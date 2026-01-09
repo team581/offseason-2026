@@ -6,18 +6,25 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class RumbleControllerSubsystem extends StateMachineSubsystem<RumbleControllerState> {
+  public static final double MATCH_DURATION_TELEOP = 135;
+
   private final Timer matchTimer = new Timer();
   private final GenericHID controller;
-  public static final double MATCH_DURATION_TELEOP = 135;
+  private final boolean matchTimeRumble;
+
+  private boolean didMatchTimeRumble90 = false;
+  private boolean didMatchTimeRumble60 = false;
+  private boolean didMatchTimeRumble30 = false;
 
   @Override
   public void teleopInit() {
     matchTimer.reset();
     matchTimer.start();
+    didMatchTimeRumble90 = false;
+    didMatchTimeRumble60 = false;
+    didMatchTimeRumble30 = false;
   }
 
   @Override
@@ -26,28 +33,38 @@ public class RumbleControllerSubsystem extends StateMachineSubsystem<RumbleContr
   }
 
   public RumbleControllerSubsystem(
-      CommandGenericHID controller, boolean matchTimeRumble, SubsystemPriorityBase priority) {
-    this(controller.getHID(), matchTimeRumble, priority);
-  }
-
-  public RumbleControllerSubsystem(
       GenericHID controller,
       boolean matchTimeRumble,
       SubsystemPriorityBase rumbleControllerPriority) {
     super(rumbleControllerPriority, RumbleControllerState.OFF);
     this.controller = controller;
-
-    if (matchTimeRumble) {
-      var rumbleCommand = runOnce(this::rumbleRequest).withName("RumbleCommand");
-      new Trigger(() -> matchTimer.hasElapsed(MATCH_DURATION_TELEOP - 90)).onTrue(rumbleCommand);
-      new Trigger(() -> matchTimer.hasElapsed(MATCH_DURATION_TELEOP - 60)).onTrue(rumbleCommand);
-      new Trigger(() -> matchTimer.hasElapsed(MATCH_DURATION_TELEOP - 30)).onTrue(rumbleCommand);
-    }
+    this.matchTimeRumble = matchTimeRumble;
   }
 
   public void rumbleRequest() {
     if (!DriverStation.isAutonomous()) {
       setStateFromRequest(RumbleControllerState.ON);
+      resetTimeout();
+    }
+  }
+
+  @Override
+  protected void whileInState(RumbleControllerState state) {
+    if (!matchTimeRumble) {
+      return;
+    }
+
+    if (!didMatchTimeRumble90) {
+      rumbleRequest();
+      didMatchTimeRumble90 = true;
+    }
+    if (!didMatchTimeRumble60) {
+      rumbleRequest();
+      didMatchTimeRumble60 = true;
+    }
+    if (!didMatchTimeRumble30) {
+      rumbleRequest();
+      didMatchTimeRumble30 = true;
     }
   }
 

@@ -125,6 +125,11 @@ public abstract class StateMachine<S extends Enum<S>> {
     return currentStateDuration > duration;
   }
 
+  /** Resets the timer used for {@link #timeout(double)}. */
+  protected void resetTimeout() {
+    lastTransitionTimestamp = Timer.getFPGATimestamp();
+  }
+
   /** Run side effects that occur when a state transition happens. */
   private void doTransition() {
     DogLog.log(name + "/State", state);

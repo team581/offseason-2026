@@ -1,23 +1,18 @@
 package com.team581.util.state_machines;
 
-import com.team581.util.scheduling.PrioritySubsystem;
 import com.team581.util.scheduling.RobotMatchState;
+import com.team581.util.scheduling.Subsystem;
 import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.IterativeRobotBase;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
  * A state machine that is also a subsystem. Extends {@link StateMachine} and implements {@link
  * Subsystem}.
  */
-public class StateMachineSubsystem<S extends Enum<S>> extends StateMachine<S>
-    implements PrioritySubsystem {
+public class StateMachineSubsystem<S extends Enum<S>> extends StateMachine<S> implements Subsystem {
   public static String getSubsystemName(Class<?> cls) {
     var name = cls.getSimpleName();
 
@@ -125,36 +120,5 @@ public class StateMachineSubsystem<S extends Enum<S>> extends StateMachine<S>
     DogLog.timeEnd(loggerName);
 
     previousStage = stage;
-  }
-
-  /**
-   * Creates a command that waits until this state machine is in the given state.
-   *
-   * @param goalState The state to wait for.
-   * @return A command that waits until the state is equal to the goal state.
-   */
-  public Command waitForState(S goalState) {
-    return Commands.waitUntil(() -> this.getState() == goalState);
-  }
-
-  /**
-   * Creates a command that waits until this state machine is in any of the given states.
-   *
-   * @param goalStates A set of the states to wait for.
-   * @return A command that waits until the state is equal to any of the goal states.
-   */
-  public Command waitForStates(Set<S> goalStates) {
-    return Commands.waitUntil(() -> goalStates.contains(this.getState()));
-  }
-
-  /**
-   * Creates a command that waits until this state machine is in any of the given states.
-   *
-   * @param goalStates An array of the states to wait for.
-   * @return A command that waits until the state is equal to any of the goal states.
-   */
-  @SafeVarargs
-  public final Command waitForStates(S... goalStates) {
-    return waitForStates(Set.of(goalStates));
   }
 }

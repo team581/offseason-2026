@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public abstract class Base581Robot extends TimedRobot {
   private static final String FINALIZE_INIT_FAULT = "Robot finalizeInit() never called";
@@ -43,9 +42,6 @@ public abstract class Base581Robot extends TimedRobot {
     isInitialized = true;
     DogLog.clearFault(FINALIZE_INIT_FAULT);
 
-    // This must be run before any commands are scheduled
-    SubsystemExecutionSequencer.ready();
-
     configureBindings();
   }
 
@@ -72,19 +68,11 @@ public abstract class Base581Robot extends TimedRobot {
   }
 
   @Override
-  public void testInit() {
-    CommandScheduler.getInstance().cancelAll();
-  }
-
-  @Override
   public void robotPeriodic() {
     DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
     DogLog.time("Scheduler/TimeSinceLastLoop");
 
-    DogLog.time("Scheduler/CommandSchedulerPeriodic");
-    CommandScheduler.getInstance().run();
-    DogLog.timeEnd("Scheduler/CommandSchedulerPeriodic");
-    SubsystemExecutionSequencer.log();
+    SubsystemExecutionSequencer.periodic();
 
     if (RobotController.getBatteryVoltage() < 12.5) {
       DogLog.logFault("Battery voltage low", AlertType.kWarning);
