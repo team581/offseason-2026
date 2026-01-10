@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import org.junit.jupiter.api.Test;
 
@@ -43,5 +44,16 @@ final class MathHelpersTest {
     var result = MathHelpers.pathflip(input);
 
     assertEquals(expected, result);
+  }
+
+  @Test
+  void getDriveDirectionReturnsDirectionFromStartToEnd() {
+    var start = new Translation2d(0, 0);
+    var end = new Translation2d(2, 0);
+
+    var result = MathHelpers.getDriveDirection(start, end);
+
+    // Direction from (0,0) to (2,0) should be 0 degrees (pointing right along +X)
+    assertEquals(Rotation2d.kZero, result);
   }
 }

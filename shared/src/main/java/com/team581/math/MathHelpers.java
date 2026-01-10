@@ -102,7 +102,7 @@ public class MathHelpers {
   }
 
   public static Rotation2d getDriveDirection(Translation2d start, Translation2d end) {
-    return new Rotation2d(start.getX() - end.getX(), start.getY() - end.getY());
+    return new Rotation2d(end.getX() - start.getX(), end.getY() - start.getY());
   }
 
   /**
