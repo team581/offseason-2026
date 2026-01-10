@@ -1,11 +1,10 @@
 package com.team581.trailblazer;
 
-import com.team581.autos.Point;
 import com.team581.trailblazer.followers.PathFollower;
+import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.trailblazer.trackers.PathTracker;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,10 +22,6 @@ import java.util.Optional;
  * </ol>
  */
 public class Trailblazer {
-  public static AutoSegmentBuilder segment(Point... waypoints) {
-    return new AutoSegmentBuilder(Arrays.stream(waypoints).map(AutoPoint::of).toList());
-  }
-
   public static AutoSegmentBuilder segment(AutoPoint... waypoints) {
     return new AutoSegmentBuilder(List.of(waypoints));
   }
@@ -48,7 +43,7 @@ public class Trailblazer {
 
     currentSegment = Optional.of(segment);
     currentIndex = 0;
-    pathTracker.resetAndSetPoints(segment.points());
+    pathTracker.resetAndSetPoints(segment.points);
   }
 
   public boolean atGoal(Pose2d currentPose) {
@@ -74,7 +69,7 @@ public class Trailblazer {
         currentFieldRelativeSpeeds,
         currentPose,
         pathTracker.getTargetPose(),
-        segment.points().get(currentIndex),
+        segment.points.get(currentIndex),
         segment,
         currentIndex);
   }

@@ -1,7 +1,7 @@
 package com.team581.trailblazer.followers;
 
 import com.team581.trailblazer.AutoPoint;
-import com.team581.trailblazer.AutoSegment;
+import com.team581.trailblazer.segments.AutoSegment;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 

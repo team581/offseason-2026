@@ -5,7 +5,7 @@ import com.team581.math.PolarChassisSpeeds;
 import com.team581.math.SlewRateLimiterStateless;
 import com.team581.trailblazer.AutoConstraintOptions;
 import com.team581.trailblazer.AutoPoint;
-import com.team581.trailblazer.AutoSegment;
+import com.team581.trailblazer.segments.AutoSegment;
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;

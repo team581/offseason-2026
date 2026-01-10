@@ -1,5 +1,10 @@
 package com.team581.trailblazer;
 
+import com.team581.math.PoseErrorTolerance;
+import com.team581.trailblazer.segments.AutoSegment;
+import com.team581.trailblazer.segments.AutoSegmentCustomEnd;
+import com.team581.trailblazer.segments.AutoSegmentForever;
+import com.team581.trailblazer.segments.AutoSegmentLastPointEnd;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -10,10 +15,6 @@ public class AutoSegmentBuilder {
 
   AutoSegmentBuilder(List<AutoPoint> waypoints) {
     this.points = waypoints;
-  }
-
-  private AutoSegment build(AutoSegmentEndBehavior endBehavior) {
-    return new AutoSegment(points, constraints, endBehavior);
   }
 
   /**
@@ -55,7 +56,7 @@ public class AutoSegmentBuilder {
    * @return The segment.
    */
   public AutoSegment forever() {
-    return build(AutoSegmentEndBehavior.FOREVER);
+    return new AutoSegmentForever(points, constraints);
   }
 
   /**
@@ -76,6 +77,21 @@ public class AutoSegmentBuilder {
           "Last point is missing a transition tolerance, but segment is trying to be built with untilFinished()");
     }
 
-    return build(AutoSegmentEndBehavior.LAST_POINT_TRANSITION_TOLERANCE);
+    return new AutoSegmentLastPointEnd(points, constraints);
+  }
+
+  /**
+   * Builds the segment, which will be followed until the robot is within the tolerance of the last
+   * point.
+   *
+   * @param finishedTolerance The tolerance for the segment to be considered finished.
+   * @return The segment.
+   */
+  public AutoSegment untilFinished(PoseErrorTolerance finishedTolerance) {
+    if (points.isEmpty()) {
+      return forever();
+    }
+
+    return new AutoSegmentCustomEnd(points, constraints, finishedTolerance);
   }
 }
