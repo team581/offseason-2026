@@ -67,8 +67,8 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(desiredVelocity, currentSpeeds, constraints);
 
     // Result should be less than desired due to acceleration limiting
-    assertThat(result < desiredVelocity).isTrue();
-    assertThat(result >= 0).isTrue();
+    assertThat(result).isLessThan(desiredVelocity);
+    assertThat(result).isGreaterThanOrEqualTo(0);
   }
 
   @Test
@@ -109,7 +109,7 @@ final class ConstraintsCalculatorTest {
             constraints);
 
     // Profiled controller should limit the angular velocity
-    assertThat(Math.abs(result) <= constraints.maxAngularVelocity() + DELTA).isTrue();
+    assertThat(Math.abs(result)).isLessThanOrEqualTo(constraints.maxAngularVelocity() + DELTA);
   }
 
   @Test
@@ -128,7 +128,7 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(10.0, currentSpeeds, constraints);
 
     // After reset, should start accelerating from zero again
-    assertThat(result < 5.0).isTrue();
+    assertThat(result).isLessThan(5.0);
   }
 
   @Test
@@ -143,7 +143,7 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(10.0, currentSpeeds, constraints);
 
     // Should be near the current linear velocity (5.0 = hypot(3, 4)) plus some acceleration
-    assertThat(result >= 5.0 - DELTA).isTrue();
+    assertThat(result).isGreaterThanOrEqualTo(5.0 - DELTA);
   }
 
   @Test
@@ -181,8 +181,8 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(0.0, currentSpeeds, constraints);
 
     // Should be less than max velocity due to deceleration starting
-    assertThat(result < 10.0).isTrue();
-    assertThat(result >= 0).isTrue();
+    assertThat(result).isLessThan(10.0);
+    assertThat(result).isGreaterThanOrEqualTo(0);
   }
 
   @Test
@@ -217,6 +217,6 @@ final class ConstraintsCalculatorTest {
             constraints);
 
     // Profiled controller should limit the angular velocity from the start
-    assertThat(Math.abs(result) <= constraints.maxAngularVelocity() + DELTA).isTrue();
+    assertThat(Math.abs(result)).isLessThanOrEqualTo(constraints.maxAngularVelocity() + DELTA);
   }
 }
