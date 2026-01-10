@@ -42,8 +42,8 @@ public class Trailblazer {
     }
 
     currentSegment = Optional.of(segment);
-    currentIndex = 0;
     pathTracker.resetAndSetPoints(segment.points);
+    currentIndex = pathTracker.getCurrentPointIndex();
   }
 
   public boolean atGoal(Pose2d currentPose) {
