@@ -32,7 +32,7 @@ public class PolarChassisSpeeds extends ChassisSpeeds {
   }
 
   public PolarChassisSpeeds(double vx, double vy, double omega) {
-    this(Math.hypot(vx, vy), vx == 0 && vy == 0 ? Rotation2d.kZero : new Rotation2d(vx, vy), omega);
+    this(Math.hypot(vx, vy), MathHelpers.rotation2d(vx, vy), omega);
   }
 
   public PolarChassisSpeeds() {
