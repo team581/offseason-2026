@@ -68,7 +68,7 @@ final class ConstraintsCalculatorTest {
 
     // Result should be less than desired due to acceleration limiting
     assertThat(result).isLessThan(desiredVelocity);
-    assertThat(result).isGreaterThanOrEqualTo(0);
+    assertThat(result).isNotNegative();
   }
 
   @Test
@@ -182,7 +182,7 @@ final class ConstraintsCalculatorTest {
 
     // Should be less than max velocity due to deceleration starting
     assertThat(result).isLessThan(10.0);
-    assertThat(result).isGreaterThanOrEqualTo(0);
+    assertThat(result).isNotNegative();
   }
 
   @Test
