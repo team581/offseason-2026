@@ -13,6 +13,7 @@ public interface PathFollower {
   /**
    * Calculate the robot speeds needed to drive the robot from the current pose to the target pose.
    *
+   * @param currentSpeeds The current field relative speeds of the robot.
    * @param currentPose The current pose of the robot.
    * @param targetPose The pose the robot should drive to.
    * @param currentPoint The current point being tracked (for constraint information).
@@ -20,6 +21,7 @@ public interface PathFollower {
    * @return The field relative chassis speeds the robot should drive at to reach the target pose.
    */
   public ChassisSpeeds calculateSpeeds(
+      ChassisSpeeds currentSpeeds,
       Pose2d currentPose,
       Pose2d targetPose,
       AutoPoint currentPoint,

@@ -2,27 +2,46 @@ package com.team581.trailblazer.followers;
 
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
+import com.team581.math.SlewRateLimiterStateless;
 import com.team581.trailblazer.AutoConstraintOptions;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.AutoSegment;
-import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.Timer;
 
 public class PidPathFollower implements PathFollower {
+  // Assume we can decelerate at 5m/s/s to allow stopping quickly
+  private static final double MAX_DECELERATION = -5;
+
   private final PIDController translationController;
   private final PIDController rotationController;
+  private final ProfiledPIDController profiledRotationController;
+
+  private double lastLinearVelocity = 0;
+  private double lastLinearVelocityTimestamp = Timer.getFPGATimestamp();
 
   public PidPathFollower(PIDController translationController, PIDController rotationController) {
     this.translationController = translationController;
     this.rotationController = rotationController;
+    this.profiledRotationController =
+        new ProfiledPIDController(
+            rotationController.getP(),
+            rotationController.getI(),
+            rotationController.getD(),
+            new AutoConstraintOptions().getAngularConstraints());
 
-    rotationController.enableContinuousInput(-Math.PI, Math.PI);
+    this.rotationController.enableContinuousInput(-Math.PI, Math.PI);
+    this.profiledRotationController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   @Override
   public ChassisSpeeds calculateSpeeds(
+      ChassisSpeeds currentSpeeds,
       Pose2d currentPose,
       Pose2d targetPose,
       AutoPoint currentPoint,
@@ -31,7 +50,6 @@ public class PidPathFollower implements PathFollower {
     // Get constraints for the current point
     var constraints = segment.getConstraints(currentPoint).orElseGet(AutoConstraintOptions::new);
 
-    // Calculate distance to goal
     var distanceToGoalMeters =
         currentPose.getTranslation().getDistance(targetPose.getTranslation());
 
@@ -41,23 +59,37 @@ public class PidPathFollower implements PathFollower {
         rotationController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
-    // Calculate drive direction
     var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
 
-    // Apply constraints - BASIC PLACEHOLDER IMPLEMENTATION
-    // Cap max linear velocity based on constraints
+    // Apply velocity constraints
     if (constraints.maxLinearVelocity() > 0) {
-      driveVelocity = Math.min(driveVelocity, constraints.maxLinearVelocity());
+      // Use the stateless slew rate limiter for linear velocity
+      driveVelocity =
+          SlewRateLimiterStateless.calculate(
+              driveVelocity,
+              lastLinearVelocity,
+              lastLinearVelocityTimestamp,
+              constraints.maxLinearVelocity(),
+              MAX_DECELERATION);
+
+      lastLinearVelocity = driveVelocity;
+    } else {
+      // Reset the state when constraints are not active
+      lastLinearVelocity = MathHelpers.getLinearVelocity(currentSpeeds);
     }
+    lastLinearVelocityTimestamp = MathSharedStore.getTimestamp();
 
     // Cap max angular velocity based on constraints
     if (constraints.maxAngularVelocity() > 0) {
       angularVelocity =
-          MathUtil.clamp(
-              angularVelocity, -constraints.maxAngularVelocity(), constraints.maxAngularVelocity());
+          profiledRotationController.calculate(
+              currentPose.getRotation().getRadians(),
+              new TrapezoidProfile.State(targetPose.getRotation().getRadians(), 0),
+              constraints.getAngularConstraints());
+    } else {
+      profiledRotationController.reset(
+          currentPose.getRotation().getRadians(), currentSpeeds.omegaRadiansPerSecond);
     }
-
-    // TODO: Add angle bisector
 
     return new PolarChassisSpeeds(driveVelocity, driveDirection, angularVelocity);
   }

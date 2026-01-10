@@ -71,6 +71,7 @@ public class Trailblazer {
 
     // Calculate speeds using follower
     return pathFollower.calculateSpeeds(
+        currentFieldRelativeSpeeds,
         currentPose,
         pathTracker.getTargetPose(),
         segment.points().get(currentIndex),
