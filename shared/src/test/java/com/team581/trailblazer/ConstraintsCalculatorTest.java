@@ -1,7 +1,7 @@
 package com.team581.trailblazer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.controller.PIDController;
@@ -67,8 +67,8 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(desiredVelocity, currentSpeeds, constraints);
 
     // Result should be less than desired due to acceleration limiting
-    assertTrue(result < desiredVelocity);
-    assertTrue(result >= 0);
+    assertThat(result < desiredVelocity).isTrue();
+    assertThat(result >= 0).isTrue();
   }
 
   @Test
@@ -109,7 +109,7 @@ final class ConstraintsCalculatorTest {
             constraints);
 
     // Profiled controller should limit the angular velocity
-    assertTrue(Math.abs(result) <= constraints.maxAngularVelocity() + DELTA);
+    assertThat(Math.abs(result) <= constraints.maxAngularVelocity() + DELTA).isTrue();
   }
 
   @Test
@@ -128,7 +128,7 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(10.0, currentSpeeds, constraints);
 
     // After reset, should start accelerating from zero again
-    assertTrue(result < 5.0);
+    assertThat(result < 5.0).isTrue();
   }
 
   @Test
@@ -143,7 +143,7 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(10.0, currentSpeeds, constraints);
 
     // Should be near the current linear velocity (5.0 = hypot(3, 4)) plus some acceleration
-    assertTrue(result >= 5.0 - DELTA);
+    assertThat(result >= 5.0 - DELTA).isTrue();
   }
 
   @Test
@@ -181,8 +181,8 @@ final class ConstraintsCalculatorTest {
     var result = calculator.constrainLinearVelocity(0.0, currentSpeeds, constraints);
 
     // Should be less than max velocity due to deceleration starting
-    assertTrue(result < 10.0);
-    assertTrue(result >= 0);
+    assertThat(result < 10.0).isTrue();
+    assertThat(result >= 0).isTrue();
   }
 
   @Test
@@ -217,6 +217,6 @@ final class ConstraintsCalculatorTest {
             constraints);
 
     // Profiled controller should limit the angular velocity from the start
-    assertTrue(Math.abs(result) <= constraints.maxAngularVelocity() + DELTA);
+    assertThat(Math.abs(result) <= constraints.maxAngularVelocity() + DELTA).isTrue();
   }
 }
