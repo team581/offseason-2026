@@ -3,6 +3,7 @@ package com.team581.trailblazer;
 import com.team581.trailblazer.followers.PathFollower;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.trailblazer.trackers.PathTracker;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
@@ -63,12 +64,16 @@ public class Trailblazer {
 
     // Update current index from tracker
     currentIndex = pathTracker.getCurrentPointIndex();
+    DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
+
+    var targetPose = pathTracker.getTargetPose();
+    DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
 
     // Calculate speeds using follower
     return pathFollower.calculateSpeeds(
         currentFieldRelativeSpeeds,
         currentPose,
-        pathTracker.getTargetPose(),
+        targetPose,
         segment.points.get(currentIndex),
         segment,
         currentIndex);
