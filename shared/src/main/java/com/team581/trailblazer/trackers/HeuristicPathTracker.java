@@ -20,6 +20,7 @@ public class HeuristicPathTracker implements PathTracker {
   @Override
   public void resetAndSetPoints(List<AutoPoint> points) {
     this.points = points;
+    this.currentPointIndex = 0;
   }
 
   @Override
