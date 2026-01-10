@@ -19,7 +19,7 @@ public class Robot extends Base581Robot {
 
   private final Trailblazer trailblazer =
       new Trailblazer(
-          new HeuristicPathTracker(new PoseErrorTolerance(0.1, 5)),
+          new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
   private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
