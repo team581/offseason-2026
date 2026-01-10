@@ -9,6 +9,12 @@ dependencies {
 	implementation wpi.java.deps.wpilib()
 	implementation wpi.java.vendor.java()
 
+	// Native JNI libraries for desktop testing
+	nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
+	nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
+	nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
+	nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+
 	testImplementation 'org.junit.jupiter:junit-jupiter:6.0.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
