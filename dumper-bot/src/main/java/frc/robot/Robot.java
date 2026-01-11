@@ -8,7 +8,6 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.wpilibj.event.EventLoop;
 import frc.robot.generated.BuildConstants;
 import frc.robot.robot_manager.RobotManager;
 
@@ -22,7 +21,7 @@ public class Robot extends Base581Robot {
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
-//   private final Autos autos = new Autos(robotManager, trailblazer);
+  // private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(
@@ -41,13 +40,12 @@ public class Robot extends Base581Robot {
 
   @Override
   public void teleopPeriodic() {
-    var leftX = hardware.driverController.getLeftX();
-    var leftY = -hardware.driverController.getLeftY();
-    var rightX = hardware.driverController.getRightX();
+    
+    
+    
 
-    var translationMagnitude = ControllerHelpers.getJoystickMagnitude(leftX, leftY, 2);
-    var rotationMagnitude =
-        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
+    
+    
 
     // swerve.setTeleopInputs(
     //     translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
