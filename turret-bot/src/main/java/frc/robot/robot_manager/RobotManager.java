@@ -4,17 +4,20 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import frc.robot.localization.LocalizationSubsystem;
 import frc.robot.swerve.SwerveSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
+import frc.robot.vision.VisionSubsystem;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final LocalizationSubsystem localization;
   public final SwerveSubsystem swerve;
 //  public final TurretSubsystem turret;
+  public final VisionSubsystem vision;
 
   public RobotManager(LocalizationSubsystem localization, SwerveSubsystem swerve) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
 //    this.turret = turret;
     this.localization = localization;
     this.swerve = swerve;
+    this.vision = vision;
   }
 
   @Override
