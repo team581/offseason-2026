@@ -1,0 +1,56 @@
+package frc.robot;
+
+import com.team581.Base581Robot;
+import com.team581.controller.ControllerHelpers;
+import com.team581.math.MathHelpers;
+import com.team581.math.PoseErrorTolerance;
+import com.team581.trailblazer.Trailblazer;
+import com.team581.trailblazer.followers.PidPathFollower;
+import com.team581.trailblazer.trackers.HeuristicPathTracker;
+import edu.wpi.first.math.controller.PIDController;
+import frc.robot.generated.BuildConstants;
+
+public class Robot extends Base581Robot {
+  private final Hardware hardware = new Hardware();
+
+  private final Trailblazer trailblazer =
+      new Trailblazer(
+          new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
+          new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem
+//   private final Autos autos = new Autos(robotManager, trailblazer);
+
+  public Robot() {
+    logMetadata(
+        BuildConstants.MAVEN_NAME,
+        BuildConstants.BUILD_DATE,
+        BuildConstants.GIT_SHA,
+        BuildConstants.GIT_DATE,
+        BuildConstants.GIT_BRANCH,
+        BuildConstants.DIRTY);
+
+    finalizeInit();
+  }
+
+  @Override
+  protected void configureBindings() {}
+
+  @Override
+  public void teleopPeriodic() {
+    var leftX = hardware.driverController.getLeftX();
+    var leftY = -hardware.driverController.getLeftY();
+    var rightX = hardware.driverController.getRightX();
+
+    var translationMagnitude = ControllerHelpers.getJoystickMagnitude(leftX, leftY, 2);
+    var rotationMagnitude =
+        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
+
+    // swerve.setTeleopInputs(
+    //     translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
+
+    if (hardware.driverController.getBackButtonPressed()) {
+    //   localization.zeroGyro();
+    }
+  }
+}
