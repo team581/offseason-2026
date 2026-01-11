@@ -53,10 +53,32 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getLeftTriggerAxis() > 0.5) {
       robotManager.intakeRequest();
     } else {
-      robotManager.idleIntakeRequest();
+      robotManager.cancelIntakeRequest();
+    }
+
+    if (hardware.driverController.getRightTriggerAxis() > 0.5) {
+      robotManager.confirmShotRequest();
+    } else {
+      robotManager.cancelShotRequest();
     }
 
     if (hardware.driverController.getXButtonPressed()) {
+      robotManager.shootHubWaitRequest();
+    }
+
+    if (hardware.driverController.getAButtonPressed()) {
+      robotManager.feed1WaitRequest();
+    }
+
+    if (hardware.driverController.getBButtonPressed()) {
+      robotManager.feed1WaitRequest();
+    }
+
+    if (hardware.driverController.getRightBumperButtonPressed()) {
+      robotManager.cancelShotRequest();
+    }
+
+    if (hardware.driverController.getYButtonPressed()) {
       robotManager.idleRequest();
     }
 
