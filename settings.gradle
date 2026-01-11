@@ -37,5 +37,6 @@ rootProject.name = 'team581-frc-2026'
 
 // Include all projects
 include 'shared'
-include "alpha-bot"
+include "turret-bot"
+include "dumper-bot"
 include "comp-bot"
