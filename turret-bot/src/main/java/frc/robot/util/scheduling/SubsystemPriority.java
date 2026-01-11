@@ -15,6 +15,7 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
 
   // 0-9 is for actuator subsystems
   SWERVE(0),
+  TURRET(0),
   RUMBLE_CONTROLLER(0);
 
   public final int value;
