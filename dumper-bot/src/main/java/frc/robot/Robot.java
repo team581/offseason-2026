@@ -35,9 +35,9 @@ public class Robot extends Base581Robot {
 
   @Override
   public void teleopPeriodic() {
-    var leftX = hardware.driverController.getLeftX();
-    var leftY = -hardware.driverController.getLeftY();
-    var rightX = hardware.driverController.getRightX();
+    
+    
+    
 
     
     
