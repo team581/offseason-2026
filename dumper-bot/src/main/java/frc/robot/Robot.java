@@ -13,10 +13,7 @@ import frc.robot.generated.BuildConstants;
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
 
-  private final Trailblazer trailblazer =
-      new Trailblazer(
-          new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
-          new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
+  
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
 //   private final Autos autos = new Autos(robotManager, trailblazer);
@@ -42,9 +39,8 @@ public class Robot extends Base581Robot {
     var leftY = -hardware.driverController.getLeftY();
     var rightX = hardware.driverController.getRightX();
 
-    var translationMagnitude = ControllerHelpers.getJoystickMagnitude(leftX, leftY, 2);
-    var rotationMagnitude =
-        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
+    
+    
 
     // swerve.setTeleopInputs(
     //     translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
