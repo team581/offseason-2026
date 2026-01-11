@@ -26,7 +26,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       new int[] {6, 7, 8, 9, 10, 11, 17, 18, 19, 20, 21, 22};
 
   private static final double IS_OFFLINE_TIMEOUT = 3;
-  private static final double USE_MT1_DISTANCE_THRESHOLD = Units.inchesToMeters(40.0);
+  
   private final String limelightTableName;
   private final String name;
   private final CameraConfig config;
@@ -36,7 +36,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private CameraHealth cameraHealth = CameraHealth.NO_TARGETS;
   private double limelightHeartbeat = -1;
 
-  private double lastTimestamp = 0.0;
+  
 
   private OptionalTagResult lastGoodTagResult = new OptionalTagResult();
   private OptionalTagResult tagResult = new OptionalTagResult();
@@ -118,12 +118,12 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       return tagResult.empty();
     }
 
-    var devs = VecBuilder.fill(0.01, 0.01, Double.MAX_VALUE);
+    
     var distance = mTEstimate.avgTagDist;
     var xyDev = 0.01 * Math.pow(distance, 1.2);
     var thetaDev = 0.03 * Math.pow(distance, 1.2);
   
-    devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
+    null devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
     
     
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mtPose);
