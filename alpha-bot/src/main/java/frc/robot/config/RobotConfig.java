@@ -6,6 +6,6 @@ public record RobotConfig(SwerveConfig swerve) {
   public record SwerveConfig(PhoenixPIDController snapController) {}
 
   public static RobotConfig get() {
-    return CompConfig.COMPETITION_BOT;
+    return AlphaConfig.ALPHA_BOT;
   }
 }

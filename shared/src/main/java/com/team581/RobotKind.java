@@ -4,7 +4,9 @@ import edu.wpi.first.wpilibj.RobotController;
 import java.util.Optional;
 
 public enum RobotKind {
-  TURRET_BOT("placeholder");
+  ALPHA_BOT("placeholder1"),
+  COMP_BOT("placeholder2"),
+  PRACTICE_BOT("placeholder3");
 
   /**
    * Returns the RobotKind by matching the serial number to a known RobotKind. If the serial number
@@ -12,7 +14,9 @@ public enum RobotKind {
    */
   public static Optional<RobotKind> fromSerialNumber() {
     return switch (RobotController.getSerialNumber()) {
-      case "placeholder" -> Optional.of(TURRET_BOT);
+      case "placeholder1" -> Optional.of(ALPHA_BOT);
+      case "placeholder2" -> Optional.of(COMP_BOT);
+      case "placeholder3" -> Optional.of(PRACTICE_BOT);
       default -> Optional.empty();
     };
   }

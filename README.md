@@ -9,7 +9,8 @@
 This repository is organized as a Gradle monorepo with the following projects:
 
 - **`shared/`** - Shared utility library
-- **`turret-bot/`** - Turret bot code
+- **`alpha-bot/`** - Alpha bot code
+- **`comp-bot/`** - Competition bot code
 
 ## Building and running
 
