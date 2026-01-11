@@ -29,9 +29,6 @@ public abstract class Base581Robot extends TimedRobot {
             .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
             .withUseLogThread(false));
 
-    DogLog.log(
-        "Metadata/RobotName",
-        RobotKind.fromSerialNumber().map(RobotKind::toString).orElse("Unknown"));
     DogLog.log("Metadata/RoborioSerialNumber", RobotController.getSerialNumber());
 
     ElasticLayoutUtil.onBoot();

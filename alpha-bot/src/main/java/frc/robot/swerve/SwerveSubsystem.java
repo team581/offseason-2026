@@ -23,7 +23,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import frc.robot.config.RobotConfig;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
@@ -37,7 +36,7 @@ public class SwerveSubsystem extends StateMachineSubsystem<SwerveState> {
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
-      RobotConfig.get().swerve().snapController();
+      new PhoenixPIDController(5.75, 0, 0);
 
   public final TunerSwerveDrivetrain drivetrain;
   private final Trailblazer trailblazer;
