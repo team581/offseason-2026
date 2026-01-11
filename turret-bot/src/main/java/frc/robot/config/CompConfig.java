@@ -11,7 +11,7 @@ import frc.robot.config.RobotConfig.VisionConfig;
 
 class CompConfig {
 
-  private static final String RIO_CAN_NAME = "rio";
+  
 
   public static final RobotConfig COMPETITION_BOT =
       new RobotConfig(
