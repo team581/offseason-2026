@@ -8,11 +8,14 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.event.EventLoop;
 import frc.robot.generated.BuildConstants;
+import frc.robot.robot_manager.RobotManager;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
 
+  private final RobotManager robotManager = new RobotManager();
   private final Trailblazer trailblazer =
       new Trailblazer(
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
@@ -48,6 +51,24 @@ public class Robot extends Base581Robot {
 
     // swerve.setTeleopInputs(
     //     translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
+
+    if (hardware.driverController.getLeftTriggerAxis() > 0.5) {
+      robotManager.intakeRequest();
+    } else {
+      robotManager.idleIntakeRequest();
+    }
+
+    if (hardware.driverController.getXButtonPressed()) {
+      robotManager.idleRequest();
+    }
+
+    if (hardware.driverController.getPOV() == 0) {
+      robotManager.climbSequenceForward();
+    }
+
+    if (hardware.driverController.getPOV() == 180) {
+      robotManager.climbSequenceBackward();
+    }
 
     if (hardware.driverController.getBackButtonPressed()) {
     //   localization.zeroGyro();
