@@ -8,9 +8,11 @@ import frc.robot.util.scheduling.SubsystemPriority;
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final LocalizationSubsystem localization;
   public final SwerveSubsystem swerve;
+//  public final TurretSubsystem turret;
 
   public RobotManager(LocalizationSubsystem localization, SwerveSubsystem swerve) {
-    super(SubsystemPriority.ROBOT_MANAGER, RobotState.PLACEHOLDER_STATE);
+    super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
+//    this.turret = turret;
     this.localization = localization;
     this.swerve = swerve;
   }
@@ -18,7 +20,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case PLACEHOLDER_STATE -> swerve.normalDriveRequest();
+      case AIMING -> swerve.normalDriveRequest();
+      case IDLE -> swerve.normalDriveRequest();
+      case LOCKED -> swerve.normalDriveRequest();
     }
   }
 }
