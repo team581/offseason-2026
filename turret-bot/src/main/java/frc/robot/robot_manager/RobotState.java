@@ -1,7 +1,8 @@
 package frc.robot.robot_manager;
 
 public enum RobotState {
-  AIMING,
+  AUTO_AIM,
+  MANUAL_AIM,
   IDLE,
   LOCKED;
 }
