@@ -13,6 +13,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.localization.LocalizationSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -59,7 +61,16 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
-    autoAimAngle = localization.getAutoAimAngle();
+   var target = new Pose2d(0,0,Rotation2d.kZero);
+   var current = localization.getPose();
+    var angle =
+        Units.radiansToDegrees(
+            Math.atan2(target.getY() - current.getY(), target.getX() - current.getX()));
+  
+    var imuAngle = current.getRotation().getDegrees();
+
+    autoAimAngle = angle - imuAngle;
+
     switch (getState()) {
       case UNHOMED, HOMING -> {
         rawCurrent = motor.getStatorCurrent().getValueAsDouble();
@@ -86,10 +97,10 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
         motor.disable();
       }
       case AUTO_AIM -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(autoAimAngle)));
+        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(autoAimAngle))));
       }
       case MANUAL_AIM -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(MANUAL_AIM_ANGLE)));
+        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
       }
       default -> {}
     }
