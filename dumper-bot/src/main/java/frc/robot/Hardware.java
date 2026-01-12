@@ -11,6 +11,8 @@ public final XboxController driverController = new XboxController(0);
   public final XboxController operatorController = new XboxController(1);
 
   public final TalonFX intakeMotor = new TalonFX(0);
+  public final TalonFX leftShooterMotor = new TalonFX(0);
+  public final TalonFX rightShooterMotor = new TalonFX(0);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(

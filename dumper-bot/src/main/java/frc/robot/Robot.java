@@ -11,12 +11,14 @@ import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
 import frc.robot.intake.IntakeSubsystem;
 import frc.robot.robot_manager.RobotManager;
+import frc.robot.shooter.Shooter;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
 
   private final IntakeSubsystem intake = new IntakeSubsystem(hardware.intakeMotor);
-  private final RobotManager robotManager = new RobotManager(intake);
+  private final Shooter shooter = new Shooter(hardware.leftShooterMotor, hardware.rightShooterMotor);
+  private final RobotManager robotManager = new RobotManager(intake, shooter);
   
 
   @SuppressWarnings("unused") // Registers itself as a subsystem

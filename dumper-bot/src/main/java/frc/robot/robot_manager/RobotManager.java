@@ -4,25 +4,28 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 
 import frc.robot.intake.IntakeState;
 import frc.robot.intake.IntakeSubsystem;
+import frc.robot.shooter.Shooter;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
     private final IntakeSubsystem intake;
-    public RobotManager(IntakeSubsystem intake) {
+    private final Shooter shooter;
+    public RobotManager(IntakeSubsystem intake, Shooter shooter) {
         super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
         this.intake = intake;
+        this.shooter = shooter;
     }
 
     @Override
     protected RobotState getNextState(RobotState currentState) {
         return switch (currentState) {
-            case PREPARE_SHOOT_HUB -> RobotState.SHOOT_HUB;
-            case PREPARE_FEED_1 -> RobotState.FEED_1;
-            case PREPARE_FEED_2 -> RobotState.FEED_2;
+            case PREPARE_SHOOT_HUB -> shooter.atGoal() ? RobotState.SHOOT_HUB: currentState;
+            case PREPARE_FEED_1 -> shooter.atGoal() ?  RobotState.FEED_1: currentState;
+            case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2: currentState;
 
-            case PREPARE_INTAKE_AND_SHOOT_HUB -> RobotState.INTAKE_AND_SHOOT_HUB;
-            case PREPARE_INTAKE_AND_FEED_1 -> RobotState.INTAKE_AND_FEED_1;
-            case PREPARE_INTAKE_AND_FEED_2 -> RobotState.INTAKE_AND_FEED_2;
+            case PREPARE_INTAKE_AND_SHOOT_HUB -> shooter.atGoal() ? RobotState.INTAKE_AND_SHOOT_HUB: currentState;
+            case PREPARE_INTAKE_AND_FEED_1 -> shooter.atGoal() ? RobotState.INTAKE_AND_FEED_1: currentState;
+            case PREPARE_INTAKE_AND_FEED_2 -> shooter.atGoal() ? RobotState.INTAKE_AND_FEED_2: currentState;
             default -> currentState;
         };
     }
@@ -33,6 +36,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             intake.setState(IntakeState.INTAKING);
         } else {
             intake.setState(IntakeState.IDLE);
+        }
+        // TODO: distance
+        switch (newState) {
+            case WAIT_FEED_1,WAIT_FEED_2, WAIT_INTAKE_AND_FEED_1, WAIT_INTAKE_AND_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2, PREPARE_INTAKE_AND_FEED_1, PREPARE_INTAKE_AND_FEED_2 -> shooter.feedRequest(0);
+            case PREPARE_INTAKE_AND_SHOOT_HUB, PREPARE_SHOOT_HUB, WAIT_INTAKE_AND_SHOOT_HUB, WAIT_SHOOT_HUB -> shooter.scoreRequest(0);
+            default -> shooter.idleRequest();
         }
     }
 
