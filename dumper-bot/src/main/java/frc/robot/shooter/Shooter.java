@@ -8,22 +8,22 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(false);
-  
+
   private double shootingRpm = 0;
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
+
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
 
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
-     leftMotor
+    leftMotor
         .getConfigurator()
         .apply(
             new TalonFXConfiguration()
@@ -34,7 +34,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                         .withStatorCurrentLimit(100)
                         .withSupplyCurrentLimit(100))
                 .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
-     rightMotor
+    rightMotor
         .getConfigurator()
         .apply(
             new TalonFXConfiguration()
@@ -50,12 +50,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public void scoreRequest(double distance) {
-    
+
     setStateFromRequest(ShooterState.SCORE);
   }
 
   public void feedRequest(double distance) {
-    
+
     setStateFromRequest(ShooterState.FEEDING);
   }
 
@@ -65,40 +65,44 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void whileInState(ShooterState state) {
-    if (state == ShooterState.SCORE ) {
+    if (state == ShooterState.SCORE) {
       velocityRequest.withVelocity(shootingRpm);
     }
-    if (state == ShooterState.FEEDING){
+    if (state == ShooterState.FEEDING) {
       velocityRequest.withVelocity(feedingRpm);
     }
     leftMotor.setControl(velocityRequest);
     rightMotor.setControl(velocityRequest);
   }
-    private double shootingDistancetoRPm() {
-      return 1.0;
-    }
-    private double feedingDistancetoRpm() {
-      return 1.0;
-    }
-    @Override
-    protected void collectInputs() {
-      shootingRpm = Math.min(4000, shootingDistancetoRPm());
-      feedingRpm = Math.min(4000, feedingDistancetoRpm());
 
-      leftMotorRpm = leftMotor.getVelocity().getValueAsDouble();
-      rightMotorRpm = rightMotor.getVelocity().getValueAsDouble();
-    }
-    public boolean atGoal() {
-      return switch(getState()) {
-       case IDLE -> true;
-        case SCORE -> {
-          yield Math.abs(shootingRpm - leftMotorRpm) <= 50 && Math.abs(shootingRpm - rightMotorRpm) <= 50;
-        }
-        case FEEDING -> {
-          yield Math.abs(feedingRpm - leftMotorRpm) <= 100 && Math.abs(feedingRpm - rightMotorRpm) <= 50;
-        }
-      };
+  private double shootingDistancetoRPm() {
+    return 1.0;
+  }
 
-    }
+  private double feedingDistancetoRpm() {
+    return 1.0;
+  }
 
+  @Override
+  protected void collectInputs() {
+    shootingRpm = Math.min(4000, shootingDistancetoRPm());
+    feedingRpm = Math.min(4000, feedingDistancetoRpm());
+
+    leftMotorRpm = leftMotor.getVelocity().getValueAsDouble();
+    rightMotorRpm = rightMotor.getVelocity().getValueAsDouble();
+  }
+
+  public boolean atGoal() {
+    return switch (getState()) {
+      case IDLE -> true;
+      case SCORE -> {
+        yield Math.abs(shootingRpm - leftMotorRpm) <= 50
+            && Math.abs(shootingRpm - rightMotorRpm) <= 50;
+      }
+      case FEEDING -> {
+        yield Math.abs(feedingRpm - leftMotorRpm) <= 100
+            && Math.abs(feedingRpm - rightMotorRpm) <= 50;
+      }
+    };
+  }
 }

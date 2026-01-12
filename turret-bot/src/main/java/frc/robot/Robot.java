@@ -24,7 +24,7 @@ import frc.robot.vision.limelight.LimelightState;
 
 public class Robot extends Base581Robot {
   private static final double TURRET_CAMERA_HEIGHT = Units.inchesToMeters(0.0);
-    private static final double TURRET_CAMERA_PITCH = 0.0;
+  private static final double TURRET_CAMERA_PITCH = 0.0;
 
   private final Hardware hardware = new Hardware();
 
@@ -35,11 +35,23 @@ public class Robot extends Base581Robot {
 
   private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
   private final ImuSubsystem imu = new ImuSubsystem(swerve.drivetrain);
-  private final Limelight turretLimelight = new Limelight("turret", LimelightState.TAGS, new CameraConfig(LimelightModel.FOUR, true, 0.0, 0.0, TURRET_CAMERA_HEIGHT, TURRET_CAMERA_PITCH, 0.0, 0.0));
+  private final Limelight turretLimelight =
+      new Limelight(
+          "turret",
+          LimelightState.TAGS,
+          new CameraConfig(
+              LimelightModel.FOUR,
+              true,
+              0.0,
+              0.0,
+              TURRET_CAMERA_HEIGHT,
+              TURRET_CAMERA_PITCH,
+              0.0,
+              0.0));
   private final VisionSubsystem vision = new VisionSubsystem(imu, turretLimelight);
-  private final LocalizationSubsystem localization = new LocalizationSubsystem(swerve, hardware.drivetrain, vision);
+  private final LocalizationSubsystem localization =
+      new LocalizationSubsystem(swerve, hardware.drivetrain, vision);
   private final TurretSubsystem turret = new TurretSubsystem(hardware.turretMotor, localization);
-
 
   private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
 
@@ -77,6 +89,5 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getBackButtonPressed()) {
       localization.zeroGyro();
     }
-
   }
 }

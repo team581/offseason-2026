@@ -2,13 +2,11 @@ package frc.robot.turret;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.MathUtil;
@@ -40,33 +38,29 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   public TurretSubsystem(TalonFX motor, LocalizationSubsystem localization) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
 
-    motor.getConfigurator().apply(
-      new TalonFXConfiguration()
-          .withFeedback(
-              new FeedbackConfigs()
-                  .withSensorToMechanismRatio(60.0 / 1.0))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(30)
-                  .withStatorCurrentLimit(30))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKP(0.0)
-                  .withKV(0.0)
-                  .withKG(0.0)));
+    motor
+        .getConfigurator()
+        .apply(
+            new TalonFXConfiguration()
+                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(60.0 / 1.0))
+                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+                .withCurrentLimits(
+                    new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(30)
+                        .withStatorCurrentLimit(30))
+                .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0)));
     this.motor = motor;
     this.localization = localization;
   }
 
   @Override
   protected void collectInputs() {
-   var target = new Pose2d(0,0,Rotation2d.kZero);
-   var current = localization.getPose();
+    var target = new Pose2d(0, 0, Rotation2d.kZero);
+    var current = localization.getPose();
     var angle =
         Units.radiansToDegrees(
             Math.atan2(target.getY() - current.getY(), target.getX() - current.getX()));
-  
+
     var imuAngle = current.getRotation().getDegrees();
 
     autoAimAngle = angle - imuAngle;
@@ -97,10 +91,12 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
         motor.disable();
       }
       case AUTO_AIM -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(autoAimAngle))));
+        motor.setControl(
+            positionRequest.withPosition(Units.degreesToRotations(clamp(autoAimAngle))));
       }
       case MANUAL_AIM -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
+        motor.setControl(
+            positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
       }
       default -> {}
     }

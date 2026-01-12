@@ -1,4 +1,5 @@
 package frc.robot.intake;
+
 public enum IntakeState {
   UNTUNED(0.0),
   UNJAM(UNTUNED),
@@ -18,4 +19,3 @@ public enum IntakeState {
     this.volts = volts;
   }
 }
-

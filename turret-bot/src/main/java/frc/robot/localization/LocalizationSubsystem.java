@@ -5,7 +5,6 @@ import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.swerve.SwerveSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -20,7 +19,8 @@ public class LocalizationSubsystem extends StateMachineSubsystem<LocalizationSta
 
   private static final double LATENCY_CONSTANT = 0.0;
 
-  public LocalizationSubsystem(SwerveSubsystem swerve, TunerSwerveDrivetrain drivetrain, VisionSubsystem vision) {
+  public LocalizationSubsystem(
+      SwerveSubsystem swerve, TunerSwerveDrivetrain drivetrain, VisionSubsystem vision) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
     this.swerve = swerve;
     this.vision = vision;
@@ -59,7 +59,7 @@ public class LocalizationSubsystem extends StateMachineSubsystem<LocalizationSta
     drivetrain.resetPose(estimatedPose);
   }
 
-   private void ingestTagResult(TagResult result) {
+  private void ingestTagResult(TagResult result) {
     var visionPose = result.pose();
 
     if (!vision.seenTagRecentlyForReset()) {

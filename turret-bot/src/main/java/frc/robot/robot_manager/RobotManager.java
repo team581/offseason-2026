@@ -1,7 +1,6 @@
 package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.localization.LocalizationSubsystem;
@@ -16,9 +15,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final TurretSubsystem turret;
   public final VisionSubsystem vision;
 
-  public RobotManager(LocalizationSubsystem localization, SwerveSubsystem swerve, TurretSubsystem turret, VisionSubsystem vision) {
+  public RobotManager(
+      LocalizationSubsystem localization,
+      SwerveSubsystem swerve,
+      TurretSubsystem turret,
+      VisionSubsystem vision) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
-//    this.turret = turret;
+    //    this.turret = turret;
     this.localization = localization;
     this.swerve = swerve;
     this.vision = vision;
@@ -35,9 +38,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   @Override
-    public void robotPeriodic() {
-      super.robotPeriodic();
-  
-      vision.addTurretObservation(Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
-    }
+  public void robotPeriodic() {
+    super.robotPeriodic();
+
+    vision.addTurretObservation(
+        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
+  }
 }
