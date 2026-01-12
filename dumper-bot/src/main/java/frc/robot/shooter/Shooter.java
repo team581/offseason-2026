@@ -15,7 +15,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(false);
-  private double distance = 0;
+  
   private double shootingRpm = 0;
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
@@ -50,12 +50,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public void scoreRequest(double distance) {
-    this.distance = distance;
+    
     setStateFromRequest(ShooterState.SCORE);
   }
 
   public void feedRequest(double distance) {
-    this.distance = distance;
+    
     setStateFromRequest(ShooterState.FEEDING);
   }
 
