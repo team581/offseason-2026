@@ -10,7 +10,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.util.DoubleCircularBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.imu.ImuSubsystem;
@@ -21,8 +20,8 @@ import frc.robot.vision.results.OptionalTagResult;
 import java.util.Optional;
 
 public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
-private static final Transform2d TURRET_TO_CAMERA = new Transform2d(Units.inchesToMeters(-6.0),0.0,Rotation2d.kZero);
-
+  private static final Transform2d TURRET_TO_CAMERA =
+      new Transform2d(Units.inchesToMeters(-6.0), 0.0, Rotation2d.kZero);
 
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
   private final Debouncer seeingTagForPoseResetDebouncer =
@@ -103,17 +102,18 @@ private static final Transform2d TURRET_TO_CAMERA = new Transform2d(Units.inches
 
     // Look up the turret angle at the specific image timestamp
     var robotToTurretObservation = getAngleAtTimestamp(mT1Timestamp);
-    
+
     if (robotToTurretObservation.isEmpty()) {
       DogLog.logFault("Could not get turret angle at timestamp");
-        return adjustedTurretResult.empty();
+      return adjustedTurretResult.empty();
     }
     DogLog.clearFault("Could not get turret angle at timestamp");
 
     // Create transform representing the rotation from Turret back to Robot
     // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
-    var turretToRobot = MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
-    
+    var turretToRobot =
+        MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
+
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
 
