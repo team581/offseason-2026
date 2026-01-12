@@ -21,7 +21,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       TurretSubsystem turret,
       VisionSubsystem vision) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
-    //    this.turret = turret;
     this.localization = localization;
     this.swerve = swerve;
     this.vision = vision;

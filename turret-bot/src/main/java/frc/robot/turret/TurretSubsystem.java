@@ -25,15 +25,15 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   private double autoAimAngle = 0.0;
   private static final double MIN_ANGLE = 0.0;
   private static final double MAX_ANGLE = 0.0;
-  private final double MANUAL_AIM_ANGLE = 0.0;
-  private final double HOMING_VOLTAGE = 0.0;
-  private final double HOMING_CURRENT_THRESHOLD = 1.5; // Half of compbot 2025 deploy threshold
-  private final double HOMING_END_POSITION = 0.0;
-  private final double TOLERANCE = 0.0;
+  private static final double MANUAL_AIM_ANGLE = 0.0;
+  private static final double HOMING_VOLTAGE = 0.0;
+  private static final double HOMING_CURRENT_THRESHOLD = 1.5; // Half of compbot 2025 deploy threshold
+  private static final double HOMING_END_POSITION = 0.0;
+  private static final double TOLERANCE = 0.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
   private double rawCurrent = 0.0;
   private double filteredCurrent = 0.0;
-  private PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
+  private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   public TurretSubsystem(TalonFX motor, LocalizationSubsystem localization) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
