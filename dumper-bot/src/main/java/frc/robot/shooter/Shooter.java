@@ -74,16 +74,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     leftMotor.setControl(velocityRequest);
     rightMotor.setControl(velocityRequest);
   }
-    private double shootingDistancetoRPm(double distance) {
+    private double shootingDistancetoRPm() {
       return 1.0;
     }
-    private double feedingDistancetoRpm(double distance) {
+    private double feedingDistancetoRpm() {
       return 1.0;
     }
     @Override
     protected void collectInputs() {
-      shootingRpm = Math.min(4000, shootingDistancetoRPm(distance));
-      feedingRpm = Math.min(4000, feedingDistancetoRpm(distance));
+      shootingRpm = Math.min(4000, shootingDistancetoRPm());
+      feedingRpm = Math.min(4000, feedingDistancetoRpm());
 
       leftMotorRpm = leftMotor.getVelocity().getValueAsDouble();
       rightMotorRpm = rightMotor.getVelocity().getValueAsDouble();
