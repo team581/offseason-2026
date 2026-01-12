@@ -5,6 +5,8 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.imu.ImuSubsystem;
@@ -14,16 +16,19 @@ import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.OptionalTagResult;
 
 public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
+private static final Transform2d TURRET_TO_CAMERA = new Transform2d(0.0,0.0,Rotation2d.kZero);
+
+
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
   private final Debouncer seeingTagForPoseResetDebouncer =
       new Debouncer(5.0, DebounceType.kFalling);
 
   private final ImuSubsystem imu;
-  private final Limelight leftLimelight;
-  private final Limelight rightLimelight;
+  private final Limelight turretLimelight;
 
-  private OptionalTagResult leftTagResult = new OptionalTagResult();
-  private OptionalTagResult rightTagResult = new OptionalTagResult();
+  private OptionalTagResult turretResult = new OptionalTagResult();
+  private OptionalTagResult adjustedTurretResult = new OptionalTagResult();
+
 
   private double robotHeading;
 
@@ -34,21 +39,19 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   private boolean seeingTagDebounced = false;
   private boolean seenTagRecentlyForReset = true;
 
-  public VisionSubsystem(ImuSubsystem imu, Limelight leftLimelight, Limelight rightLimelight) {
+  public VisionSubsystem(ImuSubsystem imu, Limelight turretLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
-    this.leftLimelight = leftLimelight;
-    this.rightLimelight = rightLimelight;
+    this.turretLimelight = turretLimelight;
   }
 
   @Override
   protected void collectInputs() {
     angularVelocity = imu.getRobotAngularVelocity();
 
-    leftTagResult = leftLimelight.getTagResult();
-    rightTagResult = rightLimelight.getTagResult();
+    turretResult = turretLimelight.getTagResult();
 
-    if (leftTagResult.isPresent() || rightTagResult.isPresent()) {
+    if (turretResult.isPresent()) {
       hasSeenTag = true;
       seeingTag = true;
     } else {
@@ -66,12 +69,17 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
     this.robotHeading = robotHeading;
   }
 
-  public OptionalTagResult getLefTagResult() {
-    return leftTagResult;
+
+  public OptionalTagResult getTurretLimelighTagResult() {
+    return turretResult;
   }
 
-  public OptionalTagResult getRightTagResult() {
-    return rightTagResult;
+  public OptionalTagResult getAdjustedTurretLimelightTagResult() {
+    if (turretResult.isEmpty()) {
+      return adjustedTurretResult.empty();
+    }
+
+    return adjustedTurretResult.empty();
   }
 
   public boolean seeingTagDebounced() {
@@ -98,30 +106,27 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   protected void afterTransition(VisionState newState) {
     switch (newState) {
       case TAGS -> {
-        leftLimelight.setState(LimelightState.TAGS);
-        rightLimelight.setState(LimelightState.TAGS);
+        turretLimelight.setState(LimelightState.TAGS);
       }
     }
   }
 
   @Override
   public void whileInState(VisionState currentState) {
-    leftLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
-    rightLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
+    turretLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
 
     DogLog.log("Vision/SeeingTag", seeingTag);
     DogLog.log("Vision/SeeingTagLast5Seconds", seenTagRecentlyForReset);
   }
 
   public boolean isAnyCameraOffline() {
-    return leftLimelight.getCameraHealth() == CameraHealth.OFFLINE
-        || rightLimelight.getCameraHealth() == CameraHealth.OFFLINE;
-  }
+    return turretLimelight.getCameraHealth() == CameraHealth.OFFLINE;
+    }
 
   public boolean isAnyCameraOnlineForTags() {
     if (RobotBase.isSimulation()) {
       return true;
     }
-    return leftLimelight.isOnlineForTags() || rightLimelight.isOnlineForTags();
+    return turretLimelight.isOnlineForTags();
   }
 }

@@ -123,7 +123,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var xyDev = 0.01 * Math.pow(distance, 1.2);
     var thetaDev = 0.03 * Math.pow(distance, 1.2);
   
-    null devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
+    var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
     
     
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mtPose);
