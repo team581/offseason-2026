@@ -115,7 +115,7 @@ private static final Transform2d TURRET_TO_CAMERA = new Transform2d(0.0,0.0,Rota
     // 2. Create a transform representing the rotation from Turret back to Robot
     // The .unaryMinus() effectively reverses the rotation angle.
     // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
-    var turretToRobot = MathHelpers.transform2dFromRotation(robotToTurretObservation.get().unaryMinus());
+    var turretToRobot = MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
     
     // 3. Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);

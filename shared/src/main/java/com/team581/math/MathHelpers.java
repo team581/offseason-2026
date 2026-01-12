@@ -126,10 +126,9 @@ public class MathHelpers {
     return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
   }
 
-
   public static final Transform2d transform2dFromRotation(Rotation2d rotation) {
-        return new Transform2d(Translation2d.kZero, rotation);
-    }
+    return new Transform2d(Translation2d.kZero, rotation);
+  }
 
   private MathHelpers() {}
 }
