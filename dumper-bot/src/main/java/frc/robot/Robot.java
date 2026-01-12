@@ -9,12 +9,14 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
+import frc.robot.intake.IntakeSubsystem;
 import frc.robot.robot_manager.RobotManager;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
 
-  private final RobotManager robotManager = new RobotManager();
+  private final IntakeSubsystem intake = new IntakeSubsystem(hardware.intakeMotor);
+  private final RobotManager robotManager = new RobotManager(intake);
   
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
