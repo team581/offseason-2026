@@ -3,6 +3,7 @@ package com.team581.math;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
@@ -124,6 +125,11 @@ public class MathHelpers {
   public static double getLinearVelocity(ChassisSpeeds speeds) {
     return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
   }
+
+
+  public static final Transform2d transform2dFromRotation(Rotation2d rotation) {
+        return new Transform2d(Translation2d.kZero, rotation);
+    }
 
   private MathHelpers() {}
 }
