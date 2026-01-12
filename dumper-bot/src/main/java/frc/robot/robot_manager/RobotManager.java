@@ -1,11 +1,16 @@
 package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
+
+import frc.robot.intake.IntakeState;
+import frc.robot.intake.IntakeSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-    public RobotManager() {
+    private final IntakeSubsystem intake;
+    public RobotManager(IntakeSubsystem intake) {
         super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
+        this.intake = intake;
     }
 
     @Override
@@ -24,8 +29,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     @Override
     protected void afterTransition(RobotState newState) {
-        switch (newState) {
-            default -> {}
+        if (newState.intaking) {
+            intake.setState(IntakeState.INTAKING);
+        } else {
+            intake.setState(IntakeState.IDLE);
         }
     }
 
