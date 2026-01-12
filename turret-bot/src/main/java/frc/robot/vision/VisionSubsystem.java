@@ -9,6 +9,8 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.util.DoubleCircularBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.imu.ImuSubsystem;
@@ -19,7 +21,8 @@ import frc.robot.vision.results.OptionalTagResult;
 import java.util.Optional;
 
 public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
-  private static final Transform2d TURRET_TO_CAMERA = new Transform2d(0.0, 0.0, Rotation2d.kZero);
+private static final Transform2d TURRET_TO_CAMERA = new Transform2d(Units.inchesToMeters(-6.0),0.0,Rotation2d.kZero);
+
 
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
   private final Debouncer seeingTagForPoseResetDebouncer =
@@ -98,21 +101,20 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
     var cameraToTurretTransform = TURRET_TO_CAMERA.inverse();
     var fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
 
-    // 1. Look up the turret angle at the specific image timestamp
+    // Look up the turret angle at the specific image timestamp
     var robotToTurretObservation = getAngleAtTimestamp(mT1Timestamp);
-
-    // Safety check in case we don't have history for that time
+    
     if (robotToTurretObservation.isEmpty()) {
-      return adjustedTurretResult.empty();
+      DogLog.logFault("Could not get turret angle at timestamp");
+        return adjustedTurretResult.empty();
     }
+    DogLog.clearFault("Could not get turret angle at timestamp");
 
-    // 2. Create a transform representing the rotation from Turret back to Robot
-    // The .unaryMinus() effectively reverses the rotation angle.
+    // Create transform representing the rotation from Turret back to Robot
     // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
-    var turretToRobot =
-        MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
-
-    // 3. Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
+    var turretToRobot = MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
+    
+    // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
 
     return adjustedTurretResult.update(
