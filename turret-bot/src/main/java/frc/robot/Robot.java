@@ -38,11 +38,11 @@ public class Robot extends Base581Robot {
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
   private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
-private final ImuSubsystem imu = new ImuSubsystem(swerve.drivetrain);
+  private final ImuSubsystem imu = new ImuSubsystem(swerve.drivetrain);
   private final Limelight turretLimelight = new Limelight("turret", LimelightState.TAGS, new CameraConfig(LimelightModel.FOUR, true, 0.0, 0.0, TURRET_CAMERA_HEIGHT, TURRET_CAMERA_PITCH, 0.0, 0.0));
-private final VisionSubsystem vision = new VisionSubsystem(imu, turretLimelight);
+  private final VisionSubsystem vision = new VisionSubsystem(imu, turretLimelight);
   private final LocalizationSubsystem localization = new LocalizationSubsystem(swerve, hardware.drivetrain, vision);
-private final TurretSubsystem turret = new TurretSubsystem(hardware.turretMotor, localization);
+  private final TurretSubsystem turret = new TurretSubsystem(hardware.turretMotor, localization);
 
 
   private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
