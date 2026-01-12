@@ -6,7 +6,6 @@ import com.team581.config.LimelightModel;
 import com.team581.controller.ControllerHelpers;
 import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
-import com.team581.mechanisms.imu.ImuState;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
@@ -15,9 +14,14 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
 import frc.robot.generated.BuildConstants;
 import frc.robot.imu.ImuSubsystem;
+import frc.robot.imu.ImuSubsystem;
 import frc.robot.localization.LocalizationSubsystem;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.swerve.SwerveSubsystem;
+import frc.robot.turret.TurretSubsystem;
+import frc.robot.vision.VisionSubsystem;
+import frc.robot.vision.limelight.Limelight;
+import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.VisionSubsystem;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
@@ -38,10 +42,10 @@ private final ImuSubsystem imu = new ImuSubsystem(swerve.drivetrain);
   private final Limelight turretLimelight = new Limelight("turret", LimelightState.TAGS, new CameraConfig(LimelightModel.FOUR, true, 0.0, 0.0, TURRET_CAMERA_HEIGHT, TURRET_CAMERA_PITCH, 0.0, 0.0));
 private final VisionSubsystem vision = new VisionSubsystem(imu, turretLimelight);
   private final LocalizationSubsystem localization = new LocalizationSubsystem(swerve, hardware.drivetrain, vision);
+private final TurretSubsystem turret = new TurretSubsystem(hardware.turretMotor, localization);
 
 
-
-  private final RobotManager robotManager = new RobotManager(localization, swerve);
+  private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);
