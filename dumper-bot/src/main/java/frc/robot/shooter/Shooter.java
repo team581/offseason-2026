@@ -14,7 +14,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(false);
-
+  private double distance = 0;
   private double shootingRpm = 0;
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
@@ -50,12 +50,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public void scoreRequest(double distance) {
-
+    this.distance = distance;
     setStateFromRequest(ShooterState.SCORE);
   }
 
   public void feedRequest(double distance) {
-
+    this.distance = distance;
     setStateFromRequest(ShooterState.FEEDING);
   }
 
@@ -65,6 +65,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void whileInState(ShooterState state) {
+    // TODO: Use a switch statement instead of if statements
     if (state == ShooterState.SCORE) {
       velocityRequest.withVelocity(shootingRpm);
     }
@@ -75,19 +76,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     rightMotor.setControl(velocityRequest);
   }
 
-  private double shootingDistancetoRPm() {
-    return 1.0;
+  // TODO: Convert to a static function that takes distance as a parameter
+  private double shootingDistancetoRpm() {
+    // TODO: Interpolation table
+    return distance * 100.0;
   }
 
+  // TODO: Convert to a static function that takes distance as a parameter
   private double feedingDistancetoRpm() {
-    return 1.0;
+    // TODO: Interpolation table
+    return distance * 100.0;
   }
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(4000, shootingDistancetoRPm());
+    shootingRpm = Math.min(4000, shootingDistancetoRpm());
     feedingRpm = Math.min(4000, feedingDistancetoRpm());
 
+    // TODO: Convert from rotations/sec to RPM
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble();
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble();
   }
@@ -96,10 +102,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return switch (getState()) {
       case IDLE -> true;
       case SCORE -> {
+        // TODO: Use MathUtil.isNear()
         yield Math.abs(shootingRpm - leftMotorRpm) <= 50
             && Math.abs(shootingRpm - rightMotorRpm) <= 50;
       }
       case FEEDING -> {
+        // TODO: Use MathUtil.isNear()
         yield Math.abs(feedingRpm - leftMotorRpm) <= 100
             && Math.abs(feedingRpm - rightMotorRpm) <= 50;
       }
