@@ -89,5 +89,13 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getBackButtonPressed()) {
       localization.zeroGyro();
     }
+
+    if (hardware.driverController.getYButtonPressed()) {
+      turret.hubAimRequest();
+    }
+
+    if (hardware.driverController.getAButtonPressed()) {
+      turret.manualAimRequest();
+    }
   }
 }
