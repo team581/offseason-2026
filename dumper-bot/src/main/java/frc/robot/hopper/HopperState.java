@@ -1,9 +1,7 @@
 package frc.robot.hopper;
 
-import frc.robot.hopper.HopperState;
-
 public enum HopperState {
-   UNTUNED(0.0),
+  UNTUNED(0.0),
   UNJAM(UNTUNED),
 
   STOPPED(UNTUNED),
