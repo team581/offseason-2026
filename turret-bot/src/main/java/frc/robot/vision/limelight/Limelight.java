@@ -8,7 +8,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -16,8 +15,6 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.results.OptionalGamePieceResult;
 import frc.robot.vision.results.OptionalTagResult;
-
-import java.lang.invoke.MethodType;
 import java.util.Locale;
 import java.util.OptionalDouble;
 
@@ -26,7 +23,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       new int[] {6, 7, 8, 9, 10, 11, 17, 18, 19, 20, 21, 22};
 
   private static final double IS_OFFLINE_TIMEOUT = 3;
-  
+
   private final String limelightTableName;
   private final String name;
   private final CameraConfig config;
@@ -35,8 +32,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private final Timer seedImuTimer = new Timer();
   private CameraHealth cameraHealth = CameraHealth.NO_TARGETS;
   private double limelightHeartbeat = -1;
-
-  
 
   private OptionalTagResult lastGoodTagResult = new OptionalTagResult();
   private OptionalTagResult tagResult = new OptionalTagResult();
@@ -109,7 +104,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         return tagResult.empty();
       }
     }
-    
+
     var mtPose = mTEstimate.pose;
 
     // This prevents pose estimator from having crazy poses if the Limelight loses power
@@ -118,14 +113,12 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       return tagResult.empty();
     }
 
-    
     var distance = mTEstimate.avgTagDist;
     var xyDev = 0.01 * Math.pow(distance, 1.2);
     var thetaDev = 0.03 * Math.pow(distance, 1.2);
-  
-    null devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
-    
-    
+
+    var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
+
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mtPose);
     DogLog.log("Vision/" + name + "/Tags/MT2Timestamp", mTEstimateTimestamp);
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);

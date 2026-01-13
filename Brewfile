@@ -1,0 +1,4 @@
+tap "jonahsnider/frc"
+cask "wpilib"
+cask "pathplanner"
+brew "openjdk@21"

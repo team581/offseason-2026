@@ -2,18 +2,21 @@ package frc.robot.turret;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.robot.localization.LocalizationSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -22,50 +25,56 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   private final LocalizationSubsystem localization;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
-  private double autoAimAngle = 0.0;
+  private double hubAimAngle = 0.0;
   private static final double MIN_ANGLE = 0.0;
   private static final double MAX_ANGLE = 0.0;
-  private final double MANUAL_AIM_ANGLE = 0.0;
-  private final double HOMING_VOLTAGE = 0.0;
-  private final double HOMING_CURRENT_THRESHOLD = 1.5; // Half of compbot 2025 deploy threshold
-  private final double HOMING_END_POSITION = 0.0;
-  private final double TOLERANCE = 0.0;
+  private static final double MANUAL_AIM_ANGLE = 0.0;
+  private static final double HOMING_VOLTAGE = 0.0;
+  private static final double HOMING_CURRENT_THRESHOLD =
+      1.5; // Half of compbot 2025 deploy threshold
+  private static final double HOMING_END_POSITION = 0.0;
+  private static final double TOLERANCE = 0.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
+  private final DoubleSubscriber SHOOT_ON_THE_MOVE_LOOKAHEAD =
+      DogLog.tunable("ShootOnTheMoveLookahead", 0.0);
   private double rawCurrent = 0.0;
   private double filteredCurrent = 0.0;
-  private PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
+  private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   public TurretSubsystem(TalonFX motor, LocalizationSubsystem localization) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
 
-    motor.getConfigurator().apply(
-      new TalonFXConfiguration()
-          .withFeedback(
-              new FeedbackConfigs()
-                  .withSensorToMechanismRatio(60.0 / 1.0))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(30)
-                  .withStatorCurrentLimit(30))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKP(0.0)
-                  .withKV(0.0)
-                  .withKG(0.0)));
+    motor
+        .getConfigurator()
+        .apply(
+            new TalonFXConfiguration()
+                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(60.0 / 1.0))
+                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+                .withCurrentLimits(
+                    new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(30)
+                        .withStatorCurrentLimit(30))
+                .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0)));
     this.motor = motor;
     this.localization = localization;
   }
 
   @Override
   protected void collectInputs() {
-    autoAimAngle = localization.getAutoAimAngle();
+    var target = new Pose2d(11.91, 4.035, Rotation2d.kZero);
+    var current = localization.getLookaheadPose(SHOOT_ON_THE_MOVE_LOOKAHEAD.get());
+    var angle =
+        Units.radiansToDegrees(
+            Math.atan2(target.getY() - current.getY(), target.getX() - current.getX()));
+    var imuAngle = current.getRotation().getDegrees();
+    hubAimAngle = angle - imuAngle;
+
     switch (getState()) {
       case UNHOMED, HOMING -> {
         rawCurrent = motor.getStatorCurrent().getValueAsDouble();
         filteredCurrent = currentFilter.calculate(rawCurrent);
       }
-      case AUTO_AIM -> goalAngle = autoAimAngle;
+      case HUB_AIM -> goalAngle = hubAimAngle;
       case MANUAL_AIM -> goalAngle = MANUAL_AIM_ANGLE;
       case IDLE -> {}
     }
@@ -83,13 +92,15 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
         motor.setVoltage(HOMING_VOLTAGE);
       }
       case IDLE -> {
-        motor.disable();
+        motor.setPosition(0.0);
       }
-      case AUTO_AIM -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(autoAimAngle)));
+      case HUB_AIM -> {
+        motor.setControl(
+            positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
       }
       case MANUAL_AIM -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(MANUAL_AIM_ANGLE)));
+        motor.setControl(
+            positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
       }
       default -> {}
     }
@@ -125,6 +136,32 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
 
   private static double clamp(double turretAngle) {
     return MathUtil.clamp(turretAngle, MIN_ANGLE, MAX_ANGLE);
+  }
+
+  @Override
+  public void robotPeriodic() {
+    super.robotPeriodic();
+
+    switch (getState()) {
+      case HUB_AIM, MANUAL_AIM -> {
+        afterTransition(getState());
+        DogLog.clearFault("Turret is not homed");
+      }
+      case UNHOMED -> {
+        DogLog.logFault("Turret is not homed", AlertType.kError);
+      }
+      default -> {
+        DogLog.clearFault("Turret is not homed");
+      }
+    }
+  }
+
+  public void manualAimRequest() {
+    setState(TurretState.MANUAL_AIM);
+  }
+
+  public void hubAimRequest() {
+    setState(TurretState.HUB_AIM);
   }
 
   public boolean atGoal() {
