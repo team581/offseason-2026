@@ -1,7 +1,5 @@
 package frc.robot.turret;
 
-import java.nio.file.attribute.AclEntryType;
-
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -11,7 +9,6 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -38,7 +35,8 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   private static final double HOMING_END_POSITION = 0.0;
   private static final double TOLERANCE = 0.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
-  private final DoubleSubscriber SHOOT_ON_THE_MOVE_LOOKAHEAD = DogLog.tunable("ShootOnTheMoveLookahead", 0.0);
+  private final DoubleSubscriber SHOOT_ON_THE_MOVE_LOOKAHEAD =
+      DogLog.tunable("ShootOnTheMoveLookahead", 0.0);
   private double rawCurrent = 0.0;
   private double filteredCurrent = 0.0;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
@@ -140,7 +138,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
     return MathUtil.clamp(turretAngle, MIN_ANGLE, MAX_ANGLE);
   }
 
-@Override
+  @Override
   public void robotPeriodic() {
     super.robotPeriodic();
 
@@ -153,8 +151,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
         DogLog.logFault("Turret is not homed", AlertType.kError);
       }
       default -> {
-      DogLog.clearFault("Turret is not homed");
-
+        DogLog.clearFault("Turret is not homed");
       }
     }
   }
@@ -162,7 +159,6 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   public void manualAimRequest() {
     setState(TurretState.MANUAL_AIM);
   }
-
 
   public void hubAimRequest() {
     setState(TurretState.HUB_AIM);
