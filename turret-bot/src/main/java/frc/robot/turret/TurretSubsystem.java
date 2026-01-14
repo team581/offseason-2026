@@ -8,7 +8,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -49,7 +48,9 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
         .getConfigurator()
         .apply(
             new TalonFXConfiguration()
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio((280.0/12.0)*(40.0/12.0)))
+                .withFeedback(
+                    new FeedbackConfigs()
+                        .withSensorToMechanismRatio((280.0 / 12.0) * (40.0 / 12.0)))
                 .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
                 .withCurrentLimits(
                     new CurrentLimitsConfigs()
