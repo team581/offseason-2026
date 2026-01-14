@@ -24,7 +24,7 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
       new Transform2d(Units.inchesToMeters(-5.3), 0.0, Rotation2d.kZero);
 
-  private static final Transform2d TURRET_TO_ROBOT = 
+  private static final Transform2d TURRET_TO_ROBOT =
       new Transform2d(Units.inchesToMeters(-0.5), 0.0, Rotation2d.kZero);
 
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
@@ -103,7 +103,6 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
     var mT1Timestamp = turretLimelightResult.timestamp();
     var cameraToTurretTransform = TURRET_TO_CAMERA.inverse();
     var fieldToTurretPose = mT1Pose;
-
 
     if (DSOptions.VISION_CAMERA_POSITION_COMPENSATION.get()) {
       fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
