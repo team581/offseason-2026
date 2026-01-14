@@ -8,6 +8,7 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
 import frc.robot.intake.IntakeSubsystem;
@@ -47,6 +48,7 @@ public class Robot extends Base581Robot {
 
   @Override
   public void teleopPeriodic() {
+    DogLog.log("Robot/LeftTriggerAxis", hardware.driverController.getLeftTriggerAxis());
  var leftX = hardware.driverController.getLeftX();
     var leftY = -hardware.driverController.getLeftY();
     var rightX = hardware.driverController.getRightX();
