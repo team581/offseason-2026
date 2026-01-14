@@ -23,7 +23,7 @@ import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 
 public class Robot extends Base581Robot {
-  private static final double TURRET_CAMERA_HEIGHT = Units.inchesToMeters(0.0);
+  private static final double TURRET_CAMERA_HEIGHT = Units.inchesToMeters(30.75);
   private static final double TURRET_CAMERA_PITCH = 0.0;
 
   private final Hardware hardware = new Hardware();
