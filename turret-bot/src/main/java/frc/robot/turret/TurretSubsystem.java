@@ -175,6 +175,9 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
     setState(TurretState.HUB_AIM);
   }
 
+  public void idleRequest() {
+    setState(TurretState.IDLE);
+  }
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED, HOMING, IDLE -> false;
