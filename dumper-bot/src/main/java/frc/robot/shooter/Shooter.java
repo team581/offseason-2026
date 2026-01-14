@@ -8,9 +8,19 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
+  private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
+      InterpolatingDoubleTreeMap.ofEntries(
+          Map.entry(1.0, 1000.0), Map.entry(2.0, 2500.0), Map.entry(5.0, 4000.0));
+  private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
+      InterpolatingDoubleTreeMap.ofEntries(
+          Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
+
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(false);
@@ -65,52 +75,40 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void whileInState(ShooterState state) {
-    // TODO: Use a switch statement instead of if statements
-    if (state == ShooterState.SCORE) {
-      velocityRequest.withVelocity(shootingRpm);
+    switch (state) {
+      case SCORE -> {
+        leftMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
+        rightMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
+      }
+      case FEEDING -> {
+        leftMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
+        rightMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
+      }
+      case IDLE -> {
+        leftMotor.disable();
+        rightMotor.disable();
+      }
     }
-    if (state == ShooterState.FEEDING) {
-      velocityRequest.withVelocity(feedingRpm);
-    }
-    leftMotor.setControl(velocityRequest);
-    rightMotor.setControl(velocityRequest);
-  }
-
-  // TODO: Convert to a static function that takes distance as a parameter
-  private double shootingDistancetoRpm() {
-    // TODO: Interpolation table
-    return distance * 100.0;
-  }
-
-  // TODO: Convert to a static function that takes distance as a parameter
-  private double feedingDistancetoRpm() {
-    // TODO: Interpolation table
-    return distance * 100.0;
   }
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(4000, shootingDistancetoRpm());
-    feedingRpm = Math.min(4000, feedingDistancetoRpm());
+    shootingRpm = Math.min(4000, DISTANCE_TO_SCORE_RPM.get(distance));
+    feedingRpm = Math.min(5000, DISTANCE_TO_FEEDING_RPM.get(distance));
 
-    // TODO: Convert from rotations/sec to RPM
-    leftMotorRpm = leftMotor.getVelocity().getValueAsDouble();
-    rightMotorRpm = rightMotor.getVelocity().getValueAsDouble();
+    leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
+    rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
   }
 
   public boolean atGoal() {
     return switch (getState()) {
       case IDLE -> true;
-      case SCORE -> {
-        // TODO: Use MathUtil.isNear()
-        yield Math.abs(shootingRpm - leftMotorRpm) <= 50
-            && Math.abs(shootingRpm - rightMotorRpm) <= 50;
-      }
-      case FEEDING -> {
-        // TODO: Use MathUtil.isNear()
-        yield Math.abs(feedingRpm - leftMotorRpm) <= 100
-            && Math.abs(feedingRpm - rightMotorRpm) <= 50;
-      }
+      case SCORE ->
+          MathUtil.isNear(leftMotorRpm, shootingRpm, 50)
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, 50);
+      case FEEDING ->
+          MathUtil.isNear(leftMotorRpm, feedingRpm, 100)
+              && MathUtil.isNear(rightMotorRpm, feedingRpm, 100);
     };
   }
 }
