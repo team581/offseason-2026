@@ -12,6 +12,7 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.config.DSOptions;
 import frc.robot.imu.ImuSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
@@ -22,6 +23,9 @@ import java.util.Optional;
 public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
       new Transform2d(Units.inchesToMeters(-5.3), 0.0, Rotation2d.kZero);
+
+  private static final Transform2d TURRET_TO_ROBOT = 
+      new Transform2d(Units.inchesToMeters(-0.5), 0.0, Rotation2d.kZero);
 
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
   private final Debouncer seeingTagForPoseResetDebouncer =
@@ -98,7 +102,12 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
     var mT1Pose = turretLimelightResult.pose();
     var mT1Timestamp = turretLimelightResult.timestamp();
     var cameraToTurretTransform = TURRET_TO_CAMERA.inverse();
-    var fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
+    var fieldToTurretPose = mT1Pose;
+
+
+    if (DSOptions.VISION_CAMERA_POSITION_COMPENSATION.get()) {
+      fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
+    }
 
     // Look up the turret angle at the specific image timestamp
     var robotToTurretObservation = getAngleAtTimestamp(mT1Timestamp);
@@ -116,6 +125,10 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
 
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
+
+    if (DSOptions.VISION_TURRET_POSITION_COMPENSATION.get()) {
+      fieldToRobotEstimate = fieldToRobotEstimate.plus(TURRET_TO_ROBOT.inverse());
+    }
 
     return adjustedTurretResult.update(
         fieldToRobotEstimate, mT1Timestamp, turretLimelightResult.standardDevs());
