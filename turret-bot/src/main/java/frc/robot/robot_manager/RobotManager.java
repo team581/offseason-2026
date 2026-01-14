@@ -15,24 +15,30 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final TurretSubsystem turret;
   public final VisionSubsystem vision;
 
-  public RobotManager(
-      LocalizationSubsystem localization,
-      SwerveSubsystem swerve,
-      TurretSubsystem turret,
-      VisionSubsystem vision) {
+  public RobotManager(LocalizationSubsystem localization, SwerveSubsystem swerve, TurretSubsystem turret, VisionSubsystem vision) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
+    this.turret = turret;
     this.localization = localization;
     this.swerve = swerve;
     this.vision = vision;
-    this.turret = turret;
   }
-
+    @Override
+    protected RobotState getNextState(RobotState currentState) {
+        return switch (currentState) {
+            default -> currentState;
+        };
+    }
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case AIMING -> swerve.normalDriveRequest();
-      case IDLE -> swerve.normalDriveRequest();
-      case LOCKED -> swerve.normalDriveRequest();
+      case AUTO_AIM ->
+      swerve.normalDriveRequest();
+      case MANUAL_AIM -> 
+      swerve.normalDriveRequest();
+      case IDLE -> 
+      swerve.normalDriveRequest();
+      case LOCKED -> 
+      swerve.normalDriveRequest();
     }
   }
 
