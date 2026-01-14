@@ -3,5 +3,6 @@ package frc.robot.robot_manager;
 public enum RobotState {
   IDLE,
   LOCKED,
-  AIMING;
+  AUTO_AIM,
+  MANUAL_AIM;
 }

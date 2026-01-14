@@ -21,7 +21,7 @@ import java.util.Optional;
 
 public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
-      new Transform2d(Units.inchesToMeters(-6.0), 0.0, Rotation2d.kZero);
+      new Transform2d(Units.inchesToMeters(-5.3), 0.0, Rotation2d.kZero);
 
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
   private final Debouncer seeingTagForPoseResetDebouncer =

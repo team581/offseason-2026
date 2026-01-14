@@ -1,10 +1,10 @@
 package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
-import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.swerve.SwerveSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -43,7 +43,16 @@ public class LocalizationSubsystem extends StateMachineSubsystem<LocalizationSta
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
-    return MathHelpers.poseLookahead(getPose(), swerve.getFieldRelativeSpeeds(), lookahead);
+    var current = getPose();
+    var velocity = swerve.getFieldRelativeSpeeds();
+    var x = current.getX() + velocity.vxMetersPerSecond * lookahead;
+    var y = current.getY() + velocity.vyMetersPerSecond * lookahead;
+    var theta =
+        current
+            .getRotation()
+            .plus(Rotation2d.fromRadians(velocity.omegaRadiansPerSecond * lookahead));
+
+    return new Pose2d(x, y, theta);
   }
 
   @Override

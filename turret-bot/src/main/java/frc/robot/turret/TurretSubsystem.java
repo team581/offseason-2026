@@ -27,13 +27,13 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   private double goalAngle = 0.0;
   private double hubAimAngle = 0.0;
   private static final double MIN_ANGLE = 0.0;
-  private static final double MAX_ANGLE = 0.0;
-  private static final double MANUAL_AIM_ANGLE = 0.0;
-  private static final double HOMING_VOLTAGE = 0.0;
+  private static final double MAX_ANGLE = 270.0;
+  private static final double MANUAL_AIM_ANGLE = 50.0;
+  private static final double HOMING_VOLTAGE = 1.0;
   private static final double HOMING_CURRENT_THRESHOLD =
       1.5; // Half of compbot 2025 deploy threshold
   private static final double HOMING_END_POSITION = 0.0;
-  private static final double TOLERANCE = 0.0;
+  private static final double TOLERANCE = 1.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
   private final DoubleSubscriber SHOOT_ON_THE_MOVE_LOOKAHEAD =
       DogLog.tunable("ShootOnTheMoveLookahead", 0.0);
@@ -48,7 +48,9 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
         .getConfigurator()
         .apply(
             new TalonFXConfiguration()
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(60.0 / 1.0))
+                .withFeedback(
+                    new FeedbackConfigs()
+                        .withSensorToMechanismRatio((280.0 / 12.0) * (40.0 / 12.0)))
                 .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
                 .withCurrentLimits(
                     new CurrentLimitsConfigs()
@@ -135,7 +137,8 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   }
 
   private static double clamp(double turretAngle) {
-    return MathUtil.clamp(turretAngle, MIN_ANGLE, MAX_ANGLE);
+    var newTurretAngle = MathUtil.inputModulus(turretAngle, MIN_ANGLE, MAX_ANGLE);
+    return MathUtil.clamp(newTurretAngle, MIN_ANGLE, MAX_ANGLE);
   }
 
   @Override
