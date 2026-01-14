@@ -57,6 +57,14 @@ Determine what the new setpoints are in a manager, then run the child subsystems
 
 We started doing this in 2023 after seeing how unresponsive the robot was as a result of bad subsystem sequencing (ex. two robot loops between when setpoint was updated and when the motor was commanded).
 
+### Plan fallback behavior
+
+Explicitly specify fallback behavior for faults in robot software spec documents.
+Before each competition, verify that core robot functionality works to an acceptable degree even when certain faults are present (ex. cameras offline).
+
+We started doing this in 2026, after having regressions in the 2025 competition bot's automation over the course of the year.
+Bugs we had fixed earlier in the season related to edge cases around intake sensor automation had been [reintroduced during the offseason](https://youtu.be/KILk_jT8dYo) without us noticing.
+
 ## Performance
 
 ### All code running all the time
@@ -101,3 +109,24 @@ Every time.
 Only use the `main` branch at competitions.
 
 We started doing this in 2023 after accidentally deploying from the `main` branch instead of the branch we had created for the event, causing a bug (which had been fixed on the event branch) to be reintroduced in a match.
+
+## Robot architecture
+
+### Stiff robots
+
+Not strictly a software thing, but keep robots mechanically stiff as much as possible.
+Backlash in systems results in control error you can't really do anything to account for.
+
+We learned this in 2025, where our champs bot had a very long arm which effectively multiplied any alignment error into pretty meaningful inaccuracies with scoring.
+Compare this to the 2025 offseason bot (2056 clone), which had a very short arm that was a fair deal stiffer, where fundamentally the same vision & auto align code resulted in much lower rates of missed scoring.
+
+## Vision
+
+### Pose stability
+
+Pose stability is often more preferable than accuracy (within reason).
+
+We learned this in 2025, where multiple Limelights could see the same AprilTag when aligning, and output slightly different poses.
+This resulted in the robot's estimated pose having a jittering effect, which manifested as oscillating around the scoring pose when trying to align.
+We updated the vision logic to only ingest poses from a single Limelight.
+Theoretically this makes vision worse, but in practice the stability from not having disagreeing cameras greatly improved alignment consistency.
