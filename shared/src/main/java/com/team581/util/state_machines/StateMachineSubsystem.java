@@ -6,6 +6,7 @@ import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.IterativeRobotBase;
+import edu.wpi.first.wpilibj.RobotBase;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -83,6 +84,9 @@ public class StateMachineSubsystem<S extends Enum<S>> extends StateMachine<S> im
   /** {@link IterativeRobotBase#disabledPeriodic()} */
   public void disabledPeriodic() {}
 
+  /** {@link IterativeRobotBase#simulationPeriodic()} */
+  public void simulationPeriodic() {}
+
   @Override
   public void periodic() {
     DogLog.time(loggerName);
@@ -115,6 +119,10 @@ public class StateMachineSubsystem<S extends Enum<S>> extends StateMachine<S> im
 
         autonomousPeriodic();
       }
+    }
+
+    if (RobotBase.isSimulation()) {
+      simulationPeriodic();
     }
 
     DogLog.timeEnd(loggerName);
