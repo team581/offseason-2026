@@ -56,7 +56,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
             .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
     motor.getConfigurator().apply(configs);
 
-    TunablePid.of("Deploy", motor, configs);
+                TunablePid.of("Turret", motor, configs);
 
     this.motor = motor;
     this.localization = localization;
@@ -66,11 +66,15 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   protected void collectInputs() {
     var target = new Pose2d(11.91, 4.035, Rotation2d.kZero);
     var current = localization.getLookaheadPose(SHOOT_ON_THE_MOVE_LOOKAHEAD.get());
-    var angle =
+    var targetAngle =
         Units.radiansToDegrees(
             Math.atan2(target.getY() - current.getY(), target.getX() - current.getX()));
     var imuAngle = current.getRotation().getDegrees();
-    hubAimAngle = angle - imuAngle;
+
+    targetAngle = MathUtil.inputModulus(targetAngle, 0, 360);
+         imuAngle = MathUtil.inputModulus(imuAngle, 0, 360);
+
+    hubAimAngle = MathUtil.inputModulus(targetAngle-imuAngle, 0, 360);
 
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -82,8 +86,10 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
       case IDLE -> {}
     }
 
-    currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
+    currentAngle = MathUtil.inputModulus(Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), 0, 360);
     DogLog.log("Turret/Angle", currentAngle);
+    var fieldRelativeAngle = currentAngle +imuAngle;
+    DogLog.log("Turret/FieldRelativeAngle", fieldRelativeAngle);
   }
 
   @Override
@@ -139,16 +145,13 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   }
 
   private static double clamp(double turretAngle) {
-    var newTurretAngle = MathUtil.inputModulus(turretAngle, MIN_ANGLE, MAX_ANGLE);
+    var newTurretAngle = MathUtil.inputModulus(turretAngle, 0, 360);
     return MathUtil.clamp(newTurretAngle, MIN_ANGLE, MAX_ANGLE);
   }
 
   @Override
   public void robotPeriodic() {
     super.robotPeriodic();
-    if (RobotBase.isSimulation()) {
-      simulationPeriodic();
-    }
     switch (getState()) {
       case HUB_AIM, MANUAL_AIM -> {
         afterTransition(getState());
@@ -182,7 +185,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
     return currentAngle;
   }
 
-  @Override
+@Override
   public void simulationPeriodic() {
     var turretSimulation =
         SimKit.positionMechanism(
