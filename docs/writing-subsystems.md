@@ -24,7 +24,7 @@ This file contains guidelines and best practices for writing subsystems.
 
 ## State machines
 
-- Subsystems should extend `StateMachineSubsystem` for determinstic logic and standardized code structure
+- Subsystems should extend `StateMachineSubsystem` for deterministic logic and standardized code structure
   - ex. `public class ArmSubsystem extends StateMachineSubsystem<ArmState>`
 - State machines should almost never include additional state outside of the state enum
   - ex. `RobotManager` needs to track when the robot is climbing to ignore state requests when hanging
