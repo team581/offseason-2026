@@ -19,7 +19,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.localization.LocalizationSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -56,7 +55,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
             .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
     motor.getConfigurator().apply(configs);
 
-                TunablePid.of("Turret", motor, configs);
+    TunablePid.of("Turret", motor, configs);
 
     this.motor = motor;
     this.localization = localization;
@@ -72,9 +71,9 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
     var imuAngle = current.getRotation().getDegrees();
 
     targetAngle = MathUtil.inputModulus(targetAngle, 0, 360);
-         imuAngle = MathUtil.inputModulus(imuAngle, 0, 360);
+    imuAngle = MathUtil.inputModulus(imuAngle, 0, 360);
 
-    hubAimAngle = MathUtil.inputModulus(targetAngle-imuAngle, 0, 360);
+    hubAimAngle = MathUtil.inputModulus(targetAngle - imuAngle, 0, 360);
 
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -86,9 +85,11 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
       case IDLE -> {}
     }
 
-    currentAngle = MathUtil.inputModulus(Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), 0, 360);
+    currentAngle =
+        MathUtil.inputModulus(
+            Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), 0, 360);
     DogLog.log("Turret/Angle", currentAngle);
-    var fieldRelativeAngle = currentAngle +imuAngle;
+    var fieldRelativeAngle = currentAngle + imuAngle;
     DogLog.log("Turret/FieldRelativeAngle", fieldRelativeAngle);
   }
 
@@ -185,7 +186,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
     return currentAngle;
   }
 
-@Override
+  @Override
   public void simulationPeriodic() {
     var turretSimulation =
         SimKit.positionMechanism(
