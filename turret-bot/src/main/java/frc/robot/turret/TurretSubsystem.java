@@ -89,6 +89,7 @@ var configs = new TalonFXConfiguration()
     }
 
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
+    DogLog.log("Turret/Angle", currentAngle);
   }
 
   @Override
