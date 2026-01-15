@@ -83,11 +83,11 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     }
 
     var mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
-    
-        if (mTEstimate == null) {
-          return tagResult.empty();
-        }
-        
+
+    if (mTEstimate == null) {
+      return tagResult.empty();
+    }
+
     var mTEstimateTimestamp = mTEstimate.timestampSeconds;
 
     if (Math.abs(angularVelocity) > 360) {

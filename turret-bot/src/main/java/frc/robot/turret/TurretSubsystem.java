@@ -11,7 +11,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -19,8 +18,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.localization.LocalizationSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -47,22 +46,17 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
 
   public TurretSubsystem(TalonFX motor, LocalizationSubsystem localization) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
-var configs = new TalonFXConfiguration()
-                .withFeedback(
-                    new FeedbackConfigs()
-                        .withSensorToMechanismRatio((280.0 / 12.0) * (40.0 / 12.0)))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(30)
-                        .withStatorCurrentLimit(30))
-                .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
-    motor
-        .getConfigurator()
-        .apply(configs
-            );
+    var configs =
+        new TalonFXConfiguration()
+            .withFeedback(
+                new FeedbackConfigs().withSensorToMechanismRatio((280.0 / 12.0) * (40.0 / 12.0)))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs().withStatorCurrentLimit(30).withStatorCurrentLimit(30))
+            .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
+    motor.getConfigurator().apply(configs);
 
-                TunablePid.of("Deploy", motor, configs);
+    TunablePid.of("Deploy", motor, configs);
 
     this.motor = motor;
     this.localization = localization;
@@ -152,9 +146,9 @@ var configs = new TalonFXConfiguration()
   @Override
   public void robotPeriodic() {
     super.robotPeriodic();
-if (RobotBase.isSimulation()) {
-  simulationPeriodic();
-}
+    if (RobotBase.isSimulation()) {
+      simulationPeriodic();
+    }
     switch (getState()) {
       case HUB_AIM, MANUAL_AIM -> {
         afterTransition(getState());
@@ -188,7 +182,7 @@ if (RobotBase.isSimulation()) {
     return currentAngle;
   }
 
-
+  @Override
   public void simulationPeriodic() {
     var turretSimulation =
         SimKit.positionMechanism(
@@ -196,10 +190,8 @@ if (RobotBase.isSimulation()) {
             (mechanism) ->
                 mechanism
                     .addMotor(motor)
-                    .withMinPosition(
-                        Units.degreesToRotations(MIN_ANGLE))
-                    .withMaxPosition(
-                        Units.degreesToRotations(MAX_ANGLE)));
+                    .withMinPosition(Units.degreesToRotations(MIN_ANGLE))
+                    .withMaxPosition(Units.degreesToRotations(MAX_ANGLE)));
 
     if (getState() == TurretState.UNHOMED || getState() == TurretState.HOMING) {
       motor.setPosition(0);

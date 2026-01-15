@@ -122,11 +122,11 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
     var turretToRobot =
         MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
 
-        var fieldToRobotEstimate = fieldToTurretPose;
-        
-        // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
- if (DSOptions.VISION_TURRET_ANGLE_COMPENSATION.get()) {
-fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
+    var fieldToRobotEstimate = fieldToTurretPose;
+
+    // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
+    if (DSOptions.VISION_TURRET_ANGLE_COMPENSATION.get()) {
+      fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
     }
 
     if (DSOptions.VISION_TURRET_POSITION_COMPENSATION.get()) {
