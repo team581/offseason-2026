@@ -37,13 +37,31 @@ This file contains guidelines and best practices for writing subsystems.
   - ex. `STOWED` for the idle state of a mechanism using position control
   - ex. `IDLE` for the stopped state of an roller/flywheel mechanism
 - States in a known sequence should include a number of their position
-  - ex. A climbing sequence that uses the states `CLIMBING_1_LINEUP`, `CLIMBING_2_GRAB`, and `CLIMBING_3_HANGING`
+  - ex. A climbing sequence that uses the states `CLIMB_1_LINEUP`, `CLIMB_2_RAISING`, and `CLIMB_3_HANGING`
+- State enums can have associated values for configuration
+  - ex. `IntakeState` with voltage values: `INTAKING(6), OUTTAKING(-6)`
+  - ex. `RobotState` with boolean flags: `IDLE(false, false, false)` for `(climbingOrRehoming, intaking, shooting)`
 
 ### State transitions
 
 - Subsystems should not automatically transition from one state to another
   - With the exception of subsystems requiring homing
     - ex. `HOMING` -> automatic transition -> `STOWED`
+- Managers should use `getNextState()` for automatic transitions based on conditions
+  - ex. `PREPARE_SHOOT` -> wait for `shooter.atGoal()` -> `SHOOT`
+
+### State request methods
+
+TODO(@jonahsnider): Document state requests for subsystems
+
+### atGoal() methods
+
+- Mechanisms that need to wait for a condition expose an `atGoal()` method
+  - ex. `shooter.atGoal()` which returns whether the shooter is at the target velocity for its current state
+- Implementation should check if the mechanism is at its target within a tolerance
+  - ex. `MathUtil.isNear(goalAngle, currentAngle, TOLERANCE)`
+- Managers use `atGoal()` to trigger automatic state transitions
+  - ex. `PREPARE_SHOOT` -> wait for `shooter.atGoal()` -> `SHOOT`
 
 ## Passing in hardware
 
@@ -52,6 +70,8 @@ This file contains guidelines and best practices for writing subsystems.
   - ex. `public Intake(TalonFX motor, DigitalInput sensor)`
 - Subsystems should keep all instances of hardware private
   - You almost never want to expose the underlying hardware instance itself, this breaks the ownership pattern that subsystems have over their hardware
+- Subsystems can accept other subsystems as dependencies
+  - ex. `public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision)`
 
 ## Logging
 
@@ -63,6 +83,19 @@ This file contains guidelines and best practices for writing subsystems.
   - ex. An intake subsystem has never been tested before, so it should include logs for applied voltage and stator current draw
     - These values introduce some overhead to retrieve and log, but are useful during first-time tuning
     - You can use `GlobalConfig.IS_DEVELOPMENT` to selectively log values depending on whether you're at home or competing
+
+### Fault logging
+
+- Use `DogLog.logFault()` for reporting errors or warnings for the drivers to see
+- Use `DogLog.clearFault()` when the condition is resolved
+- State-dependent faults should be logged in `whileInState()`
+  - ex. Log a fault when turret is `UNHOMED`, clear it in other states
+    ```java
+    switch (getState()) {
+      case UNHOMED -> DogLog.logFault("Turret is not homed", AlertType.kError);
+      default -> DogLog.clearFault("Turret is not homed");
+    }
+    ```
 
 ## Homing routines
 
