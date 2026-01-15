@@ -9,6 +9,8 @@ public final class DSOptions {
       DSOption.of("CameraPositionComp", true);
   public static final BooleanSubscriber VISION_TURRET_POSITION_COMPENSATION =
       DSOption.of("TurretPositionComp", true);
+  public static final BooleanSubscriber VISION_TURRET_ANGLE_COMPENSATION =
+      DSOption.of("TurretAngleComp", true);
 
   private DSOptions() {}
 }
