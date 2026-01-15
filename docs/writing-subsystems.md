@@ -10,7 +10,8 @@ This file contains guidelines and best practices for writing subsystems.
   - ex. `src/main/java/frc/robot/shooter/`
 - Subsystems should be named `<mechanism>.java`
   - ex. `Shooter.java`
-- State enums should be named `<mechanism>Enum.java`
+- State enums should be named `<mechanism>State.java`
+  - ex. `ShooterState.java`
 
 ### Managers
 
