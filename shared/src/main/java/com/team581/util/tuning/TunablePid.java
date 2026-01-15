@@ -6,7 +6,7 @@ import com.team581.GlobalConfig;
 import dev.doglog.DogLog;
 
 public class TunablePid {
-  public static void of(String key, TalonFX motor, TalonFXConfiguration defaultConfig) {
+  public static void register(String key, TalonFX motor, TalonFXConfiguration defaultConfig) {
     if (!GlobalConfig.IS_DEVELOPMENT) {
       return;
     }

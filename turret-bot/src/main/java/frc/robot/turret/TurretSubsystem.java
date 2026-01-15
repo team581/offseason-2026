@@ -55,7 +55,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
             .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
     motor.getConfigurator().apply(configs);
 
-    TunablePid.of("Turret", motor, configs);
+    TunablePid.register("Turret", motor, configs);
 
     this.motor = motor;
     this.localization = localization;
