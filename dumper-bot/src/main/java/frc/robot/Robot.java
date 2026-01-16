@@ -10,7 +10,6 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
-import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
@@ -24,7 +23,7 @@ public class Robot extends Base581Robot {
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
   private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
   private final Intake intake = new Intake(hardware.intakeMotor);
-  private final Hopper hopper = new Hopper(hardware.leftHopperMotor, hardware.rightHopperMotor);
+
   private final Shooter shooter =
       new Shooter(hardware.leftShooterMotor, hardware.rightShooterMotor);
   private final RobotManager robotManager = new RobotManager(intake, shooter);
