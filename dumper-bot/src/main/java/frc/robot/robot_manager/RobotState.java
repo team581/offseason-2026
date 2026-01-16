@@ -39,18 +39,16 @@ public enum RobotState {
     return switch (this) {
       default -> false;
       case CLIMB_1_LINEUP_L1_AUTO,
-  CLIMB_2_RAISING_L1_AUTO,
-  CLIMB_3_HANGING_L1_AUTO,
-
-  CLIMB_1_LINEUP_L1,
-  CLIMB_2_RAISING_L1,
-  CLIMB_3_HANGING_L1,
-
-  CLIMB_4_RAISING_L2,
-  CLIMB_5_HANGING_L2,
-
-  CLIMB_6_RAISING_L3,
-  CLIMB_7_HANGING_L3 -> true;
+          CLIMB_2_RAISING_L1_AUTO,
+          CLIMB_3_HANGING_L1_AUTO,
+          CLIMB_1_LINEUP_L1,
+          CLIMB_2_RAISING_L1,
+          CLIMB_3_HANGING_L1,
+          CLIMB_4_RAISING_L2,
+          CLIMB_5_HANGING_L2,
+          CLIMB_6_RAISING_L3,
+          CLIMB_7_HANGING_L3 ->
+          true;
     };
   }
 }
