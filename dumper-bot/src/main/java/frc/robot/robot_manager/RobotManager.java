@@ -1,7 +1,10 @@
 package frc.robot.robot_manager;
 
+import com.team581.util.FieldUtil;
+import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
@@ -31,6 +34,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     };
   }
 
+  private Pose2d robotPose = new Pose2d();
+  private double distanceToHub = 0;
+
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
@@ -57,11 +63,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     // TODO: distance
-    shooter.setDistance(0);
+    shooter.setDistance(distanceToHub);
   }
 
   @Override
-  protected void collectInputs() {}
+  protected void collectInputs() {
+    robotPose = localization.getPose();
+    distanceToHub = robotPose.getTranslation().getDistance(FieldUtil.getHubPose(FmsUtil.isRedAlliance()).getTranslation());
+  }
 
   private void setStateFailSafe(RobotState newState) {
     if (getState().climbingOrRehoming()) {
