@@ -84,13 +84,8 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getBButtonPressed()) {
-      robotManager.feed1WaitRequest();
+      robotManager.feed2WaitRequest();
     }
-
-    if (hardware.driverController.getRightBumperButtonPressed()) {
-      robotManager.idleRequest();
-    }
-
     if (hardware.driverController.getYButtonPressed()) {
       robotManager.idleRequest();
     }
