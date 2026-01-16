@@ -25,20 +25,15 @@ public class Hopper extends StateMachineSubsystem<HopperState> {
 
   public Hopper(TalonFX motor) {
     super(SubsystemPriority.HOPPER, HopperState.IDLE);
-    var config =  new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(100)
-                        .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+    var config =
+        new TalonFXConfiguration()
+            // TODO:Get sensor to mechanism ratio
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs().withStatorCurrentLimit(100).withSupplyCurrentLimit(100))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
 
-    motor
-        .getConfigurator()
-        .apply(
-            config);
-
+    motor.getConfigurator().apply(config);
 
     this.motor = motor;
   }
