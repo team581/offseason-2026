@@ -13,11 +13,13 @@ import frc.robot.util.scheduling.SubsystemPriority;
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
   private final Shooter shooter;
+  private final Localization localization;
 
   public RobotManager(Intake intake, Shooter shooter, Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
     this.shooter = shooter;
+    this.localization = localization;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
   }
