@@ -106,7 +106,7 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getBackButtonPressed()) {
-        localization.zeroGyro();
+      localization.zeroGyro();
     }
   }
 }

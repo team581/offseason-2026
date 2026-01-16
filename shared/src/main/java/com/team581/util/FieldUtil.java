@@ -12,10 +12,6 @@ public class FieldUtil {
 
   public static Pose2d BLUE_HUB_POSE = new Pose2d();
 
-
-
-
-
   public static Pose2d getHubPose(boolean isRedAlliance) {
     return isRedAlliance ? FieldUtil.RED_HUB_POSE : FieldUtil.BLUE_HUB_POSE;
   }
