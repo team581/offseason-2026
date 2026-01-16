@@ -3,11 +3,14 @@ package frc.robot.shooter;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunablePid;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -33,39 +36,48 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
 
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
-    leftMotor
-        .getConfigurator()
-        .apply(
-            new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(100)
-                        .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
-    rightMotor
-        .getConfigurator()
-        .apply(
-            new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(100)
-                        .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
+    var leftConfigs =
+        new TalonFXConfiguration()
+            // TODO:Get sensor to mechanism ratio
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withSupplyCurrentLimitEnable(true)
+                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimit(100)
+                    .withSupplyCurrentLimit(100))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+    var rightConfigs =
+        new TalonFXConfiguration()
+            // TODO:Get sensor to mechanism ratio
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withSupplyCurrentLimitEnable(true)
+                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimit(100)
+                    .withSupplyCurrentLimit(100))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+    leftMotor.getConfigurator().apply(leftConfigs);
+    rightMotor.getConfigurator().apply(rightConfigs);
+    TunablePid.register("ShooterLeft", leftMotor, leftConfigs);
+    TunablePid.register("ShooterRight", leftMotor, leftConfigs);
+
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
   }
 
-  public void scoreRequest(double distance) {
+  public void setDistance(double distance) {
     this.distance = distance;
+  }
+
+  public void scoreRequest() {
     setStateFromRequest(ShooterState.SCORE);
   }
 
-  public void feedRequest(double distance) {
-    this.distance = distance;
+  public void feedRequest() {
     setStateFromRequest(ShooterState.FEEDING);
   }
 
@@ -75,6 +87,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void whileInState(ShooterState state) {
+    DogLog.log("Shooter/State", getState());
+    DogLog.log("Shooter/LeftMotorRPM", leftMotorRpm);
+    DogLog.log("Shooter/RightMotorRPM", rightMotorRpm);
+    DogLog.log("Shooter/ShootingRPM", shootingRpm);
+    DogLog.log("Shooter/FeedingRPM", feedingRpm);
+    DogLog.log("Shooter/AtGoal", atGoal());
+
     switch (state) {
       case SCORE -> {
         leftMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));

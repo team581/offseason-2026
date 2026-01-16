@@ -3,23 +3,19 @@ package frc.robot.robot_manager;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.localization.LocalizationSubsystem;
-import frc.robot.swerve.SwerveSubsystem;
-import frc.robot.turret.TurretSubsystem;
+import frc.robot.localization.Localization;
+import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.VisionSubsystem;
+import frc.robot.vision.Vision;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  public final LocalizationSubsystem localization;
-  public final SwerveSubsystem swerve;
-  public final TurretSubsystem turret;
-  public final VisionSubsystem vision;
+  public final Localization localization;
+  public final Swerve swerve;
+  public final Turret turret;
+  public final Vision vision;
 
-  public RobotManager(
-      LocalizationSubsystem localization,
-      SwerveSubsystem swerve,
-      TurretSubsystem turret,
-      VisionSubsystem vision) {
+  public RobotManager(Localization localization, Swerve swerve, Turret turret, Vision vision) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.turret = turret;
     this.localization = localization;
@@ -37,10 +33,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case AUTO_AIM -> swerve.normalDriveRequest();
-      case MANUAL_AIM -> swerve.normalDriveRequest();
-      case IDLE -> swerve.normalDriveRequest();
-      case LOCKED -> swerve.normalDriveRequest();
+      case AUTO_AIM -> turret.hubAimRequest();
+      case MANUAL_AIM -> turret.manualAimRequest();
+      case IDLE -> turret.idleRequest();
     }
   }
 
@@ -50,5 +45,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     vision.addTurretObservation(
         Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
+
+    MechanismVisualizer.log(localization.getPose(), turret.getAngle());
   }
 }

@@ -10,10 +10,11 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
-import frc.robot.intake.IntakeSubsystem;
+import frc.robot.hopper.Hopper;
+import frc.robot.intake.Intake;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
-import frc.robot.swerve.SwerveSubsystem;
+import frc.robot.swerve.Swerve;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -21,13 +22,13 @@ public class Robot extends Base581Robot {
       new Trailblazer(
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
-  private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
-  private final IntakeSubsystem intake = new IntakeSubsystem(hardware.intakeMotor);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
+  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
       new Shooter(hardware.leftShooterMotor, hardware.rightShooterMotor);
-  private final RobotManager robotManager = new RobotManager(intake, shooter);
+  private final RobotManager robotManager = new RobotManager(intake, hopper, shooter);
 
-  @SuppressWarnings("unused") // Registers itself as a subsystem
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
@@ -67,7 +68,7 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getRightTriggerAxis() > 0.5) {
       robotManager.confirmShotRequest();
     } else {
-      robotManager.cancelShotRequest();
+      robotManager.idleRequest();
     }
 
     if (hardware.driverController.getXButtonPressed()) {
@@ -83,7 +84,7 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getRightBumperButtonPressed()) {
-      robotManager.cancelShotRequest();
+      robotManager.idleRequest();
     }
 
     if (hardware.driverController.getYButtonPressed()) {

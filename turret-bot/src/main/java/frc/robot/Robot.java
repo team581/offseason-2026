@@ -13,12 +13,12 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
 import frc.robot.generated.BuildConstants;
-import frc.robot.imu.ImuSubsystem;
-import frc.robot.localization.LocalizationSubsystem;
+import frc.robot.imu.Imu;
+import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
-import frc.robot.swerve.SwerveSubsystem;
-import frc.robot.turret.TurretSubsystem;
-import frc.robot.vision.VisionSubsystem;
+import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
+import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 
@@ -33,8 +33,8 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
-  private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
-  private final ImuSubsystem imu = new ImuSubsystem(swerve.drivetrain);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
+  private final Imu imu = new Imu(swerve.drivetrain);
   private final Limelight turretLimelight =
       new Limelight(
           "turret",
@@ -48,10 +48,9 @@ public class Robot extends Base581Robot {
               TURRET_CAMERA_PITCH,
               0.0,
               0.0));
-  private final VisionSubsystem vision = new VisionSubsystem(imu, turretLimelight);
-  private final LocalizationSubsystem localization =
-      new LocalizationSubsystem(swerve, hardware.drivetrain, vision);
-  private final TurretSubsystem turret = new TurretSubsystem(hardware.turretMotor, localization);
+  private final Vision vision = new Vision(imu, turretLimelight);
+  private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
+  private final Turret turret = new Turret(hardware.turretMotor, localization);
 
   private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
 
@@ -96,6 +95,10 @@ public class Robot extends Base581Robot {
 
     if (hardware.driverController.getAButtonPressed()) {
       turret.manualAimRequest();
+    }
+
+    if (hardware.driverController.getXButtonPressed()) {
+      turret.homeRequest();
     }
   }
 }

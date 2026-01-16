@@ -1,18 +1,20 @@
 package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
-import frc.robot.intake.IntakeState;
-import frc.robot.intake.IntakeSubsystem;
+import frc.robot.hopper.Hopper;
+import frc.robot.intake.Intake;
 import frc.robot.shooter.Shooter;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  private final IntakeSubsystem intake;
+  private final Intake intake;
+  private final Hopper hopper;
   private final Shooter shooter;
 
-  public RobotManager(IntakeSubsystem intake, Shooter shooter) {
+  public RobotManager(Intake intake, Hopper hopper, Shooter shooter) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
+    this.hopper = hopper;
     this.shooter = shooter;
   }
 
@@ -22,46 +24,44 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SHOOT_HUB -> shooter.atGoal() ? RobotState.SHOOT_HUB : currentState;
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
-
-      case PREPARE_INTAKE_AND_SHOOT_HUB ->
-          shooter.atGoal() ? RobotState.INTAKE_AND_SHOOT_HUB : currentState;
-      case PREPARE_INTAKE_AND_FEED_1 ->
-          shooter.atGoal() ? RobotState.INTAKE_AND_FEED_1 : currentState;
-      case PREPARE_INTAKE_AND_FEED_2 ->
-          shooter.atGoal() ? RobotState.INTAKE_AND_FEED_2 : currentState;
       default -> currentState;
     };
   }
 
   @Override
   protected void afterTransition(RobotState newState) {
-    if (newState.intaking) {
-      intake.setState(IntakeState.INTAKING);
-    } else {
-      intake.setState(IntakeState.IDLE);
-    }
-    // TODO: distance
     switch (newState) {
-      case WAIT_FEED_1,
-          WAIT_FEED_2,
-          WAIT_INTAKE_AND_FEED_1,
-          WAIT_INTAKE_AND_FEED_2,
-          PREPARE_FEED_1,
-          PREPARE_FEED_2,
-          PREPARE_INTAKE_AND_FEED_1,
-          PREPARE_INTAKE_AND_FEED_2 ->
-          shooter.feedRequest(0);
-      case PREPARE_INTAKE_AND_SHOOT_HUB,
-          PREPARE_SHOOT_HUB,
-          WAIT_INTAKE_AND_SHOOT_HUB,
-          WAIT_SHOOT_HUB ->
-          shooter.scoreRequest(0);
-      default -> shooter.idleRequest();
+      case IDLE -> {
+        shooter.idleRequest();
+        hopper.idleRequest();
+      }
+      case WAIT_FEED_1, WAIT_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2 -> {
+        shooter.feedRequest();
+        hopper.idleRequest();
+      }
+      case FEED_1, FEED_2 -> {
+        shooter.feedRequest();
+        hopper.outtakeRequest();
+      }
+      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
+        shooter.scoreRequest();
+        hopper.idleRequest();
+      }
+      case SHOOT_HUB -> {
+        shooter.scoreRequest();
+        hopper.outtakeRequest();
+      }
     }
   }
 
+  @Override
+  protected void whileInState(RobotState state) {
+    // TODO: distance
+    shooter.setDistance(0);
+  }
+
   private void setStateFailSafe(RobotState newState) {
-    if (getState().climbingOrRehoming) {
+    if (getState().climbingOrRehoming()) {
       return;
     }
     setStateFromRequest(newState);
@@ -72,69 +72,25 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void intakeRequest() {
-    switch (getState()) {
-      case SHOOT_HUB -> setStateFailSafe(RobotState.INTAKE_AND_SHOOT_HUB);
-      case FEED_1 -> setStateFailSafe(RobotState.INTAKE_AND_FEED_1);
-      case FEED_2 -> setStateFailSafe(RobotState.INTAKE_AND_FEED_2);
-
-      case PREPARE_SHOOT_HUB -> setStateFailSafe(RobotState.PREPARE_INTAKE_AND_SHOOT_HUB);
-      case PREPARE_FEED_1 -> setStateFailSafe(RobotState.PREPARE_INTAKE_AND_FEED_1);
-      case PREPARE_FEED_2 -> setStateFailSafe(RobotState.PREPARE_INTAKE_AND_FEED_2);
-
-      case WAIT_SHOOT_HUB -> setStateFailSafe(RobotState.WAIT_INTAKE_AND_SHOOT_HUB);
-      case WAIT_FEED_1 -> setStateFailSafe(RobotState.WAIT_INTAKE_AND_FEED_1);
-      case WAIT_FEED_2 -> setStateFailSafe(RobotState.WAIT_INTAKE_AND_FEED_2);
-      default -> setStateFailSafe(RobotState.INTAKE);
-    }
+    intake.intakeRequest();
+    hopper.intakeRequest();
   }
 
   public void cancelIntakeRequest() {
-    switch (getState()) {
-      case WAIT_INTAKE_AND_SHOOT_HUB -> setStateFailSafe(RobotState.WAIT_SHOOT_HUB);
-      case WAIT_INTAKE_AND_FEED_1 -> setStateFailSafe(RobotState.WAIT_FEED_1);
-      case WAIT_INTAKE_AND_FEED_2 -> setStateFailSafe(RobotState.WAIT_FEED_2);
-
-      case INTAKE_AND_SHOOT_HUB -> setStateFailSafe(RobotState.SHOOT_HUB);
-      case INTAKE_AND_FEED_1 -> setStateFailSafe(RobotState.FEED_1);
-      case INTAKE_AND_FEED_2 -> setStateFailSafe(RobotState.FEED_2);
-
-      case PREPARE_INTAKE_AND_SHOOT_HUB -> setStateFailSafe(RobotState.PREPARE_SHOOT_HUB);
-      case PREPARE_INTAKE_AND_FEED_1 -> setStateFailSafe(RobotState.PREPARE_FEED_1);
-      case PREPARE_INTAKE_AND_FEED_2 -> setStateFailSafe(RobotState.PREPARE_FEED_2);
-      default -> setStateFailSafe(RobotState.IDLE);
-    }
+    intake.idleRequest();
+    hopper.idleRequest();
   }
 
   public void shootHubWaitRequest() {
-    if (getState().intaking) {
-      setStateFailSafe(RobotState.WAIT_INTAKE_AND_SHOOT_HUB);
-    } else {
-      setStateFailSafe(RobotState.WAIT_SHOOT_HUB);
-    }
+    setStateFailSafe(RobotState.WAIT_SHOOT_HUB);
   }
 
   public void feed1WaitRequest() {
-    if (getState().intaking) {
-      setStateFailSafe(RobotState.WAIT_INTAKE_AND_FEED_1);
-    } else {
-      setStateFailSafe(RobotState.WAIT_FEED_1);
-    }
+    setStateFailSafe(RobotState.WAIT_FEED_1);
   }
 
   public void feed2WaitRequest() {
-    if (getState().intaking) {
-      setStateFailSafe(RobotState.WAIT_INTAKE_AND_FEED_2);
-    } else {
-      setStateFailSafe(RobotState.WAIT_FEED_2);
-    }
-  }
-
-  public void cancelShotRequest() {
-    if (getState().intaking) {
-      setStateFailSafe(RobotState.INTAKE);
-    } else {
-      idleRequest();
-    }
+    setStateFailSafe(RobotState.WAIT_FEED_2);
   }
 
   public void confirmShotRequest() {
@@ -143,14 +99,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_SHOOT_HUB -> setStateFailSafe(RobotState.PREPARE_SHOOT_HUB);
       case WAIT_FEED_1 -> setStateFailSafe(RobotState.PREPARE_FEED_1);
       case WAIT_FEED_2 -> setStateFailSafe(RobotState.PREPARE_FEED_2);
-
-      case WAIT_INTAKE_AND_SHOOT_HUB -> setStateFailSafe(RobotState.PREPARE_INTAKE_AND_SHOOT_HUB);
-      case WAIT_INTAKE_AND_FEED_1 -> setStateFailSafe(RobotState.PREPARE_INTAKE_AND_FEED_1);
-      case WAIT_INTAKE_AND_FEED_2 -> setStateFailSafe(RobotState.PREPARE_INTAKE_AND_FEED_2);
     }
   }
 
   public void climbSequenceForward() {
+    cancelIntakeRequest();
     switch (getState()) {
       default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP);
       case CLIMB_1_LINEUP -> setStateFromRequest(RobotState.CLIMB_2_RAISING);
@@ -160,6 +113,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void climbSequenceBackward() {
+    cancelIntakeRequest();
     switch (getState()) {
       default -> {}
       case CLIMB_1_LINEUP -> setStateFromRequest(RobotState.IDLE);

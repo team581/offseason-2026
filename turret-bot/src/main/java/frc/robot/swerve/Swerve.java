@@ -23,11 +23,11 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
-public class SwerveSubsystem extends StateMachineSubsystem<SwerveState> {
+public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
@@ -72,7 +72,7 @@ public class SwerveSubsystem extends StateMachineSubsystem<SwerveState> {
 
   private double teleopSlowModePercent = 1.0;
 
-  public SwerveSubsystem(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
+  public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
     this.drivetrain = drivetrain;
     this.trailblazer = trailblazer;

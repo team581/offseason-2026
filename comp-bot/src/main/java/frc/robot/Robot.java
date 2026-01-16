@@ -10,9 +10,9 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.autos.Autos;
 import frc.robot.generated.BuildConstants;
-import frc.robot.localization.LocalizationSubsystem;
+import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
-import frc.robot.swerve.SwerveSubsystem;
+import frc.robot.swerve.Swerve;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -22,10 +22,9 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
-  private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
 
-  private final LocalizationSubsystem localization =
-      new LocalizationSubsystem(swerve, hardware.drivetrain);
+  private final Localization localization = new Localization(swerve, hardware.drivetrain);
 
   private final RobotManager robotManager = new RobotManager(localization, swerve);
 

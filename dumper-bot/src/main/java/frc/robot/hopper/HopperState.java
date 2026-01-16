@@ -2,18 +2,14 @@ package frc.robot.hopper;
 
 public enum HopperState {
   UNTUNED(0.0),
-  UNJAM(UNTUNED),
+  UNJAM(-6),
 
-  STOPPED(UNTUNED),
-  IDLE(UNTUNED),
-  INTAKING(UNTUNED),
-  OUTTAKING(UNTUNED);
+  STOPPED(0),
+  IDLE(0),
+  INTAKING(6),
+  OUTTAKING(-6);
 
   public final double volts;
-
-  private HopperState(HopperState state) {
-    this.volts = state.volts;
-  }
 
   private HopperState(double volts) {
     this.volts = volts;

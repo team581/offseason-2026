@@ -1,49 +1,36 @@
 package frc.robot.robot_manager;
 
 public enum RobotState {
-  IDLE(false, false, false),
-
-  INTAKE(false, true, false),
+  IDLE,
 
   // Shoot Hub
-  WAIT_SHOOT_HUB(false, false, false),
-  PREPARE_SHOOT_HUB(false, false, false),
-  SHOOT_HUB(false, false, true),
-
-  WAIT_INTAKE_AND_SHOOT_HUB(false, true, false),
-  PREPARE_INTAKE_AND_SHOOT_HUB(false, true, false),
-  INTAKE_AND_SHOOT_HUB(false, true, true),
+  WAIT_SHOOT_HUB,
+  PREPARE_SHOOT_HUB,
+  SHOOT_HUB,
 
   // TODO: change feed name
   // Feed 1
-  WAIT_FEED_1(false, false, false),
-  PREPARE_FEED_1(false, false, false),
-  FEED_1(false, false, true),
-
-  WAIT_INTAKE_AND_FEED_1(false, true, false),
-  PREPARE_INTAKE_AND_FEED_1(false, true, false),
-  INTAKE_AND_FEED_1(false, true, true),
+  WAIT_FEED_1,
+  PREPARE_FEED_1,
+  FEED_1,
 
   // Feed 2
-  WAIT_FEED_2(false, false, false),
-  PREPARE_FEED_2(false, false, false),
-  FEED_2(false, false, true),
+  WAIT_FEED_2,
+  PREPARE_FEED_2,
+  FEED_2,
 
-  WAIT_INTAKE_AND_FEED_2(false, true, false),
-  PREPARE_INTAKE_AND_FEED_2(false, true, false),
-  INTAKE_AND_FEED_2(false, true, true),
+  CLIMB_1_LINEUP,
+  CLIMB_2_RAISING,
+  CLIMB_3_HANGING;
 
-  CLIMB_1_LINEUP(true, false, false),
-  CLIMB_2_RAISING(true, false, false),
-  CLIMB_3_HANGING(true, false, false);
+  private RobotState() {}
 
-  public final boolean climbingOrRehoming;
-  public final boolean intaking;
-  public final boolean shooting;
-
-  private RobotState(boolean climbingOrRehoming, boolean intaking, boolean shooting) {
-    this.climbingOrRehoming = climbingOrRehoming;
-    this.intaking = intaking;
-    this.shooting = shooting;
+  public boolean climbingOrRehoming() {
+    return switch (this) {
+      default -> false;
+      case CLIMB_1_LINEUP -> true;
+      case CLIMB_2_RAISING -> true;
+      case CLIMB_3_HANGING -> true;
+    };
   }
 }

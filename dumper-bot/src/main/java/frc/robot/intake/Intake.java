@@ -9,10 +9,10 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class IntakeSubsystem extends StateMachineSubsystem<IntakeState> {
+public class Intake extends StateMachineSubsystem<IntakeState> {
   private final TalonFX motor;
 
-  public IntakeSubsystem(TalonFX motor) {
+  public Intake(TalonFX motor) {
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);
     motor
         .getConfigurator()
@@ -36,7 +36,11 @@ public class IntakeSubsystem extends StateMachineSubsystem<IntakeState> {
     }
   }
 
-  public void setState(IntakeState newState) {
-    setStateFromRequest(newState);
+  public void intakeRequest() {
+    setStateFromRequest(IntakeState.INTAKING);
+  }
+
+  public void idleRequest() {
+    setStateFromRequest(IntakeState.IDLE);
   }
 }
