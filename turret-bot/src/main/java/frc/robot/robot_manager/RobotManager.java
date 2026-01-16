@@ -40,7 +40,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case AUTO_AIM -> swerve.normalDriveRequest();
       case MANUAL_AIM -> swerve.normalDriveRequest();
       case IDLE -> swerve.normalDriveRequest();
-      case LOCKED -> swerve.normalDriveRequest();
     }
   }
 
