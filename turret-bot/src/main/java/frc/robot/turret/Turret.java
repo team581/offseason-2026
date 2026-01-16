@@ -190,6 +190,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     return currentAngle;
   }
 
+  public void homeRequest() {
+    setState(TurretState.HOMING);
+  }
+
   @Override
   public void simulationPeriodic() {
     var turretSimulation =
