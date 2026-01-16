@@ -12,6 +12,8 @@ public class Hardware {
   public final XboxController operatorController = new XboxController(1);
 
   public final TalonFX intakeMotor = new TalonFX(15, canivore);
+  public final TalonFX leftHopperMotor = new TalonFX(0);
+  public final TalonFX rightHopperMotor = new TalonFX(0);
   public final TalonFX leftShooterMotor = new TalonFX(0);
   public final TalonFX rightShooterMotor = new TalonFX(0);
 
