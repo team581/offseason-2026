@@ -69,7 +69,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-    distanceToHub = robotPose.getTranslation().getDistance(FieldUtil.getHubPose(FmsUtil.isRedAlliance()).getTranslation());
+    distanceToHub =
+        robotPose
+            .getTranslation()
+            .getDistance(FieldUtil.getHubPose(FmsUtil.isRedAlliance()).getTranslation());
   }
 
   private void setStateFailSafe(RobotState newState) {
