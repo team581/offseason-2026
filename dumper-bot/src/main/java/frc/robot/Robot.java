@@ -12,6 +12,7 @@ import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
 import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
+import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.swerve.Swerve;
@@ -23,6 +24,7 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
   private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
+  private final Localization localization = new Localization(swerve, hardware.drivetrain);
   private final Intake intake = new Intake(hardware.intakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
@@ -31,7 +33,7 @@ public class Robot extends Base581Robot {
           hardware.rightShooterMotor,
           hardware.leftKickerShooterMotor,
           hardware.rightKickerShooterMotor);
-  private final RobotManager robotManager = new RobotManager(intake, hopper, shooter);
+  private final RobotManager robotManager = new RobotManager(intake, hopper, shooter, localization);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
@@ -104,7 +106,7 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getBackButtonPressed()) {
-      //   localization.zeroGyro();
+        localization.zeroGyro();
     }
   }
 }
