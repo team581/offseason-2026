@@ -19,12 +19,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import frc.robot.localization.LocalizationSubsystem;
+import frc.robot.localization.Localization;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
+public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
-  private final LocalizationSubsystem localization;
+  private final Localization localization;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double hubAimAngle = 0.0;
@@ -43,7 +43,7 @@ public class TurretSubsystem extends StateMachineSubsystem<TurretState> {
   private double filteredCurrent = 0.0;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
-  public TurretSubsystem(TalonFX motor, LocalizationSubsystem localization) {
+  public Turret(TalonFX motor, Localization localization) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
     var configs =
         new TalonFXConfiguration()

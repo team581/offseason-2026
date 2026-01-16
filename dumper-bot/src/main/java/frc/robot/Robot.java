@@ -10,11 +10,10 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
-import frc.robot.hopper.HopperSubsystem;
-import frc.robot.intake.IntakeSubsystem;
+import frc.robot.intake.Intake;
 import frc.robot.robot_manager.RobotManager;
-import frc.robot.shooter.ShooterSubsystem;
-import frc.robot.swerve.SwerveSubsystem;
+import frc.robot.shooter.Shooter;
+import frc.robot.swerve.Swerve;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -22,15 +21,23 @@ public class Robot extends Base581Robot {
       new Trailblazer(
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
+<<<<<<< HEAD
   private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
   private final IntakeSubsystem intake = new IntakeSubsystem(hardware.intakeMotor);
   private final HopperSubsystem hopper =
       new HopperSubsystem(hardware.leftHopperMotor, hardware.rightHopperMotor);
   private final ShooterSubsystem shooter =
       new ShooterSubsystem(hardware.leftShooterMotor, hardware.rightShooterMotor);
+=======
+  private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
+  private final Intake intake = new Intake(hardware.intakeMotor);
+
+  private final Shooter shooter =
+      new Shooter(hardware.leftShooterMotor, hardware.rightShooterMotor);
+>>>>>>> 96e8e1e50b71d0309f7f8cfeb60a1c81e5381009
   private final RobotManager robotManager = new RobotManager(intake, shooter);
 
-  @SuppressWarnings("unused") // Registers itself as a subsystem
+  @SuppressWarnings("unused") // Registers itself as a
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {

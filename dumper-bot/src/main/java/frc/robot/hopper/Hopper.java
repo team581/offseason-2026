@@ -12,7 +12,7 @@ import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class HopperSubsystem extends StateMachineSubsystem<HopperState> {
+public class Hopper extends StateMachineSubsystem<HopperState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
 
@@ -25,7 +25,7 @@ public class HopperSubsystem extends StateMachineSubsystem<HopperState> {
   private static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
       DogLog.tunable("HOPPER/JamCurrentThreshold", 75.0);
 
-  public HopperSubsystem(TalonFX leftMotor, TalonFX rightMotor) {
+  public Hopper(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.HOPPER, HopperState.IDLE);
     leftMotor
         .getConfigurator()
