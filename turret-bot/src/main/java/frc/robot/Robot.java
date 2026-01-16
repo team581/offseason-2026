@@ -96,5 +96,9 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getAButtonPressed()) {
       turret.manualAimRequest();
     }
+
+    if (hardware.driverController.getXButtonPressed()) {
+      turret.homeRequest();
+    }
   }
 }
