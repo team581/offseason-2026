@@ -31,9 +31,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private static final double MIN_ANGLE = -149.105;
   private static final double MAX_ANGLE = 149.105;
   private static final double MANUAL_AIM_ANGLE = 0.0;
-private static final DoubleSubscriber HOMING_VOLTAGE =
-      DogLog.tunable("TurretHomingVoltage", -2.0);  
-      private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
+  private static final DoubleSubscriber HOMING_VOLTAGE =
+      DogLog.tunable("TurretHomingVoltage", -2.0);
+  private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
       DogLog.tunable("TurretCurrentThreshold", 10.0);
   private static final double HOMING_END_POSITION = MIN_ANGLE;
   private static final double TOLERANCE = 1.0;
@@ -104,8 +104,7 @@ private static final DoubleSubscriber HOMING_VOLTAGE =
         motor.setVoltage(HOMING_VOLTAGE.get());
       }
       case IDLE -> {
-         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(0.0))));
+        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(0.0))));
       }
       case HUB_AIM -> {
         motor.setControl(
