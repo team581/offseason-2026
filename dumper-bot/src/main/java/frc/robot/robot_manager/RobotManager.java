@@ -2,7 +2,6 @@ package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
@@ -10,14 +9,12 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
-  private final Hopper hopper;
   private final Shooter shooter;
   private final Localization localization;
 
-  public RobotManager(Intake intake, Hopper hopper, Shooter shooter, Localization localization) {
+  public RobotManager(Intake intake, Shooter shooter, Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
-    this.hopper = hopper;
     this.shooter = shooter;
     this.localization = localization;
 
@@ -39,23 +36,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case IDLE -> {
         shooter.idleRequest();
-        hopper.followIntakeRequest(intake.getState());
       }
       case WAIT_FEED_1, WAIT_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2 -> {
         shooter.feedRequest();
-        hopper.idleRequest();
       }
       case FEED_1, FEED_2 -> {
         shooter.feedRequest();
-        hopper.scoreRequest();
+        intakeRequest();
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
         shooter.scoreRequest();
-        hopper.idleRequest();
       }
       case SHOOT_HUB -> {
         shooter.scoreRequest();
-        hopper.scoreRequest();
+        intakeRequest();
       }
     }
   }
@@ -64,7 +58,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void whileInState(RobotState state) {
     // TODO: distance
     shooter.setDistance(0);
-    hopper.followIntakeRequest(intake.getState());
   }
 
   @Override
