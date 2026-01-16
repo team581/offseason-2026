@@ -26,7 +26,11 @@ public class Robot extends Base581Robot {
   private final Intake intake = new Intake(hardware.intakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
-      new Shooter(hardware.leftShooterMotor, hardware.rightShooterMotor);
+      new Shooter(
+          hardware.leftShooterMotor,
+          hardware.rightShooterMotor,
+          hardware.leftKickerShooterMotor,
+          hardware.rightKickerShooterMotor);
   private final RobotManager robotManager = new RobotManager(intake, hopper, shooter);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);

@@ -15,6 +15,8 @@ public class Hardware {
   public final TalonFX hopperMotor = new TalonFX(16, canivore);
   public final TalonFX leftShooterMotor = new TalonFX(17, canivore);
   public final TalonFX rightShooterMotor = new TalonFX(18, canivore);
+  public final TalonFX leftKickerShooterMotor = new TalonFX(19, canivore);
+  public final TalonFX rightKickerShooterMotor = new TalonFX(20, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
