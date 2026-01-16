@@ -69,7 +69,7 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getRightTriggerAxis() > 0.5) {
       robotManager.confirmShotRequest();
     } else {
-      robotManager.cancelShotRequest();
+      robotManager.idleRequest();
     }
 
     if (hardware.driverController.getXButtonPressed()) {
@@ -85,7 +85,7 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getRightBumperButtonPressed()) {
-      robotManager.cancelShotRequest();
+      robotManager.idleRequest();
     }
 
     if (hardware.driverController.getYButtonPressed()) {
