@@ -8,17 +8,21 @@ import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
+import frc.robot.swerve.SnapUtil;
+import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
   private final Shooter shooter;
+  private final Swerve swerve;
   private final Localization localization;
 
-  public RobotManager(Intake intake, Shooter shooter, Localization localization) {
+  public RobotManager(Intake intake, Shooter shooter, Swerve swerve, Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
     this.shooter = shooter;
+    this.swerve = swerve;
     this.localization = localization;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
@@ -36,26 +40,41 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private Pose2d robotPose = new Pose2d();
   private double distanceToHub = 0;
+  private double angleToHub = 0;
 
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
         shooter.idleRequest();
+        swerve.normalDriveRequest();
       }
-      case WAIT_FEED_1, WAIT_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2 -> {
+      case WAIT_FEED_1, PREPARE_FEED_1 -> {
         shooter.feedRequest();
+        swerve.snapsDriveRequest(SnapUtil.getFeed1Angle(FmsUtil.isRedAlliance()));
       }
-      case FEED_1, FEED_2 -> {
+      case WAIT_FEED_2, PREPARE_FEED_2 -> {
+        shooter.feedRequest();
+        swerve.snapsDriveRequest(SnapUtil.getFeed2Angle(FmsUtil.isRedAlliance()));
+      }
+      case FEED_1 -> {
         shooter.feedRequest();
         intakeRequest();
+        swerve.snapsDriveRequest(SnapUtil.getFeed1Angle(FmsUtil.isRedAlliance()));
+      }
+      case FEED_2 -> {
+        shooter.feedRequest();
+        intakeRequest();
+        swerve.snapsDriveRequest(SnapUtil.getFeed2Angle(FmsUtil.isRedAlliance()));
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
         shooter.scoreRequest();
+        swerve.snapsDriveRequest(angleToHub);
       }
       case SHOOT_HUB -> {
         shooter.scoreRequest();
         intakeRequest();
+        swerve.snapsDriveRequest(angleToHub);
       }
     }
   }
@@ -64,12 +83,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void whileInState(RobotState state) {
     // TODO: distance
     shooter.setDistance(distanceToHub);
+    switch (state) {
+      case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> swerve.snapsDriveRequest(SnapUtil.getFeed1Angle(FmsUtil.isRedAlliance()));
+      case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.snapsDriveRequest(SnapUtil.getFeed2Angle(FmsUtil.isRedAlliance()));
+      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> swerve.snapsDriveRequest(angleToHub);
+      default -> swerve.normalDriveRequest();
+    }
   }
 
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
     distanceToHub = robotPose.getTranslation().getDistance(FieldUtil.getHubPose(FmsUtil.isRedAlliance()).getTranslation());
+    angleToHub = robotPose.relativeTo(FieldUtil.getHubPose(FmsUtil.isRedAlliance())).getTranslation().getAngle().getDegrees();
   }
 
   private void setStateFailSafe(RobotState newState) {
