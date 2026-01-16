@@ -17,7 +17,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
-  private double distance = 0;
 
   public ShooterHood(TalonFX motor) {
     super(SubsystemPriority.SHOOTER_HOOD, ShooterHoodState.UNHOMED);
@@ -43,7 +42,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
         // Do nothing, we aren't homed
       }
       default -> {
-        this.distance = distance;
         setStateFromRequest(ShooterHoodState.SCORING);
       }
     }
@@ -55,7 +53,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
         // Do nothing, we aren't homed
       }
       default -> {
-        this.distance = distance;
         setStateFromRequest(ShooterHoodState.FEEDING);
       }
     }

@@ -7,7 +7,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.networktables.DoubleSubscriber;
@@ -38,12 +37,17 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
                         .withStatorCurrentLimit(100)
                         .withSupplyCurrentLimit(100))
                 .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
-    hopperMotor.getConfigurator().apply( new TalonFXConfiguration()
-            // TODO:Get sensor to mechanism ratio
-            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs().withStatorCurrentLimit(100).withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
+    hopperMotor
+        .getConfigurator()
+        .apply(
+            new TalonFXConfiguration()
+                // TODO:Get sensor to mechanism ratio
+                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
+                .withCurrentLimits(
+                    new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(100)
+                        .withSupplyCurrentLimit(100))
+                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
     this.hopperMotor = hopperMotor;
     this.intakeMotor = intakeMotor;
   }
