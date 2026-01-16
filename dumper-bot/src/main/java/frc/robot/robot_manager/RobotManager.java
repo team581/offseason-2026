@@ -33,7 +33,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case IDLE -> {
         shooter.idleRequest();
-        hopper.idleRequest();
+        hopper.followIntakeRequest(intake.getState());
       }
       case WAIT_FEED_1, WAIT_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2 -> {
         shooter.feedRequest();
@@ -41,7 +41,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FEED_1, FEED_2 -> {
         shooter.feedRequest();
-        hopper.outtakeRequest();
+        hopper.scoreRequest();
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
         shooter.scoreRequest();
@@ -49,8 +49,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case SHOOT_HUB -> {
         shooter.scoreRequest();
-        hopper.outtakeRequest();
+        hopper.scoreRequest();
       }
+      case CLIMB_1_LINEUP -> {}
+      case CLIMB_2_RAISING -> {}
+      case CLIMB_3_HANGING -> {}
     }
   }
 
@@ -58,6 +61,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void whileInState(RobotState state) {
     // TODO: distance
     shooter.setDistance(0);
+    hopper.followIntakeRequest(intake.getState());
   }
 
   private void setStateFailSafe(RobotState newState) {
@@ -73,12 +77,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void intakeRequest() {
     intake.intakeRequest();
-    hopper.intakeRequest();
   }
 
   public void cancelIntakeRequest() {
     intake.idleRequest();
-    hopper.idleRequest();
   }
 
   public void shootHubWaitRequest() {

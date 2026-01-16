@@ -7,7 +7,7 @@ public enum HopperState {
   STOPPED(0),
   IDLE(0),
   INTAKING(6),
-  OUTTAKING(-6);
+  SCORING(6);
 
   public final double volts;
 

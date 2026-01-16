@@ -10,6 +10,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Hopper extends StateMachineSubsystem<HopperState> {
@@ -65,15 +66,22 @@ public class Hopper extends StateMachineSubsystem<HopperState> {
     return filteredCurrent > JAM_CURRENT_THRESHOLD.getAsDouble();
   }
 
-  public void intakeRequest() {
-    setStateFromRequest(HopperState.INTAKING);
-  }
-
-  public void outtakeRequest() {
-    setStateFromRequest(HopperState.OUTTAKING);
+  public void followIntakeRequest(IntakeState intakeState) {
+    HopperState newState = switch (intakeState) {
+      case IDLE -> HopperState.IDLE;
+      case INTAKING -> HopperState.INTAKING;
+      case UNJAM -> HopperState.UNJAM;
+      case STOPPED -> HopperState.STOPPED;
+      case UNTUNED -> HopperState.UNTUNED;
+    };
+    setStateFromRequest(newState);
   }
 
   public void idleRequest() {
     setStateFromRequest(HopperState.IDLE);
+  }
+
+  public void scoreRequest() {
+    setStateFromRequest(HopperState.SCORING);
   }
 }
