@@ -51,9 +51,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest();
         hopper.scoreRequest();
       }
-      case CLIMB_1_LINEUP -> {}
-      case CLIMB_2_RAISING -> {}
-      case CLIMB_3_HANGING -> {}
     }
   }
 
@@ -107,10 +104,26 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void climbSequenceForward() {
     cancelIntakeRequest();
     switch (getState()) {
-      default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP);
-      case CLIMB_1_LINEUP -> setStateFromRequest(RobotState.CLIMB_2_RAISING);
-      case CLIMB_2_RAISING -> setStateFromRequest(RobotState.CLIMB_3_HANGING);
-      case CLIMB_3_HANGING -> {}
+      default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1);
+      case CLIMB_1_LINEUP_L1 -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1);
+      case CLIMB_2_RAISING_L1 -> setStateFromRequest(RobotState.CLIMB_3_HANGING_L1);
+      case CLIMB_3_HANGING_L1 -> setStateFromRequest(RobotState.CLIMB_4_RAISING_L2);
+
+      case CLIMB_4_RAISING_L2 -> setStateFromRequest(RobotState.CLIMB_5_HANGING_L2);
+      case CLIMB_5_HANGING_L2 -> setStateFromRequest(RobotState.CLIMB_6_RAISING_L3);
+
+      case CLIMB_6_RAISING_L3 -> setStateFromRequest(RobotState.CLIMB_7_HANGING_L3);
+      case CLIMB_7_HANGING_L3 -> {}
+    }
+  }
+
+  public void climbSequenceForwardAuto() {
+    cancelIntakeRequest();
+    switch (getState()) {
+      default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTO);
+      case CLIMB_1_LINEUP_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTO);
+      case CLIMB_2_RAISING_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_3_HANGING_L1_AUTO);
+      case CLIMB_3_HANGING_L1_AUTO -> {}
     }
   }
 
@@ -118,9 +131,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     cancelIntakeRequest();
     switch (getState()) {
       default -> {}
-      case CLIMB_1_LINEUP -> setStateFromRequest(RobotState.IDLE);
-      case CLIMB_2_RAISING -> setStateFromRequest(RobotState.CLIMB_1_LINEUP);
-      case CLIMB_3_HANGING -> setStateFromRequest(RobotState.CLIMB_2_RAISING);
+      case CLIMB_1_LINEUP_L1 -> setStateFromRequest(RobotState.IDLE);
+      case CLIMB_2_RAISING_L1 -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1);
+      case CLIMB_3_HANGING_L1 -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1);
+
+      case CLIMB_1_LINEUP_L1_AUTO -> setStateFromRequest(RobotState.IDLE);
+      case CLIMB_2_RAISING_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTO);
+      case CLIMB_3_HANGING_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTO);
+
+      case CLIMB_4_RAISING_L2 -> setStateFromRequest(RobotState.CLIMB_3_HANGING_L1);
+      case CLIMB_5_HANGING_L2 -> setStateFromRequest(RobotState.CLIMB_4_RAISING_L2);
+
+      case CLIMB_6_RAISING_L3 -> setStateFromRequest(RobotState.CLIMB_5_HANGING_L2);
+      case CLIMB_7_HANGING_L3 -> setStateFromRequest(RobotState.CLIMB_6_RAISING_L3);
     }
   }
 }
