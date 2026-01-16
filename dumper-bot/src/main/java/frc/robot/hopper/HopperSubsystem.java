@@ -60,9 +60,6 @@ public class HopperSubsystem extends StateMachineSubsystem<HopperState> {
         leftMotor.disable();
         rightMotor.disable();
       }
-      case UNJAM -> {
-        if (isJammed()) {}
-      }
       default -> {
         leftMotor.setVoltage(getState().volts);
         rightMotor.setVoltage(getState().volts);
