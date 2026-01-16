@@ -15,7 +15,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
-public class ShooterSubsystem extends StateMachineSubsystem<ShooterState> {
+public class Shooter extends StateMachineSubsystem<ShooterState> {
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 1000.0), Map.entry(2.0, 2500.0), Map.entry(5.0, 4000.0));
@@ -32,7 +32,7 @@ public class ShooterSubsystem extends StateMachineSubsystem<ShooterState> {
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
 
-  public ShooterSubsystem(TalonFX leftMotor, TalonFX rightMotor) {
+  public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
 
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
     leftMotor

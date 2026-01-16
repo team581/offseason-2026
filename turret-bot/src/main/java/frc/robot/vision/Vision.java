@@ -13,14 +13,14 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
-import frc.robot.imu.ImuSubsystem;
+import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.OptionalTagResult;
 import java.util.Optional;
 
-public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
+public class Vision extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
       new Transform2d(Units.inchesToMeters(-5.3), 0.0, Rotation2d.kZero);
 
@@ -34,7 +34,7 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   private final TimeInterpolatableBuffer<Rotation2d> turretBuffer =
       TimeInterpolatableBuffer.createBuffer(2.0);
 
-  private final ImuSubsystem imu;
+  private final Imu imu;
   private final Limelight turretLimelight;
 
   private OptionalTagResult turretResult = new OptionalTagResult();
@@ -49,7 +49,7 @@ public class VisionSubsystem extends StateMachineSubsystem<VisionState> {
   private boolean seeingTagDebounced = false;
   private boolean seenTagRecentlyForReset = true;
 
-  public VisionSubsystem(ImuSubsystem imu, Limelight turretLimelight) {
+  public Vision(Imu imu, Limelight turretLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
     this.turretLimelight = turretLimelight;
