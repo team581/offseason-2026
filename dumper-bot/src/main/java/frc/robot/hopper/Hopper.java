@@ -78,7 +78,15 @@ public class Hopper extends StateMachineSubsystem<HopperState> {
     return filteredCurrent > JAM_CURRENT_THRESHOLD.getAsDouble();
   }
 
-  public void setState(HopperState newState) {
-    setStateFromRequest(newState);
+  public void intakeRequest() {
+    setStateFromRequest(HopperState.INTAKING);
+  }
+
+  public void outtakeRequest() {
+    setStateFromRequest(HopperState.OUTTAKING);
+  }
+
+  public void idleRequest() {
+    setStateFromRequest(HopperState.IDLE);
   }
 }

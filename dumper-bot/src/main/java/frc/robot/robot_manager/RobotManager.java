@@ -1,17 +1,20 @@
 package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
+import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
 import frc.robot.shooter.Shooter;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
+  private final Hopper hopper;
   private final Shooter shooter;
 
-  public RobotManager(Intake intake, Shooter shooter) {
+  public RobotManager(Intake intake, Hopper hopper, Shooter shooter) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
+    this.hopper = hopper;
     this.shooter = shooter;
   }
 
@@ -27,21 +30,34 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void afterTransition(RobotState newState) {
-    // TODO: distance
     switch (newState) {
-      case WAIT_FEED_1,
-          WAIT_FEED_2,
-          PREPARE_FEED_1,
-          PREPARE_FEED_2,
-          FEED_1,
-          FEED_2 ->
-          shooter.feedRequest(0);
-      case PREPARE_SHOOT_HUB,
-          WAIT_SHOOT_HUB,
-          SHOOT_HUB ->
-          shooter.scoreRequest(0);
-      default -> shooter.idleRequest();
+      case IDLE -> {
+        shooter.idleRequest();
+        hopper.idleRequest();
+      }
+      case WAIT_FEED_1, WAIT_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2 -> {
+        shooter.feedRequest();
+        hopper.idleRequest();
+      }
+      case FEED_1, FEED_2 -> {
+        shooter.feedRequest();
+        hopper.outtakeRequest();
+      }
+      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
+        shooter.scoreRequest();
+        hopper.idleRequest();
+      }
+      case SHOOT_HUB -> {
+        shooter.scoreRequest();
+        hopper.outtakeRequest();
+      }
     }
+  }
+
+  @Override
+  protected void whileInState(RobotState state) {
+    // TODO: distance
+    shooter.setDistance(0);
   }
 
   private void setStateFailSafe(RobotState newState) {
@@ -57,10 +73,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void intakeRequest() {
     intake.intakeRequest();
+    hopper.intakeRequest();
   }
 
   public void cancelIntakeRequest() {
     intake.idleRequest();
+    hopper.idleRequest();
   }
 
   public void shootHubWaitRequest() {
