@@ -29,17 +29,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     // TODO: distance
     switch (newState) {
-      case WAIT_FEED_1,
-          WAIT_FEED_2,
-          PREPARE_FEED_1,
-          PREPARE_FEED_2,
-          FEED_1,
-          FEED_2 ->
+      case WAIT_FEED_1, WAIT_FEED_2, PREPARE_FEED_1, PREPARE_FEED_2, FEED_1, FEED_2 ->
           shooter.feedRequest(0);
-      case PREPARE_SHOOT_HUB,
-          WAIT_SHOOT_HUB,
-          SHOOT_HUB ->
-          shooter.scoreRequest(0);
+      case PREPARE_SHOOT_HUB, WAIT_SHOOT_HUB, SHOOT_HUB -> shooter.scoreRequest(0);
       default -> shooter.idleRequest();
     }
   }
