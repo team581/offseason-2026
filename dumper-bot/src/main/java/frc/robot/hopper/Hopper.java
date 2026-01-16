@@ -13,65 +13,52 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Hopper extends StateMachineSubsystem<HopperState> {
-  private final TalonFX leftMotor;
-  private final TalonFX rightMotor;
+  private final TalonFX motor;
 
   private final LinearFilter currentFilter = LinearFilter.movingAverage(5);
-  private double rawCurrentLeft = 0.0;
-  private double rawCurrentRight = 0.0;
+  private double rawCurrent = 0.0;
 
   private double filteredCurrent = 0.0;
 
   private static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
       DogLog.tunable("HOPPER/JamCurrentThreshold", 75.0);
 
-  public Hopper(TalonFX leftMotor, TalonFX rightMotor) {
+  public Hopper(TalonFX motor) {
     super(SubsystemPriority.HOPPER, HopperState.IDLE);
-    leftMotor
-        .getConfigurator()
-        .apply(
-            new TalonFXConfiguration()
+    var config =  new TalonFXConfiguration()
                 // TODO:Get sensor to mechanism ratio
                 .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
                 .withCurrentLimits(
                     new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(100)
                         .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
-    rightMotor
+                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+
+    motor
         .getConfigurator()
         .apply(
-            new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(100)
-                        .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
-    this.leftMotor = leftMotor;
-    this.rightMotor = rightMotor;
+            config);
+
+
+    this.motor = motor;
   }
 
   @Override
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case UNTUNED, STOPPED -> {
-        leftMotor.disable();
-        rightMotor.disable();
+        motor.disable();
       }
       default -> {
-        leftMotor.setVoltage(getState().volts);
-        rightMotor.setVoltage(getState().volts);
+        motor.setVoltage(getState().volts);
       }
     }
   }
 
   @Override
   protected void collectInputs() {
-    rawCurrentLeft = leftMotor.getStatorCurrent().getValueAsDouble();
-    rawCurrentRight = rightMotor.getStatorCurrent().getValueAsDouble();
-    filteredCurrent = currentFilter.calculate((rawCurrentLeft + rawCurrentRight) / 2);
+    rawCurrent = motor.getStatorCurrent().getValueAsDouble();
+    filteredCurrent = currentFilter.calculate(rawCurrent);
   }
 
   public boolean isJammed() {

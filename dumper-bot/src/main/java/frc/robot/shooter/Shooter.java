@@ -9,6 +9,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
@@ -35,30 +36,35 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
 
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
-    leftMotor
-        .getConfigurator()
-        .apply(
-            new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(100)
-                        .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-                .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0)));
-    rightMotor
-        .getConfigurator()
-        .apply(
-            new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
-                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimit(100)
-                        .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-                .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0)));
+    var leftConfigs =
+        new TalonFXConfiguration()
+            // TODO:Get sensor to mechanism ratio
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withSupplyCurrentLimitEnable(true)
+                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimit(100)
+                    .withSupplyCurrentLimit(100))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+    var rightConfigs =
+        new TalonFXConfiguration()
+            // TODO:Get sensor to mechanism ratio
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withSupplyCurrentLimitEnable(true)
+                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimit(100)
+                    .withSupplyCurrentLimit(100))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+    leftMotor.getConfigurator().apply(leftConfigs);
+    rightMotor.getConfigurator().apply(rightConfigs);
+    TunablePid.register("ShooterLeft", leftMotor, leftConfigs);
+    TunablePid.register("ShooterRight", leftMotor, leftConfigs);
+
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
   }
