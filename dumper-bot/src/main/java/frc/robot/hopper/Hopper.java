@@ -17,7 +17,6 @@ public class Hopper extends StateMachineSubsystem<HopperState> {
 
   private final LinearFilter currentFilter = LinearFilter.movingAverage(5);
   private double rawCurrent = 0.0;
-  private double rawCurrentRight = 0.0;
 
   private double filteredCurrent = 0.0;
 
