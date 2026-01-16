@@ -2,7 +2,6 @@ package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
@@ -24,8 +23,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
   }
-
-  private Pose2d robotPose = new Pose2d();
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
@@ -71,9 +68,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   @Override
-  protected void collectInputs() {
-    robotPose = localization.getPose();
-  }
+  protected void collectInputs() {}
 
   private void setStateFailSafe(RobotState newState) {
     if (getState().climbingOrRehoming()) {
