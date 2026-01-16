@@ -237,7 +237,7 @@ public class TunerConstants {
      * <p>This constructs the underlying hardware devices, so users should not construct the devices
      * themselves. If they need the devices, they can access them through getters in the classes.
      *
-     * @param drivetrainConstants Drivetrain-wide constants for the swerve drive
+     * @param DrivetrainConstants Drivetrain-wide constants for the swerve drive
      * @param modules Constants for each specific module
      */
     public TunerSwerveDrivetrain(
@@ -251,7 +251,7 @@ public class TunerConstants {
      * <p>This constructs the underlying hardware devices, so users should not construct the devices
      * themselves. If they need the devices, they can access them through getters in the classes.
      *
-     * @param drivetrainConstants Drivetrain-wide constants for the swerve drive
+     * @param DrivetrainConstants Drivetrain-wide constants for the swerve drive
      * @param odometryUpdateFrequency The frequency to run the odometry loop. If unspecified or set
      *     to 0 Hz, this is 250 Hz on CAN FD, and 100 Hz on CAN 2.0.
      * @param modules Constants for each specific module
@@ -275,7 +275,7 @@ public class TunerConstants {
      * <p>This constructs the underlying hardware devices, so users should not construct the devices
      * themselves. If they need the devices, they can access them through getters in the classes.
      *
-     * @param drivetrainConstants Drivetrain-wide constants for the swerve drive
+     * @param DrivetrainConstants Drivetrain-wide constants for the swerve drive
      * @param odometryUpdateFrequency The frequency to run the odometry loop. If unspecified or set
      *     to 0 Hz, this is 250 Hz on CAN FD, and 100 Hz on CAN 2.0.
      * @param odometryStandardDeviation The standard deviation for odometry calculation in the form
