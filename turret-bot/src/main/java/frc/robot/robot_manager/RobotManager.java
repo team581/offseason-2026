@@ -37,10 +37,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case AUTO_AIM -> swerve.normalDriveRequest();
-      case MANUAL_AIM -> swerve.normalDriveRequest();
-      case IDLE -> swerve.normalDriveRequest();
-      case LOCKED -> swerve.normalDriveRequest();
+      case AUTO_AIM -> turret.hubAimRequest();
+      case MANUAL_AIM -> turret.manualAimRequest();
+      case IDLE -> turret.idleRequest();
     }
   }
 
