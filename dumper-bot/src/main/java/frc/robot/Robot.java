@@ -12,7 +12,7 @@ import edu.wpi.first.math.controller.PIDController;
 import frc.robot.generated.BuildConstants;
 import frc.robot.intake.IntakeSubsystem;
 import frc.robot.robot_manager.RobotManager;
-import frc.robot.shooter.Shooter;
+import frc.robot.shooter.ShooterSubsystem;
 import frc.robot.swerve.SwerveSubsystem;
 
 public class Robot extends Base581Robot {
@@ -23,8 +23,8 @@ public class Robot extends Base581Robot {
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
   private final SwerveSubsystem swerve = new SwerveSubsystem(hardware.drivetrain, trailblazer);
   private final IntakeSubsystem intake = new IntakeSubsystem(hardware.intakeMotor);
-  private final Shooter shooter =
-      new Shooter(hardware.leftShooterMotor, hardware.rightShooterMotor);
+  private final ShooterSubsystem shooter =
+      new ShooterSubsystem(hardware.leftShooterMotor, hardware.rightShooterMotor);
   private final RobotManager robotManager = new RobotManager(intake, shooter);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
