@@ -17,6 +17,8 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
+  private static final double MAX_SAFE_RPM = 4000;
+
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 1000.0), Map.entry(2.0, 2500.0), Map.entry(5.0, 4000.0));
@@ -26,7 +28,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
-  private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(false);
+
+  private final VelocityVoltage velocityRequest =
+      new VelocityVoltage(0).withEnableFOC(false).withLimitReverseMotion(true);
   private double distance = 0;
   private double shootingRpm = 0;
   private double feedingRpm = 0;
@@ -34,11 +38,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double rightMotorRpm = 0;
 
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
-
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
+
     var leftConfigs =
         new TalonFXConfiguration()
-            // TODO:Get sensor to mechanism ratio
+            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
@@ -50,7 +54,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
             .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
     var rightConfigs =
         new TalonFXConfiguration()
-            // TODO:Get sensor to mechanism ratio
+            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
@@ -60,8 +64,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+
     leftMotor.getConfigurator().apply(leftConfigs);
     rightMotor.getConfigurator().apply(rightConfigs);
+
     TunablePid.register("ShooterLeft", leftMotor, leftConfigs);
     TunablePid.register("ShooterRight", leftMotor, leftConfigs);
 
@@ -87,11 +93,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void whileInState(ShooterState state) {
-    DogLog.log("Shooter/State", getState());
-    DogLog.log("Shooter/LeftMotorRPM", leftMotorRpm);
-    DogLog.log("Shooter/RightMotorRPM", rightMotorRpm);
-    DogLog.log("Shooter/ShootingRPM", shootingRpm);
-    DogLog.log("Shooter/FeedingRPM", feedingRpm);
+    DogLog.log("Shooter/Left/RPM", leftMotorRpm);
+    DogLog.log("Shooter/Right/RPM", rightMotorRpm);
+    DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
+    DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
 
     switch (state) {
@@ -112,8 +117,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(4000, DISTANCE_TO_SCORE_RPM.get(distance));
-    feedingRpm = Math.min(5000, DISTANCE_TO_FEEDING_RPM.get(distance));
+    shootingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_SCORE_RPM.get(distance));
+    feedingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_FEEDING_RPM.get(distance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
