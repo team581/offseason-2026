@@ -11,10 +11,6 @@ public enum HopperState {
 
   public final double volts;
 
-  private HopperState(HopperState state) {
-    this.volts = state.volts;
-  }
-
   private HopperState(double volts) {
     this.volts = volts;
   }
