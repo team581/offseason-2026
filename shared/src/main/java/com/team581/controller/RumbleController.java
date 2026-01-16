@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Timer;
 
-public class RumbleControllerSubsystem extends StateMachineSubsystem<RumbleControllerState> {
+public class RumbleController extends StateMachineSubsystem<RumbleControllerState> {
   public static final double MATCH_DURATION_TELEOP = 135;
 
   private final Timer matchTimer = new Timer();
@@ -32,7 +32,7 @@ public class RumbleControllerSubsystem extends StateMachineSubsystem<RumbleContr
     matchTimer.stop();
   }
 
-  public RumbleControllerSubsystem(
+  public RumbleController(
       GenericHID controller,
       boolean matchTimeRumble,
       SubsystemPriorityBase rumbleControllerPriority) {

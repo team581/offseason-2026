@@ -1,15 +1,15 @@
 package frc.robot.robot_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
-import frc.robot.intake.IntakeSubsystem;
-import frc.robot.shooter.ShooterSubsystem;
+import frc.robot.intake.Intake;
+import frc.robot.shooter.Shooter;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  private final IntakeSubsystem intake;
-  private final ShooterSubsystem shooter;
+  private final Intake intake;
+  private final Shooter shooter;
 
-  public RobotManager(IntakeSubsystem intake, ShooterSubsystem shooter) {
+  public RobotManager(Intake intake, Shooter shooter) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
     this.shooter = shooter;
