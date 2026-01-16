@@ -62,13 +62,14 @@ public class Hopper extends StateMachineSubsystem<HopperState> {
   }
 
   public void followIntakeRequest(IntakeState intakeState) {
-    HopperState newState = switch (intakeState) {
-      case IDLE -> HopperState.IDLE;
-      case INTAKING -> HopperState.INTAKING;
-      case UNJAM -> HopperState.UNJAM;
-      case STOPPED -> HopperState.STOPPED;
-      case UNTUNED -> HopperState.UNTUNED;
-    };
+    HopperState newState =
+        switch (intakeState) {
+          case IDLE -> HopperState.IDLE;
+          case INTAKING -> HopperState.INTAKING;
+          case UNJAM -> HopperState.UNJAM;
+          case STOPPED -> HopperState.STOPPED;
+          case UNTUNED -> HopperState.UNTUNED;
+        };
     setStateFromRequest(newState);
   }
 
