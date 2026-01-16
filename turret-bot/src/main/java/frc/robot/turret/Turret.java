@@ -28,13 +28,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double hubAimAngle = 0.0;
-  private static final double MIN_ANGLE = 0.0;
-  private static final double MAX_ANGLE = 270.0;
-  private static final double MANUAL_AIM_ANGLE = 50.0;
-  private static final double HOMING_VOLTAGE = 1.0;
-  private static final double HOMING_CURRENT_THRESHOLD =
-      1.5; // Half of compbot 2025 deploy threshold
-  private static final double HOMING_END_POSITION = 0.0;
+  private static final double MIN_ANGLE = -149.105;
+  private static final double MAX_ANGLE = 149.105;
+  private static final double MANUAL_AIM_ANGLE = 0.0;
+private static final DoubleSubscriber HOMING_VOLTAGE =
+      DogLog.tunable("TurretHomingVoltage", -2.0);  
+      private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
+      DogLog.tunable("TurretCurrentThreshold", 10.0);
+  private static final double HOMING_END_POSITION = MIN_ANGLE;
   private static final double TOLERANCE = 1.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
   private final DoubleSubscriber SHOOT_ON_THE_MOVE_LOOKAHEAD =
@@ -52,7 +53,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withCurrentLimits(
                 new CurrentLimitsConfigs().withStatorCurrentLimit(30).withStatorCurrentLimit(30))
-            .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
+            .withSlot0(new Slot0Configs().withKP(150.0).withKV(0.0).withKG(0.0));
     motor.getConfigurator().apply(configs);
 
     TunablePid.register("Turret", motor, configs);
@@ -70,10 +71,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             Math.atan2(target.getY() - current.getY(), target.getX() - current.getX()));
     var imuAngle = current.getRotation().getDegrees();
 
-    targetAngle = MathUtil.inputModulus(targetAngle, 0, 360);
-    imuAngle = MathUtil.inputModulus(imuAngle, 0, 360);
+    targetAngle = MathUtil.inputModulus(targetAngle, -180, 180);
+    imuAngle = MathUtil.inputModulus(imuAngle, -180, 180);
 
-    hubAimAngle = MathUtil.inputModulus(targetAngle - imuAngle, 0, 360);
+    hubAimAngle = MathUtil.inputModulus(targetAngle - imuAngle, -180, 180);
 
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -87,7 +88,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     currentAngle =
         MathUtil.inputModulus(
-            Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), 0, 360);
+            Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), -180, 180);
     DogLog.log("Turret/Angle", currentAngle);
     var fieldRelativeAngle = currentAngle + imuAngle;
     DogLog.log("Turret/FieldRelativeAngle", fieldRelativeAngle);
@@ -100,10 +101,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         motor.disable();
       }
       case HOMING -> {
-        motor.setVoltage(HOMING_VOLTAGE);
+        motor.setVoltage(HOMING_VOLTAGE.get());
       }
       case IDLE -> {
-        motor.setPosition(0.0);
+         motor.setControl(
+            positionRequest.withPosition(Units.degreesToRotations(clamp(0.0))));
       }
       case HUB_AIM -> {
         motor.setControl(
@@ -121,8 +123,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   protected TurretState getNextState(TurretState currentState) {
     return switch (currentState) {
       case HOMING -> {
-        if (filteredCurrent > HOMING_CURRENT_THRESHOLD) {
-          motor.setPosition(HOMING_END_POSITION);
+        if (filteredCurrent > HOMING_CURRENT_THRESHOLD.get()) {
+          motor.setPosition(Units.degreesToRotations(HOMING_END_POSITION));
+          motor.disable();
           yield TurretState.IDLE;
         }
         yield currentState;
@@ -146,7 +149,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   private static double clamp(double turretAngle) {
-    var newTurretAngle = MathUtil.inputModulus(turretAngle, 0, 360);
+    var newTurretAngle = MathUtil.inputModulus(turretAngle, -180, 180);
     return MathUtil.clamp(newTurretAngle, MIN_ANGLE, MAX_ANGLE);
   }
 
