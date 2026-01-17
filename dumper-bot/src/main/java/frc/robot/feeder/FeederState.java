@@ -5,7 +5,7 @@ public enum FeederState {
   UNJAM(-6.0),
 
   IDLE(0.0),
-  FEED(6.0);
+  FEED(12.0);
 
   public final double volts;
 
