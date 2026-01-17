@@ -25,4 +25,12 @@ record SimMotor(TalonFX motor, ChassisReference orientation, double sensorToMech
     motor.getSimState().setRawRotorPosition(state.position * sensorToMechanismRatio * ratio);
     motor.getSimState().setRotorVelocity(state.velocity * sensorToMechanismRatio * ratio);
   }
+
+  /** Applies a predicted velocity to the TalonFX simulation. */
+  void applyVelocity(double velocity) {
+    // https://v6.docs.ctr-electronics.com/en/stable/docs/api-reference/simulation/simulation-intro.html#orientation
+    var ratio = orientation == ChassisReference.Clockwise_Positive ? -1.0 : 1.0;
+
+    motor.getSimState().setRotorVelocity(velocity * sensorToMechanismRatio * ratio);
+  }
 }
