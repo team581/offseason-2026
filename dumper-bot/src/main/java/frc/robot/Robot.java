@@ -77,7 +77,6 @@ public class Robot extends Base581Robot {
 
     var driverRightTrigger = hardware.driverController.rightTrigger(0.5, buttonBindingsLoop);
     driverRightTrigger.rising().ifHigh(robotManager::toggleHubRequest);
-    driverRightTrigger.falling().ifHigh(robotManager::toggleHubRequest);
 
     var driverRightBumper = hardware.driverController.rightBumper(buttonBindingsLoop);
     driverRightBumper.rising().ifHigh(robotManager::toggleFeedRequest);
