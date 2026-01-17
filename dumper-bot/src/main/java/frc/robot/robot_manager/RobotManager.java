@@ -74,14 +74,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SHOOT -> {
-          shooter.scoreRequest();
-          swerve.normalDriveRequest();
+        shooter.scoreRequest();
+        swerve.normalDriveRequest();
       }
       case FORCE_SHOOT -> {
-          shooter.scoreRequest();
-          intake.intakeRequest();
-          feeder.feedRequest();
-          swerve.normalDriveRequest();
+        shooter.scoreRequest();
+        intake.intakeRequest();
+        feeder.feedRequest();
+        swerve.normalDriveRequest();
       }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
         shooter.feedRequest();
