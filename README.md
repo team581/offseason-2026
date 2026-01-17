@@ -57,3 +57,29 @@ This repository is organized as a Gradle monorepo with the following projects:
 # Apply formatting
 ./gradlew spotlessApply
 ```
+
+## Installing Java
+
+WPILib ships with JDK 17, but we use JDK 21.
+These instructions describe how to install JDK 21 and set it up in WPILib VS Code.
+
+### Windows
+
+1. Run `winget install -e --id EclipseAdoptium.Temurin.21.JDK`
+2. In VS Code, run "Preferences: Open User Settings (JSON)" from the command palette
+3. Delete config values referencing the WPILib JDK
+   - `java.jdt.ls.java.home`
+   - `java.configuration.runtimes`
+   - `terminal.integrated.env.windows` -> `JAVA_HOME`
+
+### macOS
+
+1. Install Brew `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+2. Run `brew bundle`
+   - This will install all tools for development, including WPILib itself
+   - If you just want to install the JDK, run `brew install openjdk@21`
+3. In VS Code, run "Preferences: Open User Settings (JSON)" from the command palette
+4. Delete config values referencing the WPILib JDK
+   - `java.jdt.ls.java.home`
+   - `java.configuration.runtimes`
+   - `terminal.integrated.env.osx` -> `JAVA_HOME`
