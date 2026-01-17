@@ -54,9 +54,8 @@ public class Robot extends Base581Robot {
           hardware.rightShooterMotor,
           hardware.kickerShooterMotor,
           hardware.feederShooterMotor);
-          private final Feeder feeder = new Feeder(hardware.hopperMotor);
+          private final Feeder feeder = new Feeder(hardware.feederShooterMotor);
   private final RobotManager robotManager = new RobotManager(intake, shooter,feeder, swerve, vision, localization);
->>>>>>> 51cdb82 (Add feeder subsystem)
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
