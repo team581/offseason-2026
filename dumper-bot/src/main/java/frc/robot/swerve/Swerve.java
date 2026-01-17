@@ -184,7 +184,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public void snapsDriveRequest(double snapAngle) {
-    teleopSnapsRequest.withTargetDirection(Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));
+    teleopSnapsRequest.withTargetDirection(
+        Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));
 
     if (DriverStation.isTeleop()) {
       setStateFromRequest(SwerveState.TELEOP_SNAPS);
@@ -193,7 +194,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public void hubAimRequest(double snapAngle) {
-    teleopSnapsRequest.withTargetDirection(Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));
+    teleopSnapsRequest.withTargetDirection(
+        Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));
 
     if (DriverStation.isTeleop()) {
       setStateFromRequest(SwerveState.HUB_AIM);
