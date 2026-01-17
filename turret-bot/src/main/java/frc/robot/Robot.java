@@ -50,7 +50,7 @@ public class Robot extends Base581Robot {
               0.0));
   private final Vision vision = new Vision(imu, turretLimelight);
   private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
-  private final Turret turret = new Turret(hardware.turretMotor, localization);
+  private final Turret turret = new Turret(hardware.turretMotor);
 
   private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
 
@@ -90,15 +90,20 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getYButtonPressed()) {
-      turret.hubAimRequest();
+     robotManager.hubAimRequest();
     }
 
     if (hardware.driverController.getAButtonPressed()) {
-      turret.manualAimRequest();
+      robotManager.lockForwardRequest();
     }
 
     if (hardware.driverController.getXButtonPressed()) {
       turret.homeRequest();
+    }
+
+
+    if (hardware.driverController.getBButtonPressed()) {
+      robotManager.tagAimRequest();
     }
   }
 }

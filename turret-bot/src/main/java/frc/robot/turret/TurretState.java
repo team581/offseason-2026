@@ -5,5 +5,6 @@ public enum TurretState {
   HOMING,
   IDLE,
   HUB_AIM,
-  MANUAL_AIM;
+  TAG_AIM,
+  LOCK_FORWARD;
 }

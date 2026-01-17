@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
-  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
+  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(0.5);
   private static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
@@ -173,6 +173,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public void snapsDriveRequest(double snapAngle) {
+    snapAngle = MathUtil.inputModulus(snapAngle, -180, 180);
     teleopSnapsRequest.withTargetDirection(Rotation2d.fromDegrees(snapAngle));
 
     if (DriverStation.isTeleop()) {
@@ -181,8 +182,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
   }
 
+  public boolean snapsNearGoal() {
+    var currentRotation =drivetrain.getState().Pose.getRotation().getDegrees();
+    var snapsDirection = teleopSnapsRequest.TargetDirection.getDegrees();
+            DogLog.log("Swerve/SnapsAngle", snapsDirection);
+                        DogLog.log("Swerve/CurrentRotation", currentRotation);
+
+
+    return MathUtil.isNear(snapsDirection, currentRotation, 5.0, -180.0, 180.0);
+  }
+
   @Override
   public void whileInState(SwerveState currentState) {
+    DogLog.log("Swerve/SnapsNearGoal", snapsNearGoal());
     DogLog.log("Swerve/SnapAngle", teleopSnapsRequest.TargetDirection.getDegrees(), Degrees);
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
