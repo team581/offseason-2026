@@ -24,6 +24,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double hubAimAngle = 0.0;
+  private double feedAimAngle = 0.0;
   private double tagAimAngle = 0.0;
 
   private static final double MIN_ANGLE = -149.105;
@@ -67,8 +68,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         filteredCurrent = currentFilter.calculate(rawCurrent);
       }
       case HUB_AIM -> goalAngle = hubAimAngle;
-      case LOCK_FORWARD -> goalAngle = MANUAL_AIM_ANGLE;
+      case FEED_AIM -> goalAngle = feedAimAngle;
       case TAG_AIM -> goalAngle = tagAimAngle;
+      case LOCK_FORWARD -> goalAngle = MANUAL_AIM_ANGLE;
       case IDLE -> {}
     }
 
@@ -93,6 +95,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case HUB_AIM -> {
         motor.setControl(
             positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
+      }
+      case FEED_AIM -> {
+        motor.setControl(
+            positionRequest.withPosition(Units.degreesToRotations(clamp(feedAimAngle))));
       }
       case TAG_AIM -> {
         motor.setControl(
@@ -149,7 +155,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void robotPeriodic() {
     super.robotPeriodic();
     switch (getState()) {
-      case HUB_AIM, TAG_AIM, LOCK_FORWARD -> {
+      case HUB_AIM, FEED_AIM, TAG_AIM, LOCK_FORWARD -> {
         afterTransition(getState());
         DogLog.clearFault("Turret is not homed");
       }
@@ -162,16 +168,20 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  public void lockForwardRequest() {
-    setState(TurretState.LOCK_FORWARD);
-  }
-
   public void hubAimRequest() {
     setState(TurretState.HUB_AIM);
   }
 
+  public void feedAimRequest() {
+    setState(TurretState.FEED_AIM);
+  }
+
   public void tagAimRequest() {
     setState(TurretState.TAG_AIM);
+  }
+
+  public void lockForwardRequest() {
+    setState(TurretState.LOCK_FORWARD);
   }
 
   public void idleRequest() {
@@ -180,6 +190,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public void setHubAimAngle(double angle) {
     hubAimAngle = angle;
+  }
+
+  public void setFeedAimAngle(double angle) {
+    tagAimAngle = angle;
   }
 
   public void setTagAimAngle(double angle) {
