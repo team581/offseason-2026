@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -61,7 +62,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+              .withPeakForwardTorqueCurrent(200)
+              .withPeakReverseTorqueCurrent(0));
     var rightConfigs =
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
@@ -77,7 +82,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+                        .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+              .withPeakForwardTorqueCurrent(200)
+              .withPeakReverseTorqueCurrent(0));
 
     var kickerConfigs =
         new TalonFXConfiguration()
@@ -94,7 +103,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+              .withPeakForwardTorqueCurrent(200)
+              .withPeakReverseTorqueCurrent(0));
 
     leftMotor.getConfigurator().apply(leftConfigs);
     rightMotor.getConfigurator().apply(rightConfigs);
