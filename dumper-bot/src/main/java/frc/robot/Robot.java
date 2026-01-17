@@ -14,6 +14,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
+import frc.robot.hopper.Hopper;
 import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
@@ -47,13 +48,14 @@ public class Robot extends Base581Robot {
               0));
   private final Vision vision = new Vision(imu, mainLimelight);
   private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
-  private final Intake intake = new Intake(hardware.intakeMotor, hardware.hopperMotor);
+  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
       new Shooter(
           hardware.leftShooterMotor, hardware.rightShooterMotor, hardware.kickerShooterMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final RobotManager robotManager =
-      new RobotManager(intake, shooter, feeder, swerve, vision, localization);
+      new RobotManager(intake, hopper, shooter, feeder, swerve, vision, localization);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
