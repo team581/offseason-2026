@@ -68,6 +68,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
+      case PREPARE_FORCE_SHOOT -> {
+        if (shooter.atGoal()) {
+          yield RobotState.FORCE_SHOOT;
+        }
+        yield currentState;
+      }
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
       case SHOOT_HUB ->
@@ -203,6 +209,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void intakeRequest() {
     intake.intakeRequest();
+  }
+
+  public void hopperShootingRequest() {
+    intake.shootingRequest();
   }
 
   public void forceShootRequest() {

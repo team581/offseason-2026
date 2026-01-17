@@ -12,7 +12,7 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.config.DSOptions;
+import frc.robot.config.FeatureFlags;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
@@ -104,17 +104,17 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     var cameraToTurretTransform = TURRET_TO_CAMERA.inverse();
     var fieldToTurretPose = mT1Pose;
 
-    if (DSOptions.VISION_CAMERA_POSITION_COMPENSATION.get()) {
+    if (FeatureFlags.VISION_CAMERA_POSITION_COMPENSATION.get()) {
       fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
     }
 
     // Look up the turret angle at the specific image timestamp
     var robotToTurretObservation = getAngleAtTimestamp(mT1Timestamp);
-
     if (robotToTurretObservation.isEmpty()) {
       DogLog.logFault("Could not get turret angle at timestamp");
       return adjustedTurretResult.empty();
     }
+    DogLog.log("Vision/TurretObservation", robotToTurretObservation.orElseThrow().getDegrees());
     DogLog.clearFault("Could not get turret angle at timestamp");
 
     // Create transform representing the rotation from Turret back to Robot
@@ -125,14 +125,14 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     var fieldToRobotEstimate = fieldToTurretPose;
 
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
-    if (DSOptions.VISION_TURRET_ANGLE_COMPENSATION.get()) {
+    if (FeatureFlags.VISION_TURRET_ANGLE_COMPENSATION.get()) {
       fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
     }
 
-    if (DSOptions.VISION_TURRET_POSITION_COMPENSATION.get()) {
+    if (FeatureFlags.VISION_TURRET_POSITION_COMPENSATION.get()) {
       fieldToRobotEstimate = fieldToRobotEstimate.plus(TURRET_TO_ROBOT.inverse());
     }
-
+    DogLog.log("Vision/AdjustedTurretPose", fieldToRobotEstimate);
     return adjustedTurretResult.update(
         fieldToRobotEstimate, mT1Timestamp, turretLimelightResult.standardDevs());
   }

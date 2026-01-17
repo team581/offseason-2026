@@ -5,6 +5,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -33,7 +34,10 @@ public class Feeder extends StateMachineSubsystem<FeederState> {
                     new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(100)
                         .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
+                .withMotorOutput(
+                    new MotorOutputConfigs()
+                        .withNeutralMode(NeutralModeValue.Coast)
+                        .withInverted(InvertedValue.Clockwise_Positive)));
 
     this.feederMotor = feederMotor;
   }
