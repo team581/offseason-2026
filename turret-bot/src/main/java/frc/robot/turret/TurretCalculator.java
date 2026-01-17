@@ -4,6 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
 public class TurretCalculator {
@@ -12,7 +13,7 @@ public class TurretCalculator {
   private static final double MIN_TURRET_ANGLE = -149.105;
   private static final double MAX_TURRET_ANGLE = 149.105;
 
-  public static double calculateTurretAimingAngle(Pose2d robot, Pose2d target) {
+  public static double calculateTurretAimingAngle(Pose2d robot, Translation2d target) {
 
     robot = robot.plus(TURRET_TO_ROBOT);
     var targetAngle =
