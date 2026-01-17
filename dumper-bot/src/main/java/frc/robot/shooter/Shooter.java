@@ -43,8 +43,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double rightMotorRpm = 0;
   private double kickerMotorRpm = 0;
 
-  public Shooter(
-      TalonFX leftMotor, TalonFX rightMotor, TalonFX kickerMotor) {
+  public Shooter(TalonFX leftMotor, TalonFX rightMotor, TalonFX kickerMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
 
     var leftConfigs =
@@ -79,7 +78,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
- 
+
     var kickerConfigs =
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
@@ -174,8 +173,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       case SCORE ->
           MathUtil.isNear(leftMotorRpm, shootingRpm, 50)
               && MathUtil.isNear(rightMotorRpm, shootingRpm, 50)
-              && MathUtil.isNear(kickerMotorRpm, shootingRpm, 50)
-             ;
+              && MathUtil.isNear(kickerMotorRpm, shootingRpm, 50);
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, 100)
               && MathUtil.isNear(rightMotorRpm, feedingRpm, 100)
