@@ -2,12 +2,14 @@ package frc.robot.shooter;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -49,6 +51,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity(100.0)
+                    .withMotionMagicAcceleration(20.0))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withSupplyCurrentLimitEnable(true)
@@ -61,6 +67,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity(100.0)
+                    .withMotionMagicAcceleration(20.0))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withSupplyCurrentLimitEnable(true)
@@ -73,6 +83,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity(100.0)
+                    .withMotionMagicAcceleration(20.0))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withSupplyCurrentLimitEnable(true)
@@ -85,6 +99,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity(100.0)
+                    .withMotionMagicAcceleration(20.0))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withSupplyCurrentLimitEnable(true)
@@ -192,10 +210,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
             "shooter",
             (mechanism) ->
                 mechanism
-                    .addMotor(motor)
-                    .addMotor(motor);
-                    .addMotor(motor);
-                    .addMotor(motor));
+                    .addMotor(leftMotor)
+                    .addMotor(rightMotor)
+                    .addMotor(leftKickerMotor)
+                    .addMotor(rightKickerMotor)
+                    .withMinVelocity(0));
 
     shooterSimulation.update();
   }
