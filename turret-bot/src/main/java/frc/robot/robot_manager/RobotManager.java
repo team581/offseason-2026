@@ -97,14 +97,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(swerveTurretCompensationAngle);
         var goalPose =
             ShootOnTheMove.getVelocityCompensatedGoal(
-                FieldUtil.RED_HUB_POSE.getTranslation(), swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+                FieldUtil.RED_HUB_POSE, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
         var aimingAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose);
         turret.setHubAimAngle(aimingAngle);
       }
       case TAG_AIM -> {
         var goalPose = TagMap.getTagPose(TAG_AIM_ID);
         if (goalPose != null) {
-          var aimingAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose.getTranslation());
+          var aimingAngle =
+              TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose.getTranslation());
           turret.setTagAimAngle(aimingAngle);
           DogLog.clearFault("Tag Aim: No valid ID");
         } else {

@@ -109,19 +109,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.kickerMotor = kickerMotor;
   }
 
-  public void setHubDistance(double distance) {
+  public void scoreRequest(double distance) {
     this.hubDistance = distance;
-  }
-
-  public void setFeedDistance(double distance) {
-    this.feedDistance = distance;
-  }
-
-  public void scoreRequest() {
     setStateFromRequest(ShooterState.SCORE);
   }
 
-  public void feedRequest() {
+  public void feedRequest(double distance) {
+    this.feedDistance = distance;
     setStateFromRequest(ShooterState.FEEDING);
   }
 
