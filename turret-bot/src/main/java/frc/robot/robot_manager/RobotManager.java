@@ -1,6 +1,9 @@
 package frc.robot.robot_manager;
 
+import java.lang.reflect.Field;
+
 import com.team581.math.ShootOnTheMove;
+import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -21,7 +24,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final int TAG_AIM_ID = 15;
   private static final DoubleSubscriber TIME_OF_FLIGHT = DogLog.tunable("TimeOfFlight", 0.0);
 
-  private static final Pose2d HUB_GOAL_POSE = new Pose2d(11.91, 4.035, Rotation2d.kZero);
 
   public final Localization localization;
   public final Swerve swerve;
@@ -95,7 +97,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(swerveTurretCompensationAngle);
         var goalPose =
             ShootOnTheMove.getVelocityCompensatedGoal(
-                HUB_GOAL_POSE, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+                FieldUtil.RED_HUB_POSE, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
         var aimingAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose);
         turret.setHubAimAngle(aimingAngle);
       }
@@ -117,17 +119,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void updateTuretHubGoalAngle() {
-    var goalPose = Pose2d.kZero;
-    if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean() == true) {
-      goalPose =
-          ShootOnTheMove.getVelocityCompensatedGoal(
-              HUB_GOAL_POSE, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
-    } else {
-      goalPose = HUB_GOAL_POSE;
-    }
-    turretHubGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose);
-
-    DogLog.log("RobotManager/TurretGoalPose", goalPose);
+    var goalPose =
+        ShootOnTheMove.getVelocityCompensatedGoal(
+            FieldUtil.RED_HUB_POSE, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+    wantedTurretHubAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose);
   }
 
   public void hubAimRequest() {

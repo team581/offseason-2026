@@ -22,7 +22,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   private double filteredCurrentHopper = 0.0;
 
   private static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
-      DogLog.tunable("HOPPER/JamCurrentThreshold", 75.0);
+      DogLog.tunable("Hopper/JamCurrentThreshold", 75.0);
 
   public Intake(TalonFX intakeMotor, TalonFX hopperMotor) {
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);

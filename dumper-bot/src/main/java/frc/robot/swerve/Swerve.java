@@ -30,6 +30,9 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
+    public static final double MAX_HUB_SPEED = 2.0;
+
+
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
   private static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
@@ -145,6 +148,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     switch (getState()) {
       case TELEOP -> drivetrain.setControl(teleopRequest);
       case TELEOP_SNAPS -> {
+        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
+          drivetrain.setControl(teleopSnapsRequest);
+        } else {
+          drivetrain.setControl(teleopRequest);
+        }
+      }
+      case HUB_AIM -> {
         if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
           drivetrain.setControl(teleopSnapsRequest);
         } else {

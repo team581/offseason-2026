@@ -35,7 +35,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private final VelocityVoltage velocityRequest =
       new VelocityVoltage(0).withEnableFOC(false).withLimitReverseMotion(true);
-  private double distance = 0;
+  private double hubDistance = 0;
+    private double feedDistance = 0;
+
   private double shootingRpm = 0;
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
@@ -128,8 +130,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.rightKickerMotor = rightKickerMotor;
   }
 
-  public void setDistance(double distance) {
-    this.distance = distance;
+  public void setHubDistance(double distance) {
+    this.hubDistance = distance;
+  }
+
+    public void setFeedDistance(double distance) {
+    this.feedDistance = distance;
   }
 
   public void scoreRequest() {
@@ -178,8 +184,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_SCORE_RPM.get(distance));
-    feedingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_FEEDING_RPM.get(distance));
+    shootingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_SCORE_RPM.get(hubDistance));
+    feedingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_FEEDING_RPM.get(feedDistance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;

@@ -5,24 +5,30 @@ import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
 import frc.robot.swerve.SnapUtil;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
+import frc.robot.vision.Vision;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
   private final Shooter shooter;
+  private final Feeder feeder;
   private final Swerve swerve;
+  private final Vision vision;
   private final Localization localization;
 
-  public RobotManager(Intake intake, Shooter shooter, Swerve swerve, Localization localization) {
+  public RobotManager(Intake intake, Shooter shooter, Feeder feeder, Swerve swerve, Vision vision, Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
     this.shooter = shooter;
+    this.feeder = feeder;
     this.swerve = swerve;
+    this.vision = vision;
     this.localization = localization;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
@@ -31,7 +37,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
-      case PREPARE_SHOOT_HUB -> shooter.atGoal() ? RobotState.SHOOT_HUB : currentState;
+      case PREPARE_SHOOT_HUB -> {
+        if (shooter.atGoal() &&vision.seeingTag()&& FieldUtil.isRobotInAllianceZone(robotPose)) {
+          yield RobotState.SHOOT_HUB;
+        }
+         yield currentState;
+      }
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
       default -> currentState;
@@ -42,11 +53,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double distanceToHub = 0;
   private double angleToHub = 0;
 
+    private double distanceToFeed = 0;
+        private double angleToFeed = 0;
+
+
+
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
         shooter.idleRequest();
+        feeder.idleRequest();
+        intake.idleRequest();
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
@@ -59,11 +77,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FEED_1 -> {
         shooter.feedRequest();
+        feeder.feedRequest();
         intakeRequest();
         swerve.snapsDriveRequest(SnapUtil.getFeed1Angle(FmsUtil.isRedAlliance()));
       }
       case FEED_2 -> {
         shooter.feedRequest();
+        feeder.feedRequest();
         intakeRequest();
         swerve.snapsDriveRequest(SnapUtil.getFeed2Angle(FmsUtil.isRedAlliance()));
       }
@@ -73,6 +93,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case SHOOT_HUB -> {
         shooter.scoreRequest();
+        feeder.feedRequest();
         intakeRequest();
         swerve.snapsDriveRequest(angleToHub);
       }
@@ -82,12 +103,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     // TODO: distance
-    shooter.setDistance(distanceToHub);
+    shooter.setHubDistance(distanceToHub);
+        shooter.setFeedDistance(distanceToFeed);
+
     switch (state) {
-      case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 ->
-          swerve.snapsDriveRequest(SnapUtil.getFeed1Angle(FmsUtil.isRedAlliance()));
+      case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> {
+        swerve.snapsDriveRequest(angleToFeed);
+
+      }
       case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 ->
-          swerve.snapsDriveRequest(SnapUtil.getFeed2Angle(FmsUtil.isRedAlliance()));
+          swerve.snapsDriveRequest(angleToFeed);
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> swerve.snapsDriveRequest(angleToHub);
       default -> swerve.normalDriveRequest();
     }
@@ -96,13 +121,28 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-    distanceToHub =
+     var hubPose = FieldUtil.getHubPose();
+            distanceToHub =
         robotPose
             .getTranslation()
-            .getDistance(FieldUtil.getHubPose(FmsUtil.isRedAlliance()).getTranslation());
-    angleToHub =
+            .getDistance(hubPose.getTranslation());
+             angleToFeed =
+         angleToHub =
         robotPose
-            .relativeTo(FieldUtil.getHubPose(FmsUtil.isRedAlliance()))
+            .relativeTo(FieldUtil.getHubPose())
+            .getTranslation()
+            .getAngle()
+            .getDegrees();
+
+
+            var feedPose = FieldUtil.RED_FEED_POSE;
+            distanceToFeed =
+        robotPose
+            .getTranslation()
+            .getDistance(feedPose.getTranslation());
+         angleToFeed =
+        robotPose
+            .relativeTo(FieldUtil.getHubPose())
             .getTranslation()
             .getAngle()
             .getDegrees();
@@ -139,12 +179,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFailSafe(RobotState.WAIT_FEED_2);
   }
 
-  public void confirmShotRequest() {
+  public void toggleHubRequest() {
     switch (getState()) {
+      case PREPARE_SHOOT_HUB, SHOOT_HUB -> setStateFailSafe(RobotState.IDLE);
       default -> setStateFailSafe(RobotState.PREPARE_SHOOT_HUB);
-      case WAIT_SHOOT_HUB -> setStateFailSafe(RobotState.PREPARE_SHOOT_HUB);
-      case WAIT_FEED_1 -> setStateFailSafe(RobotState.PREPARE_FEED_1);
+    }
+  }
+
+  public void toggleFeedRequest() {
+    switch (getState()) {
       case WAIT_FEED_2 -> setStateFailSafe(RobotState.PREPARE_FEED_2);
+      case PREPARE_FEED_1, PREPARE_FEED_2, FEED_1, FEED_2 -> setStateFailSafe(RobotState.IDLE);
+      default -> setStateFailSafe(RobotState.PREPARE_FEED_1);
     }
   }
 
