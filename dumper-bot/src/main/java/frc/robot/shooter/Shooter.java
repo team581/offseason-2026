@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -48,7 +49,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     var leftConfigs =
         new TalonFXConfiguration()
-            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotionMagic(
                 new MotionMagicConfigs()
@@ -61,10 +61,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withTorqueCurrent(
+                new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(200)
+                    .withPeakReverseTorqueCurrent(0));
     var rightConfigs =
         new TalonFXConfiguration()
-            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotionMagic(
                 new MotionMagicConfigs()
@@ -77,11 +80,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withTorqueCurrent(
+                new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(200)
+                    .withPeakReverseTorqueCurrent(0));
 
     var kickerConfigs =
         new TalonFXConfiguration()
-            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotionMagic(
                 new MotionMagicConfigs()
@@ -94,7 +100,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withTorqueCurrent(
+                new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(200)
+                    .withPeakReverseTorqueCurrent(0));
 
     leftMotor.getConfigurator().apply(leftConfigs);
     rightMotor.getConfigurator().apply(rightConfigs);
@@ -134,19 +144,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     switch (state) {
       case SCORE -> {
-        leftMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
-        rightMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
-        kickerMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
+        var setpoint = shootingRpm / 60.0;
+        leftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        rightMotor.setControl(velocityRequest.withVelocity(setpoint));
+        kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
-        leftMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
-        rightMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
-        kickerMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
+        var setpoint = feedingRpm / 60.0;
+        leftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        rightMotor.setControl(velocityRequest.withVelocity(setpoint));
+        kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
       case IDLE -> {
         leftMotor.disable();
         rightMotor.disable();
         kickerMotor.disable();
+        DogLog.log("Shooter/RpmSetpoint", -1);
       }
     }
   }

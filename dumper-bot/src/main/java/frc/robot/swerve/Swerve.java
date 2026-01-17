@@ -122,14 +122,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     // For us, negative is left, but WPILib treats positive as left
     var sidewaysVelocity = -translation.getX();
 
+    var maxSpeed = getState() == SwerveState.HUB_AIM ? MAX_HUB_SPEED : MAX_SPEED;
+
     teleopRequest
-        .withVelocityX(forwardVelocity * MAX_SPEED * teleopSlowModePercent)
-        .withVelocityY(sidewaysVelocity * MAX_SPEED * teleopSlowModePercent)
+        .withVelocityX(forwardVelocity * maxSpeed * teleopSlowModePercent)
+        .withVelocityY(sidewaysVelocity * maxSpeed * teleopSlowModePercent)
         .withRotationalRate(
             rotation * TELEOP_MAX_ANGULAR_RATE.getRadians() * teleopSlowModePercent);
     teleopSnapsRequest
-        .withVelocityX(forwardVelocity * MAX_SPEED * teleopSlowModePercent)
-        .withVelocityY(sidewaysVelocity * MAX_SPEED * teleopSlowModePercent);
+        .withVelocityX(forwardVelocity * maxSpeed * teleopSlowModePercent)
+        .withVelocityY(sidewaysVelocity * maxSpeed * teleopSlowModePercent);
 
     sendSwerveRequest();
   }
@@ -186,6 +188,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     if (DriverStation.isTeleop()) {
       setStateFromRequest(SwerveState.TELEOP_SNAPS);
+      sendSwerveRequest();
+    }
+  }
+
+  public void hubAimRequest(double snapAngle) {
+    teleopSnapsRequest.withTargetDirection(Rotation2d.fromDegrees(snapAngle));
+
+    if (DriverStation.isTeleop()) {
+      setStateFromRequest(SwerveState.HUB_AIM);
       sendSwerveRequest();
     }
   }

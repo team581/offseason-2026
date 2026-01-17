@@ -68,6 +68,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
+      case SHOOT_HUB ->
+          !FieldUtil.isRobotInAllianceZone(robotPose) ? RobotState.IDLE : currentState;
       default -> currentState;
     };
   }
@@ -79,6 +81,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         feeder.idleRequest();
         intake.idleRequest();
+        swerve.normalDriveRequest();
+      }
+      case PREPARE_FORCE_SHOOT -> {
+        shooter.scoreRequest(hubDistance);
+        swerve.normalDriveRequest();
+      }
+      case FORCE_SHOOT -> {
+        shooter.scoreRequest(hubDistance);
+        intake.intakeRequest();
+        feeder.feedRequest();
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
@@ -170,6 +182,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void intakeRequest() {
     intake.intakeRequest();
+  }
+
+  public void forceShootRequest() {
+    setStateFailSafe(RobotState.PREPARE_FORCE_SHOOT);
   }
 
   public void cancelIntakeRequest() {

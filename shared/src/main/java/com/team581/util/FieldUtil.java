@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class FieldUtil {
+  private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
   // In Meters
   public static double FIELD_LENGTH = 16.5354;
   public static double FIELD_WIDTH = 8.07;
@@ -35,12 +36,12 @@ public class FieldUtil {
   public static boolean isRobotInAllianceZone(Pose2d robot) {
     var goalX = getHubPose().getX();
     if (FmsUtil.isRedAlliance()) {
-      if (robot.getX() > goalX) {
+      if (robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD) {
         return true;
       }
       return false;
     }
-    if (robot.getX() < goalX) {
+    if (robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD) {
       return true;
     }
     return false;

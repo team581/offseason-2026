@@ -44,7 +44,10 @@ public class Robot extends Base581Robot {
   }
 
   @Override
-  protected void configureBindings() {}
+  protected void configureBindings() {
+    var driverBack = hardware.driverController.back(buttonBindingsLoop);
+    driverBack.rising().ifHigh(localization::zeroGyro);
+  }
 
   @Override
   public void teleopPeriodic() {
@@ -58,9 +61,5 @@ public class Robot extends Base581Robot {
 
     swerve.setTeleopInputs(
         translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
-
-    if (hardware.driverController.getBackButtonPressed()) {
-      localization.zeroGyro();
-    }
   }
 }
