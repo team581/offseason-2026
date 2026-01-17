@@ -1,7 +1,7 @@
 package com.team581.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 
 public class FieldUtil {
   // In Meters
@@ -11,15 +11,24 @@ public class FieldUtil {
   // TODO: fill out poses
 
   // Numbers taken from field drawing
-  public static Pose2d RED_HUB_POSE = new Pose2d(11.91, 4.035, Rotation2d.kZero);
+  public static Translation2d RED_HUB_POSE = new Translation2d(11.91, 4.035);
+  public static Translation2d RED_FEED_1_POSE = new Translation2d(14.479, 5.748);
+  public static Translation2d RED_FEED_2_POSE = new Translation2d();
 
-  public static Pose2d BLUE_HUB_POSE = new Pose2d();
+  public static Translation2d BLUE_HUB_POSE = new Translation2d();
+  public static Translation2d BLUE_FEED_1_POSE = new Translation2d();
+  public static Translation2d BLUE_FEED_2_POSE = new Translation2d();
 
-  // Heuristic pose
-  public static Pose2d RED_FEED_POSE = new Pose2d(14.479, 5.748, Rotation2d.kZero);
-
-  public static Pose2d getHubPose() {
+  public static Translation2d getHubPose() {
     return FmsUtil.isRedAlliance() ? FieldUtil.RED_HUB_POSE : FieldUtil.BLUE_HUB_POSE;
+  }
+
+  public static Translation2d getFeed1Pose() {
+    return FmsUtil.isRedAlliance() ? FieldUtil.RED_FEED_1_POSE : FieldUtil.BLUE_FEED_1_POSE;
+  }
+
+  public static Translation2d getFeed2Pose() {
+    return FmsUtil.isRedAlliance() ? FieldUtil.RED_FEED_2_POSE : FieldUtil.BLUE_FEED_2_POSE;
   }
 
   // TODO: Make smarter for different rotations (would need to store bumper size)
