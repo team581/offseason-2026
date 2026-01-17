@@ -34,7 +34,10 @@ public class Feeder extends StateMachineSubsystem<FeederState> {
                     new CurrentLimitsConfigs()
                         .withStatorCurrentLimit(100)
                         .withSupplyCurrentLimit(100))
-                .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive)));
+                .withMotorOutput(
+                    new MotorOutputConfigs()
+                        .withNeutralMode(NeutralModeValue.Coast)
+                        .withInverted(InvertedValue.Clockwise_Positive)));
 
     this.feederMotor = feederMotor;
   }

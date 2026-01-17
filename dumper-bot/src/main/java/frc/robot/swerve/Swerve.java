@@ -122,7 +122,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     // For us, negative is left, but WPILib treats positive as left
     var sidewaysVelocity = -translation.getX();
 
-
     var maxSpeed = getState() == SwerveState.HUB_AIM ? MAX_HUB_SPEED : MAX_SPEED;
 
     teleopRequest

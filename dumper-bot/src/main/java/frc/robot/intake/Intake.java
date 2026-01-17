@@ -81,9 +81,9 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   }
 
   public void shootingRequest() {
-  setStateFromRequest(IntakeState.SHOOTING);
+    setStateFromRequest(IntakeState.SHOOTING);
   }
-  
+
   public void idleRequest() {
     setStateFromRequest(IntakeState.IDLE);
   }

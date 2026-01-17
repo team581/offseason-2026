@@ -8,7 +8,6 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -18,7 +17,6 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
@@ -38,8 +36,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX rightMotor;
   private final TalonFX kickerMotor;
 
-  private final VelocityTorqueCurrentFOC velocityRequest =
-      new VelocityTorqueCurrentFOC(0);
+  private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
   private double hubDistance = 0;
   private double feedDistance = 0;
 
@@ -65,7 +62,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimitEnable(true)
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.CounterClockwise_Positive))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withNeutralMode(NeutralModeValue.Coast)
+                    .withInverted(InvertedValue.CounterClockwise_Positive))
             .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
@@ -84,7 +84,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimitEnable(true)
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withNeutralMode(NeutralModeValue.Coast)
+                    .withInverted(InvertedValue.Clockwise_Positive))
             .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()

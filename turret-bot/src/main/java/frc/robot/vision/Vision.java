@@ -12,7 +12,6 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -115,7 +114,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
       DogLog.logFault("Could not get turret angle at timestamp");
       return adjustedTurretResult.empty();
     }
-    DogLog.log("Vision/TurretObservation", robotToTurretObservation.get().getDegrees());
+    DogLog.log("Vision/TurretObservation", robotToTurretObservation.orElseThrow().getDegrees());
     DogLog.clearFault("Could not get turret angle at timestamp");
 
     // Create transform representing the rotation from Turret back to Robot
