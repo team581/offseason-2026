@@ -1,7 +1,5 @@
 package frc.robot.robot_manager;
 
-import java.lang.reflect.Field;
-
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -53,7 +51,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
-      case SHOOT_HUB -> !FieldUtil.isRobotInAllianceZone(robotPose) ? RobotState.IDLE : currentState;
+      case SHOOT_HUB ->
+          !FieldUtil.isRobotInAllianceZone(robotPose) ? RobotState.IDLE : currentState;
       default -> currentState;
     };
   }
@@ -140,8 +139,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     var feedPose = FieldUtil.RED_FEED_POSE;
     distanceToFeed = robotPose.getTranslation().getDistance(feedPose.getTranslation());
-    angleToFeed =
-        robotPose.relativeTo(feedPose).getTranslation().getAngle().getDegrees();
+    angleToFeed = robotPose.relativeTo(feedPose).getTranslation().getAngle().getDegrees();
   }
 
   private void setStateFailSafe(RobotState newState) {
