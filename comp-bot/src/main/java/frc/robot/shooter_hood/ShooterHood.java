@@ -41,9 +41,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
       }
-      default -> {
-        setStateFromRequest(ShooterHoodState.SCORING);
-      }
+      default -> setStateFromRequest(ShooterHoodState.SCORING);
     }
   }
 
@@ -52,9 +50,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
       }
-      default -> {
-        setStateFromRequest(ShooterHoodState.FEEDING);
-      }
+      default -> setStateFromRequest(ShooterHoodState.FEEDING);
     }
   }
 
@@ -63,9 +59,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
       }
-      default -> {
-        setStateFromRequest(ShooterHoodState.IDLE);
-      }
+      default -> setStateFromRequest(ShooterHoodState.IDLE);
     }
   }
 
@@ -89,12 +83,10 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   @Override
   protected void afterTransition(ShooterHoodState newState) {
     switch (newState) {
-      case HOMING -> {
-        motor.setVoltage(0);
-      }
-      case UNHOMED -> {
-        motor.disable();
-      }
+      case HOMING -> motor.setVoltage(0);
+
+      case UNHOMED -> motor.disable();
+
       default -> {}
     }
   }
@@ -102,17 +94,17 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   @Override
   protected void whileInState(ShooterHoodState state) {
     switch (state) {
-      case SCORING -> {
-        // TODO: Fix this setpoint
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
-      }
-      case FEEDING -> {
-        // TODO: Fix this setpoint
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
-      }
-      case IDLE -> {
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
-      }
+      // TODO: Fix this setpoint
+      case SCORING ->
+          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+
+      // TODO: Fix this setpoint
+      case FEEDING ->
+          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+
+      case IDLE ->
+          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+
       default -> {}
     }
   }
