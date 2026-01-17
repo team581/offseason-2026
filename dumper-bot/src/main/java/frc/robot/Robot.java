@@ -12,6 +12,7 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
+import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
@@ -53,7 +54,9 @@ public class Robot extends Base581Robot {
           hardware.rightShooterMotor,
           hardware.kickerShooterMotor,
           hardware.feederShooterMotor);
-  private final RobotManager robotManager = new RobotManager(intake, shooter, swerve, localization);
+          private final Feeder feeder = new Feeder(hardware.hopperMotor);
+  private final RobotManager robotManager = new RobotManager(intake, shooter,feeder, swerve, vision, localization);
+>>>>>>> 51cdb82 (Add feeder subsystem)
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
@@ -92,9 +95,11 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getRightTriggerAxis() > 0.5) {
-      robotManager.confirmShotRequest();
-    } else {
-      robotManager.idleRequest();
+      robotManager.toggleHubRequest();
+    }
+
+    if (hardware.driverController.getRightBumperButtonPressed()) {
+      robotManager.toggleFeedRequest();
     }
 
     if (hardware.driverController.getXButtonPressed()) {
