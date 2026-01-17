@@ -1,16 +1,12 @@
 package frc.robot.robot_manager;
 
-import java.util.Map;
-
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;

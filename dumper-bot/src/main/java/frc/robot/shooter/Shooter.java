@@ -28,8 +28,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
-  private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF = InterpolatingDoubleTreeMap.ofEntries();
-  private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_TOF = InterpolatingDoubleTreeMap.ofEntries();
+  private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
+      InterpolatingDoubleTreeMap.ofEntries();
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
