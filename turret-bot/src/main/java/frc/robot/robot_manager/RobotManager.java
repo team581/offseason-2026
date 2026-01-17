@@ -122,7 +122,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var goalPose =
         ShootOnTheMove.getVelocityCompensatedGoal(
             FieldUtil.RED_HUB_POSE, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
-    wantedTurretHubAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose);
+    turretHubGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose);
   }
 
   public void hubAimRequest() {
