@@ -20,8 +20,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final Vision vision;
   private Pose2d robotPose = Pose2d.kZero;
 
-
-
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
     this.swerve = swerve;
@@ -57,8 +55,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return new Pose2d(x, y, theta);
   }
 
-  
-
   @Override
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
@@ -72,7 +68,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     drivetrain.resetPose(estimatedPose);
   }
 
-   private void ingestTagResult(TagResult result) {
+  private void ingestTagResult(TagResult result) {
     var visionPose = result.pose();
 
     if (!vision.seenTagRecentlyForReset()) {

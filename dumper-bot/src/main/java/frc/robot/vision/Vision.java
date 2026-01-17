@@ -1,28 +1,22 @@
 package frc.robot.vision;
 
-import com.team581.math.MathHelpers;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.config.DSOptions;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.OptionalTagResult;
-import java.util.Optional;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
-  private final Debouncer seeingTagForPoseResetDebouncer = new Debouncer(5.0, DebounceType.kFalling);
+  private final Debouncer seeingTagForPoseResetDebouncer =
+      new Debouncer(5.0, DebounceType.kFalling);
 
   private final Imu imu;
   private final Limelight mainLimelight;
