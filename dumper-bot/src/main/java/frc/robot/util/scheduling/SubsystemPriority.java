@@ -18,6 +18,7 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   FEEDER(0),
   SWERVE(0),
   INTAKE(0),
+  HOPPER(0),
   RUMBLE_CONTROLLER(0);
 
   public final int value;

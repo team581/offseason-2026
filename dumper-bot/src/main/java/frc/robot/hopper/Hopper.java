@@ -1,4 +1,4 @@
-package frc.robot.intake;
+package frc.robot.hopper;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -7,13 +7,23 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import dev.doglog.DogLog;
+import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Intake extends StateMachineSubsystem<IntakeState> {
+public class Hopper extends StateMachineSubsystem<HopperState> {
   private final TalonFX motor;
 
-  public Intake(TalonFX motor) {
-    super(SubsystemPriority.INTAKE, IntakeState.IDLE);
+  private final LinearFilter currentFilter = LinearFilter.movingAverage(5);
+  private double rawCurrent = 0.0;
+  private double filteredCurrent = 0.0;
+  private static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
+      DogLog.tunable("Hopper/JamCurrentThreshold", 75.0);
+
+  public Hopper(TalonFX motor) {
+    super(SubsystemPriority.HOPPER, HopperState.IDLE);
+
     motor
         .getConfigurator()
         .apply(
@@ -29,18 +39,32 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   }
 
   @Override
-  protected void afterTransition(IntakeState newState) {
+  protected void afterTransition(HopperState newState) {
     switch (newState) {
       case UNTUNED, IDLE -> motor.disable();
       default -> motor.setVoltage(getState().volts);
     }
   }
 
+  @Override
+  protected void collectInputs() {
+    rawCurrent = motor.getStatorCurrent().getValueAsDouble();
+    filteredCurrent = currentFilter.calculate(rawCurrent);
+  }
+
+  public boolean isJammed() {
+    return filteredCurrent > JAM_CURRENT_THRESHOLD.getAsDouble();
+  }
+
   public void intakeRequest() {
-    setStateFromRequest(IntakeState.INTAKING);
+    setStateFromRequest(HopperState.INTAKING);
   }
 
   public void idleRequest() {
-    setStateFromRequest(IntakeState.IDLE);
+    setStateFromRequest(HopperState.IDLE);
+  }
+
+  public void shootRequest() {
+    setStateFromRequest(HopperState.SHOOTING);
   }
 }

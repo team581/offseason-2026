@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
+import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
@@ -22,6 +23,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static Translation2d FEED_2_GOAL_POSE = FieldUtil.getFeed2Pose();
 
   private final Intake intake;
+  private final Hopper hopper;
   private final Shooter shooter;
   private final Feeder feeder;
   private final Swerve swerve;
@@ -39,6 +41,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public RobotManager(
       Intake intake,
+      Hopper hopper,
       Shooter shooter,
       Feeder feeder,
       Swerve swerve,
@@ -46,6 +49,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
+    this.hopper = hopper;
     this.shooter = shooter;
     this.feeder = feeder;
     this.swerve = swerve;
@@ -79,46 +83,63 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         feeder.idleRequest();
         intake.idleRequest();
+        hopper.idleRequest();
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SHOOT -> {
         shooter.scoreRequest(hubDistance);
+        feeder.idleRequest();
+        // Intake is controlled separately
+        hopper.idleRequest();
         swerve.normalDriveRequest();
       }
       case FORCE_SHOOT -> {
         shooter.scoreRequest(hubDistance);
-        intake.intakeRequest();
         feeder.feedRequest();
+        intake.idleRequest();
+        hopper.shootRequest();
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
         shooter.feedRequest(feed1Distance);
+        feeder.idleRequest();
+        // Intake is controlled separately
+        hopper.idleRequest();
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case WAIT_FEED_2, PREPARE_FEED_2 -> {
         shooter.feedRequest(feed2Distance);
+        feeder.idleRequest();
+        // Intake is controlled separately
+        hopper.idleRequest();
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
       case FEED_1 -> {
         shooter.feedRequest(feed1Distance);
         feeder.feedRequest();
         intakeRequest();
+        hopper.shootRequest();
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case FEED_2 -> {
         shooter.feedRequest(feed2Distance);
         feeder.feedRequest();
         intakeRequest();
+        hopper.shootRequest();
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
         shooter.scoreRequest(hubDistance);
+        feeder.idleRequest();
+        // Intake is controlled separately
+        hopper.idleRequest();
         swerve.snapsDriveRequest(hubGoalAngle);
       }
       case SHOOT_HUB -> {
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
         intakeRequest();
+        hopper.shootRequest();
         swerve.snapsDriveRequest(hubGoalAngle);
       }
     }
