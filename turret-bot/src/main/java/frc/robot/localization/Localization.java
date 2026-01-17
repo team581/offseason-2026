@@ -28,7 +28,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   @Override
   protected void collectInputs() {
-    vision.getTurretLimelighTagResult().ifPresent(this::ingestTagResult);
+    vision.getAdjustedTurretLimelightTagResult().ifPresent(this::ingestTagResult);
     robotPose = drivetrain.getState().Pose;
   }
 
