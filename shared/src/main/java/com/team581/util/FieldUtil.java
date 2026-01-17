@@ -26,12 +26,12 @@ public class FieldUtil {
   public static boolean isRobotInAllianceZone(Pose2d robot) {
     var goalX = getHubPose().getX();
     if (FmsUtil.isRedAlliance()) {
-      if (robot.getX()>goalX) {
+      if (robot.getX() > goalX) {
         return true;
       }
       return false;
-    } 
-    if (robot.getX()<goalX) {
+    }
+    if (robot.getX() < goalX) {
       return true;
     }
     return false;

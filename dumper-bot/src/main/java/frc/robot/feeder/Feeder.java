@@ -14,8 +14,8 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Feeder extends StateMachineSubsystem<FeederState> {
   private final TalonFX feederMotor;
-private final LinearFilter currentFilterHopper = LinearFilter.movingAverage(5);
-  private double rawCurrent= 0.0;
+  private final LinearFilter currentFilterHopper = LinearFilter.movingAverage(5);
+  private double rawCurrent = 0.0;
 
   private double filteredCurrent = 0.0;
   private static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
@@ -34,7 +34,7 @@ private final LinearFilter currentFilterHopper = LinearFilter.movingAverage(5);
                         .withStatorCurrentLimit(100)
                         .withSupplyCurrentLimit(100))
                 .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)));
-   
+
     this.feederMotor = feederMotor;
   }
 

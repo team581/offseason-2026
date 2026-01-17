@@ -22,7 +22,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Vision vision;
   private final Localization localization;
 
-  public RobotManager(Intake intake, Shooter shooter, Feeder feeder, Swerve swerve, Vision vision, Localization localization) {
+  public RobotManager(
+      Intake intake,
+      Shooter shooter,
+      Feeder feeder,
+      Swerve swerve,
+      Vision vision,
+      Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
     this.shooter = shooter;
@@ -38,10 +44,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case PREPARE_SHOOT_HUB -> {
-        if (shooter.atGoal() &&vision.seeingTag()&& FieldUtil.isRobotInAllianceZone(robotPose)) {
+        if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose)) {
           yield RobotState.SHOOT_HUB;
         }
-         yield currentState;
+        yield currentState;
       }
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
@@ -53,10 +59,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double distanceToHub = 0;
   private double angleToHub = 0;
 
-    private double distanceToFeed = 0;
-        private double angleToFeed = 0;
-
-
+  private double distanceToFeed = 0;
+  private double angleToFeed = 0;
 
   @Override
   protected void afterTransition(RobotState newState) {
@@ -104,15 +108,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void whileInState(RobotState state) {
     // TODO: distance
     shooter.setHubDistance(distanceToHub);
-        shooter.setFeedDistance(distanceToFeed);
+    shooter.setFeedDistance(distanceToFeed);
 
     switch (state) {
       case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> {
         swerve.snapsDriveRequest(angleToFeed);
-
       }
-      case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 ->
-          swerve.snapsDriveRequest(angleToFeed);
+      case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.snapsDriveRequest(angleToFeed);
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> swerve.snapsDriveRequest(angleToHub);
       default -> swerve.normalDriveRequest();
     }
@@ -121,31 +123,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-     var hubPose = FieldUtil.getHubPose();
-            distanceToHub =
-        robotPose
-            .getTranslation()
-            .getDistance(hubPose.getTranslation());
-             angleToFeed =
-         angleToHub =
-        robotPose
-            .relativeTo(FieldUtil.getHubPose())
-            .getTranslation()
-            .getAngle()
-            .getDegrees();
+    var hubPose = FieldUtil.getHubPose();
+    distanceToHub = robotPose.getTranslation().getDistance(hubPose.getTranslation());
+    angleToFeed =
+        angleToHub =
+            robotPose.relativeTo(FieldUtil.getHubPose()).getTranslation().getAngle().getDegrees();
 
-
-            var feedPose = FieldUtil.RED_FEED_POSE;
-            distanceToFeed =
-        robotPose
-            .getTranslation()
-            .getDistance(feedPose.getTranslation());
-         angleToFeed =
-        robotPose
-            .relativeTo(FieldUtil.getHubPose())
-            .getTranslation()
-            .getAngle()
-            .getDegrees();
+    var feedPose = FieldUtil.RED_FEED_POSE;
+    distanceToFeed = robotPose.getTranslation().getDistance(feedPose.getTranslation());
+    angleToFeed =
+        robotPose.relativeTo(FieldUtil.getHubPose()).getTranslation().getAngle().getDegrees();
   }
 
   private void setStateFailSafe(RobotState newState) {

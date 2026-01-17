@@ -1,7 +1,5 @@
 package frc.robot.robot_manager;
 
-import java.lang.reflect.Field;
-
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -11,7 +9,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.config.FeatureFlags;
 import frc.robot.localization.Localization;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
@@ -23,7 +20,6 @@ import frc.robot.vision.Vision;
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final int TAG_AIM_ID = 15;
   private static final DoubleSubscriber TIME_OF_FLIGHT = DogLog.tunable("TimeOfFlight", 0.0);
-
 
   public final Localization localization;
   public final Swerve swerve;

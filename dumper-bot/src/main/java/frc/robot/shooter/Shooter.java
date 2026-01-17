@@ -36,7 +36,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final VelocityVoltage velocityRequest =
       new VelocityVoltage(0).withEnableFOC(false).withLimitReverseMotion(true);
   private double hubDistance = 0;
-    private double feedDistance = 0;
+  private double feedDistance = 0;
 
   private double shootingRpm = 0;
   private double feedingRpm = 0;
@@ -134,7 +134,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.hubDistance = distance;
   }
 
-    public void setFeedDistance(double distance) {
+  public void setFeedDistance(double distance) {
     this.feedDistance = distance;
   }
 

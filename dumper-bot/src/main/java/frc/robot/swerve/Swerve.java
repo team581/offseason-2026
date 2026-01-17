@@ -30,8 +30,7 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
-    public static final double MAX_HUB_SPEED = 2.0;
-
+  public static final double MAX_HUB_SPEED = 2.0;
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
   private static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
