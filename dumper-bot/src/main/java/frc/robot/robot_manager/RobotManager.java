@@ -1,11 +1,14 @@
 package frc.robot.robot_manager;
 
+import java.util.Map;
+
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.config.FeatureFlags;
@@ -18,8 +21,6 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  private static final DoubleSubscriber TIME_OF_FLIGHT = DogLog.tunable("TimeOfFlight", 0.0);
-
   private static Translation2d HUB_GOAL_POSE = FieldUtil.getHubPose();
   private static Translation2d FEED_1_GOAL_POSE = FieldUtil.getFeed1Pose();
   private static Translation2d FEED_2_GOAL_POSE = FieldUtil.getFeed2Pose();
@@ -38,6 +39,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double hubDistance = 0.0;
   private double feed1Distance = 0.0;
   private double feed2Distance = 0.0;
+  private double timeOfFlight = 0.0;
 
   public RobotManager(
       Intake intake,
@@ -139,16 +141,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
+    timeOfFlight = shooter.getCurrentTimeOfFlight();
+
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       HUB_GOAL_POSE =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.getHubPose(), swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+              FieldUtil.getHubPose(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
       FEED_1_GOAL_POSE =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.getFeed1Pose(), swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+              FieldUtil.getFeed1Pose(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
       FEED_2_GOAL_POSE =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.getFeed2Pose(), swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+              FieldUtil.getFeed2Pose(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
     } else {
       HUB_GOAL_POSE = FieldUtil.getHubPose();
       FEED_1_GOAL_POSE = FieldUtil.getFeed1Pose();
