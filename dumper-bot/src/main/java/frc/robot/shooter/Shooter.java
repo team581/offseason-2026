@@ -154,16 +154,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     switch (state) {
       case SCORE -> {
-        // TODO: Undo this hardcoded RPM
-        var setpoint = 3000.0 / 60.0;
+        var setpoint = shootingRpm / 60.0;
         leftMotor.setControl(velocityRequest.withVelocity(setpoint));
         rightMotor.setControl(velocityRequest.withVelocity(setpoint));
         kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
-        // TODO: Undo this hardcoded RPM
-        var setpoint = 2000.0 / 60.0;
+        var setpoint = feedingRpm / 60.0;
         leftMotor.setControl(velocityRequest.withVelocity(setpoint));
         rightMotor.setControl(velocityRequest.withVelocity(setpoint));
         kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
