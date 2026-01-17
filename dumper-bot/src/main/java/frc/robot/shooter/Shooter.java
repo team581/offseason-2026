@@ -49,7 +49,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     var leftConfigs =
         new TalonFXConfiguration()
-            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotionMagic(
                 new MotionMagicConfigs()
@@ -69,7 +68,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withPeakReverseTorqueCurrent(0));
     var rightConfigs =
         new TalonFXConfiguration()
-            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotionMagic(
                 new MotionMagicConfigs()
@@ -90,7 +88,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     var kickerConfigs =
         new TalonFXConfiguration()
-            // TODO: Get sensor to mechanism ratio
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotionMagic(
                 new MotionMagicConfigs()
