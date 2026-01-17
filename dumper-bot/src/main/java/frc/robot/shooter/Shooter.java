@@ -7,8 +7,10 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -16,6 +18,7 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
@@ -24,7 +27,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
-          Map.entry(1.0, 1000.0), Map.entry(2.0, 2500.0), Map.entry(5.0, 4000.0));
+          Map.entry(1.0, 1000.0), Map.entry(2.0, 2500.0), Map.entry(5.0, 3000.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
@@ -35,8 +38,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX rightMotor;
   private final TalonFX kickerMotor;
 
-  private final VelocityVoltage velocityRequest =
-      new VelocityVoltage(0).withEnableFOC(false).withLimitReverseMotion(true);
+  private final VelocityTorqueCurrentFOC velocityRequest =
+      new VelocityTorqueCurrentFOC(0);
   private double hubDistance = 0;
   private double feedDistance = 0;
 
@@ -62,8 +65,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimitEnable(true)
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.CounterClockwise_Positive))
+            .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -81,8 +84,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimitEnable(true)
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast).withInverted(InvertedValue.Clockwise_Positive))
+            .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -102,7 +105,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
+            .withSlot0(new Slot0Configs().withKP(3.0).withKV(0.01).withKS(5.0))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -146,14 +149,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     switch (state) {
       case SCORE -> {
-        var setpoint = shootingRpm / 60.0;
+        // TODO: Undo this hardcoded RPM
+        var setpoint = 3000.0 / 60.0;
         leftMotor.setControl(velocityRequest.withVelocity(setpoint));
         rightMotor.setControl(velocityRequest.withVelocity(setpoint));
         kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
-        var setpoint = feedingRpm / 60.0;
+        // TODO: Undo this hardcoded RPM
+        var setpoint = 2000.0 / 60.0;
         leftMotor.setControl(velocityRequest.withVelocity(setpoint));
         rightMotor.setControl(velocityRequest.withVelocity(setpoint));
         kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
@@ -182,9 +187,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return switch (getState()) {
       case IDLE -> true;
       case SCORE ->
-          MathUtil.isNear(leftMotorRpm, shootingRpm, 50)
-              && MathUtil.isNear(rightMotorRpm, shootingRpm, 50)
-              && MathUtil.isNear(kickerMotorRpm, shootingRpm, 50);
+          MathUtil.isNear(leftMotorRpm, shootingRpm, 200)
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, 200)
+              && MathUtil.isNear(kickerMotorRpm, shootingRpm, 200);
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, 100)
               && MathUtil.isNear(rightMotorRpm, feedingRpm, 100)
