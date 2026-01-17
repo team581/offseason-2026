@@ -17,6 +17,8 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
@@ -25,12 +27,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
-          Map.entry(1.0, 1000.0), Map.entry(2.0, 2500.0), Map.entry(5.0, 3000.0));
+          Map.entry(Units.inchesToMeters(57.0), 1000.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
-      InterpolatingDoubleTreeMap.ofEntries();
+      InterpolatingDoubleTreeMap.ofEntries( Map.entry(Units.inchesToMeters(57.0), 0.0));
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;

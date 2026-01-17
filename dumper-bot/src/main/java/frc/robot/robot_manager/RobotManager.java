@@ -159,6 +159,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> swerve.snapsDriveRequest(hubGoalAngle);
       default -> swerve.normalDriveRequest();
     }
+
+    DogLog.log("RobotManager/HubDistance", hubDistance);
   }
 
   @Override
