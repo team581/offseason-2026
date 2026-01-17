@@ -184,4 +184,19 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
               && MathUtil.isNear(rightKickerMotorRpm, feedingRpm, 100);
     };
   }
+
+  @Override
+  public void simulationPeriodic() {
+    var shooterSimulation =
+        SimKit.velocityMechanism(
+            "shooter",
+            (mechanism) ->
+                mechanism
+                    .addMotor(motor)
+                    .addMotor(motor);
+                    .addMotor(motor);
+                    .addMotor(motor));
+
+    shooterSimulation.update();
+  }
 }
