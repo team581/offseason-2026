@@ -51,8 +51,8 @@ public class Robot extends Base581Robot {
       new Shooter(
           hardware.leftShooterMotor,
           hardware.rightShooterMotor,
-          hardware.leftKickerShooterMotor,
-          hardware.rightKickerShooterMotor);
+          hardware.kickerShooterMotor,
+          hardware.feederShooterMotor);
   private final RobotManager robotManager = new RobotManager(intake, shooter, swerve, localization);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
