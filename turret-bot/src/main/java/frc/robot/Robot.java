@@ -70,7 +70,22 @@ public class Robot extends Base581Robot {
   }
 
   @Override
-  protected void configureBindings() {}
+  protected void configureBindings() {
+    var driverBack = hardware.driverController.back(buttonBindingsLoop);
+    driverBack.rising().ifHigh(localization::zeroGyro);
+
+    var driverY = hardware.driverController.y(buttonBindingsLoop);
+    driverY.rising().ifHigh(robotManager::hubAimRequest);
+
+    var driverA = hardware.driverController.a(buttonBindingsLoop);
+    driverA.rising().ifHigh(robotManager::lockForwardRequest);
+
+    var driverX = hardware.driverController.x(buttonBindingsLoop);
+    driverX.rising().ifHigh(turret::homeRequest);
+
+    var driverB = hardware.driverController.b(buttonBindingsLoop);
+    driverB.rising().ifHigh(robotManager::tagAimRequest);
+  }
 
   @Override
   public void teleopPeriodic() {
@@ -84,25 +99,5 @@ public class Robot extends Base581Robot {
 
     swerve.setTeleopInputs(
         translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
-
-    if (hardware.driverController.getBackButtonPressed()) {
-      localization.zeroGyro();
-    }
-
-    if (hardware.driverController.getYButtonPressed()) {
-      robotManager.hubAimRequest();
-    }
-
-    if (hardware.driverController.getAButtonPressed()) {
-      robotManager.lockForwardRequest();
-    }
-
-    if (hardware.driverController.getXButtonPressed()) {
-      turret.homeRequest();
-    }
-
-    if (hardware.driverController.getBButtonPressed()) {
-      robotManager.tagAimRequest();
-    }
   }
 }
