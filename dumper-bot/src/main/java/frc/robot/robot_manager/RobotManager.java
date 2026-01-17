@@ -1,5 +1,7 @@
 package frc.robot.robot_manager;
 
+import java.lang.reflect.Field;
+
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -51,6 +53,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED_1 -> shooter.atGoal() ? RobotState.FEED_1 : currentState;
       case PREPARE_FEED_2 -> shooter.atGoal() ? RobotState.FEED_2 : currentState;
+      case SHOOT_HUB -> !FieldUtil.isRobotInAllianceZone(robotPose) ? RobotState.IDLE : currentState;
       default -> currentState;
     };
   }
@@ -93,13 +96,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
         shooter.scoreRequest();
-        swerve.snapsDriveRequest(angleToHub);
+        swerve.hubAimRequest(angleToHub);
       }
       case SHOOT_HUB -> {
         shooter.scoreRequest();
         feeder.feedRequest();
         intakeRequest();
-        swerve.snapsDriveRequest(angleToHub);
+        swerve.hubAimRequest(angleToHub);
       }
     }
   }
@@ -115,7 +118,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(angleToFeed);
       }
       case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.snapsDriveRequest(angleToFeed);
-      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> swerve.snapsDriveRequest(angleToHub);
+      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> {
+        if (FieldUtil.isRobotInAllianceZone(robotPose)) {
+          swerve.hubAimRequest(angleToHub);
+        } else {
+          swerve.snapsDriveRequest(angleToHub);
+        }
+      }
       default -> swerve.normalDriveRequest();
     }
   }
@@ -132,7 +141,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var feedPose = FieldUtil.RED_FEED_POSE;
     distanceToFeed = robotPose.getTranslation().getDistance(feedPose.getTranslation());
     angleToFeed =
-        robotPose.relativeTo(FieldUtil.getHubPose()).getTranslation().getAngle().getDegrees();
+        robotPose.relativeTo(feedPose).getTranslation().getAngle().getDegrees();
   }
 
   private void setStateFailSafe(RobotState newState) {
