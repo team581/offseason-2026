@@ -73,6 +73,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.idleRequest();
         swerve.normalDriveRequest();
       }
+      case PREPARE_FORCE_SHOOT -> {
+          shooter.scoreRequest();
+          swerve.normalDriveRequest();
+      }
+      case FORCE_SHOOT -> {
+          shooter.scoreRequest();
+          intake.intakeRequest();
+          feeder.feedRequest();
+          swerve.normalDriveRequest();
+      }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
         shooter.feedRequest();
         swerve.snapsDriveRequest(SnapUtil.getFeed1Angle(FmsUtil.isRedAlliance()));
@@ -155,6 +165,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void intakeRequest() {
     intake.intakeRequest();
+  }
+
+  public void forceShootRequest() {
+    setStateFailSafe(RobotState.PREPARE_FORCE_SHOOT);
   }
 
   public void cancelIntakeRequest() {

@@ -8,6 +8,9 @@ public enum RobotState {
   PREPARE_SHOOT_HUB,
   SHOOT_HUB,
 
+  PREPARE_FORCE_SHOOT,
+  FORCE_SHOOT,
+
   // TODO: change feed name
   // Feed 1
   WAIT_FEED_1,

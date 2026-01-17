@@ -111,6 +111,8 @@ public class Robot extends Base581Robot {
       robotManager.feed2WaitRequest();
     }
     if (hardware.driverController.getYButtonPressed()) {
+      robotManager.forceShootRequest();
+    } else {
       robotManager.idleRequest();
     }
 
