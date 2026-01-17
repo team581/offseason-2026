@@ -64,9 +64,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
             .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-              .withPeakForwardTorqueCurrent(200)
-              .withPeakReverseTorqueCurrent(0));
+                new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(200)
+                    .withPeakReverseTorqueCurrent(0));
     var rightConfigs =
         new TalonFXConfiguration()
             // TODO: Get sensor to mechanism ratio
@@ -83,10 +83,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
-                        .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-              .withPeakForwardTorqueCurrent(200)
-              .withPeakReverseTorqueCurrent(0));
+            .withTorqueCurrent(
+                new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(200)
+                    .withPeakReverseTorqueCurrent(0));
 
     var kickerConfigs =
         new TalonFXConfiguration()
@@ -105,9 +105,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0))
             .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-              .withPeakForwardTorqueCurrent(200)
-              .withPeakReverseTorqueCurrent(0));
+                new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(200)
+                    .withPeakReverseTorqueCurrent(0));
 
     leftMotor.getConfigurator().apply(leftConfigs);
     rightMotor.getConfigurator().apply(rightConfigs);
