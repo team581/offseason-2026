@@ -10,7 +10,7 @@ import java.util.OptionalDouble;
 
 /** Predicts a simple velocity-controlled mechanism using TalonFX configuration state. */
 public final class VelocityMechanism {
-  private static double getMechanismAcceleration(List<SimMotor> devices) {
+  private static double getMechanismAccelerationLimit(List<SimMotor> devices) {
     // Collect configs for averaging
     var configs =
         devices.stream()
@@ -40,18 +40,34 @@ public final class VelocityMechanism {
   private final OptionalDouble maxVelocity;
   private double currentVelocity = 0.0;
   private double previousTimestamp = MathSharedStore.getTimestamp();
+  private boolean hasRefreshedAccelerationLimit = false;
+  private double accelerationLimit = 0.0;
 
   /** Recomputes the predicted velocity and pushes the result into each motor sim. */
   public void update() {
-    var acceleration = getMechanismAcceleration(devices);
+    if (!hasRefreshedAccelerationLimit) {
+      hasRefreshedAccelerationLimit = true;
+      accelerationLimit = getMechanismAccelerationLimit(devices);
+    }
+
+    currentVelocity =
+        devices.stream()
+            .mapToDouble(device -> device.motor().getVelocity().getValueAsDouble())
+            .average()
+            .orElseThrow();
+
+    var wantedVelocity = desiredMechanismVelocity(devices);
     // When disabled, target 0 velocity to simulate spin-down from lack of voltage
-    var wantedVelocity = DriverStation.isDisabled() ? 0.0 : desiredMechanismVelocity(devices);
-    var boundedWantedVelocity = applyVelocityBounds(wantedVelocity);
+    var boundedWantedVelocity =
+        DriverStation.isDisabled() ? 0.0 : applyVelocityBounds(wantedVelocity);
     var newVelocity =
         SlewRateLimiterStateless.calculate(
-            boundedWantedVelocity, currentVelocity, previousTimestamp, acceleration, -acceleration);
+            boundedWantedVelocity,
+            currentVelocity,
+            previousTimestamp,
+            accelerationLimit,
+            -accelerationLimit);
 
-    currentVelocity = newVelocity;
     previousTimestamp = MathSharedStore.getTimestamp();
 
     for (var motor : devices) {
