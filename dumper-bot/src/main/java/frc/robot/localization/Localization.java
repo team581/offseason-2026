@@ -8,20 +8,30 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
+import frc.robot.vision.Vision;
+import frc.robot.vision.results.TagResult;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
+
+  private static final double LATENCY_CONSTANT = 0.0;
+
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
+  private final Vision vision;
   private Pose2d robotPose = Pose2d.kZero;
 
-  public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain) {
+
+
+  public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
     this.swerve = swerve;
     this.drivetrain = drivetrain;
+    this.vision = vision;
   }
 
   @Override
   protected void collectInputs() {
+    vision.getMainLimelighTagResult().ifPresent(this::ingestTagResult);
     robotPose = drivetrain.getState().Pose;
   }
 
@@ -47,6 +57,8 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return new Pose2d(x, y, theta);
   }
 
+  
+
   @Override
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
@@ -58,5 +70,17 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   public void resetPose(Pose2d estimatedPose) {
     drivetrain.resetPose(estimatedPose);
+  }
+
+   private void ingestTagResult(TagResult result) {
+    var visionPose = result.pose();
+
+    if (!vision.seenTagRecentlyForReset()) {
+      resetPose(visionPose);
+    }
+    swerve.drivetrain.addVisionMeasurement(
+        visionPose,
+        Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT / 1000)),
+        result.standardDevs());
   }
 }
