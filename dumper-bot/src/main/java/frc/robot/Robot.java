@@ -70,7 +70,42 @@ public class Robot extends Base581Robot {
   }
 
   @Override
-  protected void configureBindings() {}
+  protected void configureBindings() {
+    var driverLeftTrigger = hardware.driverController.leftTrigger(0.5, buttonBindingsLoop);
+    driverLeftTrigger.rising().ifHigh(robotManager::intakeRequest);
+    driverLeftTrigger.falling().ifHigh(robotManager::cancelIntakeRequest);
+
+    var driverRightTrigger = hardware.driverController.rightTrigger(0.5, buttonBindingsLoop);
+    driverRightTrigger.rising().ifHigh(robotManager::toggleHubRequest);
+    driverRightTrigger.falling().ifHigh(robotManager::toggleHubRequest);
+
+    var driverRightBumper = hardware.driverController.rightBumper(buttonBindingsLoop);
+    driverRightBumper.rising().ifHigh(robotManager::toggleFeedRequest);
+
+    var driverX = hardware.driverController.x(buttonBindingsLoop);
+    driverX.rising().ifHigh(robotManager::shootHubWaitRequest);
+
+    var driverA = hardware.driverController.a(buttonBindingsLoop);
+    driverA.rising().ifHigh(robotManager::feed1WaitRequest);
+
+    var driverB = hardware.driverController.b(buttonBindingsLoop);
+    driverB.rising().ifHigh(robotManager::feed2WaitRequest);
+
+    var driverY = hardware.driverController.y(buttonBindingsLoop);
+    driverY.rising().ifHigh(robotManager::forceShootRequest);
+
+    var driverLeftBumper = hardware.driverController.leftBumper(buttonBindingsLoop);
+    driverLeftBumper.rising().ifHigh(robotManager::idleRequest);
+
+    var driverPov0 = hardware.driverController.pov(0, buttonBindingsLoop);
+    driverPov0.rising().ifHigh(robotManager::climbSequenceForward);
+
+    var driverPov180 = hardware.driverController.pov(180, buttonBindingsLoop);
+    driverPov180.rising().ifHigh(robotManager::climbSequenceBackward);
+
+    var driverBack = hardware.driverController.back(buttonBindingsLoop);
+    driverBack.rising().ifHigh(localization::zeroGyro);
+  }
 
   @Override
   public void teleopPeriodic() {
@@ -84,51 +119,5 @@ public class Robot extends Base581Robot {
         Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
     swerve.setTeleopInputs(
         translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
-
-    if (hardware.driverController.getLeftTriggerAxis() > 0.5) {
-      robotManager.intakeRequest();
-    } else {
-      robotManager.cancelIntakeRequest();
-    }
-
-    if (hardware.driverController.getRightTriggerAxis() > 0.5) {
-      robotManager.toggleHubRequest();
-    }
-
-    if (hardware.driverController.getRightBumperButtonPressed()) {
-      robotManager.toggleFeedRequest();
-    }
-
-    if (hardware.driverController.getXButtonPressed()) {
-      robotManager.shootHubWaitRequest();
-    }
-
-    if (hardware.driverController.getAButtonPressed()) {
-      robotManager.feed1WaitRequest();
-    }
-
-    if (hardware.driverController.getBButtonPressed()) {
-      robotManager.feed2WaitRequest();
-    }
-
-    if (hardware.driverController.getYButton()) {
-      robotManager.forceShootRequest();
-    }
-
-    if (hardware.driverController.getLeftBumperButton()) {
-      robotManager.idleRequest();
-    }
-
-    if (hardware.driverController.getPOV() == 0) {
-      robotManager.climbSequenceForward();
-    }
-
-    if (hardware.driverController.getPOV() == 180) {
-      robotManager.climbSequenceBackward();
-    }
-
-    if (hardware.driverController.getBackButtonPressed()) {
-      localization.zeroGyro();
-    }
   }
 }

@@ -6,6 +6,7 @@ import com.team581.util.tuning.ElasticLayoutUtil;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
@@ -13,6 +14,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 
 public abstract class Base581Robot extends TimedRobot {
   private static final String FINALIZE_INIT_FAULT = "Robot finalizeInit() never called";
+
+  protected final EventLoop buttonBindingsLoop = new EventLoop();
 
   private boolean isInitialized = false;
 
@@ -68,6 +71,10 @@ public abstract class Base581Robot extends TimedRobot {
   public void robotPeriodic() {
     DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
     DogLog.time("Scheduler/TimeSinceLastLoop");
+
+    DogLog.time("Scheduler/ButtonBindingsLoop");
+    buttonBindingsLoop.poll();
+    DogLog.timeEnd("Scheduler/ButtonBindingsLoop");
 
     SubsystemExecutionSequencer.periodic();
 
