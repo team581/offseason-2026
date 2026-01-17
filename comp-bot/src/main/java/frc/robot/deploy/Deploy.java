@@ -8,12 +8,9 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.google.errorprone.annotations.Var;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
-
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.Unit;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> {
@@ -27,12 +24,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
     var configs =
         new TalonFXConfiguration()
-            .withFeedback(
-                new FeedbackConfigs().withSensorToMechanismRatio(1))
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
             .withCurrentLimits(
                 new CurrentLimitsConfigs().withStatorCurrentLimit(1).withStatorCurrentLimit(1))
-              .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
+            .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
     motor.getConfigurator().apply(configs);
 
     TunablePid.register("Deploy", motor, configs);
@@ -61,7 +57,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   public void homingRequest() {
     setStateFromRequest(DeployState.HOMING);
   }
-
 
   @Override
   protected DeployState getNextState(DeployState currentState) {
