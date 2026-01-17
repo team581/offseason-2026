@@ -153,19 +153,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     switch (state) {
       case SCORE -> {
-        leftMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
-        rightMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
-        kickerMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
+        var setpoint = shootingRpm / 60.0;
+        leftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        rightMotor.setControl(velocityRequest.withVelocity(setpoint));
+        kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
-        leftMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
-        rightMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
-        kickerMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
+        var setpoint = feedingRpm / 60.0;
+        leftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        rightMotor.setControl(velocityRequest.withVelocity(setpoint));
+        kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
       case IDLE -> {
         leftMotor.disable();
         rightMotor.disable();
         kickerMotor.disable();
+        DogLog.log("Shooter/RpmSetpoint", -1);
       }
     }
   }
