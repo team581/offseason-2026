@@ -102,7 +102,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FORCE_SHOOT -> {
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
-        intake.idleRequest();
+        intake.shootingRequest();
         hopper.shootRequest();
         swerve.normalDriveRequest();
       }
@@ -123,14 +123,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED_1 -> {
         shooter.feedRequest(feed1Distance);
         feeder.feedRequest();
-        intakeRequest();
+        intake.shootingRequest();
         hopper.shootRequest();
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case FEED_2 -> {
         shooter.feedRequest(feed2Distance);
         feeder.feedRequest();
-        intakeRequest();
+        intake.shootingRequest();
         hopper.shootRequest();
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
@@ -144,7 +144,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case SHOOT_HUB -> {
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
-        intakeRequest();
+        intake.shootingRequest();
         hopper.shootRequest();
         swerve.snapsDriveRequest(hubGoalAngle);
       }
@@ -209,20 +209,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFailSafe(RobotState.IDLE);
   }
 
-  public void intakeRequest() {
-    intake.intakeRequest();
-  }
-
-  public void hopperShootingRequest() {
-    intake.shootingRequest();
-  }
-
   public void forceShootRequest() {
     setStateFailSafe(RobotState.PREPARE_FORCE_SHOOT);
-  }
-
-  public void cancelIntakeRequest() {
-    intake.idleRequest();
   }
 
   public void shootHubWaitRequest() {
@@ -253,7 +241,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void climbSequenceForward() {
-    cancelIntakeRequest();
+    intake.idleRequest();
     switch (getState()) {
       default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1);
       case CLIMB_1_LINEUP_L1 -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1);
@@ -269,7 +257,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void climbSequenceForwardAuto() {
-    cancelIntakeRequest();
+    intake.idleRequest();
     switch (getState()) {
       default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTO);
       case CLIMB_1_LINEUP_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTO);
@@ -279,7 +267,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void climbSequenceBackward() {
-    cancelIntakeRequest();
+    intake.idleRequest();
     switch (getState()) {
       default -> {}
       case CLIMB_1_LINEUP_L1 -> setStateFromRequest(RobotState.IDLE);
