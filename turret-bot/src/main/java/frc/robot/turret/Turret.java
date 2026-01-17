@@ -17,7 +17,6 @@ import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import frc.robot.localization.Localization;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
@@ -25,7 +24,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double hubAimAngle = 0.0;
-    private double tagAimAngle = 0.0;
+  private double tagAimAngle = 0.0;
 
   private static final double MIN_ANGLE = -149.105;
   private static final double MAX_ANGLE = 149.105;
@@ -61,7 +60,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
-  
+
     switch (getState()) {
       case UNHOMED, HOMING -> {
         rawCurrent = motor.getStatorCurrent().getValueAsDouble();
@@ -77,7 +76,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         MathUtil.inputModulus(
             Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), -180, 180);
     DogLog.log("Turret/Angle", currentAngle);
-
   }
 
   @Override
@@ -96,7 +94,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         motor.setControl(
             positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
       }
-       case TAG_AIM -> {
+      case TAG_AIM -> {
         motor.setControl(
             positionRequest.withPosition(Units.degreesToRotations(clamp(tagAimAngle))));
       }
@@ -143,7 +141,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public boolean goalOutOfBounds() {
-   return goalAngle>(MAX_ANGLE-OUT_OF_BOUNDS_THRESHOLD) || goalAngle <( MIN_ANGLE+OUT_OF_BOUNDS_THRESHOLD);
+    return goalAngle > (MAX_ANGLE - OUT_OF_BOUNDS_THRESHOLD)
+        || goalAngle < (MIN_ANGLE + OUT_OF_BOUNDS_THRESHOLD);
   }
 
   @Override
@@ -183,10 +182,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     hubAimAngle = angle;
   }
 
-   public void setTagAimAngle(double angle) {
+  public void setTagAimAngle(double angle) {
     tagAimAngle = angle;
   }
-
 
   public boolean atGoal() {
     return switch (getState()) {

@@ -183,11 +183,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public boolean snapsNearGoal() {
-    var currentRotation =drivetrain.getState().Pose.getRotation().getDegrees();
+    var currentRotation = drivetrain.getState().Pose.getRotation().getDegrees();
     var snapsDirection = teleopSnapsRequest.TargetDirection.getDegrees();
-            DogLog.log("Swerve/SnapsAngle", snapsDirection);
-                        DogLog.log("Swerve/CurrentRotation", currentRotation);
-
+    DogLog.log("Swerve/SnapsAngle", snapsDirection);
+    DogLog.log("Swerve/CurrentRotation", currentRotation);
 
     return MathUtil.isNear(snapsDirection, currentRotation, 5.0, -180.0, 180.0);
   }

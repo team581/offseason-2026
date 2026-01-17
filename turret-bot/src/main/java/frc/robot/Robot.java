@@ -90,7 +90,7 @@ public class Robot extends Base581Robot {
     }
 
     if (hardware.driverController.getYButtonPressed()) {
-     robotManager.hubAimRequest();
+      robotManager.hubAimRequest();
     }
 
     if (hardware.driverController.getAButtonPressed()) {
@@ -100,7 +100,6 @@ public class Robot extends Base581Robot {
     if (hardware.driverController.getXButtonPressed()) {
       turret.homeRequest();
     }
-
 
     if (hardware.driverController.getBButtonPressed()) {
       robotManager.tagAimRequest();
