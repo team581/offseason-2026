@@ -8,6 +8,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.localization.Localization;
@@ -20,7 +21,7 @@ import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  private static final int TAG_AIM_ID = 15;
+  private static final IntegerSubscriber TAG_AIM_ID = DogLog.tunable("TagAimID", 9);
   private static final DoubleSubscriber TIME_OF_FLIGHT = DogLog.tunable("TimeOfFlight", 0.0);
 
   public final Localization localization;
@@ -112,7 +113,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.setHubAimAngle(aimingAngle);
       }
       case TAG_AIM -> {
-        var goalPose = TagMap.getTagPose(TAG_AIM_ID);
+        var goalPose = TagMap.getTagPose((int) TAG_AIM_ID.get());
         if (goalPose != null) {
           var aimingAngle =
               TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose.getTranslation());
