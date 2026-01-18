@@ -24,6 +24,11 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
       };
 
+        private static final int[] HUB_TAGS =
+      new int[] {
+        2,3,4,5,8,9,10,11
+      };
+
   private static final double IS_OFFLINE_TIMEOUT = 3;
 
   private final String limelightTableName;
@@ -66,7 +71,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   public OptionalTagResult getTagResult() {
-    if (getState() != LimelightState.TAGS) {
+    if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
       return tagResult.empty();
     }
@@ -169,10 +174,17 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     switch (getState()) {
       case TAGS -> {
         if (limelightTimer.hasElapsed(5.0)) {
-          // LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, VALID_APRILTAGS);
+          LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, VALID_APRILTAGS);
         }
         updateHealth(tagResult);
       }
+      case HUB_TAGS -> {
+        if (limelightTimer.hasElapsed(5.0)) {
+          LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, HUB_TAGS);
+        }
+        updateHealth(tagResult);
+      }
+      default -> {}
     }
 
     // TODO: Remove once Limelights are upgraded
@@ -233,7 +245,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   public boolean isOnlineForTags() {
     return switch (getState()) {
-      case TAGS, OFF -> getCameraHealth() != CameraHealth.OFFLINE;
+      case TAGS, HUB_TAGS, OFF -> getCameraHealth() != CameraHealth.OFFLINE;
       default -> false;
     };
   }
