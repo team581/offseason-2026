@@ -12,10 +12,8 @@ public class FieldUtil {
   public static double FIELD_WIDTH = 8.069326;
 
   public static Point HUB_POSE = Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
-  public static Point FEED_1_POSE =
-      Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
-  public static Point FEED_2_POSE =
-      Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
+  public static Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
+  public static Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
   public static Translation2d getHubPose() {
     return FmsUtil.isRedAlliance()
