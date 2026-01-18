@@ -1,35 +1,38 @@
 package com.team581.util;
 
+import com.team581.autos.Point;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class FieldUtil {
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
-  // In Meters
-  public static double FIELD_LENGTH = 16.5354;
-  public static double FIELD_WIDTH = 8.07;
+  // In meters
+  public static double FIELD_LENGTH = 16.540988;
+  public static double FIELD_WIDTH = 8.069326;
 
-  // TODO: fill out poses
-
-  // Numbers taken from field drawing
-  public static Translation2d RED_HUB_POSE = new Translation2d(11.91, 4.035);
-  public static Translation2d RED_FEED_1_POSE = new Translation2d(14.479, 5.748);
-  public static Translation2d RED_FEED_2_POSE = new Translation2d();
-
-  public static Translation2d BLUE_HUB_POSE = new Translation2d();
-  public static Translation2d BLUE_FEED_1_POSE = new Translation2d();
-  public static Translation2d BLUE_FEED_2_POSE = new Translation2d();
+  public static Point HUB_POSE = Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
+  public static Point FEED_1_POSE =
+      Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
+  public static Point FEED_2_POSE =
+      Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
   public static Translation2d getHubPose() {
-    return FmsUtil.isRedAlliance() ? FieldUtil.RED_HUB_POSE : FieldUtil.BLUE_HUB_POSE;
+    return FmsUtil.isRedAlliance()
+        ? HUB_POSE.redPose().getTranslation()
+        : HUB_POSE.bluePose().getTranslation();
   }
 
   public static Translation2d getFeed1Pose() {
-    return FmsUtil.isRedAlliance() ? FieldUtil.RED_FEED_1_POSE : FieldUtil.BLUE_FEED_1_POSE;
+    return FmsUtil.isRedAlliance()
+        ? FEED_1_POSE.redPose().getTranslation()
+        : FEED_1_POSE.bluePose().getTranslation();
   }
 
   public static Translation2d getFeed2Pose() {
-    return FmsUtil.isRedAlliance() ? FieldUtil.RED_FEED_2_POSE : FieldUtil.BLUE_FEED_2_POSE;
+    return FmsUtil.isRedAlliance()
+        ? FEED_2_POSE.redPose().getTranslation()
+        : FEED_2_POSE.bluePose().getTranslation();
   }
 
   // TODO: Make smarter for different rotations (would need to store bumper size)

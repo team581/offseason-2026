@@ -8,7 +8,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class MathHelpers {
-  private static final Translation2d FIELD_CENTER = new Translation2d(17.55 / 2.0, 8.05 / 2.0);
+  private static final Translation2d FIELD_CENTER = new Translation2d(16.540988 / 2.0, 8.069326 / 2.0);
   private static final double EPSILON = Math.ulp(1.0);
 
   /**
