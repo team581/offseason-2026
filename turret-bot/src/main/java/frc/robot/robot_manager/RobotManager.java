@@ -54,7 +54,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
         if (MathUtil.isNear(
-            swerveTurretCompensationAngle, robotPose.getRotation().getDegrees(), 5, -180, 180)) {
+            swerveTurretCompensationAngle, robotPose.getRotation().getDegrees(), 5, -180, 180) || TurretCalculator.doesTurretHaveRoom(turret.getAngle())) {
           yield RobotState.HUB_AIM;
         }
         yield currentState;
