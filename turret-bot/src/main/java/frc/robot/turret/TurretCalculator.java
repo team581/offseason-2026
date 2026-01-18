@@ -45,18 +45,16 @@ public class TurretCalculator {
   }
 
   public static boolean doesTurretHaveRoom(double turretAngle) {
-if (turretAngle>0) {
-  if (turretAngle<MAX_TURRET_ANGLE-SPACE_FROM_HARDSTOP+SPACE_FROM_HARDSTOP_TOLERANCE) {
-    return true;
+    if (turretAngle > 0) {
+      if (turretAngle < MAX_TURRET_ANGLE - SPACE_FROM_HARDSTOP + SPACE_FROM_HARDSTOP_TOLERANCE) {
+        return true;
+      }
+    }
+    if (turretAngle < 0) {
+      if (turretAngle > MIN_TURRET_ANGLE + SPACE_FROM_HARDSTOP - SPACE_FROM_HARDSTOP_TOLERANCE) {
+        return true;
+      }
+    }
+    return false;
   }
-
-  }
-  if (turretAngle<0) {
-  if (turretAngle>MIN_TURRET_ANGLE+SPACE_FROM_HARDSTOP-SPACE_FROM_HARDSTOP_TOLERANCE) {
-    return true;
-  }
-
-  }
-  return false;
-}
 }
