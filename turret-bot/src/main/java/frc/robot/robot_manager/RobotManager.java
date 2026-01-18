@@ -46,11 +46,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case HUB_AIM -> {
-        // if (turret.goalOutOfBounds()) {
-        //   swerveTurretCompensationAngle =
-        // TurretCalculator.calculateSwerveTurretCompensationAngle(wantedTurretHubAngle, robotPose);
-        //   yield RobotState.HUB_AIM_ADJUSTING_SWERVE;
-        // }
+        if (turret.goalOutOfBounds()) {
+          swerveTurretCompensationAngle =
+        TurretCalculator.calculateSwerveTurretCompensationAngle(turretHubGoalAngle, robotPose);
+          yield RobotState.HUB_AIM_ADJUSTING_SWERVE;
+        }
         yield currentState;
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {

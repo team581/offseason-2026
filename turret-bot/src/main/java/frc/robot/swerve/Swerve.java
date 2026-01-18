@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
-  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(0.5);
+  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(0.25);
   private static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
@@ -171,7 +171,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     setStateFromRequest(SwerveState.TRAILBLAZER);
     sendSwerveRequest();
   }
-  
+
  public void snapsDriveRequest(double snapAngle) {
     teleopSnapsRequest.withTargetDirection(
         Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));

@@ -35,9 +35,9 @@ public class TurretCalculator {
     var actualTargetRotation = MathUtil.inputModulus(wantedTurretAngle + robotHeading, -180, 180);
     if (wantedTurretAngle > 0.0) {
 
-      return MathUtil.inputModulus(actualTargetRotation - 30.0, -180, 180) - MAX_TURRET_ANGLE;
+      return MathUtil.inputModulus(actualTargetRotation + 60.0, -180, 180) - MAX_TURRET_ANGLE;
     } else {
-      return MathUtil.inputModulus(actualTargetRotation + 30.0, -180, 180) - MIN_TURRET_ANGLE;
-    }
+      return MathUtil.inputModulus(actualTargetRotation - 60.0, -180, 180) - MIN_TURRET_ANGLE;
+  }
   }
 }
