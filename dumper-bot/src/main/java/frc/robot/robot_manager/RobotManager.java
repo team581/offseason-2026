@@ -62,8 +62,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
-      case PREPARE_SHOOT_HUB -> {
-        if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose)) {
+      // case PREPARE_SHOOT_HUB -> {
+      //   if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose)) {
+      //     yield RobotState.SHOOT_HUB;
+      //   }
+      //   yield currentState;
+      // }
+         case PREPARE_SHOOT_HUB -> {
+        if (shooter.atGoal()) {
           yield RobotState.SHOOT_HUB;
         }
         yield currentState;
