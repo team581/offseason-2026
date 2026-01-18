@@ -120,8 +120,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     return tagResult.update(mtPose, mTEstimateTimestamp, devs);
   }
 
-
-
   @Override
   protected void collectInputs() {
     tagResult = getTagResult();
