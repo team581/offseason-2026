@@ -19,13 +19,19 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
+
+import static edu.wpi.first.units.Units.RPM;
+
 import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
+  private static final int RPM_TOLERANCE = 50;
+
   private static final double MAX_SAFE_RPM = 4000;
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(Units.inchesToMeters(57.0), 1000.0));
+      InterpolatingDoubleTreeMap.ofEntries(
+          Map.entry(Units.inchesToMeters(57.0), 2250.0), Map.entry(3.376, 3300.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
@@ -188,13 +194,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return switch (getState()) {
       case IDLE -> true;
       case SCORE ->
-          MathUtil.isNear(leftMotorRpm, shootingRpm, 200)
-              && MathUtil.isNear(rightMotorRpm, shootingRpm, 200)
-              && MathUtil.isNear(kickerMotorRpm, shootingRpm, 200);
+          MathUtil.isNear(leftMotorRpm, shootingRpm, RPM_TOLERANCE)
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE)
+              && MathUtil.isNear(kickerMotorRpm, shootingRpm, RPM_TOLERANCE);
       case FEEDING ->
-          MathUtil.isNear(leftMotorRpm, feedingRpm, 100)
-              && MathUtil.isNear(rightMotorRpm, feedingRpm, 100)
-              && MathUtil.isNear(kickerMotorRpm, feedingRpm, 100);
+          MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE)
+              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE)
+              && MathUtil.isNear(kickerMotorRpm, feedingRpm, RPM_TOLERANCE);
     };
   }
 
