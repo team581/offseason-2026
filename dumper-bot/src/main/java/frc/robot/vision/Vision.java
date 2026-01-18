@@ -1,6 +1,5 @@
 package frc.robot.vision;
 
-import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;

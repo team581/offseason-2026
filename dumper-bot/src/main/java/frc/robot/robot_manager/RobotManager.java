@@ -94,7 +94,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
-                        vision.setState(VisionState.TAGS);
+        vision.setState(VisionState.TAGS);
 
         shooter.idleRequest();
         feeder.idleRequest();
@@ -103,7 +103,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SHOOT -> {
-                        vision.setState(VisionState.HUB_TAGS);
+        vision.setState(VisionState.HUB_TAGS);
 
         shooter.scoreRequest(hubDistance);
         feeder.idleRequest();
@@ -112,7 +112,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case FORCE_SHOOT -> {
-                        vision.setState(VisionState.HUB_TAGS);
+        vision.setState(VisionState.HUB_TAGS);
 
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
@@ -121,7 +121,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
-                        vision.setState(VisionState.TAGS);
+        vision.setState(VisionState.TAGS);
 
         shooter.feedRequest(feed1Distance);
         feeder.idleRequest();
@@ -130,7 +130,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case WAIT_FEED_2, PREPARE_FEED_2 -> {
-                        vision.setState(VisionState.TAGS);
+        vision.setState(VisionState.TAGS);
 
         shooter.feedRequest(feed2Distance);
         feeder.idleRequest();
@@ -139,7 +139,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
       case FEED_1 -> {
-                        vision.setState(VisionState.TAGS);
+        vision.setState(VisionState.TAGS);
 
         shooter.feedRequest(feed1Distance);
         feeder.feedRequest();
@@ -148,7 +148,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case FEED_2 -> {
-                vision.setState(VisionState.TAGS);
+        vision.setState(VisionState.TAGS);
 
         shooter.feedRequest(feed2Distance);
         feeder.feedRequest();
@@ -157,7 +157,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
-                vision.setState(VisionState.HUB_TAGS);
+        vision.setState(VisionState.HUB_TAGS);
 
         shooter.scoreRequest(hubDistance);
         feeder.idleRequest();
