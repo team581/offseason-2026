@@ -39,7 +39,7 @@ final class MathHelpersTest {
   @Test
   void pathflipTest() {
     var input = new Pose2d(0, 0, Rotation2d.kZero);
-    var expected = new Pose2d(16.54, 8.07, Rotation2d.k180deg);
+    var expected = new Pose2d(16.540988, 8.069326, Rotation2d.k180deg);
 
     var result = MathHelpers.pathflip(input);
 
