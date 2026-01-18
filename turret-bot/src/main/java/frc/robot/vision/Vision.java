@@ -53,7 +53,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private boolean seeingTagDebounced = false;
   private boolean seenTagRecentlyForReset = true;
 
-  public Vision(Imu imu, Limelight turretLimelight, Limelight backLimelight, Limelight frontLimelight) {
+  public Vision(
+      Imu imu, Limelight turretLimelight, Limelight backLimelight, Limelight frontLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
     this.turretLimelight = turretLimelight;
@@ -188,8 +189,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
         turretLimelight.setState(LimelightState.HUB_TAGS);
         backLimelight.setState(LimelightState.HUB_TAGS);
         frontLimelight.setState(LimelightState.HUB_TAGS);
+      }
     }
-    }}
+  }
 
   @Override
   public void whileInState(VisionState currentState) {
@@ -209,6 +211,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     if (RobotBase.isSimulation()) {
       return true;
     }
-    return turretLimelight.isOnlineForTags()|| backLimelight.isOnlineForTags() || frontLimelight.isOnlineForTags();
+    return turretLimelight.isOnlineForTags()
+        || backLimelight.isOnlineForTags()
+        || frontLimelight.isOnlineForTags();
   }
 }

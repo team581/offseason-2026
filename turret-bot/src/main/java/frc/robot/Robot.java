@@ -48,7 +48,7 @@ public class Robot extends Base581Robot {
               TURRET_CAMERA_PITCH,
               0.0,
               0.0));
-   private final Limelight backLimelight =
+  private final Limelight backLimelight =
       new Limelight(
           "back",
           LimelightState.TAGS,
@@ -62,7 +62,7 @@ public class Robot extends Base581Robot {
               180.0,
               0.0));
 
-                 private final Limelight frontLimelight =
+  private final Limelight frontLimelight =
       new Limelight(
           "front",
           LimelightState.TAGS,
