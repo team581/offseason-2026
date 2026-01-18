@@ -10,12 +10,17 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.event.BooleanEvent;
 import edu.wpi.first.wpilibj.event.EventLoop;
 
 public abstract class Base581Robot extends TimedRobot {
   private static final String FINALIZE_INIT_FAULT = "Robot finalizeInit() never called";
 
   protected final EventLoop buttonBindingsLoop = new EventLoop();
+
+  /** A {@link BooleanEvent} that is true when the robot is enabled. */
+  protected final BooleanEvent enabledEvent =
+      new BooleanEvent(buttonBindingsLoop, DriverStation::isEnabled);
 
   private boolean isInitialized = false;
 

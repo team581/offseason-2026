@@ -73,38 +73,42 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
-    var driverLeftTrigger = hardware.driverController.leftTrigger(0.5, buttonBindingsLoop);
+    var driverLeftTrigger =
+        enabledEvent.and(hardware.driverController.leftTrigger(0.5, buttonBindingsLoop));
     driverLeftTrigger.rising().ifHigh(intake::intakeRequest);
     driverLeftTrigger.falling().ifHigh(intake::idleRequest);
 
-    var driverRightTrigger = hardware.driverController.rightTrigger(0.5, buttonBindingsLoop);
+    var driverRightTrigger =
+        enabledEvent.and(hardware.driverController.rightTrigger(0.5, buttonBindingsLoop));
     driverRightTrigger.rising().ifHigh(robotManager::toggleHubRequest);
 
-    var driverRightBumper = hardware.driverController.rightBumper(buttonBindingsLoop);
+    var driverRightBumper =
+        enabledEvent.and(hardware.driverController.rightBumper(buttonBindingsLoop));
     driverRightBumper.rising().ifHigh(robotManager::toggleFeedRequest);
 
-    var driverX = hardware.driverController.x(buttonBindingsLoop);
+    var driverX = enabledEvent.and(hardware.driverController.x(buttonBindingsLoop));
     driverX.rising().ifHigh(robotManager::shootHubWaitRequest);
 
-    var driverA = hardware.driverController.a(buttonBindingsLoop);
+    var driverA = enabledEvent.and(hardware.driverController.a(buttonBindingsLoop));
     driverA.rising().ifHigh(robotManager::feed1WaitRequest);
 
-    var driverB = hardware.driverController.b(buttonBindingsLoop);
+    var driverB = enabledEvent.and(hardware.driverController.b(buttonBindingsLoop));
     driverB.rising().ifHigh(robotManager::feed2WaitRequest);
 
-    var driverY = hardware.driverController.y(buttonBindingsLoop);
+    var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
     driverY.rising().ifHigh(robotManager::forceShootRequest);
 
-    var driverLeftBumper = hardware.driverController.leftBumper(buttonBindingsLoop);
+    var driverLeftBumper =
+        enabledEvent.and(hardware.driverController.leftBumper(buttonBindingsLoop));
     driverLeftBumper.rising().ifHigh(robotManager::idleRequest);
 
-    var driverPov0 = hardware.driverController.pov(0, buttonBindingsLoop);
+    var driverPov0 = enabledEvent.and(hardware.driverController.pov(0, buttonBindingsLoop));
     driverPov0.rising().ifHigh(robotManager::climbSequenceForward);
 
-    var driverPov180 = hardware.driverController.pov(180, buttonBindingsLoop);
+    var driverPov180 = enabledEvent.and(hardware.driverController.pov(180, buttonBindingsLoop));
     driverPov180.rising().ifHigh(robotManager::climbSequenceBackward);
 
-    var driverBack = hardware.driverController.back(buttonBindingsLoop);
+    var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
   }
 
