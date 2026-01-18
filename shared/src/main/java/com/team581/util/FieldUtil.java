@@ -11,12 +11,12 @@ import java.util.List;
 public class FieldUtil {
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
   // In meters
-  public static double FIELD_LENGTH = 16.540988;
-  public static double FIELD_WIDTH = 8.069326;
+  public static final double FIELD_LENGTH = 16.540988;
+  public static final double FIELD_WIDTH = 8.069326;
 
-  public static Point HUB_POSE = Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
-  public static Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
-  public static Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
+  public static final Point HUB_POSE = Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
+  public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
+  public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
   // calculations
   private static final double redRobotStartingLineX = Units.inchesToMeters(156.61);
@@ -39,16 +39,16 @@ public class FieldUtil {
       new Rectangle2d(
           new Translation2d(redRobotStartingLineX, FIELD_WIDTH),
           new Translation2d(redBoxCoordinateX, oppositeTrenchCoordinateY));
-  public static Rectangle2d RED_RIGHT_UNSAFE_TRENCH_BOX =
+  public static final Rectangle2d RED_RIGHT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
           new Translation2d(redRobotStartingLineX, trenchLengthY),
           new Translation2d(redBoxCoordinateX, 0.0));
 
-  public static Rectangle2d BLUE_LEFT_UNSAFE_TRENCH_BOX =
+  public static final Rectangle2d BLUE_LEFT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
           new Translation2d(blueBoxCoordinateX, FIELD_WIDTH),
           new Translation2d(blueRobotStartingLineX, oppositeTrenchCoordinateY));
-  public static Rectangle2d BLUE_RIGHT_UNSAFE_TRENCH_BOX =
+  public static final Rectangle2d BLUE_RIGHT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
           new Translation2d(blueBoxCoordinateX, trenchLengthY),
           new Translation2d(blueRobotStartingLineX, 0.0));
