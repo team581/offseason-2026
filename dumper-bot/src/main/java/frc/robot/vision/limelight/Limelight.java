@@ -24,10 +24,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
       };
 
-        private static final int[] HUB_TAGS =
-      new int[] {
-        2,3,4,5,8,9,10,11
-      };
+  private static final int[] HUB_TAGS = new int[] {2, 3, 4, 5, 8, 9, 10, 11};
 
   private static final double IS_OFFLINE_TIMEOUT = 3;
 
