@@ -1,13 +1,12 @@
 package com.team581.util;
 
-import java.util.List;
-
+import com.team581.autos.Point;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
-import com.team581.autos.Point;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import java.util.List;
 
 public class FieldUtil {
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
@@ -20,14 +19,11 @@ public class FieldUtil {
   public static Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
   // calculations
-  private static final double fieldLengthX = Units.inchesToMeters(651.22);
-  private static final double fieldWidthY = Units.inchesToMeters(317.69);
-
   private static final double redRobotStartingLineX = Units.inchesToMeters(156.61);
-  private static final double blueRobotStartingLineX = fieldLengthX - redRobotStartingLineX;
+  private static final double blueRobotStartingLineX = FIELD_LENGTH - redRobotStartingLineX;
 
   private static final double redTrenchX = Units.inchesToMeters(182.11);
-  private static final double blueTrenchX = fieldLengthX - redTrenchX;
+  private static final double blueTrenchX = FIELD_LENGTH - redTrenchX;
 
   private static final double trenchToRobotStartingLineDistanceX =
       redTrenchX - redRobotStartingLineX;
@@ -37,11 +33,11 @@ public class FieldUtil {
   private static final double blueBoxCoordinateX = blueTrenchX - trenchToRobotStartingLineDistanceX;
 
   private static final double trenchLengthY = Units.inchesToMeters(25.62 * 2);
-  private static final double oppositeTrenchCoordinateY = fieldWidthY - trenchLengthY;
+  private static final double oppositeTrenchCoordinateY = FIELD_WIDTH - trenchLengthY;
   // end of calculations
   public static final Rectangle2d RED_LEFT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
-          new Translation2d(redRobotStartingLineX, fieldWidthY),
+          new Translation2d(redRobotStartingLineX, FIELD_WIDTH),
           new Translation2d(redBoxCoordinateX, oppositeTrenchCoordinateY));
   public static Rectangle2d RED_RIGHT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
@@ -50,7 +46,7 @@ public class FieldUtil {
 
   public static Rectangle2d BLUE_LEFT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
-          new Translation2d(blueBoxCoordinateX, fieldWidthY),
+          new Translation2d(blueBoxCoordinateX, FIELD_WIDTH),
           new Translation2d(blueRobotStartingLineX, oppositeTrenchCoordinateY));
   public static Rectangle2d BLUE_RIGHT_UNSAFE_TRENCH_BOX =
       new Rectangle2d(
@@ -63,18 +59,6 @@ public class FieldUtil {
           FieldUtil.BLUE_RIGHT_UNSAFE_TRENCH_BOX,
           FieldUtil.RED_LEFT_UNSAFE_TRENCH_BOX,
           FieldUtil.RED_RIGHT_UNSAFE_TRENCH_BOX);
-
-  public static Rectangle2d getLeftUnsafeTrenchBox() {
-    return FmsUtil.isRedAlliance()
-        ? FieldUtil.RED_LEFT_UNSAFE_TRENCH_BOX
-        : FieldUtil.BLUE_LEFT_UNSAFE_TRENCH_BOX;
-  }
-
-  public static Rectangle2d getRightUnsafeTrenchBox() {
-    return FmsUtil.isRedAlliance()
-        ? FieldUtil.RED_RIGHT_UNSAFE_TRENCH_BOX
-        : FieldUtil.BLUE_RIGHT_UNSAFE_TRENCH_BOX;
-  }
 
   public static Translation2d getHubPose() {
     return FmsUtil.isRedAlliance()

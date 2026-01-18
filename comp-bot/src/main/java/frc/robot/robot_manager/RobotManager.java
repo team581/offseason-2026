@@ -3,12 +3,10 @@ package frc.robot.robot_manager;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rectangle2d;
 import frc.robot.localization.Localization;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.List;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Localization localization;
@@ -57,6 +55,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     nearTrench =
-        FieldUtil.TRENCH_BOXES.stream().anyMatch(trench -> trench.contains(robotPose.getTranslation()));
+        FieldUtil.TRENCH_BOXES.stream()
+            .anyMatch(trench -> trench.contains(robotPose.getTranslation()));
   }
 }
