@@ -152,6 +152,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
+    DogLog.log("Shooter/Right/AppliedVoltage", rightMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/Left/AppliedVoltage", leftMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/Kicker/AppliedVoltage", kickerMotor.getMotorVoltage().getValueAsDouble());
 
     switch (state) {
       case SCORE -> {
