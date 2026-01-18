@@ -16,6 +16,7 @@ import frc.robot.shooter.Shooter;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static Translation2d HUB_GOAL_POSE = FieldUtil.getHubPose();
@@ -27,7 +28,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Shooter shooter;
   private final Feeder feeder;
   private final Swerve swerve;
-
+  private final Vision vision;
   private final Localization localization;
 
   private Pose2d robotPose = Pose2d.kZero;
@@ -53,7 +54,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.shooter = shooter;
     this.feeder = feeder;
     this.swerve = swerve;
-
+    this.vision = vision;
     this.localization = localization;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
@@ -93,6 +94,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
+        vision.setState(VisionState.TAGS);
+
         shooter.idleRequest();
         feeder.idleRequest();
         intake.idleRequest();
@@ -100,6 +103,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SHOOT -> {
+        vision.setState(VisionState.HUB_TAGS);
+
         shooter.scoreRequest(hubDistance);
         feeder.idleRequest();
         // Intake is controlled separately
@@ -107,6 +112,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case FORCE_SHOOT -> {
+        vision.setState(VisionState.HUB_TAGS);
+
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
         intake.shootingRequest();
@@ -114,6 +121,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_1, PREPARE_FEED_1 -> {
+        vision.setState(VisionState.TAGS);
+
         shooter.feedRequest(feed1Distance);
         feeder.idleRequest();
         // Intake is controlled separately
@@ -121,6 +130,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case WAIT_FEED_2, PREPARE_FEED_2 -> {
+        vision.setState(VisionState.TAGS);
+
         shooter.feedRequest(feed2Distance);
         feeder.idleRequest();
         // Intake is controlled separately
@@ -128,6 +139,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
       case FEED_1 -> {
+        vision.setState(VisionState.TAGS);
+
         shooter.feedRequest(feed1Distance);
         feeder.feedRequest();
         intake.shootingRequest();
@@ -135,6 +148,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed1GoalAngle);
       }
       case FEED_2 -> {
+        vision.setState(VisionState.TAGS);
+
         shooter.feedRequest(feed2Distance);
         feeder.feedRequest();
         intake.shootingRequest();
@@ -142,6 +157,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(feed2GoalAngle);
       }
       case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
+        vision.setState(VisionState.HUB_TAGS);
+
         shooter.scoreRequest(hubDistance);
         feeder.idleRequest();
         // Intake is controlled separately
@@ -149,6 +166,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(hubGoalAngle);
       }
       case SHOOT_HUB -> {
+        vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
         intake.shootingRequest();

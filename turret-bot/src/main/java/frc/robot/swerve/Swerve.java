@@ -124,7 +124,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         .withVelocityX(forwardVelocity * MAX_SPEED * teleopSlowModePercent)
         .withVelocityY(sidewaysVelocity * MAX_SPEED * teleopSlowModePercent)
         .withRotationalRate(
-            rotation * TELEOP_MAX_ANGULAR_RATE.getRadians() * teleopSlowModePercent);
+            // Robots use CCW+ for rotation, but humans use CW+, so we invert it
+            -1.0 * rotation * TELEOP_MAX_ANGULAR_RATE.getRadians() * teleopSlowModePercent);
     teleopSnapsRequest
         .withVelocityX(forwardVelocity * MAX_SPEED * teleopSlowModePercent)
         .withVelocityY(sidewaysVelocity * MAX_SPEED * teleopSlowModePercent);

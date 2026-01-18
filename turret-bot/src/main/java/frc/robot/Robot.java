@@ -41,7 +41,7 @@ public class Robot extends Base581Robot {
           LimelightState.TAGS,
           new CameraConfig(
               LimelightModel.FOUR,
-              true,
+              false,
               0.0,
               0.0,
               TURRET_CAMERA_HEIGHT,
@@ -71,19 +71,19 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
-    var driverBack = hardware.driverController.back(buttonBindingsLoop);
+    var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
 
-    var driverY = hardware.driverController.y(buttonBindingsLoop);
+    var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
     driverY.rising().ifHigh(robotManager::hubAimRequest);
 
-    var driverA = hardware.driverController.a(buttonBindingsLoop);
+    var driverA = enabledEvent.and(hardware.driverController.a(buttonBindingsLoop));
     driverA.rising().ifHigh(robotManager::lockForwardRequest);
 
-    var driverX = hardware.driverController.x(buttonBindingsLoop);
+    var driverX = enabledEvent.and(hardware.driverController.x(buttonBindingsLoop));
     driverX.rising().ifHigh(turret::homeRequest);
 
-    var driverB = hardware.driverController.b(buttonBindingsLoop);
+    var driverB = enabledEvent.and(hardware.driverController.b(buttonBindingsLoop));
     driverB.rising().ifHigh(robotManager::tagAimRequest);
   }
 

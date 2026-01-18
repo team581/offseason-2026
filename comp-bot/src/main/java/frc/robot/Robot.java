@@ -48,7 +48,7 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
-    var driverBack = hardware.driverController.back(buttonBindingsLoop);
+    var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
   }
 
