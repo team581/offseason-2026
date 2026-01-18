@@ -27,7 +27,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Shooter shooter;
   private final Feeder feeder;
   private final Swerve swerve;
-  private final Vision vision;
+
   private final Localization localization;
 
   private Pose2d robotPose = Pose2d.kZero;
@@ -53,7 +53,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.shooter = shooter;
     this.feeder = feeder;
     this.swerve = swerve;
-    this.vision = vision;
+
     this.localization = localization;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
@@ -63,12 +63,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // case PREPARE_SHOOT_HUB -> {
-      //   if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose)) {
+      //   if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose))
+      // {
       //     yield RobotState.SHOOT_HUB;
       //   }
       //   yield currentState;
       // }
-         case PREPARE_SHOOT_HUB -> {
+      case PREPARE_SHOOT_HUB -> {
         if (shooter.atGoal()) {
           yield RobotState.SHOOT_HUB;
         }

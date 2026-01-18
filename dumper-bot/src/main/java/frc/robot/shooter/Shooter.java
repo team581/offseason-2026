@@ -19,9 +19,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
-
-import static edu.wpi.first.units.Units.RPM;
-
 import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
