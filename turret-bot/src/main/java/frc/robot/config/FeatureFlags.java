@@ -11,6 +11,8 @@ public class FeatureFlags {
       FeatureFlag.of("TurretPositionComp", true);
   public static final BooleanSupplier VISION_TURRET_ANGLE_COMPENSATION =
       FeatureFlag.of("TurretAngleComp", true);
+  public static final BooleanSupplier VISION_HUB_TAGS_FILTER =
+      FeatureFlag.of("OnlyUseHubTags", true);
 
   private FeatureFlags() {}
 }

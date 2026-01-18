@@ -1,5 +1,6 @@
 package frc.robot.vision;
 
 public enum VisionState {
-  TAGS;
+  TAGS,
+  HUB_TAGS;
 }

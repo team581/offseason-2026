@@ -153,7 +153,10 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     return hasSeenTag;
   }
 
-  public void setState(VisionState state) {
+    public void setState(VisionState state) {
+    if (state == VisionState.HUB_TAGS && !FeatureFlags.VISION_HUB_TAGS_FILTER.getAsBoolean()) {
+      state = VisionState.TAGS;
+    }
     setStateFromRequest(state);
   }
 

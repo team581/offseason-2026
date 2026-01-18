@@ -18,6 +18,7 @@ import frc.robot.turret.TurretCalculator;
 import frc.robot.util.april_tags.TagMap;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final int TAG_AIM_ID = 15;
@@ -69,12 +70,23 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case HUB_AIM, HUB_AIM_ADJUSTING_SWERVE -> {
+        vision.setState(VisionState.HUB_TAGS);
         updateTurretHubGoalAngle();
         turret.hubAimRequest();
       }
-      case TAG_AIM -> turret.tagAimRequest();
-      case LOCK_FORWARD -> turret.lockForwardRequest();
-      case IDLE -> turret.idleRequest();
+      case TAG_AIM -> {
+        vision.setState(VisionState.TAGS);
+        turret.tagAimRequest();
+      }
+      case LOCK_FORWARD -> {
+        turret.lockForwardRequest();
+        swerve.normalDriveRequest();
+        vision.setState(VisionState.TAGS);
+      }
+      case IDLE -> {
+        vision.setState(VisionState.TAGS);
+        turret.idleRequest();
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 package frc.robot.vision;
 
+import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -7,6 +8,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.config.FeatureFlags;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
@@ -83,6 +85,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   public void setState(VisionState state) {
+    if (state == VisionState.HUB_TAGS && !FeatureFlags.VISION_HUB_TAGS_FILTER.getAsBoolean()) {
+      state = VisionState.TAGS;
+    }
     setStateFromRequest(state);
   }
 
@@ -91,6 +96,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     switch (newState) {
       case TAGS -> {
         mainLimelight.setState(LimelightState.TAGS);
+      }
+      case HUB_TAGS -> {
+        mainLimelight.setState(LimelightState.HUB_TAGS);
       }
     }
   }
