@@ -172,7 +172,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     sendSwerveRequest();
   }
 
- public void snapsDriveRequest(double snapAngle) {
+  public void snapsDriveRequest(double snapAngle) {
     teleopSnapsRequest.withTargetDirection(
         Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));
 

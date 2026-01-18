@@ -38,6 +38,6 @@ public class TurretCalculator {
       return MathUtil.inputModulus(actualTargetRotation + 60.0, -180, 180) - MAX_TURRET_ANGLE;
     } else {
       return MathUtil.inputModulus(actualTargetRotation - 60.0, -180, 180) - MIN_TURRET_ANGLE;
-  }
+    }
   }
 }
