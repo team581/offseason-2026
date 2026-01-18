@@ -108,7 +108,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var xyDev = 0.01 * Math.pow(distance, 1.2);
     var thetaDev = 0.03 * Math.pow(distance, 1.2);
 
-    if (distance > Units.inchesToMeters(40)) {
+    if (distance > Units.inchesToMeters(40) || !config.useMegatag1RotationWhenClose()) {
       thetaDev = Double.POSITIVE_INFINITY;
     }
 

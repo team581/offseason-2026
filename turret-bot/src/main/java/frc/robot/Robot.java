@@ -41,7 +41,7 @@ public class Robot extends Base581Robot {
           LimelightState.TAGS,
           new CameraConfig(
               LimelightModel.FOUR,
-              true,
+              false,
               0.0,
               0.0,
               TURRET_CAMERA_HEIGHT,
