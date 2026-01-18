@@ -104,7 +104,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     var cameraToTurretTransform = TURRET_TO_CAMERA.inverse();
     var fieldToTurretPose = mT1Pose;
 
-    if (FeatureFlags.VISION_CAMERA_POSITION_COMPENSATION.get()) {
+    if (FeatureFlags.VISION_CAMERA_POSITION_COMPENSATION.getAsBoolean()) {
       fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
     }
 
@@ -125,11 +125,11 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     var fieldToRobotEstimate = fieldToTurretPose;
 
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
-    if (FeatureFlags.VISION_TURRET_ANGLE_COMPENSATION.get()) {
+    if (FeatureFlags.VISION_TURRET_ANGLE_COMPENSATION.getAsBoolean()) {
       fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
     }
 
-    if (FeatureFlags.VISION_TURRET_POSITION_COMPENSATION.get()) {
+    if (FeatureFlags.VISION_TURRET_POSITION_COMPENSATION.getAsBoolean()) {
       fieldToRobotEstimate = fieldToRobotEstimate.plus(TURRET_TO_ROBOT.inverse());
     }
     DogLog.log("Vision/AdjustedTurretPose", fieldToRobotEstimate);
