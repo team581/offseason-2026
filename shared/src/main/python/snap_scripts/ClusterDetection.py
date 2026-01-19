@@ -1,8 +1,27 @@
+from collections.abc import Sequence
+from typing import Any
+
 import cv2
 import numpy as np
+from numpy.typing import NDArray
 
 
-def runPipeline(image, llrobot):
+def runPipeline(
+    image: NDArray[np.uint8], llrobot: list[float]
+) -> tuple[Sequence[NDArray[Any]], list[int | float], NDArray[np.uint8]]:
+    """
+    Main pipeline function called by Limelight.
+
+    Args:
+        image: The camera frame as a NumPy array in BGR color format.
+        llrobot: Numeric array of values sent from the robot via NetworkTables.
+
+    Returns:
+        A tuple of (contours, llpython, image):
+        - contours: Detected contours from OpenCV
+        - llpython: Custom numeric data to send back via NetworkTables
+        - image: The (possibly modified) image array
+    """
     # 1. Initialize variables
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 

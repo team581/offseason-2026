@@ -113,3 +113,17 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           args: "format --check"
+  ty:
+    name: Type check Python
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install dependencies
+        run: uv --package snapscripts sync
+      - name: Type check with ty
+        run: uv --package snapscripts run ty check

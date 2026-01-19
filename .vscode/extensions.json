@@ -3,5 +3,6 @@
   "vscjava.vscode-java-pack",
   "richardwillis.vscode-spotless-gradle",
   "bierner.markdown-mermaid",
-  "josevseb.google-java-format-for-vs-code"
+  "josevseb.google-java-format-for-vs-code",
+  "astral-sh.ty"
 ]}

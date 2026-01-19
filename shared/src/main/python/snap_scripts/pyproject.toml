@@ -1,6 +1,16 @@
 [project]
-name = "snap-scripts"
+name = "snapscripts"
 version = "0.0.0"
 description = "Limelight SnapScripts for vision processing"
 requires-python = ">=3.14"
 dependencies = ["numpy", "opencv-python"]
+
+
+[dependency-groups]
+dev = ["ty"]
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["**/*.py"]
