@@ -22,7 +22,9 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
-  private static final int RPM_TOLERANCE = 50;
+  private static final int RPM_TOLERANCE_KICKER = 100;
+
+  private static final int RPM_TOLERANCE_SHOOTER = 50;
 
   private static final double MAX_SAFE_RPM = 4000;
 
@@ -69,7 +71,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(InvertedValue.CounterClockwise_Positive))
-            .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
+            .withSlot0(new Slot0Configs().withKP(5.0).withKV(0.3).withKS(2.3).withKA(0.7))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -91,7 +93,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(InvertedValue.Clockwise_Positive))
-            .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
+            .withSlot0(new Slot0Configs().withKP(5.0).withKV(0.3).withKS(2.3).withKA(0.7))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -152,9 +154,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
-    DogLog.log("Shooter/Right/AppliedVoltage", rightMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Shooter/Left/AppliedVoltage", leftMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Shooter/Kicker/AppliedVoltage", kickerMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Kicker/StatorCurrent", kickerMotor.getStatorCurrent().getValueAsDouble());
 
     switch (state) {
       case SCORE -> {
@@ -194,13 +196,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return switch (getState()) {
       case IDLE -> true;
       case SCORE ->
-          MathUtil.isNear(leftMotorRpm, shootingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(kickerMotorRpm, shootingRpm, RPM_TOLERANCE);
+          MathUtil.isNear(leftMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(kickerMotorRpm, shootingRpm, RPM_TOLERANCE_KICKER);
       case FEEDING ->
-          MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(kickerMotorRpm, feedingRpm, RPM_TOLERANCE);
+          MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(kickerMotorRpm, feedingRpm, RPM_TOLERANCE_KICKER);
     };
   }
 
