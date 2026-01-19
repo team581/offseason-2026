@@ -2,6 +2,7 @@ package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -12,15 +13,19 @@ import frc.robot.vision.Vision;
 import frc.robot.vision.results.TagResult;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
+  private static final double MIN_TRUST_FACTOR = 0.01;
   private static final double LATENCY_CONSTANT = 0.0;
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
 
-  private double trustFactor = 0.0;
+
+  private double trustFactor = 0.1;
   private double metersTravelledSinceLastCheck = 0.0;
 
   private Pose2d robotPose = Pose2d.kZero;
+
+  private Pose2d lastCheckedPose = Pose2d.kZero;
 
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
@@ -34,8 +39,15 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     vision.getAdjustedTurretLimelighTagResult().ifPresent(this::ingestTagResult);
     vision.getBackLimelightTagResult().ifPresent(this::ingestTagResult);
     vision.getFrontLimelightTagResult().ifPresent(this::ingestTagResult);
-    trustFactor = trustFactor * 1.0 * metersTravelledSinceLastCheck;
     robotPose = drivetrain.getState().Pose;
+
+    metersTravelledSinceLastCheck =
+        lastCheckedPose.getTranslation().getDistance(robotPose.getTranslation());
+    trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck*0.001);
+    }
+
+  public double getTrustFactor() {
+    return trustFactor;
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -59,14 +71,11 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     var newTimestamp = Utils.fpgaToCurrentTime(timestamp);
     return drivetrain.samplePoseAt(newTimestamp).orElseGet(this::getPose);
   }
-
-  public double getTrustFactor() {
-    return trustFactor;
-  }
-
+  
   private void ingestTagResult(TagResult result) {
-    trustFactor = 0.0;
-
+    DogLog.timestamp("Localization/IngestTagResult");
+    trustFactor = 0.1;
+    lastCheckedPose = robotPose;
     var visionPose = result.pose();
 
     if (!vision.seenTagRecentlyForReset()) {
