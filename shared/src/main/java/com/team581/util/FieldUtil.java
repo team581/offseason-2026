@@ -21,11 +21,11 @@ public class FieldUtil {
   public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
   // calculations
-  public static final double RED_ROBOT_STARTING_LINE_X = Units.inchesToMeters(156.61);
-  public static final double BLUE_ROBOT_STARTING_LINE_X = FIELD_LENGTH - RED_ROBOT_STARTING_LINE_X;
+  public static final double BLUE_ROBOT_STARTING_LINE_X = Units.inchesToMeters(156.61);
+  public static final double RED_ROBOT_STARTING_LINE_X = FIELD_LENGTH - BLUE_ROBOT_STARTING_LINE_X;
 
-  public static final double RED_TRENCH_X = Units.inchesToMeters(182.11);
-  public static final double BLUE_TRENCH_X = FIELD_LENGTH - RED_TRENCH_X;
+  public static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
+  public static final double RED_TRENCH_X = FIELD_LENGTH - BLUE_TRENCH_X;
 
   public static final double TRENCH_TO_ROBOT_STARTING_LINE_DISTANCE_X =
       RED_TRENCH_X - RED_ROBOT_STARTING_LINE_X;
@@ -58,11 +58,11 @@ public class FieldUtil {
 
   public static final Rectangle2d RED_ALLIANCE_ZONE =
       new Rectangle2d(
-          Translation2d.kZero, new Translation2d(RED_ROBOT_STARTING_LINE_X, FIELD_WIDTH));
+         new Translation2d(RED_ROBOT_STARTING_LINE_X, 0.0), new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
   public static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(
-          new Translation2d(BLUE_ROBOT_STARTING_LINE_X, 0.0),
-          new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
+          Translation2d.kZero,
+          new Translation2d(BLUE_ROBOT_STARTING_LINE_X, FIELD_WIDTH));
 
   public static final List<Rectangle2d> TRENCH_BOXES =
       ImmutableList.of(
