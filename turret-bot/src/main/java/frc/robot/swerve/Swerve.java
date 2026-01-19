@@ -16,6 +16,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -152,6 +153,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           drivetrain.setControl(teleopRequest);
         }
       }
+      case TRENCH_ASSIST -> {
+        var robotPose = drivetrain.getState().Pose;
+        var trenchAssistVelocity = getTrenchAssistVelocity(robotPose.getY());
+        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
+          var snapAngle = Math.round(robotPose.getRotation().getDegrees() / 90.0) * 90.0;
+
+          drivetrain.setControl(
+              teleopSnapsRequest
+                  .withVelocityY(trenchAssistVelocity)
+                  .withTargetDirection(Rotation2d.fromDegrees(snapAngle)));
+        } else {
+          drivetrain.setControl(teleopRequest.withVelocityY(trenchAssistVelocity));
+        }
+      }
       case TRAILBLAZER ->
           drivetrain.setControl(
               trailblazerRequest.withSpeeds(
@@ -190,6 +205,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("Swerve/CurrentRotation", currentRotation);
 
     return MathUtil.isNear(snapsDirection, currentRotation, 5.0, -180.0, 180.0);
+  }
+
+  private final PIDController trenchPidController = new PIDController(0, 0, 0);
+
+  private double getTrenchAssistVelocity(double currentY) {
+    return currentY < 4.034663
+        ? trenchPidController.calculate(currentY, 0.632968)
+        : trenchPidController.calculate(currentY, 7.436358);
   }
 
   @Override
