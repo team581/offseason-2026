@@ -1,7 +1,6 @@
 package com.team581.math;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -71,6 +70,51 @@ final class FieldUtilTest {
     var robotTranslation = new Translation2d(4.064, 0.508);
     var insideBoxes = insideAny(robotTranslation);
     var insideRedRight = FieldUtil.RED_RIGHT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
-    assertEquals(insideBoxes, insideRedRight);
+    assertThat(insideBoxes).isEqualTo(insideRedRight);
+  }
+
+  // Alliance Zone Tests
+  @Test
+  void insideRedAllianceZone() {
+    var robotTranslation = new Translation2d(1.0, 1.0);
+    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isTrue();
+  }
+
+  @Test
+  void insideBlueAllianceZone() {
+    var robotTranslation = new Translation2d(15.0, 1.0);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isTrue();
+  }
+
+  @Test
+  void outsideRedAllianceZone() {
+    var robotTranslation = new Translation2d(8.0, 1.0);
+    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isFalse();
+  }
+
+  @Test
+  void outsideBlueAllianceZone() {
+    var robotTranslation = new Translation2d(8.0, 1.0);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isFalse();
+  }
+
+  @Test
+  void nearestLegalScoringPoseNotInsideRed() {
+    var robotTranslation = new Translation2d(8.0, 1.0);
+    var expected = new Translation2d(FieldUtil.RED_ROBOT_STARTING_LINE_X, 1.0);
+    var actual = FieldUtil.RED_ALLIANCE_ZONE.nearest(robotTranslation);
+    assertThat(expected).isEqualTo(actual);
+  }
+
+  @Test
+  void nearestLegalScoringPoseNotInsideBlue() {
+    var robotTranslation = new Translation2d(8.0, 1.0);
+    var expected = new Translation2d(FieldUtil.BLUE_ROBOT_STARTING_LINE_X, 1.0);
+    var actual = FieldUtil.BLUE_ALLIANCE_ZONE.nearest(robotTranslation);
+    assertThat(expected).isEqualTo(actual);
   }
 }
