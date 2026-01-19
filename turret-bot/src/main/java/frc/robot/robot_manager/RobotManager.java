@@ -149,7 +149,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         inAllianceZone
             ? robotPose.getTranslation()
             : allianceZone.nearest(robotPose.getTranslation());
-    DogLog.log("RobotManager/LegalPose", new Pose2d(robotTranslationInAllianceZone, robotPose.getRotation()));
+    DogLog.log(
+        "RobotManager/LegalPose",
+        new Pose2d(robotTranslationInAllianceZone, robotPose.getRotation()));
     DogLog.log("RobotManager/InAllianceZone", inAllianceZone);
 
     var goalPose = FieldUtil.getHubPose();
