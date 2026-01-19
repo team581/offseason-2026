@@ -1,7 +1,6 @@
 package frc.robot.turret;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -16,13 +15,14 @@ public class TurretCalculator {
   private static final double SPACE_FROM_HARDSTOP = 30.0;
   private static final double SPACE_FROM_HARDSTOP_TOLERANCE = 2.0;
 
-  public static double calculateTurretAimingAngle(Pose2d robot, Translation2d target) {
+  public static double calculateTurretAimingAngle(
+      Translation2d robot, Rotation2d robotRotation, Translation2d target) {
 
-    robot = robot.plus(TURRET_TO_ROBOT);
+    robot = robot.plus(TURRET_TO_ROBOT.getTranslation());
     var targetAngle =
         Units.radiansToDegrees(
             Math.atan2(target.getY() - robot.getY(), target.getX() - robot.getX()));
-    var robotHeading = robot.getRotation().getDegrees();
+    var robotHeading = robotRotation.getDegrees();
 
     targetAngle = MathUtil.inputModulus(targetAngle, -180, 180);
     robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
@@ -31,8 +31,8 @@ public class TurretCalculator {
   }
 
   public static double calculateSwerveTurretCompensationAngle(
-      double wantedTurretAngle, Pose2d robot) {
-    var robotHeading = robot.getRotation().getDegrees();
+      double wantedTurretAngle, Rotation2d robotRotation) {
+    var robotHeading = robotRotation.getDegrees();
     robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
     wantedTurretAngle = MathUtil.inputModulus(wantedTurretAngle, -180, 180);
     var actualTargetRotation = MathUtil.inputModulus(wantedTurretAngle + robotHeading, -180, 180);
