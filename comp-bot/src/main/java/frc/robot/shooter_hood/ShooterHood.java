@@ -86,8 +86,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void collectInputs() {
     measuredAngle = motor.getPosition().getValueAsDouble();
     hubAngle = DISTANCE_TO_SCORE.get(hubDistance);
-    feedAngle = DISTANCE_TO_FEED.get (feedDistance);
-
+    feedAngle = DISTANCE_TO_FEED.get(feedDistance);
   }
 
   @Override
@@ -118,13 +117,12 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   @Override
   protected void whileInState(ShooterHoodState state) {
     switch (state) {
-
       case SCORING ->
           motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(hubAngle)));
 
-
       case FEEDING ->
-          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(feedAngle)));
+          motor.setControl(
+              positionVoltageRequest.withPosition(Units.degreesToRotations(feedAngle)));
 
       case IDLE ->
           motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
