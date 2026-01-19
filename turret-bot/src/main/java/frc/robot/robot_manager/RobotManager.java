@@ -141,8 +141,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     var allianceZone = FieldUtil.getAllianceZone();
     inAllianceZone = allianceZone.contains(robotPose.getTranslation());
-    vision.addTurretObservation(
-        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
     robotPose = localization.getPose();
 
     robotTranslationInAllianceZone =
