@@ -48,7 +48,34 @@ public class Robot extends Base581Robot {
               TURRET_CAMERA_PITCH,
               0.0,
               0.0));
-  private final Vision vision = new Vision(imu, turretLimelight);
+  private final Limelight backLimelight =
+      new Limelight(
+          "back",
+          LimelightState.TAGS,
+          new CameraConfig(
+              LimelightModel.THREEG,
+              true,
+              Units.inchesToMeters(-15.5),
+              0.0,
+              Units.inchesToMeters(24.5),
+              0.0,
+              180.0,
+              0.0));
+
+  private final Limelight frontLimelight =
+      new Limelight(
+          "front",
+          LimelightState.TAGS,
+          new CameraConfig(
+              LimelightModel.THREEG,
+              true,
+              Units.inchesToMeters(9.75),
+              0.0,
+              Units.inchesToMeters(24.5),
+              0.0,
+              0.0,
+              0.0));
+  private final Vision vision = new Vision(imu, turretLimelight, backLimelight, frontLimelight);
   private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
   private final Turret turret = new Turret(hardware.turretMotor);
 

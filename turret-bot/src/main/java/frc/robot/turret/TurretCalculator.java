@@ -13,6 +13,9 @@ public class TurretCalculator {
   private static final double MIN_TURRET_ANGLE = -149.105;
   private static final double MAX_TURRET_ANGLE = 149.105;
 
+  private static final double SPACE_FROM_HARDSTOP = 30.0;
+  private static final double SPACE_FROM_HARDSTOP_TOLERANCE = 2.0;
+
   public static double calculateTurretAimingAngle(Pose2d robot, Translation2d target) {
 
     robot = robot.plus(TURRET_TO_ROBOT);
@@ -39,5 +42,19 @@ public class TurretCalculator {
     } else {
       return MathUtil.inputModulus(actualTargetRotation - 60.0, -180, 180) - MIN_TURRET_ANGLE;
     }
+  }
+
+  public static boolean doesTurretHaveRoom(double turretAngle) {
+    if (turretAngle > 0) {
+      if (turretAngle < MAX_TURRET_ANGLE - SPACE_FROM_HARDSTOP + SPACE_FROM_HARDSTOP_TOLERANCE) {
+        return true;
+      }
+    }
+    if (turretAngle < 0) {
+      if (turretAngle > MIN_TURRET_ANGLE + SPACE_FROM_HARDSTOP - SPACE_FROM_HARDSTOP_TOLERANCE) {
+        return true;
+      }
+    }
+    return false;
   }
 }

@@ -12,6 +12,7 @@ import frc.robot.autos.Autos;
 import frc.robot.generated.BuildConstants;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
+import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 
 public class Robot extends Base581Robot {
@@ -26,7 +27,9 @@ public class Robot extends Base581Robot {
 
   private final Localization localization = new Localization(swerve, hardware.drivetrain);
 
-  private final RobotManager robotManager = new RobotManager(localization, swerve);
+  private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
+
+  private final RobotManager robotManager = new RobotManager(shooterHood, localization, swerve);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);

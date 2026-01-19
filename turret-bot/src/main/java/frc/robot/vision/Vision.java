@@ -36,9 +36,13 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   private final Imu imu;
   private final Limelight turretLimelight;
+  private final Limelight backLimelight;
+  private final Limelight frontLimelight;
 
   private OptionalTagResult turretResult = new OptionalTagResult();
   private OptionalTagResult adjustedTurretResult = new OptionalTagResult();
+  private OptionalTagResult backResult = new OptionalTagResult();
+  private OptionalTagResult frontResult = new OptionalTagResult();
 
   private double robotHeading;
 
@@ -49,10 +53,13 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private boolean seeingTagDebounced = false;
   private boolean seenTagRecentlyForReset = true;
 
-  public Vision(Imu imu, Limelight turretLimelight) {
+  public Vision(
+      Imu imu, Limelight turretLimelight, Limelight backLimelight, Limelight frontLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
     this.turretLimelight = turretLimelight;
+    this.backLimelight = backLimelight;
+    this.frontLimelight = frontLimelight;
   }
 
   @Override
@@ -60,6 +67,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     angularVelocity = imu.getRobotAngularVelocity();
 
     turretResult = turretLimelight.getTagResult();
+    backResult = backLimelight.getTagResult();
+    frontResult = frontLimelight.getTagResult();
 
     if (turretResult.isPresent()) {
       hasSeenTag = true;
@@ -137,6 +146,14 @@ public class Vision extends StateMachineSubsystem<VisionState> {
         fieldToRobotEstimate, mT1Timestamp, turretLimelightResult.standardDevs());
   }
 
+  public OptionalTagResult getBackLimelightTagResult() {
+    return backResult;
+  }
+
+  public OptionalTagResult getFrontLimelightTagResult() {
+    return frontResult;
+  }
+
   public boolean seeingTagDebounced() {
     return seeingTagDebounced;
   }
@@ -165,6 +182,13 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     switch (newState) {
       case TAGS -> {
         turretLimelight.setState(LimelightState.TAGS);
+        backLimelight.setState(LimelightState.TAGS);
+        frontLimelight.setState(LimelightState.TAGS);
+      }
+      case HUB_TAGS -> {
+        turretLimelight.setState(LimelightState.HUB_TAGS);
+        backLimelight.setState(LimelightState.HUB_TAGS);
+        frontLimelight.setState(LimelightState.HUB_TAGS);
       }
     }
   }
@@ -172,6 +196,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   @Override
   public void whileInState(VisionState currentState) {
     turretLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
+    backLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
+    frontLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
 
     DogLog.log("Vision/SeeingTag", seeingTag);
     DogLog.log("Vision/SeeingTagLast5Seconds", seenTagRecentlyForReset);
@@ -185,6 +211,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     if (RobotBase.isSimulation()) {
       return true;
     }
-    return turretLimelight.isOnlineForTags();
+    return turretLimelight.isOnlineForTags()
+        || backLimelight.isOnlineForTags()
+        || frontLimelight.isOnlineForTags();
   }
 }

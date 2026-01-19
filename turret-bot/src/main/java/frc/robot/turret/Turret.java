@@ -5,7 +5,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
@@ -40,8 +40,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
   private double rawCurrent = 0.0;
   private double filteredCurrent = 0.0;
-  private final MotionMagicVoltage positionRequest =
-      new MotionMagicVoltage(0.0).withEnableFOC(false);
+  private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   public Turret(TalonFX motor) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);

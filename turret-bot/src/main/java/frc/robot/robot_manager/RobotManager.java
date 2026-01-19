@@ -8,6 +8,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.localization.Localization;
@@ -20,7 +21,7 @@ import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  private static final int TAG_AIM_ID = 15;
+  private static final IntegerSubscriber TAG_AIM_ID = DogLog.tunable("TagAimID", 9);
   private static final DoubleSubscriber TIME_OF_FLIGHT = DogLog.tunable("TimeOfFlight", 0.0);
 
   public final Localization localization;
@@ -54,7 +55,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
         if (MathUtil.isNear(
-            swerveTurretCompensationAngle, robotPose.getRotation().getDegrees(), 5, -180, 180)) {
+                swerveTurretCompensationAngle, robotPose.getRotation().getDegrees(), 5, -180, 180)
+            || TurretCalculator.doesTurretHaveRoom(turret.getAngle())) {
           yield RobotState.HUB_AIM;
         }
         yield currentState;
@@ -68,7 +70,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case HUB_AIM, HUB_AIM_ADJUSTING_SWERVE -> {
         vision.setState(VisionState.HUB_TAGS);
-        updateTurretHubGoalAngle();
         turret.hubAimRequest();
       }
       case TAG_AIM -> {
@@ -88,19 +89,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-
+  protected void whileInState(RobotState state) {
     DogLog.log("RobotManager/SwerveCompAngle", swerveTurretCompensationAngle);
 
-    vision.addTurretObservation(
-        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
-
-    robotPose = localization.getPose();
     switch (getState()) {
       case HUB_AIM -> {
-        updateTurretHubGoalAngle();
         turret.setHubAimAngle(turretHubGoalAngle);
+        // TODO: Why are we continuously setting a normal drive request? Can't we just do that once?
         swerve.normalDriveRequest();
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
@@ -112,7 +107,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.setHubAimAngle(aimingAngle);
       }
       case TAG_AIM -> {
-        var goalPose = TagMap.getTagPose(TAG_AIM_ID);
+        var goalPose = TagMap.getTagPose((int) TAG_AIM_ID.get());
         if (goalPose != null) {
           var aimingAngle =
               TurretCalculator.calculateTurretAimingAngle(robotPose, goalPose.getTranslation());
@@ -129,7 +124,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     MechanismVisualizer.log(localization.getPose(), turret.getAngle());
   }
 
-  private void updateTurretHubGoalAngle() {
+  @Override
+  protected void collectInputs() {
+    vision.addTurretObservation(
+        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
+    robotPose = localization.getPose();
+
     var goalPose = FieldUtil.getHubPose();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
