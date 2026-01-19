@@ -1,13 +1,15 @@
 package com.team581.util;
 
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.team581.autos.Point;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
-import java.util.List;
 
 public class FieldUtil {
   public static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
@@ -97,14 +99,8 @@ public class FieldUtil {
   public static boolean isRobotInAllianceZone(Pose2d robot) {
     var goalX = getHubPose().getX();
     if (FmsUtil.isRedAlliance()) {
-      if (robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD) {
-        return true;
-      }
-      return false;
+      return robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD;
     }
-    if (robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD) {
-      return true;
-    }
-    return false;
+    return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
   }
 }

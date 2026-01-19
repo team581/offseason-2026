@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -173,6 +174,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopper.shootRequest();
         swerve.snapsDriveRequest(hubGoalAngle);
       }
+      default -> {}
     }
   }
 
