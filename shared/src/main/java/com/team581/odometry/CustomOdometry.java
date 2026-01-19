@@ -10,26 +10,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 
 public class CustomOdometry extends SwerveDriveOdometry {
-  private final int numberOfModules;
-  private final Translation2d[] robotRelativeModuleOffsets;
-
-  private Pose2d robotPose = Pose2d.kZero;
-  private final SwerveModulePosition[] previousWheelPositions;
-
-  public CustomOdometry(
-      SwerveDriveKinematics kinematics,
-      Rotation2d gyroAngle,
-      SwerveModulePosition[] modulePositions) {
-    super(kinematics, gyroAngle, modulePositions);
-    numberOfModules = kinematics.getModules().length;
-    robotRelativeModuleOffsets = kinematics.getModules();
-
-    previousWheelPositions = new SwerveModulePosition[numberOfModules];
-    for (int i = 0; i < numberOfModules; i++) {
-      previousWheelPositions[i] = new SwerveModulePosition();
-    }
-  }
-
   private static Translation2d getModuleDisplacement(
       SwerveModulePosition previousWheelPosition, SwerveModulePosition currentWheelPosition) {
     // First, calculate difference between previous and current angles and distances
@@ -60,6 +40,53 @@ public class CustomOdometry extends SwerveDriveOdometry {
     double displacementY = circleCenterY - radius * currentWheelPosition.angle.getCos();
 
     return new Translation2d(displacementX, displacementY);
+  }
+
+  private final int numberOfModules;
+
+  private final Translation2d[] robotRelativeModuleOffsets;
+  private Pose2d robotPose = Pose2d.kZero;
+
+  private final SwerveModulePosition[] previousWheelPositions;
+
+  public CustomOdometry(
+      SwerveDriveKinematics kinematics,
+      Rotation2d gyroAngle,
+      SwerveModulePosition[] modulePositions) {
+    super(kinematics, gyroAngle, modulePositions);
+    numberOfModules = kinematics.getModules().length;
+    robotRelativeModuleOffsets = kinematics.getModules();
+
+    previousWheelPositions = new SwerveModulePosition[numberOfModules];
+    for (int i = 0; i < numberOfModules; i++) {
+      previousWheelPositions[i] = new SwerveModulePosition();
+    }
+  }
+
+  @Override
+  public Pose2d getPoseMeters() {
+    return robotPose;
+  }
+
+  @Override
+  public void resetPose(Pose2d poseMeters) {
+    robotPose = poseMeters;
+  }
+
+  @Override
+  public void resetPosition(
+      Rotation2d gyroAngle, SwerveModulePosition[] wheelPositions, Pose2d poseMeters) {
+    robotPose = new Pose2d(poseMeters.getTranslation(), gyroAngle);
+  }
+
+  @Override
+  public void resetRotation(Rotation2d rotation) {
+    robotPose = new Pose2d(robotPose.getTranslation(), rotation);
+  }
+
+  @Override
+  public void resetTranslation(Translation2d translation) {
+    robotPose = new Pose2d(translation, robotPose.getRotation());
   }
 
   @Override
@@ -120,31 +147,5 @@ public class CustomOdometry extends SwerveDriveOdometry {
     }
 
     return updatedPose;
-  }
-
-  @Override
-  public void resetPosition(
-      Rotation2d gyroAngle, SwerveModulePosition[] wheelPositions, Pose2d poseMeters) {
-    robotPose = new Pose2d(poseMeters.getTranslation(), gyroAngle);
-  }
-
-  @Override
-  public void resetPose(Pose2d poseMeters) {
-    robotPose = poseMeters;
-  }
-
-  @Override
-  public void resetTranslation(Translation2d translation) {
-    robotPose = new Pose2d(translation, robotPose.getRotation());
-  }
-
-  @Override
-  public void resetRotation(Rotation2d rotation) {
-    robotPose = new Pose2d(robotPose.getTranslation(), rotation);
-  }
-
-  @Override
-  public Pose2d getPoseMeters() {
-    return robotPose;
   }
 }

@@ -33,15 +33,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     robotPose = drivetrain.getState().Pose;
   }
 
-  public Pose2d getPose() {
-    return robotPose;
-  }
-
-  public Pose2d getPose(double timestamp) {
-    var newTimestamp = Utils.fpgaToCurrentTime(timestamp);
-    return drivetrain.samplePoseAt(newTimestamp).orElseGet(this::getPose);
-  }
-
   public Pose2d getLookaheadPose(double lookahead) {
     var current = getPose();
     var velocity = swerve.getFieldRelativeSpeeds();
@@ -55,17 +46,13 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return new Pose2d(x, y, theta);
   }
 
-  @Override
-  public void whileInState(LocalizationState currentState) {
-    DogLog.log("Localization/EstimatedPose", getPose());
+  public Pose2d getPose() {
+    return robotPose;
   }
 
-  public void zeroGyro() {
-    drivetrain.seedFieldCentric();
-  }
-
-  public void resetPose(Pose2d estimatedPose) {
-    drivetrain.resetPose(estimatedPose);
+  public Pose2d getPose(double timestamp) {
+    var newTimestamp = Utils.fpgaToCurrentTime(timestamp);
+    return drivetrain.samplePoseAt(newTimestamp).orElseGet(this::getPose);
   }
 
   private void ingestTagResult(TagResult result) {
@@ -78,5 +65,18 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
         visionPose,
         Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT / 1000)),
         result.standardDevs());
+  }
+
+  public void resetPose(Pose2d estimatedPose) {
+    drivetrain.resetPose(estimatedPose);
+  }
+
+  @Override
+  public void whileInState(LocalizationState currentState) {
+    DogLog.log("Localization/EstimatedPose", getPose());
+  }
+
+  public void zeroGyro() {
+    drivetrain.seedFieldCentric();
   }
 }

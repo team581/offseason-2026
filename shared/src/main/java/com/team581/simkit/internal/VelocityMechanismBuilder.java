@@ -26,10 +26,10 @@ public final class VelocityMechanismBuilder {
     return this;
   }
 
-  @CanIgnoreReturnValue
-  public VelocityMechanismBuilder withMinVelocity(double minVelocity) {
-    this.minVelocity = OptionalDouble.of(minVelocity);
-    return this;
+  public VelocityMechanism build() {
+    checkState(!motors.isEmpty(), "At least one motor is required");
+
+    return new VelocityMechanism(motors, minVelocity, maxVelocity);
   }
 
   @CanIgnoreReturnValue
@@ -38,9 +38,9 @@ public final class VelocityMechanismBuilder {
     return this;
   }
 
-  public VelocityMechanism build() {
-    checkState(!motors.isEmpty(), "At least one motor is required");
-
-    return new VelocityMechanism(motors, minVelocity, maxVelocity);
+  @CanIgnoreReturnValue
+  public VelocityMechanismBuilder withMinVelocity(double minVelocity) {
+    this.minVelocity = OptionalDouble.of(minVelocity);
+    return this;
   }
 }

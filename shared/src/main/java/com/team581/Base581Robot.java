@@ -42,52 +42,24 @@ public abstract class Base581Robot extends TimedRobot {
     ElasticLayoutUtil.onBoot();
   }
 
-  /** Must be called by subclasses to finalize initialization */
-  protected void finalizeInit() {
-    isInitialized = true;
-    DogLog.clearFault(FINALIZE_INIT_FAULT);
-
-    configureBindings();
-  }
-
   @Override
-  public void robotInit() {
-    if (!isInitialized) {
-      DogLog.logFault(FINALIZE_INIT_FAULT);
-    }
+  public void autonomousInit() {
+    ElasticLayoutUtil.onEnable();
   }
+
+  protected abstract void configureBindings();
 
   @Override
   public void disabledInit() {
     ElasticLayoutUtil.onDisable();
   }
 
-  @Override
-  public void autonomousInit() {
-    ElasticLayoutUtil.onEnable();
-  }
+  /** Must be called by subclasses to finalize initialization */
+  protected void finalizeInit() {
+    isInitialized = true;
+    DogLog.clearFault(FINALIZE_INIT_FAULT);
 
-  @Override
-  public void teleopInit() {
-    ElasticLayoutUtil.onEnable();
-  }
-
-  @Override
-  public void robotPeriodic() {
-    DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
-    DogLog.time("Scheduler/TimeSinceLastLoop");
-
-    DogLog.time("Scheduler/ButtonBindingsLoop");
-    buttonBindingsLoop.poll();
-    DogLog.timeEnd("Scheduler/ButtonBindingsLoop");
-
-    SubsystemExecutionSequencer.periodic();
-
-    if (RobotController.getBatteryVoltage() < 12.5) {
-      DogLog.logFault("Battery voltage low", AlertType.kWarning);
-    } else {
-      DogLog.clearFault("Battery voltage low");
-    }
+    configureBindings();
   }
 
   protected void logMetadata(
@@ -110,5 +82,33 @@ public abstract class Base581Robot extends TimedRobot {
     }
   }
 
-  protected abstract void configureBindings();
+  @Override
+  public void robotInit() {
+    if (!isInitialized) {
+      DogLog.logFault(FINALIZE_INIT_FAULT);
+    }
+  }
+
+  @Override
+  public void robotPeriodic() {
+    DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
+    DogLog.time("Scheduler/TimeSinceLastLoop");
+
+    DogLog.time("Scheduler/ButtonBindingsLoop");
+    buttonBindingsLoop.poll();
+    DogLog.timeEnd("Scheduler/ButtonBindingsLoop");
+
+    SubsystemExecutionSequencer.periodic();
+
+    if (RobotController.getBatteryVoltage() < 12.5) {
+      DogLog.logFault("Battery voltage low", AlertType.kWarning);
+    } else {
+      DogLog.clearFault("Battery voltage low");
+    }
+  }
+
+  @Override
+  public void teleopInit() {
+    ElasticLayoutUtil.onEnable();
+  }
 }

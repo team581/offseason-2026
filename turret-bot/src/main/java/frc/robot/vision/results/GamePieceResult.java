@@ -11,16 +11,16 @@ public class GamePieceResult {
     this.timestamp = 0.0;
   }
 
+  public double timestamp() {
+    return timestamp;
+  }
+
   public double tx() {
     return tx;
   }
 
   public double ty() {
     return ty;
-  }
-
-  public double timestamp() {
-    return timestamp;
   }
 
   public void update(double tx, double ty, double timestamp) {

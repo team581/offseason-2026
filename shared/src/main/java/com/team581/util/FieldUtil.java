@@ -75,12 +75,6 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
   }
 
-  public static Translation2d getHubPose() {
-    return FmsUtil.isRedAlliance()
-        ? HUB_POSE.redPose().getTranslation()
-        : HUB_POSE.bluePose().getTranslation();
-  }
-
   public static Translation2d getFeed1Pose() {
     return FmsUtil.isRedAlliance()
         ? FEED_1_POSE.redPose().getTranslation()
@@ -91,6 +85,12 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance()
         ? FEED_2_POSE.redPose().getTranslation()
         : FEED_2_POSE.bluePose().getTranslation();
+  }
+
+  public static Translation2d getHubPose() {
+    return FmsUtil.isRedAlliance()
+        ? HUB_POSE.redPose().getTranslation()
+        : HUB_POSE.bluePose().getTranslation();
   }
 
   // TODO: Make smarter for different rotations (would need to store bumper size)

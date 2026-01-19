@@ -10,6 +10,13 @@ import java.util.OptionalDouble;
 
 /** Predicts a simple velocity-controlled mechanism using TalonFX configuration state. */
 public final class VelocityMechanism {
+  private static double desiredMechanismVelocity(List<SimMotor> devices) {
+    return devices.stream()
+        .mapToDouble(device -> device.motor().getClosedLoopReference().getValueAsDouble())
+        .average()
+        .orElse(0.0);
+  }
+
   private static double getMechanismAccelerationLimit(List<SimMotor> devices) {
     // Collect configs for averaging
     var configs =
@@ -28,13 +35,6 @@ public final class VelocityMechanism {
         .orElse(0.0);
   }
 
-  private static double desiredMechanismVelocity(List<SimMotor> devices) {
-    return devices.stream()
-        .mapToDouble(device -> device.motor().getClosedLoopReference().getValueAsDouble())
-        .average()
-        .orElse(0.0);
-  }
-
   private final List<SimMotor> devices;
   private final OptionalDouble minVelocity;
   private final OptionalDouble maxVelocity;
@@ -42,6 +42,19 @@ public final class VelocityMechanism {
   private double previousTimestamp = MathSharedStore.getTimestamp();
   private boolean hasRefreshedAccelerationLimit = false;
   private double accelerationLimit = 0.0;
+
+  VelocityMechanism(List<SimMotor> motors, OptionalDouble minVelocity, OptionalDouble maxVelocity) {
+    this.devices = motors;
+    this.minVelocity = minVelocity;
+    this.maxVelocity = maxVelocity;
+  }
+
+  private double applyVelocityBounds(double velocity) {
+    return MathUtil.clamp(
+        velocity,
+        minVelocity.orElse(Double.NEGATIVE_INFINITY),
+        maxVelocity.orElse(Double.POSITIVE_INFINITY));
+  }
 
   /** Recomputes the predicted velocity and pushes the result into each motor sim. */
   public void update() {
@@ -73,18 +86,5 @@ public final class VelocityMechanism {
     for (var motor : devices) {
       motor.applyVelocity(newVelocity);
     }
-  }
-
-  VelocityMechanism(List<SimMotor> motors, OptionalDouble minVelocity, OptionalDouble maxVelocity) {
-    this.devices = motors;
-    this.minVelocity = minVelocity;
-    this.maxVelocity = maxVelocity;
-  }
-
-  private double applyVelocityBounds(double velocity) {
-    return MathUtil.clamp(
-        velocity,
-        minVelocity.orElse(Double.NEGATIVE_INFINITY),
-        maxVelocity.orElse(Double.POSITIVE_INFINITY));
   }
 }

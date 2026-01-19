@@ -17,12 +17,12 @@ public final class ElasticLayoutUtil {
     startServer();
   }
 
-  public static void onEnable() {
-    stopServer();
-  }
-
   public static void onDisable() {
     startServer();
+  }
+
+  public static void onEnable() {
+    stopServer();
   }
 
   public static final void startServer() {

@@ -41,6 +41,35 @@ public class ConstraintsCalculator {
   }
 
   /**
+   * Applies angular velocity constraints using a profiled PID controller.
+   *
+   * @param desiredAngularVelocity The desired angular velocity in rad/s (used when constraints are
+   *     disabled)
+   * @param currentAngleRadians The current heading in radians
+   * @param targetAngleRadians The target heading in radians
+   * @param currentSpeeds The current chassis speeds (used to reset profiled controller state)
+   * @param constraints The constraint options to apply
+   * @return The constrained angular velocity in rad/s
+   */
+  public double constrainAngularVelocity(
+      double desiredAngularVelocity,
+      double currentAngleRadians,
+      double targetAngleRadians,
+      ChassisSpeeds currentSpeeds,
+      AutoConstraintOptions constraints) {
+    if (constraints.maxAngularVelocity() > 0) {
+      return profiledAngularController.calculate(
+          currentAngleRadians,
+          new TrapezoidProfile.State(targetAngleRadians, 0),
+          constraints.getAngularConstraints());
+    }
+
+    // Reset the profiled controller when constraints are not active
+    profiledAngularController.reset(currentAngleRadians, currentSpeeds.omegaRadiansPerSecond);
+    return desiredAngularVelocity;
+  }
+
+  /**
    * Applies linear velocity constraints using slew rate limiting.
    *
    * @param desiredVelocity The desired linear velocity in m/s
@@ -84,35 +113,6 @@ public class ConstraintsCalculator {
     lastLinearVelocityTimestamp = MathSharedStore.getTimestamp();
 
     return constrainedVelocity;
-  }
-
-  /**
-   * Applies angular velocity constraints using a profiled PID controller.
-   *
-   * @param desiredAngularVelocity The desired angular velocity in rad/s (used when constraints are
-   *     disabled)
-   * @param currentAngleRadians The current heading in radians
-   * @param targetAngleRadians The target heading in radians
-   * @param currentSpeeds The current chassis speeds (used to reset profiled controller state)
-   * @param constraints The constraint options to apply
-   * @return The constrained angular velocity in rad/s
-   */
-  public double constrainAngularVelocity(
-      double desiredAngularVelocity,
-      double currentAngleRadians,
-      double targetAngleRadians,
-      ChassisSpeeds currentSpeeds,
-      AutoConstraintOptions constraints) {
-    if (constraints.maxAngularVelocity() > 0) {
-      return profiledAngularController.calculate(
-          currentAngleRadians,
-          new TrapezoidProfile.State(targetAngleRadians, 0),
-          constraints.getAngularConstraints());
-    }
-
-    // Reset the profiled controller when constraints are not active
-    profiledAngularController.reset(currentAngleRadians, currentSpeeds.omegaRadiansPerSecond);
-    return desiredAngularVelocity;
   }
 
   /** Resets the internal state of the constrainer. */

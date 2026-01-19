@@ -12,16 +12,26 @@ public abstract class ReusableOptional<T> {
     this.isPresent = false;
   }
 
-  public boolean isPresent() {
-    return isPresent;
+  public void ifPresent(Consumer<T> consumer) {
+    if (isPresent) {
+      consumer.accept(value);
+    }
   }
 
   public boolean isEmpty() {
     return !isPresent;
   }
 
-  public T orElseThrow() {
-    return value;
+  public boolean isPresent() {
+    return isPresent;
+  }
+
+  public ReusableOptional<T> or(Supplier<ReusableOptional<T>> other) {
+    if (isPresent) {
+      return this;
+    }
+
+    return other.get();
   }
 
   public T orElse(T other) {
@@ -32,17 +42,7 @@ public abstract class ReusableOptional<T> {
     return other;
   }
 
-  public void ifPresent(Consumer<T> consumer) {
-    if (isPresent) {
-      consumer.accept(value);
-    }
-  }
-
-  public ReusableOptional<T> or(Supplier<ReusableOptional<T>> other) {
-    if (isPresent) {
-      return this;
-    }
-
-    return other.get();
+  public T orElseThrow() {
+    return value;
   }
 }

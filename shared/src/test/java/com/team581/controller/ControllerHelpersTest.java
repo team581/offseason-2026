@@ -12,14 +12,14 @@ final class ControllerHelpersTest {
   }
 
   @Test
-  void joystickMagnitudeDeadbandPositiveTest() {
-    var actual = ControllerHelpers.getJoystickMagnitude(0.03, 0.03, 2);
+  void joystickMagnitudeDeadbandNegativeTest() {
+    var actual = ControllerHelpers.getJoystickMagnitude(-0.03, -0.03, 2);
     assertEquals(0, actual);
   }
 
   @Test
-  void joystickMagnitudeDeadbandNegativeTest() {
-    var actual = ControllerHelpers.getJoystickMagnitude(-0.03, -0.03, 2);
+  void joystickMagnitudeDeadbandPositiveTest() {
+    var actual = ControllerHelpers.getJoystickMagnitude(0.03, 0.03, 2);
     assertEquals(0, actual);
   }
 

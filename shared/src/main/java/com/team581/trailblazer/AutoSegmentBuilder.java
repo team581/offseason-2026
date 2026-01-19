@@ -18,39 +18,6 @@ public class AutoSegmentBuilder {
   }
 
   /**
-   * Set the linear constraints for the segment.
-   *
-   * @param maxVelocity The maximum velocity in meters per second.
-   * @param maxAcceleration The maximum acceleration in meters per second squared.
-   * @return This builder.
-   */
-  public AutoSegmentBuilder withLinearConstraints(double maxVelocity, double maxAcceleration) {
-    this.constraints =
-        Optional.of(
-            constraints
-                .orElseGet(AutoConstraintOptions::new)
-                .withLinearConstraints(maxVelocity, maxAcceleration));
-    return this;
-  }
-
-  /**
-   * Set the angular constraints for the segment.
-   *
-   * @param maxAngularVelocity The maximum angular velocity in radians per second.
-   * @param maxAngularAcceleration The maximum angular acceleration in radians per second squared.
-   * @return This builder.
-   */
-  public AutoSegmentBuilder withAngularConstraints(
-      double maxAngularVelocity, double maxAngularAcceleration) {
-    this.constraints =
-        Optional.of(
-            constraints
-                .orElseGet(AutoConstraintOptions::new)
-                .withAngularConstraints(maxAngularVelocity, maxAngularAcceleration));
-    return this;
-  }
-
-  /**
    * Builds the segment, which will be followed indefinitely.
    *
    * @return The segment.
@@ -93,5 +60,38 @@ public class AutoSegmentBuilder {
     }
 
     return new AutoSegmentCustomEnd(points, constraints, finishedTolerance);
+  }
+
+  /**
+   * Set the angular constraints for the segment.
+   *
+   * @param maxAngularVelocity The maximum angular velocity in radians per second.
+   * @param maxAngularAcceleration The maximum angular acceleration in radians per second squared.
+   * @return This builder.
+   */
+  public AutoSegmentBuilder withAngularConstraints(
+      double maxAngularVelocity, double maxAngularAcceleration) {
+    this.constraints =
+        Optional.of(
+            constraints
+                .orElseGet(AutoConstraintOptions::new)
+                .withAngularConstraints(maxAngularVelocity, maxAngularAcceleration));
+    return this;
+  }
+
+  /**
+   * Set the linear constraints for the segment.
+   *
+   * @param maxVelocity The maximum velocity in meters per second.
+   * @param maxAcceleration The maximum acceleration in meters per second squared.
+   * @return This builder.
+   */
+  public AutoSegmentBuilder withLinearConstraints(double maxVelocity, double maxAcceleration) {
+    this.constraints =
+        Optional.of(
+            constraints
+                .orElseGet(AutoConstraintOptions::new)
+                .withLinearConstraints(maxVelocity, maxAcceleration));
+    return this;
   }
 }

@@ -26,10 +26,10 @@ public final class PositionMechanismBuilder {
     return this;
   }
 
-  @CanIgnoreReturnValue
-  public PositionMechanismBuilder withMinPosition(double minPosition) {
-    this.minPosition = OptionalDouble.of(minPosition);
-    return this;
+  public PositionMechanism build() {
+    checkState(!motors.isEmpty(), "At least one motor is required");
+
+    return new PositionMechanism(motors, minPosition, maxPosition);
   }
 
   @CanIgnoreReturnValue
@@ -38,9 +38,9 @@ public final class PositionMechanismBuilder {
     return this;
   }
 
-  public PositionMechanism build() {
-    checkState(!motors.isEmpty(), "At least one motor is required");
-
-    return new PositionMechanism(motors, minPosition, maxPosition);
+  @CanIgnoreReturnValue
+  public PositionMechanismBuilder withMinPosition(double minPosition) {
+    this.minPosition = OptionalDouble.of(minPosition);
+    return this;
   }
 }

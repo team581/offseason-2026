@@ -6,13 +6,12 @@ import edu.wpi.first.wpilibj.Timer;
 public class TimestampedChassisSpeeds extends ChassisSpeeds {
   public final double timestampSeconds;
 
-  public TimestampedChassisSpeeds(double vx, double vy, double omega, double timestampSeconds) {
-    super(vx, vy, omega);
-    this.timestampSeconds = timestampSeconds;
+  public TimestampedChassisSpeeds() {
+    this(Timer.getFPGATimestamp());
   }
 
-  public TimestampedChassisSpeeds(double vx, double vy, double omega) {
-    this(vx, vy, omega, Timer.getFPGATimestamp());
+  public TimestampedChassisSpeeds(ChassisSpeeds speeds) {
+    this(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   public TimestampedChassisSpeeds(ChassisSpeeds speeds, double timestampSeconds) {
@@ -21,10 +20,6 @@ public class TimestampedChassisSpeeds extends ChassisSpeeds {
         speeds.vyMetersPerSecond,
         speeds.omegaRadiansPerSecond,
         timestampSeconds);
-  }
-
-  public TimestampedChassisSpeeds(ChassisSpeeds speeds) {
-    this(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
   }
 
   public TimestampedChassisSpeeds(TimestampedChassisSpeeds speeds) {
@@ -39,8 +34,13 @@ public class TimestampedChassisSpeeds extends ChassisSpeeds {
     this(0, 0, 0, timestampSeconds);
   }
 
-  public TimestampedChassisSpeeds() {
-    this(Timer.getFPGATimestamp());
+  public TimestampedChassisSpeeds(double vx, double vy, double omega) {
+    this(vx, vy, omega, Timer.getFPGATimestamp());
+  }
+
+  public TimestampedChassisSpeeds(double vx, double vy, double omega, double timestampSeconds) {
+    super(vx, vy, omega);
+    this.timestampSeconds = timestampSeconds;
   }
 
   public double timestampDifference(TimestampedChassisSpeeds other) {

@@ -18,14 +18,8 @@ public class HeuristicPathTracker implements PathTracker {
   }
 
   @Override
-  public void resetAndSetPoints(List<AutoPoint> points) {
-    this.points = points;
-    this.currentPointIndex = 0;
-  }
-
-  @Override
-  public void updateRobotState(Pose2d currentPose, ChassisSpeeds currentFieldRelativeRobotSpeeds) {
-    this.currentPose = currentPose;
+  public int getCurrentPointIndex() {
+    return currentPointIndex;
   }
 
   @Override
@@ -45,7 +39,13 @@ public class HeuristicPathTracker implements PathTracker {
   }
 
   @Override
-  public int getCurrentPointIndex() {
-    return currentPointIndex;
+  public void resetAndSetPoints(List<AutoPoint> points) {
+    this.points = points;
+    this.currentPointIndex = 0;
+  }
+
+  @Override
+  public void updateRobotState(Pose2d currentPose, ChassisSpeeds currentFieldRelativeRobotSpeeds) {
+    this.currentPose = currentPose;
   }
 }

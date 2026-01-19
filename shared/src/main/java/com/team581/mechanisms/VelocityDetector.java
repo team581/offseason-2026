@@ -12,13 +12,6 @@ public class VelocityDetector {
   private final Debouncer debouncer;
   private boolean hasSeenMinVelocity = false;
 
-  public VelocityDetector(double minVelocity, double minVelocityTimeout, double debounceTime) {
-    this.minVelocity = minVelocity;
-    this.minVelocityTimeout = minVelocityTimeout;
-    this.debouncer = new Debouncer(debounceTime, DebounceType.kRising);
-    timeout.start();
-  }
-
   public VelocityDetector(double minVelocity, double minVelocityTimeout) {
     this.minVelocity = minVelocity;
     this.minVelocityTimeout = minVelocityTimeout;
@@ -26,30 +19,11 @@ public class VelocityDetector {
     timeout.start();
   }
 
-  @CanIgnoreReturnValue
-  public VelocityDetector withDebounceRising(double time) {
-    this.debouncer.setDebounceTime(time);
-    this.debouncer.setDebounceType(DebounceType.kRising);
-    return this;
-  }
-
-  @CanIgnoreReturnValue
-  public VelocityDetector withDebounceFalling(double time) {
-    this.debouncer.setDebounceTime(time);
-    this.debouncer.setDebounceType(DebounceType.kFalling);
-    return this;
-  }
-
-  @CanIgnoreReturnValue
-  public VelocityDetector withDebounceBoth(double time) {
-    this.debouncer.setDebounceTime(time);
-    this.debouncer.setDebounceType(DebounceType.kBoth);
-    return this;
-  }
-
-  public void reset() {
-    hasSeenMinVelocity = false;
-    timeout.reset();
+  public VelocityDetector(double minVelocity, double minVelocityTimeout, double debounceTime) {
+    this.minVelocity = minVelocity;
+    this.minVelocityTimeout = minVelocityTimeout;
+    this.debouncer = new Debouncer(debounceTime, DebounceType.kRising);
+    timeout.start();
   }
 
   /**
@@ -64,5 +38,31 @@ public class VelocityDetector {
             || Math.abs(motorVelocity) >= minVelocity;
 
     return hasSeenMinVelocity && debouncer.calculate(Math.abs(motorVelocity) <= maxVelocity);
+  }
+
+  public void reset() {
+    hasSeenMinVelocity = false;
+    timeout.reset();
+  }
+
+  @CanIgnoreReturnValue
+  public VelocityDetector withDebounceBoth(double time) {
+    this.debouncer.setDebounceTime(time);
+    this.debouncer.setDebounceType(DebounceType.kBoth);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  public VelocityDetector withDebounceFalling(double time) {
+    this.debouncer.setDebounceTime(time);
+    this.debouncer.setDebounceType(DebounceType.kFalling);
+    return this;
+  }
+
+  @CanIgnoreReturnValue
+  public VelocityDetector withDebounceRising(double time) {
+    this.debouncer.setDebounceTime(time);
+    this.debouncer.setDebounceType(DebounceType.kRising);
+    return this;
   }
 }

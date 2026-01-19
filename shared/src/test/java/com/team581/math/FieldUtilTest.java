@@ -13,13 +13,6 @@ final class FieldUtilTest {
   }
 
   @Test
-  void outsideAllBoxesTest() {
-    var robotTranslation = new Translation2d(Units.inchesToMeters(0.0), Units.inchesToMeters(0.0));
-    var insideBoxes = insideAny(robotTranslation);
-    assertThat(insideBoxes).isFalse();
-  }
-
-  @Test
   void insideAnyBoxesTest() {
     var robotTranslation =
         new Translation2d(Units.inchesToMeters(160.0), Units.inchesToMeters(20.0));
@@ -28,30 +21,10 @@ final class FieldUtilTest {
   }
 
   @Test
-  void insideRedRightBoxTest() {
-    // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
-    // Units.inchesToMeters(20.0));
-    var robotTranslation = new Translation2d(4.064, 0.508);
-    var insideRedRight = FieldUtil.RED_RIGHT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
-    assertThat(insideRedRight).isTrue();
-  }
-
-  @Test
-  void insideRedLeftBoxTest() {
-    // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
-    // FieldUtil.FIELD_WIDTH-Units.inchesToMeters(20.0));
-    var robotTranslation = new Translation2d(4.064, 7.562);
-    var insideRedLeft = FieldUtil.RED_LEFT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
-    assertThat(insideRedLeft).isTrue();
-  }
-
-  @Test
-  void insideBlueRightBoxTest() {
-    // var robotTranslation = new Translation2d(FieldUtil.FIELD_LENGTH-Units.inchesToMeters(160.0),
-    // Units.inchesToMeters(20.0));
-    var robotTranslation = new Translation2d(12.4714, 0.508);
-    var insideBlueRight = FieldUtil.BLUE_RIGHT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
-    assertThat(insideBlueRight).isTrue();
+  void insideBlueAllianceZone() {
+    var robotTranslation = new Translation2d(15.0, 1.0);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isTrue();
   }
 
   @Test
@@ -61,6 +34,15 @@ final class FieldUtilTest {
     var robotTranslation = new Translation2d(12.4714, 7.562);
     var insideBlueLeft = FieldUtil.BLUE_LEFT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
     assertThat(insideBlueLeft).isTrue();
+  }
+
+  @Test
+  void insideBlueRightBoxTest() {
+    // var robotTranslation = new Translation2d(FieldUtil.FIELD_LENGTH-Units.inchesToMeters(160.0),
+    // Units.inchesToMeters(20.0));
+    var robotTranslation = new Translation2d(12.4714, 0.508);
+    var insideBlueRight = FieldUtil.BLUE_RIGHT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
+    assertThat(insideBlueRight).isTrue();
   }
 
   @Test
@@ -82,24 +64,29 @@ final class FieldUtilTest {
   }
 
   @Test
-  void insideBlueAllianceZone() {
-    var robotTranslation = new Translation2d(15.0, 1.0);
-    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
-    assertThat(isInside).isTrue();
+  void insideRedLeftBoxTest() {
+    // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
+    // FieldUtil.FIELD_WIDTH-Units.inchesToMeters(20.0));
+    var robotTranslation = new Translation2d(4.064, 7.562);
+    var insideRedLeft = FieldUtil.RED_LEFT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
+    assertThat(insideRedLeft).isTrue();
   }
 
   @Test
-  void outsideRedAllianceZone() {
-    var robotTranslation = new Translation2d(8.0, 1.0);
-    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
-    assertThat(isInside).isFalse();
+  void insideRedRightBoxTest() {
+    // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
+    // Units.inchesToMeters(20.0));
+    var robotTranslation = new Translation2d(4.064, 0.508);
+    var insideRedRight = FieldUtil.RED_RIGHT_UNSAFE_TRENCH_BOX.contains(robotTranslation);
+    assertThat(insideRedRight).isTrue();
   }
 
   @Test
-  void outsideBlueAllianceZone() {
+  void nearestLegalScoringPoseNotInsideBlue() {
     var robotTranslation = new Translation2d(8.0, 1.0);
-    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
-    assertThat(isInside).isFalse();
+    var expected = new Translation2d(FieldUtil.BLUE_ROBOT_STARTING_LINE_X, 1.0);
+    var actual = FieldUtil.BLUE_ALLIANCE_ZONE.nearest(robotTranslation);
+    assertThat(expected).isEqualTo(actual);
   }
 
   @Test
@@ -111,10 +98,23 @@ final class FieldUtilTest {
   }
 
   @Test
-  void nearestLegalScoringPoseNotInsideBlue() {
+  void outsideAllBoxesTest() {
+    var robotTranslation = new Translation2d(Units.inchesToMeters(0.0), Units.inchesToMeters(0.0));
+    var insideBoxes = insideAny(robotTranslation);
+    assertThat(insideBoxes).isFalse();
+  }
+
+  @Test
+  void outsideBlueAllianceZone() {
     var robotTranslation = new Translation2d(8.0, 1.0);
-    var expected = new Translation2d(FieldUtil.BLUE_ROBOT_STARTING_LINE_X, 1.0);
-    var actual = FieldUtil.BLUE_ALLIANCE_ZONE.nearest(robotTranslation);
-    assertThat(expected).isEqualTo(actual);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isFalse();
+  }
+
+  @Test
+  void outsideRedAllianceZone() {
+    var robotTranslation = new Translation2d(8.0, 1.0);
+    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isFalse();
   }
 }
