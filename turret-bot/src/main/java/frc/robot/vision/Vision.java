@@ -64,7 +64,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   @Override
   protected void collectInputs() {
-    angularVelocity = imu.getRobotAngularVelocity();
+    robotAngularVelocity = imu.getRobotAngularVelocity();
 
     turretResult = turretLimelight.getTagResult();
     backResult = backLimelight.getTagResult();
@@ -84,9 +84,10 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     }
   }
 
-  // Call this in your turret's periodic() or a fast telemetry thread
-  public void addTurretObservation(double timestamp, Rotation2d angle) {
+  // Call this in turret's periodic() or a fast telemetry thread
+  public void addTurretObservation(double timestamp, Rotation2d angle, double turretAngularVelocity) {
     turretBuffer.addSample(timestamp, angle);
+    turretLimelight.sendImuData(robotHeading, turretAngularVelocity+robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
   }
 
   private Optional<Rotation2d> getAngleAtTimestamp(double timestamp) {
@@ -195,9 +196,10 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   @Override
   public void whileInState(VisionState currentState) {
-    turretLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
-    backLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
-    frontLimelight.sendImuData(robotHeading, angularVelocity, 0.0, 0.0, 0.0, 0.0);
+    // Send IMU data to all limelights
+    // Set turret limelight angular velocity from turret
+    backLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    frontLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
 
     DogLog.log("Vision/SeeingTag", seeingTag);
     DogLog.log("Vision/SeeingTagLast5Seconds", seenTagRecentlyForReset);
