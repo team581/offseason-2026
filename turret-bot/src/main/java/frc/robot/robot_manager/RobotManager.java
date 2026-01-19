@@ -70,7 +70,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case HUB_AIM, HUB_AIM_ADJUSTING_SWERVE -> {
         vision.setState(VisionState.HUB_TAGS);
-        updateTurretHubGoalAngle();
         turret.hubAimRequest();
       }
       case TAG_AIM -> {
@@ -90,19 +89,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-
+  protected void whileInState(RobotState state) {
     DogLog.log("RobotManager/SwerveCompAngle", swerveTurretCompensationAngle);
 
-    vision.addTurretObservation(
-        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
-
-    robotPose = localization.getPose();
     switch (getState()) {
       case HUB_AIM -> {
-        updateTurretHubGoalAngle();
         turret.setHubAimAngle(turretHubGoalAngle);
+        // TODO: Why are we continuously setting a normal drive request? Can't we just do that once?
         swerve.normalDriveRequest();
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
@@ -131,7 +124,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     MechanismVisualizer.log(localization.getPose(), turret.getAngle());
   }
 
-  private void updateTurretHubGoalAngle() {
+  @Override
+  protected void collectInputs() {
+    vision.addTurretObservation(
+        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(turret.getAngle()));
+    robotPose = localization.getPose();
+
     var goalPose = FieldUtil.getHubPose();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
