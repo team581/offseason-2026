@@ -47,7 +47,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   private final Vision vision;
 
-  private static final DoubleSubscriber LATENCY_SECONDS = DogLog.tunable("TurretLatencySeconds", 0.0);
+  private static final DoubleSubscriber LATENCY_SECONDS =
+      DogLog.tunable("TurretLatencySeconds", 0.0);
 
   public Turret(TalonFX motor, Vision vision) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
