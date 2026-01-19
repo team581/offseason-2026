@@ -93,7 +93,7 @@ public class FieldUtil {
         : HUB_POSE.bluePose().getTranslation();
   }
 
-  // TODO: Make smarter for different rotations (would need to store bumper size)
+  // TODO[@rhetorr]: Make smarter for different rotations (would need to store bumper size)
   public static boolean isRobotInAllianceZone(Pose2d robot) {
     var goalX = getHubPose().getX();
     if (FmsUtil.isRedAlliance()) {

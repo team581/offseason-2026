@@ -74,7 +74,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case HUB_AIM, HUB_AIM_ADJUSTING_SWERVE -> {
+      case HUB_AIM -> {
+        vision.setState(VisionState.HUB_TAGS);
+        turret.hubAimRequest();
+        swerve.normalDriveRequest();
+      }
+      case HUB_AIM_ADJUSTING_SWERVE -> {
         vision.setState(VisionState.HUB_TAGS);
         turret.hubAimRequest();
       }
@@ -101,8 +106,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (getState()) {
       case HUB_AIM -> {
         turret.setHubAimAngle(turretHubGoalAngle);
-        // TODO: Why are we continuously setting a normal drive request? Can't we just do that once?
-        swerve.normalDriveRequest();
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
         swerve.snapsDriveRequest(swerveTurretCompensationAngle);
