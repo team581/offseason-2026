@@ -17,10 +17,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
 
-
   private double trustFactor = 0.0;
   private double metersTravelledSinceLastCheck = 0.0;
-  private Pose2d lastCheckedPose = Pose2d.kZero;
+
   private Pose2d robotPose = Pose2d.kZero;
 
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision) {
@@ -37,10 +36,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     vision.getFrontLimelightTagResult().ifPresent(this::ingestTagResult);
     trustFactor = trustFactor * 1.0 * metersTravelledSinceLastCheck;
     robotPose = drivetrain.getState().Pose;
-    }
-
-  public double getTrustFactor() {
-    return trustFactor;
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -65,9 +60,13 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return drivetrain.samplePoseAt(newTimestamp).orElseGet(this::getPose);
   }
 
+  public double getTrustFactor() {
+    return trustFactor;
+  }
+
   private void ingestTagResult(TagResult result) {
     trustFactor = 0.0;
-    lastCheckedPose = robotPose;
+
     var visionPose = result.pose();
 
     if (!vision.seenTagRecentlyForReset()) {
@@ -86,8 +85,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   @Override
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
-        DogLog.log("Localization/TrustFactor", trustFactor);
-
+    DogLog.log("Localization/TrustFactor", trustFactor);
   }
 
   public void zeroGyro() {
