@@ -1,8 +1,11 @@
 package frc.robot.vision;
 
+import java.util.Optional;
+
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -18,7 +21,6 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.OptionalTagResult;
-import java.util.Optional;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
@@ -46,7 +48,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   private double robotHeading;
 
-  private double angularVelocity;
+  private double robotAngularVelocity;
 
   private boolean hasSeenTag = false;
   private boolean seeingTag = false;
@@ -69,6 +71,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     turretResult = turretLimelight.getTagResult();
     backResult = backLimelight.getTagResult();
     frontResult = frontLimelight.getTagResult();
+
+    adjustedTurretResult = getAdjustedTurretLimelightTagResult(turretResult);
 
     if (turretResult.isPresent()) {
       hasSeenTag = true;
@@ -98,11 +102,11 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     this.robotHeading = robotHeading;
   }
 
-  public OptionalTagResult getTurretLimelighTagResult() {
-    return turretResult;
+  public OptionalTagResult getAdjustedTurretLimelighTagResult() {
+    return adjustedTurretResult;
   }
 
-  public OptionalTagResult getAdjustedTurretLimelightTagResult() {
+  private OptionalTagResult getAdjustedTurretLimelightTagResult(OptionalTagResult turretResult) {
     if (turretResult.isEmpty()) {
       return adjustedTurretResult.empty();
     }

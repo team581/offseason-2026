@@ -3,10 +3,12 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import frc.robot.config.FeatureFlags;
@@ -143,6 +145,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var allianceZone = FieldUtil.getAllianceZone();
     inAllianceZone = allianceZone.contains(robotPose.getTranslation());
     robotPose = localization.getPose();
+
+    var robotVelocity =
+        Units.radiansToDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
+    DogLog.log("RobotManager/RobotVelocity", robotVelocity);
+    var turretVelocity = turret.getVelocityDegreesPerSecond();
+    DogLog.log("RobotManager/TurretVelocity", turretVelocity);
 
     robotTranslationInAllianceZone =
         inAllianceZone
