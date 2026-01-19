@@ -48,9 +48,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   private final Vision vision;
 
-  private static final DoubleSubscriber LATENCY_SECONDS =
-      DogLog.tunable("TurretLatencySeconds", 0.0);
-
   public Turret(TalonFX motor, Vision vision) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
     this.vision = vision;
@@ -90,12 +87,15 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     DogLog.log("Turret/Angle", currentAngle);
 
     // Predict the turret's current angle to account for sensor latency
-    double latencyCompensatedAngle = Units.rotationsToDegrees(BaseStatusSignal.getLatencyCompensatedValueAsDouble(
-        motor.getPosition(), motor.getVelocity()));
+    double latencyCompensatedAngle =
+        Units.rotationsToDegrees(
+            BaseStatusSignal.getLatencyCompensatedValueAsDouble(
+                motor.getPosition(), motor.getVelocity()));
     DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
 
     // Add the predicted angle to the vision buffer at the current timestamp
-    vision.addTurretObservation(Timer.getFPGATimestamp(), Rotation2d.fromDegrees(latencyCompensatedAngle));
+    vision.addTurretObservation(
+        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(latencyCompensatedAngle));
   }
 
   @Override
