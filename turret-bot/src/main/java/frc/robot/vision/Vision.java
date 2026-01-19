@@ -1,11 +1,8 @@
 package frc.robot.vision;
 
-import java.util.Optional;
-
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -21,6 +18,7 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.OptionalTagResult;
+import java.util.Optional;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
@@ -89,9 +87,11 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   // Call this in turret's periodic() or a fast telemetry thread
-  public void addTurretObservation(double timestamp, Rotation2d angle, double turretAngularVelocity) {
+  public void addTurretObservation(
+      double timestamp, Rotation2d angle, double turretAngularVelocity) {
     turretBuffer.addSample(timestamp, angle);
-    turretLimelight.sendImuData(robotHeading, turretAngularVelocity+robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    turretLimelight.sendImuData(
+        robotHeading, turretAngularVelocity + robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
   }
 
   private Optional<Rotation2d> getAngleAtTimestamp(double timestamp) {

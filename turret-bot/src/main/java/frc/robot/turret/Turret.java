@@ -12,7 +12,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -96,7 +95,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     // Add the predicted angle to the vision buffer at the current timestamp
     vision.addTurretObservation(
-        Timer.getFPGATimestamp(), Rotation2d.fromDegrees(latencyCompensatedAngle), getVelocityDegreesPerSecond());
+        Timer.getFPGATimestamp(),
+        Rotation2d.fromDegrees(latencyCompensatedAngle),
+        getVelocityDegreesPerSecond());
   }
 
   @Override
