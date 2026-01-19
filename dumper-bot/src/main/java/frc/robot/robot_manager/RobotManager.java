@@ -173,6 +173,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopper.shootRequest();
         swerve.snapsDriveRequest(hubGoalAngle);
       }
+      default -> {}
     }
   }
 

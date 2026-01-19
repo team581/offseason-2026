@@ -81,7 +81,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     var mTEstimateTimestamp = mTEstimate.timestampSeconds;
 
-    // TODO: Make work with angular velocity from swerve + turret
     if (Math.abs(angularVelocity) > 360) {
       return tagResult.empty();
     }
@@ -182,7 +181,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       default -> {}
     }
 
-    // TODO: Remove once Limelights are upgraded
     LimelightHelpers.SetIMUMode(limelightTableName, 0);
   }
 

@@ -6,7 +6,7 @@ public enum IntakeState {
 
   IDLE(0),
   SHOOTING(12),
-  INTAKING(4);
+  INTAKING(6);
 
   public final double volts;
 

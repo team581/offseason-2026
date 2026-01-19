@@ -7,6 +7,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import frc.robot.config.FeatureFlags;
@@ -74,7 +75,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case HUB_AIM, HUB_AIM_ADJUSTING_SWERVE -> {
+      case HUB_AIM -> {
+        vision.setState(VisionState.HUB_TAGS);
+        turret.hubAimRequest();
+        swerve.normalDriveRequest();
+      }
+      case HUB_AIM_ADJUSTING_SWERVE -> {
         vision.setState(VisionState.HUB_TAGS);
         turret.hubAimRequest();
       }
@@ -101,8 +107,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (getState()) {
       case HUB_AIM -> {
         turret.setHubAimAngle(turretHubGoalAngle);
-        // TODO: Why are we continuously setting a normal drive request? Can't we just do that once?
-        swerve.normalDriveRequest();
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
         swerve.snapsDriveRequest(swerveTurretCompensationAngle);
@@ -140,6 +144,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var allianceZone = FieldUtil.getAllianceZone();
     inAllianceZone = allianceZone.contains(robotPose.getTranslation());
     robotPose = localization.getPose();
+
+    var robotVelocity =
+        Units.radiansToDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
+    DogLog.log("RobotManager/RobotVelocity", robotVelocity);
+    var turretVelocity = turret.getVelocityDegreesPerSecond();
+    DogLog.log("RobotManager/TurretVelocity", turretVelocity);
 
     robotTranslationInAllianceZone =
         inAllianceZone
