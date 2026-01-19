@@ -231,7 +231,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
 
     // Check if velocity meets threshold
-    if (!(MathHelpers.getLinearVelocity(fieldRelativeSpeeds) > TRENCH_ASSIST_VELOCITY_THRESHOLD.get())) {
+    if (!(MathHelpers.getLinearVelocity(fieldRelativeSpeeds)
+        > TRENCH_ASSIST_VELOCITY_THRESHOLD.get())) {
       return false;
     }
 

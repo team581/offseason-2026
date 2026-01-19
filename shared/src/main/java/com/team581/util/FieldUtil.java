@@ -73,20 +73,38 @@ public class FieldUtil {
 
   // TODO: Fill out trench assist zones
   // Custom zones to enable trench assist
-  private static final Rectangle2d RED_LEFT_TRENCH_ASSIST_ZONE = new Rectangle2d(new Translation2d(), new Translation2d());
-  private static final Rectangle2d RED_RIGHT_TRENCH_ASSIST_ZONE = new Rectangle2d(new Translation2d(), new Translation2d());
-  private static final Rectangle2d BLUE_LEFT_TRENCH_ASSIST_ZONE = new Rectangle2d(new Translation2d(), new Translation2d());
-  private static final Rectangle2d BLUE_RIGHT_TRENCH_ASSIST_ZONE = new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d RED_LEFT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d RED_RIGHT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d BLUE_LEFT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d BLUE_RIGHT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
 
   public static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
-        RED_LEFT_TRENCH_ASSIST_ZONE,
-        RED_RIGHT_TRENCH_ASSIST_ZONE,
-        BLUE_LEFT_TRENCH_ASSIST_ZONE,
-        BLUE_RIGHT_TRENCH_ASSIST_ZONE);
+          RED_LEFT_TRENCH_ASSIST_ZONE,
+          RED_RIGHT_TRENCH_ASSIST_ZONE,
+          BLUE_LEFT_TRENCH_ASSIST_ZONE,
+          BLUE_RIGHT_TRENCH_ASSIST_ZONE);
 
   public static Rectangle2d getAllianceZone() {
     return FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
+  }
+
+  public static Rectangle2d getClosestTrenchAssistZone(Translation2d robotPose) {
+    double closestTrenchDistance = Double.POSITIVE_INFINITY;
+    Rectangle2d closestZone = TRENCH_ASSIST_ZONES.getFirst();
+
+    for (int i = 1; i < 4; i++) {
+      if (robotPose.getDistance(TRENCH_ASSIST_ZONES.get(i).getCenter().getTranslation())
+          < closestTrenchDistance)
+        ;
+      closestZone = TRENCH_ASSIST_ZONES.get(i);
+    }
+
+    return closestZone;
   }
 
   public static Translation2d getFeed1Pose() {
@@ -105,18 +123,6 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance()
         ? HUB_POSE.redPose().getTranslation()
         : HUB_POSE.bluePose().getTranslation();
-  }
-
-  public static Rectangle2d getClosestTrenchAssistZone(Translation2d robotPose) {
-    double closestTrenchDistance = Double.POSITIVE_INFINITY;
-    Rectangle2d closestZone = TRENCH_ASSIST_ZONES.getFirst();
-
-    for (int i = 1; i < 4; i++) {
-      if (robotPose.getDistance(TRENCH_ASSIST_ZONES.get(i).getCenter().getTranslation()) < closestTrenchDistance);
-      closestZone = TRENCH_ASSIST_ZONES.get(i);
-    }
-
-    return closestZone;
   }
 
   // TODO[@rhetorr]: Make smarter for different rotations (would need to store bumper size)
