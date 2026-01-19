@@ -58,11 +58,11 @@ public class FieldUtil {
 
   public static final Rectangle2d RED_ALLIANCE_ZONE =
       new Rectangle2d(
-         new Translation2d(RED_ROBOT_STARTING_LINE_X, 0.0), new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
+          new Translation2d(RED_ROBOT_STARTING_LINE_X, 0.0),
+          new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
   public static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(
-          Translation2d.kZero,
-          new Translation2d(BLUE_ROBOT_STARTING_LINE_X, FIELD_WIDTH));
+          Translation2d.kZero, new Translation2d(BLUE_ROBOT_STARTING_LINE_X, FIELD_WIDTH));
 
   public static final List<Rectangle2d> TRENCH_BOXES =
       ImmutableList.of(
