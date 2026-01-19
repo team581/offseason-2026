@@ -1,5 +1,6 @@
 package frc.robot.turret;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -89,13 +90,12 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     DogLog.log("Turret/Angle", currentAngle);
 
     // Predict the turret's current angle to account for sensor latency
-    double velocityDegreesPerSecond =
-        Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
-    double predictedAngle = currentAngle + (velocityDegreesPerSecond * LATENCY_SECONDS.get());
-    DogLog.log("Turret/PredictedAngle", predictedAngle);
+    double latencyCompensatedAngle = Units.rotationsToDegrees(BaseStatusSignal.getLatencyCompensatedValueAsDouble(
+        motor.getPosition(), motor.getVelocity()));
+    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
 
     // Add the predicted angle to the vision buffer at the current timestamp
-    vision.addTurretObservation(Timer.getFPGATimestamp(), Rotation2d.fromDegrees(predictedAngle));
+    vision.addTurretObservation(Timer.getFPGATimestamp(), Rotation2d.fromDegrees(latencyCompensatedAngle));
   }
 
   @Override
