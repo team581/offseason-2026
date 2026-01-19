@@ -7,7 +7,6 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -42,7 +41,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX rightMotor;
   private final TalonFX kickerMotor;
 
-  private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
 
   private double hubDistance = 0;
@@ -157,9 +155,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
- //   DogLog.log("Shooter/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
- //   DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
- //   DogLog.log("Shooter/Kicker/StatorCurrent", kickerMotor.getStatorCurrent().getValueAsDouble());
+    //   DogLog.log("Shooter/Right/StatorCurrent",
+    // rightMotor.getStatorCurrent().getValueAsDouble());
+    //   DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    //   DogLog.log("Shooter/Kicker/StatorCurrent",
+    // kickerMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Kicker/Voltage", kickerMotor.getMotorVoltage().getValueAsDouble());
