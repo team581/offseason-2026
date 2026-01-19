@@ -2,7 +2,6 @@ package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -18,7 +17,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
-
 
   private double trustFactor = 0.1;
   private double metersTravelledSinceLastCheck = 0.0;
@@ -43,11 +41,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
     metersTravelledSinceLastCheck =
         lastCheckedPose.getTranslation().getDistance(robotPose.getTranslation());
-    trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck*0.001);
-    }
-
-  public double getTrustFactor() {
-    return trustFactor;
+    trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck * 0.001);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -71,7 +65,11 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     var newTimestamp = Utils.fpgaToCurrentTime(timestamp);
     return drivetrain.samplePoseAt(newTimestamp).orElseGet(this::getPose);
   }
-  
+
+  public double getTrustFactor() {
+    return trustFactor;
+  }
+
   private void ingestTagResult(TagResult result) {
     DogLog.timestamp("Localization/IngestTagResult");
     trustFactor = 0.1;
