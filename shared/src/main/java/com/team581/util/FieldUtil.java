@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import java.util.List;
+import java.util.Optional;
 
 public class FieldUtil {
   public static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
@@ -93,18 +94,9 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
   }
 
-  public static Rectangle2d getClosestTrenchAssistZone(Translation2d robotPose) {
-    double closestTrenchDistance = Double.POSITIVE_INFINITY;
-    Rectangle2d closestZone = TRENCH_ASSIST_ZONES.getFirst();
-
-    for (int i = 1; i < 4; i++) {
-      if (robotPose.getDistance(TRENCH_ASSIST_ZONES.get(i).getCenter().getTranslation())
-          < closestTrenchDistance)
-        ;
-      closestZone = TRENCH_ASSIST_ZONES.get(i);
-    }
-
-    return closestZone;
+  /** Returns the trench assist zone that the robot is currently in, if it exists. */
+  public static Optional<Rectangle2d> getCurrentTrenchAssistZone(Translation2d robotPose) {
+    return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
   }
 
   public static Translation2d getFeed1Pose() {

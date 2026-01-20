@@ -223,12 +223,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private boolean ableToTrenchAssist() {
     var robotPose = drivetrain.getState().Pose.getTranslation();
-    var closestTrenchAssistZone = FieldUtil.getClosestTrenchAssistZone(robotPose);
+    var maybeClosestTrenchAssistZone = FieldUtil.getCurrentTrenchAssistZone(robotPose);
 
     // Check if in trench assist zone
-    if (!closestTrenchAssistZone.contains(robotPose)) {
+    if (maybeClosestTrenchAssistZone.isEmpty()) {
       return false;
     }
+
+    var closestTrenchAssistZone = maybeClosestTrenchAssistZone.orElseThrow();
 
     // Check if velocity meets threshold
     if (!(MathHelpers.getLinearVelocity(fieldRelativeSpeeds)
