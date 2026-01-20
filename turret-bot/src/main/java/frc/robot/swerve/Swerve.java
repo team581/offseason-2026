@@ -233,8 +233,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     var closestTrenchAssistZone = maybeClosestTrenchAssistZone.orElseThrow();
 
     // Check if velocity meets threshold
-    if (!(MathHelpers.getLinearVelocity(fieldRelativeSpeeds)
-        > TRENCH_ASSIST_VELOCITY_THRESHOLD.get())) {
+    if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds)
+        <= TRENCH_ASSIST_VELOCITY_THRESHOLD.get()) {
       return false;
     }
 
@@ -243,11 +243,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     var angleToTrench =
         MathHelpers.getDriveDirection(
             robotPose, closestTrenchAssistZone.getCenter().getTranslation());
-    var velocityTowardTrench =
-        Math.abs(velocityAngle.getDegrees() - angleToTrench.getDegrees())
-            < TRENCH_ASSIST_ANGLE_THRESHOLD.get();
-
-    return velocityTowardTrench;
+    return Math.abs(velocityAngle.getDegrees() - angleToTrench.getDegrees())
+        < TRENCH_ASSIST_ANGLE_THRESHOLD.get();
   }
 
   @Override
