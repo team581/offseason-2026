@@ -4,5 +4,6 @@
   "richardwillis.vscode-spotless-gradle",
   "bierner.markdown-mermaid",
   "josevseb.google-java-format-for-vs-code",
-  "astral-sh.ty"
+  "astral-sh.ty",
+  "charliermarsh.ruff"
 ]}
