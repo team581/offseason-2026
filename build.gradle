@@ -60,8 +60,6 @@ subprojects {
 		if (System.getenv().containsKey("ERRORPRONE_AUTOFIX")) {
 			options.errorprone.errorproneArgs.add "-XepPatchLocation:IN_PLACE"
 		}
-
-		options.errorprone.excludedPaths = "LimelightHelpers.java"
 	}
 
 	// Common test configuration
