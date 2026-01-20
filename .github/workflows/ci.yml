@@ -126,4 +126,4 @@ jobs:
       - name: Install dependencies
         run: uv sync --package snapscripts
       - name: Type check with ty
-        run: uv --package snapscripts run ty check
+        run: uv run --package snapscripts ty check
