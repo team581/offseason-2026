@@ -10,6 +10,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -87,6 +88,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
     hubAngle = DISTANCE_TO_SCORE.get(hubDistance);
     feedAngle = DISTANCE_TO_FEED.get(feedDistance);
+
+    DogLog.log("ShooterHood/Angle", measuredAngle);
   }
 
   @Override
