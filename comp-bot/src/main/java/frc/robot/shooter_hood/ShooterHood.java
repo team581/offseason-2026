@@ -28,7 +28,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
   private double hubDistance = 0;
   private double feedDistance = 0;
-
+  private double measuredAngle = 0;
   private double hubAngle = 0;
   private double feedAngle = 0;
 
@@ -85,7 +85,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
   @Override
   protected void collectInputs() {
-
+    measuredAngle = motor.getPosition().getValueAsDouble();
     hubAngle = DISTANCE_TO_SCORE.get(hubDistance);
     feedAngle = DISTANCE_TO_FEED.get(feedDistance);
 
