@@ -56,7 +56,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       hasEnabledAuto = true;
     }
 
-    if (DriverStation.isAutonomous()) {
+    if (selectedAuto.shouldRun()) {
       selectedAuto.beforePeriodic();
       selectedAuto.periodic();
     }
