@@ -34,9 +34,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   /** The robot translation clamped to be within the alliance zone. */
   private Translation2d robotTranslationInAllianceZone = Translation2d.kZero;
 
-  // TODO: once this robot has a shooter, this will decide if it can shoot
-  private boolean inAllianceZone = true;
-
   private double swerveTurretCompensationAngle = 0.0;
   private double turretHubGoalAngle = 0.0;
 
@@ -141,8 +138,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void collectInputs() {
-    var allianceZone = FieldUtil.getAllianceZone();
-    inAllianceZone = allianceZone.contains(robotPose.getTranslation());
     robotPose = localization.getPose();
 
     var robotVelocity =
@@ -152,13 +147,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/TurretVelocity", turretVelocity);
 
     robotTranslationInAllianceZone =
-        inAllianceZone
-            ? robotPose.getTranslation()
-            : allianceZone.nearest(robotPose.getTranslation());
+        FieldUtil.getAllianceZone().nearest(robotPose.getTranslation());
     DogLog.log(
         "RobotManager/LegalPose",
         new Pose2d(robotTranslationInAllianceZone, robotPose.getRotation()));
-    DogLog.log("RobotManager/InAllianceZone", inAllianceZone);
+    DogLog.log(
+        "RobotManager/InAllianceZone",
+        robotTranslationInAllianceZone.equals(robotPose.getTranslation()));
 
     var goalPose = FieldUtil.getHubPose();
 
