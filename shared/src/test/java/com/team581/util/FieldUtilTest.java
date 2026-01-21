@@ -56,7 +56,7 @@ final class FieldUtilTest {
     var clamped = FieldUtil.clampPoseToAllianceZone(robotTranslation);
 
     assertThat(clamped.getX()).isLessThan(4.628);
-    assertThat(clamped.getY()).isEqualTo(robotTranslation.getY(), offset(0.01));
+    assertThat(clamped.getY()).isCloseTo(robotTranslation.getY(), offset(0.01));
   }
 
   @Test
@@ -68,6 +68,6 @@ final class FieldUtilTest {
     var clamped = FieldUtil.clampPoseToAllianceZone(robotTranslation);
 
     assertThat(clamped.getX()).isGreaterThan(12.527);
-    assertThat(clamped.getY()).isEqualTo(robotTranslation.getY(), offset(0.01));
+    assertThat(clamped.getY()).isCloseTo(robotTranslation.getY(), offset(0.01));
   }
 }
