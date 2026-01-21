@@ -38,7 +38,7 @@ final class FieldUtilTest {
   // }
   @Test
   void insideBlueAllianceZone() {
-    var robotTranslation = new Translation2d(1.0, 1.0);
+    var robotTranslation = new Translation2d(15.0, 1.0);
     var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isTrue();
   }
@@ -75,7 +75,7 @@ final class FieldUtilTest {
 
   @Test
   void insideRedAllianceZone() {
-    var robotTranslation = new Translation2d(15.0, 1.0);
+    var robotTranslation = new Translation2d(1.0, 1.0);
     var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isTrue();
   }
