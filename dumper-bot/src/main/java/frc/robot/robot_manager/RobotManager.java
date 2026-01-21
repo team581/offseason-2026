@@ -31,7 +31,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Swerve swerve;
   private final Vision vision;
   private final Localization localization;
-  private final ClusterMap clusterMap;
 
   private Pose2d robotPose = Pose2d.kZero;
   private double hubGoalAngle = 0.0;
@@ -59,7 +58,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.swerve = swerve;
     this.vision = vision;
     this.localization = localization;
-    this.clusterMap = clusterMap;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
   }

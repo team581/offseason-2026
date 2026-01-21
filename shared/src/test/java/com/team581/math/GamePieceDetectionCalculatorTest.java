@@ -8,9 +8,9 @@ import com.team581.vision.results.GamePieceResult;
 import edu.wpi.first.math.util.Units;
 import org.junit.jupiter.api.Test;
 
-public class GamePieceDetectionCalculatorTest {
+final class GamePieceDetectionCalculatorTest {
   @Test
-  void testCenteredDistanceCalculation() {
+  void centeredDistanceCalculation() {
     var cameraConfig =
         new CameraConfig(LimelightModel.THREE, false, 0, 0, Units.inchesToMeters(10), 0, 0, 0);
 
