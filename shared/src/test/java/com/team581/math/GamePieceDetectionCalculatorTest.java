@@ -1,0 +1,25 @@
+package com.team581.math;
+
+import org.junit.jupiter.api.Test;
+
+import com.team581.config.CameraConfig;
+import com.team581.config.LimelightModel;
+import com.team581.vision.results.GamePieceResult;
+
+import edu.wpi.first.math.util.Units;
+
+public class GamePieceDetectionCalculatorTest {
+  @Test
+  void testCenteredDistanceCalculation() {
+    var cameraConfig = new CameraConfig(LimelightModel.THREE, false, 0, 0, Units.inchesToMeters(10), 0, 0, 0);
+
+    // Calculated from https://www.calculator.net/triangle-calculator.html?vc=60&vx=10&vy=&va=90&vz=&vb=&angleunits=d&x=Calculate
+    var expectedForwardDistance = Units.inchesToMeters(17.32051);
+    var result = new GamePieceResult();
+    result.update(0.0, -30.0, 0.0);
+    var calculatedForwardDistance = GamePieceDetectionCalculator.calculateRobotRelativeTranslationFromCamera(result, cameraConfig).getX();
+
+    assert Math.abs(calculatedForwardDistance - expectedForwardDistance) < Units.inchesToMeters(0.01) :
+      String.format("Expected: %.5f, Actual: %.5f", expectedForwardDistance, calculatedForwardDistance);
+  }
+}
