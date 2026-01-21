@@ -96,7 +96,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     staleData = Arrays.equals(previousResult, result);
     previousResult = result;
     if (staleData) {
-      DogLog.timestamp("ClusterMap/SkipStaleCorners");
+      DogLog.timestamp("ClusterMap/SkipStaleData");
 
       return Optional.empty();
     }
