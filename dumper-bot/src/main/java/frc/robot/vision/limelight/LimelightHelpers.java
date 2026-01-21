@@ -703,13 +703,6 @@ public final class LimelightHelpers {
         limelightName, yaw, yawRate, pitch, pitchRate, roll, rollRate, false);
   }
 
-  private static double extractArrayEntry(double[] inData, int position) {
-    if (inData.length < position + 1) {
-      return 0;
-    }
-    return inData[position];
-  }
-
   public static double[] getBotPose(String limelightName) {
     return getLimelightNTDoubleArray(limelightName, "botpose");
   }
@@ -775,62 +768,6 @@ public final class LimelightHelpers {
     return toPose3D(poseArray);
   }
 
-  private static @Nullable PoseEstimate getBotPoseEstimate(
-      String limelightName, String entryName, boolean isMegaTag2) {
-    DoubleArrayEntry poseEntry =
-        LimelightHelpers.getLimelightDoubleArrayEntry(limelightName, entryName);
-
-    TimestampedDoubleArray tsValue = poseEntry.getAtomic();
-    double[] poseArray = tsValue.value;
-    long timestamp = tsValue.timestamp;
-
-    if (poseArray.length == 0) {
-      // Handle the case where no data is available
-      return null; // or some default PoseEstimate
-    }
-
-    var pose = toPose2D(poseArray);
-    double latency = extractArrayEntry(poseArray, 6);
-    var tagCount = (int) extractArrayEntry(poseArray, 7);
-    double tagSpan = extractArrayEntry(poseArray, 8);
-    double tagDist = extractArrayEntry(poseArray, 9);
-    double tagArea = extractArrayEntry(poseArray, 10);
-
-    // Convert server timestamp from microseconds to seconds and adjust for latency
-    double adjustedTimestamp = (timestamp / 1000000.0) - (latency / 1000.0);
-
-    RawFiducial[] rawFiducials = new RawFiducial[tagCount];
-    int valsPerFiducial = 7;
-    int expectedTotalVals = 11 + valsPerFiducial * tagCount;
-
-    if (poseArray.length != expectedTotalVals) {
-      // Don't populate fiducials
-    } else {
-      for (int i = 0; i < tagCount; i++) {
-        int baseIndex = 11 + (i * valsPerFiducial);
-        var id = (int) poseArray[baseIndex];
-        double txnc = poseArray[baseIndex + 1];
-        double tync = poseArray[baseIndex + 2];
-        double ta = poseArray[baseIndex + 3];
-        double distToCamera = poseArray[baseIndex + 4];
-        double distToRobot = poseArray[baseIndex + 5];
-        double ambiguity = poseArray[baseIndex + 6];
-        rawFiducials[i] = new RawFiducial(id, txnc, tync, ta, distToCamera, distToRobot, ambiguity);
-      }
-    }
-
-    return new PoseEstimate(
-        pose,
-        adjustedTimestamp,
-        latency,
-        tagCount,
-        tagSpan,
-        tagDist,
-        tagArea,
-        rawFiducials,
-        isMegaTag2);
-  }
-
   /**
    * Gets the MegaTag1 Pose2d and timestamp for use with WPILib pose estimator
    * (addVisionMeasurement) in the WPILib Blue alliance coordinate system.
@@ -868,9 +805,6 @@ public final class LimelightHelpers {
     return getLimelightNTDoubleArray(limelightName, "botpose_targetspace");
   }
 
-  /////
-  /////
-
   public static double[] getBotPose_wpiBlue(String limelightName) {
     return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");
   }
@@ -878,6 +812,9 @@ public final class LimelightHelpers {
   public static double[] getBotPose_wpiRed(String limelightName) {
     return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
   }
+
+  /////
+  /////
 
   /** Switch to getBotPose */
   @Deprecated
@@ -1131,9 +1068,6 @@ public final class LimelightHelpers {
     return getLimelightNTStringArray(limelightName, "rawbarcodes");
   }
 
-  /////
-  /////
-
   /**
    * Gets the latest raw neural detector results from NetworkTables
    *
@@ -1207,6 +1141,9 @@ public final class LimelightHelpers {
 
     return rawFiducials;
   }
+
+  /////
+  /////
 
   /**
    * T2D is an array that contains several targeting metrcis
@@ -1352,9 +1289,6 @@ public final class LimelightHelpers {
     return result;
   }
 
-  /////
-  /////
-
   /**
    * Converts a Pose3d object to an array of doubles in the format [x, y, z, roll, pitch, yaw].
    * Translation components are in meters, rotation components are in degrees.
@@ -1416,12 +1350,8 @@ public final class LimelightHelpers {
     }
   }
 
-  static final String sanitizeName(String name) {
-    if (Objects.equals(name, "") || name == null) {
-      return "limelight";
-    }
-    return name;
-  }
+  /////
+  /////
 
   /**
    * Sets the camera pose relative to the robot.
@@ -1522,29 +1452,6 @@ public final class LimelightHelpers {
     setLimelightNTDoubleArray(limelightName, "llrobot", outgoingPythonData);
   }
 
-  private static void setRobotOrientationInternal(
-      String limelightName,
-      double yaw,
-      double yawRate,
-      double pitch,
-      double pitchRate,
-      double roll,
-      double rollRate,
-      boolean flush) {
-
-    double[] entries = new double[6];
-    entries[0] = yaw;
-    entries[1] = yawRate;
-    entries[2] = pitch;
-    entries[3] = pitchRate;
-    entries[4] = roll;
-    entries[5] = rollRate;
-    setLimelightNTDoubleArray(limelightName, "robot_orientation_set", entries);
-    if (flush) {
-      Flush();
-    }
-  }
-
   /**
    * Enables Picture-in-Picture mode with secondary stream in the corner.
    *
@@ -1572,30 +1479,6 @@ public final class LimelightHelpers {
     setLimelightNTDouble(limelightName, "stream", 0);
   }
 
-  /////
-  /////
-
-  private static boolean synchTakesnapshot(String tableName, String snapshotName) {
-    URL url = getLimelightURLString(tableName, "capturesnapshot");
-    try {
-      var connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("GET");
-      if (snapshotName != null && !snapshotName.equals("")) {
-        connection.setRequestProperty("snapname", snapshotName);
-      }
-
-      int responseCode = connection.getResponseCode();
-      if (responseCode == 200) {
-        return true;
-      } else {
-        System.err.println("Bad LL Request");
-      }
-    } catch (IOException e) {
-      System.err.println(e.getMessage());
-    }
-    return false;
-  }
-
   /** Asynchronously take snapshot. */
   public static CompletableFuture<Boolean> takeSnapshot(String tableName, String snapshotName) {
     return CompletableFuture.supplyAsync(
@@ -1603,9 +1486,6 @@ public final class LimelightHelpers {
           return synchTakesnapshot(tableName, snapshotName);
         });
   }
-
-  /////
-  /////
 
   /**
    * Takes a 6-length array of pose data and converts it to a Pose2d object. Uses only x, y, and yaw
@@ -1647,6 +1527,126 @@ public final class LimelightHelpers {
 
   public static Boolean validPoseEstimate(PoseEstimate pose) {
     return pose != null && pose.rawFiducials != null && pose.rawFiducials.length != 0;
+  }
+
+  /////
+  /////
+
+  private static double extractArrayEntry(double[] inData, int position) {
+    if (inData.length < position + 1) {
+      return 0;
+    }
+    return inData[position];
+  }
+
+  private static @Nullable PoseEstimate getBotPoseEstimate(
+      String limelightName, String entryName, boolean isMegaTag2) {
+    DoubleArrayEntry poseEntry =
+        LimelightHelpers.getLimelightDoubleArrayEntry(limelightName, entryName);
+
+    TimestampedDoubleArray tsValue = poseEntry.getAtomic();
+    double[] poseArray = tsValue.value;
+    long timestamp = tsValue.timestamp;
+
+    if (poseArray.length == 0) {
+      // Handle the case where no data is available
+      return null; // or some default PoseEstimate
+    }
+
+    var pose = toPose2D(poseArray);
+    double latency = extractArrayEntry(poseArray, 6);
+    var tagCount = (int) extractArrayEntry(poseArray, 7);
+    double tagSpan = extractArrayEntry(poseArray, 8);
+    double tagDist = extractArrayEntry(poseArray, 9);
+    double tagArea = extractArrayEntry(poseArray, 10);
+
+    // Convert server timestamp from microseconds to seconds and adjust for latency
+    double adjustedTimestamp = (timestamp / 1000000.0) - (latency / 1000.0);
+
+    RawFiducial[] rawFiducials = new RawFiducial[tagCount];
+    int valsPerFiducial = 7;
+    int expectedTotalVals = 11 + valsPerFiducial * tagCount;
+
+    if (poseArray.length != expectedTotalVals) {
+      // Don't populate fiducials
+    } else {
+      for (int i = 0; i < tagCount; i++) {
+        int baseIndex = 11 + (i * valsPerFiducial);
+        var id = (int) poseArray[baseIndex];
+        double txnc = poseArray[baseIndex + 1];
+        double tync = poseArray[baseIndex + 2];
+        double ta = poseArray[baseIndex + 3];
+        double distToCamera = poseArray[baseIndex + 4];
+        double distToRobot = poseArray[baseIndex + 5];
+        double ambiguity = poseArray[baseIndex + 6];
+        rawFiducials[i] = new RawFiducial(id, txnc, tync, ta, distToCamera, distToRobot, ambiguity);
+      }
+    }
+
+    return new PoseEstimate(
+        pose,
+        adjustedTimestamp,
+        latency,
+        tagCount,
+        tagSpan,
+        tagDist,
+        tagArea,
+        rawFiducials,
+        isMegaTag2);
+  }
+
+  /////
+  /////
+
+  private static void setRobotOrientationInternal(
+      String limelightName,
+      double yaw,
+      double yawRate,
+      double pitch,
+      double pitchRate,
+      double roll,
+      double rollRate,
+      boolean flush) {
+
+    double[] entries = new double[6];
+    entries[0] = yaw;
+    entries[1] = yawRate;
+    entries[2] = pitch;
+    entries[3] = pitchRate;
+    entries[4] = roll;
+    entries[5] = rollRate;
+    setLimelightNTDoubleArray(limelightName, "robot_orientation_set", entries);
+    if (flush) {
+      Flush();
+    }
+  }
+
+  private static boolean synchTakesnapshot(String tableName, String snapshotName) {
+    URL url = getLimelightURLString(tableName, "capturesnapshot");
+    try {
+      var connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("GET");
+      if (snapshotName != null && !snapshotName.equals("")) {
+        connection.setRequestProperty("snapname", snapshotName);
+      }
+
+      int responseCode = connection.getResponseCode();
+      if (responseCode == 200) {
+        return true;
+      } else {
+        System.err.println("Bad LL Request");
+      }
+    } catch (IOException e) {
+      System.err.println(e.getMessage());
+    }
+    return false;
+  }
+
+  static final String sanitizeName(String name) {
+    if (Objects.equals(name, "") || name == null) {
+      return "limelight";
+    }
+    return name;
   }
 
   private LimelightHelpers() {}

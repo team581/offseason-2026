@@ -32,18 +32,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.drivetrain = drivetrain;
   }
 
-  @Override
-  protected void collectInputs() {
-    vision.getAdjustedTurretLimelighTagResult().ifPresent(this::ingestTagResult);
-    vision.getBackLimelightTagResult().ifPresent(this::ingestTagResult);
-    vision.getFrontLimelightTagResult().ifPresent(this::ingestTagResult);
-    robotPose = drivetrain.getState().Pose;
-
-    metersTravelledSinceLastCheck =
-        lastCheckedPose.getTranslation().getDistance(robotPose.getTranslation());
-    trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck * 0.001);
-  }
-
   public Pose2d getLookaheadPose(double lookahead) {
     var current = getPose();
     var velocity = swerve.getFieldRelativeSpeeds();
@@ -70,6 +58,20 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor;
   }
 
+  public void resetPose(Pose2d estimatedPose) {
+    drivetrain.resetPose(estimatedPose);
+  }
+
+  @Override
+  public void whileInState(LocalizationState currentState) {
+    DogLog.log("Localization/EstimatedPose", getPose());
+    DogLog.log("Localization/TrustFactor", trustFactor);
+  }
+
+  public void zeroGyro() {
+    drivetrain.seedFieldCentric();
+  }
+
   private void ingestTagResult(TagResult result) {
     DogLog.timestamp("Localization/IngestTagResult");
     trustFactor = 0.1;
@@ -85,17 +87,15 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
         result.standardDevs());
   }
 
-  public void resetPose(Pose2d estimatedPose) {
-    drivetrain.resetPose(estimatedPose);
-  }
-
   @Override
-  public void whileInState(LocalizationState currentState) {
-    DogLog.log("Localization/EstimatedPose", getPose());
-    DogLog.log("Localization/TrustFactor", trustFactor);
-  }
+  protected void collectInputs() {
+    vision.getAdjustedTurretLimelighTagResult().ifPresent(this::ingestTagResult);
+    vision.getBackLimelightTagResult().ifPresent(this::ingestTagResult);
+    vision.getFrontLimelightTagResult().ifPresent(this::ingestTagResult);
+    robotPose = drivetrain.getState().Pose;
 
-  public void zeroGyro() {
-    drivetrain.seedFieldCentric();
+    metersTravelledSinceLastCheck =
+        lastCheckedPose.getTranslation().getDistance(robotPose.getTranslation());
+    trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck * 0.001);
   }
 }

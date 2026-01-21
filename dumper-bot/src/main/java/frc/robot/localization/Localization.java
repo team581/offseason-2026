@@ -27,12 +27,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.vision = vision;
   }
 
-  @Override
-  protected void collectInputs() {
-    vision.getMainLimelighTagResult().ifPresent(this::ingestTagResult);
-    robotPose = drivetrain.getState().Pose;
-  }
-
   public Pose2d getLookaheadPose(double lookahead) {
     var current = getPose();
     var velocity = swerve.getFieldRelativeSpeeds();
@@ -55,6 +49,19 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return drivetrain.samplePoseAt(newTimestamp).orElseGet(this::getPose);
   }
 
+  public void resetPose(Pose2d estimatedPose) {
+    drivetrain.resetPose(estimatedPose);
+  }
+
+  @Override
+  public void whileInState(LocalizationState currentState) {
+    DogLog.log("Localization/EstimatedPose", getPose());
+  }
+
+  public void zeroGyro() {
+    drivetrain.seedFieldCentric();
+  }
+
   private void ingestTagResult(TagResult result) {
     var visionPose = result.pose();
 
@@ -67,16 +74,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
         result.standardDevs());
   }
 
-  public void resetPose(Pose2d estimatedPose) {
-    drivetrain.resetPose(estimatedPose);
-  }
-
   @Override
-  public void whileInState(LocalizationState currentState) {
-    DogLog.log("Localization/EstimatedPose", getPose());
-  }
-
-  public void zeroGyro() {
-    drivetrain.seedFieldCentric();
+  protected void collectInputs() {
+    vision.getMainLimelighTagResult().ifPresent(this::ingestTagResult);
+    robotPose = drivetrain.getState().Pose;
   }
 }

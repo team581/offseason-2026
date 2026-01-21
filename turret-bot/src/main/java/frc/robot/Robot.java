@@ -97,6 +97,20 @@ public class Robot extends Base581Robot {
   }
 
   @Override
+  public void teleopPeriodic() {
+    var leftX = hardware.driverController.getLeftX();
+    var leftY = -hardware.driverController.getLeftY();
+    var rightX = hardware.driverController.getRightX();
+
+    var translationMagnitude = ControllerHelpers.getJoystickMagnitude(leftX, leftY, 2);
+    var rotationMagnitude =
+        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
+
+    swerve.setTeleopInputs(
+        translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
+  }
+
+  @Override
   protected void configureBindings() {
     var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
@@ -112,19 +126,5 @@ public class Robot extends Base581Robot {
 
     var driverB = enabledEvent.and(hardware.driverController.b(buttonBindingsLoop));
     driverB.rising().ifHigh(robotManager::tagAimRequest);
-  }
-
-  @Override
-  public void teleopPeriodic() {
-    var leftX = hardware.driverController.getLeftX();
-    var leftY = -hardware.driverController.getLeftY();
-    var rightX = hardware.driverController.getRightX();
-
-    var translationMagnitude = ControllerHelpers.getJoystickMagnitude(leftX, leftY, 2);
-    var rotationMagnitude =
-        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
-
-    swerve.setTeleopInputs(
-        translationMagnitude, MathHelpers.rotation2d(leftX, leftY), rotationMagnitude);
   }
 }

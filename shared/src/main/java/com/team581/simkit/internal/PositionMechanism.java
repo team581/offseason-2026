@@ -72,20 +72,6 @@ public final class PositionMechanism {
     this.maxPosition = maxPosition;
   }
 
-  private TrapezoidProfile.State applyBounds(TrapezoidProfile.State state) {
-    var clampedPosition =
-        MathUtil.clamp(
-            state.position,
-            minPosition.orElse(Double.NEGATIVE_INFINITY),
-            maxPosition.orElse(Double.POSITIVE_INFINITY));
-
-    if (clampedPosition == state.position) {
-      return state;
-    }
-
-    return new TrapezoidProfile.State(clampedPosition, 0.0);
-  }
-
   /** Seeds the rotor position of every motor to match the provided mechanism position. */
   public void seedPosition(double mechanismPosition) {
     for (var motor : devices) {
@@ -115,5 +101,19 @@ public final class PositionMechanism {
     }
 
     updateTimer.restart();
+  }
+
+  private TrapezoidProfile.State applyBounds(TrapezoidProfile.State state) {
+    var clampedPosition =
+        MathUtil.clamp(
+            state.position,
+            minPosition.orElse(Double.NEGATIVE_INFINITY),
+            maxPosition.orElse(Double.POSITIVE_INFINITY));
+
+    if (clampedPosition == state.position) {
+      return state;
+    }
+
+    return new TrapezoidProfile.State(clampedPosition, 0.0);
   }
 }

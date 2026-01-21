@@ -47,39 +47,9 @@ public abstract class Base581Robot extends TimedRobot {
     ElasticLayoutUtil.onEnable();
   }
 
-  protected abstract void configureBindings();
-
   @Override
   public void disabledInit() {
     ElasticLayoutUtil.onDisable();
-  }
-
-  /** Must be called by subclasses to finalize initialization */
-  protected void finalizeInit() {
-    isInitialized = true;
-    DogLog.clearFault(FINALIZE_INIT_FAULT);
-
-    configureBindings();
-  }
-
-  protected void logMetadata(
-      String mavenName,
-      String buildDate,
-      String gitSha,
-      String gitDate,
-      String gitBranch,
-      int gitDirty) {
-    DogLog.log("Metadata/ProjectName", mavenName);
-    DogLog.log("Metadata/BuildDate", buildDate);
-    DogLog.log("Metadata/GitSHA", gitSha);
-    DogLog.log("Metadata/GitDate", gitDate);
-    DogLog.log("Metadata/GitBranch", gitBranch);
-
-    switch (gitDirty) {
-      case 0 -> DogLog.log("Metadata/GitDirty", "All changes committed");
-      case 1 -> DogLog.log("Metadata/GitDirty", "Uncomitted changes");
-      default -> DogLog.log("Metadata/GitDirty", "Unknown");
-    }
   }
 
   @Override
@@ -110,5 +80,35 @@ public abstract class Base581Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     ElasticLayoutUtil.onEnable();
+  }
+
+  protected abstract void configureBindings();
+
+  /** Must be called by subclasses to finalize initialization */
+  protected void finalizeInit() {
+    isInitialized = true;
+    DogLog.clearFault(FINALIZE_INIT_FAULT);
+
+    configureBindings();
+  }
+
+  protected void logMetadata(
+      String mavenName,
+      String buildDate,
+      String gitSha,
+      String gitDate,
+      String gitBranch,
+      int gitDirty) {
+    DogLog.log("Metadata/ProjectName", mavenName);
+    DogLog.log("Metadata/BuildDate", buildDate);
+    DogLog.log("Metadata/GitSHA", gitSha);
+    DogLog.log("Metadata/GitDate", gitDate);
+    DogLog.log("Metadata/GitBranch", gitBranch);
+
+    switch (gitDirty) {
+      case 0 -> DogLog.log("Metadata/GitDirty", "All changes committed");
+      case 1 -> DogLog.log("Metadata/GitDirty", "Uncomitted changes");
+      default -> DogLog.log("Metadata/GitDirty", "Unknown");
+    }
   }
 }

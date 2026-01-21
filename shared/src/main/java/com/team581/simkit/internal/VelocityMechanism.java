@@ -49,13 +49,6 @@ public final class VelocityMechanism {
     this.maxVelocity = maxVelocity;
   }
 
-  private double applyVelocityBounds(double velocity) {
-    return MathUtil.clamp(
-        velocity,
-        minVelocity.orElse(Double.NEGATIVE_INFINITY),
-        maxVelocity.orElse(Double.POSITIVE_INFINITY));
-  }
-
   /** Recomputes the predicted velocity and pushes the result into each motor sim. */
   public void update() {
     if (!hasRefreshedAccelerationLimit) {
@@ -86,5 +79,12 @@ public final class VelocityMechanism {
     for (var motor : devices) {
       motor.applyVelocity(newVelocity);
     }
+  }
+
+  private double applyVelocityBounds(double velocity) {
+    return MathUtil.clamp(
+        velocity,
+        minVelocity.orElse(Double.NEGATIVE_INFINITY),
+        maxVelocity.orElse(Double.POSITIVE_INFINITY));
   }
 }

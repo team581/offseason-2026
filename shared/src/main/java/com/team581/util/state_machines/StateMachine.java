@@ -18,55 +18,8 @@ public abstract class StateMachine<S extends Enum<S>> {
     state = initialState;
   }
 
-  /**
-   * Runs once after entering a new state. This is where you should run one-off state actions.
-   *
-   * @param newState The newly entered state.
-   */
-  protected void afterTransition(S newState) {}
-
   public void beforePeriodic() {
     collectInputs();
-  }
-
-  /**
-   * Runs once before exiting the current state. This is where you should run state exit actions.
-   *
-   * <p>Default behavior is to do nothing.
-   *
-   * @param oldState The state being exited.
-   * @param newState The state being entered.
-   */
-  protected void beforeTransition(S oldState, S newState) {}
-
-  /**
-   * {@link StateMachineSubsystemInputManager} will call this method for each state machine. Used
-   * for retrieving sensor values, etc. Inputs are collected in a special phase before any subsystem
-   * periodic methods are run.
-   *
-   * <p>Default behavior is to do nothing.
-   */
-  protected void collectInputs() {}
-
-  /** Run side effects that occur when a state transition happens. */
-  private void doTransition() {
-    DogLog.log(name + "/State", state);
-
-    lastTransitionTimestamp = Timer.getFPGATimestamp();
-
-    afterTransition(state);
-  }
-
-  /**
-   * Process transitions from one state to another.
-   *
-   * <p>Default behavior is to stay in the current state indefinitely.
-   *
-   * @param currentState The current state.
-   * @return The new state after processing transitions.
-   */
-  protected S getNextState(S currentState) {
-    return currentState;
   }
 
   /**
@@ -91,6 +44,53 @@ public abstract class StateMachine<S extends Enum<S>> {
     setStateFromRequest(getNextState(state));
 
     whileInState(state);
+  }
+
+  /** Run side effects that occur when a state transition happens. */
+  private void doTransition() {
+    DogLog.log(name + "/State", state);
+
+    lastTransitionTimestamp = Timer.getFPGATimestamp();
+
+    afterTransition(state);
+  }
+
+  /**
+   * Runs once after entering a new state. This is where you should run one-off state actions.
+   *
+   * @param newState The newly entered state.
+   */
+  protected void afterTransition(S newState) {}
+
+  /**
+   * Runs once before exiting the current state. This is where you should run state exit actions.
+   *
+   * <p>Default behavior is to do nothing.
+   *
+   * @param oldState The state being exited.
+   * @param newState The state being entered.
+   */
+  protected void beforeTransition(S oldState, S newState) {}
+
+  /**
+   * {@link StateMachineSubsystemInputManager} will call this method for each state machine. Used
+   * for retrieving sensor values, etc. Inputs are collected in a special phase before any subsystem
+   * periodic methods are run.
+   *
+   * <p>Default behavior is to do nothing.
+   */
+  protected void collectInputs() {}
+
+  /**
+   * Process transitions from one state to another.
+   *
+   * <p>Default behavior is to stay in the current state indefinitely.
+   *
+   * @param currentState The current state.
+   * @return The new state after processing transitions.
+   */
+  protected S getNextState(S currentState) {
+    return currentState;
   }
 
   /** Resets the timer used for {@link #timeout(double)}. */

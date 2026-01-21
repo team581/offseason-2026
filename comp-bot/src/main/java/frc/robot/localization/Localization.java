@@ -20,11 +20,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.drivetrain = drivetrain;
   }
 
-  @Override
-  protected void collectInputs() {
-    robotPose = drivetrain.getState().Pose;
-  }
-
   public Pose2d getLookaheadPose(double lookahead) {
     var current = getPose();
     var velocity = swerve.getFieldRelativeSpeeds();
@@ -58,5 +53,10 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   public void zeroGyro() {
     drivetrain.seedFieldCentric();
+  }
+
+  @Override
+  protected void collectInputs() {
+    robotPose = drivetrain.getState().Pose;
   }
 }

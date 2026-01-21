@@ -57,15 +57,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     this.limelight = limelight;
   }
 
-  @Override
-  protected void collectInputs() {
-    if (!FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
-      return;
-    }
-    swerveSpeeds = swerve.getRobotRelativeSpeeds();
-    updateMap();
-  }
-
   public Optional<Pose2d> getBestClusterPose() {
     if (clusterMap.isEmpty()) {
       return Optional.empty();
@@ -84,6 +75,21 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       return Optional.of(clusterPoseWithIntakeRotation);
     }
     return Optional.empty();
+  }
+
+  @Override
+  public void robotPeriodic() {
+    super.robotPeriodic();
+    try {
+      DogLog.log(
+          "Cluster/Clusters",
+          clusterMap.stream()
+              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
+              .toArray(Pose2d[]::new));
+    } catch (RuntimeException error) {
+      DogLog.logFault("ClusterMapLoggingError");
+      System.err.println(error);
+    }
   }
 
   private Optional<Translation2d> getRawClusterPoses() {
@@ -126,21 +132,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             robotPoseAtCapture, gamePieceResult, limelight.config);
 
     return Optional.of(clusterPose);
-  }
-
-  @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-    try {
-      DogLog.log(
-          "Cluster/Clusters",
-          clusterMap.stream()
-              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
-              .toArray(Pose2d[]::new));
-    } catch (RuntimeException error) {
-      DogLog.logFault("ClusterMapLoggingError");
-      System.err.println(error);
-    }
   }
 
   private boolean safeToTrack() {
@@ -188,5 +179,14 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
       clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster));
     }
+  }
+
+  @Override
+  protected void collectInputs() {
+    if (!FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
+      return;
+    }
+    swerveSpeeds = swerve.getRobotRelativeSpeeds();
+    updateMap();
   }
 }

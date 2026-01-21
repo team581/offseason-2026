@@ -23,13 +23,6 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     this.drivetrain = drivetrain;
   }
 
-  @Override
-  protected void collectInputs() {
-    driveState = drivetrain.getState();
-    robotHeading = MathUtil.inputModulus(driveState.Pose.getRotation().getDegrees(), -180, 180);
-    robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
-  }
-
   public double getRobotAngularVelocity() {
     return robotAngularVelocity;
   }
@@ -42,5 +35,12 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   public void whileInState(ImuState currentState) {
     DogLog.log("Imu/RobotHeading", robotHeading, Degrees);
     DogLog.log("Imu/AngularVelocity", robotAngularVelocity, DegreesPerSecond);
+  }
+
+  @Override
+  protected void collectInputs() {
+    driveState = drivetrain.getState();
+    robotHeading = MathUtil.inputModulus(driveState.Pose.getRotation().getDegrees(), -180, 180);
+    robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
   }
 }
