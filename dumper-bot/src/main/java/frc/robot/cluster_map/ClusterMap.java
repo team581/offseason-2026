@@ -1,9 +1,14 @@
 package frc.robot.cluster_map;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import static java.util.Comparator.comparingDouble;
+import java.util.Optional;
 
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,12 +24,9 @@ import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightHelpers;
 import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.GamePieceResult;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
+  private static final double SAME_CLUSTER_DETECTION_THRESHOLD_METERS = 1.0;
   private static final double SWERVE_MAX_LINEAR_SPEED_TRACKING = 3.0;
   private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 3.0;
 
@@ -167,7 +169,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             .filter(
                 rememberedCluster -> {
                   return rememberedCluster.expiresAt() != newCoralExpiry
-                      && (rememberedCluster.clusterTranslation().getDistance(visionCluster) < 0.8);
+                      && (rememberedCluster.clusterTranslation().getDistance(visionCluster) < SAME_CLUSTER_DETECTION_THRESHOLD_METERS);
                 })
             .min(
                 (a, b) ->

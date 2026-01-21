@@ -3,10 +3,12 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
 import frc.robot.hopper.Hopper;
@@ -30,6 +32,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Swerve swerve;
   private final Vision vision;
   private final Localization localization;
+  private final ClusterMap clusterMap;
 
   private Pose2d robotPose = Pose2d.kZero;
   private double hubGoalAngle = 0.0;
@@ -47,7 +50,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Feeder feeder,
       Swerve swerve,
       Vision vision,
-      Localization localization) {
+      Localization localization,
+      ClusterMap clusterMap) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.intake = intake;
     this.hopper = hopper;
@@ -56,6 +60,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.swerve = swerve;
     this.vision = vision;
     this.localization = localization;
+    this.clusterMap = clusterMap;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
   }

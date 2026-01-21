@@ -9,9 +9,11 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
+import frc.robot.cluster_map.ClusterMap;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.hopper.Hopper;
@@ -46,8 +48,23 @@ public class Robot extends Base581Robot {
               20,
               0,
               0));
+
+               private final Limelight groundLimelight =
+      new Limelight(
+          "ground",
+          LimelightState.CLUSTER_MAP,
+          new CameraConfig(
+              LimelightModel.THREE,
+              false,
+              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(0.0),
+              00,
+              0,
+              0));
   private final Vision vision = new Vision(imu, mainLimelight);
   private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
+  private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final Intake intake = new Intake(hardware.intakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
@@ -55,7 +72,7 @@ public class Robot extends Base581Robot {
           hardware.leftShooterMotor, hardware.rightShooterMotor, hardware.kickerShooterMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final RobotManager robotManager =
-      new RobotManager(intake, hopper, shooter, feeder, swerve, vision, localization);
+      new RobotManager(intake, hopper, shooter, feeder, swerve, vision, localization, clusterMap);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
