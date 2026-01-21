@@ -1,5 +1,7 @@
 package com.team581.math;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.vision.results.GamePieceResult;
@@ -22,9 +24,6 @@ public class GamePieceDetectionCalculatorTest {
                 result, cameraConfig)
             .getX();
 
-    assert Math.abs(calculatedForwardDistance - expectedForwardDistance)
-            < Units.inchesToMeters(0.01)
-        : String.format(
-            "Expected: %.5f, Actual: %.5f", expectedForwardDistance, calculatedForwardDistance);
+    assertEquals(expectedForwardDistance, calculatedForwardDistance, Units.inchesToMeters(0.01));
   }
 }
