@@ -92,6 +92,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     double[] result = LimelightHelpers.getPythonScriptData(limelight.limelightTableName);
 
+    if (result == null || result.length < 5) {
+      DogLog.timestamp("ClusterMap/NoData");
+      return Optional.empty();
+    }
     // Check if the result array has changed
     staleData = Arrays.equals(previousResult, result);
     previousResult = result;
