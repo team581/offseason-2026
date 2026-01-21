@@ -2,6 +2,8 @@ package frc.robot.robot_manager;
 
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.localization.Localization;
 import frc.robot.shooter_hood.ShooterHood;
@@ -17,7 +19,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean nearTrench = false;
 
   public RobotManager(ShooterHood shooterHood, Localization localization, Swerve swerve) {
-    super(SubsystemPriority.ROBOT_MANAGER, RobotState.PLACEHOLDER_STATE);
+    super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
     this.localization = localization;
     this.swerve = swerve;
@@ -26,10 +28,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
-      case PLACEHOLDER_STATE -> {
-        swerve.normalDriveRequest();
-        shooterHood.idleRequest();
-      }
       case IDLE -> {
         swerve.normalDriveRequest();
         shooterHood.idleRequest();
@@ -43,7 +41,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE -> {
         if (nearTrench) {
           shooterHood.idleRequest();
+          DogLog.log("RobotManager/StowShooterHood", true);
         } else {
+          DogLog.log("RobotManager/StowShooterHood", false);
           shooterHood.scoreRequest(0);
         }
       }
