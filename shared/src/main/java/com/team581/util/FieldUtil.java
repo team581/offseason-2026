@@ -26,7 +26,8 @@ public class FieldUtil {
 
   // // given
   public static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
-  // public static final double RED_TRENCH_X = Units.inchesToMeters(182.11);
+  public static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
+  public static final double RED_TRENCH_X = FIELD_LENGTH-BLUE_TRENCH_X;
   // public static final double TRENCH_WIDTH_Y = Units.inchesToMeters(25.62 * 2);
 
   // // calculated
@@ -36,7 +37,8 @@ public class FieldUtil {
   // 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
   // public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH-RED_TRENCH_BOX_LENGTH_X;
 
-  // public static final double TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y = FIELD_WIDTH-TRENCH_WIDTH_Y;
+  private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(49.84);
+  public static final double OPPOSITE_TRENCH_COORDINATE_Y = FIELD_WIDTH - TRENCH_LENGTH_Y;
 
   // // end of calculations
   // public static final Rectangle2d RED_DEPOT_SIDE_TRENCH_BOX =
@@ -71,23 +73,43 @@ public class FieldUtil {
   //         FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX,
   //         FieldUtil.RED_OUTPOST_SIDE_TRENCH_BOX);
 
-  // TODO: Fill out trench assist zones
-  // Custom zones to enable trench assist
-  private static final Rectangle2d RED_LEFT_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(new Translation2d(), new Translation2d());
-  private static final Rectangle2d RED_RIGHT_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(new Translation2d(), new Translation2d());
-  private static final Rectangle2d BLUE_LEFT_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(new Translation2d(), new Translation2d());
-  private static final Rectangle2d BLUE_RIGHT_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(new Translation2d(), new Translation2d());
+  // Custom zones to enable trench assist for driver to cleanly drive through with speed
+  public static final double BOTTOM_TRENCH_Y = Units.inchesToMeters(TRENCH_LENGTH_Y / 2.0);
+  public static final double TOP_TRENCH_Y =
+      Units.inchesToMeters(FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0);
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(70.0);
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
+
+  // TODO: we're never using "right" or "left" in the names again it's gonna be OUTPOST_SIDE or DEPOT_SIDE
+  private static final Rectangle2d RED_DEPOT_SIDE_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          new Translation2d(RED_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, 0.0),
+          new Translation2d(
+              RED_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, TRENCH_ASSIST_ZONE_LENGTH_Y));
+  private static final Rectangle2d RED_OUTPOST_SIDE_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          new Translation2d(
+              RED_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
+              FIELD_WIDTH - TRENCH_ASSIST_ZONE_LENGTH_Y),
+          new Translation2d(RED_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, FIELD_WIDTH));
+  private static final Rectangle2d BLUE_OUTPOST_SIDE_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          new Translation2d(
+              BLUE_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
+              FIELD_WIDTH - TRENCH_ASSIST_ZONE_LENGTH_Y),
+          new Translation2d(BLUE_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, FIELD_WIDTH));
+  private static final Rectangle2d BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          new Translation2d(BLUE_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, 0.0),
+          new Translation2d(
+              BLUE_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, TRENCH_ASSIST_ZONE_LENGTH_Y));
 
   public static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
-          RED_LEFT_TRENCH_ASSIST_ZONE,
-          RED_RIGHT_TRENCH_ASSIST_ZONE,
-          BLUE_LEFT_TRENCH_ASSIST_ZONE,
-          BLUE_RIGHT_TRENCH_ASSIST_ZONE);
+          RED_DEPOT_SIDE_TRENCH_ASSIST_ZONE,
+          RED_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
+          BLUE_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
+          BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE);
 
   public static Rectangle2d getAllianceZone() {
     return FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
