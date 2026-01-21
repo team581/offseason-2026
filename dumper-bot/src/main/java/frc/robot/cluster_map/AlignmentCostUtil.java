@@ -1,7 +1,6 @@
 package frc.robot.cluster_map;
 
 import com.team581.math.MathHelpers;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -31,5 +30,4 @@ public class AlignmentCostUtil {
                 targetDirection.minus(MathHelpers.getDriveDirection(robotVelocity)).getRadians());
     return distanceCost + driveAngleCost;
   }
-
 }

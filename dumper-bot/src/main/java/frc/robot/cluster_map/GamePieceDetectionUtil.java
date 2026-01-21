@@ -1,7 +1,6 @@
 package frc.robot.cluster_map;
 
 import com.team581.config.CameraConfig;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -34,8 +33,7 @@ public final class GamePieceDetectionUtil {
     if (adjustedThetaY == 0) {
       forwardOffset = Math.abs(-cameraConfig.right());
     } else {
-      forwardOffset =
-          (cameraConfig.up() / Math.tan(adjustedThetaY));
+      forwardOffset = (cameraConfig.up() / Math.tan(adjustedThetaY));
     }
 
     double sidewaysOffset = forwardOffset * Math.tan(newThetaX);

@@ -1,14 +1,9 @@
 package frc.robot.cluster_map;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import static java.util.Comparator.comparingDouble;
-import java.util.Optional;
 
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -24,6 +19,10 @@ import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightHelpers;
 import frc.robot.vision.limelight.LimelightState;
 import frc.robot.vision.results.GamePieceResult;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SWERVE_MAX_LINEAR_SPEED_TRACKING = 3.0;
@@ -40,13 +39,12 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private Localization localization;
   private Swerve swerve;
 
-
   private final Comparator<Pose2d> bestClusterComparator =
-      comparingDouble(target ->
-              {
-      return AlignmentCostUtil.getClusterAlignCost(
-              target, localization.getPose(), swerve.getFieldRelativeSpeeds());
-  });
+      comparingDouble(
+          target -> {
+            return AlignmentCostUtil.getClusterAlignCost(
+                target, localization.getPose(), swerve.getFieldRelativeSpeeds());
+          });
 
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
@@ -57,44 +55,14 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     this.limelight = limelight;
   }
 
-  private Optional<Translation2d> getRawClusterPoses() {
-    if (limelight.getState() != LimelightState.CLUSTER_MAP) {
-      return Optional.empty();
+  @Override
+  protected void collectInputs() {
+    if (!FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
+      return;
     }
-
-    double[] result = LimelightHelpers.getPythonScriptData(limelight.limelightTableName);
-
-    // Check if the result array has changed
-    staleData = Arrays.equals(previousResult, result);
-    previousResult = result;
-    if (staleData) {
-      DogLog.timestamp("CoralMap/SkipStaleCorners");
-
-      return Optional.empty();
-    }
-
-    //TODO: Verify latency is correct for data from python
-    double latency =
-        (LimelightHelpers.getLatency_Capture(limelight.limelightTableName)
-                + LimelightHelpers.getLatency_Pipeline(limelight.limelightTableName))
-            / 1000.0;
-
-    double timestamp = Timer.getFPGATimestamp() - latency;
-
-    var robotPoseAtCapture = localization.getPose(timestamp);
-
-        double angleX = result[0];
-        double angleY = result[1];
-
-        gamePieceResult.update(angleX, angleY, 0);
-
-        var clusterPose =
-            GamePieceDetectionUtil.calculateFieldRelativeTranslationFromCamera(
-                robotPoseAtCapture, gamePieceResult, limelight.config);
-
-        return Optional.of(clusterPose);
-      }
-
+    swerveSpeeds = swerve.getRobotRelativeSpeeds();
+    updateMap();
+  }
 
   public Optional<Pose2d> getBestCoralPose() {
     if (clusterMap.isEmpty()) {
@@ -115,6 +83,59 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     return Optional.empty();
   }
 
+  private Optional<Translation2d> getRawClusterPoses() {
+    if (limelight.getState() != LimelightState.CLUSTER_MAP) {
+      return Optional.empty();
+    }
+
+    double[] result = LimelightHelpers.getPythonScriptData(limelight.limelightTableName);
+
+    // Check if the result array has changed
+    staleData = Arrays.equals(previousResult, result);
+    previousResult = result;
+    if (staleData) {
+      DogLog.timestamp("CoralMap/SkipStaleCorners");
+
+      return Optional.empty();
+    }
+
+    // TODO: Verify latency is correct for data from python
+    double latency =
+        (LimelightHelpers.getLatency_Capture(limelight.limelightTableName)
+                + LimelightHelpers.getLatency_Pipeline(limelight.limelightTableName))
+            / 1000.0;
+
+    double timestamp = Timer.getFPGATimestamp() - latency;
+
+    var robotPoseAtCapture = localization.getPose(timestamp);
+
+    double angleX = result[0];
+    double angleY = result[1];
+
+    gamePieceResult.update(angleX, angleY, 0);
+
+    var clusterPose =
+        GamePieceDetectionUtil.calculateFieldRelativeTranslationFromCamera(
+            robotPoseAtCapture, gamePieceResult, limelight.config);
+
+    return Optional.of(clusterPose);
+  }
+
+  @Override
+  public void robotPeriodic() {
+    super.robotPeriodic();
+    try {
+      DogLog.log(
+          "Cluster/Clusters",
+          clusterMap.stream()
+              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
+              .toArray(Pose2d[]::new));
+    } catch (RuntimeException error) {
+      DogLog.logFault("CoralMapLoggingError");
+      System.err.println(error);
+    }
+  }
+
   private boolean safeToTrack() {
     return swerveSpeeds.vxMetersPerSecond < SWERVE_MAX_LINEAR_SPEED_TRACKING
         && swerveSpeeds.vyMetersPerSecond < SWERVE_MAX_LINEAR_SPEED_TRACKING
@@ -130,7 +151,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     var visionCluster = latestPose.orElseThrow();
 
-
     clusterMap.removeIf(
         element -> {
           return (element.expiresAt() < Timer.getFPGATimestamp());
@@ -142,48 +162,23 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     double newCoralExpiry = Timer.getFPGATimestamp() + CLUSTER_LIFETIME_SECONDS;
 
-      Optional<ClusterMapElement> match =
-          clusterMap.stream()
-              .filter(
-                  rememberedCluster -> {
-                    return rememberedCluster.expiresAt() != newCoralExpiry
-                        && (rememberedCluster.clusterTranslation().getDistance(visionCluster) < 0.8);
-                  })
-              .min(
-                  (a, b) ->
-                      Double.compare(
-                          a.clusterTranslation().getDistance(visionCluster),
-                          b.clusterTranslation().getDistance(visionCluster)));
+    Optional<ClusterMapElement> match =
+        clusterMap.stream()
+            .filter(
+                rememberedCluster -> {
+                  return rememberedCluster.expiresAt() != newCoralExpiry
+                      && (rememberedCluster.clusterTranslation().getDistance(visionCluster) < 0.8);
+                })
+            .min(
+                (a, b) ->
+                    Double.compare(
+                        a.clusterTranslation().getDistance(visionCluster),
+                        b.clusterTranslation().getDistance(visionCluster)));
 
-      if (match.isPresent()) {
-        clusterMap.remove(match.orElseThrow());
-
+    if (match.isPresent()) {
+      clusterMap.remove(match.orElseThrow());
 
       clusterMap.add(new ClusterMapElement(newCoralExpiry, visionCluster));
-    }
-  }
-
-  @Override
-  protected void collectInputs() {
-    if (!FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
-      return;
-    }
-    swerveSpeeds = swerve.getRobotRelativeSpeeds();
-    updateMap();
-  }
-
-  @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-    try {
-      DogLog.log(
-          "Cluster/Clusters",
-          clusterMap.stream()
-              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
-              .toArray(Pose2d[]::new));
-    } catch (RuntimeException error) {
-      DogLog.logFault("CoralMapLoggingError");
-      System.err.println(error);
     }
   }
 }
