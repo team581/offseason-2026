@@ -1,14 +1,16 @@
-import cv2
 import os
 import sys
+
+import ClusterDetection
+import cv2
+import numpy as np
+from numpy.typing import NDArray
 
 # Add the directory containing ClusterDetection.py to the Python path
 # This assumes run_cluster_detection_local.py is in the same directory as ClusterDetection.py
 script_dir = os.path.dirname(__file__)
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
-
-import ClusterDetection
 
 
 def main():
@@ -33,13 +35,16 @@ def main():
         print("or update 'sample_image_path' to point to a valid image file.")
         return
 
-    image = cv2.imread(sample_image_path)
+    loaded_image = cv2.imread(sample_image_path)
 
-    if image is None:
+    if loaded_image is None:
         print(
             f"ERROR: Could not load image from '{sample_image_path}'. Check file path and integrity."
         )
         return
+
+    # Ensure the image has the correct type for the pipeline
+    image: NDArray[np.uint8] = loaded_image.astype(np.uint8)
 
     print(f"Successfully loaded image: {sample_image_path} with shape {image.shape}")
 
