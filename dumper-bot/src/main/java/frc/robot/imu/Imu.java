@@ -8,19 +8,19 @@ import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Imu extends BaseImuSubsystem {
-  BuiltInAccelerometer builtInAccelerometer = new BuiltInAccelerometer();
+  private final BuiltInAccelerometer builtInAccelerometer = new BuiltInAccelerometer();
 
-  double builtInPrevXAccel = 0.0;
+  private final LinearFilter builtInXAccelFilter = LinearFilter.movingAverage(10);
+  private final LinearFilter builtInYAccelFilter = LinearFilter.movingAverage(10);
 
-  double builtInPrevYAccel = 0.0;
-  double pigeonXPrevAccel = 0.0;
-  double pigeonYPrevAccel = 0.0;
-  LinearFilter builtInXAccelFilter = LinearFilter.movingAverage(10);
+  private final LinearFilter pigeonXAccelFilter = LinearFilter.movingAverage(10);
+  private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
-  LinearFilter builtInYAccelFilter = LinearFilter.movingAverage(10);
-  LinearFilter pigeonXAccelFilter = LinearFilter.movingAverage(10);
+  private double builtInPrevXAccel = 0.0;
+  private double builtInPrevYAccel = 0.0;
 
-  LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
+  private double pigeonXPrevAccel = 0.0;
+  private double pigeonYPrevAccel = 0.0;
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
