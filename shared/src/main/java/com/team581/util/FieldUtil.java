@@ -25,12 +25,12 @@ public class FieldUtil {
   // // calculations
 
   // // given
-  public static final double RED_STARTING_LINE_X = Units.inchesToMeters(156.61);
+  public static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
   // public static final double RED_TRENCH_X = Units.inchesToMeters(182.11);
   // public static final double TRENCH_WIDTH_Y = Units.inchesToMeters(25.62 * 2);
 
   // // calculated
-  public static final double BLUE_STARTING_LINE_X = FIELD_LENGTH - RED_STARTING_LINE_X;
+  public static final double RED_STARTING_LINE_X = FIELD_LENGTH - BLUE_STARTING_LINE_X;
 
   // public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X +
   // 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
@@ -57,11 +57,11 @@ public class FieldUtil {
   //         new Translation2d(BLUE_STARTING_LINE_X, 0.0),
   //         new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
 
-  public static final Rectangle2d RED_ALLIANCE_ZONE =
-      new Rectangle2d(Translation2d.kZero, new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH));
   public static final Rectangle2d BLUE_ALLIANCE_ZONE =
+      new Rectangle2d(Translation2d.kZero, new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH));
+  public static final Rectangle2d RED_ALLIANCE_ZONE =
       new Rectangle2d(
-          new Translation2d(BLUE_STARTING_LINE_X, 0.0),
+          new Translation2d(RED_STARTING_LINE_X, 0.0),
           new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
   // public static final List<Rectangle2d> TRENCH_BOXES =

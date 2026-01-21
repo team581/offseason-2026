@@ -39,7 +39,7 @@ final class FieldUtilTest {
   @Test
   void insideBlueAllianceZone() {
     var robotTranslation = new Translation2d(15.0, 1.0);
-    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isTrue();
   }
 
@@ -76,7 +76,7 @@ final class FieldUtilTest {
   @Test
   void insideRedAllianceZone() {
     var robotTranslation = new Translation2d(1.0, 1.0);
-    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isTrue();
   }
 
@@ -101,16 +101,16 @@ final class FieldUtilTest {
   @Test
   void nearestLegalScoringPoseNotInsideBlue() {
     var robotTranslation = new Translation2d(8.0, 1.0);
-    var expected = new Translation2d(FieldUtil.BLUE_STARTING_LINE_X, 1.0);
-    var actual = FieldUtil.BLUE_ALLIANCE_ZONE.nearest(robotTranslation);
+    var expected = new Translation2d(FieldUtil.RED_STARTING_LINE_X, 1.0);
+    var actual = FieldUtil.RED_ALLIANCE_ZONE.nearest(robotTranslation);
     assertThat(expected).isEqualTo(actual);
   }
 
   @Test
   void nearestLegalScoringPoseNotInsideRed() {
     var robotTranslation = new Translation2d(8.0, 1.0);
-    var expected = new Translation2d(FieldUtil.RED_STARTING_LINE_X, 1.0);
-    var actual = FieldUtil.RED_ALLIANCE_ZONE.nearest(robotTranslation);
+    var expected = new Translation2d(FieldUtil.BLUE_STARTING_LINE_X, 1.0);
+    var actual = FieldUtil.BLUE_ALLIANCE_ZONE.nearest(robotTranslation);
     assertThat(expected).isEqualTo(actual);
   }
 
@@ -125,14 +125,14 @@ final class FieldUtilTest {
   @Test
   void outsideBlueAllianceZone() {
     var robotTranslation = new Translation2d(8.0, 1.0);
-    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isFalse();
   }
 
   @Test
   void outsideRedAllianceZone() {
     var robotTranslation = new Translation2d(8.0, 1.0);
-    var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isFalse();
   }
 }
