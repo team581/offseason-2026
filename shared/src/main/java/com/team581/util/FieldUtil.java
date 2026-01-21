@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class FieldUtil {
-  public static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
+  private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
   // In meters
   public static final double FIELD_LENGTH = 16.540988;
   public static final double FIELD_WIDTH = 8.069326;
@@ -21,57 +21,20 @@ public class FieldUtil {
   public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
   public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
-  // OLD TRENCH BOXES, NOW USING TRENCH ASSIST BOXES
-  // // calculations
+  private static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
+  private static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
+  private static final double RED_TRENCH_X = FIELD_LENGTH - BLUE_TRENCH_X;
 
-  // // given
-  public static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
-  public static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
-  public static final double RED_TRENCH_X = FIELD_LENGTH - BLUE_TRENCH_X;
-  // public static final double TRENCH_WIDTH_Y = Units.inchesToMeters(25.62 * 2);
-
-  // // calculated
-  public static final double RED_STARTING_LINE_X = FIELD_LENGTH - BLUE_STARTING_LINE_X;
-
-  // public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X +
-  // 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
-  // public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH-RED_TRENCH_BOX_LENGTH_X;
+  private static final double RED_STARTING_LINE_X = FIELD_LENGTH - BLUE_STARTING_LINE_X;
 
   private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(49.84);
-  public static final double OPPOSITE_TRENCH_COORDINATE_Y = FIELD_WIDTH - TRENCH_LENGTH_Y;
 
-  // // end of calculations
-  // public static final Rectangle2d RED_DEPOT_SIDE_TRENCH_BOX =
-  //     new Rectangle2d(
-  //         new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH),
-  //         new Translation2d(RED_TRENCH_BOX_LENGTH_X, TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y));
-  // public static final Rectangle2d RED_OUTPOST_SIDE_TRENCH_BOX =
-  //     new Rectangle2d(
-  //         new Translation2d(RED_STARTING_LINE_X, 0.0),
-  //         new Translation2d(RED_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
-
-  // public static final Rectangle2d BLUE_OUTPOST_SIDE_TRENCH_BOX =
-  //     new Rectangle2d(
-  //         new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH),
-  //         new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y));
-  // public static final Rectangle2d BLUE_DEPOT_SIDE_TRENCH_BOX =
-  //     new Rectangle2d(
-  //         new Translation2d(BLUE_STARTING_LINE_X, 0.0),
-  //         new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
-
-  public static final Rectangle2d BLUE_ALLIANCE_ZONE =
+  private static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(Translation2d.kZero, new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH));
-  public static final Rectangle2d RED_ALLIANCE_ZONE =
+  private static final Rectangle2d RED_ALLIANCE_ZONE =
       new Rectangle2d(
           new Translation2d(RED_STARTING_LINE_X, 0.0),
           new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
-
-  // public static final List<Rectangle2d> TRENCH_BOXES =
-  //     ImmutableList.of(
-  //         FieldUtil.BLUE_OUTPOST_SIDE_TRENCH_BOX,
-  //         FieldUtil.BLUE_DEPOT_SIDE_TRENCH_BOX,
-  //         FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX,
-  //         FieldUtil.RED_OUTPOST_SIDE_TRENCH_BOX);
 
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
   public static final double BOTTOM_TRENCH_Y = Units.inchesToMeters(TRENCH_LENGTH_Y / 2.0);
@@ -105,15 +68,17 @@ public class FieldUtil {
           new Translation2d(
               BLUE_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, TRENCH_ASSIST_ZONE_LENGTH_Y));
 
-  public static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
+  private static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
           RED_DEPOT_SIDE_TRENCH_ASSIST_ZONE,
           RED_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
           BLUE_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
           BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE);
 
-  public static Rectangle2d getAllianceZone() {
-    return FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
+  public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
+    var allianceZone = FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
+
+    return allianceZone.nearest(pose);
   }
 
   /** Returns the trench assist zone that the robot is currently in, if it exists. */
@@ -121,27 +86,11 @@ public class FieldUtil {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
   }
 
-  public static Translation2d getFeed1Pose() {
-    return FmsUtil.isRedAlliance()
-        ? FEED_1_POSE.redPose().getTranslation()
-        : FEED_1_POSE.bluePose().getTranslation();
-  }
-
-  public static Translation2d getFeed2Pose() {
-    return FmsUtil.isRedAlliance()
-        ? FEED_2_POSE.redPose().getTranslation()
-        : FEED_2_POSE.bluePose().getTranslation();
-  }
-
-  public static Translation2d getHubPose() {
-    return FmsUtil.isRedAlliance()
-        ? HUB_POSE.redPose().getTranslation()
-        : HUB_POSE.bluePose().getTranslation();
-  }
-
   // TODO(@rhetorr): Make smarter for different rotations (would need to store bumper size)
+  // TODO: This seems like it duplicates functionality you can get from clampPoseToAllianceZone -
+  // you can just check if clampPoseToAllianceZone(robotPose) == robotPose
   public static boolean isRobotInAllianceZone(Pose2d robot) {
-    var goalX = getHubPose().getX();
+    var goalX = HUB_POSE.getPose().getX();
     if (FmsUtil.isRedAlliance()) {
       return robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD;
     }

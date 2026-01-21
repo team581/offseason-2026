@@ -20,10 +20,6 @@ import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
-  private static Translation2d HUB_GOAL_POSE = FieldUtil.getHubPose();
-  private static Translation2d FEED_1_GOAL_POSE = FieldUtil.getFeed1Pose();
-  private static Translation2d FEED_2_GOAL_POSE = FieldUtil.getFeed2Pose();
-
   private final Intake intake;
   private final Hopper hopper;
   private final Shooter shooter;
@@ -33,12 +29,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Localization localization;
 
   private Pose2d robotPose = Pose2d.kZero;
+
+  private Translation2d hubGoalPose = Translation2d.kZero;
   private double hubGoalAngle = 0.0;
-  private double feed1GoalAngle = 0.0;
-  private double feed2GoalAngle = 0.0;
   private double hubDistance = 0.0;
+
+  private Translation2d feed1GoalPose = Translation2d.kZero;
+  private double feed1GoalAngle = 0.0;
   private double feed1Distance = 0.0;
+
+  private Translation2d feed2GoalPose = Translation2d.kZero;
+  private double feed2GoalAngle = 0.0;
   private double feed2Distance = 0.0;
+
   private double timeOfFlight = 0.0;
 
   public RobotManager(
@@ -204,28 +207,32 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     timeOfFlight = shooter.getCurrentTimeOfFlight();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
-      HUB_GOAL_POSE =
+      hubGoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.getHubPose(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
-      FEED_1_GOAL_POSE =
+              FieldUtil.HUB_POSE.getTranslation(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
+      feed1GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.getFeed1Pose(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
-      FEED_2_GOAL_POSE =
+              FieldUtil.FEED_1_POSE.getTranslation(),
+              swerve.getFieldRelativeSpeeds(),
+              timeOfFlight);
+      feed2GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.getFeed2Pose(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
+              FieldUtil.FEED_2_POSE.getTranslation(),
+              swerve.getFieldRelativeSpeeds(),
+              timeOfFlight);
     } else {
-      HUB_GOAL_POSE = FieldUtil.getHubPose();
-      FEED_1_GOAL_POSE = FieldUtil.getFeed1Pose();
-      FEED_2_GOAL_POSE = FieldUtil.getFeed2Pose();
+      hubGoalPose = FieldUtil.HUB_POSE.getTranslation();
+      feed1GoalPose = FieldUtil.FEED_1_POSE.getTranslation();
+      feed2GoalPose = FieldUtil.FEED_2_POSE.getTranslation();
     }
 
-    hubGoalAngle = getSwerveAimingAngle(HUB_GOAL_POSE);
-    feed1GoalAngle = getSwerveAimingAngle(FEED_1_GOAL_POSE);
-    feed2GoalAngle = getSwerveAimingAngle(FEED_2_GOAL_POSE);
+    hubGoalAngle = getSwerveAimingAngle(hubGoalPose);
+    feed1GoalAngle = getSwerveAimingAngle(feed1GoalPose);
+    feed2GoalAngle = getSwerveAimingAngle(feed2GoalPose);
 
-    hubDistance = robotPose.getTranslation().getDistance(HUB_GOAL_POSE);
-    feed1Distance = robotPose.getTranslation().getDistance(FEED_1_GOAL_POSE);
-    feed2Distance = robotPose.getTranslation().getDistance(FEED_2_GOAL_POSE);
+    hubDistance = robotPose.getTranslation().getDistance(hubGoalPose);
+    feed1Distance = robotPose.getTranslation().getDistance(feed1GoalPose);
+    feed2Distance = robotPose.getTranslation().getDistance(feed2GoalPose);
   }
 
   private double getSwerveAimingAngle(Translation2d goal) {

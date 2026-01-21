@@ -50,8 +50,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-    nearTrench =
-        FieldUtil.TRENCH_ASSIST_ZONES.stream()
-            .anyMatch(trench -> trench.contains(robotPose.getTranslation()));
+    nearTrench = FieldUtil.getCurrentTrenchAssistZone(robotPose.getTranslation()).isPresent();
   }
 }

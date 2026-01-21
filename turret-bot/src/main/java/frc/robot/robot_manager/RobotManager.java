@@ -109,7 +109,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.snapsDriveRequest(swerveTurretCompensationAngle);
         var goalPose =
             ShootOnTheMove.getVelocityCompensatedGoal(
-                FieldUtil.getHubPose(), swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+                FieldUtil.HUB_POSE.getTranslation(),
+                swerve.getFieldRelativeSpeeds(),
+                TIME_OF_FLIGHT.get());
         var aimingAngle =
             TurretCalculator.calculateTurretAimingAngle(
                 robotTranslationInAllianceZone, robotPose.getRotation(), goalPose);
@@ -146,8 +148,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var turretVelocity = turret.getVelocityDegreesPerSecond();
     DogLog.log("RobotManager/TurretVelocity", turretVelocity);
 
-    robotTranslationInAllianceZone =
-        FieldUtil.getAllianceZone().nearest(robotPose.getTranslation());
+    robotTranslationInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose.getTranslation());
     DogLog.log(
         "RobotManager/LegalPose",
         new Pose2d(robotTranslationInAllianceZone, robotPose.getRotation()));
@@ -155,7 +156,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         "RobotManager/InAllianceZone",
         robotTranslationInAllianceZone.equals(robotPose.getTranslation()));
 
-    var goalPose = FieldUtil.getHubPose();
+    var goalPose = FieldUtil.HUB_POSE.getTranslation();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       goalPose =
