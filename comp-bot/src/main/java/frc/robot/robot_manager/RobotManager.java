@@ -15,7 +15,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Swerve swerve;
   private final ShooterHood shooterHood;
 
-  private Pose2d robotPose = new Pose2d();
+  private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
   public RobotManager(ShooterHood shooterHood, Localization localization, Swerve swerve) {
@@ -55,7 +55,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     nearTrench =
-        FieldUtil.TRENCH_BOXES.stream()
+        FieldUtil.TRENCH_ASSIST_ZONES.stream()
             .anyMatch(trench -> trench.contains(robotPose.getTranslation()));
   }
 }

@@ -21,39 +21,41 @@ public class FieldUtil {
   public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
   public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
-  // calculations
 
-  // given
+  // OLD TRENCH BOXES, NOW USING TRENCH ASSIST BOXES
+  // // calculations
+
+  // // given
   public static final double RED_STARTING_LINE_X = Units.inchesToMeters(156.61);
-  public static final double RED_TRENCH_X = Units.inchesToMeters(182.11);
-  public static final double TRENCH_WIDTH_Y = Units.inchesToMeters(25.62 * 2);
+  // public static final double RED_TRENCH_X = Units.inchesToMeters(182.11);
+  // public static final double TRENCH_WIDTH_Y = Units.inchesToMeters(25.62 * 2);
 
-  // calculated
+  // // calculated
   public static final double BLUE_STARTING_LINE_X = FIELD_LENGTH - RED_STARTING_LINE_X;
 
-  public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X + 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
-  public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH-RED_TRENCH_BOX_LENGTH_X;
+  // public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X + 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
+  // public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH-RED_TRENCH_BOX_LENGTH_X;
 
-  public static final double TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y = FIELD_WIDTH-TRENCH_WIDTH_Y;
+  // public static final double TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y = FIELD_WIDTH-TRENCH_WIDTH_Y;
 
-  // end of calculations
-  public static final Rectangle2d RED_DEPOT_SIDE_TRENCH_BOX =
-      new Rectangle2d(
-          new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH),
-          new Translation2d(RED_TRENCH_BOX_LENGTH_X, TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y));
-  public static final Rectangle2d RED_OUTPOST_SIDE_TRENCH_BOX =
-      new Rectangle2d(
-          new Translation2d(RED_STARTING_LINE_X, 0.0),
-          new Translation2d(RED_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
+  // // end of calculations
+  // public static final Rectangle2d RED_DEPOT_SIDE_TRENCH_BOX =
+  //     new Rectangle2d(
+  //         new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH),
+  //         new Translation2d(RED_TRENCH_BOX_LENGTH_X, TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y));
+  // public static final Rectangle2d RED_OUTPOST_SIDE_TRENCH_BOX =
+  //     new Rectangle2d(
+  //         new Translation2d(RED_STARTING_LINE_X, 0.0),
+  //         new Translation2d(RED_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
 
-  public static final Rectangle2d BLUE_OUTPOST_SIDE_TRENCH_BOX =
-      new Rectangle2d(
-          new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH),
-          new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y));
-  public static final Rectangle2d BLUE_DEPOT_SIDE_TRENCH_BOX =
-      new Rectangle2d(
-          new Translation2d(BLUE_STARTING_LINE_X, 0.0),
-          new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
+  // public static final Rectangle2d BLUE_OUTPOST_SIDE_TRENCH_BOX =
+  //     new Rectangle2d(
+  //         new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH),
+  //         new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y));
+  // public static final Rectangle2d BLUE_DEPOT_SIDE_TRENCH_BOX =
+  //     new Rectangle2d(
+  //         new Translation2d(BLUE_STARTING_LINE_X, 0.0),
+  //         new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
 
   public static final Rectangle2d RED_ALLIANCE_ZONE =
       new Rectangle2d(
@@ -63,12 +65,12 @@ public class FieldUtil {
           new Translation2d(BLUE_STARTING_LINE_X, 0.0),
           new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
-  public static final List<Rectangle2d> TRENCH_BOXES =
-      ImmutableList.of(
-          FieldUtil.BLUE_OUTPOST_SIDE_TRENCH_BOX,
-          FieldUtil.BLUE_DEPOT_SIDE_TRENCH_BOX,
-          FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX,
-          FieldUtil.RED_OUTPOST_SIDE_TRENCH_BOX);
+  // public static final List<Rectangle2d> TRENCH_BOXES =
+  //     ImmutableList.of(
+  //         FieldUtil.BLUE_OUTPOST_SIDE_TRENCH_BOX,
+  //         FieldUtil.BLUE_DEPOT_SIDE_TRENCH_BOX,
+  //         FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX,
+  //         FieldUtil.RED_OUTPOST_SIDE_TRENCH_BOX);
 
   // TODO: Fill out trench assist zones
   // Custom zones to enable trench assist
