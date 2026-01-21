@@ -267,7 +267,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     intake.idleRequest();
     hopper.idleRequest();
   }
-  
+
   public void toggleFeedRequest() {
     switch (getState()) {
       case WAIT_FEED_2 -> setStateFailSafe(RobotState.PREPARE_FEED_2);
