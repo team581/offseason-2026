@@ -31,10 +31,11 @@ public class FieldUtil {
   // calculated
   public static final double BLUE_STARTING_LINE_X = FIELD_LENGTH - RED_STARTING_LINE_X;
 
-  public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X + 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
-  public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH-RED_TRENCH_BOX_LENGTH_X;
+  public static final double RED_TRENCH_BOX_LENGTH_X =
+      RED_STARTING_LINE_X + 2 * (RED_TRENCH_X - RED_STARTING_LINE_X);
+  public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH - RED_TRENCH_BOX_LENGTH_X;
 
-  public static final double TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y = FIELD_WIDTH-TRENCH_WIDTH_Y;
+  public static final double TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y = FIELD_WIDTH - TRENCH_WIDTH_Y;
 
   // end of calculations
   public static final Rectangle2d RED_DEPOT_SIDE_TRENCH_BOX =
@@ -56,8 +57,7 @@ public class FieldUtil {
           new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
 
   public static final Rectangle2d RED_ALLIANCE_ZONE =
-      new Rectangle2d(
-          Translation2d.kZero, new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH));
+      new Rectangle2d(Translation2d.kZero, new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH));
   public static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(
           new Translation2d(BLUE_STARTING_LINE_X, 0.0),
