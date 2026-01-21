@@ -1,10 +1,13 @@
 package frc.robot.vision.limelight;
 
+import java.util.Locale;
+
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.ReusableOptional;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -15,7 +18,6 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.results.OptionalTagResult;
-import java.util.Locale;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
   private static final int[] VALID_APRILTAGS =
@@ -28,9 +30,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   private static final double IS_OFFLINE_TIMEOUT = 3;
 
-  private final String limelightTableName;
+  public final String limelightTableName;
   private final String name;
-  private final CameraConfig config;
+  public final CameraConfig config;
 
   private final Timer limelightTimer = new Timer();
   private final Timer seedImuTimer = new Timer();
