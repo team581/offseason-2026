@@ -79,7 +79,7 @@ spotless {
 
 	java {
 		target 'shared/**/*.java', 'comp-bot/**/*.java', 'dumper-bot/**/*.java', 'turret-bot/**/*.java'
-		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true)
+		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true).sortMembersVisibilityOrderEnabled(true)
 		googleJavaFormat()
 		licenseHeader ''
 
