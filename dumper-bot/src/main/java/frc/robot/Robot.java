@@ -1,7 +1,6 @@
 package frc.robot;
 
 import com.team581.Base581Robot;
-import com.team581.cluster_map.ClusterMap;
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.controller.ControllerHelpers;
@@ -13,6 +12,7 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
+import frc.robot.cluster_map.ClusterMap;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.hopper.Hopper;
