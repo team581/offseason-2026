@@ -40,9 +40,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE -> {
         if (nearTrench) {
           shooterHood.idleRequest();
-          DogLog.log("RobotManager/StowShooterHood", true);
         } else {
-          DogLog.log("RobotManager/StowShooterHood", false);
           shooterHood.scoreRequest(0);
         }
       }
