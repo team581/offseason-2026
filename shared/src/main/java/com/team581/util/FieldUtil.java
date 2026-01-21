@@ -27,7 +27,7 @@ public class FieldUtil {
   // // given
   public static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
   public static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
-  public static final double RED_TRENCH_X = FIELD_LENGTH-BLUE_TRENCH_X;
+  public static final double RED_TRENCH_X = FIELD_LENGTH - BLUE_TRENCH_X;
   // public static final double TRENCH_WIDTH_Y = Units.inchesToMeters(25.62 * 2);
 
   // // calculated
@@ -80,7 +80,8 @@ public class FieldUtil {
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(70.0);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
 
-  // TODO: we're never using "right" or "left" in the names again it's gonna be OUTPOST_SIDE or DEPOT_SIDE
+  // TODO: we're never using "right" or "left" in the names again it's gonna be OUTPOST_SIDE or
+  // DEPOT_SIDE
   private static final Rectangle2d RED_DEPOT_SIDE_TRENCH_ASSIST_ZONE =
       new Rectangle2d(
           new Translation2d(RED_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, 0.0),

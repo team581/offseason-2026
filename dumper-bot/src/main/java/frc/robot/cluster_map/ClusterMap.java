@@ -5,7 +5,6 @@ import static java.util.Comparator.comparingDouble;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.GamePieceResult;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;

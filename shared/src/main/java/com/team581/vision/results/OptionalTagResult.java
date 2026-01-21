@@ -2,7 +2,6 @@ package com.team581.vision.results;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.team581.util.ReusableOptional;
-
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N3;
