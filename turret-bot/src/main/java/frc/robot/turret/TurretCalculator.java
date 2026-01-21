@@ -15,6 +15,20 @@ public class TurretCalculator {
   private static final double SPACE_FROM_HARDSTOP = 30.0;
   private static final double SPACE_FROM_HARDSTOP_TOLERANCE = 2.0;
 
+  public static double calculateSwerveTurretCompensationAngle(
+      double wantedTurretAngle, Rotation2d robotRotation) {
+    var robotHeading = robotRotation.getDegrees();
+    robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
+    wantedTurretAngle = MathUtil.inputModulus(wantedTurretAngle, -180, 180);
+    var actualTargetRotation = MathUtil.inputModulus(wantedTurretAngle + robotHeading, -180, 180);
+    if (wantedTurretAngle > 0.0) {
+
+      return MathUtil.inputModulus(actualTargetRotation + 60.0, -180, 180) - MAX_TURRET_ANGLE;
+    } else {
+      return MathUtil.inputModulus(actualTargetRotation - 60.0, -180, 180) - MIN_TURRET_ANGLE;
+    }
+  }
+
   public static double calculateTurretAimingAngle(
       Translation2d robot, Rotation2d robotRotation, Translation2d target) {
 
@@ -28,20 +42,6 @@ public class TurretCalculator {
     robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
 
     return MathUtil.inputModulus(targetAngle - robotHeading, -180, 180);
-  }
-
-  public static double calculateSwerveTurretCompensationAngle(
-      double wantedTurretAngle, Rotation2d robotRotation) {
-    var robotHeading = robotRotation.getDegrees();
-    robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
-    wantedTurretAngle = MathUtil.inputModulus(wantedTurretAngle, -180, 180);
-    var actualTargetRotation = MathUtil.inputModulus(wantedTurretAngle + robotHeading, -180, 180);
-    if (wantedTurretAngle > 0.0) {
-
-      return MathUtil.inputModulus(actualTargetRotation + 60.0, -180, 180) - MAX_TURRET_ANGLE;
-    } else {
-      return MathUtil.inputModulus(actualTargetRotation - 60.0, -180, 180) - MIN_TURRET_ANGLE;
-    }
   }
 
   public static boolean doesTurretHaveRoom(double turretAngle) {

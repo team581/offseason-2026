@@ -10,13 +10,27 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
+import dev.doglog.DogLog;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.Map;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
+
+  private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
+      InterpolatingDoubleTreeMap.ofEntries(Map.entry(0.0, 0.0));
+  private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
+      InterpolatingDoubleTreeMap.ofEntries(Map.entry(0.0, 0.0));
+
+  private double hubDistance = 0;
+  private double feedDistance = 0;
+  private double measuredAngle = 0;
+  private double hubAngle = 0;
+  private double feedAngle = 0;
 
   public ShooterHood(TalonFX motor) {
     super(SubsystemPriority.SHOOTER_HOOD, ShooterHoodState.UNHOMED);
@@ -37,6 +51,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   }
 
   public void scoreRequest(double distance) {
+    this.hubDistance = distance;
     switch (getState()) {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
@@ -46,6 +61,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   }
 
   public void feedRequest(double distance) {
+    this.feedDistance = distance;
     switch (getState()) {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
@@ -68,12 +84,22 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   }
 
   @Override
+  protected void collectInputs() {
+    measuredAngle = motor.getPosition().getValueAsDouble();
+    hubAngle = DISTANCE_TO_SCORE.get(hubDistance);
+    feedAngle = DISTANCE_TO_FEED.get(feedDistance);
+
+    DogLog.log("ShooterHood/Angle", measuredAngle);
+  }
+
+  @Override
   protected ShooterHoodState getNextState(ShooterHoodState currentState) {
     return switch (currentState) {
       case HOMING -> {
-        // While we are homing, check the stator current draw of the motor
-        // Once the current exceeds a threshold (20A), reset the encoder position to 0 and switch to
-        // IDLE
+        if (motor.getStatorCurrent().getValueAsDouble() >= 20.0) {
+          motor.setPosition(0);
+          yield ShooterHoodState.IDLE;
+        }
         yield currentState;
       }
       default -> currentState;
@@ -94,13 +120,12 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   @Override
   protected void whileInState(ShooterHoodState state) {
     switch (state) {
-      // TODO: Fix this setpoint
       case SCORING ->
-          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(hubAngle)));
 
-      // TODO: Fix this setpoint
       case FEEDING ->
-          motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+          motor.setControl(
+              positionVoltageRequest.withPosition(Units.degreesToRotations(feedAngle)));
 
       case IDLE ->
           motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));

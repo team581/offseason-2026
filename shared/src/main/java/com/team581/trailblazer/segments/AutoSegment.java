@@ -15,14 +15,6 @@ public abstract class AutoSegment {
     this.constraints = constraints;
   }
 
-  public Optional<AutoPoint> lastPoint() {
-    if (points.isEmpty()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(points.get(points.size() - 1));
-  }
-
   /**
    * Check if the robot is done following this segment.
    *
@@ -40,5 +32,13 @@ public abstract class AutoSegment {
    */
   public Optional<AutoConstraintOptions> getConstraints(AutoPoint point) {
     return point.constraints().or(() -> this.constraints);
+  }
+
+  public Optional<AutoPoint> lastPoint() {
+    if (points.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(points.get(points.size() - 1));
   }
 }

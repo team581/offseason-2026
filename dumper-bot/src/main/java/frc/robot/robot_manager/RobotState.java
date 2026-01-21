@@ -11,7 +11,7 @@ public enum RobotState {
   PREPARE_FORCE_SHOOT,
   FORCE_SHOOT,
 
-  // TODO: change feed name
+  // TODO(@rhetorr): Change feed state names to be more descriptive
   // Feed 1
   WAIT_FEED_1,
   PREPARE_FEED_1,

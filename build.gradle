@@ -60,8 +60,6 @@ subprojects {
 		if (System.getenv().containsKey("ERRORPRONE_AUTOFIX")) {
 			options.errorprone.errorproneArgs.add "-XepPatchLocation:IN_PLACE"
 		}
-
-		options.errorprone.excludedPaths = "LimelightHelpers.java"
 	}
 
 	// Common test configuration
@@ -81,6 +79,7 @@ spotless {
 
 	java {
 		target 'shared/**/*.java', 'comp-bot/**/*.java', 'dumper-bot/**/*.java', 'turret-bot/**/*.java'
+		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true)
 		googleJavaFormat()
 		licenseHeader ''
 

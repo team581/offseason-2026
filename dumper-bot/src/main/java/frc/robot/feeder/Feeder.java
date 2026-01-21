@@ -28,7 +28,6 @@ public class Feeder extends StateMachineSubsystem<FeederState> {
         .getConfigurator()
         .apply(
             new TalonFXConfiguration()
-                // TODO:Get sensor to mechanism ratio
                 .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
                 .withCurrentLimits(
                     new CurrentLimitsConfigs()

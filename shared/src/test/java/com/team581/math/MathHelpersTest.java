@@ -10,18 +10,14 @@ import org.junit.jupiter.api.Test;
 
 final class MathHelpersTest {
   @Test
-  void roundToTest() {
-    var result = MathHelpers.roundTo(123.45, 1);
-    var expected = 123.5;
+  void getDriveDirectionReturnsDirectionFromStartToEnd() {
+    var start = new Translation2d(0, 0);
+    var end = new Translation2d(2, 0);
 
-    assertEquals(expected, result);
-  }
+    var result = MathHelpers.getDriveDirection(start, end);
 
-  @Test
-  void signedSqrtTest() {
-    var result = MathHelpers.signedSqrt(-36);
-
-    assertEquals(-6, result);
+    // Direction from (0,0) to (2,0) should be 0 degrees (pointing right along +X)
+    assertEquals(Rotation2d.kZero, result);
   }
 
   @Test
@@ -47,13 +43,17 @@ final class MathHelpersTest {
   }
 
   @Test
-  void getDriveDirectionReturnsDirectionFromStartToEnd() {
-    var start = new Translation2d(0, 0);
-    var end = new Translation2d(2, 0);
+  void roundToTest() {
+    var result = MathHelpers.roundTo(123.45, 1);
+    var expected = 123.5;
 
-    var result = MathHelpers.getDriveDirection(start, end);
+    assertEquals(expected, result);
+  }
 
-    // Direction from (0,0) to (2,0) should be 0 degrees (pointing right along +X)
-    assertEquals(Rotation2d.kZero, result);
+  @Test
+  void signedSqrtTest() {
+    var result = MathHelpers.signedSqrt(-36);
+
+    assertEquals(-6, result);
   }
 }

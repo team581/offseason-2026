@@ -9,17 +9,17 @@ public class OptionalGamePieceResult extends ReusableOptional<GamePieceResult> {
   }
 
   @CanIgnoreReturnValue
-  public OptionalGamePieceResult update(double tx, double ty, double timestamp) {
-    this.value.update(tx, ty, timestamp);
-    this.isPresent = true;
-
+  public OptionalGamePieceResult empty() {
+    this.value.update(0.0, 0.0, 0.0);
+    this.isPresent = false;
     return this;
   }
 
   @CanIgnoreReturnValue
-  public OptionalGamePieceResult empty() {
-    this.value.update(0.0, 0.0, 0.0);
-    this.isPresent = false;
+  public OptionalGamePieceResult update(double tx, double ty, double timestamp) {
+    this.value.update(tx, ty, timestamp);
+    this.isPresent = true;
+
     return this;
   }
 }

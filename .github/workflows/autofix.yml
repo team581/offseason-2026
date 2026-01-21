@@ -40,5 +40,17 @@ jobs:
         run: ./gradlew spotlessApply
         continue-on-error: true
 
+      - name: Fix Python lint issues with Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check --fix"
+        continue-on-error: true
+
+      - name: Format Python with Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format"
+        continue-on-error: true
+
       - name: Run autofix.ci
         uses: autofix-ci/action@v1

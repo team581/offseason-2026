@@ -37,6 +37,10 @@ public class Trailblazer {
     this.pathFollower = pathFollower;
   }
 
+  public boolean atGoal(Pose2d currentPose) {
+    return currentSegment.filter(segment -> segment.atGoal(currentPose, currentIndex)).isPresent();
+  }
+
   public void followSegment(AutoSegment segment) {
     if (currentSegment.isPresent() && currentSegment.orElseThrow().equals(segment)) {
       return;
@@ -45,10 +49,6 @@ public class Trailblazer {
     currentSegment = Optional.of(segment);
     pathTracker.resetAndSetPoints(segment.points);
     currentIndex = pathTracker.getCurrentPointIndex();
-  }
-
-  public boolean atGoal(Pose2d currentPose) {
-    return currentSegment.filter(segment -> segment.atGoal(currentPose, currentIndex)).isPresent();
   }
 
   public ChassisSpeeds getFieldRelativeSetpoint(

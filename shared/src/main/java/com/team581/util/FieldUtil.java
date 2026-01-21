@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import java.util.List;
+import java.util.Optional;
 
 public class FieldUtil {
   public static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
@@ -69,14 +70,31 @@ public class FieldUtil {
           FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX,
           FieldUtil.RED_OUTPOST_SIDE_TRENCH_BOX);
 
+  // TODO: Fill out trench assist zones
+  // Custom zones to enable trench assist
+  private static final Rectangle2d RED_LEFT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d RED_RIGHT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d BLUE_LEFT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+  private static final Rectangle2d BLUE_RIGHT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(new Translation2d(), new Translation2d());
+
+  public static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
+      ImmutableList.of(
+          RED_LEFT_TRENCH_ASSIST_ZONE,
+          RED_RIGHT_TRENCH_ASSIST_ZONE,
+          BLUE_LEFT_TRENCH_ASSIST_ZONE,
+          BLUE_RIGHT_TRENCH_ASSIST_ZONE);
+
   public static Rectangle2d getAllianceZone() {
     return FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
   }
 
-  public static Translation2d getHubPose() {
-    return FmsUtil.isRedAlliance()
-        ? HUB_POSE.redPose().getTranslation()
-        : HUB_POSE.bluePose().getTranslation();
+  /** Returns the trench assist zone that the robot is currently in, if it exists. */
+  public static Optional<Rectangle2d> getCurrentTrenchAssistZone(Translation2d robotPose) {
+    return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
   }
 
   public static Translation2d getFeed1Pose() {
@@ -91,18 +109,18 @@ public class FieldUtil {
         : FEED_2_POSE.bluePose().getTranslation();
   }
 
-  // TODO: Make smarter for different rotations (would need to store bumper size)
+  public static Translation2d getHubPose() {
+    return FmsUtil.isRedAlliance()
+        ? HUB_POSE.redPose().getTranslation()
+        : HUB_POSE.bluePose().getTranslation();
+  }
+
+  // TODO(@rhetorr): Make smarter for different rotations (would need to store bumper size)
   public static boolean isRobotInAllianceZone(Pose2d robot) {
     var goalX = getHubPose().getX();
     if (FmsUtil.isRedAlliance()) {
-      if (robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD) {
-        return true;
-      }
-      return false;
+      return robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD;
     }
-    if (robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD) {
-      return true;
-    }
-    return false;
+    return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
   }
 }

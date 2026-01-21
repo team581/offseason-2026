@@ -12,46 +12,44 @@ public class MathHelpers {
       new Translation2d(16.540988 / 2.0, 8.069326 / 2.0);
   private static final double EPSILON = Math.ulp(1.0);
 
-  /**
-   * Constructs a Rotation2d with the given x and y (cosine and sine) components.
-   *
-   * @param x The x component or cosine of the rotation.
-   * @param y The y component or sine of the rotation.
-   */
-  public static Rotation2d rotation2d(double x, double y) {
-    if (Math.hypot(x, y) < 1e-6) {
-      return Rotation2d.kZero;
-    }
-
-    return new Rotation2d(x, y);
-  }
-
-  /**
-   * Returns a value rounded to the specified number of decimal places.
-   *
-   * @param value The value
-   * @param numDigits The number of digits after the decimal point to include
-   */
-  public static double roundTo(double value, double numDigits) {
-    var factor = Math.pow(10, numDigits);
-
-    return Math.round(value * factor * (1 + EPSILON)) / factor;
-  }
-
-  public static Translation2d roundTo(Translation2d input, double precision) {
-    return new Translation2d(roundTo(input.getX(), precision), roundTo(input.getY(), precision));
+  public static double angleModulus(double angleDegrees) {
+    return MathUtil.inputModulus(angleDegrees, -180, 180);
   }
 
   public static double average(double a, double b) {
     return (a + b) / 2.0;
   }
 
-  public static double angleModulus(double angleDegrees) {
-    return MathUtil.inputModulus(angleDegrees, -180, 180);
+  /**
+   * Returns the value that is farther from the two given values. If they are equal, the first value
+   * is returned.
+   */
+  public static double farthest(double value, double a, double b) {
+    return Math.abs(value - a) >= Math.abs(value - b) ? a : b;
   }
 
-  public static double signedSqrt(double value) {
-    return Math.copySign(Math.sqrt(Math.abs(value)), value);
+  public static Rotation2d getDriveDirection(ChassisSpeeds vector) {
+    return new Translation2d(vector.vxMetersPerSecond, vector.vyMetersPerSecond).getAngle();
+  }
+
+  public static Rotation2d getDriveDirection(Pose2d start, Pose2d end) {
+    return getDriveDirection(start.getTranslation(), end.getTranslation());
+  }
+
+  public static Rotation2d getDriveDirection(Pose2d start, Translation2d end) {
+    return getDriveDirection(start.getTranslation(), end);
+  }
+
+  public static Rotation2d getDriveDirection(Translation2d start, Pose2d end) {
+    return getDriveDirection(start, end.getTranslation());
+  }
+
+  public static Rotation2d getDriveDirection(Translation2d start, Translation2d end) {
+    return rotation2d(end.getX() - start.getX(), end.getY() - start.getY());
+  }
+
+  public static double getLinearVelocity(ChassisSpeeds speeds) {
+    return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
   }
 
   /**
@@ -68,35 +66,6 @@ public class MathHelpers {
   }
 
   /**
-   * Returns the input pose flipped from red to blue (or vice versa).
-   *
-   * @param input Pose to transform
-   */
-  public static Pose2d pathflip(Pose2d input) {
-    return input.rotateAround(FIELD_CENTER, Rotation2d.k180deg);
-  }
-
-  public static Rotation2d getDriveDirection(ChassisSpeeds vector) {
-    return new Translation2d(vector.vxMetersPerSecond, vector.vyMetersPerSecond).getAngle();
-  }
-
-  public static Rotation2d getDriveDirection(Pose2d start, Pose2d end) {
-    return getDriveDirection(start.getTranslation(), end.getTranslation());
-  }
-
-  public static Rotation2d getDriveDirection(Translation2d start, Pose2d end) {
-    return getDriveDirection(start, end.getTranslation());
-  }
-
-  public static Rotation2d getDriveDirection(Pose2d start, Translation2d end) {
-    return getDriveDirection(start.getTranslation(), end);
-  }
-
-  public static Rotation2d getDriveDirection(Translation2d start, Translation2d end) {
-    return rotation2d(end.getX() - start.getX(), end.getY() - start.getY());
-  }
-
-  /**
    * Returns the value that is closer from the two given values. If they are equal, the first value
    * is returned.
    */
@@ -105,15 +74,46 @@ public class MathHelpers {
   }
 
   /**
-   * Returns the value that is farther from the two given values. If they are equal, the first value
-   * is returned.
+   * Returns the input pose flipped from red to blue (or vice versa).
+   *
+   * @param input Pose to transform
    */
-  public static double farthest(double value, double a, double b) {
-    return Math.abs(value - a) >= Math.abs(value - b) ? a : b;
+  public static Pose2d pathflip(Pose2d input) {
+    return input.rotateAround(FIELD_CENTER, Rotation2d.k180deg);
   }
 
-  public static double getLinearVelocity(ChassisSpeeds speeds) {
-    return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+  /**
+   * Constructs a Rotation2d with the given x and y (cosine and sine) components.
+   *
+   * @param x The x component or cosine of the rotation.
+   * @param y The y component or sine of the rotation.
+   */
+  public static Rotation2d rotation2d(double x, double y) {
+    if (Math.hypot(x, y) < 1e-6) {
+      return Rotation2d.kZero;
+    }
+
+    return new Rotation2d(x, y);
+  }
+
+  public static Translation2d roundTo(Translation2d input, double precision) {
+    return new Translation2d(roundTo(input.getX(), precision), roundTo(input.getY(), precision));
+  }
+
+  /**
+   * Returns a value rounded to the specified number of decimal places.
+   *
+   * @param value The value
+   * @param numDigits The number of digits after the decimal point to include
+   */
+  public static double roundTo(double value, double numDigits) {
+    var factor = Math.pow(10, numDigits);
+
+    return Math.round(value * factor * (1 + EPSILON)) / factor;
+  }
+
+  public static double signedSqrt(double value) {
+    return Math.copySign(Math.sqrt(Math.abs(value)), value);
   }
 
   public static final Transform2d transform2dFromRotation(Rotation2d rotation) {

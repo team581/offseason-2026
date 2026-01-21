@@ -13,12 +13,12 @@ public class TagResult {
     return pose;
   }
 
-  public double timestamp() {
-    return timestamp;
-  }
-
   public Vector<N3> standardDevs() {
     return standardDevs;
+  }
+
+  public double timestamp() {
+    return timestamp;
   }
 
   void update(Pose2d pose, double timestamp, Vector<N3> standardDevs) {

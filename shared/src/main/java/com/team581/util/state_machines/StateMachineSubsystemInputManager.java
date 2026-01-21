@@ -20,14 +20,14 @@ public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
     return () -> 999;
   }
 
-  public void register(StateMachineSubsystem<?> stateMachine) {
-    stateMachineSubsystems.add(stateMachine);
-  }
-
   @Override
   public void periodic() {
     for (var stateMachineSubsystem : stateMachineSubsystems) {
       stateMachineSubsystem.beforePeriodic();
     }
+  }
+
+  public void register(StateMachineSubsystem<?> stateMachine) {
+    stateMachineSubsystems.add(stateMachine);
   }
 }

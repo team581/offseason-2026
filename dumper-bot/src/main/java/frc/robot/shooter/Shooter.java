@@ -7,7 +7,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -22,7 +22,9 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
-  private static final int RPM_TOLERANCE = 50;
+  private static final int RPM_TOLERANCE_KICKER = 100;
+
+  private static final int RPM_TOLERANCE_SHOOTER = 50;
 
   private static final double MAX_SAFE_RPM = 4000;
 
@@ -39,7 +41,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX rightMotor;
   private final TalonFX kickerMotor;
 
-  private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
+  private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
+
   private double hubDistance = 0;
   private double feedDistance = 0;
 
@@ -69,7 +72,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(InvertedValue.CounterClockwise_Positive))
-            .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
+            .withSlot0(new Slot0Configs().withKP(0.13).withKV(0.132).withKS(0.0).withKA(0.0))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -91,7 +94,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(InvertedValue.Clockwise_Positive))
-            .withSlot0(new Slot0Configs().withKP(4.0).withKV(0.01).withKS(2.2))
+            .withSlot0(new Slot0Configs().withKP(0.13).withKV(0.132).withKS(0.0).withKA(0.0))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -152,23 +155,28 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
-    DogLog.log("Shooter/Right/AppliedVoltage", rightMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Shooter/Left/AppliedVoltage", leftMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Shooter/Kicker/AppliedVoltage", kickerMotor.getMotorVoltage().getValueAsDouble());
+    //   DogLog.log("Shooter/Right/StatorCurrent",
+    // rightMotor.getStatorCurrent().getValueAsDouble());
+    //   DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    //   DogLog.log("Shooter/Kicker/StatorCurrent",
+    // kickerMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/Kicker/Voltage", kickerMotor.getMotorVoltage().getValueAsDouble());
 
     switch (state) {
       case SCORE -> {
         var setpoint = shootingRpm / 60.0;
-        leftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        rightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
+        leftMotor.setControl(voltageRequest.withVelocity(setpoint));
+        rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+        kickerMotor.setControl(voltageRequest.withVelocity(setpoint));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
         var setpoint = feedingRpm / 60.0;
-        leftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        rightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        kickerMotor.setControl(velocityRequest.withVelocity(setpoint));
+        leftMotor.setControl(voltageRequest.withVelocity(setpoint));
+        rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+        kickerMotor.setControl(voltageRequest.withVelocity(setpoint));
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
       case IDLE -> {
@@ -194,13 +202,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return switch (getState()) {
       case IDLE -> true;
       case SCORE ->
-          MathUtil.isNear(leftMotorRpm, shootingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(kickerMotorRpm, shootingRpm, RPM_TOLERANCE);
+          MathUtil.isNear(leftMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(kickerMotorRpm, shootingRpm, RPM_TOLERANCE_KICKER);
       case FEEDING ->
-          MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE)
-              && MathUtil.isNear(kickerMotorRpm, feedingRpm, RPM_TOLERANCE);
+          MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(kickerMotorRpm, feedingRpm, RPM_TOLERANCE_KICKER);
     };
   }
 

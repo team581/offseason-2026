@@ -33,6 +33,7 @@
     "edu.wpi.first.math.**.proto.*",
     "edu.wpi.first.math.**.struct.*"
   ],
+  "python.languageServer": "None",
   "wpilib.autoStartRioLog": false,
   "[java]": {"editor.defaultFormatter": "josevseb.google-java-format-for-vs-code"},
   "[json]": {"editor.defaultFormatter": "richardwillis.vscode-spotless-gradle"},

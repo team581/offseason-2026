@@ -11,8 +11,6 @@ import edu.wpi.first.math.MathUtil;
  * limits without creating new objects.
  */
 public final class SlewRateLimiterStateless {
-  private SlewRateLimiterStateless() {}
-
   /**
    * Calculates the rate-limited value.
    *
@@ -36,4 +34,6 @@ public final class SlewRateLimiterStateless {
             input - currentValue, negativeRateLimit * elapsedTime, positiveRateLimit * elapsedTime);
     return currentValue;
   }
+
+  private SlewRateLimiterStateless() {}
 }

@@ -20,8 +20,8 @@ import java.util.Locale;
 public class Limelight extends StateMachineSubsystem<LimelightState> {
   private static final int[] VALID_APRILTAGS =
       new int[] {
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+        26, 27, 28, 29, 30, 31, 32
       };
 
   private static final int[] HUB_TAGS = new int[] {2, 3, 4, 5, 8, 9, 10, 11};
@@ -81,7 +81,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     var mTEstimateTimestamp = mTEstimate.timestampSeconds;
 
-    // TODO: Make work with angular velocity from swerve + turret
     if (Math.abs(angularVelocity) > 360) {
       return tagResult.empty();
     }
@@ -182,7 +181,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       default -> {}
     }
 
-    // TODO: Remove once Limelights are upgraded
     LimelightHelpers.SetIMUMode(limelightTableName, 0);
   }
 

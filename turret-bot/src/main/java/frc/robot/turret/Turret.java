@@ -1,5 +1,6 @@
 package frc.robot.turret;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -14,10 +15,13 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
+import frc.robot.vision.Vision;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
@@ -42,8 +46,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double filteredCurrent = 0.0;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
-  public Turret(TalonFX motor) {
+  private final Vision vision;
+
+  public Turret(TalonFX motor, Vision vision) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
+    this.vision = vision;
     var configs =
         new TalonFXConfiguration()
             .withFeedback(
@@ -78,6 +85,19 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         MathUtil.inputModulus(
             Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), -180, 180);
     DogLog.log("Turret/Angle", currentAngle);
+
+    // Predict the turret's current angle to account for sensor latency
+    double latencyCompensatedAngle =
+        Units.rotationsToDegrees(
+            BaseStatusSignal.getLatencyCompensatedValueAsDouble(
+                motor.getPosition(), motor.getVelocity()));
+    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
+
+    // Add the predicted angle to the vision buffer at the current timestamp
+    vision.addTurretObservation(
+        Timer.getFPGATimestamp(),
+        Rotation2d.fromDegrees(latencyCompensatedAngle),
+        getVelocityDegreesPerSecond());
   }
 
   @Override
@@ -193,7 +213,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public void setFeedAimAngle(double angle) {
-    tagAimAngle = angle;
+    feedAimAngle = angle;
   }
 
   public void setTagAimAngle(double angle) {
@@ -209,6 +229,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public double getAngle() {
     return currentAngle;
+  }
+
+  public double getVelocityDegreesPerSecond() {
+    return Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
   }
 
   public void homeRequest() {

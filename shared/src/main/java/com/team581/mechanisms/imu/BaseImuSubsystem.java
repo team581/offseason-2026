@@ -30,12 +30,12 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
   }
 
-  public double getRobotHeading() {
-    return robotHeading;
-  }
-
   public double getRobotAngularVelocity() {
     return robotAngularVelocity;
+  }
+
+  public double getRobotHeading() {
+    return robotHeading;
   }
 
   @Override

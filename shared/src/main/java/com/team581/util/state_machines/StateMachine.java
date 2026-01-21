@@ -18,8 +18,64 @@ public abstract class StateMachine<S extends Enum<S>> {
     state = initialState;
   }
 
+  /**
+   * Runs once after entering a new state. This is where you should run one-off state actions.
+   *
+   * @param newState The newly entered state.
+   */
+  protected void afterTransition(S newState) {}
+
   public void beforePeriodic() {
     collectInputs();
+  }
+
+  /**
+   * Runs once before exiting the current state. This is where you should run state exit actions.
+   *
+   * <p>Default behavior is to do nothing.
+   *
+   * @param oldState The state being exited.
+   * @param newState The state being entered.
+   */
+  protected void beforeTransition(S oldState, S newState) {}
+
+  /**
+   * {@link StateMachineSubsystemInputManager} will call this method for each state machine. Used
+   * for retrieving sensor values, etc. Inputs are collected in a special phase before any subsystem
+   * periodic methods are run.
+   *
+   * <p>Default behavior is to do nothing.
+   */
+  protected void collectInputs() {}
+
+  /** Run side effects that occur when a state transition happens. */
+  private void doTransition() {
+    DogLog.log(name + "/State", state);
+
+    lastTransitionTimestamp = Timer.getFPGATimestamp();
+
+    afterTransition(state);
+  }
+
+  /**
+   * Process transitions from one state to another.
+   *
+   * <p>Default behavior is to stay in the current state indefinitely.
+   *
+   * @param currentState The current state.
+   * @return The new state after processing transitions.
+   */
+  protected S getNextState(S currentState) {
+    return currentState;
+  }
+
+  /**
+   * Gets the current state.
+   *
+   * @return The current state.
+   */
+  public S getState() {
+    return state;
   }
 
   /** Processes collecting inputs, state transitions, and state actions. */
@@ -37,61 +93,10 @@ public abstract class StateMachine<S extends Enum<S>> {
     whileInState(state);
   }
 
-  /**
-   * Gets the current state.
-   *
-   * @return The current state.
-   */
-  public S getState() {
-    return state;
+  /** Resets the timer used for {@link #timeout(double)}. */
+  protected void resetTimeout() {
+    lastTransitionTimestamp = Timer.getFPGATimestamp();
   }
-
-  /**
-   * {@link StateMachineSubsystemInputManager} will call this method for each state machine. Used
-   * for retrieving sensor values, etc. Inputs are collected in a special phase before any subsystem
-   * periodic methods are run.
-   *
-   * <p>Default behavior is to do nothing.
-   */
-  protected void collectInputs() {}
-
-  /**
-   * Process transitions from one state to another.
-   *
-   * <p>Default behavior is to stay in the current state indefinitely.
-   *
-   * @param currentState The current state.
-   * @return The new state after processing transitions.
-   */
-  protected S getNextState(S currentState) {
-    return currentState;
-  }
-
-  /**
-   * Runs once before exiting the current state. This is where you should run state exit actions.
-   *
-   * <p>Default behavior is to do nothing.
-   *
-   * @param oldState The state being exited.
-   * @param newState The state being entered.
-   */
-  protected void beforeTransition(S oldState, S newState) {}
-
-  /**
-   * Runs once after entering a new state. This is where you should run one-off state actions.
-   *
-   * @param newState The newly entered state.
-   */
-  protected void afterTransition(S newState) {}
-
-  /**
-   * Called each loop while in the current state. Used for continuous state actions.
-   *
-   * <p>Default behavior is to do nothing.
-   *
-   * @param state The current state.
-   */
-  protected void whileInState(S state) {}
 
   /**
    * Used to change to a new state when a request is made. Will also trigger all logic that should
@@ -125,17 +130,12 @@ public abstract class StateMachine<S extends Enum<S>> {
     return currentStateDuration > duration;
   }
 
-  /** Resets the timer used for {@link #timeout(double)}. */
-  protected void resetTimeout() {
-    lastTransitionTimestamp = Timer.getFPGATimestamp();
-  }
-
-  /** Run side effects that occur when a state transition happens. */
-  private void doTransition() {
-    DogLog.log(name + "/State", state);
-
-    lastTransitionTimestamp = Timer.getFPGATimestamp();
-
-    afterTransition(state);
-  }
+  /**
+   * Called each loop while in the current state. Used for continuous state actions.
+   *
+   * <p>Default behavior is to do nothing.
+   *
+   * @param state The current state.
+   */
+  protected void whileInState(S state) {}
 }

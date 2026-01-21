@@ -26,18 +26,18 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   }
 
   @Override
+  protected void afterTransition(AutoSelection newState) {
+    // Recreate the auto instances when the selection changes
+    selectedAuto = newState.auto.apply(robotManager, trailblazer);
+  }
+
+  @Override
   protected AutoSelection getNextState(AutoSelection currentState) {
     if (DriverStation.isEnabled()) {
       return currentState;
     }
 
     return autoChooser.getSelectedAuto();
-  }
-
-  @Override
-  protected void afterTransition(AutoSelection newState) {
-    // Recreate the auto instances when the selection changes
-    selectedAuto = newState.auto.apply(robotManager, trailblazer);
   }
 
   @Override
@@ -56,7 +56,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       hasEnabledAuto = true;
     }
 
-    if (DriverStation.isAutonomous()) {
+    if (selectedAuto.shouldRun()) {
       selectedAuto.beforePeriodic();
       selectedAuto.periodic();
     }

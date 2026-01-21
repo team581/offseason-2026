@@ -12,17 +12,17 @@ public class OptionalTagResult extends ReusableOptional<TagResult> {
   }
 
   @CanIgnoreReturnValue
-  public OptionalTagResult update(Pose2d pose, double timestamp, Vector<N3> standardDevs) {
-    this.value.update(pose, timestamp, standardDevs);
-    this.isPresent = true;
-
+  public OptionalTagResult empty() {
+    this.value.update(null, 0, null);
+    this.isPresent = false;
     return this;
   }
 
   @CanIgnoreReturnValue
-  public OptionalTagResult empty() {
-    this.value.update(null, 0, null);
-    this.isPresent = false;
+  public OptionalTagResult update(Pose2d pose, double timestamp, Vector<N3> standardDevs) {
+    this.value.update(pose, timestamp, standardDevs);
+    this.isPresent = true;
+
     return this;
   }
 }
