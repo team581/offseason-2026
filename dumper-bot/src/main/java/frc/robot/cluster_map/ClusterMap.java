@@ -1,13 +1,10 @@
 package frc.robot.cluster_map;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import static java.util.Comparator.comparingDouble;
-import java.util.Optional;
 
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.vision.results.GamePieceResult;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -23,7 +20,10 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightHelpers;
 import frc.robot.vision.limelight.LimelightState;
-import frc.robot.vision.results.GamePieceResult;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SAME_CLUSTER_DETECTION_THRESHOLD_METERS = 1.0;
@@ -76,7 +76,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             .map(cluster -> new Pose2d(cluster.clusterTranslation(), Rotation2d.kZero))
             .min(bestClusterComparator);
     if (bestCluster.isPresent()) {
-      var rotation = MathHelpers.getDriveDirection(bestCluster.orElseThrow(), localization.getPose());
+      var rotation =
+          MathHelpers.getDriveDirection(bestCluster.orElseThrow(), localization.getPose());
       var clusterPoseWithIntakeRotation =
           new Pose2d(bestCluster.orElseThrow().getTranslation(), rotation);
       DogLog.log("ClusterMap/BestClusterPose", clusterPoseWithIntakeRotation);
@@ -121,7 +122,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     gamePieceResult.update(angleX, angleY, 0);
 
     var clusterPose =
-        GamePieceDetectionUtil.calculateFieldRelativeTranslationFromCamera(
+        GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
             robotPoseAtCapture, gamePieceResult, limelight.config);
 
     return Optional.of(clusterPose);
@@ -173,7 +174,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             .filter(
                 rememberedCluster -> {
                   return rememberedCluster.expiresAt() != newClusterExpiry
-                      && (rememberedCluster.clusterTranslation().getDistance(visionCluster) < SAME_CLUSTER_DETECTION_THRESHOLD_METERS);
+                      && (rememberedCluster.clusterTranslation().getDistance(visionCluster)
+                          < SAME_CLUSTER_DETECTION_THRESHOLD_METERS);
                 })
             .min(
                 (a, b) ->

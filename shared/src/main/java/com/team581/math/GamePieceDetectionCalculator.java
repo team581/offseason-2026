@@ -1,16 +1,17 @@
-package frc.robot.cluster_map;
+package com.team581.math;
 
 import com.team581.config.CameraConfig;
+import com.team581.vision.results.GamePieceResult;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
-import frc.robot.vision.results.GamePieceResult;
 
-public final class GamePieceDetectionUtil {
+public final class GamePieceDetectionCalculator {
 
   public static Translation2d calculateFieldRelativeTranslationFromCamera(
-      Pose2d robotPose, GamePieceResult visionResult, CameraConfig cameraConfig) {
+      Pose2d robotPose, com.team581.vision.results.GamePieceResult visionResult, CameraConfig cameraConfig) {
     var robotRelativeTranslation =
         calculateRobotRelativeTranslationFromCamera(visionResult, cameraConfig);
     return robotRelativeToFieldRelativeGamePiecePose(robotPose, robotRelativeTranslation);
@@ -51,5 +52,5 @@ public final class GamePieceDetectionUtil {
         .plus(robotPose.getTranslation());
   }
 
-  private GamePieceDetectionUtil() {}
+  private GamePieceDetectionCalculator() {}
 }

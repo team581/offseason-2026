@@ -1,4 +1,4 @@
-package frc.robot.vision.results;
+package com.team581.vision.results;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.team581.util.ReusableOptional;

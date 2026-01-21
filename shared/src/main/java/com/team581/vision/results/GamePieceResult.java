@@ -1,4 +1,4 @@
-package frc.robot.vision.results;
+package com.team581.vision.results;
 
 public class GamePieceResult {
   private double tx;

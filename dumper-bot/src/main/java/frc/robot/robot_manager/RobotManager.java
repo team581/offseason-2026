@@ -1,5 +1,6 @@
 package frc.robot.robot_manager;
 
+import com.team581.cluster_map.ClusterMap;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -8,7 +9,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
-import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
 import frc.robot.hopper.Hopper;
