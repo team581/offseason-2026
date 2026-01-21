@@ -30,7 +30,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
-          Map.entry(Units.inchesToMeters(57.0), 2250.0), Map.entry(3.376, 3300.0));
+          Map.entry(Units.inchesToMeters(57.0), 2250.0), Map.entry(3.376, 3300.0), Map.entry(3.8, 3000.0), Map.entry(3.97, 2700.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
@@ -114,7 +114,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withStatorCurrentLimit(100)
                     .withSupplyCurrentLimit(100))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0))
+            .withSlot0(new Slot0Configs().withKP(3.0).withKV(0.01).withKS(5.0))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
@@ -146,6 +146,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   public void idleRequest() {
     setStateFromRequest(ShooterState.IDLE);
   }
+
 
   @Override
   protected void whileInState(ShooterState state) {
