@@ -66,21 +66,21 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     updateMap();
   }
 
-  public Optional<Pose2d> getBestCoralPose() {
+  public Optional<Pose2d> getBestClusterPose() {
     if (clusterMap.isEmpty()) {
       return Optional.empty();
     }
 
-    var bestCoral =
+    var bestCluster =
         clusterMap.stream()
             .map(cluster -> new Pose2d(cluster.clusterTranslation(), Rotation2d.kZero))
             .min(bestClusterComparator);
-    if (bestCoral.isPresent()) {
-      var rotation = MathHelpers.getDriveDirection(bestCoral.orElseThrow(), localization.getPose());
-      var coralPoseWithIntakeRotation =
-          new Pose2d(bestCoral.orElseThrow().getTranslation(), rotation);
-      DogLog.log("CoralMap/BestCoralPose", coralPoseWithIntakeRotation);
-      return Optional.of(coralPoseWithIntakeRotation);
+    if (bestCluster.isPresent()) {
+      var rotation = MathHelpers.getDriveDirection(bestCluster.orElseThrow(), localization.getPose());
+      var clusterPoseWithIntakeRotation =
+          new Pose2d(bestCluster.orElseThrow().getTranslation(), rotation);
+      DogLog.log("ClusterMap/BestClusterPose", clusterPoseWithIntakeRotation);
+      return Optional.of(clusterPoseWithIntakeRotation);
     }
     return Optional.empty();
   }
@@ -96,7 +96,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     staleData = Arrays.equals(previousResult, result);
     previousResult = result;
     if (staleData) {
-      DogLog.timestamp("CoralMap/SkipStaleCorners");
+      DogLog.timestamp("ClusterMap/SkipStaleCorners");
 
       return Optional.empty();
     }
@@ -133,7 +133,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
               .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
               .toArray(Pose2d[]::new));
     } catch (RuntimeException error) {
-      DogLog.logFault("CoralMapLoggingError");
+      DogLog.logFault("ClusterMapLoggingError");
       System.err.println(error);
     }
   }
@@ -162,13 +162,13 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       return;
     }
 
-    double newCoralExpiry = Timer.getFPGATimestamp() + CLUSTER_LIFETIME_SECONDS;
+    double newClusterExpiry = Timer.getFPGATimestamp() + CLUSTER_LIFETIME_SECONDS;
 
     Optional<ClusterMapElement> match =
         clusterMap.stream()
             .filter(
                 rememberedCluster -> {
-                  return rememberedCluster.expiresAt() != newCoralExpiry
+                  return rememberedCluster.expiresAt() != newClusterExpiry
                       && (rememberedCluster.clusterTranslation().getDistance(visionCluster) < SAME_CLUSTER_DETECTION_THRESHOLD_METERS);
                 })
             .min(
@@ -180,7 +180,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     if (match.isPresent()) {
       clusterMap.remove(match.orElseThrow());
 
-      clusterMap.add(new ClusterMapElement(newCoralExpiry, visionCluster));
+      clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster));
     }
   }
 }
