@@ -58,8 +58,7 @@ public class FieldUtil {
   //         new Translation2d(BLUE_TRENCH_BOX_LENGTH_X, TRENCH_WIDTH_Y));
 
   public static final Rectangle2d RED_ALLIANCE_ZONE =
-      new Rectangle2d(
-          Translation2d.kZero, new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH));
+      new Rectangle2d(Translation2d.kZero, new Translation2d(RED_STARTING_LINE_X, FIELD_WIDTH));
   public static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(
           new Translation2d(BLUE_STARTING_LINE_X, 0.0),

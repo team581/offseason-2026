@@ -37,6 +37,12 @@ final class FieldUtilTest {
   //   var insideRedDepotSide = FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX.contains(robotTranslation);
   //   assertThat(insideRedDepotSide).isTrue();
   // }
+  @Test
+  void insideBlueAllianceZone() {
+    var robotTranslation = new Translation2d(1.0, 1.0);
+    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
+    assertThat(isInside).isTrue();
+  }
 
   // @Test
   // void insideBlueDepotSideBoxTest() {
@@ -46,13 +52,6 @@ final class FieldUtilTest {
   //   var insideBlueDepotSide = FieldUtil.BLUE_DEPOT_SIDE_TRENCH_BOX.contains(robotTranslation);
   //   assertThat(insideBlueDepotSide).isTrue();
   // }
-
-  @Test
-  void insideBlueAllianceZone() {
-    var robotTranslation = new Translation2d(1.0, 1.0);
-    var isInside = FieldUtil.BLUE_ALLIANCE_ZONE.contains(robotTranslation);
-    assertThat(isInside).isTrue();
-  }
 
   // @Test
   // void insideBlueOutpostSideBoxTest() {
@@ -79,6 +78,24 @@ final class FieldUtilTest {
     var isInside = FieldUtil.RED_ALLIANCE_ZONE.contains(robotTranslation);
     assertThat(isInside).isTrue();
   }
+
+  // @Test
+  // void insideRedDepotSideBoxTest() {
+  //   // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
+  //   // FieldUtil.FIELD_WIDTH-Units.inchesToMeters(20.0));
+  //   var robotTranslation = new Translation2d(4.064, 7.562);
+  //   var insideRedDepotSide = FieldUtil.RED_DEPOT_SIDE_TRENCH_BOX.contains(robotTranslation);
+  //   assertThat(insideRedDepotSide).isTrue();
+  // }
+
+  // @Test
+  // void insideRedOutpostSideBoxTest() {
+  //   // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
+  //   // Units.inchesToMeters(20.0));
+  //   var robotTranslation = new Translation2d(4.064, 0.508);
+  //   var insideRedOutpostSide = FieldUtil.RED_OUTPOST_SIDE_TRENCH_BOX.contains(robotTranslation);
+  //   assertThat(insideRedOutpostSide).isTrue();
+  // }
 
   @Test
   void nearestLegalScoringPoseNotInsideBlue() {
