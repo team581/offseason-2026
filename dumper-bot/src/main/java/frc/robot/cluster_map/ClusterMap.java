@@ -2,6 +2,7 @@ package frc.robot.cluster_map;
 
 import static java.util.Comparator.comparingDouble;
 
+import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.GamePieceResult;

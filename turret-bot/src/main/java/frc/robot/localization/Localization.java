@@ -2,6 +2,8 @@ package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.vision.results.TagResult;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -9,7 +11,6 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
-import frc.robot.vision.results.TagResult;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
   private static final double MIN_TRUST_FACTOR = 0.01;
