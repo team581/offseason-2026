@@ -2,7 +2,6 @@ package frc.robot.robot_manager;
 
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.localization.Localization;
 import frc.robot.shooter_hood.ShooterHood;

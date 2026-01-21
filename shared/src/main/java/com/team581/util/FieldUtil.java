@@ -21,7 +21,6 @@ public class FieldUtil {
   public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
   public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
-
   // OLD TRENCH BOXES, NOW USING TRENCH ASSIST BOXES
   // // calculations
 
@@ -33,7 +32,8 @@ public class FieldUtil {
   // // calculated
   public static final double BLUE_STARTING_LINE_X = FIELD_LENGTH - RED_STARTING_LINE_X;
 
-  // public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X + 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
+  // public static final double RED_TRENCH_BOX_LENGTH_X = RED_STARTING_LINE_X +
+  // 2*(RED_TRENCH_X-RED_STARTING_LINE_X);
   // public static final double BLUE_TRENCH_BOX_LENGTH_X = FIELD_LENGTH-RED_TRENCH_BOX_LENGTH_X;
 
   // public static final double TOPSIDE_TO_DOWN_TRENCH_WIDTH_Y = FIELD_WIDTH-TRENCH_WIDTH_Y;

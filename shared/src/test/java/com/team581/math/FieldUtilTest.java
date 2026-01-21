@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
 import org.junit.jupiter.api.Test;
 
 final class FieldUtilTest {
@@ -46,7 +45,8 @@ final class FieldUtilTest {
 
   // @Test
   // void insideBlueDepotSideBoxTest() {
-  //   // var robotTranslation = new Translation2d(FieldUtil.FIELD_LENGTH-Units.inchesToMeters(160.0),
+  //   // var robotTranslation = new
+  // Translation2d(FieldUtil.FIELD_LENGTH-Units.inchesToMeters(160.0),
   //   // Units.inchesToMeters(20.0));
   //   var robotTranslation = new Translation2d(12.4714, 0.508);
   //   var insideBlueDepotSide = FieldUtil.BLUE_DEPOT_SIDE_TRENCH_BOX.contains(robotTranslation);
@@ -58,7 +58,8 @@ final class FieldUtilTest {
   //   // var robotTranslation = new Translation2d(Units.inchesToMeters(160.0),
   //   // FieldUtil.FIELD_WIDTH-Units.inchesToMeters(20.0));
   //   var robotTranslation = new Translation2d(12.4714, 7.562);
-  //   var insideBlueOutpostSide = FieldUtil.BLUE_OUTPOST_SIDE_TRENCH_BOX.contains(robotTranslation);
+  //   var insideBlueOutpostSide =
+  // FieldUtil.BLUE_OUTPOST_SIDE_TRENCH_BOX.contains(robotTranslation);
   //   assertThat(insideBlueOutpostSide).isTrue();
   // }
 
@@ -115,7 +116,8 @@ final class FieldUtilTest {
 
   // @Test
   // void outsideAllBoxesTest() {
-  //   var robotTranslation = new Translation2d(Units.inchesToMeters(0.0), Units.inchesToMeters(0.0));
+  //   var robotTranslation = new Translation2d(Units.inchesToMeters(0.0),
+  // Units.inchesToMeters(0.0));
   //   var insideBoxes = insideAny(robotTranslation);
   //   assertThat(insideBoxes).isFalse();
   // }
