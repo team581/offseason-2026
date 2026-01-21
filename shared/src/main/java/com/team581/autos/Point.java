@@ -5,6 +5,8 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.util.FmsUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
   public static Point ofRed(Pose2d redPose) {
@@ -17,6 +19,22 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
 
   public Pose2d getPose() {
     return FmsUtil.isRedAlliance() ? redPose : bluePose;
+  }
+
+  public Translation2d getTranslation() {
+    return getPose().getTranslation();
+  }
+
+  public double getX() {
+    return getPose().getX();
+  }
+
+  public double getY() {
+    return getPose().getY();
+  }
+
+  public Rotation2d getRotation() {
+    return getPose().getRotation();
   }
 
   public AutoPoint withLinearConstraints(double maxVelocity, double maxAcceleration) {
