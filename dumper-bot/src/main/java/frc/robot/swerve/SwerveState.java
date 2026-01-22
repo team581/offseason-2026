@@ -2,7 +2,9 @@ package frc.robot.swerve;
 
 public enum SwerveState {
   TELEOP,
-  TELEOP_SNAPS,
-  HUB_AIM,
+  FEEDING_TELEOP,
+  FEEDING_AUTO,
+  HUB_AIM_TELEOP,
+  HUB_AIM_AUTO,
   TRAILBLAZER;
 }

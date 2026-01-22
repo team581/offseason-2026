@@ -106,7 +106,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.setHubAimAngle(turretHubGoalAngle);
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
-        swerve.snapsDriveRequest(swerveTurretCompensationAngle);
+        swerve.hubAimRequest(swerveTurretCompensationAngle);
         var goalPose =
             ShootOnTheMove.getVelocityCompensatedGoal(
                 FieldUtil.HUB_POSE.getTranslation(),

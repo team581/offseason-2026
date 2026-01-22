@@ -13,7 +13,6 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -69,6 +68,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private SwerveDriveState drivetrainState = new SwerveDriveState();
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
+  private Rotation2d snapAngle = Rotation2d.kZero;
 
   private double teleopSlowModePercent = 1.0;
 
@@ -90,16 +90,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   public ChassisSpeeds getFieldRelativeSpeeds() {
     return fieldRelativeSpeeds;
-  }
-
-  @Override
-  protected SwerveState getNextState(SwerveState currentState) {
-    // Ensure that we are in an auto state during auto, and a teleop state during teleop
-    if (DriverStation.isAutonomous()) {
-      return SwerveState.TRAILBLAZER;
-    }
-
-    return currentState;
   }
 
   /**
@@ -145,13 +135,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private void sendSwerveRequest() {
     switch (getState()) {
       case TELEOP -> drivetrain.setControl(teleopRequest);
-      case TELEOP_SNAPS -> {
-        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
-          drivetrain.setControl(teleopSnapsRequest);
-        } else {
-          drivetrain.setControl(teleopRequest);
-        }
-      }
       case TRAILBLAZER ->
           drivetrain.setControl(
               trailblazerRequest.withSpeeds(
@@ -173,19 +156,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     sendSwerveRequest();
   }
 
-  public void snapsDriveRequest(double snapAngle) {
-    teleopSnapsRequest.withTargetDirection(
-        Rotation2d.fromDegrees(snapAngle).rotateBy(Rotation2d.k180deg));
+  public void exampleSnapsRequest(double snapAngle) {
+    this.snapAngle = Rotation2d.fromDegrees(snapAngle);
+    teleopSnapsRequest.withTargetDirection(this.snapAngle.rotateBy(Rotation2d.k180deg));
 
     if (DriverStation.isTeleop()) {
-      setStateFromRequest(SwerveState.TELEOP_SNAPS);
+      setStateFromRequest(SwerveState.TELEOP);
       sendSwerveRequest();
     }
   }
 
   @Override
   public void whileInState(SwerveState currentState) {
-    DogLog.log("Swerve/SnapAngle", teleopSnapsRequest.TargetDirection.getDegrees(), Degrees);
+    DogLog.log("Swerve/SnapAngle", snapAngle.getDegrees(), Degrees);
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
