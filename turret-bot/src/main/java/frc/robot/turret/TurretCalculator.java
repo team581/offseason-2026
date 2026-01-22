@@ -31,8 +31,7 @@ public class TurretCalculator {
 
   public static double calculateTurretAimingAngle(
       Translation2d robot, Rotation2d robotRotation, Translation2d target) {
-
-    robot = robot.plus(TURRET_TO_ROBOT.getTranslation());
+    robot = robot.plus(TURRET_TO_ROBOT.getTranslation().rotateBy(robotRotation));
     var targetAngle =
         Units.radiansToDegrees(
             Math.atan2(target.getY() - robot.getY(), target.getX() - robot.getX()));
