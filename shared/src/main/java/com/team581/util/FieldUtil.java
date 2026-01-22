@@ -40,7 +40,7 @@ public class FieldUtil {
   public static final double BOTTOM_TRENCH_Y = Units.inchesToMeters(TRENCH_LENGTH_Y / 2.0);
   public static final double TOP_TRENCH_Y =
       Units.inchesToMeters(FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0);
-  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(70.0);
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(140);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
 
   // TODO: we're never using "right" or "left" in the names again it's gonna be OUTPOST_SIDE or
