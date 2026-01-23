@@ -44,6 +44,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
       new PhoenixPIDController(5.75, 0, 0);
 
+  private static final double TRENCH_ASSIST_Y_TOLERANCE = Units.inchesToMeters(0.5);
+
   public final TunerSwerveDrivetrain drivetrain;
   private final Trailblazer trailblazer;
 
@@ -79,13 +81,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private Rotation2d snapAngle = Rotation2d.kZero;
 
   // Trench Assist variables
-  private final DoubleSubscriber TRENCH_ASSIST_VELOCITY_THRESHOLD =
+  private final DoubleSubscriber trenchAssistVelocityThreshold =
       DogLog.tunable("Swerve/TrenchAssistVelocityThreshold", 2.0);
-  private final DoubleSubscriber TRENCH_ASSIST_ANGLE_THRESHOLD =
+  private final DoubleSubscriber trenchAssistAngleThreshold =
       DogLog.tunable("Swerve/TrenchAssistAngleThreshold", 60.0);
-  private final double TRENCH_ASSIST_Y_TOLERANCE = Units.inchesToMeters(0.5);
   private final PIDController trenchPidController = new PIDController(15, 0, 0);
-  private double TRENCH_ASSIST_Y = 0.0;
+  private double trenchAssistY = 0.0;
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -155,9 +156,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
 
     if (robotPose.getY() < FieldUtil.FIELD_WIDTH / 2.0) {
-      TRENCH_ASSIST_Y = FieldUtil.BOTTOM_TRENCH_Y;
+      trenchAssistY = FieldUtil.BOTTOM_TRENCH_Y;
     } else {
-      TRENCH_ASSIST_Y = FieldUtil.TOP_TRENCH_Y;
+      trenchAssistY = FieldUtil.TOP_TRENCH_Y;
     }
   }
 
@@ -170,9 +171,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           DogLog.log("Swerve/TrenchAssist/assistVelocity", trenchAssistVelocity);
           DogLog.log("Swerve/TrenchAssist/SnapAngle", trenchSnapAngle);
 
-          if (Math.abs(TRENCH_ASSIST_Y - robotPose.getY()) > TRENCH_ASSIST_Y_TOLERANCE)
+          if (Math.abs(trenchAssistY - robotPose.getY()) > TRENCH_ASSIST_Y_TOLERANCE)
             DogLog.timestamp("Swerve/TrenchAssist/ApplyingTrenchAssist");
-          DogLog.log("Swerve/TrenchAssist/TrenchAssistY", TRENCH_ASSIST_Y);
+          DogLog.log("Swerve/TrenchAssist/TrenchAssistY", trenchAssistY);
           drivetrain.setControl(
               teleopSnapsRequest
                   .withVelocityY(trenchAssistVelocity)
@@ -238,7 +239,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   private double getTrenchAssistVelocity() {
-    return -trenchPidController.calculate(robotPose.getY(), TRENCH_ASSIST_Y);
+    return -trenchPidController.calculate(robotPose.getY(), trenchAssistY);
   }
 
   private boolean ableToTrenchAssist() {
@@ -257,8 +258,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         new Pose2d(FieldUtil.getClosestTrenchCenter(robotPose.getTranslation()), Rotation2d.kZero));
 
     // Check if velocity meets threshold
-    if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds)
-        <= TRENCH_ASSIST_VELOCITY_THRESHOLD.get()) {
+    if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds) <= trenchAssistVelocityThreshold.get()) {
       DogLog.log("Swerve/TrenchAssist/VelocityThreshold", false);
       return false;
     }
@@ -274,11 +274,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         MathUtil.isNear(
             velocityAngle.getDegrees(),
             angleToTrench.getDegrees(),
-            TRENCH_ASSIST_ANGLE_THRESHOLD.get()));
+            trenchAssistAngleThreshold.get()));
     return MathUtil.isNear(
-        velocityAngle.getDegrees(),
-        angleToTrench.getDegrees(),
-        TRENCH_ASSIST_ANGLE_THRESHOLD.get());
+        velocityAngle.getDegrees(), angleToTrench.getDegrees(), trenchAssistAngleThreshold.get());
   }
 
   @Override
