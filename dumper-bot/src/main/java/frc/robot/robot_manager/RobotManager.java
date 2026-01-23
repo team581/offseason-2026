@@ -26,7 +26,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Feeder feeder;
   private final Swerve swerve;
   private final Vision vision;
-  private final Localization localization;
+  public final Localization localization;
 
   private Pose2d robotPose = Pose2d.kZero;
 
@@ -209,21 +209,23 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       hubGoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.HUB_POSE.getTranslation(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
+              FieldUtil.HUB_POSE.getPose().getTranslation(),
+              swerve.getFieldRelativeSpeeds(),
+              timeOfFlight);
       feed1GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.FEED_1_POSE.getTranslation(),
+              FieldUtil.FEED_1_POSE.getPose().getTranslation(),
               swerve.getFieldRelativeSpeeds(),
               timeOfFlight);
       feed2GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.FEED_2_POSE.getTranslation(),
+              FieldUtil.FEED_2_POSE.getPose().getTranslation(),
               swerve.getFieldRelativeSpeeds(),
               timeOfFlight);
     } else {
-      hubGoalPose = FieldUtil.HUB_POSE.getTranslation();
-      feed1GoalPose = FieldUtil.FEED_1_POSE.getTranslation();
-      feed2GoalPose = FieldUtil.FEED_2_POSE.getTranslation();
+      hubGoalPose = FieldUtil.HUB_POSE.getPose().getTranslation();
+      feed1GoalPose = FieldUtil.FEED_1_POSE.getPose().getTranslation();
+      feed2GoalPose = FieldUtil.FEED_2_POSE.getPose().getTranslation();
     }
 
     hubGoalAngle = getSwerveAimingAngle(hubGoalPose);
