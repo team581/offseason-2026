@@ -199,13 +199,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       case INTAKING -> {
         if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)
             && ableToWallSnap()) {
-              DogLog.timestamp("Swerve/WallSnaps/Snapping");
+          DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
               MathHelpers.getClosestPointOnRectanglePerimeter(
                   drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
           var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
           drivetrain.setControl(
-              teleopSnapsIntakeRequest.withTargetDirection(angleToWall.plus(Rotation2d.k180deg)).withCenterOfRotation(new Translation2d(distanceToWall,0.0)));
+              teleopSnapsIntakeRequest
+                  .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
+                  .withCenterOfRotation(new Translation2d(distanceToWall, 0.0)));
 
         } else {
           drivetrain.setControl(teleopRequest);
