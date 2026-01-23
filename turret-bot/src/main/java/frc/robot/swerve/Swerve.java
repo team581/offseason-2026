@@ -254,7 +254,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     var closestTrenchAssistZone = maybeClosestTrenchAssistZone.orElseThrow();
     DogLog.log("Swerve/TrenchAssist/InZone", closestTrenchAssistZone.getCenter());
-    DogLog.log("Swerve/TrenchAssist/ClosestTrench", new Pose2d(FieldUtil.getClosestTrenchCenter(robotPose.getTranslation()), Rotation2d.kZero));
+    DogLog.log(
+        "Swerve/TrenchAssist/ClosestTrench",
+        new Pose2d(FieldUtil.getClosestTrenchCenter(robotPose.getTranslation()), Rotation2d.kZero));
 
     // Check if velocity meets threshold
     if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds)

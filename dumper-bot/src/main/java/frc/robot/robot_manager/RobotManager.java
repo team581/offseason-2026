@@ -3,7 +3,6 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -70,8 +69,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case PREPARE_SCORE -> {
-        if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose))
-      {
+        if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose)) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -83,11 +81,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case PREPARE_FEED_1 ->
-          shooter.atGoal() && (!FieldUtil.isRobotInNoFeedZone(robotPose) && vision.isAnyCameraOnlineForTags())
+          shooter.atGoal()
+                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
+                      && vision.isAnyCameraOnlineForTags())
               ? RobotState.FEED_1
               : currentState;
       case PREPARE_FEED_2 ->
-          shooter.atGoal() && (!FieldUtil.isRobotInNoFeedZone(robotPose) && vision.isAnyCameraOnlineForTags())
+          shooter.atGoal()
+                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
+                      && vision.isAnyCameraOnlineForTags())
               ? RobotState.FEED_2
               : currentState;
       case SCORE -> {
