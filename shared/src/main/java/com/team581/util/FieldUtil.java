@@ -107,7 +107,7 @@ public class FieldUtil {
   }
 
   public static Translation2d getClosestTrenchCenter(Translation2d robotPose) {
-    Translation2d closestTrenchCenter = TRENCH_CENTERS.get(0);
+    Translation2d closestTrenchCenter = TRENCH_CENTERS.getFirst();
     for (int i = 1; i < TRENCH_CENTERS.size(); i++) {
       if (robotPose.getDistance(TRENCH_CENTERS.get(i))
           < robotPose.getDistance(closestTrenchCenter)) {
