@@ -149,14 +149,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     var maxSpeed = getState() == SwerveState.HUB_AIM_TELEOP ? MAX_HUB_SPEED : MAX_SPEED;
 
     teleopRequest
-        .withVelocityX(forwardVelocity * maxSpeed * teleopSlowModePercent)
-        .withVelocityY(sidewaysVelocity * maxSpeed * teleopSlowModePercent)
+        .withVelocityX(forwardVelocity * maxSpeed)
+        .withVelocityY(sidewaysVelocity * maxSpeed)
         .withRotationalRate(
             // Robots use CCW+ for rotation, but humans use CW+, so we invert it
-            -1.0 * rotation * TELEOP_MAX_ANGULAR_RATE.getRadians() * teleopSlowModePercent);
+            -1.0 * rotation * TELEOP_MAX_ANGULAR_RATE.getRadians());
     teleopSnapsRequest
-        .withVelocityX(forwardVelocity * maxSpeed * teleopSlowModePercent)
-        .withVelocityY(sidewaysVelocity * maxSpeed * teleopSlowModePercent);
+        .withVelocityX(forwardVelocity * maxSpeed)
+        .withVelocityY(sidewaysVelocity * maxSpeed);
+    teleopSnapsIntakeRequest
+        .withVelocityX(forwardVelocity * maxSpeed)
+        .withVelocityY(sidewaysVelocity * maxSpeed);
 
     sendSwerveRequest();
   }
@@ -196,12 +199,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       case INTAKING -> {
         if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)
             && ableToWallSnap()) {
+              DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
               MathHelpers.getClosestPointOnRectanglePerimeter(
                   drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
           var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
           drivetrain.setControl(
-              teleopSnapsIntakeRequest.withTargetDirection(angleToWall.plus(Rotation2d.k180deg)));
+              teleopSnapsIntakeRequest.withTargetDirection(angleToWall.plus(Rotation2d.k180deg)).withCenterOfRotation(new Translation2d(distanceToWall,0.0)));
 
         } else {
           drivetrain.setControl(teleopRequest);
@@ -278,7 +282,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     var velocityAngleTowardWall =
         Math.hypot(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond)
-                > 0.001
+                > 0.01
             && MathUtil.isNear(
                 angleToWall.getDegrees(),
                 velocityAngle.getDegrees(),
