@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -12,6 +13,7 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
 import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
 import frc.robot.swerve.Swerve;
@@ -198,7 +200,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> swerve.feedingAimRequest(feed1GoalAngle);
       case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.feedingAimRequest(feed2GoalAngle);
       case WAIT_SCORE, PREPARE_SCORE, SCORE -> swerve.hubAimRequest(hubGoalAngle);
-      default -> swerve.normalDriveRequest();
+      default ->{
+      if (intake.getState() == IntakeState.INTAKING) {
+        swerve.intakeDriveRequest();
+      } else {
+      swerve.normalDriveRequest();
+    } }
     }
 
     DogLog.log("RobotManager/HubDistance", hubDistance);
@@ -283,11 +290,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void intakeRequest() {
     intake.intakeRequest();
     hopper.intakeRequest();
+    swerve.intakeDriveRequest();
   }
 
   public void cancelIntakeRequest() {
     intake.idleRequest();
     hopper.idleRequest();
+    swerve.normalDriveRequest();
   }
 
   public void toggleFeedRequest() {
