@@ -74,6 +74,19 @@ public class FieldUtil {
           BLUE_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
           BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE);
 
+  // Center points of trenches
+  private static final Translation2d RED_DEPOT_SIDE_TRENCH_CENTER = new Translation2d(RED_TRENCH_X, BOTTOM_TRENCH_Y);
+  private static final Translation2d RED_OUTPOST_SIDE_TRENCH_CENTER = new Translation2d(RED_TRENCH_X, TOP_TRENCH_Y);
+  private static final Translation2d BLUE_DEPOT_SIDE_TRENCH_CENTER = new Translation2d(BLUE_TRENCH_X, TOP_TRENCH_Y);
+  private static final Translation2d BLUE_OUTPOST_SIDE_TRENCH_CENTER = new Translation2d(BLUE_TRENCH_X, BOTTOM_TRENCH_Y);
+
+  private static final List<Translation2d> TRENCH_CENTERS =
+      ImmutableList.of(
+          RED_DEPOT_SIDE_TRENCH_CENTER,
+          RED_OUTPOST_SIDE_TRENCH_CENTER,
+          BLUE_DEPOT_SIDE_TRENCH_CENTER,
+          BLUE_OUTPOST_SIDE_TRENCH_CENTER);
+
   public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
     var allianceZone = FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
 
@@ -83,6 +96,17 @@ public class FieldUtil {
   /** Returns the trench assist zone that the robot is currently in, if it exists. */
   public static Optional<Rectangle2d> getCurrentTrenchAssistZone(Translation2d robotPose) {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
+  }
+
+  public static Translation2d getClosestTrenchCenter(Translation2d robotPose) {
+    Translation2d closestTrenchCenter = TRENCH_CENTERS.get(0);
+    for (int i = 1; i < TRENCH_CENTERS.size(); i++) {
+      if (robotPose.getDistance(TRENCH_CENTERS.get(i)) < robotPose.getDistance(closestTrenchCenter)) {
+        closestTrenchCenter = TRENCH_CENTERS.get(i);
+      }
+    }
+
+    return closestTrenchCenter;
   }
 
   // TODO(@rhetorr): Make smarter for different rotations (would need to store bumper size)
