@@ -69,16 +69,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
-      case PREPARE_SHOOT_HUB -> {
+      case PREPARE_SCORE -> {
         if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose))
       {
-          yield RobotState.SHOOT_HUB;
+          yield RobotState.SCORE;
         }
         yield currentState;
       }
-      case PREPARE_FORCE_SHOOT -> {
+      case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoal()) {
-          yield RobotState.FORCE_SHOOT;
+          yield RobotState.FORCE_SCORE;
         }
         yield currentState;
       }
@@ -90,12 +90,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           shooter.atGoal() && (!FieldUtil.isRobotInNoFeedZone(robotPose) && vision.isAnyCameraOnlineForTags())
               ? RobotState.FEED_2
               : currentState;
-      case SHOOT_HUB -> {
+      case SCORE -> {
         if (!FieldUtil.isRobotInAllianceZone(robotPose) && vision.isAnyCameraOnlineForTags()) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {
-          yield RobotState.PREPARE_SHOOT_HUB;
+          yield RobotState.PREPARE_SCORE;
         }
         yield currentState;
       }
@@ -115,7 +115,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopper.idleRequest();
         swerve.normalDriveRequest();
       }
-      case PREPARE_FORCE_SHOOT -> {
+      case PREPARE_FORCE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
 
         shooter.scoreRequest(hubDistance);
@@ -124,7 +124,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopper.idleRequest();
         swerve.normalDriveRequest();
       }
-      case FORCE_SHOOT -> {
+      case FORCE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
 
         shooter.scoreRequest(hubDistance);
@@ -169,7 +169,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopper.shootRequest();
         swerve.feedingAimRequest(feed2GoalAngle);
       }
-      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB -> {
+      case WAIT_SCORE, PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
 
         shooter.scoreRequest(hubDistance);
@@ -178,7 +178,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopper.idleRequest();
         swerve.hubAimRequest(hubGoalAngle);
       }
-      case SHOOT_HUB -> {
+      case SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(hubDistance);
         feeder.feedRequest();
@@ -195,7 +195,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (state) {
       case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> swerve.feedingAimRequest(feed1GoalAngle);
       case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.feedingAimRequest(feed2GoalAngle);
-      case WAIT_SHOOT_HUB, PREPARE_SHOOT_HUB, SHOOT_HUB -> swerve.hubAimRequest(hubGoalAngle);
+      case WAIT_SCORE, PREPARE_SCORE, SCORE -> swerve.hubAimRequest(hubGoalAngle);
       default -> swerve.normalDriveRequest();
     }
 
@@ -256,11 +256,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void forceShootRequest() {
-    setStateFailSafe(RobotState.PREPARE_FORCE_SHOOT);
+    setStateFailSafe(RobotState.PREPARE_FORCE_SCORE);
   }
 
   public void shootHubWaitRequest() {
-    setStateFailSafe(RobotState.WAIT_SHOOT_HUB);
+    setStateFailSafe(RobotState.WAIT_SCORE);
   }
 
   public void feed1WaitRequest() {
@@ -273,8 +273,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void toggleHubRequest() {
     switch (getState()) {
-      case PREPARE_SHOOT_HUB, SHOOT_HUB -> setStateFailSafe(RobotState.IDLE);
-      default -> setStateFailSafe(RobotState.PREPARE_SHOOT_HUB);
+      case PREPARE_SCORE, SCORE -> setStateFailSafe(RobotState.IDLE);
+      default -> setStateFailSafe(RobotState.PREPARE_SCORE);
     }
   }
 

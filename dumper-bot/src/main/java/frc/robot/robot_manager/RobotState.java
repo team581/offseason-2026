@@ -4,12 +4,12 @@ public enum RobotState {
   IDLE,
 
   // Shoot Hub
-  WAIT_SHOOT_HUB,
-  PREPARE_SHOOT_HUB,
-  SHOOT_HUB,
+  WAIT_SCORE,
+  PREPARE_SCORE,
+  SCORE,
 
-  PREPARE_FORCE_SHOOT,
-  FORCE_SHOOT,
+  PREPARE_FORCE_SCORE,
+  FORCE_SCORE,
 
   // TODO(@rhetorr): Change feed state names to be more descriptive
   // Feed 1
