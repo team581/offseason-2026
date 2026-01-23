@@ -96,6 +96,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Rotation2d snapAngle = Rotation2d.kZero;
   private double distanceToWall = 0.0;
+  private boolean visionOnline = false;
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -265,6 +266,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   private boolean ableToWallSnap() {
+    if (!visionOnline) {
+      return false;
+    }
     var robotPose = drivetrainState.Pose;
     var closestWallTranslation =
         MathHelpers.getClosestPointOnRectanglePerimeter(
@@ -310,6 +314,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
+  }
+
+  public void setVisionOnline(boolean online) {
+    visionOnline = online;
   }
 
   private void startSimThread() {
