@@ -1,6 +1,7 @@
 package frc.robot.robot_manager;
 
 import com.team581.math.ShootOnTheMove;
+import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -15,7 +16,6 @@ import frc.robot.localization.Localization;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
 import frc.robot.turret.TurretCalculator;
-import frc.robot.util.april_tags.TagMap;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
@@ -118,7 +118,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.setHubAimAngle(aimingAngle);
       }
       case TAG_AIM -> {
-        var goalPose = TagMap.getTagPose((int) TAG_AIM_ID.get());
+        var goalPose = AprilTags.getTagPose((int) TAG_AIM_ID.get());
         if (goalPose != null) {
           var aimingAngle =
               TurretCalculator.calculateTurretAimingAngle(
