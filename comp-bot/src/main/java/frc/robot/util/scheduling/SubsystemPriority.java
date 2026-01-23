@@ -20,7 +20,6 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   INTAKE(0),
   RUMBLE_CONTROLLER(0);
 
-
   public final int value;
 
   private SubsystemPriority(int priority) {

@@ -1,7 +1,5 @@
 package frc.robot.intake;
 
-import static edu.wpi.first.units.Units.Volts;
-
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
