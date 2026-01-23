@@ -97,8 +97,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private Rotation2d snapAngle = Rotation2d.kZero;
   private double distanceToWall = 0.0;
 
-  private double teleopSlowModePercent = 1.0;
-
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
     this.drivetrain = drivetrain;
