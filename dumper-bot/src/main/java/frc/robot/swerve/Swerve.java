@@ -26,6 +26,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.function.DoubleSupplier;
@@ -266,7 +267,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   private boolean ableToWallSnap() {
-    if (!visionOnline) {
+    if (!visionOnline || !FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()) {
       return false;
     }
     var robotPose = drivetrainState.Pose;
