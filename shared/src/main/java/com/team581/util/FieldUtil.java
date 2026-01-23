@@ -38,49 +38,41 @@ public class FieldUtil {
           new Translation2d(RED_STARTING_LINE_X, 0.0),
           new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
-  public static final Rectangle2d RED_HUB_NO_FEED_ZONE =
+  private static final Rectangle2d RED_HUB_NO_FEED_ZONE =
       new Rectangle2d(
           new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2), 3.034663),
           new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2) - 1.0, 5.034663));
-  public static final Rectangle2d BLUE_HUB_NO_FEED_ZONE =
+  private static final Rectangle2d BLUE_HUB_NO_FEED_ZONE =
       new Rectangle2d(
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2), 3.034663),
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
+
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(140);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
 
-  // TODO: we're never using "right" or "left" in the names again it's gonna be OUTPOST_SIDE or
-  // DEPOT_SIDE
-  private static final Rectangle2d RED_DEPOT_SIDE_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(
-          new Translation2d(RED_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, 0.0),
-          new Translation2d(
-              RED_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, TRENCH_ASSIST_ZONE_LENGTH_Y));
-  private static final Rectangle2d RED_OUTPOST_SIDE_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(
-          new Translation2d(
-              RED_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-              FIELD_WIDTH - TRENCH_ASSIST_ZONE_LENGTH_Y),
-          new Translation2d(RED_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, FIELD_WIDTH));
-  private static final Rectangle2d BLUE_OUTPOST_SIDE_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(
-          new Translation2d(
-              BLUE_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-              FIELD_WIDTH - TRENCH_ASSIST_ZONE_LENGTH_Y),
-          new Translation2d(BLUE_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, FIELD_WIDTH));
-  private static final Rectangle2d BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE =
-      new Rectangle2d(
-          new Translation2d(BLUE_TRENCH_X - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, 0.0),
-          new Translation2d(
-              BLUE_TRENCH_X + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0, TRENCH_ASSIST_ZONE_LENGTH_Y));
-
   private static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
-          RED_DEPOT_SIDE_TRENCH_ASSIST_ZONE,
-          RED_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
-          BLUE_OUTPOST_SIDE_TRENCH_ASSIST_ZONE,
-          BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE);
+          // Red depot
+          new Rectangle2d(
+              new Pose2d(RED_TRENCH_X, AprilTags.TAG_7.getY(), Rotation2d.kZero),
+              TRENCH_ASSIST_ZONE_LENGTH_X,
+              TRENCH_ASSIST_ZONE_LENGTH_Y),
+          // Red outpost
+          new Rectangle2d(
+              new Pose2d(RED_TRENCH_X, AprilTags.TAG_12.getY(), Rotation2d.kZero),
+              TRENCH_ASSIST_ZONE_LENGTH_X,
+              TRENCH_ASSIST_ZONE_LENGTH_Y),
+          // Blue outpost
+          new Rectangle2d(
+              new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_17.getY(), Rotation2d.kZero),
+              TRENCH_ASSIST_ZONE_LENGTH_X,
+              TRENCH_ASSIST_ZONE_LENGTH_Y),
+          // Blue depot
+          new Rectangle2d(
+              new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_22.getY(), Rotation2d.kZero),
+              TRENCH_ASSIST_ZONE_LENGTH_X,
+              TRENCH_ASSIST_ZONE_LENGTH_Y));
 
   // Center points of trenches
   private static final List<Translation2d> TRENCH_CENTERS =
