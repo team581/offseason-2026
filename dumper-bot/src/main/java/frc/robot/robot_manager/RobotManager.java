@@ -87,8 +87,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case PREPARE_FEED_1 -> shooter.atGoal() && !FieldUtil.isRobotInNoFeedZone(robotPose) ? RobotState.FEED_1 : currentState;
-      case PREPARE_FEED_2 -> shooter.atGoal() && !FieldUtil.isRobotInNoFeedZone(robotPose) ? RobotState.FEED_2 : currentState;
+      case PREPARE_FEED_1 ->
+          shooter.atGoal() && !FieldUtil.isRobotInNoFeedZone(robotPose)
+              ? RobotState.FEED_1
+              : currentState;
+      case PREPARE_FEED_2 ->
+          shooter.atGoal() && !FieldUtil.isRobotInNoFeedZone(robotPose)
+              ? RobotState.FEED_2
+              : currentState;
       case SHOOT_HUB -> {
         if (!FieldUtil.isRobotInAllianceZone(robotPose)) {
           yield RobotState.IDLE;

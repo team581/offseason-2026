@@ -1,16 +1,14 @@
 package com.team581.util;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.google.common.collect.ImmutableList;
 import com.team581.autos.Point;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import java.util.List;
+import java.util.Optional;
 
 public class FieldUtil {
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
@@ -20,33 +18,35 @@ public class FieldUtil {
 
   public static final Point HUB_POSE =
       Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
-      public static final double HUB_RADIUS_METERS = Units.inchesToMeters(48.106087/2);
-      public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
-      public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
+  public static final double HUB_RADIUS_METERS = Units.inchesToMeters(48.106087 / 2);
+  public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
+  public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
-      private static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
-      private static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
-      private static final double RED_TRENCH_X = FIELD_LENGTH - BLUE_TRENCH_X;
+  private static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
+  private static final double BLUE_TRENCH_X = Units.inchesToMeters(182.11);
+  private static final double RED_TRENCH_X = FIELD_LENGTH - BLUE_TRENCH_X;
 
-      private static final double RED_STARTING_LINE_X = FIELD_LENGTH - BLUE_STARTING_LINE_X;
+  private static final double RED_STARTING_LINE_X = FIELD_LENGTH - BLUE_STARTING_LINE_X;
 
-      private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(49.84);
+  private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(49.84);
 
-      private static final Rectangle2d BLUE_ALLIANCE_ZONE =
+  private static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(Translation2d.kZero, new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH));
-      private static final Rectangle2d RED_ALLIANCE_ZONE =
+  private static final Rectangle2d RED_ALLIANCE_ZONE =
       new Rectangle2d(
-        new Translation2d(RED_STARTING_LINE_X, 0.0),
-        new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
+          new Translation2d(RED_STARTING_LINE_X, 0.0),
+          new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
-        public static final Rectangle2d RED_HUB_NO_FEED_ZONE =
-        new Rectangle2d(
-            new Translation2d(RED_STARTING_LINE_X-(HUB_RADIUS_METERS*2), 3.034663), new Translation2d(RED_STARTING_LINE_X-(HUB_RADIUS_METERS*2)-1.0, 5.034663));
-             public static final Rectangle2d BLUE_HUB_NO_FEED_ZONE =
-        new Rectangle2d(
-            new Translation2d(BLUE_STARTING_LINE_X+(HUB_RADIUS_METERS*2), 3.034663), new Translation2d(BLUE_STARTING_LINE_X+(HUB_RADIUS_METERS*2)+1.0, 5.034663));
-        // Custom zones to enable trench assist for driver to cleanly drive through with speed
-        public static final double BOTTOM_TRENCH_Y = TRENCH_LENGTH_Y / 2.0;
+  public static final Rectangle2d RED_HUB_NO_FEED_ZONE =
+      new Rectangle2d(
+          new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2), 3.034663),
+          new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2) - 1.0, 5.034663));
+  public static final Rectangle2d BLUE_HUB_NO_FEED_ZONE =
+      new Rectangle2d(
+          new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2), 3.034663),
+          new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
+  // Custom zones to enable trench assist for driver to cleanly drive through with speed
+  public static final double BOTTOM_TRENCH_Y = TRENCH_LENGTH_Y / 2.0;
   public static final double TOP_TRENCH_Y = FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(140);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
@@ -105,13 +105,14 @@ public class FieldUtil {
     return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
   }
 
-  private static boolean isPointInsideHub(Translation2d point) {
-    double distance = point.getDistance(HUB_POSE.getPose().getTranslation());
-    return distance < HUB_RADIUS_METERS;
+  public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
+    // Check if line from robot to target collides with hub no feed zone
+    var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
+
+    return noFeedZone.contains(robotPose.getTranslation());
   }
 
-  private static boolean doesLineCollideWithCircle(
-      Translation2d start, Translation2d end) {
+  private static boolean doesLineCollideWithCircle(Translation2d start, Translation2d end) {
     // Return True if there is a collision, False if not
 
     // Special logic for if the start and/or end point are inside a collision zone (happens in
@@ -158,12 +159,8 @@ public class FieldUtil {
     return closestPointOnLineToCircleDistance < HUB_RADIUS_METERS;
   }
 
-  public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
-    // Check if line from robot to target collides with hub no feed zone
-    var noFeedZone =
-        FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
-
-    return noFeedZone.contains(robotPose.getTranslation());
+  private static boolean isPointInsideHub(Translation2d point) {
+    double distance = point.getDistance(HUB_POSE.getPose().getTranslation());
+    return distance < HUB_RADIUS_METERS;
   }
-
 }
