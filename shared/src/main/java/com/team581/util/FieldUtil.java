@@ -2,8 +2,7 @@ package com.team581.util;
 
 import com.google.common.collect.ImmutableList;
 import com.team581.autos.Point;
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
+import com.team581.math.MathHelpers;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,13 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class FieldUtil {
-  public static final AprilTagFieldLayout FIELD_LAYOUT =
-      AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
-
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
-  // In meters
-  public static final double FIELD_LENGTH = FIELD_LAYOUT.getFieldLength();
-  public static final double FIELD_WIDTH = FIELD_LAYOUT.getFieldWidth();
+
+  public static final double FIELD_LENGTH = AprilTags.FIELD_LAYOUT.getFieldLength();
+  public static final double FIELD_WIDTH = AprilTags.FIELD_LAYOUT.getFieldWidth();
   public static final Rectangle2d FIELD_BOUNDS =
       new Rectangle2d(Translation2d.kZero, new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
@@ -91,21 +87,24 @@ public class FieldUtil {
           BLUE_DEPOT_SIDE_TRENCH_ASSIST_ZONE);
 
   // Center points of trenches
-  private static final Translation2d RED_DEPOT_SIDE_TRENCH_CENTER =
-      new Translation2d(RED_TRENCH_X, BOTTOM_TRENCH_Y);
-  private static final Translation2d RED_OUTPOST_SIDE_TRENCH_CENTER =
-      new Translation2d(RED_TRENCH_X, TOP_TRENCH_Y);
-  private static final Translation2d BLUE_DEPOT_SIDE_TRENCH_CENTER =
-      new Translation2d(BLUE_TRENCH_X, TOP_TRENCH_Y);
-  private static final Translation2d BLUE_OUTPOST_SIDE_TRENCH_CENTER =
-      new Translation2d(BLUE_TRENCH_X, BOTTOM_TRENCH_Y);
-
   private static final List<Translation2d> TRENCH_CENTERS =
       ImmutableList.of(
-          RED_DEPOT_SIDE_TRENCH_CENTER,
-          RED_OUTPOST_SIDE_TRENCH_CENTER,
-          BLUE_DEPOT_SIDE_TRENCH_CENTER,
-          BLUE_OUTPOST_SIDE_TRENCH_CENTER);
+          // Red depot side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_7.getX(), AprilTags.TAG_6.getX()),
+              AprilTags.TAG_7.getY()),
+          // Red outpost side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_12.getX(), AprilTags.TAG_1.getX()),
+              AprilTags.TAG_12.getY()),
+          // Blue depot side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_22.getX(), AprilTags.TAG_23.getX()),
+              AprilTags.TAG_22.getY()),
+          // Blue outpost side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX()),
+              AprilTags.TAG_17.getY()));
 
   public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
     var allianceZone = FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
