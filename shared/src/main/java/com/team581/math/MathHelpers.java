@@ -2,6 +2,7 @@ package com.team581.math;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -118,6 +119,54 @@ public class MathHelpers {
 
   public static final Transform2d transform2dFromRotation(Rotation2d rotation) {
     return new Transform2d(Translation2d.kZero, rotation);
+  }
+
+  public static final Translation2d getClosestPointOnRectanglePerimeter(
+      Translation2d point, Rectangle2d rectangle) {
+    // Rotate point by inverse of rectangle rotation
+    var m_center = rectangle.getCenter();
+    var m_xWidth = rectangle.getXWidth();
+    var m_yWidth = rectangle.getYWidth();
+    var rotatedPoint =
+        point.rotateAround(m_center.getTranslation(), m_center.getRotation().unaryMinus());
+
+    // Find nearest point on or inside the rectangle
+    double minX = m_center.getX() - m_xWidth / 2.0;
+    double maxX = m_center.getX() + m_xWidth / 2.0;
+    double minY = m_center.getY() - m_yWidth / 2.0;
+    double maxY = m_center.getY() + m_yWidth / 2.0;
+
+    var nearestPoint =
+        new Translation2d(
+            MathUtil.clamp(rotatedPoint.getX(), minX, maxX),
+            MathUtil.clamp(rotatedPoint.getY(), minY, maxY));
+
+    // If point inside rectangle push it to the perimeter
+    if (nearestPoint.getX() > minX
+        && nearestPoint.getX() < maxX
+        && nearestPoint.getY() > minY
+        && nearestPoint.getY() < maxY) {
+      double dxMin = nearestPoint.getX() - minX;
+      double dxMax = maxX - nearestPoint.getX();
+      double dyMin = nearestPoint.getY() - minY;
+      double dyMax = maxY - nearestPoint.getY();
+
+      double minDist = Math.min(Math.min(dxMin, dxMax), Math.min(dyMin, dyMax));
+
+      if (minDist == dxMin) {
+        nearestPoint = new Translation2d(minX, nearestPoint.getY());
+      } else if (minDist == dxMax) {
+        nearestPoint = new Translation2d(maxX, nearestPoint.getY());
+      } else if (minDist == dyMin) {
+        nearestPoint = new Translation2d(nearestPoint.getX(), minY);
+      } else {
+        nearestPoint = new Translation2d(nearestPoint.getX(), maxY);
+      }
+    }
+
+    // Undo rotation
+    return nearestPoint.rotateAround(m_center.getTranslation(), m_center.getRotation());
+
   }
 
   private MathHelpers() {}
