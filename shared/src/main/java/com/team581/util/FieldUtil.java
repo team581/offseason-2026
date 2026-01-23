@@ -37,9 +37,8 @@ public class FieldUtil {
           new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
-  public static final double BOTTOM_TRENCH_Y = Units.inchesToMeters(TRENCH_LENGTH_Y / 2.0);
-  public static final double TOP_TRENCH_Y =
-      Units.inchesToMeters(FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0);
+  public static final double BOTTOM_TRENCH_Y = TRENCH_LENGTH_Y / 2.0;
+  public static final double TOP_TRENCH_Y = FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(140);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
 
