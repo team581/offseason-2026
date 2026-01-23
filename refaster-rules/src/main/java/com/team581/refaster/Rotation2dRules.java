@@ -119,4 +119,19 @@ class Rotation2dRules {
       return Rotation2d.k180deg;
     }
   }
+
+  /**
+   * Prefer {@link Rotation2d#fromDegrees(double)} over {@code new Rotation2d(Math.toRadians(...))}.
+   */
+  static class Rotation2dFromDegrees {
+    @BeforeTemplate
+    Rotation2d before(double degrees) {
+      return new Rotation2d(Math.toRadians(degrees));
+    }
+
+    @AfterTemplate
+    Rotation2d after(double degrees) {
+      return Rotation2d.fromDegrees(degrees);
+    }
+  }
 }
