@@ -1,20 +1,24 @@
 package com.team581.util;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.google.common.collect.ImmutableList;
 import com.team581.autos.Point;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
-import java.util.List;
-import java.util.Optional;
 
 public class FieldUtil {
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
   // In meters
   public static final double FIELD_LENGTH = 16.540988;
   public static final double FIELD_WIDTH = 8.069326;
+  public static final Rectangle2d FIELD_BOUNDS =
+      new Rectangle2d(Translation2d.kZero, new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
   public static final Point HUB_POSE =
       Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
