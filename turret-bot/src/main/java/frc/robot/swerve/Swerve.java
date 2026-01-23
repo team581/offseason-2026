@@ -84,8 +84,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private final DoubleSubscriber TRENCH_ASSIST_VELOCITY_THRESHOLD =
       DogLog.tunable("Swerve/TrenchAssistVelocityThreshold", 2.0);
   private final DoubleSubscriber TRENCH_ASSIST_ANGLE_THRESHOLD =
-      DogLog.tunable("Swerve/TrenchAssistAngleThreshold", 60.0);
-  private final double TRENCH_ASSIST_Y_TOLERANCE = Units.inchesToMeters(6);
+      DogLog.tunable("Swerve/TrenchAssistAngleThreshold", 30.0);
+  private final double TRENCH_ASSIST_Y_TOLERANCE = Units.inchesToMeters(1.5);
   private final PIDController trenchPidController = new PIDController(10, 0, 0);
   private double TRENCH_ASSIST_Y = 0.0;
 
@@ -173,6 +173,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           DogLog.log("Swerve/TrenchAssist/SnapAngle", trenchSnapAngle);
 
           if (Math.abs(TRENCH_ASSIST_Y - robotPose.getY()) > TRENCH_ASSIST_Y_TOLERANCE)
+            DogLog.timestamp("Swerve/TrenchAssist/ApplyingTrenchAssist");
+            DogLog.log("Swerve/TrenchAssist/TrenchAssistY", TRENCH_ASSIST_Y);
             drivetrain.setControl(
                 teleopSnapsRequest
                     .withVelocityY(trenchAssistVelocity)
@@ -238,7 +240,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   private double getTrenchAssistVelocity() {
-    return trenchPidController.calculate(robotPose.getY(), TRENCH_ASSIST_Y);
+    return -trenchPidController.calculate(robotPose.getY(), TRENCH_ASSIST_Y);
   }
 
   private boolean ableToTrenchAssist() {
