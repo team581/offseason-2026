@@ -31,8 +31,6 @@ public class FieldUtil {
 
   private static final double RED_STARTING_LINE_X = FIELD_LENGTH - BLUE_STARTING_LINE_X;
 
-  private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(49.84);
-
   private static final Rectangle2d BLUE_ALLIANCE_ZONE =
       new Rectangle2d(Translation2d.kZero, new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH));
   private static final Rectangle2d RED_ALLIANCE_ZONE =
@@ -49,8 +47,6 @@ public class FieldUtil {
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2), 3.034663),
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
-  public static final double BOTTOM_TRENCH_Y = TRENCH_LENGTH_Y / 2.0;
-  public static final double TOP_TRENCH_Y = FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(140);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
 

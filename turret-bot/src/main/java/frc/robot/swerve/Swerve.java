@@ -154,12 +154,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     robotRelativeSpeeds = drivetrainState.Speeds;
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
-
-    if (robotPose.getY() < FieldUtil.FIELD_WIDTH / 2.0) {
-      trenchAssistY = FieldUtil.BOTTOM_TRENCH_Y;
-    } else {
-      trenchAssistY = FieldUtil.TOP_TRENCH_Y;
-    }
   }
 
   private void sendSwerveRequest() {
@@ -252,10 +246,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
 
     var closestTrenchAssistZone = maybeClosestTrenchAssistZone.orElseThrow();
+
+    var closestTrenchCenter = FieldUtil.getClosestTrenchCenter(robotPose.getTranslation());
+
+    trenchAssistY = closestTrenchCenter.getY();
     DogLog.log("Swerve/TrenchAssist/InZone", closestTrenchAssistZone.getCenter());
     DogLog.log(
-        "Swerve/TrenchAssist/ClosestTrench",
-        new Pose2d(FieldUtil.getClosestTrenchCenter(robotPose.getTranslation()), Rotation2d.kZero));
+        "Swerve/TrenchAssist/ClosestTrench", new Pose2d(closestTrenchCenter, Rotation2d.kZero));
 
     // Check if velocity meets threshold
     if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds) <= trenchAssistVelocityThreshold.get()) {
@@ -266,9 +263,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     // Check if angle is toward trench
     var velocityAngle = MathHelpers.getDriveDirection(fieldRelativeSpeeds);
-    var angleToTrench =
-        MathHelpers.getDriveDirection(
-            robotPose, FieldUtil.getClosestTrenchCenter(robotPose.getTranslation()));
+    var angleToTrench = MathHelpers.getDriveDirection(robotPose, closestTrenchCenter);
     DogLog.log(
         "Swerve/TrenchAssist/AngleThreshold",
         MathUtil.isNear(
