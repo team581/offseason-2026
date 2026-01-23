@@ -111,9 +111,4 @@ public class FieldUtil {
 
     return noFeedZone.contains(robotPose.getTranslation());
   }
-
-  private static boolean isPointInsideHub(Translation2d point) {
-    double distance = point.getDistance(HUB_POSE.getPose().getTranslation());
-    return distance < HUB_RADIUS_METERS;
-  }
 }
