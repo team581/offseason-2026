@@ -45,4 +45,8 @@ tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs.add "-Xplugin:RefasterRuleCompiler"
 	// Disable Error Prone checks when compiling Refaster rules
 	options.errorprone.enabled = false
+
+	// Disable build caching for this task - the refaster-compiler annotation processor
+	// outputs aren't properly tracked by Gradle's cache, causing stale cache issues when rules change
+	outputs.cacheIf { false }
 }
