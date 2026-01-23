@@ -2,7 +2,6 @@ package com.team581.math;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
