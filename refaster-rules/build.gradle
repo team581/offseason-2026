@@ -16,11 +16,12 @@ dependencies {
 	// Annotation processor that compiles templates into .refaster files
 	annotationProcessor "tech.picnic.error-prone-support:refaster-compiler:0.26.0"
 
-	// WPILib types (like ChassisSpeeds)
-	implementation wpi.java.deps.wpilib()
-
-	// Our shared module for MathHelpers
+	// Depend on the shared library
 	implementation project(':shared')
+
+	annotationProcessor wpi.java.deps.wpilibAnnotations()
+	implementation wpi.java.deps.wpilib()
+	implementation wpi.java.vendor.java()
 }
 
 tasks.withType(JavaCompile).configureEach {
