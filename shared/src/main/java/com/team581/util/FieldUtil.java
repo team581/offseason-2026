@@ -96,9 +96,4 @@ public class FieldUtil {
     }
     return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
   }
-
-  private static boolean isPointInsideHub(Translation2d point) {
-    double distance = point.getDistance(HUB_POSE.getPose().getTranslation());
-    return distance < HUB_RADIUS_METERS;
-  }
 }
