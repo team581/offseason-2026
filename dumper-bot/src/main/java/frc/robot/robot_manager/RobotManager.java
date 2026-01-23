@@ -26,7 +26,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Feeder feeder;
   private final Swerve swerve;
   private final Vision vision;
-  private final Localization localization;
+  public final Localization localization;
 
   private Pose2d robotPose = Pose2d.kZero;
 
