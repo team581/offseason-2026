@@ -1,6 +1,5 @@
 package com.team581.math;
 
-import com.team581.util.FieldUtil;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
@@ -10,8 +9,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class MathHelpers {
-  private static final Translation2d FIELD_CENTER =
-      new Translation2d(FieldUtil.FIELD_LENGTH / 2.0, FieldUtil.FIELD_WIDTH / 2.0);
   private static final double EPSILON = Math.ulp(1.0);
 
   public static double angleModulus(double angleDegrees) {
@@ -120,15 +117,6 @@ public class MathHelpers {
    */
   public static double nearest(double value, double a, double b) {
     return Math.abs(value - a) < Math.abs(value - b) ? a : b;
-  }
-
-  /**
-   * Returns the input pose flipped from red to blue (or vice versa).
-   *
-   * @param input Pose to transform
-   */
-  public static Pose2d pathflip(Pose2d input) {
-    return input.rotateAround(FIELD_CENTER, Rotation2d.k180deg);
   }
 
   /**

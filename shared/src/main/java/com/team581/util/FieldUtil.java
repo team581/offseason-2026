@@ -139,4 +139,13 @@ public class FieldUtil {
 
     return noFeedZone.contains(robotPose.getTranslation());
   }
+
+  /**
+   * Returns the input pose flipped from red to blue (or vice versa).
+   *
+   * @param input Pose to transform
+   */
+  public static Pose2d pathflip(Pose2d input) {
+    return input.rotateAround(FIELD_BOUNDS.getCenter().getTranslation(), Rotation2d.k180deg);
+  }
 }

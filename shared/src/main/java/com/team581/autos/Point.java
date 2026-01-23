@@ -1,8 +1,8 @@
 package com.team581.autos;
 
-import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
+import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -10,11 +10,11 @@ import edu.wpi.first.math.geometry.Translation2d;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
   public static Point ofRed(Pose2d redPose) {
-    return new Point(redPose, MathHelpers.pathflip(redPose));
+    return new Point(redPose, FieldUtil.pathflip(redPose));
   }
 
   public static Point ofBlue(Pose2d bluePose) {
-    return new Point(MathHelpers.pathflip(bluePose), bluePose);
+    return new Point(FieldUtil.pathflip(bluePose), bluePose);
   }
 
   public Pose2d getPose() {

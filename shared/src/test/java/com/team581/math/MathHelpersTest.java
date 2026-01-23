@@ -80,16 +80,6 @@ final class MathHelpersTest {
   }
 
   @Test
-  void pathflipTest() {
-    var input = new Pose2d(0, 0, Rotation2d.kZero);
-    var expected = new Pose2d(FieldUtil.FIELD_LENGTH, FieldUtil.FIELD_WIDTH, Rotation2d.k180deg);
-
-    var result = MathHelpers.pathflip(input);
-
-    assertEquals(expected, result);
-  }
-
-  @Test
   void roundToTest() {
     var result = MathHelpers.roundTo(123.45, 1);
     var expected = 123.5;

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.offset;
 
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import org.junit.jupiter.api.BeforeAll;
@@ -69,5 +71,15 @@ final class FieldUtilTest {
 
     assertThat(clamped.getX()).isGreaterThan(12.527);
     assertThat(clamped.getY()).isCloseTo(robotTranslation.getY(), offset(0.01));
+  }
+
+  @Test
+  void pathflipTest() {
+    var input = new Pose2d(0, 0, Rotation2d.kZero);
+    var expected = new Pose2d(FieldUtil.FIELD_LENGTH, FieldUtil.FIELD_WIDTH, Rotation2d.k180deg);
+
+    var result = FieldUtil.pathflip(input);
+
+    assertThat(result).isEqualTo(expected);
   }
 }
