@@ -2,6 +2,6 @@ package frc.robot.intake;
 
 public enum IntakeState {
   INTAKING,
-  NOT_INTAKING,
+  IDLE,
   SHOOTING;
 }
