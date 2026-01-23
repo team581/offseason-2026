@@ -3,7 +3,6 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -210,7 +209,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       hubGoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.HUB_POSE.getPose().getTranslation(), swerve.getFieldRelativeSpeeds(), timeOfFlight);
+              FieldUtil.HUB_POSE.getPose().getTranslation(),
+              swerve.getFieldRelativeSpeeds(),
+              timeOfFlight);
       feed1GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
               FieldUtil.FEED_1_POSE.getPose().getTranslation(),
