@@ -78,8 +78,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Rotation2d snapAngle = Rotation2d.kZero;
 
-  private double teleopSlowModePercent = 1.0;
-
   // Trench Assist variables
   private final DoubleSubscriber TRENCH_ASSIST_VELOCITY_THRESHOLD =
       DogLog.tunable("Swerve/TrenchAssistVelocityThreshold", 2.0);
@@ -136,14 +134,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     var sidewaysVelocity = -translation.getX();
 
     teleopRequest
-        .withVelocityX(forwardVelocity * MAX_SPEED * teleopSlowModePercent)
-        .withVelocityY(sidewaysVelocity * MAX_SPEED * teleopSlowModePercent)
+        .withVelocityX(forwardVelocity * MAX_SPEED)
+        .withVelocityY(sidewaysVelocity * MAX_SPEED)
         .withRotationalRate(
             // Robots use CCW+ for rotation, but humans use CW+, so we invert it
-            -1.0 * rotation * TELEOP_MAX_ANGULAR_RATE.getRadians() * teleopSlowModePercent);
+            -1.0 * rotation * TELEOP_MAX_ANGULAR_RATE.getRadians());
     teleopSnapsRequest
-        .withVelocityX(forwardVelocity * MAX_SPEED * teleopSlowModePercent)
-        .withVelocityY(sidewaysVelocity * MAX_SPEED * teleopSlowModePercent);
+        .withVelocityX(forwardVelocity * MAX_SPEED)
+        .withVelocityY(sidewaysVelocity * MAX_SPEED);
 
     sendSwerveRequest();
   }
