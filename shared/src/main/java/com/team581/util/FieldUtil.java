@@ -18,6 +18,7 @@ public class FieldUtil {
 
   public static final Point HUB_POSE =
       Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
+  public static final double HUB_RADIUS_METERS = Units.inchesToMeters(48.106087 / 2);
   public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
   public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
@@ -36,6 +37,14 @@ public class FieldUtil {
           new Translation2d(RED_STARTING_LINE_X, 0.0),
           new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 
+  public static final Rectangle2d RED_HUB_NO_FEED_ZONE =
+      new Rectangle2d(
+          new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2), 3.034663),
+          new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2) - 1.0, 5.034663));
+  public static final Rectangle2d BLUE_HUB_NO_FEED_ZONE =
+      new Rectangle2d(
+          new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2), 3.034663),
+          new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
   public static final double BOTTOM_TRENCH_Y = TRENCH_LENGTH_Y / 2.0;
   public static final double TOP_TRENCH_Y = FIELD_WIDTH - TRENCH_LENGTH_Y / 2.0;
@@ -118,5 +127,12 @@ public class FieldUtil {
       return robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD;
     }
     return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
+  }
+
+  public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
+    // Check if line from robot to target collides with hub no feed zone
+    var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
+
+    return noFeedZone.contains(robotPose.getTranslation());
   }
 }

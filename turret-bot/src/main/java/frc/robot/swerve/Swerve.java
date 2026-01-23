@@ -174,12 +174,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
           if (Math.abs(TRENCH_ASSIST_Y - robotPose.getY()) > TRENCH_ASSIST_Y_TOLERANCE)
             DogLog.timestamp("Swerve/TrenchAssist/ApplyingTrenchAssist");
-            DogLog.log("Swerve/TrenchAssist/TrenchAssistY", TRENCH_ASSIST_Y);
-            drivetrain.setControl(
-                teleopSnapsRequest
-                    .withVelocityY(trenchAssistVelocity)
-                    .withTargetDirection(
-                        Rotation2d.fromDegrees(trenchSnapAngle).rotateBy(Rotation2d.k180deg)));
+          DogLog.log("Swerve/TrenchAssist/TrenchAssistY", TRENCH_ASSIST_Y);
+          drivetrain.setControl(
+              teleopSnapsRequest
+                  .withVelocityY(trenchAssistVelocity)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(trenchSnapAngle).rotateBy(Rotation2d.k180deg)));
         } else {
           drivetrain.setControl(teleopRequest);
         }
