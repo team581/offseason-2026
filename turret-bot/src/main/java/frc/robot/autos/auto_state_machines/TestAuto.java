@@ -18,8 +18,7 @@ public class TestAuto extends BaseImperativeAuto<TestAutoState> {
   // Test 1: Simple straight movement forward
   private final AutoSegment segment1Straight =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(0, 0, Rotation2d.kZero)),
-              AutoPoint.ofRed(new Pose2d(2, 0, Rotation2d.kZero)))
+              AutoPoint.ofRed(Pose2d.kZero), AutoPoint.ofRed(new Pose2d(2, 0, Rotation2d.kZero)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   // Test 2: Turn in place and then move forward

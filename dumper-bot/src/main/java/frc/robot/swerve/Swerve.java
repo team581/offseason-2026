@@ -81,7 +81,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(new Translation2d(0.0, 0.0))
+          .withCenterOfRotation(Translation2d.kZero)
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE / 2);
 
   private final SwerveRequest.ApplyFieldSpeeds trailblazerRequest =

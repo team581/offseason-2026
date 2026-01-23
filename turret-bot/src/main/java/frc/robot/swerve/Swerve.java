@@ -75,7 +75,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private @Nullable Notifier simNotifier = null;
 
   private SwerveDriveState drivetrainState = new SwerveDriveState();
-  private Pose2d robotPose = new Pose2d();
+  private Pose2d robotPose = Pose2d.kZero;
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Rotation2d snapAngle = Rotation2d.kZero;

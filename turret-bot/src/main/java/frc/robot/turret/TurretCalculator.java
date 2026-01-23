@@ -1,6 +1,6 @@
 package frc.robot.turret;
 
-import edu.wpi.first.math.MathUtil;
+import com.team581.math.MathHelpers;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -18,14 +18,14 @@ public class TurretCalculator {
   public static double calculateSwerveTurretCompensationAngle(
       double wantedTurretAngle, Rotation2d robotRotation) {
     var robotHeading = robotRotation.getDegrees();
-    robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
-    wantedTurretAngle = MathUtil.inputModulus(wantedTurretAngle, -180, 180);
-    var actualTargetRotation = MathUtil.inputModulus(wantedTurretAngle + robotHeading, -180, 180);
+    robotHeading = MathHelpers.angleModulus(robotHeading);
+    wantedTurretAngle = MathHelpers.angleModulus(wantedTurretAngle);
+    var actualTargetRotation = MathHelpers.angleModulus(wantedTurretAngle + robotHeading);
     if (wantedTurretAngle > 0.0) {
 
-      return MathUtil.inputModulus(actualTargetRotation + 60.0, -180, 180) - MAX_TURRET_ANGLE;
+      return MathHelpers.angleModulus(actualTargetRotation + 60.0) - MAX_TURRET_ANGLE;
     } else {
-      return MathUtil.inputModulus(actualTargetRotation - 60.0, -180, 180) - MIN_TURRET_ANGLE;
+      return MathHelpers.angleModulus(actualTargetRotation - 60.0) - MIN_TURRET_ANGLE;
     }
   }
 
@@ -33,14 +33,13 @@ public class TurretCalculator {
       Translation2d robot, Rotation2d robotRotation, Translation2d target) {
     robot = robot.plus(TURRET_TO_ROBOT.getTranslation().rotateBy(robotRotation));
     var targetAngle =
-        Units.radiansToDegrees(
-            Math.atan2(target.getY() - robot.getY(), target.getX() - robot.getX()));
+        Math.toDegrees(Math.atan2(target.getY() - robot.getY(), target.getX() - robot.getX()));
     var robotHeading = robotRotation.getDegrees();
 
-    targetAngle = MathUtil.inputModulus(targetAngle, -180, 180);
-    robotHeading = MathUtil.inputModulus(robotHeading, -180, 180);
+    targetAngle = MathHelpers.angleModulus(targetAngle);
+    robotHeading = MathHelpers.angleModulus(robotHeading);
 
-    return MathUtil.inputModulus(targetAngle - robotHeading, -180, 180);
+    return MathHelpers.angleModulus(targetAngle - robotHeading);
   }
 
   public static boolean doesTurretHaveRoom(double turretAngle) {

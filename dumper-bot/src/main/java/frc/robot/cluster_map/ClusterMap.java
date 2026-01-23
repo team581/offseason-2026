@@ -11,7 +11,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.localization.Localization;
@@ -137,8 +136,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private boolean safeToTrack() {
     return swerveSpeeds.vxMetersPerSecond < SWERVE_MAX_LINEAR_SPEED_TRACKING
         && swerveSpeeds.vyMetersPerSecond < SWERVE_MAX_LINEAR_SPEED_TRACKING
-        && swerveSpeeds.omegaRadiansPerSecond
-            < Units.degreesToRadians(SWERVE_MAX_ANGULAR_SPEED_TRACKING);
+        && swerveSpeeds.omegaRadiansPerSecond < Math.toRadians(SWERVE_MAX_ANGULAR_SPEED_TRACKING);
   }
 
   private void updateMap() {
