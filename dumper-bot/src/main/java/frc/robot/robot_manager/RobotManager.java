@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -68,15 +69,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
-      // case PREPARE_SHOOT_HUB -> {
-      //   if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose))
-      // {
-      //     yield RobotState.SHOOT_HUB;
-      //   }
-      //   yield currentState;
-      // }
       case PREPARE_SHOOT_HUB -> {
-        if (shooter.atGoal()) {
+        if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose))
+      {
           yield RobotState.SHOOT_HUB;
         }
         yield currentState;
