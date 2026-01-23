@@ -2,6 +2,8 @@ package com.team581.util;
 
 import com.google.common.collect.ImmutableList;
 import com.team581.autos.Point;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -11,10 +13,13 @@ import java.util.List;
 import java.util.Optional;
 
 public class FieldUtil {
+  public static final AprilTagFieldLayout FIELD_LAYOUT =
+      AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
   // In meters
-  public static final double FIELD_LENGTH = 16.540988;
-  public static final double FIELD_WIDTH = 8.069326;
+  public static final double FIELD_LENGTH = FIELD_LAYOUT.getFieldLength();
+  public static final double FIELD_WIDTH = FIELD_LAYOUT.getFieldWidth();
   public static final Rectangle2d FIELD_BOUNDS =
       new Rectangle2d(Translation2d.kZero, new Translation2d(FIELD_LENGTH, FIELD_WIDTH));
 

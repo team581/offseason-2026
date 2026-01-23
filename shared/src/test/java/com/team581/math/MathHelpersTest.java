@@ -2,6 +2,7 @@ package com.team581.math;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -81,7 +82,7 @@ final class MathHelpersTest {
   @Test
   void pathflipTest() {
     var input = new Pose2d(0, 0, Rotation2d.kZero);
-    var expected = new Pose2d(16.540988, 8.069326, Rotation2d.k180deg);
+    var expected = new Pose2d(FieldUtil.FIELD_LENGTH, FieldUtil.FIELD_WIDTH, Rotation2d.k180deg);
 
     var result = MathHelpers.pathflip(input);
 

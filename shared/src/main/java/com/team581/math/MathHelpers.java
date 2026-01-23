@@ -1,5 +1,6 @@
 package com.team581.math;
 
+import com.team581.util.FieldUtil;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
@@ -10,7 +11,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class MathHelpers {
   private static final Translation2d FIELD_CENTER =
-      new Translation2d(16.540988 / 2.0, 8.069326 / 2.0);
+      new Translation2d(FieldUtil.FIELD_LENGTH / 2.0, FieldUtil.FIELD_WIDTH / 2.0);
   private static final double EPSILON = Math.ulp(1.0);
 
   public static double angleModulus(double angleDegrees) {
