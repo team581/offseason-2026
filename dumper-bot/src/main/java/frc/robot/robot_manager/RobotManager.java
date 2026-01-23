@@ -3,7 +3,6 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -200,12 +199,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> swerve.feedingAimRequest(feed1GoalAngle);
       case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.feedingAimRequest(feed2GoalAngle);
       case WAIT_SCORE, PREPARE_SCORE, SCORE -> swerve.hubAimRequest(hubGoalAngle);
-      default ->{
-      if (intake.getState() == IntakeState.INTAKING) {
-        swerve.intakeDriveRequest();
-      } else {
-      swerve.normalDriveRequest();
-    } }
+      default -> {
+        if (intake.getState() == IntakeState.INTAKING) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
+      }
     }
 
     DogLog.log("RobotManager/HubDistance", hubDistance);

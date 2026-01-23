@@ -1,8 +1,6 @@
 package frc.robot.swerve;
 
-import java.util.function.DoubleSupplier;
-
-import org.jspecify.annotations.Nullable;
+import static edu.wpi.first.units.Units.Degrees;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -16,7 +14,6 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -26,12 +23,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.function.DoubleSupplier;
+import org.jspecify.annotations.Nullable;
 
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
@@ -74,7 +72,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
-            private final SwerveRequest.FieldCentricFacingAngle teleopSnapsIntakeRequest =
+  private final SwerveRequest.FieldCentricFacingAngle teleopSnapsIntakeRequest =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
@@ -82,8 +80,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-              .withCenterOfRotation(new Translation2d(0.0,0.0))
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE/2);
+          .withCenterOfRotation(new Translation2d(0.0, 0.0))
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE / 2);
 
   private final SwerveRequest.ApplyFieldSpeeds trailblazerRequest =
       new SwerveRequest.ApplyFieldSpeeds()
@@ -176,8 +174,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           MathHelpers.getClosestPointOnRectanglePerimeter(
                   drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS)
               .getDistance(drivetrainState.Pose.getTranslation());
+    }
   }
-}
 
   private void sendSwerveRequest() {
     switch (getState()) {
@@ -195,12 +193,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 trailblazer.getFieldRelativeSetpoint(
                     drivetrainState.Pose, fieldRelativeSpeeds, snapAngle)));
       }
-        case INTAKING -> {
-        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband) && ableToWallSnap()) {
-          var closestWallPose = MathHelpers.getClosestPointOnRectanglePerimeter(
+      case INTAKING -> {
+        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)
+            && ableToWallSnap()) {
+          var closestWallPose =
+              MathHelpers.getClosestPointOnRectanglePerimeter(
                   drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
           var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
-          drivetrain.setControl(teleopSnapsIntakeRequest.withTargetDirection(angleToWall.plus(Rotation2d.k180deg)));
+          drivetrain.setControl(
+              teleopSnapsIntakeRequest.withTargetDirection(angleToWall.plus(Rotation2d.k180deg)));
 
         } else {
           drivetrain.setControl(teleopRequest);
@@ -274,7 +275,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     var angleToWall = MathHelpers.getDriveDirection(robotPose, closestWallTranslation);
     DogLog.log("Swerve/WallSnaps/AngleToWall", angleToWall.getDegrees(), Degrees);
-
 
     var velocityAngleTowardWall =
         Math.hypot(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond)
