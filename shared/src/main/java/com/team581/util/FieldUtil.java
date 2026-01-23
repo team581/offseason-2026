@@ -1,14 +1,16 @@
 package com.team581.util;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.google.common.collect.ImmutableList;
 import com.team581.autos.Point;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
-import java.util.List;
-import java.util.Optional;
 
 public class FieldUtil {
   private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
@@ -18,6 +20,7 @@ public class FieldUtil {
 
   public static final Point HUB_POSE =
       Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
+      public static final double HUB_RADIUS_METERS = Units.inchesToMeters(48.106087/2);
   public static final Point FEED_1_POSE = Point.ofRed(new Pose2d(15.75, 0.75, Rotation2d.kZero));
   public static final Point FEED_2_POSE = Point.ofRed(new Pose2d(15.75, 7.25, Rotation2d.kZero));
 
@@ -95,4 +98,58 @@ public class FieldUtil {
     }
     return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
   }
+
+  private static boolean isPointInsideHub(Translation2d point) {
+    double distance = point.getDistance(HUB_POSE.getPose().getTranslation());
+    return distance < HUB_RADIUS_METERS;
+  }
+
+  private static boolean doesLineCollideWithCircle(
+      Translation2d start, Translation2d end) {
+    // Return True if there is a collision, False if not
+
+    // Special logic for if the start and/or end point are inside a collision zone (happens in
+    // matches from bad localization data)
+    if (isPointInsideHub(start) || isPointInsideHub(end)) {
+      return true;
+    }
+
+    // If start to end dot start to circle is less than 0, use start as closest point.
+    double startToEndDotStartToCircle =
+        ((end.getX() - start.getX()) * (HUB_POSE.getPose().getX() - start.getX()))
+            + ((end.getY() - start.getY()) * (HUB_POSE.getPose().getY() - start.getY()));
+    if (startToEndDotStartToCircle < 0) {
+      double startToCircleDistance = start.getDistance(HUB_POSE.getPose().getTranslation());
+      return startToCircleDistance < HUB_RADIUS_METERS;
+    }
+
+    // If end to start dot end to circle is less than 0, use end as closest point.
+    double endToStartDotEndToCircle =
+        ((start.getX() - end.getX()) * (HUB_POSE.getPose().getX() - end.getX()))
+            + ((start.getY() - end.getY()) * (HUB_POSE.getPose().getY() - end.getY()));
+    if (endToStartDotEndToCircle < 0) {
+      double endToCircleDistance = end.getDistance(HUB_POSE.getPose().getTranslation());
+      return endToCircleDistance < HUB_RADIUS_METERS;
+    }
+
+    double lineVectorX = end.getX() - start.getX();
+    double lineVectorY = end.getY() - start.getY();
+    double circleVectorX = HUB_POSE.getPose().getTranslation().getX() - start.getX();
+    double circleVectorY = HUB_POSE.getPose().getTranslation().getY() - start.getY();
+
+    double dotProduct = lineVectorX * circleVectorX + lineVectorY * circleVectorY;
+
+    double lineVectorMagnitude = Math.hypot(lineVectorX, lineVectorY);
+    double circleVectorMagnitude = Math.hypot(circleVectorX, circleVectorY);
+
+    // Angle = acos(docProduct / (lineVectorMagnitude * circleVectorMagnitude))
+    // Closest Point on Line to Center of Circle = circleVectorMagnitude * sin(angle)
+    // sin(acos(x)) = sqrt(1 - x^2) - gets rid of trig operations
+    double x = dotProduct / (lineVectorMagnitude * circleVectorMagnitude);
+    double closestPointOnLineToCircleDistance =
+        circleVectorMagnitude * Math.sqrt(1 - Math.pow(x, 2));
+
+    return closestPointOnLineToCircleDistance < HUB_RADIUS_METERS;
+  }
+
 }
