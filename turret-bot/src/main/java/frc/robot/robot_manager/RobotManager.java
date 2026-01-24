@@ -50,12 +50,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     if (readyToShootAtHub) {
       if (turret.goalOutOfBounds()) {
-          swerveTurretCompensationAngle =
-              TurretCalculator.calculateSwerveTurretCompensationAngle(
-                  turretHubGoalAngle, robotPose.getRotation());
-          return RobotState.HUB_AIM_ADJUSTING_SWERVE;
-        }
-        return RobotState.HUB_AIM;
+        swerveTurretCompensationAngle =
+            TurretCalculator.calculateSwerveTurretCompensationAngle(
+                turretHubGoalAngle, robotPose.getRotation());
+        return RobotState.HUB_AIM_ADJUSTING_SWERVE;
+      }
+      return RobotState.HUB_AIM;
     }
     return switch (currentState) {
       case HUB_AIM -> {
@@ -152,7 +152,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
 
-    readyToShootAtHub = FmsUtil.isHubActive((int)TIME_OF_FLIGHT.get());
+    readyToShootAtHub = FmsUtil.isHubActive((int) TIME_OF_FLIGHT.get());
     var robotVelocity = Math.toDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     DogLog.log("RobotManager/RobotVelocity", robotVelocity);
     var turretVelocity = turret.getVelocityDegreesPerSecond();
