@@ -27,6 +27,10 @@ public class MathHelpers {
     return Math.abs(value - a) >= Math.abs(value - b) ? a : b;
   }
 
+  /**
+   * Returns the closest point on the perimeter of a rectangle to a given point. Modification of
+   * built in WPILib function to get nearest point
+   */
   public static final Translation2d getClosestPointOnRectanglePerimeter(
       Translation2d point, Rectangle2d rectangle) {
     // Rotate point by inverse of rectangle rotation
@@ -92,6 +96,82 @@ public class MathHelpers {
 
   public static Rotation2d getDriveDirection(Translation2d start, Translation2d end) {
     return rotation2d(end.getX() - start.getX(), end.getY() - start.getY());
+  }
+
+  /**
+   * Returns the intersection point on the perimeter of a rectangle from a given point and angle.
+   */
+  public static final Translation2d getIntersectionOnRectanglePerimeter(
+      Translation2d point, Rectangle2d rectangle, Rotation2d angle) {
+
+    // Rotate point and angle by inverse of rectangle rotation to align with axes
+    var m_center = rectangle.getCenter();
+    var m_xWidth = rectangle.getXWidth();
+    var m_yWidth = rectangle.getYWidth();
+    var rotatedPoint =
+        point.rotateAround(m_center.getTranslation(), m_center.getRotation().unaryMinus());
+    var rotatedAngle = angle.minus(m_center.getRotation());
+
+    // Find intersection with axis-aligned rectangle
+    double minX = m_center.getX() - m_xWidth / 2.0;
+    double maxX = m_center.getX() + m_xWidth / 2.0;
+    double minY = m_center.getY() - m_yWidth / 2.0;
+    double maxY = m_center.getY() + m_yWidth / 2.0;
+
+    double pointX = rotatedPoint.getX();
+    double pointY = rotatedPoint.getY();
+    double cos = rotatedAngle.getCos();
+    double sin = rotatedAngle.getSin();
+
+    var intersectedValues = new java.util.ArrayList<Double>();
+
+    // Check for intersection with each side
+    if (Math.abs(cos) > 1e-9) {
+      double intersect1 = (minX - pointX) / cos;
+      if (intersect1 >= 0) {
+        double y = pointY + intersect1 * sin;
+        if (y >= minY && y <= maxY) {
+          intersectedValues.add(intersect1);
+        }
+      }
+
+      double intersect2 = (maxX - pointX) / cos;
+      if (intersect2 >= 0) {
+        double y = pointY + intersect2 * sin;
+        if (y >= minY && y <= maxY) {
+          intersectedValues.add(intersect2);
+        }
+      }
+    }
+
+    if (Math.abs(sin) > 1e-9) {
+      double intersect3 = (minY - pointY) / sin;
+      if (intersect3 >= 0) {
+        double x = pointX + intersect3 * cos;
+        if (x >= minX && x <= maxX) {
+          intersectedValues.add(intersect3);
+        }
+      }
+
+      double intersect4 = (maxY - pointY) / sin;
+      if (intersect4 >= 0) {
+        double x = pointX + intersect4 * cos;
+        if (x >= minX && x <= maxX) {
+          intersectedValues.add(intersect4);
+        }
+      }
+    }
+
+    if (intersectedValues.isEmpty()) {
+      // No intersection found, return closest point on perimeter instead
+      return getClosestPointOnRectanglePerimeter(point, rectangle);
+    }
+
+    double minIntersected = java.util.Collections.min(intersectedValues);
+    var intersectionPoint = new Translation2d(pointX + minIntersected * cos, pointY + minIntersected * sin);
+
+    // Undo rotation
+    return intersectionPoint.rotateAround(m_center.getTranslation(), m_center.getRotation());
   }
 
   public static double getLinearVelocity(ChassisSpeeds speeds) {
