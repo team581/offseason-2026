@@ -32,13 +32,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   private static final double CLUSTER_LIFETIME_SECONDS = 2;
 
-   private static final double CAMERA_IMAGE_HEIGHT = 480.0;
-  private static final double CAMERA_IMAGE_WIDTH = 640.0;
-  private static final double FOV_VERTICAL = 48.9;
-  private static final double FOV_HORIZONTAL = 62.5;
-  private static final double HORIZONTAL_LEFT_VIEW = 62.5 / 2;
-  private static final double VERTICAL_TOP_VIEW = 48.9 / 2;
-
   private final Limelight limelight;
 
   private final ArrayList<ClusterMapElement> clusterMap = new ArrayList<>();
