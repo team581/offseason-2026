@@ -48,8 +48,9 @@ public class FieldUtil {
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
 
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
-  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = Units.inchesToMeters(140);
-  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
+  private static final double TRENCH_LENGTH_X = Units.inchesToMeters(47.0);
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 3;
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
 
   private static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
@@ -74,24 +75,51 @@ public class FieldUtil {
               TRENCH_ASSIST_ZONE_LENGTH_X,
               TRENCH_ASSIST_ZONE_LENGTH_Y));
 
-  // Center points of trenches
-  private static final List<Translation2d> TRENCH_CENTERS =
+  // Points on the midpoint of trenches; two for each trench, one on neutral zone side, one on
+  // alliance zone side
+  private static final List<Translation2d> ALLIANCE_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
           // Red depot side
           new Translation2d(
-              MathHelpers.average(AprilTags.TAG_7.getX(), AprilTags.TAG_6.getX()),
+              MathHelpers.average(AprilTags.TAG_7.getX(), AprilTags.TAG_6.getX())
+                  + TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_7.getY()),
           // Red outpost side
           new Translation2d(
-              MathHelpers.average(AprilTags.TAG_12.getX(), AprilTags.TAG_1.getX()),
+              MathHelpers.average(AprilTags.TAG_12.getX(), AprilTags.TAG_1.getX())
+                  + TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_12.getY()),
           // Blue depot side
           new Translation2d(
-              MathHelpers.average(AprilTags.TAG_22.getX(), AprilTags.TAG_23.getX()),
+              MathHelpers.average(AprilTags.TAG_22.getX(), AprilTags.TAG_23.getX())
+                  - TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_22.getY()),
           // Blue outpost side
           new Translation2d(
-              MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX()),
+              MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX())
+                  - TRENCH_LENGTH_X / 2.0,
+              AprilTags.TAG_17.getY()));
+  private static final List<Translation2d> NEUTRAL_ZONE_TRENCH_MIDPOINTS =
+      ImmutableList.of(
+          // Red depot side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_7.getX(), AprilTags.TAG_6.getX())
+                  - TRENCH_LENGTH_X / 2.0,
+              AprilTags.TAG_7.getY()),
+          // Red outpost side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_12.getX(), AprilTags.TAG_1.getX())
+                  - TRENCH_LENGTH_X / 2.0,
+              AprilTags.TAG_12.getY()),
+          // Blue depot side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_22.getX(), AprilTags.TAG_23.getX())
+                  + TRENCH_LENGTH_X / 2.0,
+              AprilTags.TAG_22.getY()),
+          // Blue outpost side
+          new Translation2d(
+              MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX())
+                  + TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_17.getY()));
 
   public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
@@ -100,8 +128,12 @@ public class FieldUtil {
     return allianceZone.nearest(pose);
   }
 
-  public static Translation2d getClosestTrenchCenter(Translation2d robotPose) {
-    return robotPose.nearest(TRENCH_CENTERS);
+  public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotPose) {
+    return robotPose.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
+  }
+
+  public static Translation2d getClosestNeutralZoneTrenchMidpoint(Translation2d robotPose) {
+    return robotPose.nearest(NEUTRAL_ZONE_TRENCH_MIDPOINTS);
   }
 
   /** Returns the trench assist zone that the robot is currently in, if it exists. */

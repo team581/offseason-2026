@@ -29,7 +29,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SWERVE_MAX_LINEAR_SPEED_TRACKING = 3.0;
   private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 3.0;
 
-  private static final double CLUSTER_LIFETIME_SECONDS = 10;
+  private static final double CLUSTER_LIFETIME_SECONDS = 2;
 
   private final Limelight limelight;
 
@@ -81,7 +81,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     super.robotPeriodic();
     try {
       DogLog.log(
-          "Cluster/Clusters",
+          "ClusterMap/Clusters",
           clusterMap.stream()
               .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
               .toArray(Pose2d[]::new));
@@ -121,10 +121,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     var robotPoseAtCapture = localization.getPose(timestamp);
 
-    double angleX = result[0];
-    double angleY = result[1];
+    double angleX = LimelightHelpers.getTX(limelight.limelightTableName);
+    double angleY = LimelightHelpers.getTY(limelight.limelightTableName);
 
-    gamePieceResult.update(angleX, angleY, 0);
+    gamePieceResult.update(angleX, angleY, timestamp);
 
     var clusterPose =
         GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
@@ -174,9 +174,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     if (match.isPresent()) {
       clusterMap.remove(match.orElseThrow());
-
-      clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster));
     }
+    clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster));
   }
 
   @Override

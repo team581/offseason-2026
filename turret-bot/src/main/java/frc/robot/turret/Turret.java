@@ -39,7 +39,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private static final DoubleSubscriber HOMING_VOLTAGE =
       DogLog.tunable("TurretHomingVoltage", -2.0);
   private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
-      DogLog.tunable("TurretCurrentThreshold", 10.0);
+      DogLog.tunable("TurretCurrentThreshold", 5.0);
   private static final double HOMING_END_POSITION = MIN_ANGLE;
   private static final double TOLERANCE = 1.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);

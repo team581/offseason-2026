@@ -69,7 +69,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case PREPARE_SCORE -> {
-        if (shooter.atGoal() && vision.seeingTag() && FieldUtil.isRobotInAllianceZone(robotPose)) {
+        if (shooter.atGoal()
+            && vision.seeingTagDebounced()
+            && FieldUtil.isRobotInAllianceZone(robotPose)) {
           yield RobotState.SCORE;
         }
         yield currentState;
