@@ -67,6 +67,50 @@ final class MathHelpersTest {
   }
 
   @Test
+  void getIntersectionOnRectanglePerimeterTest() {
+    var rectangle = new Rectangle2d(new Translation2d(0, 0), new Translation2d(4, 2));
+
+    // Point outside, heading towards rectangle
+    var outsidePoint = new Translation2d(5, 1);
+    var outsideExpected = new Translation2d(4, 1);
+    var outsideResult =
+        MathHelpers.getIntersectionOnRectanglePerimeter(
+            outsidePoint, rectangle, Rotation2d.fromDegrees(180));
+    assertEquals(outsideExpected.getX(), outsideResult.getX(), 1e-9);
+    assertEquals(outsideExpected.getY(), outsideResult.getY(), 1e-9);
+
+    // Point inside, heading out
+    var insidePoint = new Translation2d(2, 1);
+    var insideExpected = new Translation2d(3, 2); // Hits the corner
+    var insideResult =
+        MathHelpers.getIntersectionOnRectanglePerimeter(
+            insidePoint, rectangle, Rotation2d.fromDegrees(45));
+    assertEquals(insideExpected.getX(), insideResult.getX(), 1e-9);
+    assertEquals(insideExpected.getY(), insideResult.getY(), 1e-9);
+
+    // Rotated rectangle
+    var rotatedRectCenter = new Pose2d(5, 5, Rotation2d.fromDegrees(90));
+    var rotatedRectangle = new Rectangle2d(rotatedRectCenter, 4, 2); // width 4, height 2
+    var rotatedPoint = new Translation2d(5, 0); // Below rectangle
+    var rotatedExpected = new Translation2d(5, 3);
+    var rotatedResult =
+        MathHelpers.getIntersectionOnRectanglePerimeter(
+            rotatedPoint, rotatedRectangle, Rotation2d.fromDegrees(90));
+    assertEquals(rotatedExpected.getX(), rotatedResult.getX(), 1e-9);
+    assertEquals(rotatedExpected.getY(), rotatedResult.getY(), 1e-9);
+
+    // No intersection case
+    var noInterPoint = new Translation2d(5, 1);
+    // Should return to closest point
+    var noInterExpected = new Translation2d(4, 1);
+    var noInterResult =
+        MathHelpers.getIntersectionOnRectanglePerimeter(
+            noInterPoint, rectangle, Rotation2d.fromDegrees(0));
+    assertEquals(noInterExpected.getX(), noInterResult.getX(), 1e-9);
+    assertEquals(noInterExpected.getY(), noInterResult.getY(), 1e-9);
+  }
+
+  @Test
   void interpolateChassisSpeedsTest() {
     var a = new ChassisSpeeds(0, 10, 0);
     var b = new ChassisSpeeds(10, 20, 0);
