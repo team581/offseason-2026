@@ -219,11 +219,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               MathHelpers.getClosestPointOnRectanglePerimeter(
                   drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
           var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
+          var centerOfRotationRobotRelative =
+              lastWallIntakePoint
+                  .minus(drivetrainState.Pose.getTranslation())
+                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+          DogLog.log(
+              "Swerve/WallSnaps/CenterOfRotation",
+              new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
           drivetrain.setControl(
               teleopSnapsIntakeRequest
                   .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
-                  .withCenterOfRotation(new Translation2d(distanceToWall, 0.0)));
-
+                  .withCenterOfRotation(centerOfRotationRobotRelative));
         } else {
           drivetrain.setControl(teleopRequest);
         }
