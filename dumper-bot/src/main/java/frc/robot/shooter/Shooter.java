@@ -24,21 +24,20 @@ import java.util.Map;
 public class Shooter extends StateMachineSubsystem<ShooterState> {
   private static final int RPM_TOLERANCE_KICKER = 100;
 
-  private static final int RPM_TOLERANCE_SHOOTER = 50;
+  private static final int RPM_TOLERANCE_SHOOTER = 75;
 
   private static final double MAX_SAFE_RPM = 4000;
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(Units.inchesToMeters(57.0), 2250.0),
-          Map.entry(3.376, 3300.0),
-          Map.entry(3.8, 3000.0),
-          Map.entry(3.97, 2700.0));
+          Map.entry(3.376, 3000.0),
+          Map.entry(5.00, 3700.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       InterpolatingDoubleTreeMap.ofEntries(
           Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(Units.inchesToMeters(57.0), 0.0));
+      InterpolatingDoubleTreeMap.ofEntries(Map.entry(Units.inchesToMeters(57.0), 1.5));
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
