@@ -1,6 +1,8 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Degrees;
+import java.util.function.DoubleSupplier;
+
+import org.jspecify.annotations.Nullable;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -15,6 +17,7 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -24,14 +27,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.function.DoubleSupplier;
-import org.jspecify.annotations.Nullable;
 
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
@@ -215,7 +217,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       }
       case INTAKING -> {
         if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)
-            && ableToWallSnap()) {
+            ) {
+              if (ableToWallSnap()) {
           DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
               MathHelpers.getClosestPointOnRectanglePerimeter(
@@ -232,7 +235,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               teleopSnapsIntakeRequest
                   .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
                   .withCenterOfRotation(centerOfRotationRobotRelative));
+              } else if (ableToDirectionSnap()) {
+          DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
+          drivetrain.setControl(
+              teleopSnapsIntakeRequest.withTargetDirection(filteredLastDriveDirection.plus(Rotation2d.k180deg)).withCenterOfRotation(Translation2d.kZero));
+             } else {
+          DogLog.timestamp("Swerve/Intake/NoSnapping");
+          drivetrain.setControl(teleopRequest);
+             }
         } else {
+          DogLog.timestamp("Swerve/Intake/NoSnapping");
           drivetrain.setControl(teleopRequest);
         }
       }
@@ -287,6 +299,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     if (DriverStation.isTeleop()) {
       setStateFromRequest(SwerveState.INTAKING);
     }
+  }
+
+  private boolean ableToDirectionSnap() {
+    var robotVelocity = MathHelpers.getLinearVelocity(fieldRelativeSpeeds);
+    if (robotVelocity > MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS.getAsDouble()) {
+      return true;
+    }
+    return false;
   }
 
   private boolean ableToWallSnap() {
