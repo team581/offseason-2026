@@ -39,7 +39,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_HUB_SPEED = 2.0;
 
   private static final DoubleSupplier WALL_SNAPS_VELOCITY_ANGLE_THRESHOLD =
-      DogLog.tunable("Swerve/WallSnaps/VelocityAngleThresholdDegrees", 90.0, Degrees);
+      DogLog.tunable("Swerve/WallSnaps/VelocityAngleThresholdDegrees", 30.0, Degrees);
 
   private static final DoubleSupplier WALL_SNAPS_ROTATION_ANGLE_THRESHOLD =
       DogLog.tunable("Swerve/WallSnaps/RotationAngleThresholdDegrees", 40.0, Degrees);
