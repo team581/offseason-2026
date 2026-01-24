@@ -44,7 +44,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private static final DoubleSupplier WALL_SNAPS_ROTATION_ANGLE_THRESHOLD =
       DogLog.tunable("Swerve/WallSnaps/RotationAngleThresholdDegrees", 40.0, Degrees);
   private static final DoubleSupplier WALL_SNAPS_DISTANCE_THRESHOLD =
-      DogLog.tunable("Swerve/WallSnaps/DistanceThresholdMeters", 1.25);
+      DogLog.tunable("Swerve/WallSnaps/DistanceThresholdMeters", 1.75);
+  private static final DoubleSupplier MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS =
+      DogLog.tunable("Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.5);
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
   private static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
