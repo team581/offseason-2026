@@ -8,6 +8,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
+import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
@@ -98,6 +99,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private Rotation2d snapAngle = Rotation2d.kZero;
   private double distanceToWall = 0.0;
   private boolean visionOnline = false;
+  private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
+  private CircularFilter lastDriveDirectionFilter = new CircularFilter(5);
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -162,6 +165,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         .withVelocityY(sidewaysVelocity * maxSpeed);
 
     sendSwerveRequest();
+
+    filteredLastDriveDirection =
+        Rotation2d.fromDegrees(
+            lastDriveDirectionFilter.calculate(
+                new Translation2d(forwardVelocity, sidewaysVelocity)
+                    .getAngle()
+                    .plus(Rotation2d.k180deg)
+                    .getDegrees()));
   }
 
   @Override
