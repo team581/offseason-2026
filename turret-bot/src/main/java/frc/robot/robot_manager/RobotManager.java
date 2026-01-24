@@ -5,7 +5,6 @@ import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -49,7 +48,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
-    //TODO: this needs to check if we have balls, if we're even in the alliance zone, etc
+    // TODO: this needs to check if we have balls, if we're even in the alliance zone, etc
     // if (readyToShootAtHub) {
     //   if (turret.goalOutOfBounds()) {
     //     swerveTurretCompensationAngle =
