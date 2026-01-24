@@ -1,11 +1,16 @@
 package frc.robot.cluster_map;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import static java.util.Comparator.comparingDouble;
+import java.util.Optional;
 
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.GamePieceResult;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,17 +24,20 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightHelpers;
 import frc.robot.vision.limelight.LimelightState;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SAME_CLUSTER_DETECTION_THRESHOLD_METERS = 1.0;
   private static final double SWERVE_MAX_LINEAR_SPEED_TRACKING = 3.0;
   private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 3.0;
 
-  private static final double CLUSTER_LIFETIME_SECONDS = 10;
+  private static final double CLUSTER_LIFETIME_SECONDS = 2;
+
+   private static final double CAMERA_IMAGE_HEIGHT = 480.0;
+  private static final double CAMERA_IMAGE_WIDTH = 640.0;
+  private static final double FOV_VERTICAL = 48.9;
+  private static final double FOV_HORIZONTAL = 62.5;
+  private static final double HORIZONTAL_LEFT_VIEW = 62.5 / 2;
+  private static final double VERTICAL_TOP_VIEW = 48.9 / 2;
 
   private final Limelight limelight;
 
@@ -81,7 +89,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     super.robotPeriodic();
     try {
       DogLog.log(
-          "Cluster/Clusters",
+          "ClusterMap/Clusters",
           clusterMap.stream()
               .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
               .toArray(Pose2d[]::new));
@@ -121,10 +129,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     var robotPoseAtCapture = localization.getPose(timestamp);
 
-    double angleX = result[0];
-    double angleY = result[1];
 
-    gamePieceResult.update(angleX, angleY, 0);
+           double angleX= LimelightHelpers.getTX(limelight.limelightTableName);
+           double angleY = LimelightHelpers.getTY(limelight.limelightTableName);
+
+    gamePieceResult.update(angleX, angleY, timestamp);
 
     var clusterPose =
         GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
@@ -175,8 +184,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     if (match.isPresent()) {
       clusterMap.remove(match.orElseThrow());
 
-      clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster));
     }
+    clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster));
   }
 
   @Override
