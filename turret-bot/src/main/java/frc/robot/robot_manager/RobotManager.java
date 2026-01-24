@@ -151,8 +151,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-
-    readyToShootAtHub = FmsUtil.isHubActive((int)TIME_OF_FLIGHT.get());
+    var timeSinceMatchStart = FmsUtil.getTimeSinceMatchStart();
+    readyToShootAtHub = FmsUtil.isHubActive(timeSinceMatchStart+(int)TIME_OF_FLIGHT.get());
     var robotVelocity = Math.toDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     DogLog.log("RobotManager/RobotVelocity", robotVelocity);
     var turretVelocity = turret.getVelocityDegreesPerSecond();

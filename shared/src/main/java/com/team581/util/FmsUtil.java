@@ -10,9 +10,10 @@ import java.util.Optional;
 
 public class FmsUtil {
   // seconds
-  public static final double TELEOP_TIME = 160.0;
-  public static final double AUTO_TIME = 20.0;
+  public static final int TELEOP_TIME = 160;
+  public static final int AUTO_TIME = 20;
 
+  // Match period shift times in seconds
   private static final Range<Integer> AUTONOMOUS = Range.closedOpen(0, 20);
   private static final Range<Integer> TRANSITION_SHIFT = Range.closedOpen(20, 30);
   private static final Range<Integer> SHIFT_1 = Range.closedOpen(30, 55);
@@ -44,8 +45,8 @@ public class FmsUtil {
       ALLIANCE_LOSS_HUB_ACTIVITY.keySet();
 
   /** Returns time since start of the match, in autonomous. */
-  public static double getTimeSinceMatchStart() {
-    var time = DriverStation.getMatchTime();
+  public static int getTimeSinceMatchStart() {
+    var time = (int)DriverStation.getMatchTime();
     if (DriverStation.isAutonomous()) {
       return AUTO_TIME - time;
     } else {
