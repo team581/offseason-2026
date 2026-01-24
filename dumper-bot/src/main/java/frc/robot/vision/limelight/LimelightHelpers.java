@@ -19,16 +19,11 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.TimestampedDoubleArray;
-import frc.robot.vision.limelight.LimelightHelpers.LimelightResults;
-import frc.robot.vision.limelight.LimelightHelpers.PoseEstimate;
-import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -669,24 +664,6 @@ public class LimelightHelpers {
   }
 
   /**
-   * Sets the 3D point-of-interest offset for the current fiducial pipeline.
-   * https://docs.limelightvision.io/docs/docs-limelight/pipeline-apriltag/apriltag-3d#point-of-interest-tracking
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param x X offset in meters
-   * @param y Y offset in meters
-   * @param z Z offset in meters
-   */
-  public static void SetFidcuial3DOffset(String limelightName, double x, double y, double z) {
-
-    double[] entries = new double[3];
-    entries[0] = x;
-    entries[1] = y;
-    entries[2] = z;
-    setLimelightNTDoubleArray(limelightName, "fiducial_offset_set", entries);
-  }
-
-  /**
    * Sets the downscaling factor for AprilTag detection. Increasing downscale can improve
    * performance at the cost of potentially reduced detection range.
    *
@@ -913,6 +890,9 @@ public class LimelightHelpers {
     return getLimelightNTDoubleArray(limelightName, "botpose");
   }
 
+  /////
+  /////
+
   /** Switch to getBotPose_wpiBlue */
   @Deprecated
   public static double[] getBotpose_wpiBlue(String limelightName) {
@@ -970,7 +950,7 @@ public class LimelightHelpers {
   public static int getClassifierClassIndex(String limelightName) {
     double[] t2d = getT2DArray(limelightName);
     if (t2d.length == 17) {
-      return (int) t2d[10];
+      return (int) t2d[11];
     }
     return 0;
   }
@@ -1026,7 +1006,7 @@ public class LimelightHelpers {
   public static int getDetectorClassIndex(String limelightName) {
     double[] t2d = getT2DArray(limelightName);
     if (t2d.length == 17) {
-      return (int) t2d[11];
+      return (int) t2d[10];
     }
     return 0;
   }
@@ -1169,9 +1149,6 @@ public class LimelightHelpers {
     return null;
   }
 
-  /////
-  /////
-
   public static String getNeuralClassID(String limelightName) {
     return getLimelightNTString(limelightName, "tclass");
   }
@@ -1225,9 +1202,6 @@ public class LimelightHelpers {
     return rawDetections;
   }
 
-  /////
-  /////
-
   /**
    * Gets the latest raw fiducial/AprilTag detection results from NetworkTables.
    *
@@ -1260,6 +1234,9 @@ public class LimelightHelpers {
 
     return rawFiducials;
   }
+
+  /////
+  /////
 
   /**
    * Gets the raw target contours from NetworkTables. Returns ungrouped contours in normalized
@@ -1441,9 +1418,6 @@ public class LimelightHelpers {
     return result;
   }
 
-  /////
-  /////
-
   /**
    * Converts a Pose3d object to an array of doubles in the format [x, y, z, roll, pitch, yaw].
    * Translation components are in meters, rotation components are in degrees.
@@ -1461,6 +1435,9 @@ public class LimelightHelpers {
     result[5] = Math.toDegrees(pose.getRotation().getZ());
     return result;
   }
+
+  /////
+  /////
 
   /**
    * Prints detailed information about a PoseEstimate to standard output. Includes timestamp,
@@ -1671,17 +1648,9 @@ public class LimelightHelpers {
     String ip = "172.29." + usbIndex + ".1";
     int basePort = 5800 + (usbIndex * 10);
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 10; i++) {
       PortForwarder.add(basePort + i, ip, 5800 + i);
     }
-  }
-
-  /** Asynchronously take snapshot. */
-  public static CompletableFuture<Boolean> takeSnapshot(String tableName, String snapshotName) {
-    return CompletableFuture.supplyAsync(
-        () -> {
-          return SYNCH_TAKESNAPSHOT(tableName, snapshotName);
-        });
   }
 
   /**
@@ -1702,9 +1671,6 @@ public class LimelightHelpers {
     return new Pose2d(tran2d, r2d);
   }
 
-  /////
-  /////
-
   /**
    * Takes a 6-length array of pose data and converts it to a Pose3d object. Array format: [x, y, z,
    * roll, pitch, yaw] where angles are in degrees.
@@ -1723,6 +1689,9 @@ public class LimelightHelpers {
             Math.toRadians(inData[3]), Math.toRadians(inData[4]), Math.toRadians(inData[5])));
   }
 
+  /////
+  /////
+
   /**
    * Triggers a rewind capture with the specified duration. Maximum duration is 165 seconds.
    * Rate-limited on the Limelight.
@@ -1731,15 +1700,13 @@ public class LimelightHelpers {
    * @param durationSeconds Duration of rewind capture in seconds (max 165)
    */
   public static void triggerRewindCapture(String limelightName, double durationSeconds) {
-    double counter = getLimelightNTDouble(limelightName, "capture_rewind");
+    double[] currentArray = getLimelightNTDoubleArray(limelightName, "capture_rewind");
+    double counter = (currentArray.length > 0) ? currentArray[0] : 0;
     double[] entries = new double[2];
     entries[0] = counter + 1;
     entries[1] = Math.min(durationSeconds, 165);
     setLimelightNTDoubleArray(limelightName, "capture_rewind", entries);
   }
-
-  /////
-  /////
 
   /**
    * Triggers a snapshot capture via NetworkTables by incrementing the snapshot counter.
@@ -1752,29 +1719,11 @@ public class LimelightHelpers {
     setLimelightNTDouble(limelightName, "snapshot", current + 1);
   }
 
+  /////
+  /////
+
   public static Boolean validPoseEstimate(PoseEstimate pose) {
     return pose != null && pose.rawFiducials != null && pose.rawFiducials.length != 0;
-  }
-
-  private static boolean SYNCH_TAKESNAPSHOT(String tableName, String snapshotName) {
-    URL url = getLimelightURLString(tableName, "capturesnapshot");
-    try {
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("GET");
-      if (snapshotName != null && !"".equals(snapshotName)) {
-        connection.setRequestProperty("snapname", snapshotName);
-      }
-
-      int responseCode = connection.getResponseCode();
-      if (responseCode == 200) {
-        return true;
-      } else {
-        System.err.println("Bad LL Request");
-      }
-    } catch (IOException e) {
-      System.err.println(e.getMessage());
-    }
-    return false;
   }
 
   private static void SetRobotOrientation_INTERNAL(
@@ -1831,13 +1780,15 @@ public class LimelightHelpers {
     // Convert server timestamp from microseconds to seconds and adjust for latency
     double adjustedTimestamp = (timestamp / 1000000.0) - (latency / 1000.0);
 
-    RawFiducial[] rawFiducials = new RawFiducial[tagCount];
     int valsPerFiducial = 7;
     int expectedTotalVals = 11 + valsPerFiducial * tagCount;
+    RawFiducial[] rawFiducials;
 
     if (poseArray.length != expectedTotalVals) {
-      // Don't populate fiducials
+      // Array size mismatch - return empty array instead of null-filled array
+      rawFiducials = new RawFiducial[0];
     } else {
+      rawFiducials = new RawFiducial[tagCount];
       for (int i = 0; i < tagCount; i++) {
         int baseIndex = 11 + (i * valsPerFiducial);
         int id = (int) poseArray[baseIndex];
