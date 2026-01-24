@@ -9,6 +9,8 @@ public class FeatureFlags {
       FeatureFlag.of("OnlyUseHubTags", true);
   public static final BooleanSupplier CLUSTER_MAP = FeatureFlag.of("ClusterMapEnabled", true);
   public static final BooleanSupplier INTAKE_WALL_SNAPS = FeatureFlag.of("IntakeWallSnaps", true);
+  public static final BooleanSupplier INTAKE_DIRECTIONAL_SNAPS =
+      FeatureFlag.of("IntakeDirectionalSnaps", true);
 
   private FeatureFlags() {}
 }

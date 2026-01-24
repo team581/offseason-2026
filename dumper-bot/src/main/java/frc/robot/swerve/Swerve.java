@@ -91,6 +91,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       new SwerveRequest.ApplyFieldSpeeds()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
+  private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
   private double lastSimTime;
   private @Nullable Notifier simNotifier = null;
@@ -103,7 +104,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private double distanceToWallIntakePoint = 0.0;
   private boolean visionOnline = false;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
-  private CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -301,11 +301,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   private boolean ableToDirectionSnap() {
-    var robotVelocity = MathHelpers.getLinearVelocity(fieldRelativeSpeeds);
-    if (robotVelocity > MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS.getAsDouble()) {
-      return true;
+    if (!FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()) {
+      return false;
     }
-    return false;
+
+    var robotVelocity = MathHelpers.getLinearVelocity(fieldRelativeSpeeds);
+    return robotVelocity > MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS.getAsDouble();
   }
 
   private boolean ableToWallSnap() {
