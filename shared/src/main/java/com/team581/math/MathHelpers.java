@@ -168,7 +168,8 @@ public class MathHelpers {
     }
 
     double minIntersected = java.util.Collections.min(intersectedValues);
-    var intersectionPoint = new Translation2d(pointX + minIntersected * cos, pointY + minIntersected * sin);
+    var intersectionPoint =
+        new Translation2d(pointX + minIntersected * cos, pointY + minIntersected * sin);
 
     // Undo rotation
     return intersectionPoint.rotateAround(m_center.getTranslation(), m_center.getRotation());
