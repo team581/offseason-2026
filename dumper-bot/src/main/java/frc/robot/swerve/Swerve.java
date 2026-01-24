@@ -309,12 +309,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     double robotAngle = robotPose.getRotation().getDegrees();
 
-    var intakeAngleDifference =
-        MathUtil.inputModulus(angleToWall.getDegrees() - robotAngle, -180, 180);
+    var intakeAngleDifference = MathHelpers.angleModulus(angleToWall.getDegrees() - robotAngle);
     DogLog.log("Swerve/WallSnaps/IntakeAngleDifference", intakeAngleDifference);
     var driveAngleDifference =
-        MathUtil.inputModulus(
-            angleToWall.getDegrees() - filteredVelocityAngle.getDegrees(), -180, 180);
+        MathHelpers.angleModulus(angleToWall.getDegrees() - filteredVelocityAngle.getDegrees());
     DogLog.log("Swerve/WallSnaps/DriveAngleDifference", driveAngleDifference);
 
     var signMisMatch =
