@@ -55,9 +55,9 @@ public class Robot extends Base581Robot {
           new CameraConfig(
               LimelightModel.THREE,
               false,
+              Units.inchesToMeters(20.0),
               Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(13.0),
               -20,
               0,
               0));
@@ -127,6 +127,7 @@ public class Robot extends Base581Robot {
 
     var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
     driverY.rising().ifHigh(robotManager::forceShootRequest);
+    driverY.falling().ifHigh(robotManager::idleRequest);
 
     var driverLeftBumper =
         enabledEvent.and(hardware.driverController.leftBumper(buttonBindingsLoop));
