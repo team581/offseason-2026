@@ -97,7 +97,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Rotation2d snapAngle = Rotation2d.kZero;
-  private double distanceToWall = 0.0;
+  private Translation2d lastWallIntakePoint = Translation2d.kZero;
+  private double distanceToWallIntakePoint = 0.0;
   private boolean visionOnline = false;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
   private CircularFilter lastDriveDirectionFilter = new CircularFilter(5);
@@ -184,10 +185,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
     if (getState() == SwerveState.INTAKING) {
-      distanceToWall =
-          MathHelpers.getClosestPointOnRectanglePerimeter(
-                  drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS)
-              .getDistance(drivetrainState.Pose.getTranslation());
+      lastWallIntakePoint =
+          MathHelpers.getIntersectionOnRectanglePerimeter(
+              drivetrainState.Pose.getTranslation(),
+              FieldUtil.FIELD_BOUNDS,
+              filteredLastDriveDirection);
+      distanceToWallIntakePoint =
+          lastWallIntakePoint.getDistance(drivetrainState.Pose.getTranslation());
     }
   }
 
