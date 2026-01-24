@@ -3,7 +3,6 @@ package frc.robot.robot_manager;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
-import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -36,7 +35,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private double swerveTurretCompensationAngle = 0.0;
   private double turretHubGoalAngle = 0.0;
-  private boolean readyToShootAtHub = true;
 
   public RobotManager(Localization localization, Swerve swerve, Turret turret, Vision vision) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
@@ -48,15 +46,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
-    if (readyToShootAtHub) {
-      if (turret.goalOutOfBounds()) {
-        swerveTurretCompensationAngle =
-            TurretCalculator.calculateSwerveTurretCompensationAngle(
-                turretHubGoalAngle, robotPose.getRotation());
-        return RobotState.HUB_AIM_ADJUSTING_SWERVE;
-      }
-      return RobotState.HUB_AIM;
-    }
+    // TODO: this needs to check if we have balls, if we're even in the alliance zone, etc
+    // if (readyToShootAtHub) {
+    //   if (turret.goalOutOfBounds()) {
+    //     swerveTurretCompensationAngle =
+    //         TurretCalculator.calculateSwerveTurretCompensationAngle(
+    //             turretHubGoalAngle, robotPose.getRotation());
+    //     return RobotState.HUB_AIM_ADJUSTING_SWERVE;
+    //   }
+    //   return RobotState.HUB_AIM;
+    // }
     return switch (currentState) {
       case HUB_AIM -> {
         if (turret.goalOutOfBounds()) {
@@ -142,7 +141,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           setStateFromRequest(RobotState.IDLE);
         }
       }
-      default -> {}
+      default -> {
+        swerve.intakeDriveRequest();
+      }
     }
 
     MechanismVisualizer.log(localization.getPose(), turret.getAngle());
@@ -151,8 +152,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-    var timeSinceMatchStart = FmsUtil.getTimeSinceMatchStart();
-    readyToShootAtHub = FmsUtil.isHubActive(timeSinceMatchStart + (int) TIME_OF_FLIGHT.get());
+
     var robotVelocity = Math.toDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     DogLog.log("RobotManager/RobotVelocity", robotVelocity);
     var turretVelocity = turret.getVelocityDegreesPerSecond();
@@ -177,6 +177,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     turretHubGoalAngle =
         TurretCalculator.calculateTurretAimingAngle(
             robotTranslationInAllianceZone, robotPose.getRotation(), goalPose);
+
+    swerve.setVisionOnline(vision.isAnyCameraOnlineForTags());
   }
 
   public void hubAimRequest() {

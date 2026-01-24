@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import java.util.Collections;
 
 public class MathHelpers {
   private static final double EPSILON = Math.ulp(1.0);
@@ -167,7 +168,7 @@ public class MathHelpers {
       return getClosestPointOnRectanglePerimeter(point, rectangle);
     }
 
-    double minIntersected = java.util.Collections.min(intersectedValues);
+    double minIntersected = Collections.min(intersectedValues);
     var intersectionPoint =
         new Translation2d(pointX + minIntersected * cos, pointY + minIntersected * sin);
 

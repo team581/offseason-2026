@@ -15,5 +15,9 @@ public class FeatureFlags {
       FeatureFlag.of("OnlyUseHubTags", true);
   public static final BooleanSupplier TRENCH_ASSIST = FeatureFlag.of("TrenchAssist", false);
 
+  public static final BooleanSupplier INTAKE_WALL_SNAPS = FeatureFlag.of("IntakeWallSnaps", true);
+  public static final BooleanSupplier INTAKE_DIRECTIONAL_SNAPS =
+      FeatureFlag.of("IntakeDirectionalSnaps", false);
+
   private FeatureFlags() {}
 }
