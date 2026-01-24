@@ -8,6 +8,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -26,6 +27,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       InterpolatingDoubleTreeMap.ofEntries(Map.entry(0.0, 0.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       InterpolatingDoubleTreeMap.ofEntries(Map.entry(0.0, 0.0));
+  private static final double MAX_ANGLE = 100;
+  private static final double MIN_ANGLE = 0;
   private double hubDistance = 0;
   private double feedDistance = 0;
   private double measuredAngle = 0;
@@ -103,6 +106,14 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     DogLog.log("ShooterHood/MeasuredAngle", measuredAngle);
     DogLog.log("ShooterHood/FeedingAngle", feedAngle);
     DogLog.log("ShooterHood/StatorCurrent", statorCurrent);
+    switch (getState()) {
+      case UNHOMED, HOMING -> {
+        statorCurrent = motor.getStatorCurrent().getValueAsDouble();
+      }
+      case SCORING -> measuredAngle = hubAngle;
+      case FEEDING -> measuredAngle = feedAngle;
+      case IDLE -> {}
+    }
   }
 
   @Override
@@ -149,5 +160,24 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
       default -> {}
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    var shooterHoodSimulation =
+        SimKit.positionMechanism(
+            "ShooterHood",
+            (mechanism) ->
+                mechanism
+                    .addMotor(motor)
+                    .withMaxPosition(Units.degreesToRotations(MAX_ANGLE))
+                    .withMinPosition(Units.degreesToRotations(MIN_ANGLE)));
+
+    if (getState() == ShooterHoodState.UNHOMED || getState() == ShooterHoodState.HOMING) {
+      motor.setPosition(10);
+      setStateFromRequest(ShooterHoodState.IDLE);
+    }
+
+    shooterHoodSimulation.update();
   }
 }
