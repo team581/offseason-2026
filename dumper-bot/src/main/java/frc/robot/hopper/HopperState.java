@@ -5,8 +5,8 @@ public enum HopperState {
   UNJAM(-6.0),
 
   IDLE(0.0),
-  INTAKING(6.0),
-  SHOOTING(6.0);
+  INTAKING(12.0),
+  SHOOTING(10.0);
 
   public final double volts;
 
