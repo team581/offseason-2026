@@ -103,7 +103,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private double distanceToWallIntakePoint = 0.0;
   private boolean visionOnline = false;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
-  private CircularFilter lastDriveDirectionFilter = new CircularFilter(5);
+  private CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
