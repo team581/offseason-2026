@@ -1,6 +1,8 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Degrees;
+import java.util.function.DoubleSupplier;
+
+import org.jspecify.annotations.Nullable;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -8,12 +10,14 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
+import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -25,19 +29,29 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
-import org.jspecify.annotations.Nullable;
 
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(0.25);
   private static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
+
+  private static final DoubleSupplier WALL_SNAPS_VELOCITY_ANGLE_THRESHOLD =
+      DogLog.tunable("Swerve/WallSnaps/VelocityAngleThresholdDegrees", 30.0, Degrees);
+
+  private static final DoubleSupplier WALL_SNAPS_ROTATION_ANGLE_THRESHOLD =
+      DogLog.tunable("Swerve/WallSnaps/RotationAngleThresholdDegrees", 40.0, Degrees);
+  private static final DoubleSupplier WALL_SNAPS_DISTANCE_THRESHOLD =
+      DogLog.tunable("Swerve/WallSnaps/DistanceThresholdMeters", 1.75);
+  private static final DoubleSupplier MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS =
+      DogLog.tunable("Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.5);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
@@ -66,6 +80,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
+  private final SwerveRequest.FieldCentricFacingAngle teleopSnapsIntakeRequest =
+      new SwerveRequest.FieldCentricFacingAngle()
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.5)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
+          .withCenterOfRotation(Translation2d.kZero)
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
+
   private final SwerveRequest.ApplyFieldSpeeds trailblazerRequest =
       new SwerveRequest.ApplyFieldSpeeds()
           .withDriveRequestType(DriveRequestType.Velocity)
@@ -86,7 +111,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private final DoubleSubscriber trenchAssistAngleThreshold =
       DogLog.tunable("Swerve/TrenchAssistAngleThreshold", 60.0);
   private final PIDController trenchPidController = new PIDController(15, 0, 0);
+  private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
+  private Translation2d lastWallIntakePoint = Translation2d.kZero;
+  private double distanceToWallIntakePoint = 0.0;
+  private boolean visionOnline = false;
   private double trenchAssistY = 0.0;
+  private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -143,8 +173,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     teleopSnapsRequest
         .withVelocityX(forwardVelocity * MAX_SPEED)
         .withVelocityY(sidewaysVelocity * MAX_SPEED);
+         teleopSnapsIntakeRequest
+        .withVelocityX(forwardVelocity * MAX_SPEED)
+        .withVelocityY(sidewaysVelocity * MAX_SPEED);
 
     sendSwerveRequest();
+
+    filteredLastDriveDirection =
+        Rotation2d.fromDegrees(
+            lastDriveDirectionFilter.calculate(
+                new Translation2d(forwardVelocity, sidewaysVelocity)
+                    .getAngle()
+                    .plus(Rotation2d.k180deg)
+                    .getDegrees()));
   }
 
   @Override
@@ -154,6 +195,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     robotRelativeSpeeds = drivetrainState.Speeds;
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
+
+    if (getState() == SwerveState.INTAKING) {
+      lastWallIntakePoint =
+          MathHelpers.getIntersectionOnRectanglePerimeter(
+              drivetrainState.Pose.getTranslation(),
+              FieldUtil.FIELD_BOUNDS,
+              filteredLastDriveDirection);
+      distanceToWallIntakePoint =
+          lastWallIntakePoint.getDistance(drivetrainState.Pose.getTranslation());
+    }
   }
 
   private void sendSwerveRequest() {
@@ -189,6 +240,41 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             trailblazerRequest.withSpeeds(
                 trailblazer.getFieldRelativeSetpoint(robotPose, fieldRelativeSpeeds, snapAngle)));
       }
+
+      case INTAKING -> {
+        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
+          if (ableToWallSnap()) {
+            DogLog.timestamp("Swerve/WallSnaps/Snapping");
+            var closestWallPose =
+                MathHelpers.getClosestPointOnRectanglePerimeter(
+                    drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+            var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
+            var centerOfRotationRobotRelative =
+                lastWallIntakePoint
+                    .minus(drivetrainState.Pose.getTranslation())
+                    .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+            DogLog.log(
+                "Swerve/WallSnaps/CenterOfRotation",
+                new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
+            drivetrain.setControl(
+                teleopSnapsIntakeRequest
+                    .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
+                    .withCenterOfRotation(centerOfRotationRobotRelative));
+          } else if (ableToDirectionSnap()) {
+            DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
+            drivetrain.setControl(
+                teleopSnapsIntakeRequest
+                    .withTargetDirection(filteredLastDriveDirection.plus(Rotation2d.k180deg))
+                    .withCenterOfRotation(Translation2d.kZero));
+          } else {
+            DogLog.timestamp("Swerve/Intake/NoSnapping");
+            drivetrain.setControl(teleopRequest);
+          }
+        } else {
+          DogLog.timestamp("Swerve/Intake/NoSnapping");
+          drivetrain.setControl(teleopRequest);
+        }
+      }
       case TRAILBLAZER ->
           drivetrain.setControl(
               trailblazerRequest.withSpeeds(
@@ -223,6 +309,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
   }
 
+  public void intakeDriveRequest() {
+    if (DriverStation.isTeleop()) {
+      setStateFromRequest(SwerveState.INTAKING);
+    }
+  }
+
   public boolean snapsNearGoal() {
     var currentRotation = robotPose.getRotation().getDegrees();
     var snapsDirection = teleopSnapsRequest.TargetDirection.getDegrees();
@@ -234,6 +326,82 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private double getTrenchAssistVelocity() {
     return -trenchPidController.calculate(robotPose.getY(), trenchAssistY);
+  }
+
+  public void setVisionOnline(boolean online) {
+    visionOnline = online;
+  }
+
+  private boolean ableToDirectionSnap() {
+    if (!FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()) {
+      return false;
+    }
+
+    var robotVelocity = MathHelpers.getLinearVelocity(fieldRelativeSpeeds);
+    return robotVelocity > MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS.getAsDouble();
+  }
+
+  private boolean ableToWallSnap() {
+    if (!visionOnline || !FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()) {
+      return false;
+    }
+    var robotPose = drivetrainState.Pose;
+    var closestWallTranslation =
+        MathHelpers.getClosestPointOnRectanglePerimeter(
+            robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+
+    DogLog.log(
+        "Swerve/WallSnaps/ClosestWallPose", new Pose2d(closestWallTranslation, Rotation2d.kZero));
+
+    // Check if velocity angle is toward wall
+    var filteredVelocityAngle = filteredLastDriveDirection;
+    DogLog.log(
+        "Swerve/WallSnaps/FilteredVelocityAngle", filteredVelocityAngle.getDegrees(), Degrees);
+
+    var angleToWall = MathHelpers.getDriveDirection(robotPose, closestWallTranslation);
+    DogLog.log("Swerve/WallSnaps/AngleToWall", angleToWall.getDegrees(), Degrees);
+
+    double robotAngle = robotPose.getRotation().getDegrees();
+
+    var intakeAngleDifference = MathHelpers.angleModulus(angleToWall.getDegrees() - robotAngle);
+    DogLog.log("Swerve/WallSnaps/IntakeAngleDifference", intakeAngleDifference);
+    var driveAngleDifference =
+        MathHelpers.angleModulus(angleToWall.getDegrees() - filteredVelocityAngle.getDegrees());
+    DogLog.log("Swerve/WallSnaps/DriveAngleDifference", driveAngleDifference);
+
+    var signMisMatch =
+        Math.abs(
+                    MathHelpers.angleModulus(
+                        filteredVelocityAngle.getDegrees() - angleToWall.getDegrees()))
+                > 1e-5
+            && Math.signum(intakeAngleDifference) != Math.signum(driveAngleDifference);
+    DogLog.log("Swerve/WallSnaps/SignMisMatch", signMisMatch);
+    if (signMisMatch) {
+      return false;
+    }
+
+    var velocityAngleTowardWall =
+        MathHelpers.getLinearVelocity(fieldRelativeSpeeds) > 0.01
+            && MathUtil.isNear(
+                angleToWall.getDegrees(),
+                filteredVelocityAngle.getDegrees(),
+                WALL_SNAPS_VELOCITY_ANGLE_THRESHOLD.getAsDouble(),
+                -180,
+                180);
+    var rotationAngleTowardWall =
+        MathUtil.isNear(
+            angleToWall.getDegrees(),
+            robotAngle,
+            WALL_SNAPS_ROTATION_ANGLE_THRESHOLD.getAsDouble(),
+            -180,
+            180);
+
+    var distanceToWallThreshold =
+        distanceToWallIntakePoint < WALL_SNAPS_DISTANCE_THRESHOLD.getAsDouble();
+    DogLog.log("Swerve/WallSnaps/DistanceToWall", distanceToWallThreshold);
+    DogLog.log("Swerve/WallSnaps/VelocityAngleTowardWall", velocityAngleTowardWall);
+    DogLog.log("Swerve/WallSnaps/RotationAngleTowardWall", rotationAngleTowardWall);
+    return distanceToWallThreshold && velocityAngleTowardWall && rotationAngleTowardWall;
   }
 
   private boolean ableToTrenchAssist() {
