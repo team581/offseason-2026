@@ -9,6 +9,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -82,8 +83,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
 
     currentAngle =
-        MathUtil.inputModulus(
-            Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()), -180, 180);
+        MathHelpers.angleModulus(Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()));
     DogLog.log("Turret/Angle", currentAngle);
 
     // Predict the turret's current angle to account for sensor latency
@@ -162,7 +162,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   private static double clamp(double turretAngle) {
-    var newTurretAngle = MathUtil.inputModulus(turretAngle, -180, 180);
+    var newTurretAngle = MathHelpers.angleModulus(turretAngle);
     return MathUtil.clamp(newTurretAngle, MIN_ANGLE, MAX_ANGLE);
   }
 

@@ -5,10 +5,10 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+import com.team581.math.MathHelpers;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 
 public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   protected final SwerveDrivetrain<?, ?, ?> drivetrain;
@@ -40,7 +40,7 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   @Override
   protected void collectInputs() {
     driveState = drivetrain.getState();
-    robotHeading = MathUtil.inputModulus(driveState.Pose.getRotation().getDegrees(), -180, 180);
+    robotHeading = MathHelpers.angleModulus(driveState.Pose.getRotation().getDegrees());
     robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
   }
 }

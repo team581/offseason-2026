@@ -6,7 +6,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
@@ -250,7 +249,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private double getSwerveAimingAngle(Translation2d goal) {
-    return Units.radiansToDegrees(
+    return Math.toDegrees(
         Math.atan2(goal.getY() - robotPose.getY(), goal.getX() - robotPose.getX()));
   }
 

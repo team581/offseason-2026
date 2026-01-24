@@ -8,7 +8,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import frc.robot.config.FeatureFlags;
@@ -142,8 +141,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
 
-    var robotVelocity =
-        Units.radiansToDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
+    var robotVelocity = Math.toDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     DogLog.log("RobotManager/RobotVelocity", robotVelocity);
     var turretVelocity = turret.getVelocityDegreesPerSecond();
     DogLog.log("RobotManager/TurretVelocity", turretVelocity);

@@ -16,11 +16,12 @@ dependencies {
 	// Annotation processor that compiles templates into .refaster files
 	annotationProcessor "tech.picnic.error-prone-support:refaster-compiler:0.26.0"
 
-	// WPILib types (like ChassisSpeeds)
-	implementation wpi.java.deps.wpilib()
-
-	// Our shared module for MathHelpers
+	// Depend on the shared library
 	implementation project(':shared')
+
+	annotationProcessor wpi.java.deps.wpilibAnnotations()
+	implementation wpi.java.deps.wpilib()
+	implementation wpi.java.vendor.java()
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -44,4 +45,8 @@ tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs.add "-Xplugin:RefasterRuleCompiler"
 	// Disable Error Prone checks when compiling Refaster rules
 	options.errorprone.enabled = false
+
+	// Disable build caching for this task - the refaster-compiler annotation processor
+	// outputs aren't properly tracked by Gradle's cache, causing stale cache issues when rules change
+	outputs.cacheIf { false }
 }

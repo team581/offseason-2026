@@ -17,7 +17,7 @@ public final class MechanismVisualizer {
     var turretTransform =
         new Transform3d(
             new Translation3d(0, 0, TURRET_HEIGHT_METERS),
-            new Rotation3d(0, 0, Units.degreesToRadians(turretAngleDegrees)));
+            new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
 
     // Convert robot pose to 3D and apply the turret transform
     var robotPose3d = new Pose3d(robotPose);
