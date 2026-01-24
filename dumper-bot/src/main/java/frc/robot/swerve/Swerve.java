@@ -1,8 +1,6 @@
 package frc.robot.swerve;
 
-import java.util.function.DoubleSupplier;
-
-import org.jspecify.annotations.Nullable;
+import static edu.wpi.first.units.Units.Degrees;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -17,7 +15,6 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -27,13 +24,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.function.DoubleSupplier;
+import org.jspecify.annotations.Nullable;
 
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
@@ -216,33 +214,34 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                     drivetrainState.Pose, fieldRelativeSpeeds, snapAngle)));
       }
       case INTAKING -> {
-        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)
-            ) {
-              if (ableToWallSnap()) {
-          DogLog.timestamp("Swerve/WallSnaps/Snapping");
-          var closestWallPose =
-              MathHelpers.getClosestPointOnRectanglePerimeter(
-                  drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
-          var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
-          var centerOfRotationRobotRelative =
-              lastWallIntakePoint
-                  .minus(drivetrainState.Pose.getTranslation())
-                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
-          DogLog.log(
-              "Swerve/WallSnaps/CenterOfRotation",
-              new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
-          drivetrain.setControl(
-              teleopSnapsIntakeRequest
-                  .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
-                  .withCenterOfRotation(centerOfRotationRobotRelative));
-              } else if (ableToDirectionSnap()) {
-          DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
-          drivetrain.setControl(
-              teleopSnapsIntakeRequest.withTargetDirection(filteredLastDriveDirection.plus(Rotation2d.k180deg)).withCenterOfRotation(Translation2d.kZero));
-             } else {
-          DogLog.timestamp("Swerve/Intake/NoSnapping");
-          drivetrain.setControl(teleopRequest);
-             }
+        if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
+          if (ableToWallSnap()) {
+            DogLog.timestamp("Swerve/WallSnaps/Snapping");
+            var closestWallPose =
+                MathHelpers.getClosestPointOnRectanglePerimeter(
+                    drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+            var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
+            var centerOfRotationRobotRelative =
+                lastWallIntakePoint
+                    .minus(drivetrainState.Pose.getTranslation())
+                    .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+            DogLog.log(
+                "Swerve/WallSnaps/CenterOfRotation",
+                new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
+            drivetrain.setControl(
+                teleopSnapsIntakeRequest
+                    .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
+                    .withCenterOfRotation(centerOfRotationRobotRelative));
+          } else if (ableToDirectionSnap()) {
+            DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
+            drivetrain.setControl(
+                teleopSnapsIntakeRequest
+                    .withTargetDirection(filteredLastDriveDirection.plus(Rotation2d.k180deg))
+                    .withCenterOfRotation(Translation2d.kZero));
+          } else {
+            DogLog.timestamp("Swerve/Intake/NoSnapping");
+            drivetrain.setControl(teleopRequest);
+          }
         } else {
           DogLog.timestamp("Swerve/Intake/NoSnapping");
           drivetrain.setControl(teleopRequest);
