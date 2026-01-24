@@ -36,7 +36,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private double swerveTurretCompensationAngle = 0.0;
   private double turretHubGoalAngle = 0.0;
-  private boolean readyToShootAtHub = true;
 
   public RobotManager(Localization localization, Swerve swerve, Turret turret, Vision vision) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
@@ -155,7 +154,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     var timeSinceMatchStart = FmsUtil.getTimeSinceMatchStart();
-    readyToShootAtHub = FmsUtil.isHubActive(timeSinceMatchStart + (int) TIME_OF_FLIGHT.get());
+
     var robotVelocity = Math.toDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     DogLog.log("RobotManager/RobotVelocity", robotVelocity);
     var turretVelocity = turret.getVelocityDegreesPerSecond();
