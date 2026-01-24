@@ -46,7 +46,7 @@ public class FmsUtil {
 
   /** Returns time since start of the match, in autonomous. */
   public static int getTimeSinceMatchStart() {
-    var time = (int)DriverStation.getMatchTime();
+    var time = (int) DriverStation.getMatchTime();
     if (DriverStation.isAutonomous()) {
       return AUTO_TIME - time;
     } else {
