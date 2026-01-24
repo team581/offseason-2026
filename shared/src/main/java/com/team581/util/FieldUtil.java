@@ -50,7 +50,7 @@ public class FieldUtil {
   // Custom zones to enable trench assist for driver to cleanly drive through with speed
   private static final double TRENCH_LENGTH_X = Units.inchesToMeters(47.0);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 3;
-  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(75.0);
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
 
   private static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
