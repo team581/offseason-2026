@@ -43,9 +43,7 @@ public class FmsUtil {
   private static final ImmutableSet<Range<Integer>> MATCH_PERIODS =
       ALLIANCE_LOSS_HUB_ACTIVITY.keySet();
 
-  /**
-   * @return Time since start of the match, in autonomous
-   */
+  /** Returns time since start of the match, in autonomous. */
   public static double getTimeSinceMatchStart() {
     var time = DriverStation.getMatchTime();
     if (DriverStation.isAutonomous()) {
@@ -57,13 +55,13 @@ public class FmsUtil {
 
   public static Optional<Boolean> isAutoWinner() {
     var gameData = DriverStation.getGameSpecificMessage();
-    if (gameData.length() == 0) {
+    if (gameData.isEmpty()) {
       return Optional.empty();
     }
     var character = gameData.charAt(0);
     return switch (character) {
-      case 'R' -> Optional.of(Boolean.valueOf(isRedAlliance()));
-      case 'B' -> Optional.of(Boolean.valueOf(!isRedAlliance()));
+      case 'R' -> Optional.of(isRedAlliance());
+      case 'B' -> Optional.of(!isRedAlliance());
       default -> Optional.empty();
     };
   }
@@ -74,14 +72,12 @@ public class FmsUtil {
       return true;
     }
     var possibleRange =
-        MATCH_PERIODS.stream()
-            .findFirst()
-            .filter((a) -> a.contains(Integer.valueOf(timeSinceMatchStart)));
+        MATCH_PERIODS.stream().findFirst().filter((a) -> a.contains(timeSinceMatchStart));
     if (possibleRange.isEmpty()) {
       return false;
     }
-    return (isAutoWinner.get() ? ALLIANCE_WIN_HUB_ACTIVITY : ALLIANCE_LOSS_HUB_ACTIVITY)
-        .get(possibleRange.get());
+    return (isAutoWinner.orElseThrow() ? ALLIANCE_WIN_HUB_ACTIVITY : ALLIANCE_LOSS_HUB_ACTIVITY)
+        .get(possibleRange.orElseThrow());
   }
 
   public static boolean isRedAlliance() {
