@@ -1,5 +1,7 @@
 package com.team581.math;
 
+import java.util.Collections;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
@@ -167,7 +169,7 @@ public class MathHelpers {
       return getClosestPointOnRectanglePerimeter(point, rectangle);
     }
 
-    double minIntersected = java.util.Collections.min(intersectedValues);
+    double minIntersected = Collections.min(intersectedValues);
     var intersectionPoint =
         new Translation2d(pointX + minIntersected * cos, pointY + minIntersected * sin);
 
