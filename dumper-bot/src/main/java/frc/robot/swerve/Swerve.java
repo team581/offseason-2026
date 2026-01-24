@@ -1,6 +1,8 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Degrees;
+import java.util.function.DoubleSupplier;
+
+import org.jspecify.annotations.Nullable;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -15,6 +17,7 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -24,14 +27,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.function.DoubleSupplier;
-import org.jspecify.annotations.Nullable;
 
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
@@ -44,7 +46,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private static final DoubleSupplier WALL_SNAPS_ROTATION_ANGLE_THRESHOLD =
       DogLog.tunable("Swerve/WallSnaps/RotationAngleThresholdDegrees", 40.0, Degrees);
   private static final DoubleSupplier WALL_SNAPS_DISTANCE_THRESHOLD =
-      DogLog.tunable("Swerve/WallSnaps/DistanceThresholdMeters", 1.75);
+      DogLog.tunable("Swerve/WallSnaps/DistanceThresholdMeters", 2.0);
   private static final DoubleSupplier MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS =
       DogLog.tunable("Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.5);
 
