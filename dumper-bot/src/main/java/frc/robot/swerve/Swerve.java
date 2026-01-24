@@ -294,29 +294,52 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         "Swerve/WallSnaps/ClosestWallPose", new Pose2d(closestWallTranslation, Rotation2d.kZero));
 
     // Check if velocity angle is toward wall
-    var velocityAngle = MathHelpers.getDriveDirection(fieldRelativeSpeeds);
-    DogLog.log("Swerve/WallSnaps/VelocityAngle", velocityAngle.getDegrees(), Degrees);
+    var filteredVelocityAngle = filteredLastDriveDirection;
+    DogLog.log(
+        "Swerve/WallSnaps/FilteredVelocityAngle", filteredVelocityAngle.getDegrees(), Degrees);
 
     var angleToWall = MathHelpers.getDriveDirection(robotPose, closestWallTranslation);
     DogLog.log("Swerve/WallSnaps/AngleToWall", angleToWall.getDegrees(), Degrees);
+
+    double robotAngle = robotPose.getRotation().getDegrees();
+
+    var intakeAngleDifference =
+        MathUtil.inputModulus(angleToWall.getDegrees() - robotAngle, -180, 180);
+    DogLog.log("Swerve/WallSnaps/IntakeAngleDifference", intakeAngleDifference);
+    var driveAngleDifference =
+        MathUtil.inputModulus(
+            angleToWall.getDegrees() - filteredVelocityAngle.getDegrees(), -180, 180);
+    DogLog.log("Swerve/WallSnaps/DriveAngleDifference", driveAngleDifference);
+
+    var signMisMatch =
+        Math.abs(
+                    MathHelpers.angleModulus(
+                        filteredVelocityAngle.getDegrees() - angleToWall.getDegrees()))
+                > 1e-5
+            && Math.signum(intakeAngleDifference) != Math.signum(driveAngleDifference);
+    DogLog.log("Swerve/WallSnaps/SignMisMatch", signMisMatch);
+    if (signMisMatch) {
+      return false;
+    }
 
     var velocityAngleTowardWall =
         MathHelpers.getLinearVelocity(fieldRelativeSpeeds) > 0.01
             && MathUtil.isNear(
                 angleToWall.getDegrees(),
-                velocityAngle.getDegrees(),
+                filteredVelocityAngle.getDegrees(),
                 WALL_SNAPS_VELOCITY_ANGLE_THRESHOLD.getAsDouble(),
                 -180,
                 180);
     var rotationAngleTowardWall =
         MathUtil.isNear(
             angleToWall.getDegrees(),
-            robotPose.getRotation().getDegrees(),
+            robotAngle,
             WALL_SNAPS_ROTATION_ANGLE_THRESHOLD.getAsDouble(),
             -180,
             180);
 
-    var distanceToWallThreshold = distanceToWall < WALL_SNAPS_DISTANCE_THRESHOLD.getAsDouble();
+    var distanceToWallThreshold =
+        distanceToWallIntakePoint < WALL_SNAPS_DISTANCE_THRESHOLD.getAsDouble();
     DogLog.log("Swerve/WallSnaps/DistanceToWall", distanceToWallThreshold);
     DogLog.log("Swerve/WallSnaps/VelocityAngleTowardWall", velocityAngleTowardWall);
     DogLog.log("Swerve/WallSnaps/RotationAngleTowardWall", rotationAngleTowardWall);
