@@ -140,10 +140,15 @@ public class FieldUtil {
                   + TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_17.getY()));
 
-  public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
-    var allianceZone = FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
+  public static Translation2d clampPoseToAllianceZone(Translation2d robot) {
+    if (isRobotInAllianceZone(robot)) {
+      return robot;
+    }
+    return new Translation2d(getAllianceZoneX(), robot.getY());
+  }
 
-    return allianceZone.nearest(pose);
+  public static double getAllianceZoneX() {
+    return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
   }
 
   public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotPose) {
@@ -159,15 +164,11 @@ public class FieldUtil {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
   }
 
-  // TODO(@rhetorr): Make smarter for different rotations (would need to store bumper size)
-  // TODO: This seems like it duplicates functionality you can get from clampPoseToAllianceZone -
-  // you can just check if clampPoseToAllianceZone(robotPose) == robotPose
-  public static boolean isRobotInAllianceZone(Pose2d robot) {
-    var goalX = HUB_POSE.getPose().getX();
+  public static boolean isRobotInAllianceZone(Translation2d robot) {
     if (FmsUtil.isRedAlliance()) {
-      return robot.getX() > goalX + EXTRA_NEUTRAL_ZONE_THRESHOLD;
+      return robot.getX() > getAllianceZoneX() + EXTRA_NEUTRAL_ZONE_THRESHOLD;
     }
-    return robot.getX() < goalX - EXTRA_NEUTRAL_ZONE_THRESHOLD;
+    return robot.getX() < getAllianceZoneX() - EXTRA_NEUTRAL_ZONE_THRESHOLD;
   }
 
   public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
