@@ -2,7 +2,6 @@ package frc.robot.swerve;
 
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -11,10 +10,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class SwerveAssist {
-  private final static double TRENCH_ASSIST_VELOCITY_THRESHOLD = 1.5;
-  private final static double TRENCH_ASSIST_ANGLE_THRESHOLD = 30.0;
+  private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 1.5;
+  private static final double TRENCH_ASSIST_ANGLE_THRESHOLD = 30.0;
 
-  private static final PIDController trenchPidController = new PIDController(10, 0, 0);
+  private static final PIDController TRENCH_PID_CONTROLLER = new PIDController(10, 0, 0);
 
   public static boolean ableToTrenchAssist(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     // Check if in trench assist zone
@@ -67,7 +66,9 @@ public class SwerveAssist {
   }
 
   public static double getTrenchAssistVelocity(Pose2d robotPose) {
-    return -trenchPidController.calculate(robotPose.getY(), FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation()).getY());
+    return -TRENCH_PID_CONTROLLER.calculate(
+        robotPose.getY(),
+        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation()).getY());
   }
 
   public static double getTrenchSnapAngle(Pose2d robotPose) {

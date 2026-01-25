@@ -19,7 +19,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -222,7 +221,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               trenchAssistSnapsRequest
                   .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose)).rotateBy(Rotation2d.k180deg)));
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose))
+                          .rotateBy(Rotation2d.k180deg)));
         } else {
           drivetrain.setControl(teleopRequest);
         }
@@ -233,7 +233,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               trenchAssistSnapsRequest
                   .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose)).rotateBy(Rotation2d.k180deg)));
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose))
+                          .rotateBy(Rotation2d.k180deg)));
         } else {
           if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
             drivetrain.setControl(teleopSnapsRequest);
@@ -254,7 +255,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               trenchAssistSnapsRequest
                   .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose)).rotateBy(Rotation2d.k180deg)));
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose))
+                          .rotateBy(Rotation2d.k180deg)));
         } else {
           if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
             if (ableToWallSnap()) {

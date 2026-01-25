@@ -54,13 +54,17 @@ public class FieldUtil {
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 3;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
 
-  private static final Pose2d RED_DEPOT_TRENCH_CENTER = new Pose2d(RED_TRENCH_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
-  private static final Pose2d RED_OUTPOST_TRENCH_CENTER = new Pose2d(RED_TRENCH_X, AprilTags.TAG_12.getY(), Rotation2d.kZero);
-  private static final Pose2d BLUE_DEPOT_TRENCH_CENTER = new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_17.getY(), Rotation2d.kZero);
-  private static final Pose2d BLUE_OUTPOST_TRENCH_CENTER = new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
+  private static final Pose2d RED_DEPOT_TRENCH_CENTER =
+      new Pose2d(RED_TRENCH_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
+  private static final Pose2d RED_OUTPOST_TRENCH_CENTER =
+      new Pose2d(RED_TRENCH_X, AprilTags.TAG_12.getY(), Rotation2d.kZero);
+  private static final Pose2d BLUE_DEPOT_TRENCH_CENTER =
+      new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_17.getY(), Rotation2d.kZero);
+  private static final Pose2d BLUE_OUTPOST_TRENCH_CENTER =
+      new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
 
   private static final List<Rectangle2d> TRENCH_ZONES =
-    ImmutableList.of(
+      ImmutableList.of(
           new Rectangle2d(RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
           new Rectangle2d(RED_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
           new Rectangle2d(BLUE_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
@@ -136,10 +140,6 @@ public class FieldUtil {
                   + TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_17.getY()));
 
-  public static boolean robotInTrench(Translation2d robotPose) {
-    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
-  }
-
   public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
     var allianceZone = FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
 
@@ -184,5 +184,9 @@ public class FieldUtil {
    */
   public static Pose2d pathflip(Pose2d input) {
     return input.rotateAround(FIELD_BOUNDS.getCenter().getTranslation(), Rotation2d.k180deg);
+  }
+
+  public static boolean robotInTrench(Translation2d robotPose) {
+    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 }
