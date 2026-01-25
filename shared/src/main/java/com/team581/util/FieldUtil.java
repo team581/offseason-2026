@@ -199,49 +199,49 @@ public class FieldUtil {
 
     // Trench assist zones
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/BlueOutpost/Corner1",
+        "FieldUtil/TrenchAssistZones/BlueOutpost/Corner1",
         new Pose2d(
             BLUE_OUTPOST_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             BLUE_OUTPOST_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/BlueOutpost/Corner2",
+        "FieldUtil/TrenchAssistZones/BlueOutpost/Corner2",
         new Pose2d(
             BLUE_OUTPOST_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             BLUE_OUTPOST_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/BlueDepot/Corner1",
+        "FieldUtil/TrenchAssistZones/BlueDepot/Corner1",
         new Pose2d(
             BLUE_DEPOT_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             BLUE_DEPOT_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/BlueDepot/Corner2",
+        "FieldUtil/TrenchAssistZones/BlueDepot/Corner2",
         new Pose2d(
             BLUE_DEPOT_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             BLUE_DEPOT_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/RedDepot/Corner1",
+        "FieldUtil/TrenchAssistZones/RedDepot/Corner1",
         new Pose2d(
             RED_DEPOT_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             RED_DEPOT_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/RedDepot/Corner2",
+        "FieldUtil/TrenchAssistZones/RedDepot/Corner2",
         new Pose2d(
             RED_DEPOT_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             RED_DEPOT_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/RedOutpost/Corner1",
+        "FieldUtil/TrenchAssistZones/RedOutpost/Corner1",
         new Pose2d(
             RED_OUTPOST_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             RED_OUTPOST_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
             Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrencheAssistZones/RedOutpost/Corner2",
+        "FieldUtil/TrenchAssistZones/RedOutpost/Corner2",
         new Pose2d(
             RED_OUTPOST_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
             RED_OUTPOST_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
