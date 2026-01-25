@@ -9,6 +9,7 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
@@ -64,7 +65,7 @@ public class Robot extends Base581Robot {
   private final Vision vision = new Vision(imu, mainLimelight);
   private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
-  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Intake intake = new Intake(hardware.leftIntakeMotor, hardware.rightIntakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
       new Shooter(
