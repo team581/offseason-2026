@@ -76,7 +76,8 @@ public class Robot extends Base581Robot {
               0.0,
               0.0));
   private final Vision vision = new Vision(imu, turretLimelight, backLimelight, frontLimelight);
-  private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
+  private final Localization localization =
+      new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, vision);
 
   private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
