@@ -42,7 +42,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private double horizontalUnjamRpm = 0;
   private double rotorMotorRpm = 0;
   private double horizontalMotorRpm = 0;
-  private double rotorUnjamRpm = -0;
+  private double rotorUnjamRpm = -0.0;
 
   public DyeRotor(TalonFX rotorMotor, TalonFX horizontalMotor, TalonFX verticalMotor) {
     super(SubsystemPriority.DYE_ROTOR, DyeRotorState.IDLE);
