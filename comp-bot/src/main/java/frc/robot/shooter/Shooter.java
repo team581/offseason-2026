@@ -48,7 +48,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
 
-
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
 
   private double hubDistance = 0;
@@ -58,7 +57,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
-
 
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
@@ -108,18 +106,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withPeakForwardTorqueCurrent(200)
                     .withPeakReverseTorqueCurrent(0));
 
-
-
     leftMotor.getConfigurator().apply(leftConfigs);
     rightMotor.getConfigurator().apply(rightConfigs);
-
 
     TunablePid.register("Shooter/LeftShooter", leftMotor, leftConfigs);
     TunablePid.register("Shooter/RightShooter", rightMotor, rightConfigs);
 
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
-
   }
 
   public void scoreRequest(double distance) {
@@ -148,7 +142,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     //   DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
-
 
     switch (state) {
       case SCORE -> {
@@ -181,10 +174,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
-
   }
 
-  public void scoreRequest(){
+  public void scoreRequest() {
     setStateFromRequest(ShooterState.SCORE);
   }
 
@@ -198,20 +190,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
               && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER);
-
     };
   }
 
   @Override
   public void simulationPeriodic() {
-      var shooterSimulation =
+    var shooterSimulation =
         SimKit.velocityMechanism(
             "shooter",
             (mechanism) ->
-                mechanism
-                    .addMotor(leftMotor)
-                    .addMotor(rightMotor)
-                    .withMinVelocity(1000));
+                mechanism.addMotor(leftMotor).addMotor(rightMotor).withMinVelocity(1000));
 
     shooterSimulation.update();
   }

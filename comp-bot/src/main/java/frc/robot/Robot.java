@@ -30,7 +30,8 @@ public class Robot extends Base581Robot {
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
 
-  private final Shooter shooter = new Shooter(hardware.shooterrightMotor,hardware.shooterleftMotor);
+  private final Shooter shooter =
+      new Shooter(hardware.shooterrightMotor, hardware.shooterleftMotor);
 
   private final RobotManager robotManager = new RobotManager(shooterHood, localization, swerve);
 
@@ -70,6 +71,5 @@ public class Robot extends Base581Robot {
 
     var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
     driverY.rising().ifHigh(shooter::scoreRequest);
-
   }
 }
