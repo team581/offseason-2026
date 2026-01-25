@@ -2,7 +2,6 @@ package frc.robot.swerve;
 
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -11,10 +10,30 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class SwerveAssist {
-  private final static double TRENCH_ASSIST_VELOCITY_THRESHOLD = 1.5;
-  private final static double TRENCH_ASSIST_ANGLE_THRESHOLD = 30.0;
+  private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 1.5;
+  private static final double TRENCH_ASSIST_ANGLE_TOLERANCE = 30.0;
+  private static final double BUMP_ASSIST_ANGLE_TOLERANCE = 45.0;
+  private static final double ROBOT_INTAKE_TO_BUMP_ANGLE = 0.0;
 
   private static final PIDController trenchPidController = new PIDController(10, 0, 0);
+
+  public static boolean ableToBumpAssist(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+    // Check if in bump assist zone
+    if (FieldUtil.getCurrentBumpAssistZone(robotPose.getTranslation()).isEmpty()) {
+      return false;
+    }
+
+    // Check if our angle is within the tolerance
+    var angleTolerance =
+        MathUtil.isNear(
+            robotPose.getRotation().getDegrees(),
+            getBumpSnapAngle(fieldRelativeSpeeds.vxMetersPerSecond),
+            BUMP_ASSIST_ANGLE_TOLERANCE,
+            -180.0,
+            180.0);
+    DogLog.log("SwerveAssist/Bump/AngleTolerance", angleTolerance);
+    return angleTolerance;
+  }
 
   public static boolean ableToTrenchAssist(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     // Check if in trench assist zone
@@ -51,23 +70,33 @@ public class SwerveAssist {
     if (MathUtil.isNear(
             velocityAngle.getDegrees(),
             angleToAllianceZoneAssistPoint.getDegrees(),
-            TRENCH_ASSIST_ANGLE_THRESHOLD,
-            -180,
-            180)
+            TRENCH_ASSIST_ANGLE_TOLERANCE,
+            -180.0,
+            180.0)
         || MathUtil.isNear(
             velocityAngle.getDegrees(),
             angleToNeutralZoneAssistPoint.getDegrees(),
-            TRENCH_ASSIST_ANGLE_THRESHOLD,
-            -180,
-            180)) {
-      DogLog.log("SwerveAssist/Trench/AngleThreshold", true);
+            TRENCH_ASSIST_ANGLE_TOLERANCE,
+            -180.0,
+            180.0)) {
+      DogLog.log("SwerveAssist/Trench/AngleTolerance", true);
       return true;
     }
+    DogLog.log("SwerveAssist/Trench/AngleTolerance", false);
     return false;
   }
 
+  public static double getBumpSnapAngle(double vxMetersPerSecond) {
+    // Decides which way to snap based on which direction our velocity is going
+    return vxMetersPerSecond > 0.0
+        ? ROBOT_INTAKE_TO_BUMP_ANGLE
+        : ROBOT_INTAKE_TO_BUMP_ANGLE + 180.0;
+  }
+
   public static double getTrenchAssistVelocity(Pose2d robotPose) {
-    return -trenchPidController.calculate(robotPose.getY(), FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation()).getY());
+    return -trenchPidController.calculate(
+        robotPose.getY(),
+        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation()).getY());
   }
 
   public static double getTrenchSnapAngle(Pose2d robotPose) {

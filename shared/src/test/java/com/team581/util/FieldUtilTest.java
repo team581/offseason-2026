@@ -76,7 +76,8 @@ final class FieldUtilTest {
   @Test
   void pathflipTest() {
     var input = new Pose2d(0, 0, Rotation2d.kZero);
-    var expected = new Pose2d(FieldUtil.FIELD_LENGTH, FieldUtil.FIELD_WIDTH, Rotation2d.k180deg);
+    var expected =
+        new Pose2d(FieldUtil.FIELD_LENGTH_X, FieldUtil.FIELD_WIDTH_Y, Rotation2d.k180deg);
 
     var result = FieldUtil.pathflip(input);
 
