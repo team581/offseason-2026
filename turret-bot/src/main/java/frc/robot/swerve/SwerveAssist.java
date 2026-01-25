@@ -10,7 +10,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class SwerveAssist {
-  private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 1.5;
+  private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 0.75;
   private static final double TRENCH_ASSIST_ANGLE_TOLERANCE = 30.0;
   private static final double BUMP_ASSIST_ANGLE_TOLERANCE = 45.0;
   private static final double ROBOT_INTAKE_TO_BUMP_ANGLE = 0.0;
