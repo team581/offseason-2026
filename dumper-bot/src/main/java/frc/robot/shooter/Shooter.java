@@ -80,7 +80,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                 new MotorOutputConfigs()
                     .withNeutralMode(NeutralModeValue.Coast)
                     .withInverted(InvertedValue.CounterClockwise_Positive))
-           .withSlot0(new Slot0Configs().withKP(0.35).withKV(0.128).withKS(0.0).withKA(0.0))
+            .withSlot0(new Slot0Configs().withKP(0.35).withKV(0.128).withKS(0.0).withKA(0.0))
             .withTorqueCurrent(
                 new TorqueCurrentConfigs()
                     .withPeakForwardTorqueCurrent(200)
