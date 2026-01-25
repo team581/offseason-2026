@@ -1,6 +1,7 @@
 package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
+import com.team581.localization.TrustFactor;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.TagResult;
 import dev.doglog.DogLog;
