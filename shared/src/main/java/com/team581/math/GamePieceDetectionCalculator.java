@@ -29,7 +29,7 @@ public final class GamePieceDetectionCalculator {
     double newThetaX = -1 * (hypot * Math.cos(adjustedRelativeToCenter));
     double newThetaY = hypot * Math.sin(adjustedRelativeToCenter);
 
-    double adjustedThetaY = Units.degreesToRadians(cameraConfig.pitch()) - newThetaY;
+    double adjustedThetaY = -Units.degreesToRadians(cameraConfig.pitch()) - newThetaY;
 
     double forwardOffset;
     if (adjustedThetaY == 0) {

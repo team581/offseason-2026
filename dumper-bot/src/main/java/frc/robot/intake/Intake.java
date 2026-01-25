@@ -12,11 +12,12 @@ import dev.doglog.DogLog;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Intake extends StateMachineSubsystem<IntakeState> {
-  private final TalonFX motor;
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
 
-  public Intake(TalonFX motor) {
+  public Intake(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);
-    motor
+    leftMotor
         .getConfigurator()
         .apply(
             new TalonFXConfiguration()
@@ -29,22 +30,45 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
                     new MotorOutputConfigs()
                         .withNeutralMode(NeutralModeValue.Coast)
                         .withInverted(InvertedValue.Clockwise_Positive)));
-    this.motor = motor;
+    rightMotor
+        .getConfigurator()
+        .apply(
+            new TalonFXConfiguration()
+                .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
+                .withCurrentLimits(
+                    new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(100)
+                        .withSupplyCurrentLimit(100))
+                .withMotorOutput(
+                    new MotorOutputConfigs()
+                        .withNeutralMode(NeutralModeValue.Coast)
+                        .withInverted(InvertedValue.Clockwise_Positive)));
+    this.leftMotor = leftMotor;
+    this.rightMotor = rightMotor;
   }
 
   @Override
   protected void afterTransition(IntakeState newState) {
     switch (newState) {
-      case UNTUNED, IDLE -> motor.disable();
-      default -> motor.setVoltage(getState().volts);
+      case UNTUNED, IDLE -> {
+        leftMotor.disable();
+        rightMotor.disable();
+      }
+      default -> {
+        leftMotor.setVoltage(getState().volts);
+        rightMotor.setVoltage(getState().volts);
+      }
     }
   }
 
   @Override
   protected void whileInState(IntakeState state) {
-    DogLog.log("Intake/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Intake/SupplyCurrent", motor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Intake/Velocity", motor.getVelocity().getValueAsDouble());
+    DogLog.log("Intake/LeftMotor/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Intake/RightMotor/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Intake/LeftMotor/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Intake/RightMotor/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Intake/LeftMotor/Velocity", leftMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Intake/RightMotor/Velocity", rightMotor.getVelocity().getValueAsDouble());
   }
 
   public void intakeRequest() {

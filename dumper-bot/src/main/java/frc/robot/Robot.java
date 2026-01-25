@@ -55,16 +55,16 @@ public class Robot extends Base581Robot {
           new CameraConfig(
               LimelightModel.THREE,
               false,
+              Units.inchesToMeters(20.0),
               Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(13.0),
               -20,
               0,
               0));
   private final Vision vision = new Vision(imu, mainLimelight);
   private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
-  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Intake intake = new Intake(hardware.leftIntakeMotor, hardware.rightIntakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
       new Shooter(
@@ -127,6 +127,7 @@ public class Robot extends Base581Robot {
 
     var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
     driverY.rising().ifHigh(robotManager::forceShootRequest);
+    driverY.falling().ifHigh(robotManager::idleRequest);
 
     var driverLeftBumper =
         enabledEvent.and(hardware.driverController.leftBumper(buttonBindingsLoop));
