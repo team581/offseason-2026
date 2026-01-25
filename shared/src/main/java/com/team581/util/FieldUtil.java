@@ -47,10 +47,24 @@ public class FieldUtil {
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2), 3.034663),
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
 
-  // Custom zones to enable trench assist for driver to cleanly drive through with speed
+  // TODO: Validate all points & zones
+  // Custom zones to enable swerve assist to cleanly drive through field obstacles with speed
   private static final double TRENCH_LENGTH_X = Units.inchesToMeters(47.0);
+  private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(48.94);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 3;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
+
+  private static final Pose2d RED_DEPOT_TRENCH_CENTER = new Pose2d(RED_TRENCH_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
+  private static final Pose2d RED_OUTPOST_TRENCH_CENTER = new Pose2d(RED_TRENCH_X, AprilTags.TAG_12.getY(), Rotation2d.kZero);
+  private static final Pose2d BLUE_DEPOT_TRENCH_CENTER = new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_17.getY(), Rotation2d.kZero);
+  private static final Pose2d BLUE_OUTPOST_TRENCH_CENTER = new Pose2d(BLUE_TRENCH_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
+
+  private static final List<Rectangle2d> TRENCH_ZONES =
+    ImmutableList.of(
+          new Rectangle2d(RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
+          new Rectangle2d(RED_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
+          new Rectangle2d(BLUE_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
+          new Rectangle2d(BLUE_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y));
 
   private static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
@@ -75,8 +89,8 @@ public class FieldUtil {
               TRENCH_ASSIST_ZONE_LENGTH_X,
               TRENCH_ASSIST_ZONE_LENGTH_Y));
 
-  // Points on the midpoint of trenches; two for each trench, one on neutral zone side, one on
-  // alliance zone side
+  // Points on the midpoint of trenches; two for each trench, one on alliance zone side, one on
+  // neutral zone side
   private static final List<Translation2d> ALLIANCE_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
           // Red depot side
@@ -121,6 +135,10 @@ public class FieldUtil {
               MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX())
                   + TRENCH_LENGTH_X / 2.0,
               AprilTags.TAG_17.getY()));
+
+  public static boolean robotInTrench(Translation2d robotPose) {
+    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
+  }
 
   public static Translation2d clampPoseToAllianceZone(Translation2d pose) {
     var allianceZone = FmsUtil.isRedAlliance() ? RED_ALLIANCE_ZONE : BLUE_ALLIANCE_ZONE;
