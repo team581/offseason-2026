@@ -1,6 +1,3 @@
-from collections.abc import Sequence
-from typing import Any
-
 import cv2
 import numpy as np
 from numpy.typing import NDArray
@@ -8,7 +5,7 @@ from numpy.typing import NDArray
 
 def runPipeline(
     image: NDArray[np.uint8], llrobot: list[float]
-) -> tuple[Sequence[NDArray[Any]], list[int | float], NDArray[np.uint8]]:
+) -> tuple[np.ndarray, NDArray[np.uint8], list[int | float]]:
     """
     Main pipeline function called by Limelight.
 
@@ -17,10 +14,10 @@ def runPipeline(
         llrobot: Numeric array of values sent from the robot via NetworkTables.
 
     Returns:
-        A tuple of (contours, llpython, image):
-        - contours: Detected contours from OpenCV
-        - llpython: Custom numeric data to send back via NetworkTables
+        A tuple of (largestContour, image, llpython):
+        - largestContour: The contour for Limelight's crosshair to latch onto
         - image: The (possibly modified) image array
+        - llpython: Custom numeric data to send back via NetworkTables
     """
     # 1. Initialize variables
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -33,7 +30,8 @@ def runPipeline(
     # 3. Find all potential targets
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    all_targets = []
+    # Track both contour and its computed properties
+    all_targets: list[tuple[np.ndarray, int, int, float]] = []
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > 50:  # Filter out noise
@@ -41,32 +39,70 @@ def runPipeline(
             if M["m00"] != 0:
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
-                all_targets.append((cx, cy, area))
+                all_targets.append((cnt, cx, cy, area))
 
     # 4. Grouping Logic: Find the "Best" Cluster
     # We want a target that has the most neighbors within a 100-pixel radius
-    best_target = [0, 0, 0, 0, 0]  # tx, ty, ta, count, cluster_score
-    max_score = -1
+    llpython: list[int | float] = [0, 0, 0, 0, 0]  # cx, cy, area, count, cluster_score
+    best_contour: np.ndarray = np.array([[]])
+    best_center: tuple[int, int] | None = None
+    max_score: float = -1
 
     proximity_threshold = 100  # Adjust based on camera height/distance
 
-    for i, t1 in enumerate(all_targets):
+    for cnt, cx1, cy1, area1 in all_targets:
         cluster_count = 0
-        for j, t2 in enumerate(all_targets):
+        for _, cx2, cy2, _ in all_targets:
             # Calculate distance between game pieces
-            dist = np.sqrt((t1[0] - t2[0]) ** 2 + (t1[1] - t2[1]) ** 2)
+            dist = np.sqrt((cx1 - cx2) ** 2 + (cy1 - cy2) ** 2)
             if dist < proximity_threshold:
                 cluster_count += 1
 
         # Score = number of items in cluster * area of the primary item
-        score = cluster_count * t1[2]
+        score = cluster_count * area1
 
         if score > max_score:
             max_score = score
-            # Convert to Limelight crosshair space (-1 to 1 or -30 to 30 deg)
-            # This example returns raw center for simpler visualization
-            best_target = [t1[0], t1[1], t1[2], cluster_count, score]
+            best_contour = cnt
+            best_center = (cx1, cy1)
+            # Store custom data: [cx, cy, area, num_in_cluster, score]
+            llpython = [cx1, cy1, area1, cluster_count, score]
 
-    # 5. Output to NetworkTables (llpython array)
-    # [tx, ty, area, num_in_cluster, score]
-    return contours, best_target, image
+    # 5. Draw visualizations on the image for debugging in Limelight web UI
+    # Draw all detected contours in yellow (thin)
+    if contours:
+        cv2.drawContours(image, contours, -1, (0, 0, 255), 2)
+
+    # Highlight the best contour in green (thick)
+    # Note: Limelight draws its own crosshair on this contour automatically
+    if len(best_contour) > 0 and len(best_contour[0]) > 0:
+        cv2.drawContours(image, [best_contour], -1, (0, 255, 0), 2)
+
+    # Display cluster info near best target (offset to avoid Limelight's crosshair)
+    if best_center is not None:
+        cx, cy = best_center
+        cv2.putText(
+            image,
+            f"N:{int(llpython[3])} S:{int(llpython[4])}",
+            (cx + 25, cy - 25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+        )
+
+    # Display total targets found (bottom-left to avoid Limelight's FPS/pipeline text)
+    img_height = image.shape[0]
+    cv2.putText(
+        image,
+        f"Targets: {len(all_targets)}",
+        (10, img_height - 15),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (255, 255, 255),
+        2,
+    )
+
+    # 6. Return in Limelight's expected order: contour, image, llpython
+    # The contour is used by Limelight's crosshair (tx, ty, ta, etc.)
+    return best_contour, image, llpython
