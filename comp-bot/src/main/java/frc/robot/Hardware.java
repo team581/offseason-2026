@@ -10,7 +10,8 @@ public class Hardware {
   public final XboxController operatorController = new XboxController(1);
 
   public final TalonFX shooterHoodMotor = new TalonFX(0);
-
+  public final TalonFX shooterleftMotor = new TalonFX(0);
+  public final TalonFX shooterrightMotor = new TalonFX(0);
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
           RobotTunerConstants.DrivetrainConstants,
