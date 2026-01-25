@@ -13,8 +13,6 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
 
-  private static final double LATENCY_CONSTANT = 0.0;
-
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Imu imu;
