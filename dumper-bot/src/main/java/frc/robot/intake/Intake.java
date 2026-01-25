@@ -8,14 +8,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Intake extends StateMachineSubsystem<IntakeState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
-
 
   public Intake(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);
@@ -59,7 +57,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
       default -> {
         leftMotor.setVoltage(getState().volts);
         rightMotor.setVoltage(getState().volts);
-    }}
+      }
+    }
   }
 
   @Override
@@ -70,7 +69,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     DogLog.log("Intake/RightMotor/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Intake/LeftMotor/Velocity", leftMotor.getVelocity().getValueAsDouble());
     DogLog.log("Intake/RightMotor/Velocity", rightMotor.getVelocity().getValueAsDouble());
-
   }
 
   public void intakeRequest() {

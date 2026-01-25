@@ -13,14 +13,14 @@ public class TrustFactor {
     return trustFactor;
   }
 
+  public void tagSeen(Pose2d robotPose) {
+    trustFactor = 0.1;
+    lastCheckedPose = robotPose;
+  }
+
   public void update(Pose2d robotPose) {
     metersTravelledSinceLastCheck =
         lastCheckedPose.getTranslation().getDistance(robotPose.getTranslation());
     trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck * 0.001);
-  }
-
-  public void tagSeen(Pose2d robotPose) {
-    trustFactor = 0.1;
-    lastCheckedPose = robotPose;
   }
 }
