@@ -3,7 +3,6 @@ package frc.robot.localization;
 import com.ctre.phoenix6.Utils;
 import com.team581.localization.TrustFactor;
 import com.team581.util.state_machines.StateMachineSubsystem;
-import com.team581.vision.results.TagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -66,18 +65,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   public void zeroGyro() {
     drivetrain.seedFieldCentric();
-  }
-
-  private void ingestTagResult(TagResult result) {
-    var visionPose = result.pose();
-    trustFactor.tagSeen();
-    // if (!vision.seenTagRecentlyForReset()) {
-    //   resetPose(visionPose);
-    // }
-    swerve.drivetrain.addVisionMeasurement(
-        visionPose,
-        Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT / 1000)),
-        result.standardDevs());
   }
 
   @Override
