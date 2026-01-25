@@ -8,6 +8,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
@@ -17,15 +18,17 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
+  private final Imu imu;
   private final TrustFactor trustFactor = new TrustFactor();
 
   private Pose2d robotPose = Pose2d.kZero;
 
-  public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision) {
+  public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision, Imu imu) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
     this.swerve = swerve;
     this.vision = vision;
     this.drivetrain = drivetrain;
+    this.imu = imu;
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -70,7 +73,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   private void ingestTagResult(TagResult result) {
     DogLog.timestamp("Localization/IngestTagResult");
-    trustFactor.tagSeen(robotPose);
+    trustFactor.tagSeen();
     var visionPose = result.pose();
 
     if (!vision.seenTagRecentlyForReset()) {
@@ -89,6 +92,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     vision.getFrontLimelightTagResult().ifPresent(this::ingestTagResult);
     robotPose = drivetrain.getState().Pose;
 
-    trustFactor.update(robotPose);
+    trustFactor.update(robotPose, imu.collisionDetected());
   }
 }
