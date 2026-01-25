@@ -8,10 +8,11 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Imu extends BaseImuSubsystem {
+  private static final DoubleSubscriber COLLISION_G_FORCE_THRESHOLD =
+      DogLog.tunable("Imu/CollisionGForceThreshold", 2.0);
   private final LinearFilter pigeonXAccelFilter = LinearFilter.movingAverage(10);
-  private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
-  private static final DoubleSubscriber COLLISION_G_FORCE_THRESHOLD = DogLog.tunable("Imu/CollisionGForceThreshold", 2.0);
+  private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
   private double pigeonXPrevAccel = 0.0;
   private double pigeonYPrevAccel = 0.0;
@@ -34,7 +35,6 @@ public class Imu extends BaseImuSubsystem {
     double pigeonXJerk = (pigeonFilteredXAccel - pigeonXPrevAccel) / 0.02;
     double pigeonYJerk = (pigeonFilteredYAccel - pigeonYPrevAccel) / 0.02;
 
-
     pigeonXPrevAccel = pigeonFilteredXAccel;
     pigeonYPrevAccel = pigeonFilteredYAccel;
 
@@ -42,7 +42,6 @@ public class Imu extends BaseImuSubsystem {
 
     pigeonGForce = pigeonJerk / 9.81;
     maxGForceDetected = Math.max(maxGForceDetected, pigeonGForce);
-
 
     DogLog.log("Imu/Pigeon/XJerk", pigeonXJerk);
     DogLog.log("Imu/Pigeon/YJerk", pigeonYJerk);
