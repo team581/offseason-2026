@@ -12,18 +12,13 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
-  private static final double MIN_TRUST_FACTOR = 0.01;
   private static final double LATENCY_CONSTANT = 0.0;
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
-
-  private double trustFactor = 0.1;
-  private double metersTravelledSinceLastCheck = 0.0;
+  private final TrustFactor trustFactor = new TrustFactor();
 
   private Pose2d robotPose = Pose2d.kZero;
-
-  private Pose2d lastCheckedPose = Pose2d.kZero;
 
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
@@ -55,7 +50,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   }
 
   public double getTrustFactor() {
-    return trustFactor;
+    return trustFactor.get();
   }
 
   public void resetPose(Pose2d estimatedPose) {
@@ -65,7 +60,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   @Override
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
-    DogLog.log("Localization/TrustFactor", trustFactor);
+    DogLog.log("Localization/TrustFactor", getTrustFactor());
   }
 
   public void zeroGyro() {
@@ -74,8 +69,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   private void ingestTagResult(TagResult result) {
     DogLog.timestamp("Localization/IngestTagResult");
-    trustFactor = 0.1;
-    lastCheckedPose = robotPose;
+    trustFactor.tagSeen(robotPose);
     var visionPose = result.pose();
 
     if (!vision.seenTagRecentlyForReset()) {
@@ -94,8 +88,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     vision.getFrontLimelightTagResult().ifPresent(this::ingestTagResult);
     robotPose = drivetrain.getState().Pose;
 
-    metersTravelledSinceLastCheck =
-        lastCheckedPose.getTranslation().getDistance(robotPose.getTranslation());
-    trustFactor += Math.max(MIN_TRUST_FACTOR, trustFactor * metersTravelledSinceLastCheck * 0.001);
+    trustFactor.update(robotPose);
   }
 }
