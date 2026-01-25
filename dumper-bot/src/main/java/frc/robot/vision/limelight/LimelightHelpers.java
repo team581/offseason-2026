@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,8 +20,6 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.TimestampedDoubleArray;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +31,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * Networks, and standard color/retroreflective tracking.
  */
 public class LimelightHelpers {
+
+  /** Represents hardware statistics from the Limelight. */
+  public static class HardwareReport {
+    @JsonProperty("cid")
+    public String cameraId;
+
+    @JsonProperty("cpu")
+    public double cpuUsage;
+
+    @JsonProperty("dfree")
+    public double diskFree;
+
+    @JsonProperty("dtot")
+    public double diskTotal;
+
+    @JsonProperty("ram")
+    public double ramUsage;
+
+    @JsonProperty("temp")
+    public double temperature;
+
+    public HardwareReport() {}
+  }
 
   /** Encapsulates the state of an internal Limelight IMU. */
   public static class IMUData {
@@ -64,6 +86,50 @@ public class LimelightHelpers {
     }
   }
 
+  /** Represents IMU data from the JSON results. */
+  public static class IMUResults {
+    @JsonProperty("data")
+    public double[] data;
+
+    @JsonProperty("quat")
+    public double[] quaternion;
+
+    @JsonProperty("yaw")
+    public double yaw;
+
+    // Parsed from data array
+    public double robotYaw;
+    public double roll;
+    public double pitch;
+    public double rawYaw;
+    public double gyroZ;
+    public double gyroX;
+    public double gyroY;
+    public double accelZ;
+    public double accelX;
+    public double accelY;
+
+    public IMUResults() {
+      data = new double[0];
+      quaternion = new double[4];
+    }
+
+    public void parseDataArray() {
+      if (data != null && data.length >= 10) {
+        robotYaw = data[0];
+        roll = data[1];
+        pitch = data[2];
+        rawYaw = data[3];
+        gyroZ = data[4];
+        gyroX = data[5];
+        gyroY = data[6];
+        accelZ = data[7];
+        accelX = data[8];
+        accelY = data[9];
+      }
+    }
+  }
+
   /** Limelight Results object, parsed from a Limelight's JSON results output. */
   public static class LimelightResults {
 
@@ -86,9 +152,36 @@ public class LimelightHelpers {
     @JsonProperty("ts_rio")
     public double timestamp_RIOFPGA_capture;
 
+    @JsonProperty("ts_nt")
+    public long timestamp_nt;
+
+    @JsonProperty("ts_sys")
+    public long timestamp_sys;
+
+    @JsonProperty("ts_us")
+    public long timestamp_us;
+
     @JsonFormat(shape = NUMBER)
     @JsonProperty("v")
     public boolean valid;
+
+    @JsonProperty("pTYPE")
+    public String pipelineType;
+
+    @JsonProperty("tx")
+    public double tx;
+
+    @JsonProperty("ty")
+    public double ty;
+
+    @JsonProperty("txnc")
+    public double tx_nocrosshair;
+
+    @JsonProperty("tync")
+    public double ty_nocrosshair;
+
+    @JsonProperty("ta")
+    public double ta;
 
     @JsonProperty("botpose")
     public double[] botpose;
@@ -111,8 +204,29 @@ public class LimelightHelpers {
     @JsonProperty("botpose_avgarea")
     public double botpose_avgarea;
 
+    @JsonProperty("botpose_orb")
+    public double[] botpose_orb;
+
+    @JsonProperty("botpose_orb_wpiblue")
+    public double[] botpose_orb_wpiblue;
+
+    @JsonProperty("botpose_orb_wpired")
+    public double[] botpose_orb_wpired;
+
     @JsonProperty("t6c_rs")
     public double[] camerapose_robotspace;
+
+    @JsonProperty("hw")
+    public HardwareReport hardware;
+
+    @JsonProperty("imu")
+    public IMUResults imuResults;
+
+    @JsonProperty("rewind")
+    public RewindStats rewindStats;
+
+    @JsonProperty("PythonOut")
+    public double[] pythonOutput;
 
     @JsonProperty("Retro")
     public LimelightTarget_Retro[] targets_Retro;
@@ -133,12 +247,17 @@ public class LimelightHelpers {
       botpose = new double[6];
       botpose_wpired = new double[6];
       botpose_wpiblue = new double[6];
+      botpose_orb = new double[6];
+      botpose_orb_wpiblue = new double[6];
+      botpose_orb_wpired = new double[6];
       camerapose_robotspace = new double[6];
       targets_Retro = new LimelightTarget_Retro[0];
       targets_Fiducials = new LimelightTarget_Fiducial[0];
       targets_Classifier = new LimelightTarget_Classifier[0];
       targets_Detector = new LimelightTarget_Detector[0];
       targets_Barcode = new LimelightTarget_Barcode[0];
+      pythonOutput = new double[0];
+      pipelineType = "";
     }
 
     public Pose2d getBotPose2d() {
@@ -651,6 +770,29 @@ public class LimelightHelpers {
     }
   }
 
+  /** Represents capture rewind buffer statistics. */
+  public static class RewindStats {
+    @JsonProperty("bufferUsage")
+    public double bufferUsage;
+
+    @JsonProperty("enabled")
+    public int enabled;
+
+    @JsonProperty("flushing")
+    public int flushing;
+
+    @JsonProperty("frameCount")
+    public int frameCount;
+
+    @JsonProperty("latpen")
+    public int latencyPenalty;
+
+    @JsonProperty("storedSeconds")
+    public double storedSeconds;
+
+    public RewindStats() {}
+  }
+
   private static final Map<String, DoubleArrayEntry> DOUBLE_ARRAY_ENTRIES =
       new ConcurrentHashMap<>();
 
@@ -884,14 +1026,13 @@ public class LimelightHelpers {
     return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
   }
 
+  /////
+
   /** Switch to getBotPose */
   @Deprecated
   public static double[] getBotpose(String limelightName) {
     return getLimelightNTDoubleArray(limelightName, "botpose");
   }
-
-  /////
-  /////
 
   /** Switch to getBotPose_wpiBlue */
   @Deprecated
@@ -1088,7 +1229,15 @@ public class LimelightHelpers {
     }
 
     try {
-      results = mapper.readValue(getJSONDump(limelightName), LimelightResults.class);
+      String jsonString = getJSONDump(limelightName);
+      if (Strings.isNullOrEmpty(jsonString) || jsonString.isBlank()) {
+        results.error = "lljson error: empty json";
+      } else {
+        results = mapper.readValue(jsonString, LimelightResults.class);
+        if (results.imuResults != null) {
+          results.imuResults.parseDataArray();
+        }
+      }
     } catch (JsonProcessingException e) {
       results.error = "lljson error: " + e.getMessage();
     }
@@ -1135,18 +1284,6 @@ public class LimelightHelpers {
 
   public static NetworkTableEntry getLimelightNTTableEntry(String tableName, String entryName) {
     return getLimelightNTTable(tableName).getEntry(entryName);
-  }
-
-  public static URL getLimelightURLString(String tableName, String request) {
-    String urlString = "http://" + sanitizeName(tableName) + ".local:5807/" + request;
-
-    try {
-      return new URL(urlString);
-
-    } catch (MalformedURLException e) {
-      System.err.println("bad LL URL");
-    }
-    return null;
   }
 
   public static String getNeuralClassID(String limelightName) {
@@ -1767,7 +1904,7 @@ public class LimelightHelpers {
 
     if (poseArray.length == 0) {
       // Handle the case where no data is available
-      return null; // or some default PoseEstimate
+      return new PoseEstimate();
     }
 
     var pose = toPose2D(poseArray);
