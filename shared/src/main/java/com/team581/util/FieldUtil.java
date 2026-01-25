@@ -88,23 +88,23 @@ public class FieldUtil {
   // neutral zone side
   private static final List<Translation2d> ALLIANCE_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
-          // Red depot side
-          new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY()),
-          // Red outpost side
-          new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY()),
           // Blue depot side
-          new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY()),
+          new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY()),
           // Blue outpost side
+          new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY()),
+          // Red depot side
+          new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY()),
+          // Red outpost side
           new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY()));
   private static final List<Translation2d> NEUTRAL_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
-          // Red depot side
-          new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY()),
-          // Red outpost side
-          new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY()),
           // Blue depot side
-          new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY()),
+          new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY()),
           // Blue outpost side
+          new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY()),
+          // Red depot side
+          new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY()),
+          // Red outpost side
           new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY()));
 
   private static final double BUMP_LENGTH_X = Units.inchesToMeters(44.4);
