@@ -62,7 +62,8 @@ public class Robot extends Base581Robot {
               0,
               0));
   private final Vision vision = new Vision(imu, mainLimelight);
-  private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
+  private final Localization localization =
+      new Localization(swerve, hardware.drivetrain, vision, imu);
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final Intake intake = new Intake(hardware.leftIntakeMotor, hardware.rightIntakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
