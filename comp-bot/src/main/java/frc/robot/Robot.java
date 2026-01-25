@@ -10,6 +10,7 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.autos.Autos;
 import frc.robot.generated.BuildConstants;
+import frc.robot.imu.Imu;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
@@ -25,8 +26,9 @@ public class Robot extends Base581Robot {
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
   private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
+  private final Imu imu = new Imu(swerve.drivetrain);
 
-  private final Localization localization = new Localization(swerve, hardware.drivetrain);
+  private final Localization localization = new Localization(swerve, hardware.drivetrain, imu);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
 
