@@ -67,11 +67,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
+    var robotTranslation = robotPose.getTranslation();
     return switch (currentState) {
       case PREPARE_SCORE -> {
         if (shooter.atGoal()
             && vision.seeingTagDebounced()
-            && FieldUtil.isRobotInAllianceZone(robotPose)) {
+            && FieldUtil.isRobotInAllianceZone(robotTranslation)) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -95,7 +96,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FEED_2
               : currentState;
       case SCORE -> {
-        if (!FieldUtil.isRobotInAllianceZone(robotPose) && vision.isAnyCameraOnlineForTags()) {
+        if (!FieldUtil.isRobotInAllianceZone(robotTranslation) && vision.isAnyCameraOnlineForTags()) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {
