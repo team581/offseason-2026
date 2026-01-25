@@ -15,7 +15,7 @@ public class SwerveAssist {
   private static final double BUMP_ASSIST_ANGLE_TOLERANCE = 45.0;
   private static final double ROBOT_INTAKE_TO_BUMP_ANGLE = 0.0;
 
-  private static final PIDController trenchPidController = new PIDController(10, 0, 0);
+  private static final PIDController TRENCH_PID_CONTROLLER = new PIDController(10, 0, 0);
 
   public static boolean ableToBumpAssist(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     // Check if in bump assist zone
@@ -94,7 +94,7 @@ public class SwerveAssist {
   }
 
   public static double getTrenchAssistVelocity(Pose2d robotPose) {
-    return -trenchPidController.calculate(
+    return -TRENCH_PID_CONTROLLER.calculate(
         robotPose.getY(),
         FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation()).getY());
   }

@@ -13,6 +13,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -22,27 +23,30 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Map;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
-  private static final int RPM_TOLERANCE_KICKER = 100;
 
   private static final int RPM_TOLERANCE_SHOOTER = 50;
 
   private static final double MAX_SAFE_RPM = 4000;
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
-      InterpolatingDoubleTreeMap.ofEntries(
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreRPM",
           Map.entry(Units.inchesToMeters(57.0), 2250.0),
           Map.entry(3.376, 3300.0),
           Map.entry(3.8, 3000.0),
           Map.entry(3.97, 2700.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
-      InterpolatingDoubleTreeMap.ofEntries(
-          Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToFeedingRPM",
+          Map.entry(1.0, 2000.0),
+          Map.entry(2.0, 3500.0),
+          Map.entry(5.0, 5000.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(Units.inchesToMeters(57.0), 0.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
-  private final TalonFX kickerMotor;
 
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
 
@@ -53,9 +57,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
-  private double kickerMotorRpm = 0;
 
-  public Shooter(TalonFX leftMotor, TalonFX rightMotor, TalonFX kickerMotor) {
+  public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
 
     var leftConfigs =
@@ -103,37 +106,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
                     .withPeakForwardTorqueCurrent(200)
                     .withPeakReverseTorqueCurrent(0));
 
-    var kickerConfigs =
-        new TalonFXConfiguration()
-            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-            .withMotionMagic(
-                new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(100.0)
-                    .withMotionMagicAcceleration(20.0))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withSupplyCurrentLimitEnable(true)
-                    .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(100)
-                    .withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(3.0).withKV(0.01).withKS(5.0))
-            .withTorqueCurrent(
-                new TorqueCurrentConfigs()
-                    .withPeakForwardTorqueCurrent(200)
-                    .withPeakReverseTorqueCurrent(0));
-
     leftMotor.getConfigurator().apply(leftConfigs);
     rightMotor.getConfigurator().apply(rightConfigs);
-    kickerMotor.getConfigurator().apply(kickerConfigs);
 
     TunablePid.register("Shooter/LeftShooter", leftMotor, leftConfigs);
     TunablePid.register("Shooter/RightShooter", rightMotor, rightConfigs);
-    TunablePid.register("Shooter/RightKicker", kickerMotor, kickerConfigs);
 
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
-    this.kickerMotor = kickerMotor;
   }
 
   public void scoreRequest(double distance) {
@@ -154,38 +134,34 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   protected void whileInState(ShooterState state) {
     DogLog.log("Shooter/Left/RPM", leftMotorRpm);
     DogLog.log("Shooter/Right/RPM", rightMotorRpm);
-    DogLog.log("Shooter/Kicker/RPM", kickerMotorRpm);
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
     //   DogLog.log("Shooter/Right/StatorCurrent",
     // rightMotor.getStatorCurrent().getValueAsDouble());
     //   DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
-    //   DogLog.log("Shooter/Kicker/StatorCurrent",
-    // kickerMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Shooter/Kicker/Voltage", kickerMotor.getMotorVoltage().getValueAsDouble());
 
     switch (state) {
       case SCORE -> {
         var setpoint = shootingRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
         rightMotor.setControl(voltageRequest.withVelocity(setpoint));
-        kickerMotor.setControl(voltageRequest.withVelocity(setpoint));
+
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
         var setpoint = feedingRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
         rightMotor.setControl(voltageRequest.withVelocity(setpoint));
-        kickerMotor.setControl(voltageRequest.withVelocity(setpoint));
+
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
       case IDLE -> {
         leftMotor.disable();
         rightMotor.disable();
-        kickerMotor.disable();
+
         DogLog.log("Shooter/RpmSetpoint", -1);
       }
     }
@@ -198,7 +174,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
-    kickerMotorRpm = kickerMotor.getVelocity().getValueAsDouble() * 60.0;
+  }
+
+  public void scoreRequest() {
+    setStateFromRequest(ShooterState.SCORE);
   }
 
   public boolean atGoal() {
@@ -206,12 +185,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       case IDLE -> true;
       case SCORE ->
           MathUtil.isNear(leftMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER)
-              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER)
-              && MathUtil.isNear(kickerMotorRpm, shootingRpm, RPM_TOLERANCE_KICKER);
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, RPM_TOLERANCE_SHOOTER);
+
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
-              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER)
-              && MathUtil.isNear(kickerMotorRpm, feedingRpm, RPM_TOLERANCE_KICKER);
+              && MathUtil.isNear(rightMotorRpm, feedingRpm, RPM_TOLERANCE_SHOOTER);
     };
   }
 
@@ -221,11 +199,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         SimKit.velocityMechanism(
             "shooter",
             (mechanism) ->
-                mechanism
-                    .addMotor(leftMotor)
-                    .addMotor(rightMotor)
-                    .addMotor(kickerMotor)
-                    .withMinVelocity(0));
+                mechanism.addMotor(leftMotor).addMotor(rightMotor).withMinVelocity(1000));
 
     shooterSimulation.update();
   }

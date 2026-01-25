@@ -1,0 +1,52 @@
+package frc.robot.lights;
+
+import com.ctre.phoenix6.controls.SolidColor;
+import com.ctre.phoenix6.controls.StrobeAnimation;
+import com.ctre.phoenix6.signals.RGBWColor;
+import edu.wpi.first.wpilibj.util.Color;
+import java.util.Optional;
+
+public enum LightsState {
+  ERROR(Color.kRed, 0.08),
+  UNHOMED(Color.kOrangeRed, 0.25),
+  HOMED_NO_TAGS(Color.kYellow),
+  HOMED_SEES_TAGS(Color.kGreen),
+
+  BLINK(Color.kWhite, 0.08),
+  OTHER(Color.kPurple, 0.25),
+
+  IDLE_EMPTY(Color.kBlack),
+  IDLE_FULL(Color.kWhite, 0.08),
+
+  PLACEHOLDER(Color.kBlack, 0.0);
+
+  public final Optional<StrobeAnimation> stateBlinkRequest;
+  public final Optional<SolidColor> stateColorRequest;
+
+  public final Color color;
+  public final double duration;
+
+  LightsState(Color color) {
+    this.color = color;
+    this.duration = Double.POSITIVE_INFINITY;
+    this.stateBlinkRequest = Optional.empty();
+    this.stateColorRequest =
+        Optional.of(new SolidColor(0, 399).withColor(new RGBWColor(color)).withUpdateFreqHz(50.0));
+  }
+
+  LightsState(Color color, double duration) {
+    this.color = color;
+    this.duration = duration;
+    this.stateBlinkRequest =
+        Optional.of(
+            new StrobeAnimation(0, 399)
+                .withColor(new RGBWColor(color))
+                .withFrameRate(1 / duration)
+                .withUpdateFreqHz(50.0));
+    this.stateColorRequest = Optional.empty();
+  }
+
+  public boolean blinks() {
+    return stateBlinkRequest.isPresent();
+  }
+}

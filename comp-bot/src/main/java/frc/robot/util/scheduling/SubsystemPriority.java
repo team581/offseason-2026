@@ -15,11 +15,13 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
 
   // 0-9 is for actuator subsystems
   DEPLOY(0),
+  LIGHTS(0),
   DYE_ROTOR(0),
   SWERVE(0),
   SHOOTER_HOOD(0),
   INTAKE(0),
   SHOOTER(0),
+  TURRET(0),
   RUMBLE_CONTROLLER(0);
 
   public final int value;

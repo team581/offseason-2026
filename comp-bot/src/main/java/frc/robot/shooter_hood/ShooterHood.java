@@ -10,6 +10,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -24,9 +25,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       new PositionVoltage(0).withEnableFOC(false);
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(0.0, 0.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "ShooterHood/DistanceToScore", Map.entry(0.0, 0.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(0.0, 0.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0));
   private static final double MAX_ANGLE = 100;
   private static final double MIN_ANGLE = 0;
   private double hubDistance = 0;

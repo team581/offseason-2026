@@ -48,9 +48,14 @@ def main():
 
     print(f"Successfully loaded image: {sample_image_path} with shape {image.shape}")
 
+    # Keep a copy of the original for side-by-side comparison
+    # (the pipeline draws on the image in place, same as on Limelight)
+    original_image = image.copy()
+
     # --- Run the Pipeline ---
     print("Running ClusterDetection pipeline...")
-    contours, llpython_output, processed_image = ClusterDetection.runPipeline(
+    # Return order per Limelight API: (contour, image, llpython)
+    best_contour, processed_image, llpython_output = ClusterDetection.runPipeline(
         image, llrobot_data
     )
     print("Pipeline finished.")
@@ -58,58 +63,17 @@ def main():
     # --- Display Results ---
     print("\n--- Pipeline Output ---")
     print(f"llpython data: {llpython_output}")
-    print(f"Number of contours found: {len(contours)}")
+    print(f"  [0] cx: {llpython_output[0]}")
+    print(f"  [1] cy: {llpython_output[1]}")
+    print(f"  [2] area: {llpython_output[2]}")
+    print(f"  [3] cluster_count: {llpython_output[3]}")
+    print(f"  [4] score: {llpython_output[4]}")
+    print(f"Best contour size: {len(best_contour)} points")
 
-    # Make a copy of the original image to draw on for visualization.
-    # The 'processed_image' returned by runPipeline is currently the input image itself,
-    # as the pipeline doesn't modify it directly.
-    display_image = image.copy()
-
-    # Draw all found contours in green
-    if contours:
-        cv2.drawContours(
-            display_image, contours, -1, (0, 255, 0), 2
-        )  # Green contours, thickness 2
-
-    # Draw the "best target" if one was identified (llpython_output will not be all zeros)
-    # llpython_output is [tx, ty, area, num_in_cluster, score]
-    # Check if tx and ty are non-zero, indicating a target was found
-    if len(llpython_output) >= 2 and (
-        llpython_output[0] != 0 or llpython_output[1] != 0
-    ):
-        center_x = int(llpython_output[0])
-        center_y = int(llpython_output[1])
-        # Draw a red circle at the center of the best target
-        cv2.circle(
-            display_image, (center_x, center_y), 10, (0, 0, 255), -1
-        )  # Red circle, filled
-        # Draw a crosshair for more precision
-        cv2.line(
-            display_image,
-            (center_x - 20, center_y),
-            (center_x + 20, center_y),
-            (0, 0, 255),
-            2,
-        )
-        cv2.line(
-            display_image,
-            (center_x, center_y - 20),
-            (center_x, center_y + 20),
-            (0, 0, 255),
-            2,
-        )
-        cv2.putText(
-            display_image,
-            f"Score: {llpython_output[4]:.0f}",
-            (center_x + 15, center_y - 15),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 255),
-            1,
-        )
-
-    cv2.imshow("Original Image", image)
-    cv2.imshow("Processed Image with Detections", display_image)
+    # The processed_image now includes all visualizations from ClusterDetection.py
+    # (contours, crosshair, text overlays) so we can display it directly
+    cv2.imshow("Original Image", original_image)
+    cv2.imshow("Processed Image (Limelight View)", processed_image)
     cv2.waitKey(0)  # Wait indefinitely until a key is pressed
     cv2.destroyAllWindows()
 

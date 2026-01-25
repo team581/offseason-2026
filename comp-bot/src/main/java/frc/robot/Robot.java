@@ -12,6 +12,7 @@ import frc.robot.autos.Autos;
 import frc.robot.generated.BuildConstants;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
+import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 
@@ -28,6 +29,9 @@ public class Robot extends Base581Robot {
   private final Localization localization = new Localization(swerve, hardware.drivetrain);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
+
+  private final Shooter shooter =
+      new Shooter(hardware.shooterrightMotor, hardware.shooterleftMotor);
 
   private final RobotManager robotManager = new RobotManager(shooterHood, localization, swerve);
 
@@ -64,5 +68,8 @@ public class Robot extends Base581Robot {
   protected void configureBindings() {
     var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
+
+    var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
+    driverY.rising().ifHigh(shooter::scoreRequest);
   }
 }
