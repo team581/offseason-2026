@@ -112,13 +112,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Rotation2d snapAngle = Rotation2d.kZero;
 
-  // Trench Assist variables
-  private final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 2.0;
-  private final double TRENCH_ASSIST_ANGLE_THRESHOLD = 30.0;
-  private final PIDController trenchPidController = new PIDController(10, 0, 0);
-  private double trenchAssistVelocity = 0.0;
-  private double trenchSnapAngle = 0.0;
-  private double trenchAssistY = 0.0;
+  private boolean ableToTrenchAssist = false;
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
   private Translation2d lastWallIntakePoint = Translation2d.kZero;
@@ -207,6 +201,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
 
+    ableToTrenchAssist = SwerveAssist.ableToTrenchAssist(robotPose, fieldRelativeSpeeds);
+
     if (getState() == SwerveState.INTAKING) {
       lastWallIntakePoint =
           MathHelpers.getIntersectionOnRectanglePerimeter(
@@ -221,23 +217,23 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private void sendSwerveRequest() {
     switch (getState()) {
       case TELEOP -> {
-        if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist()) {
+        if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           drivetrain.setControl(
               trenchAssistSnapsRequest
-                  .withVelocityY(trenchAssistVelocity)
+                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(trenchSnapAngle).rotateBy(Rotation2d.k180deg)));
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose)).rotateBy(Rotation2d.k180deg)));
         } else {
           drivetrain.setControl(teleopRequest);
         }
       }
       case HUB_AIM_TELEOP -> {
-        if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist()) {
+        if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           drivetrain.setControl(
               trenchAssistSnapsRequest
-                  .withVelocityY(trenchAssistVelocity)
+                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(trenchSnapAngle).rotateBy(Rotation2d.k180deg)));
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose)).rotateBy(Rotation2d.k180deg)));
         } else {
           if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
             drivetrain.setControl(teleopSnapsRequest);
@@ -253,12 +249,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       }
 
       case INTAKING -> {
-        if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist()) {
+        if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           drivetrain.setControl(
               trenchAssistSnapsRequest
-                  .withVelocityY(trenchAssistVelocity)
+                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(trenchSnapAngle).rotateBy(Rotation2d.k180deg)));
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose)).rotateBy(Rotation2d.k180deg)));
         } else {
           if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
             if (ableToWallSnap()) {
@@ -344,10 +340,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     return MathUtil.isNear(snapsDirection, currentRotation, 5.0, -180.0, 180.0);
   }
 
-  private double getTrenchAssistVelocity() {
-    return -trenchPidController.calculate(robotPose.getY(), trenchAssistY);
-  }
-
   public void setVisionOnline(boolean online) {
     visionOnline = online;
   }
@@ -424,60 +416,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     return distanceToWallThreshold && velocityAngleTowardWall && rotationAngleTowardWall;
   }
 
-  private boolean ableToTrenchAssist() {
-    // Check if in trench assist zone
-    if (FieldUtil.getCurrentTrenchAssistZone(robotPose.getTranslation()).isEmpty()) {
-      return false;
-    }
-
-    // Check if velocity meets threshold
-    if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds) <= TRENCH_ASSIST_VELOCITY_THRESHOLD) {
-      DogLog.log("Swerve/TrenchAssist/VelocityThreshold", false);
-      return false;
-    }
-    DogLog.log("Swerve/TrenchAssist/VelocityThreshold", true);
-
-    var allianceZoneAssistPoint =
-        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation());
-    var neutralZoneAssistPoint =
-        FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotPose.getTranslation());
-    trenchAssistY = allianceZoneAssistPoint.getY();
-
-    DogLog.log(
-        "Swerve/TrenchAssist/ClosestAllianceZoneTrenchMidpoint",
-        new Pose2d(allianceZoneAssistPoint, Rotation2d.kCCW_90deg));
-    DogLog.log(
-        "Swerve/TrenchAssist/ClosestNeutralZoneTrenchMidpoint",
-        new Pose2d(neutralZoneAssistPoint, Rotation2d.kCCW_90deg));
-
-    // Check if angle is toward trench
-    var velocityAngle = MathHelpers.getDriveDirection(fieldRelativeSpeeds);
-    var angleToAllianceZoneAssistPoint =
-        MathHelpers.getDriveDirection(robotPose, allianceZoneAssistPoint);
-    var angleToNeutralZoneAssistPoint =
-        MathHelpers.getDriveDirection(robotPose, neutralZoneAssistPoint);
-
-    if (MathUtil.isNear(
-            velocityAngle.getDegrees(),
-            angleToAllianceZoneAssistPoint.getDegrees(),
-            TRENCH_ASSIST_ANGLE_THRESHOLD,
-            -180,
-            180)
-        || MathUtil.isNear(
-            velocityAngle.getDegrees(),
-            angleToNeutralZoneAssistPoint.getDegrees(),
-            TRENCH_ASSIST_ANGLE_THRESHOLD,
-            -180,
-            180)) {
-      DogLog.log("Swerve/TrenchAssist/AngleThreshold", true);
-
-      trenchAssistVelocity = getTrenchAssistVelocity();
-      trenchSnapAngle = Math.round(robotPose.getRotation().getDegrees() / 90.0) * 90.0;
-      return true;
-    }
-    return false;
-  }
-
   @Override
   public void whileInState(SwerveState currentState) {
     DogLog.log("Swerve/SnapsNearGoal", snapsNearGoal());
@@ -485,10 +423,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
-    DogLog.log("Swerve/TrenchAssist/AbleToTrenchAssist", ableToTrenchAssist());
-    DogLog.log("Swerve/TrenchAssist/assistVelocity", trenchAssistVelocity);
-    DogLog.log("Swerve/TrenchAssist/SnapAngle", trenchSnapAngle);
-    DogLog.log("Swerve/TrenchAssist/TrenchAssistY", trenchAssistY);
+    DogLog.log("SwerveAssist/Trench/AbleToTrenchAssist", ableToTrenchAssist);
   }
 
   private void startSimThread() {
