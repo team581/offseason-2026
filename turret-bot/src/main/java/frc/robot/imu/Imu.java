@@ -15,6 +15,8 @@ public class Imu extends BaseImuSubsystem {
 
   private double pigeonXPrevAccel = 0.0;
   private double pigeonYPrevAccel = 0.0;
+  private double pigeonGForce = 0.0;
+  private double maxGForceDetected = Double.NEGATIVE_INFINITY;
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
@@ -44,6 +46,12 @@ public class Imu extends BaseImuSubsystem {
 
     DogLog.log("Imu/Pigeon/XJerk", pigeonXJerk);
     DogLog.log("Imu/Pigeon/YJerk", pigeonYJerk);
-    DogLog.log("Imu/Pigeon/HypotAccel", Math.hypot(pigeonXJerk, pigeonYJerk));
+    DogLog.log("Imu/Pigeon/HypotAccel", pigeonJerk);
+    DogLog.log("Imu/Pigeon/GForce", pigeonGForce);
+    DogLog.log("Imu/Pigeon/MaxGForce", maxGForceDetected);
+  }
+
+  public boolean collisionDetected() {
+    return pigeonGForce > COLLISION_G_FORCE_THRESHOLD.get();
   }
 }
