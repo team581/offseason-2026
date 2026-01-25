@@ -13,6 +13,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -29,16 +30,21 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private static final double MAX_SAFE_RPM = 4000;
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
-      InterpolatingDoubleTreeMap.ofEntries(
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreRPM",
           Map.entry(Units.inchesToMeters(57.0), 2250.0),
           Map.entry(3.376, 3300.0),
           Map.entry(3.8, 3000.0),
           Map.entry(3.97, 2700.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
-      InterpolatingDoubleTreeMap.ofEntries(
-          Map.entry(1.0, 2000.0), Map.entry(2.0, 3500.0), Map.entry(5.0, 5000.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToFeedingRPM",
+          Map.entry(1.0, 2000.0),
+          Map.entry(2.0, 3500.0),
+          Map.entry(5.0, 5000.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(Units.inchesToMeters(57.0), 0.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
