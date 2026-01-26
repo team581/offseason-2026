@@ -96,7 +96,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FEED_2
               : currentState;
       case SCORE -> {
-        if (!FieldUtil.isRobotInAllianceZone(robotTranslation) && vision.isAnyCameraOnlineForTags()) {
+        if (!FieldUtil.isRobotInAllianceZone(robotTranslation)
+            && vision.isAnyCameraOnlineForTags()) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {

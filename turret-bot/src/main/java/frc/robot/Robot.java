@@ -126,5 +126,8 @@ public class Robot extends Base581Robot {
 
     var driverB = enabledEvent.and(hardware.driverController.b(buttonBindingsLoop));
     driverB.rising().ifHigh(robotManager::tagAimRequest);
+
+    var driverPOVLeft = enabledEvent.and(hardware.driverController.povLeft(buttonBindingsLoop));
+    driverPOVLeft.rising().ifHigh(robotManager::toggleAutoscoreRequest);
   }
 }

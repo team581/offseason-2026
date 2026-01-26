@@ -1,8 +1,11 @@
 package frc.robot.robot_manager;
 
+import java.util.Optional;
+
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
+import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -10,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.localization.Localization;
 import frc.robot.swerve.Swerve;
@@ -33,6 +37,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   /** The robot translation clamped to be within the alliance zone. */
   private Translation2d robotTranslationInAllianceZone = Translation2d.kZero;
 
+  private double startOfMatchPeriod = 0;
+  private double timeSinceMatchStart = 0;
+
+  private boolean autoscore = false;
+  private boolean inAllianceZone = true;
+  private boolean readyToShootAtHub = true;
   private double swerveTurretCompensationAngle = 0.0;
   private double turretHubGoalAngle = 0.0;
 
@@ -46,16 +56,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
-    // TODO: this needs to check if we have balls, if we're even in the alliance zone, etc
-    // if (readyToShootAtHub) {
-    //   if (turret.goalOutOfBounds()) {
-    //     swerveTurretCompensationAngle =
-    //         TurretCalculator.calculateSwerveTurretCompensationAngle(
-    //             turretHubGoalAngle, robotPose.getRotation());
-    //     return RobotState.HUB_AIM_ADJUSTING_SWERVE;
-    //   }
-    //   return RobotState.HUB_AIM;
-    // }
+    // TODO: this needs to check if we have balls in the future
+    if (autoscore) {
+      if (readyToShootAtHub && inAllianceZone) {
+        if (turret.goalOutOfBounds()) {
+          swerveTurretCompensationAngle =
+              TurretCalculator.calculateSwerveTurretCompensationAngle(
+                  turretHubGoalAngle, robotPose.getRotation());
+          return RobotState.HUB_AIM_ADJUSTING_SWERVE;
+        }
+        return RobotState.HUB_AIM;
+      }
+    }
     return switch (currentState) {
       case HUB_AIM -> {
         if (turret.goalOutOfBounds()) {
@@ -76,6 +88,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       default -> currentState;
     };
+  }
+
+  @Override
+  public void autonomousInit() {
+    startOfMatchPeriod = Timer.getFPGATimestamp();
+    timeSinceMatchStart = 0.0;
+  }
+
+  @Override
+  public void teleopInit() {
+    startOfMatchPeriod = Timer.getFPGATimestamp() - 20.0;
+    timeSinceMatchStart = 20.0;
   }
 
   @Override
@@ -152,19 +176,22 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
+    var robotTranslation = robotPose.getTranslation();
+    var robotRotation = robotPose.getRotation();
+
+    timeSinceMatchStart = Timer.getFPGATimestamp() - startOfMatchPeriod;
 
     var robotVelocity = Math.toDegrees(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     DogLog.log("RobotManager/RobotVelocity", robotVelocity);
     var turretVelocity = turret.getVelocityDegreesPerSecond();
     DogLog.log("RobotManager/TurretVelocity", turretVelocity);
 
-    robotTranslationInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose.getTranslation());
-    DogLog.log(
-        "RobotManager/LegalPose",
-        new Pose2d(robotTranslationInAllianceZone, robotPose.getRotation()));
-    DogLog.log(
-        "RobotManager/InAllianceZone",
-        robotTranslationInAllianceZone.equals(robotPose.getTranslation()));
+    readyToShootAtHub = FmsUtil.isHubActive(timeSinceMatchStart + TIME_OF_FLIGHT.get());
+    inAllianceZone = FieldUtil.isRobotInAllianceZone(robotTranslation);
+    robotTranslationInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotTranslation);
+    DogLog.log("RobotManager/Autoscore", autoscore);
+    DogLog.log("RobotManager/ReadyToShootAtHub", readyToShootAtHub);
+    DogLog.log("RobotManager/InAllianceZone", inAllianceZone);
 
     var goalPose = FieldUtil.HUB_POSE.getTranslation();
 
@@ -176,7 +203,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     turretHubGoalAngle =
         TurretCalculator.calculateTurretAimingAngle(
-            robotTranslationInAllianceZone, robotPose.getRotation(), goalPose);
+            robotTranslationInAllianceZone, robotRotation, goalPose);
 
     swerve.setVisionOnline(vision.isAnyCameraOnlineForTags());
   }
@@ -185,6 +212,17 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (getState() != RobotState.HUB_AIM_ADJUSTING_SWERVE) {
       setStateFromRequest(RobotState.HUB_AIM);
     }
+  }
+
+  public void setAutoscoreRequest(boolean autoScoring) {
+    if(autoscore&&!autoScoring){
+      setStateFromRequest(RobotState.IDLE);
+    }
+    autoscore = autoScoring;
+  }
+
+  public void toggleAutoscoreRequest() {
+    setAutoscoreRequest(!autoscore);
   }
 
   public void tagAimRequest() {
