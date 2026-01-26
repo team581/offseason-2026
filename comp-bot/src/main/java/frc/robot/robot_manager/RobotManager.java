@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
@@ -185,6 +186,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.shootingRequest();
         swerve.normalDriveRequest();
       }
+      default -> {}
     }
   }
 
@@ -248,5 +250,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
+
+    hubGoalAngle = 0.0;
+    hubDistance = 0.0;
+    feedLeftGoalAngle = 0.0;
+    feedLeftDistance = 0.0;
+    feedRightGoalAngle = 0.0;
+    feedRightDistance = 0.0;
   }
 }
