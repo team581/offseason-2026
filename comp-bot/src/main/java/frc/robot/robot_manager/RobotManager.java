@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.imu.Imu;
@@ -31,6 +32,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
+  private Translation2d hubGoalPose = Translation2d.kZero;
   private double hubGoalAngle = 0.0;
   private double hubDistance = 0.0;
 
@@ -50,8 +52,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Intake intake,
       Deploy deploy,
       Vision vision,
-      Lights lights,
-      Imu imu) {
+      Lights lights) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
     this.localization = localization;
