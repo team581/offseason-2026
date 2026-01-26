@@ -1,14 +1,11 @@
 package frc.robot.vision.limelight;
 
-import java.util.Locale;
-
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.ReusableOptional;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.OptionalTagResult;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -18,6 +15,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.Locale;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
   private static final int[] VALID_APRILTAGS =
