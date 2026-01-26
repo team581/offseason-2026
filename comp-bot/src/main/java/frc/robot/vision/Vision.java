@@ -1,9 +1,12 @@
 package frc.robot.vision;
 
+import java.util.Optional;
+
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.OptionalTagResult;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -19,7 +22,6 @@ import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
-import java.util.Optional;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
   private static final Transform2d TURRET_TO_CAMERA =
@@ -42,7 +44,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private OptionalTagResult turretResult = new OptionalTagResult();
   private OptionalTagResult adjustedTurretResult = new OptionalTagResult();
   private OptionalTagResult backResult = new OptionalTagResult();
-  private OptionalTagResult frontResult = new OptionalTagResult();
 
   private double robotHeading;
 
@@ -144,9 +145,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     return backResult;
   }
 
-  public OptionalTagResult getFrontLimelightTagResult() {
-    return frontResult;
-  }
 
   public boolean seeingTagDebounced() {
     return seeingTagDebounced;
