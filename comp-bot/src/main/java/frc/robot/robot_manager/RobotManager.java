@@ -6,7 +6,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
-import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
 import frc.robot.lights.Lights;
 import frc.robot.lights.LightsState;
@@ -51,8 +50,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Intake intake,
       Deploy deploy,
       Vision vision,
-      Lights lights,
-      Imu imu) {
+      Lights lights) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
     this.localization = localization;

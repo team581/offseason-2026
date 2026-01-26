@@ -59,8 +59,7 @@ public class Robot extends Base581Robot {
           intake,
           deploy,
           vision,
-          lights,
-          imu);
+          lights);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);

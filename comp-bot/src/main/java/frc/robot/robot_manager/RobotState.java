@@ -31,4 +31,11 @@ public enum RobotState {
 
   CLIMB_6_RAISING_L3,
   CLIMB_7_HANGING_L3;
+
+  public boolean isClimbingOrRehoming() {
+    return switch (this) {
+      case IDLE -> false;
+      default -> false;
+    };
+  }
 }
