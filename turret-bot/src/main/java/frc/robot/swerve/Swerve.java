@@ -201,8 +201,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
 
-    ableToTrenchAssist = SwerveAssist.ableToTrenchAssist(robotPose, fieldRelativeSpeeds);
-    ableToBumpAssist = SwerveAssist.ableToBumpAssist(robotPose, fieldRelativeSpeeds);
+    ableToTrenchAssist =
+        SwerveAssist.ableToTrenchAssist(robotPose, fieldRelativeSpeeds) && visionOnline;
+    ableToBumpAssist =
+        SwerveAssist.ableToBumpAssist(robotPose, fieldRelativeSpeeds) && visionOnline;
 
     if (getState() == SwerveState.INTAKING) {
       lastWallIntakePoint =
