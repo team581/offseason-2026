@@ -1,6 +1,8 @@
 package frc.robot;
 
 import com.team581.Base581Robot;
+import com.team581.config.CameraConfig;
+import com.team581.config.LimelightModel;
 import com.team581.controller.ControllerHelpers;
 import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
@@ -8,6 +10,7 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
@@ -22,6 +25,8 @@ import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
+import frc.robot.vision.limelight.Limelight;
+import frc.robot.vision.limelight.LimelightState;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -45,7 +50,33 @@ public class Robot extends Base581Robot {
   private final DyeRotor dyeRotor =
       new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
   private final Lights lights = new Lights(hardware.candle);
-  private final Vision vision = new Vision();
+  private final Limelight turretLimelight =
+      new Limelight(
+          "turret",
+          LimelightState.TAGS,
+          new CameraConfig(
+              LimelightModel.FOUR,
+              false,
+              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(0.0),
+              0.0,
+              0.0,
+              0.0));
+  private final Limelight backLimelight =
+      new Limelight(
+          "back",
+          LimelightState.TAGS,
+          new CameraConfig(
+              LimelightModel.THREEG,
+              true,
+              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(0.0),
+              Units.inchesToMeters(0.0),
+              0.0,
+              0.0,
+              0.0));
+  private final Vision vision = new Vision(imu, turretLimelight, backLimelight);
   private final Turret turret = new Turret(hardware.turretMotor, vision);
 
   private final RobotManager robotManager =
