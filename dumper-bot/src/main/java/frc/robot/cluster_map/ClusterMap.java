@@ -1,11 +1,16 @@
 package frc.robot.cluster_map;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import static java.util.Comparator.comparingDouble;
+import java.util.Optional;
 
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.GamePieceResult;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,10 +24,6 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightHelpers;
 import frc.robot.vision.limelight.LimelightState;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SAME_CLUSTER_DETECTION_THRESHOLD_METERS = 1.0;
@@ -173,9 +174,9 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     if (match.isPresent()) {
       var existingCluster = match.orElseThrow().clusterTranslation();
-      var existingHealth = match.orElseThrow().health();
-      var blendedPose = existingCluster.interpolate(visionCluster, 1 / existingHealth);
-      clusterMap.add(new ClusterMapElement(newClusterExpiry, blendedPose, existingHealth + 1.0));
+      var health = match.orElseThrow().health()+1;
+      var blendedPose = existingCluster.interpolate(visionCluster, 1 / health);
+      clusterMap.add(new ClusterMapElement(newClusterExpiry, blendedPose, health));
       clusterMap.remove(match.orElseThrow());
     } else {
       clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster, 1.0));
