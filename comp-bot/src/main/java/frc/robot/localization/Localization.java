@@ -1,12 +1,16 @@
 package frc.robot.localization;
 
+
 import com.ctre.phoenix6.Utils;
 import com.team581.localization.TrustFactor;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.TagResult;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
@@ -21,6 +25,8 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final Imu imu;
   private final TrustFactor trustFactor = new TrustFactor();
 
+  private final Field2d field2d = new Field2d();
+
   private Pose2d robotPose = Pose2d.kZero;
 
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision, Imu imu) {
@@ -29,6 +35,8 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.vision = vision;
     this.drivetrain = drivetrain;
     this.imu = imu;
+
+    SmartDashboard.putData("Field", field2d);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -69,6 +77,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
+    field2d.setRobotPose(robotPose);
   }
 
   public void zeroGyro() {
