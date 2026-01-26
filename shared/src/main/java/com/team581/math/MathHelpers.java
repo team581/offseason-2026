@@ -1,5 +1,6 @@
 package com.team581.math;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
@@ -8,6 +9,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.Collections;
+import java.util.List;
 
 public class MathHelpers {
   private static final double EPSILON = Math.ulp(1.0);
@@ -77,6 +79,17 @@ public class MathHelpers {
 
     // Undo rotation
     return nearestPoint.rotateAround(m_center.getTranslation(), m_center.getRotation());
+  }
+
+  public static final List<Translation2d> getCorners(Rectangle2d rectangle) {
+    var center = rectangle.getCenter();
+    var xWidth = rectangle.getXWidth();
+    var yWidth = rectangle.getYWidth();
+    return ImmutableList.of(
+        new Translation2d(center.getX() - xWidth / 2.0, center.getY() - yWidth / 2.0),
+        new Translation2d(center.getX() + xWidth / 2.0, center.getY() - yWidth / 2.0),
+        new Translation2d(center.getX() + xWidth / 2.0, center.getY() + yWidth / 2.0),
+        new Translation2d(center.getX() - xWidth / 2.0, center.getY() + yWidth / 2.0));
   }
 
   public static Rotation2d getDriveDirection(ChassisSpeeds vector) {
