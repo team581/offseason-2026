@@ -30,16 +30,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double goalAngle = 0.0;
   private double hubAimAngle = 0.0;
   private double feedAimAngle = 0.0;
-  private double tagAimAngle = 0.0;
 
   private static final double MIN_ANGLE = -149.105;
   private static final double MAX_ANGLE = 149.105;
   private static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
-  private static final double MANUAL_AIM_ANGLE = 0.0;
   private static final DoubleSubscriber HOMING_VOLTAGE =
       DogLog.tunable("TurretHomingVoltage", -2.0);
   private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
-      DogLog.tunable("TurretCurrentThreshold", 3.0);
+      DogLog.tunable("TurretCurrentThreshold", 5.0);
   private static final double HOMING_END_POSITION = MIN_ANGLE;
   private static final double TOLERANCE = 1.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
@@ -77,8 +75,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case HUB_AIM -> goalAngle = hubAimAngle;
       case FEED_AIM -> goalAngle = feedAimAngle;
-      case TAG_AIM -> goalAngle = tagAimAngle;
-      case LOCK_FORWARD -> goalAngle = MANUAL_AIM_ANGLE;
       case IDLE -> {}
     }
 
@@ -120,14 +116,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         motor.setControl(
             positionRequest.withPosition(Units.degreesToRotations(clamp(feedAimAngle))));
       }
-      case TAG_AIM -> {
-        motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(tagAimAngle))));
-      }
-      case LOCK_FORWARD -> {
-        motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
-      }
+
       default -> {}
     }
   }
@@ -175,7 +164,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void robotPeriodic() {
     super.robotPeriodic();
     switch (getState()) {
-      case HUB_AIM, FEED_AIM, TAG_AIM, LOCK_FORWARD -> {
+      case HUB_AIM, FEED_AIM -> {
         afterTransition(getState());
         DogLog.clearFault("Turret is not homed");
       }
@@ -196,14 +185,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.FEED_AIM);
   }
 
-  public void tagAimRequest() {
-    setState(TurretState.TAG_AIM);
-  }
-
-  public void lockForwardRequest() {
-    setState(TurretState.LOCK_FORWARD);
-  }
-
   public void idleRequest() {
     setState(TurretState.IDLE);
   }
@@ -214,10 +195,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public void setFeedAimAngle(double angle) {
     feedAimAngle = angle;
-  }
-
-  public void setTagAimAngle(double angle) {
-    tagAimAngle = angle;
   }
 
   public boolean atGoal() {

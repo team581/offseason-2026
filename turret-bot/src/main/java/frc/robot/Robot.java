@@ -9,6 +9,7 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
@@ -76,7 +77,8 @@ public class Robot extends Base581Robot {
               0.0,
               0.0));
   private final Vision vision = new Vision(imu, turretLimelight, backLimelight, frontLimelight);
-  private final Localization localization = new Localization(swerve, hardware.drivetrain, vision);
+  private final Localization localization =
+      new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, vision);
 
   private final RobotManager robotManager = new RobotManager(localization, swerve, turret, vision);
@@ -94,6 +96,8 @@ public class Robot extends Base581Robot {
         BuildConstants.DIRTY);
 
     finalizeInit();
+
+    FieldUtil.debugLogFieldZones();
   }
 
   @Override

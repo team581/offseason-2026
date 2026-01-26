@@ -14,6 +14,7 @@ public class FeatureFlags {
   public static final BooleanSupplier VISION_HUB_TAGS_FILTER =
       FeatureFlag.of("OnlyUseHubTags", true);
   public static final BooleanSupplier TRENCH_ASSIST = FeatureFlag.of("TrenchAssist", false);
+  public static final BooleanSupplier BUMP_ASSIST = FeatureFlag.of("BumpAssist", false);
 
   public static final BooleanSupplier INTAKE_WALL_SNAPS = FeatureFlag.of("IntakeWallSnaps", true);
   public static final BooleanSupplier INTAKE_DIRECTIONAL_SNAPS =

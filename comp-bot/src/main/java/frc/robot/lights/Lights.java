@@ -40,9 +40,11 @@ public class Lights extends StateMachineSubsystem<LightsState> {
   @Override
   public void whileInState(LightsState currentState) {
     var usedState = DriverStation.isDisabled() ? disabledState : currentState;
-    // TODO:Finish logic to check for blink state
-    candle.setControl(LightsState.PLACEHOLDER.stateBlinkRequest.orElseThrow());
-    //  candle.setControl(usedState.getControlRequest());
+    if (getState().blinks()) {
+      candle.setControl(usedState.stateBlinkRequest.orElseThrow());
+    } else {
+      candle.setControl(usedState.stateColorRequest.orElseThrow());
+    }
     DogLog.log("Lights/Color", usedState.color.toString());
     DogLog.log("Lights/Duration", usedState.duration);
   }

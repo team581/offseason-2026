@@ -35,7 +35,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     setStateFromRequest(IntakeState.INTAKING);
   }
 
-  public void idleRequestgRequest() {
+  public void idleRequest() {
     setStateFromRequest(IntakeState.IDLE);
   }
 
