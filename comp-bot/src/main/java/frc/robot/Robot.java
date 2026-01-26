@@ -107,7 +107,6 @@ public class Robot extends Base581Robot {
         BuildConstants.DIRTY);
 
     finalizeInit();
-    WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
   }
 
   @Override
