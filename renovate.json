@@ -6,5 +6,23 @@
     "schedule:daily"
   ],
   "semanticCommits": "disabled",
-  "labels": ["dependencies"]
+  "labels": ["dependencies"],
+  "customDatasources": {
+    "wpilib-vendordep": {
+      "defaultRegistryUrlTemplate": "{{registryUrl}}",
+      "format": "json",
+      "transformTemplates": ["{ \"releases\": [{ \"version\": version }] }"]
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
+      "managerFilePatterns": ["**/vendordeps/*.json"],
+      "matchStrings": [
+        "jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }"
+      ],
+      "datasourceTemplate": "custom.wpilib-vendordep"
+    }
+  ]
 }
