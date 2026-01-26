@@ -3,7 +3,6 @@ package frc.robot.robot_manager;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.imu.Imu;
@@ -26,23 +25,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final DyeRotor dyeRotor;
   private final Turret turret;
   private final Intake intake;
-  private final Deploy deploy;
-  private final Vision vision;
+
   private final Lights lights;
-  private final Imu imu;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
-   private Translation2d hubGoalPose = Translation2d.kZero;
   private double hubGoalAngle = 0.0;
   private double hubDistance = 0.0;
 
-  private Translation2d feedLeftGoalPose = Translation2d.kZero;
   private double feedLeftGoalAngle = 0.0;
   private double feedLeftDistance = 0.0;
 
-  private Translation2d feedRightGoalPose = Translation2d.kZero;
   private double feedRightGoalAngle = 0.0;
   private double feedRightDistance = 0.0;
 
@@ -66,33 +60,43 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.dyeRotor = dyeRotor;
     this.turret = turret;
     this.intake = intake;
-    this.deploy = deploy;
-    this.vision = vision;
+
     this.lights = lights;
-    this.imu = imu;
   }
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case PREPARE_SCORE -> {
-        if (shooter.atGoal() && FieldUtil.isRobotInAllianceZone(robotPose) && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
+        if (shooter.atGoal()
+            && FieldUtil.isRobotInAllianceZone(robotPose)
+            && dyeRotor.atGoal()
+            && turret.atGoal()
+            && shooterHood.atGoal()) {
           yield RobotState.SCORE;
         }
         yield currentState;
       }
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoal()&& dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
+        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
       }
       case PREPARE_FEED_LEFT ->
-          shooter.atGoal() && (!FieldUtil.isRobotInNoFeedZone(robotPose)&& dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal())
+          shooter.atGoal()
+                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
+                      && dyeRotor.atGoal()
+                      && turret.atGoal()
+                      && shooterHood.atGoal())
               ? RobotState.FEED_LEFT
               : currentState;
       case PREPARE_FEED_RIGHT ->
-          shooter.atGoal() && (!FieldUtil.isRobotInNoFeedZone(robotPose)&& dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal())
+          shooter.atGoal()
+                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
+                      && dyeRotor.atGoal()
+                      && turret.atGoal()
+                      && shooterHood.atGoal())
               ? RobotState.FEED_RIGHT
               : currentState;
       case SCORE -> {
@@ -120,14 +124,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.idleRequest();
         lights.setState(LightsState.IDLE_EMPTY);
       }
-       case PREPARE_FORCE_SCORE -> {
+      case PREPARE_FORCE_SCORE -> {
         shooter.scoreRequest(hubDistance);
         dyeRotor.shootRequest();
         shooterHood.scoreRequest(hubDistance);
         turret.hubAimRequest();
         swerve.normalDriveRequest();
       }
-       case FORCE_SCORE -> {
+      case FORCE_SCORE -> {
         shooter.scoreRequest(hubDistance);
         shooterHood.scoreRequest(hubDistance);
         dyeRotor.shootRequest();
@@ -165,7 +169,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.shootingRequest();
         swerve.normalDriveRequest();
       }
-       case WAIT_SCORE, PREPARE_SCORE -> {
+      case WAIT_SCORE, PREPARE_SCORE -> {
         shooter.scoreRequest(hubDistance);
         shooterHood.scoreRequest(hubDistance);
         // Intake is controlled separately
@@ -194,8 +198,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           shooterHood.scoreRequest(0);
         }
       }
-      case WAIT_FEED_LEFT, PREPARE_FEED_LEFT, FEED_LEFT -> turret.setFeedAimAngle(feedLeftGoalAngle);
-      case WAIT_FEED_RIGHT, PREPARE_FEED_RIGHT, FEED_RIGHT -> turret.setFeedAimAngle(feedRightGoalAngle);
+      case WAIT_FEED_LEFT, PREPARE_FEED_LEFT, FEED_LEFT ->
+          turret.setFeedAimAngle(feedLeftGoalAngle);
+      case WAIT_FEED_RIGHT, PREPARE_FEED_RIGHT, FEED_RIGHT ->
+          turret.setFeedAimAngle(feedRightGoalAngle);
       case WAIT_SCORE, PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
       default -> {}
     }
