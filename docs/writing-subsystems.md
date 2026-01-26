@@ -112,3 +112,23 @@ TODO(@jonahsnider): Document state requests for subsystems
     - Once the current draw is recorded, it automatically transitions out of the homing state to an idle state
 - When necessary, a moving average filter should be used to reduce the noise of the stator current measurement
   - Alternatively, increasing the minimum current can act as a way to filter out false positives
+
+## Safety checks
+
+Ensure that subsystems include proper input validation and safeguards to prevent damaging themselves.
+
+### Position mechanisms
+
+- Clamp setpoints to be within safe minimum and maximum positions
+- Current limits
+
+### Rollers
+
+- Current limits
+
+### Flywheels
+
+- Minimum velocity of 0
+  - Prevents damaging pulleys by rapidly switching directions
+- Current limits
+  - Torque current limits if using a torque current control loop
