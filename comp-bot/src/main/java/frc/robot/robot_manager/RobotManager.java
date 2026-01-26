@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
@@ -69,7 +70,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     return switch (currentState) {
       case PREPARE_SCORE -> {
         if (shooter.atGoal()
-            && FieldUtil.isRobotInAllianceZone(robotPose)
+            && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
             && dyeRotor.atGoal()
             && turret.atGoal()
             && shooterHood.atGoal()) {
@@ -100,7 +101,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FEED_RIGHT
               : currentState;
       case SCORE -> {
-        if (!FieldUtil.isRobotInAllianceZone(robotPose)) {
+        if (!FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {
