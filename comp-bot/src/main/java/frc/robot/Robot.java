@@ -39,8 +39,6 @@ public class Robot extends Base581Robot {
   private final Swerve swerve = new Swerve(hardware.drivetrain, trailblazer);
   private final Imu imu = new Imu(swerve.drivetrain);
 
-  private final Localization localization = new Localization(swerve, hardware.drivetrain, imu);
-
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
 
   private final Shooter shooter =
@@ -77,6 +75,8 @@ public class Robot extends Base581Robot {
               0.0,
               0.0));
   private final Vision vision = new Vision(imu, turretLimelight, backLimelight);
+  private final Localization localization =
+      new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, vision);
 
   private final RobotManager robotManager =
