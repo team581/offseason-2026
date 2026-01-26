@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
+import com.team581.math.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
