@@ -116,41 +116,44 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
-        swerve.normalDriveRequest();
-        shooterHood.idleRequest();
         shooter.idleRequest();
-        intake.idleRequest();
+        shooterHood.idleRequest();
         dyeRotor.idleRequest();
         turret.idleRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_EMPTY);
       }
       case PREPARE_FORCE_SCORE -> {
         shooter.scoreRequest(hubDistance);
-        dyeRotor.shootRequest();
         shooterHood.scoreRequest(hubDistance);
+        dyeRotor.shootRequest();
         turret.hubAimRequest();
+        // Intake is controlled separately
         swerve.normalDriveRequest();
       }
       case FORCE_SCORE -> {
         shooter.scoreRequest(hubDistance);
         shooterHood.scoreRequest(hubDistance);
         dyeRotor.shootRequest();
-        intake.shootingRequest();
         turret.hubAimRequest();
+        intake.shootingRequest();
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_LEFT, PREPARE_FEED_LEFT -> {
         shooter.feedRequest(feedLeftDistance);
         shooterHood.feedRequest(feedLeftDistance);
-        turret.feedAimRequest();
         dyeRotor.shootRequest();
+        turret.feedAimRequest();
+        // Intake is controlled separately
         swerve.normalDriveRequest();
       }
       case WAIT_FEED_RIGHT, PREPARE_FEED_RIGHT -> {
         shooter.feedRequest(feedRightDistance);
         shooterHood.feedRequest(feedRightDistance);
-        turret.feedAimRequest();
         dyeRotor.shootRequest();
+        turret.feedAimRequest();
+        // Intake is controlled separately
         swerve.normalDriveRequest();
       }
       case FEED_LEFT -> {
@@ -172,9 +175,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_SCORE, PREPARE_SCORE -> {
         shooter.scoreRequest(hubDistance);
         shooterHood.scoreRequest(hubDistance);
-        // Intake is controlled separately
         dyeRotor.shootRequest();
         turret.hubAimRequest();
+        // Intake is controlled separately
         swerve.normalDriveRequest();
       }
       case SCORE -> {
@@ -185,7 +188,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.shootingRequest();
         swerve.normalDriveRequest();
       }
-      default -> {}
     }
   }
 
