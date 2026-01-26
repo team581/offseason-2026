@@ -9,13 +9,19 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.autos.Autos;
+import frc.robot.deploy.Deploy;
+import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.generated.BuildConstants;
 import frc.robot.imu.Imu;
+import frc.robot.intake.Intake;
+import frc.robot.lights.Lights;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
+import frc.robot.vision.Vision;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -33,9 +39,28 @@ public class Robot extends Base581Robot {
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
 
   private final Shooter shooter =
-      new Shooter(hardware.shooterrightMotor, hardware.shooterleftMotor);
+      new Shooter(hardware.shooterRightMotor, hardware.shooterLeftMotor);
+  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Deploy deploy = new Deploy(hardware.deployMotor);
+  private final DyeRotor dyeRotor =
+      new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
+  private final Lights lights = new Lights(hardware.candle);
+  private final Vision vision = new Vision();
+  private final Turret turret = new Turret(hardware.turretMotor, vision);
 
-  private final RobotManager robotManager = new RobotManager(shooterHood, localization, swerve);
+  private final RobotManager robotManager =
+      new RobotManager(
+          shooterHood,
+          localization,
+          swerve,
+          shooter,
+          dyeRotor,
+          turret,
+          intake,
+          deploy,
+          vision,
+          lights,
+          imu);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);
