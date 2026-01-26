@@ -1,5 +1,6 @@
 package frc.robot.robot_manager;
 
+import com.team581.math.SwerveAssist;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -210,6 +211,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-    nearTrench = FieldUtil.getCurrentTrenchAssistZone(robotPose.getTranslation()).isPresent();
+    nearTrench = FieldUtil.inTrench(robotPose.getTranslation()) || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
   }
 }

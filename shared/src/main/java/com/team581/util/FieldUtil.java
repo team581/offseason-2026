@@ -342,7 +342,7 @@ public class FieldUtil {
     return input.rotateAround(FIELD_BOUNDS.getCenter().getTranslation(), Rotation2d.k180deg);
   }
 
-  public static boolean robotInTrench(Translation2d robotPose) {
+  public static boolean inTrench(Translation2d robotPose) {
     return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 }
