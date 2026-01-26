@@ -5,24 +5,18 @@
     ":disableRateLimiting",
     "schedule:daily"
   ],
+  "customManagers": [{
+    "customType": "jsonata",
+    "datasourceTemplate": "custom.wpilib-vendordep",
+    "managerFilePatterns": ["**/vendordeps/*.json"],
+    "fileFormat": "json",
+    "matchStrings": ["jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }"]
+  }],
   "semanticCommits": "disabled",
   "labels": ["dependencies"],
-  "customDatasources": {
-    "wpilib-vendordep": {
-      "defaultRegistryUrlTemplate": "{{registryUrl}}",
-      "format": "json",
-      "transformTemplates": ["{ \"releases\": [{ \"version\": version }] }"]
-    }
-  },
-  "customManagers": [
-    {
-      "customType": "jsonata",
-      "fileFormat": "json",
-      "managerFilePatterns": ["**/vendordeps/*.json"],
-      "matchStrings": [
-        "jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }"
-      ],
-      "datasourceTemplate": "custom.wpilib-vendordep"
-    }
-  ]
+  "customDatasources": {"wpilib-vendordep": {
+    "defaultRegistryUrlTemplate": "{{registryUrl}}",
+    "format": "json",
+    "transformTemplates": ["{ \"releases\": [{ \"version\": version }] }"]
+  }}
 }
