@@ -6,7 +6,7 @@ import edu.wpi.first.hal.HAL;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class FmsUtilTest {
+final class FmsUtilTest {
   @BeforeAll
   static void initializeHal() {
     HAL.initialize(500, 0);

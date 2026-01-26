@@ -245,6 +245,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
-    nearTrench = FieldUtil.inTrench(robotPose.getTranslation()) || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
+    nearTrench =
+        FieldUtil.inTrench(robotPose.getTranslation())
+            || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
   }
 }

@@ -35,13 +35,6 @@ public class FieldUtil {
   private static final double BLUE_OBSTACLE_X =
       MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX());
 
-  private static final Rectangle2d BLUE_ALLIANCE_ZONE =
-      new Rectangle2d(Translation2d.kZero, new Translation2d(BLUE_STARTING_LINE_X, FIELD_WIDTH_Y));
-  private static final Rectangle2d RED_ALLIANCE_ZONE =
-      new Rectangle2d(
-          new Translation2d(RED_STARTING_LINE_X, 0.0),
-          new Translation2d(FIELD_LENGTH_X, FIELD_WIDTH_Y));
-
   private static final Rectangle2d RED_HUB_NO_FEED_ZONE =
       new Rectangle2d(
           new Translation2d(RED_STARTING_LINE_X - (HUB_RADIUS_METERS * 2), 3.034663),
@@ -144,10 +137,6 @@ public class FieldUtil {
       return robot;
     }
     return new Translation2d(getAllianceZoneX(), robot.getY());
-  }
-
-  public static double getAllianceZoneX() {
-    return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
   }
 
   // Logs all zone points; only needs to run once
@@ -303,6 +292,10 @@ public class FieldUtil {
             Rotation2d.kCW_90deg));
   }
 
+  public static double getAllianceZoneX() {
+    return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
+  }
+
   public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotPose) {
     return robotPose.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
   }
@@ -318,6 +311,10 @@ public class FieldUtil {
   /** Returns the trench assist zone that the robot is currently in, if it exists. */
   public static Optional<Rectangle2d> getCurrentTrenchAssistZone(Translation2d robotPose) {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
+  }
+
+  public static boolean inTrench(Translation2d robotPose) {
+    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 
   public static boolean isRobotInAllianceZone(Translation2d robot) {
@@ -341,9 +338,5 @@ public class FieldUtil {
    */
   public static Pose2d pathflip(Pose2d input) {
     return input.rotateAround(FIELD_BOUNDS.getCenter().getTranslation(), Rotation2d.k180deg);
-  }
-
-  public static boolean inTrench(Translation2d robotPose) {
-    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 }

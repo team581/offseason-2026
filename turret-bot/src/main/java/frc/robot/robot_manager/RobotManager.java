@@ -1,7 +1,5 @@
 package frc.robot.robot_manager;
 
-import java.util.Optional;
-
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
@@ -215,7 +213,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void setAutoscoreRequest(boolean autoScoring) {
-    if(autoscore&&!autoScoring){
+    if (autoscore && !autoScoring) {
       setStateFromRequest(RobotState.IDLE);
     }
     autoscore = autoScoring;
