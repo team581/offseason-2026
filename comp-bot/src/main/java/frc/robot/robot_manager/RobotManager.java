@@ -23,6 +23,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final ShooterHood shooterHood;
   private final Shooter shooter;
   private final DyeRotor dyeRotor;
+  private final Deploy deploy;
   private final Turret turret;
   private final Intake intake;
 
@@ -59,7 +60,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.dyeRotor = dyeRotor;
     this.turret = turret;
     this.intake = intake;
-
+    this.deploy = deploy;
     this.lights = lights;
   }
 
@@ -204,6 +205,41 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_SCORE, PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
       default -> {}
     }
+  }
+
+  public void idleRequest() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.IDLE);
+    }
+  }
+
+  public void forceShootRequest() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.PREPARE_FORCE_SCORE);
+    }
+  }
+
+  public void shootHubWaitRequest() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.PREPARE_SCORE);
+    }
+  }
+
+  public void feedLeftWaitRequest() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.PREPARE_FEED_LEFT);
+    }
+  }
+
+  public void feedRightWaitRequest() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.PREPARE_FEED_RIGHT);
+    }
+  }
+
+  public void intakeRequest() {
+    intake.intakeRequest();
+    deploy.intakeRequest();
   }
 
   @Override
