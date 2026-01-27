@@ -44,7 +44,7 @@ public class FieldUtil {
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2), 3.034663),
           new Translation2d(BLUE_STARTING_LINE_X + (HUB_RADIUS_METERS * 2) + 1.0, 5.034663));
 
-  // Custom zones to enable swerve assist to cleanly drive through field obstacles with speed
+  // Trench/assist zone calculations
   private static final double TRENCH_LENGTH_X = Units.inchesToMeters(47.0);
   private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(48.94);
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 3;
@@ -59,23 +59,41 @@ public class FieldUtil {
   private static final Pose2d RED_OUTPOST_TRENCH_CENTER =
       new Pose2d(RED_OBSTACLE_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
 
+  private static final Rectangle2d BLUE_OUTPOST_TRENCH_ZONE =
+      new Rectangle2d(BLUE_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+  private static final Rectangle2d BLUE_DEPOT_TRENCH_ZONE =
+      new Rectangle2d(BLUE_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+  private static final Rectangle2d RED_DEPOT_TRENCH_ZONE =
+      new Rectangle2d(RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+  private static final Rectangle2d RED_OUTPOST_TRENCH_ZONE =
+      new Rectangle2d(RED_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+
+  private static final Rectangle2d BLUE_OUTPOST_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          BLUE_OUTPOST_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y);
+  private static final Rectangle2d BLUE_DEPOT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          BLUE_DEPOT_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y);
+  private static final Rectangle2d RED_DEPOT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          RED_DEPOT_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y);
+  private static final Rectangle2d RED_OUTPOST_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          RED_OUTPOST_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y);
+
   private static final List<Rectangle2d> TRENCH_ZONES =
       ImmutableList.of(
-          new Rectangle2d(BLUE_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
-          new Rectangle2d(BLUE_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
-          new Rectangle2d(RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y),
-          new Rectangle2d(RED_OUTPOST_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y));
+          BLUE_OUTPOST_TRENCH_ZONE,
+          BLUE_DEPOT_TRENCH_ZONE,
+          RED_DEPOT_TRENCH_ZONE,
+          RED_OUTPOST_TRENCH_ZONE);
 
   private static final List<Rectangle2d> TRENCH_ASSIST_ZONES =
       ImmutableList.of(
-          new Rectangle2d(
-              BLUE_OUTPOST_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y),
-          new Rectangle2d(
-              BLUE_DEPOT_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y),
-          new Rectangle2d(
-              RED_DEPOT_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y),
-          new Rectangle2d(
-              RED_OUTPOST_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y));
+          BLUE_OUTPOST_TRENCH_ASSIST_ZONE,
+          BLUE_DEPOT_TRENCH_ASSIST_ZONE,
+          RED_DEPOT_TRENCH_ASSIST_ZONE,
+          RED_OUTPOST_TRENCH_ASSIST_ZONE);
 
   // Midpoints of the entryways of trenches; two for each trench, one on alliance zone side, one on
   // neutral zone side
@@ -100,13 +118,13 @@ public class FieldUtil {
           // Red outpost side
           new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY()));
 
+  // Bump/assist zone calculations
   private static final double BUMP_LENGTH_X = Units.inchesToMeters(44.4);
   private static final double BUMP_LENGTH_Y = Units.inchesToMeters(73.0);
   // Trench bump barrier is the little barrier that separates them
   private static final double TRENCH_BUMP_BARRIER_LENGTH_Y = Units.inchesToMeters(12.0);
   private static final double BUMP_CENTER_Y_DISTANCE_FROM_WALL =
       TRENCH_LENGTH_Y + TRENCH_BUMP_BARRIER_LENGTH_Y + (BUMP_LENGTH_Y / 2.0);
-
   private static final double BUMP_ASSIST_ZONE_LENGTH_X = BUMP_LENGTH_X * 2.0;
   private static final double BUMP_ASSIST_ZONE_LENGTH_Y = BUMP_LENGTH_Y;
 
@@ -121,16 +139,23 @@ public class FieldUtil {
   private static final Pose2d RED_DEPOT_BUMP_CENTER =
       new Pose2d(RED_OBSTACLE_X, BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
 
+  private static final Rectangle2d BLUE_OUTPOST_BUMP_ASSIST_ZONE =
+      new Rectangle2d(
+          BLUE_OUTPOST_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y);
+  private static final Rectangle2d BLUE_DEPOT_BUMP_ASSIST_ZONE =
+      new Rectangle2d(BLUE_DEPOT_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y);
+  private static final Rectangle2d RED_OUTPOST_BUMP_ASSIST_ZONE =
+      new Rectangle2d(
+          RED_OUTPOST_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y);
+  private static final Rectangle2d RED_DEPOT_BUMP_ASSIST_ZONE =
+      new Rectangle2d(RED_DEPOT_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y);
+
   private static final List<Rectangle2d> BUMP_ASSIST_ZONES =
       ImmutableList.of(
-          new Rectangle2d(
-              BLUE_OUTPOST_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y),
-          new Rectangle2d(
-              BLUE_DEPOT_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y),
-          new Rectangle2d(
-              RED_OUTPOST_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y),
-          new Rectangle2d(
-              RED_DEPOT_BUMP_CENTER, BUMP_ASSIST_ZONE_LENGTH_X, BUMP_ASSIST_ZONE_LENGTH_Y));
+          BLUE_OUTPOST_BUMP_ASSIST_ZONE,
+          BLUE_DEPOT_BUMP_ASSIST_ZONE,
+          RED_OUTPOST_BUMP_ASSIST_ZONE,
+          RED_DEPOT_BUMP_ASSIST_ZONE);
 
   public static Translation2d clampPoseToAllianceZone(Translation2d robot) {
     if (isRobotInAllianceZone(robot)) {
@@ -144,152 +169,96 @@ public class FieldUtil {
     // Trenches
     DogLog.log(
         "FieldUtil/Trenches/BlueOutpost/Corner1",
-        new Pose2d(
-            BLUE_OUTPOST_TRENCH_CENTER.getX() - TRENCH_LENGTH_X / 2.0,
-            BLUE_OUTPOST_TRENCH_CENTER.getY() - TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/BlueOutpost/Corner2",
-        new Pose2d(
-            BLUE_OUTPOST_TRENCH_CENTER.getX() + TRENCH_LENGTH_X / 2.0,
-            BLUE_OUTPOST_TRENCH_CENTER.getY() + TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/BlueDepot/Corner1",
-        new Pose2d(
-            BLUE_DEPOT_TRENCH_CENTER.getX() - TRENCH_LENGTH_X / 2.0,
-            BLUE_DEPOT_TRENCH_CENTER.getY() - TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/BlueDepot/Corner2",
-        new Pose2d(
-            BLUE_DEPOT_TRENCH_CENTER.getX() + TRENCH_LENGTH_X / 2.0,
-            BLUE_DEPOT_TRENCH_CENTER.getY() + TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/RedDepot/Corner1",
-        new Pose2d(
-            RED_DEPOT_TRENCH_CENTER.getX() - TRENCH_LENGTH_X / 2.0,
-            RED_DEPOT_TRENCH_CENTER.getY() - TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(RED_DEPOT_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/RedDepot/Corner2",
-        new Pose2d(
-            RED_DEPOT_TRENCH_CENTER.getX() + TRENCH_LENGTH_X / 2.0,
-            RED_DEPOT_TRENCH_CENTER.getY() + TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(RED_DEPOT_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/RedOutpost/Corner1",
-        new Pose2d(
-            RED_OUTPOST_TRENCH_CENTER.getX() - TRENCH_LENGTH_X / 2.0,
-            RED_OUTPOST_TRENCH_CENTER.getY() - TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(RED_OUTPOST_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/Trenches/RedOutpost/Corner2",
-        new Pose2d(
-            RED_OUTPOST_TRENCH_CENTER.getX() + TRENCH_LENGTH_X / 2.0,
-            RED_OUTPOST_TRENCH_CENTER.getY() + TRENCH_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+        new Pose2d(MathHelpers.getCorners(RED_OUTPOST_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
 
     // Trench assist zones
     DogLog.log(
         "FieldUtil/TrenchAssistZones/BlueOutpost/Corner1",
         new Pose2d(
-            BLUE_OUTPOST_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_OUTPOST_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/BlueOutpost/Corner2",
         new Pose2d(
-            BLUE_OUTPOST_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_OUTPOST_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/BlueDepot/Corner1",
         new Pose2d(
-            BLUE_DEPOT_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_DEPOT_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/BlueDepot/Corner2",
         new Pose2d(
-            BLUE_DEPOT_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_DEPOT_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/RedDepot/Corner1",
         new Pose2d(
-            RED_DEPOT_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_DEPOT_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_DEPOT_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/RedDepot/Corner2",
         new Pose2d(
-            RED_DEPOT_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_DEPOT_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_DEPOT_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/RedOutpost/Corner1",
         new Pose2d(
-            RED_OUTPOST_TRENCH_CENTER.getX() - TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_OUTPOST_TRENCH_CENTER.getY() - TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_OUTPOST_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/TrenchAssistZones/RedOutpost/Corner2",
         new Pose2d(
-            RED_OUTPOST_TRENCH_CENTER.getX() + TRENCH_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_OUTPOST_TRENCH_CENTER.getY() + TRENCH_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_OUTPOST_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
 
     // Bump assist zones
     DogLog.log(
         "FieldUtil/BumpAssistZones/BlueOutpost/Corner1",
         new Pose2d(
-            BLUE_OUTPOST_BUMP_CENTER.getX() - BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_OUTPOST_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_OUTPOST_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/BlueOutpost/Corner2",
         new Pose2d(
-            BLUE_OUTPOST_BUMP_CENTER.getX() + BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_OUTPOST_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_OUTPOST_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/BlueDepot/Corner1",
         new Pose2d(
-            BLUE_DEPOT_BUMP_CENTER.getX() - BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_DEPOT_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_DEPOT_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/BlueDepot/Corner2",
         new Pose2d(
-            BLUE_DEPOT_BUMP_CENTER.getX() + BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            BLUE_DEPOT_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(BLUE_DEPOT_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/RedDepot/Corner1",
         new Pose2d(
-            RED_DEPOT_BUMP_CENTER.getX() - BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_DEPOT_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_DEPOT_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/RedDepot/Corner2",
         new Pose2d(
-            RED_DEPOT_BUMP_CENTER.getX() + BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_DEPOT_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_DEPOT_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/RedOutpost/Corner1",
         new Pose2d(
-            RED_OUTPOST_BUMP_CENTER.getX() - BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_OUTPOST_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_OUTPOST_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/BumpAssistZones/RedOutpost/Corner2",
         new Pose2d(
-            RED_OUTPOST_BUMP_CENTER.getX() + BUMP_ASSIST_ZONE_LENGTH_X / 2.0,
-            RED_OUTPOST_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 2.0,
-            Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(RED_OUTPOST_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
   }
 
   public static double getAllianceZoneX() {
