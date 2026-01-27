@@ -45,6 +45,16 @@ subprojects {
 		dependencies {
 			errorprone project(':refaster-rules')
 		}
+
+		// Ensure downstream compileJava tasks properly track refaster-rules as an input for cache invalidation.
+		// The errorprone configuration dependency alone isn't sufficient - Gradle doesn't track project
+		// dependencies in annotation processor paths as inputs, causing stale cache hits when rules change.
+		afterEvaluate {
+			def refasterJar = rootProject.project(':refaster-rules').tasks.named('jar')
+			tasks.withType(JavaCompile).configureEach {
+				inputs.files(refasterJar).withPropertyName('refasterRulesJar')
+			}
+		}
 	}
 
 	tasks.withType(JavaCompile) {
