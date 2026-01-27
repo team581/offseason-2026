@@ -15,6 +15,7 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
+import frc.robot.health.HealthManager;
 import frc.robot.hopper.Hopper;
 import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
@@ -71,8 +72,10 @@ public class Robot extends Base581Robot {
       new Shooter(
           hardware.leftShooterMotor, hardware.rightShooterMotor, hardware.kickerShooterMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
+  private final HealthManager health = new HealthManager(mainLimelight, groundLimelight);
   private final RobotManager robotManager =
-      new RobotManager(intake, hopper, shooter, feeder, swerve, vision, localization, clusterMap);
+      new RobotManager(
+          health, intake, hopper, shooter, feeder, swerve, vision, localization, clusterMap);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 

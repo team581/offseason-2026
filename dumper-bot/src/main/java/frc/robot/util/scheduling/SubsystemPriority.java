@@ -4,8 +4,9 @@ import com.team581.util.scheduling.SubsystemPriorityBase;
 
 public enum SubsystemPriority implements SubsystemPriorityBase {
   // 20-30 is for manager subsystems
-  AUTOS(30),
-  ROBOT_MANAGER(29),
+  HEALTH(30),
+  AUTOS(29),
+  ROBOT_MANAGER(28),
 
   // 10-19 is for sensor subsystems
   LOCALIZATION(11),

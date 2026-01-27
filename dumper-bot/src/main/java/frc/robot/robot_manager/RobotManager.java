@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.feeder.Feeder;
+import frc.robot.health.HealthManager;
 import frc.robot.hopper.Hopper;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
@@ -20,6 +21,7 @@ import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
+  private final HealthManager health;
   private final Intake intake;
   private final Hopper hopper;
   private final Shooter shooter;
@@ -45,6 +47,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double timeOfFlight = 0.0;
 
   public RobotManager(
+      HealthManager health,
       Intake intake,
       Hopper hopper,
       Shooter shooter,
@@ -54,6 +57,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Localization localization,
       ClusterMap clusterMap) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
+
+    this.health = health;
     this.intake = intake;
     this.hopper = hopper;
     this.shooter = shooter;
@@ -85,22 +90,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED_1 ->
           shooter.atGoal()
-                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
-                      && vision.isAnyCameraOnlineForTags())
+                  && (!FieldUtil.isRobotInNoFeedZone(robotPose) && health.isLocalizationHealthy())
               ? RobotState.FEED_1
               : currentState;
       case PREPARE_FEED_2 ->
           shooter.atGoal()
-                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
-                      && vision.isAnyCameraOnlineForTags())
+                  && (!FieldUtil.isRobotInNoFeedZone(robotPose) && health.isLocalizationHealthy())
               ? RobotState.FEED_2
               : currentState;
       case SCORE -> {
         // If we are not in the alliance zone while vision is online, stop tracking the hub.
         // Otherwise, if vision is dead and we cannot reliable track whether we are in the alliance
         // zone, we still want to be able to score
-        if (!FieldUtil.isRobotInAllianceZone(robotTranslation)
-            && vision.isAnyCameraOnlineForTags()) {
+        if (!FieldUtil.isRobotInAllianceZone(robotTranslation) && health.isLocalizationHealthy()) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {
@@ -252,7 +254,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hubDistance = robotPose.getTranslation().getDistance(hubGoalPose);
     feed1Distance = robotPose.getTranslation().getDistance(feed1GoalPose);
     feed2Distance = robotPose.getTranslation().getDistance(feed2GoalPose);
-    swerve.setVisionOnline(vision.isAnyCameraOnlineForTags());
+    swerve.setVisionOnline(health.isLocalizationHealthy());
   }
 
   private double getSwerveAimingAngle(Translation2d goal) {
