@@ -20,16 +20,9 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
     this.groundLimelight = groundLimelight;
   }
 
-  @Override
-  protected void collectInputs() {
-    localizationHealthy = mainLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    fuelDetectionHealthy = groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    allCamerasHealthy = localizationHealthy && fuelDetectionHealthy;
-  }
-
-  /** Returns whether the robot's ability to localize itself is healthy. */
-  public boolean isLocalizationHealthy() {
-    return localizationHealthy;
+  /** Returns whether all cameras are healthy. */
+  public boolean isAllCamerasHealthy() {
+    return allCamerasHealthy;
   }
 
   /** Returns whether the robot's ability to detect fuel is healthy. */
@@ -37,8 +30,15 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
     return fuelDetectionHealthy;
   }
 
-  /** Returns whether all cameras are healthy. */
-  public boolean isAllCamerasHealthy() {
-    return allCamerasHealthy;
+  /** Returns whether the robot's ability to localize itself is healthy. */
+  public boolean isLocalizationHealthy() {
+    return localizationHealthy;
+  }
+
+  @Override
+  protected void collectInputs() {
+    localizationHealthy = mainLimelight.getCameraHealth() != CameraHealth.OFFLINE;
+    fuelDetectionHealthy = groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
+    allCamerasHealthy = localizationHealthy && fuelDetectionHealthy;
   }
 }
