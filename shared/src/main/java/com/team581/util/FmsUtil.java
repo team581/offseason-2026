@@ -6,17 +6,14 @@ import edu.wpi.first.wpilibj.RobotBase;
 import java.util.Optional;
 
 public class FmsUtil {
-  // seconds
-  private static final double TELEOP_TIME = 160.0;
-  private static final double AUTO_TIME = 20.0;
 
   // Match period shift times in seconds
-  private static final double transitionShiftTimeStamp = 20.0;
-  private static final double shift1TimeStamp = 30.0;
-  private static final double shift2TimeStamp = 55.0;
-  private static final double shift3TimeStamp = 80.0;
-  private static final double shift4TimeStamp = 105.0;
-  private static final double endGameTimeStamp = 130.0;
+  private static final double TRANSITION_SHIFT_TIME_STAMP = 20.0;
+  private static final double SHIFT1TIME_STAMP = 30.0;
+  private static final double SHIFT2TIME_STAMP = 55.0;
+  private static final double SHIFT3TIME_STAMP = 80.0;
+  private static final double SHIFT4TIME_STAMP = 105.0;
+  private static final double END_GAME_TIME_STAMP = 130.0;
 
   public static Optional<Boolean> isAutoWinner() {
     if (RobotBase.isSimulation()) {
@@ -39,22 +36,22 @@ public class FmsUtil {
     if (isAutoWinner.isEmpty()) {
       return true;
     }
-    if (timeSinceMatchStart >= endGameTimeStamp) {
+    if (timeSinceMatchStart >= END_GAME_TIME_STAMP) {
       return true;
     }
-    if (timeSinceMatchStart >= shift4TimeStamp) {
+    if (timeSinceMatchStart >= SHIFT4TIME_STAMP) {
       return isAutoWinner.orElseThrow();
     }
-    if (timeSinceMatchStart >= shift3TimeStamp) {
+    if (timeSinceMatchStart >= SHIFT3TIME_STAMP) {
       return !isAutoWinner.orElseThrow();
     }
-    if (timeSinceMatchStart >= shift2TimeStamp) {
+    if (timeSinceMatchStart >= SHIFT2TIME_STAMP) {
       return isAutoWinner.orElseThrow();
     }
-    if (timeSinceMatchStart >= shift1TimeStamp) {
+    if (timeSinceMatchStart >= SHIFT1TIME_STAMP) {
       return !isAutoWinner.orElseThrow();
     }
-    if (timeSinceMatchStart >= transitionShiftTimeStamp) {
+    if (timeSinceMatchStart >= TRANSITION_SHIFT_TIME_STAMP) {
       return true;
     }
     return true;
