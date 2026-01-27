@@ -2,6 +2,7 @@ package frc.robot.health;
 
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 
@@ -32,7 +33,7 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
 
   /** Returns whether the robot's ability to localize itself is healthy. */
   public boolean isLocalizationHealthy() {
-    return localizationHealthy;
+    return localizationHealthy && DSOptions.USE_TAG_LIMELIGHTS.getAsBoolean();
   }
 
   @Override
