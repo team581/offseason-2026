@@ -61,7 +61,8 @@ subprojects {
 		options.errorprone.disable("Var", "BooleanParameter", "InlineMeSuggester", "ImmutableEnumChecker")
 
 		// Exclude specific Refaster rules (these can't be disabled with disable(), they require NamePattern)
-		options.errorprone.errorproneArgs.add "-XepOpt:Refaster:NamePattern=^(?!.*SequencedCollectionGetLast).*"
+		// SequencedCollectionGetFirst and SequencedCollectionGetLast suggest .getFirst()/.getLast() which require Java 21+
+		options.errorprone.errorproneArgs.add "-XepOpt:Refaster:NamePattern=^(?!.*SequencedCollectionGet(First|Last)).*"
 
 		// Set the ERRORPRONE_AUTOFIX environment variable to fix files in place
 		if (System.getenv().containsKey("ERRORPRONE_AUTOFIX")) {
