@@ -96,6 +96,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FEED_2
               : currentState;
       case SCORE -> {
+        // If we are not in the alliance zone while vision is online, stop tracking the hub.
+        // Otherwise, if vision is dead and we cannot reliable track whether we are in the alliance
+        // zone, we still want to be able to score
         if (!FieldUtil.isRobotInAllianceZone(robotTranslation)
             && vision.isAnyCameraOnlineForTags()) {
           yield RobotState.IDLE;

@@ -26,7 +26,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Deploy deploy;
   private final Turret turret;
   private final Intake intake;
-
+  private final Vision vision;
   private final Lights lights;
 
   private Pose2d robotPose = Pose2d.kZero;
@@ -61,6 +61,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.turret = turret;
     this.intake = intake;
     this.deploy = deploy;
+    this.vision = vision;
     this.lights = lights;
   }
 
@@ -100,7 +101,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FEED_RIGHT
               : currentState;
       case SCORE -> {
-        if (!FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
+        // If we are not in the alliance zone while vision is online, stop tracking the hub.
+        // Otherwise, if vision is dead and we cannot reliable track whether we are in the alliance
+        // zone, we still want to be able to score
+        if (!FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
+            && vision.isAnyCameraOnlineForTags()) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {
