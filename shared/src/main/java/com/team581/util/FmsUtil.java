@@ -7,16 +7,16 @@ import java.util.Optional;
 
 public class FmsUtil {
   // seconds
-  public static final double TELEOP_TIME = 160.0;
-  public static final double AUTO_TIME = 20.0;
+  private static final double TELEOP_TIME = 160.0;
+  private static final double AUTO_TIME = 20.0;
 
   // Match period shift times in seconds
-  public static final double transitionShiftTimeStamp = 20.0;
-  public static final double shift1TimeStamp = 30.0;
-  public static final double shift2TimeStamp = 55.0;
-  public static final double shift3TimeStamp = 80.0;
-  public static final double shift4TimeStamp = 105.0;
-  public static final double endGameTimeStamp = 130.0;
+  private static final double transitionShiftTimeStamp = 20.0;
+  private static final double shift1TimeStamp = 30.0;
+  private static final double shift2TimeStamp = 55.0;
+  private static final double shift3TimeStamp = 80.0;
+  private static final double shift4TimeStamp = 105.0;
+  private static final double endGameTimeStamp = 130.0;
 
   public static Optional<Boolean> isAutoWinner() {
     if (RobotBase.isSimulation()) {
