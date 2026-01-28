@@ -15,7 +15,11 @@ public class FmsUtil {
   private static final double SHIFT4TIME_STAMP = 105.0;
   private static final double END_GAME_TIME_STAMP = 130.0;
 
-  public static Optional<Boolean> isAutoWinner() {
+  public static boolean isHubActive(double timeSinceMatchStart) {
+    return isHubActive(timeSinceMatchStart, isAutoWinner());
+  }
+
+  static Optional<Boolean> isAutoWinner() {
     if (RobotBase.isSimulation()) {
       return Optional.of(true);
     }
@@ -31,8 +35,7 @@ public class FmsUtil {
     };
   }
 
-  public static boolean isHubActive(double timeSinceMatchStart) {
-    var isAutoWinner = isAutoWinner();
+  static boolean isHubActive(double timeSinceMatchStart, Optional<Boolean> isAutoWinner) {
     if (isAutoWinner.isEmpty()) {
       return true;
     }
