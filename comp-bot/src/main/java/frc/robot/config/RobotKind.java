@@ -6,6 +6,8 @@ public enum RobotKind {
   COMP_BOT("placeholder1"),
   PRACTICE_BOT("placeholder2");
 
+  public static final boolean IS_COMP_BOT = fromSerialNumber() == COMP_BOT;
+
   /** Returns the RobotKind by matching the serial number to a known RobotKind. */
   public static RobotKind fromSerialNumber() {
     return switch (RobotController.getSerialNumber()) {
