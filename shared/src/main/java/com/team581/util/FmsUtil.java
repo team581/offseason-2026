@@ -19,6 +19,12 @@ public class FmsUtil {
     return isHubActive(timeSinceMatchStart, isAutoWinner());
   }
 
+  public static boolean isRedAlliance() {
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Red);
+
+    return alliance == Alliance.Red;
+  }
+
   static Optional<Boolean> isAutoWinner() {
     if (RobotBase.isSimulation()) {
       return Optional.of(true);
@@ -58,12 +64,6 @@ public class FmsUtil {
       return true;
     }
     return true;
-  }
-
-  public static boolean isRedAlliance() {
-    var alliance = DriverStation.getAlliance().orElse(Alliance.Red);
-
-    return alliance == Alliance.Red;
   }
 
   private FmsUtil() {}
