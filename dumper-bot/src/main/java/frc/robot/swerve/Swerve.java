@@ -1,6 +1,8 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Degrees;
+import java.util.function.DoubleSupplier;
+
+import org.jspecify.annotations.Nullable;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
@@ -10,11 +12,13 @@ import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
+import com.team581.math.PolarChassisSpeeds;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -24,14 +28,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.function.DoubleSupplier;
-import org.jspecify.annotations.Nullable;
 
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
@@ -104,6 +107,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private double distanceToWallIntakePoint = 0.0;
   private boolean visionOnline = false;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
+  private PolarChassisSpeeds intakeAssistSpeeds = new PolarChassisSpeeds();
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -197,6 +201,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
   }
 
+  public void setIntakeAssistSpeeds(PolarChassisSpeeds speeds) {
+    intakeAssistSpeeds = speeds;
+  }
+
   private void sendSwerveRequest() {
     switch (getState()) {
       case TELEOP -> drivetrain.setControl(teleopRequest);
@@ -214,6 +222,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                     drivetrainState.Pose, fieldRelativeSpeeds, snapAngle)));
       }
       case INTAKING -> {
+        var currentSpeeds = new ChassisSpeeds(teleopRequest.VelocityX, teleopRequest.VelocityY, 0.0);
+        var wantedSpeeds = currentSpeeds.plus(intakeAssistSpeeds);
+        teleopRequest.withVelocityX(wantedSpeeds.vxMetersPerSecond).withVelocityY(wantedSpeeds.vyMetersPerSecond);
+        teleopSnapsIntakeRequest.withVelocityX(wantedSpeeds.vxMetersPerSecond).withVelocityY(wantedSpeeds.vyMetersPerSecond);
+
         if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
           if (ableToWallSnap()) {
             DogLog.timestamp("Swerve/WallSnaps/Snapping");
