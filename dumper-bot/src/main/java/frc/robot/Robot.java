@@ -66,7 +66,7 @@ public class Robot extends Base581Robot {
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
-  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Intake intake = new Intake(hardware.leftIntakeMotor, hardware.rightIntakeMotor);
   private final Hopper hopper = new Hopper(hardware.hopperMotor);
   private final Shooter shooter =
       new Shooter(
