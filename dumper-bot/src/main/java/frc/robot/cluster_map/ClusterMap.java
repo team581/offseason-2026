@@ -7,6 +7,7 @@ import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.GamePieceResult;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -67,7 +68,15 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             .min(bestClusterComparator);
     if (bestCluster.isPresent()) {
       var rotation =
-          MathHelpers.getDriveDirection(bestCluster.orElseThrow(), localization.getPose());
+          MathHelpers.getDriveDirection(localization.getPose(), bestCluster.orElseThrow());
+      if (!MathUtil.isNear(
+          localization.getPose().getRotation().getDegrees(),
+          rotation.getDegrees(),
+          45,
+          -180,
+          180)) {
+        return Optional.empty();
+      }
       var clusterPoseWithIntakeRotation =
           new Pose2d(bestCluster.orElseThrow().getTranslation(), rotation);
       DogLog.log("ClusterMap/BestClusterPose", clusterPoseWithIntakeRotation);

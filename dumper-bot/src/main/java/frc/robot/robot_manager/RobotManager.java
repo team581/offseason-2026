@@ -1,9 +1,12 @@
 package frc.robot.robot_manager;
 
+import com.team581.math.IntakeAssistCalculator;
+import com.team581.math.PolarChassisSpeeds;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.cluster_map.ClusterMap;
@@ -28,6 +31,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Feeder feeder;
   private final Swerve swerve;
   private final Vision vision;
+  private final ClusterMap clusterMap;
   public final Localization localization;
 
   private Pose2d robotPose = Pose2d.kZero;
@@ -44,6 +48,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double feed2GoalAngle = 0.0;
   private double feed2Distance = 0.0;
 
+  private final PIDController INTAKE_ASSIST_CONTROLLER = new PIDController(3.0, 0.0, 0.0);
+  private final double INTAKE_ASSIST_MAX_SPEED = 1.0;
+
   private double timeOfFlight = 0.0;
 
   public RobotManager(
@@ -54,8 +61,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Feeder feeder,
       Swerve swerve,
       Vision vision,
-      Localization localization,
-      ClusterMap clusterMap) {
+      ClusterMap clusterMap,
+      Localization localization) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
 
     this.health = health;
@@ -65,6 +72,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.feeder = feeder;
     this.swerve = swerve;
     this.vision = vision;
+    this.clusterMap = clusterMap;
     this.localization = localization;
 
     DogLog.log("Robot/StateCount", RobotState.values().length);
@@ -209,6 +217,17 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WAIT_SCORE, PREPARE_SCORE, SCORE -> swerve.hubAimRequest(hubGoalAngle);
       default -> {
         if (intake.getState() == IntakeState.INTAKING) {
+          var maybeClusterPose = clusterMap.getBestClusterPose();
+          if (FeatureFlags.CLUSTER_MAP.getAsBoolean() && maybeClusterPose.isPresent()) {
+            swerve.setIntakeAssistSpeeds(
+                IntakeAssistCalculator.getAssistSpeedsFromPose(
+                    maybeClusterPose.orElseThrow(),
+                    robotPose,
+                    INTAKE_ASSIST_CONTROLLER,
+                    INTAKE_ASSIST_MAX_SPEED));
+          } else {
+            swerve.setIntakeAssistSpeeds(new PolarChassisSpeeds());
+          }
           swerve.intakeDriveRequest();
         } else {
           swerve.normalDriveRequest();

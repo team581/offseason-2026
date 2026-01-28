@@ -1,7 +1,5 @@
 package frc.robot.robot_manager;
 
-import java.util.Optional;
-
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
@@ -22,6 +20,7 @@ import frc.robot.turret.TurretCalculator;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
+import java.util.Optional;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final IntegerSubscriber TAG_AIM_ID = DogLog.tunable("TagAimID", 9);

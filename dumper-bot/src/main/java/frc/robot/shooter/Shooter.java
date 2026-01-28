@@ -34,7 +34,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
           "Shooter/DistanceToScoreRPM",
           Map.entry(Units.inchesToMeters(57.0), 2250.0),
           Map.entry(2.27, 2600.0),
-          Map.entry(3.6, 3100.0));
+          Map.entry(3.6, 3150.0),
+          Map.entry(4.0, 3200.0));
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",

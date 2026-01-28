@@ -75,7 +75,7 @@ public class Robot extends Base581Robot {
   private final HealthManager health = new HealthManager(mainLimelight, groundLimelight);
   private final RobotManager robotManager =
       new RobotManager(
-          health, intake, hopper, shooter, feeder, swerve, vision, localization, clusterMap);
+          health, intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
