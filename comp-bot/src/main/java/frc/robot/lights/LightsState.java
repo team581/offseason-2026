@@ -30,8 +30,7 @@ public enum LightsState {
     this.color = color;
     this.duration = Double.POSITIVE_INFINITY;
     this.stateBlinkRequest = Optional.empty();
-    this.stateColorRequest =
-        Optional.of(new SolidColor(0, 399).withColor(new RGBWColor(color)).withUpdateFreqHz(50.0));
+    this.stateColorRequest = Optional.of(new SolidColor(0, 399).withColor(new RGBWColor(color)));
   }
 
   LightsState(Color color, double duration) {
@@ -41,8 +40,7 @@ public enum LightsState {
         Optional.of(
             new StrobeAnimation(0, 399)
                 .withColor(new RGBWColor(color))
-                .withFrameRate(1 / duration)
-                .withUpdateFreqHz(50.0));
+                .withFrameRate(1 / duration));
     this.stateColorRequest = Optional.empty();
   }
 
