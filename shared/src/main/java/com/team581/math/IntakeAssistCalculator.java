@@ -15,10 +15,12 @@ public class IntakeAssistCalculator {
             .getTranslation()
             .minus(robotPose.getTranslation())
             .rotateBy(Rotation2d.fromDegrees(360 - robotPose.getRotation().getDegrees()));
-    var sidewaysSpeed = MathUtil.clamp(controller.calculate(robotRelativePose.getY(), 0.0), -maxSpeed, maxSpeed);
+    var sidewaysSpeed =
+        MathUtil.clamp(controller.calculate(robotRelativePose.getY(), 0.0), -maxSpeed, maxSpeed);
     var robotRelativeError = new Translation2d(0, sidewaysSpeed);
     var fieldRelativeError = robotRelativeError.rotateBy(robotPose.getRotation());
-    var assistSpeeds = new PolarChassisSpeeds(fieldRelativeError.getX(), fieldRelativeError.getY(), 0.0);
+    var assistSpeeds =
+        new PolarChassisSpeeds(fieldRelativeError.getX(), fieldRelativeError.getY(), 0.0);
 
     return assistSpeeds;
   }

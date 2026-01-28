@@ -5,7 +5,6 @@ import com.team581.math.PolarChassisSpeeds;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -219,8 +218,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       default -> {
         if (intake.getState() == IntakeState.INTAKING) {
           var maybeClusterPose = clusterMap.getBestClusterPose();
-          if (FeatureFlags.CLUSTER_MAP.getAsBoolean()&&maybeClusterPose.isPresent()) {
-            swerve.setIntakeAssistSpeeds(IntakeAssistCalculator.getAssistSpeedsFromPose(maybeClusterPose.orElseThrow(), robotPose, INTAKE_ASSIST_CONTROLLER, INTAKE_ASSIST_MAX_SPEED));
+          if (FeatureFlags.CLUSTER_MAP.getAsBoolean() && maybeClusterPose.isPresent()) {
+            swerve.setIntakeAssistSpeeds(
+                IntakeAssistCalculator.getAssistSpeedsFromPose(
+                    maybeClusterPose.orElseThrow(),
+                    robotPose,
+                    INTAKE_ASSIST_CONTROLLER,
+                    INTAKE_ASSIST_MAX_SPEED));
           } else {
             swerve.setIntakeAssistSpeeds(new PolarChassisSpeeds());
           }
