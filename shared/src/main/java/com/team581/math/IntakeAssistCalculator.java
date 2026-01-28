@@ -19,9 +19,6 @@ public class IntakeAssistCalculator {
         MathUtil.clamp(controller.calculate(robotRelativePose.getY(), 0.0), -maxSpeed, maxSpeed);
     var robotRelativeError = new Translation2d(0, sidewaysSpeed);
     var fieldRelativeError = robotRelativeError.rotateBy(robotPose.getRotation());
-    var assistSpeeds =
-        new PolarChassisSpeeds(fieldRelativeError.getX(), fieldRelativeError.getY(), 0.0);
-
-    return assistSpeeds;
+    return new PolarChassisSpeeds(fieldRelativeError.getX(), fieldRelativeError.getY(), 0.0);
   }
 }

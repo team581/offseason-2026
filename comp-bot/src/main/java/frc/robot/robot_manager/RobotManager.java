@@ -260,13 +260,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     // -And if we are not in alliance zone, point towards feed pose
     if (!vision.isAnyCameraOnlineForTags() || nearTrench) {
       shooterHood.idleRequest();
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", new String("NearTrench"));
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NearTrench");
     } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
       shooterHood.scoreRequest(hubDistance);
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", new String("InAllianceZone"));
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "InAllianceZone");
     } else {
       shooterHood.feedRequest(usedFeedDistance);
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", new String("NotInAlliance"));
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
     }
   }
 

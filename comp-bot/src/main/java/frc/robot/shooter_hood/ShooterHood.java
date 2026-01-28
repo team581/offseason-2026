@@ -142,8 +142,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
       case IDLE -> {
         motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
-      DogLog.log("ShooterHood/CurrentSetpoint", 0);
-    }
+        DogLog.log("ShooterHood/CurrentSetpoint", 0);
+      }
 
       default -> {}
     }
