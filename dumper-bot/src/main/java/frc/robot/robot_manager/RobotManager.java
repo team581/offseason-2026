@@ -29,7 +29,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Hopper hopper;
   private final Shooter shooter;
   private final Feeder feeder;
-  private final Swerve swerve;
+  public final Swerve swerve;
   private final Vision vision;
   private final ClusterMap clusterMap;
   public final Localization localization;
