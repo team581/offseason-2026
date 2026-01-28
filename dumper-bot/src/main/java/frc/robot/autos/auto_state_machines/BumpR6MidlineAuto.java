@@ -72,9 +72,8 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
       case SEGMENT_1_DRIVE_TO_MIDLINE ->
           robotManager.swerve.trailblazerDriveRequest(segment1DriveToMidline);
       case INTAKE_ACROSS_MIDLINE -> {
-        robotManager.intakeRequest();
-        robotManager.swerve.trailblazerDriveRequest(segment2IntakeAcrossMidline);
-        robotManager.idleRequest();
+      robotManager.intakeRequest();
+      robotManager.swerve.trailblazerDriveRequest(segment2IntakeAcrossMidline);
       }
       case SEGMENT_3_DRIVE_BACK -> robotManager.swerve.trailblazerDriveRequest(segment3DriveBack);
       case SEGMENT_4_DRIVE_TO_SHOOT ->
