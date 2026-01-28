@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
+import com.team581.math.PolarChassisSpeeds;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
@@ -104,6 +105,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private double distanceToWallIntakePoint = 0.0;
   private boolean visionOnline = false;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
+  private PolarChassisSpeeds intakeAssistSpeeds = new PolarChassisSpeeds();
 
   public Swerve(TunerSwerveDrivetrain drivetrain, Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.TELEOP);
@@ -197,6 +199,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
   }
 
+  public void setIntakeAssistSpeeds(PolarChassisSpeeds speeds) {
+    intakeAssistSpeeds = speeds;
+  }
+
   private void sendSwerveRequest() {
     switch (getState()) {
       case TELEOP -> drivetrain.setControl(teleopRequest);
@@ -214,6 +220,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                     drivetrainState.Pose, fieldRelativeSpeeds, snapAngle)));
       }
       case INTAKING -> {
+        var currentSpeeds =
+            new ChassisSpeeds(teleopRequest.VelocityX, teleopRequest.VelocityY, 0.0);
+        var wantedSpeeds = currentSpeeds.plus(intakeAssistSpeeds);
+        teleopRequest
+            .withVelocityX(wantedSpeeds.vxMetersPerSecond)
+            .withVelocityY(wantedSpeeds.vyMetersPerSecond);
+        teleopSnapsIntakeRequest
+            .withVelocityX(wantedSpeeds.vxMetersPerSecond)
+            .withVelocityY(wantedSpeeds.vyMetersPerSecond);
+
         if (MathUtil.isNear(teleopRequest.RotationalRate, 0, teleopRequest.RotationalDeadband)) {
           if (ableToWallSnap()) {
             DogLog.timestamp("Swerve/WallSnaps/Snapping");

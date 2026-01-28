@@ -140,6 +140,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
       case UNHOMED -> motor.disable();
 
+      case IDLE -> {
+        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+        DogLog.log("ShooterHood/CurrentSetpoint", 0);
+      }
+
       default -> {}
     }
   }
@@ -155,10 +160,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case FEEDING -> {
         motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(feedAngle)));
         DogLog.log("ShooterHood/CurrentSetpoint", feedAngle);
-      }
-      case IDLE -> {
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
-        DogLog.log("ShooterHood/CurrentSetpoint", 0);
       }
 
       default -> {}

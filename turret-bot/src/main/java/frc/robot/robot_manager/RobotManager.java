@@ -20,6 +20,7 @@ import frc.robot.turret.TurretCalculator;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
+import java.util.Optional;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final IntegerSubscriber TAG_AIM_ID = DogLog.tunable("TagAimID", 9);
@@ -29,6 +30,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Swerve swerve;
   public final Turret turret;
   public final Vision vision;
+  private Optional<RobotState> beforeAutoScoreState = Optional.empty();
 
   private Pose2d robotPose = Pose2d.kZero;
 
@@ -214,7 +216,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void setAutoscoreRequest(boolean autoScoring) {
     if (autoscore && !autoScoring) {
-      setStateFromRequest(RobotState.IDLE);
+      setStateFromRequest(beforeAutoScoreState.orElse(RobotState.IDLE));
+      beforeAutoScoreState = Optional.empty();
+    }
+    if (!autoscore && autoScoring) {
+      beforeAutoScoreState = Optional.of(getState());
     }
     autoscore = autoScoring;
   }
