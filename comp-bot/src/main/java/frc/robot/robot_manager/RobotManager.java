@@ -3,6 +3,8 @@ package frc.robot.robot_manager;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
@@ -123,8 +125,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
+        // Set hood behavior separately while idling
         shooter.idleRequest();
-        shooterHoodSmartIdleRequest();
         dyeRotor.idleRequest();
         turret.idleRequest();
         intake.idleRequest();
@@ -201,7 +203,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE -> {}
+      case IDLE -> shooterHoodSmartIdleRequest();
       case WAIT_FEED_LEFT, PREPARE_FEED_LEFT, FEED_LEFT -> {
         turret.setFeedAimAngle(feedLeftGoalAngle);
         usedFeedDistance = feedLeftDistance;
@@ -251,15 +253,21 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void shooterHoodSmartIdleRequest() {
+    // TODO: Remove logs later
+    DogLog.timestamp("RobotManager/HoodSmartIdle");
+
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
     if (!vision.isAnyCameraOnlineForTags() || nearTrench) {
       shooterHood.idleRequest();
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", new String("NearTrench"));
     } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
       shooterHood.scoreRequest(hubDistance);
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", new String("InAllianceZone"));
     } else {
       shooterHood.feedRequest(usedFeedDistance);
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", new String("NotInAlliance"));
     }
   }
 
