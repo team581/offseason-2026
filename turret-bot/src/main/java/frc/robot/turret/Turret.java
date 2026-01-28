@@ -1,7 +1,5 @@
 package frc.robot.turret;
 
-import java.util.Map;
-
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -28,6 +26,7 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import java.util.Map;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
@@ -47,13 +46,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       DogLog.tunable("TurretCurrentThreshold", 3.0);
   private static final double HOMING_END_POSITION = MIN_ANGLE;
 
-  //TODO: tune distance and tolerance values
-  private static final InterpolatingDoubleTreeMap TOLERANCE_TABLE = TunableInterpolatingDoubleTreeMap.ofEntries("Turret/DistanceToTolerance",
-  Map.entry(0.0, 1.0),
-  Map.entry(1.0, 1.0),
-  Map.entry(8.0, 0.1),
-  Map.entry(999.0, 0.1)
-  );
+  // TODO: tune distance and tolerance values
+  private static final InterpolatingDoubleTreeMap TOLERANCE_TABLE =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Turret/DistanceToTolerance",
+          Map.entry(0.0, 1.0),
+          Map.entry(1.0, 1.0),
+          Map.entry(8.0, 0.1),
+          Map.entry(999.0, 0.1));
   private double dynamicTolerance = 0.0;
   private double distanceForTolerance = 0.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
@@ -83,7 +83,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
-    dynamicTolerance = FeatureFlags.DYNAMIC_TURRET_TOLERANCE.getAsBoolean() ? TOLERANCE_TABLE.get(distanceForTolerance) : 1.0;
+    dynamicTolerance =
+        FeatureFlags.DYNAMIC_TURRET_TOLERANCE.getAsBoolean()
+            ? TOLERANCE_TABLE.get(distanceForTolerance)
+            : 1.0;
 
     switch (getState()) {
       case UNHOMED, HOMING -> {
