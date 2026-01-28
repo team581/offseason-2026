@@ -4,26 +4,26 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 
 public enum IntegrationTestState {
-  DRIVE_TO_START,
-  CLOSE_CENTERED_WITH_HUB,
-  BACK_CENTERED_WITH_HUB,
-  RIGHT_TRENCH,
-  LEFT_RAMP,
-  PAUSE;
+  SEGMENT_1_DRIVE_TO_START,
+  SEGMENT_2_CLOSE_CENTERED_WITH_HUB,
+  SEGMENT_3_BACK_CENTERED_WITH_HUB,
+  SEGMENT_4_RIGHT_TRENCH,
+  SEGMENT_5_LEFT_RAMP,
+  PAUSED;
 
   private static final ImmutableMap<IntegrationTestState, IntegrationTestState> nextState =
       ImmutableMap.ofEntries(
-          Map.entry(DRIVE_TO_START, CLOSE_CENTERED_WITH_HUB),
-          Map.entry(CLOSE_CENTERED_WITH_HUB, BACK_CENTERED_WITH_HUB),
-          Map.entry(BACK_CENTERED_WITH_HUB, RIGHT_TRENCH),
-          Map.entry(RIGHT_TRENCH, LEFT_RAMP));
+          Map.entry(SEGMENT_1_DRIVE_TO_START, SEGMENT_2_CLOSE_CENTERED_WITH_HUB),
+          Map.entry(SEGMENT_2_CLOSE_CENTERED_WITH_HUB, SEGMENT_3_BACK_CENTERED_WITH_HUB),
+          Map.entry(SEGMENT_3_BACK_CENTERED_WITH_HUB, SEGMENT_4_RIGHT_TRENCH),
+          Map.entry(SEGMENT_4_RIGHT_TRENCH, SEGMENT_5_LEFT_RAMP));
 
   private static final ImmutableMap<IntegrationTestState, IntegrationTestState> previousState =
       ImmutableMap.ofEntries(
-          Map.entry(CLOSE_CENTERED_WITH_HUB, DRIVE_TO_START),
-          Map.entry(BACK_CENTERED_WITH_HUB, CLOSE_CENTERED_WITH_HUB),
-          Map.entry(RIGHT_TRENCH, BACK_CENTERED_WITH_HUB),
-          Map.entry(LEFT_RAMP, RIGHT_TRENCH));
+          Map.entry(SEGMENT_2_CLOSE_CENTERED_WITH_HUB, SEGMENT_1_DRIVE_TO_START),
+          Map.entry(SEGMENT_3_BACK_CENTERED_WITH_HUB, SEGMENT_2_CLOSE_CENTERED_WITH_HUB),
+          Map.entry(SEGMENT_4_RIGHT_TRENCH, SEGMENT_3_BACK_CENTERED_WITH_HUB),
+          Map.entry(SEGMENT_5_LEFT_RAMP, SEGMENT_4_RIGHT_TRENCH));
 
   public IntegrationTestState nextState() {
     return nextState.get(this);

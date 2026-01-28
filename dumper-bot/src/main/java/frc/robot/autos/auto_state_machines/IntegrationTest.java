@@ -9,19 +9,19 @@ import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
-  private IntegrationTestState beforePauseState = IntegrationTestState.PAUSE;
+  private IntegrationTestState beforePauseState = IntegrationTestState.PAUSED;
 
   public IntegrationTest(RobotManager robotManager, Trailblazer trailblazer) {
-    super(IntegrationTestState.DRIVE_TO_START, robotManager, trailblazer);
+    super(IntegrationTestState.SEGMENT_1_DRIVE_TO_START, robotManager, trailblazer);
   }
 
   public void pauseRequest() {
-    if (getState() == IntegrationTestState.PAUSE) {
+    if (getState() == IntegrationTestState.PAUSED) {
       setStateFromRequest(beforePauseState);
     }
 
     beforePauseState = getState();
-    setStateFromRequest(IntegrationTestState.PAUSE);
+    setStateFromRequest(IntegrationTestState.PAUSED);
   }
 
   public void skipRequest() {
@@ -41,9 +41,9 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
   protected IntegrationTestState getNextState(IntegrationTestState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
-        case CLOSE_CENTERED_WITH_HUB ->
-            timeout(2.0) ? IntegrationTestState.BACK_CENTERED_WITH_HUB : currentState;
-        case PAUSE -> currentState;
+        case SEGMENT_2_CLOSE_CENTERED_WITH_HUB ->
+            timeout(2.0) ? IntegrationTestState.SEGMENT_3_BACK_CENTERED_WITH_HUB : currentState;
+        case PAUSED -> currentState;
         default -> currentState.nextState();
       };
     }
