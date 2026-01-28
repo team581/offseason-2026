@@ -10,16 +10,16 @@ public class Hardware {
   public final XboxController driverController = new XboxController(0);
   public final XboxController operatorController = new XboxController(1);
 
-  public final TalonFX shooterHoodMotor = new TalonFX(0);
-  public final TalonFX shooterLeftMotor = new TalonFX(0);
-  public final TalonFX shooterRightMotor = new TalonFX(0);
-  public final TalonFX intakeMotor = new TalonFX(0);
-  public final TalonFX deployMotor = new TalonFX(0);
-  public final TalonFX rotorMotor = new TalonFX(0);
-  public final TalonFX horizontalMotor = new TalonFX(0);
-  public final TalonFX verticalMotor = new TalonFX(0);
+  public final TalonFX shooterLeftMotor = new TalonFX(15);
+  public final TalonFX shooterRightMotor = new TalonFX(16);
+  public final TalonFX turretMotor = new TalonFX(17);
+  public final TalonFX rotorMotor = new TalonFX(18);
+  public final TalonFX horizontalMotor = new TalonFX(19);
+  public final TalonFX verticalMotor = new TalonFX(20);
+  public final TalonFX intakeMotor = new TalonFX(21);
+  public final TalonFX deployMotor = new TalonFX(22);
+  public final TalonFX shooterHoodMotor = new TalonFX(23);
   public final CANdle candle = new CANdle(0);
-  public final TalonFX turretMotor = new TalonFX(0);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(

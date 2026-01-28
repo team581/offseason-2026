@@ -2,8 +2,6 @@ package com.team581.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import edu.wpi.first.hal.HAL;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 final class FmsUtilTest {
