@@ -10,6 +10,7 @@ import frc.robot.robot_manager.RobotManager;
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
   private IntegrationTestState beforePauseState = IntegrationTestState.PAUSE;
+
   public IntegrationTest(RobotManager robotManager, Trailblazer trailblazer) {
     super(IntegrationTestState.DRIVE_TO_START, robotManager, trailblazer);
   }
