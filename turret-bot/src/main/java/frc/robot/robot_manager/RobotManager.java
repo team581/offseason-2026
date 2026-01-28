@@ -1,5 +1,7 @@
 package frc.robot.robot_manager;
 
+import java.util.Optional;
+
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
@@ -29,6 +31,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Swerve swerve;
   public final Turret turret;
   public final Vision vision;
+  private Optional<RobotState> beforeAutoScoreState = Optional.empty();
 
   private Pose2d robotPose = Pose2d.kZero;
 
@@ -214,7 +217,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void setAutoscoreRequest(boolean autoScoring) {
     if (autoscore && !autoScoring) {
-      setStateFromRequest(RobotState.IDLE);
+      setStateFromRequest(beforeAutoScoreState.orElse(RobotState.IDLE));
+      beforeAutoScoreState = Optional.empty();
+    }
+    if (!autoscore && autoScoring) {
+      beforeAutoScoreState = Optional.of(getState());
     }
     autoscore = autoScoring;
   }
