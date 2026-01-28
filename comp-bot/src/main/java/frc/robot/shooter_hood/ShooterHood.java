@@ -1,5 +1,7 @@
 package frc.robot.shooter_hood;
 
+import java.util.Map;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -12,26 +14,27 @@ import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import com.team581.util.tuning.TunablePid;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.Map;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
-      new PositionVoltage(0).withEnableFOC(false);
+  new PositionVoltage(0).withEnableFOC(false);
 
   private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "ShooterHood/DistanceToScore", Map.entry(0.0, 0.0));
-  private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0));
-  private static final double MAX_ANGLE = 100;
-  private static final double MIN_ANGLE = 0;
+  TunableInterpolatingDoubleTreeMap.ofEntries(
+    "ShooterHood/DistanceToScore", Map.entry(0.0, 0.0));
+    private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
+    TunableInterpolatingDoubleTreeMap.ofEntries(
+      "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0));
+      private static final double MAX_ANGLE = 100;
+      private static final double MIN_ANGLE = 0;
+      private static final double IDLE_ANGLE = 0.0;
   private double hubDistance = 0;
   private double feedDistance = 0;
   private double measuredAngle = 0;
@@ -141,7 +144,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED -> motor.disable();
 
       case IDLE -> {
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(0)));
+        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(IDLE_ANGLE)));
         DogLog.log("ShooterHood/CurrentSetpoint", 0);
       }
 
