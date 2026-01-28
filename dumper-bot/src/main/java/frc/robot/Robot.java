@@ -9,6 +9,7 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
@@ -74,8 +75,7 @@ public class Robot extends Base581Robot {
   private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final HealthManager health = new HealthManager(mainLimelight, groundLimelight);
   private final RobotManager robotManager =
-      new RobotManager(
-          health, intake, hopper, shooter, feeder, swerve, vision, localization, clusterMap);
+      new RobotManager(intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
 
   // private final Autos autos = new Autos(robotManager, trailblazer);
 
