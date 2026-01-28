@@ -1,13 +1,9 @@
 package frc.robot.robot_manager;
 
-import java.lang.reflect.Field;
-
-import com.team581.math.MathHelpers;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
@@ -134,7 +130,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE -> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
-      // Set hood behavior separately while idling
+        // Set hood behavior separately while idling
         dyeRotor.idleRequest();
         turret.idleRequest();
         intake.idleRequest();
@@ -303,6 +299,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
     }
   }
+
   public void cancelIntakeRequest() {
     intake.idleRequest();
     deploy.stowRequest();
@@ -384,7 +381,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var yDistanceToLeft = Math.abs(robotPose.getY() - FieldUtil.FEED_LEFT_POSE.getY());
     var yDistanceToRight = Math.abs(robotPose.getY() - FieldUtil.FEED_RIGHT_POSE.getY());
     var closestFeedLocation = Math.min(yDistanceToLeft, yDistanceToRight);
-    if(closestFeedLocation == yDistanceToLeft) {
+    if (closestFeedLocation == yDistanceToLeft) {
       feedLocation = FeedLocation.LEFT;
     } else {
       feedLocation = FeedLocation.RIGHT;
