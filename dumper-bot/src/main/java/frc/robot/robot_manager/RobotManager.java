@@ -252,18 +252,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               timeOfFlight);
       feed1GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.FEED_1_POSE.getPose().getTranslation(),
+              FieldUtil.FEED_LEFT_POSE.getPose().getTranslation(),
               swerve.getFieldRelativeSpeeds(),
               timeOfFlight);
       feed2GoalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(
-              FieldUtil.FEED_2_POSE.getPose().getTranslation(),
+              FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation(),
               swerve.getFieldRelativeSpeeds(),
               timeOfFlight);
     } else {
       hubGoalPose = FieldUtil.HUB_POSE.getPose().getTranslation();
-      feed1GoalPose = FieldUtil.FEED_1_POSE.getPose().getTranslation();
-      feed2GoalPose = FieldUtil.FEED_2_POSE.getPose().getTranslation();
+      feed1GoalPose = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();
+      feed2GoalPose = FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation();
     }
 
     hubGoalAngle = getSwerveAimingAngle(hubGoalPose);

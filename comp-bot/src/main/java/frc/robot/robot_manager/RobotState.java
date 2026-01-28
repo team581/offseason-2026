@@ -3,18 +3,15 @@ package frc.robot.robot_manager;
 public enum RobotState {
   IDLE,
 
-  WAIT_SCORE,
   PREPARE_SCORE,
   SCORE,
 
   PREPARE_FORCE_SCORE,
   FORCE_SCORE,
 
-  WAIT_FEED_LEFT,
   PREPARE_FEED_LEFT,
   FEED_LEFT,
 
-  WAIT_FEED_RIGHT,
   PREPARE_FEED_RIGHT,
   FEED_RIGHT,
 
