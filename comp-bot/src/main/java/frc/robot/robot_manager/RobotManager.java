@@ -41,6 +41,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double feedRightGoalAngle = 0.0;
   private double feedRightDistance = 0.0;
 
+  private double usedFeedDistance = 0.0;
+
   public RobotManager(
       ShooterHood shooterHood,
       Localization localization,
@@ -122,7 +124,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case IDLE -> {
         shooter.idleRequest();
-        shooterHood.idleRequest();
+        shooterHoodSmartIdleRequest();
         dyeRotor.idleRequest();
         turret.idleRequest();
         intake.idleRequest();
@@ -199,17 +201,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE -> {
-        if (nearTrench) {
-          shooterHood.idleRequest();
-        } else {
-          shooterHood.scoreRequest(0);
-        }
+      case IDLE -> {}
+      case WAIT_FEED_LEFT, PREPARE_FEED_LEFT, FEED_LEFT -> {
+        turret.setFeedAimAngle(feedLeftGoalAngle);
+        usedFeedDistance = feedLeftDistance;
       }
-      case WAIT_FEED_LEFT, PREPARE_FEED_LEFT, FEED_LEFT ->
-          turret.setFeedAimAngle(feedLeftGoalAngle);
-      case WAIT_FEED_RIGHT, PREPARE_FEED_RIGHT, FEED_RIGHT ->
-          turret.setFeedAimAngle(feedRightGoalAngle);
+      case WAIT_FEED_RIGHT, PREPARE_FEED_RIGHT, FEED_RIGHT -> {
+        turret.setFeedAimAngle(feedRightGoalAngle);
+        usedFeedDistance = feedRightDistance;
+      }
       case WAIT_SCORE, PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
       default -> {}
     }
@@ -248,6 +248,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void intakeRequest() {
     intake.intakeRequest();
     deploy.intakeRequest();
+  }
+
+  private void shooterHoodSmartIdleRequest() {
+    // -First, if cameras are offline or we are near a trench, always be idle
+    // -Otherwise if we are in our alliance zone, point towards hub
+    // -And if we are not in alliance zone, point towards feed pose
+    if (!vision.isAnyCameraOnlineForTags() || nearTrench) {
+      shooterHood.idleRequest();
+    } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
+      shooterHood.scoreRequest(hubDistance);
+    } else {
+      shooterHood.feedRequest(usedFeedDistance);
+    }
   }
 
   @Override
