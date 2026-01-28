@@ -9,8 +9,18 @@ import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
+  private IntegrationTestState beforePauseState = IntegrationTestState.PAUSE;
   public IntegrationTest(RobotManager robotManager, Trailblazer trailblazer) {
     super(IntegrationTestState.DRIVE_TO_START, robotManager, trailblazer);
+  }
+
+  public void pauseRequest() {
+    if (getState() == IntegrationTestState.PAUSE) {
+      setStateFromRequest(beforePauseState);
+    }
+
+    beforePauseState = getState();
+    setStateFromRequest(IntegrationTestState.PAUSE);
   }
 
   @Override
@@ -20,7 +30,6 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
   @Override
   protected IntegrationTestState getNextState(IntegrationTestState currentState) {
-
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
         case DRIVE_TO_START -> IntegrationTestState.CLOSE_CENTERED_WITH_HUB;
