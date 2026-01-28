@@ -24,6 +24,14 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
     setStateFromRequest(IntegrationTestState.PAUSE);
   }
 
+  public void skipRequest() {
+    setStateFromRequest(getState().nextState());
+  }
+
+  public void previousRequest() {
+    setStateFromRequest(getState().previousState());
+  }
+
   @Override
   public Point getStartingPoint() {
     return Point.ofRed(Pose2d.kZero);
@@ -33,12 +41,10 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
   protected IntegrationTestState getNextState(IntegrationTestState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
-        case DRIVE_TO_START -> IntegrationTestState.CLOSE_CENTERED_WITH_HUB;
-        case CLOSE_CENTERED_WITH_HUB -> IntegrationTestState.PAUSE;
-        case BACK_CENTERED_WITH_HUB -> IntegrationTestState.PAUSE;
-        case RIGHT_TRENCH -> IntegrationTestState.PAUSE;
-        case SHOOT_ON_MOVE_RIGHT_TRENCH_TO_MIDDLE_CENTERED_WITH_HUB -> IntegrationTestState.PAUSE;
+        case CLOSE_CENTERED_WITH_HUB ->
+            timeout(2.0) ? IntegrationTestState.BACK_CENTERED_WITH_HUB : currentState;
         case PAUSE -> currentState;
+        default -> currentState.nextState();
       };
     }
     return currentState;
