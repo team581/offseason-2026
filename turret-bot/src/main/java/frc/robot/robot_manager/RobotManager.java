@@ -195,6 +195,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     var goalPose = FieldUtil.HUB_POSE.getTranslation();
 
+    turret.setDistance(robotTranslation.getDistance(goalPose));
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       goalPose =
           ShootOnTheMove.getVelocityCompensatedGoal(

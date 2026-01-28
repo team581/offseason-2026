@@ -19,6 +19,8 @@ public class FeatureFlags {
   public static final BooleanSupplier INTAKE_WALL_SNAPS = FeatureFlag.of("IntakeWallSnaps", true);
   public static final BooleanSupplier INTAKE_DIRECTIONAL_SNAPS =
       FeatureFlag.of("IntakeDirectionalSnaps", false);
+  public static final BooleanSupplier DYNAMIC_TURRET_TOLERANCE =
+      FeatureFlag.of("DynamicTurretTolerance", true);
 
   private FeatureFlags() {}
 }

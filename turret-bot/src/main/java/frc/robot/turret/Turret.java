@@ -12,17 +12,21 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import java.util.Map;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
@@ -41,7 +45,17 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
       DogLog.tunable("TurretCurrentThreshold", 3.0);
   private static final double HOMING_END_POSITION = MIN_ANGLE;
-  private static final double TOLERANCE = 1.0;
+
+  // TODO: tune distance and tolerance values
+  private static final InterpolatingDoubleTreeMap TOLERANCE_TABLE =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Turret/DistanceToTolerance",
+          Map.entry(0.0, 1.0),
+          Map.entry(1.0, 1.0),
+          Map.entry(8.0, 0.1),
+          Map.entry(999.0, 0.1));
+  private double dynamicTolerance = 0.0;
+  private double distanceForTolerance = 0.0;
   private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
   private double rawCurrent = 0.0;
   private double filteredCurrent = 0.0;
@@ -69,6 +83,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
+    dynamicTolerance =
+        FeatureFlags.DYNAMIC_TURRET_TOLERANCE.getAsBoolean()
+            ? TOLERANCE_TABLE.get(distanceForTolerance)
+            : 1.0;
 
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -220,10 +238,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     tagAimAngle = angle;
   }
 
+  public void setDistance(double distance) {
+    distanceForTolerance = distance;
+  }
+
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED, HOMING, IDLE -> false;
-      default -> MathUtil.isNear(clamp(goalAngle), currentAngle, TOLERANCE);
+      default -> MathUtil.isNear(clamp(goalAngle), currentAngle, dynamicTolerance);
     };
   }
 
