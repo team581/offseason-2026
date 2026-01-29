@@ -1,6 +1,5 @@
 package frc.robot.autos.auto_state_machines;
 
-import com.team581.GlobalConfig;
 import com.team581.autos.Point;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
@@ -11,8 +10,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_states.IntegrationTestState;
 import frc.robot.robot_manager.RobotManager;

@@ -78,7 +78,6 @@ public class Robot extends Base581Robot {
       new RobotManager(
           health, intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
 
-
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);
 
