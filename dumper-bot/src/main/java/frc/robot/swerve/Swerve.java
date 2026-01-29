@@ -209,7 +209,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 ? scoreAngle
                 : scoreAngle.rotateBy(Rotation2d.k180deg);
 
-                DogLog.log("Swerve/UsedSnapAngle", usedSnapAngle.getDegrees(), Degrees);
+        DogLog.log("Swerve/UsedSnapAngle", usedSnapAngle.getDegrees(), Degrees);
 
         drivetrain.setControl(
             swerveRequest
