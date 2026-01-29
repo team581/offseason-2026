@@ -140,7 +140,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   public boolean seenTagRecentlyForReset() {
-    return seenTagRecentlyForReset;
+    return seenTagRecentlyForReset || RobotBase.isSimulation();
   }
 
   public boolean seeingTag() {
