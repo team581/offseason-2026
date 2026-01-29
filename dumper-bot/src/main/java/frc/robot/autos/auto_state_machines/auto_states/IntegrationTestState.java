@@ -33,10 +33,10 @@ public enum IntegrationTestState {
           SEGMENT_4_RIGHT_TRENCH);
 
   public IntegrationTestState nextState() {
-    return NEXT_STATE.get(this);
+    return NEXT_STATE.getOrDefault(this, this);
   }
 
   public IntegrationTestState previousState() {
-    return PREVIOUS_STATE.get(this);
+    return PREVIOUS_STATE.getOrDefault(this, this);
   }
 }
