@@ -78,7 +78,8 @@ public class Robot extends Base581Robot {
       new RobotManager(
           health, intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
 
-  @SuppressWarnings("unused")
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
@@ -116,7 +117,7 @@ public class Robot extends Base581Robot {
 
     var driverRightTrigger =
         enabledEvent.and(hardware.driverController.rightTrigger(0.5, buttonBindingsLoop));
-    driverRightTrigger.rising().ifHigh(robotManager::toggleHubRequest);
+    driverRightTrigger.rising().ifHigh(robotManager::toggleScoreRequest);
 
     var driverRightBumper =
         enabledEvent.and(hardware.driverController.rightBumper(buttonBindingsLoop));
