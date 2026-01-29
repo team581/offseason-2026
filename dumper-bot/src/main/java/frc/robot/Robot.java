@@ -12,6 +12,7 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
+import frc.robot.autos.Autos;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
@@ -77,7 +78,8 @@ public class Robot extends Base581Robot {
       new RobotManager(
           health, intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
 
-  // private final Autos autos = new Autos(robotManager, trailblazer);
+ @SuppressWarnings("unused")    
+  private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(
