@@ -5,11 +5,10 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.trailblazer.trackers.PathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
 import java.util.Optional;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Trailblazer is Team 581's custom path following library. We built Trailblazer to give us end to
@@ -43,14 +42,10 @@ public class Trailblazer {
     return currentSegment.filter(segment -> segment.atGoal(currentPose, currentIndex)).isPresent();
   }
 
-  public void setActiveSegment(AutoSegment segment) {
-    if (currentSegment.isPresent() && currentSegment.orElseThrow().equals(segment)) {
-      return;
-    }
-
-    currentSegment = Optional.of(segment);
-    pathTracker.resetAndSetPoints(segment.points);
-    currentIndex = pathTracker.getCurrentPointIndex();
+  public boolean atGoal(Translation2d currentTranslation) {
+    return currentSegment
+        .filter(segment -> segment.atGoal(currentTranslation, currentIndex))
+        .isPresent();
   }
 
   public ChassisSpeeds getFieldRelativeSetpoint(
@@ -79,5 +74,15 @@ public class Trailblazer {
         segment.points.get(currentIndex),
         segment,
         currentIndex);
+  }
+
+  public void setActiveSegment(AutoSegment segment) {
+    if (currentSegment.isPresent() && currentSegment.orElseThrow().equals(segment)) {
+      return;
+    }
+
+    currentSegment = Optional.of(segment);
+    pathTracker.resetAndSetPoints(segment.points);
+    currentIndex = pathTracker.getCurrentPointIndex();
   }
 }
