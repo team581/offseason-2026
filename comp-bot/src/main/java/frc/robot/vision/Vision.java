@@ -8,9 +8,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
@@ -22,12 +20,6 @@ import frc.robot.vision.limelight.LimelightState;
 import java.util.Optional;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
-  private static final Transform2d TURRET_TO_CAMERA =
-      new Transform2d(Units.inchesToMeters(-5.3), 0.0, Rotation2d.kZero);
-
-  private static final Transform2d TURRET_TO_ROBOT =
-      new Transform2d(Units.inchesToMeters(-0.5), 0.0, Rotation2d.kZero);
-
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
   private final Debouncer seeingTagForPoseResetDebouncer =
       new Debouncer(5.0, DebounceType.kFalling);
@@ -111,7 +103,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
     var mT1Pose = turretLimelightResult.pose();
     var mT1Timestamp = turretLimelightResult.timestamp();
-    var cameraToTurretTransform = TURRET_TO_CAMERA.inverse();
+    var cameraToTurretTransform = VisionConfig.TURRET_TO_CAMERA.inverse();
 
     var fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
 
@@ -132,7 +124,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
 
-    fieldToRobotEstimate = fieldToRobotEstimate.plus(TURRET_TO_ROBOT.inverse());
+    fieldToRobotEstimate = fieldToRobotEstimate.plus(VisionConfig.TURRET_TO_ROBOT.inverse());
 
     DogLog.log("Vision/AdjustedTurretPose", fieldToRobotEstimate);
     return adjustedTurretResult.update(
