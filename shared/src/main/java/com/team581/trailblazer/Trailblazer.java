@@ -55,6 +55,12 @@ public class Trailblazer {
     return this.getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
   }
 
+  /**
+   * @deprecated I (Jonah) want to delete this. It only really makes sense for robots where swerve
+   *     is aware of auto vs teleop, but we migrated off of that via {@link
+   *     com.team581.swerve.DriveSource}. Please remind me to delete this in 2027.
+   */
+  @Deprecated(since = "2026-01-28", forRemoval = true)
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose,
       ChassisSpeeds currentFieldRelativeSpeeds,
