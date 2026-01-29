@@ -159,7 +159,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         feeder.idleRequest();
         // Intake is controlled separately
         hopper.idleRequest();
-        swerve.feedingAimRequest(feed1GoalAngle);
+        swerve.feedDriveRequest(feed1GoalAngle);
       }
       case WAIT_FEED_2, PREPARE_FEED_2 -> {
         vision.setState(VisionState.TAGS);
@@ -168,7 +168,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         feeder.idleRequest();
         // Intake is controlled separately
         hopper.idleRequest();
-        swerve.feedingAimRequest(feed2GoalAngle);
+        swerve.feedDriveRequest(feed2GoalAngle);
       }
       case FEED_1 -> {
         vision.setState(VisionState.TAGS);
@@ -177,7 +177,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         feeder.feedRequest();
         intake.shootingRequest();
         hopper.shootRequest();
-        swerve.feedingAimRequest(feed1GoalAngle);
+        swerve.feedDriveRequest(feed1GoalAngle);
       }
       case FEED_2 -> {
         vision.setState(VisionState.TAGS);
@@ -186,7 +186,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         feeder.feedRequest();
         intake.shootingRequest();
         hopper.shootRequest();
-        swerve.feedingAimRequest(feed2GoalAngle);
+        swerve.feedDriveRequest(feed2GoalAngle);
       }
       case WAIT_SCORE, PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
@@ -195,7 +195,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         feeder.idleRequest();
         // Intake is controlled separately
         hopper.idleRequest();
-        swerve.hubAimRequest(hubGoalAngle);
+        swerve.scoreDriveRequest(hubGoalAngle);
       }
       case SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
@@ -203,7 +203,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         feeder.feedRequest();
         intake.shootingRequest();
         hopper.shootRequest();
-        swerve.hubAimRequest(hubGoalAngle);
+        swerve.scoreDriveRequest(hubGoalAngle);
       }
       default -> {}
     }
@@ -212,9 +212,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> swerve.feedingAimRequest(feed1GoalAngle);
-      case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.feedingAimRequest(feed2GoalAngle);
-      case WAIT_SCORE, PREPARE_SCORE, SCORE -> swerve.hubAimRequest(hubGoalAngle);
+      case WAIT_FEED_1, PREPARE_FEED_1, FEED_1 -> swerve.feedDriveRequest(feed1GoalAngle);
+      case WAIT_FEED_2, PREPARE_FEED_2, FEED_2 -> swerve.feedDriveRequest(feed2GoalAngle);
+      case WAIT_SCORE, PREPARE_SCORE, SCORE -> swerve.scoreDriveRequest(hubGoalAngle);
       default -> {
         if (intake.getState() == IntakeState.INTAKING) {
           var maybeClusterPose = clusterMap.getBestClusterPose();

@@ -101,27 +101,27 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
   protected void whileInState(IntegrationTestState newState) {
     switch (newState) {
       case SEGMENT_1_DRIVE_TO_START -> {
-        robotManager.swerve.trailblazerDriveRequest(segment1DriveToStart);
+        trailblazer.setActiveSegment(segment1DriveToStart);
         robotManager.idleRequest();
       }
       case SEGMENT_2_CLOSE_CENTERED_WITH_HUB -> {
-        robotManager.swerve.trailblazerDriveRequest(segment2CloseCenteredWithHub);
+        trailblazer.setActiveSegment(segment2CloseCenteredWithHub);
         robotManager.scoreRequest();
       }
       case SEGMENT_3_BACK_CENTERED_WITH_HUB -> {
-        robotManager.swerve.trailblazerDriveRequest(segment3BackCenteredWithHub);
+        trailblazer.setActiveSegment(segment3BackCenteredWithHub);
         robotManager.scoreRequest();
       }
       case SEGMENT_4_RIGHT_TRENCH -> {
-        robotManager.swerve.trailblazerDriveRequest(segment4RightTrench);
+        trailblazer.setActiveSegment(segment4RightTrench);
         robotManager.scoreRequest();
       }
       case SEGMENT_5_LEFT_RAMP -> {
-        robotManager.swerve.trailblazerDriveRequest(segment5RightTrench);
+        trailblazer.setActiveSegment(segment5RightTrench);
         robotManager.scoreRequest();
       }
       case PAUSED -> {
-        robotManager.swerve.normalDriveRequest();
+        trailblazer.setActiveSegment(segment1DriveToStart);
         robotManager.idleRequest();
       }
     }
