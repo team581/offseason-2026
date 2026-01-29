@@ -37,11 +37,11 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
-  private final DriveSource teleopDriverSource =
+  private final DriveSource teleopDriveSource =
       new XboxControllerDriveSource(
           hardware.driverController, Swerve.MAX_SPEED, Swerve.TELEOP_MAX_ANGULAR_RATE);
 
-  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriverSource);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriveSource);
   private final Imu imu = new Imu(swerve.drivetrain);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
@@ -98,7 +98,7 @@ public class Robot extends Base581Robot {
           lights);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
-  private final Autos autos = new Autos(robotManager, trailblazer, teleopDriverSource);
+  private final Autos autos = new Autos(robotManager, trailblazer, teleopDriveSource);
 
   public Robot() {
     logMetadata(
