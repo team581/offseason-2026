@@ -78,7 +78,7 @@ public class Robot extends Base581Robot {
       new RobotManager(
           health, intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
 
- @SuppressWarnings("unused")    
+  @SuppressWarnings("unused")
   private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
