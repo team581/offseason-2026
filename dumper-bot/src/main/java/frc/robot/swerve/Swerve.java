@@ -300,7 +300,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public void feedDriveRequest(double snapAngle) {
-    scoreAngle = Rotation2d.fromDegrees(snapAngle);
+    feedAngle = Rotation2d.fromDegrees(snapAngle);
     setStateFromRequest(SwerveState.FEED);
   }
 
