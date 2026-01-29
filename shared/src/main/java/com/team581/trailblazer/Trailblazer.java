@@ -43,7 +43,7 @@ public class Trailblazer {
     return currentSegment.filter(segment -> segment.atGoal(currentPose, currentIndex)).isPresent();
   }
 
-  public void followSegment(AutoSegment segment) {
+  public void setActiveSegment(AutoSegment segment) {
     if (currentSegment.isPresent() && currentSegment.orElseThrow().equals(segment)) {
       return;
     }

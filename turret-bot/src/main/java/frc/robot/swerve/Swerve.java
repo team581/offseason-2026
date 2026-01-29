@@ -332,7 +332,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public void trailblazerDriveRequest(AutoSegment segment) {
-    trailblazer.followSegment(segment);
+    trailblazer.setActiveSegment(segment);
     setStateFromRequest(SwerveState.TRAILBLAZER);
     sendSwerveRequest();
   }
