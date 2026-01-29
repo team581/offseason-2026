@@ -5,10 +5,12 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.trailblazer.trackers.PathTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Trailblazer is Team 581's custom path following library. We built Trailblazer to give us end to
