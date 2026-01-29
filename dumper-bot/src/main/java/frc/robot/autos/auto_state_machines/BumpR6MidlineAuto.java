@@ -16,31 +16,33 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
   private final AutoSegment segment1DriveToMidline =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(12.996, 6.0, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(11.912, 5.482, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(10.218, 5.482, Rotation2d.k180deg)))
-          .untilFinished(new PoseErrorTolerance(0, null));
+              AutoPoint.ofRed(new Pose2d(11.912, 6.0, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(10.218, 6.0, Rotation2d.k180deg)))
+          .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment2IntakeAcrossMidline =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(10.218, 5.482, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.218, 5.8, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(10.218, 4.341, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(10.218, 2.885, Rotation2d.kCW_90deg)))
-          .untilFinished(new PoseErrorTolerance(0, null));
+          .untilFinished(new PoseErrorTolerance(0.05, 3));
+
 
   private final AutoSegment segment3DriveBack =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(10.218, 2.885, Rotation2d.kCCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.218, 4.341, Rotation2d.kCCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.218, 2.885, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.218, 4.341, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(10.218, 5.482, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(11.912, 5.482, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(13.751, 5.482, Rotation2d.k180deg)))
-          .untilFinished(new PoseErrorTolerance(0, null));
+              AutoPoint.ofRed(new Pose2d(11.912, 5.482, Rotation2d.k180deg)))
+          .untilFinished(new PoseErrorTolerance(0.05, 3));
+
 
   private final AutoSegment segment4DriveToShoot =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(13.751, 5.82, Rotation2d.kZero)),
+              AutoPoint.ofRed(new Pose2d(13.751, 5.482, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(14.305, 4.797, Rotation2d.fromDegrees(-145))))
-          .untilFinished(new PoseErrorTolerance(0, null));
+          .untilFinished(new PoseErrorTolerance(0.05, 3));
+
 
   public BumpR6MidlineAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(BumpR6MidlineAutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
@@ -48,7 +50,7 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(Pose2d.kZero);
+    return Point.ofRed(new Pose2d(12.996, 6.0, Rotation2d.k180deg));
   }
 
   @Override
@@ -74,8 +76,14 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
         robotManager.intakeRequest();
         trailblazer.setActiveSegment(segment2IntakeAcrossMidline);
       }
-      case SEGMENT_3_DRIVE_BACK -> trailblazer.setActiveSegment(segment3DriveBack);
-      case SEGMENT_4_DRIVE_TO_SHOOT -> trailblazer.setActiveSegment(segment4DriveToShoot);
+      case SEGMENT_3_DRIVE_BACK -> {
+        trailblazer.setActiveSegment(segment3DriveBack);
+        robotManager.cancelIntakeRequest();
+      }
+      case SEGMENT_4_DRIVE_TO_SHOOT -> {
+          trailblazer.setActiveSegment(segment4DriveToShoot);
+          robotManager.forceShootRequest();
+      }
       case DONE -> {}
     }
   }
