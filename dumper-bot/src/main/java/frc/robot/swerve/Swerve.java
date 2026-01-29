@@ -96,12 +96,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnapsClosedLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricIntakeSnapsClosedLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
