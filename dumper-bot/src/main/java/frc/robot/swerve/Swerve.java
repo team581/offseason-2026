@@ -111,7 +111,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private SwerveDriveState drivetrainState = new SwerveDriveState();
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
-  private Rotation2d snapAngle = Rotation2d.kZero;
   private Translation2d lastWallIntakePoint = Translation2d.kZero;
   private double distanceToWallIntakePoint = 0.0;
   private boolean visionOnline = false;
@@ -210,6 +209,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 ? scoreAngle
                 : scoreAngle.rotateBy(Rotation2d.k180deg);
 
+                DogLog.log("Swerve/UsedSnapAngle", usedSnapAngle.getDegrees(), Degrees);
+
         drivetrain.setControl(
             swerveRequest
                 .withVelocityX(speeds.vxMetersPerSecond)
@@ -289,7 +290,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       }
     }
 
-    DogLog.log("Swerve/SnapAngle", snapAngle.getDegrees(), Degrees);
+    DogLog.log("Swerve/ScoreAngle", scoreAngle.getDegrees(), Degrees);
+    DogLog.log("Swerve/FeedAngle", feedAngle.getDegrees(), Degrees);
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
