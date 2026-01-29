@@ -64,7 +64,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnapsClosedLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private double lastSimTime;
   private @Nullable Notifier simNotifier = null;
