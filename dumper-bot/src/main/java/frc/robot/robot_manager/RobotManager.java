@@ -308,11 +308,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFailSafe(RobotState.WAIT_FEED_2);
   }
 
-  public void toggleHubRequest() {
+  public void toggleScoreRequest() {
     switch (getState()) {
       case PREPARE_SCORE, SCORE -> setStateFailSafe(RobotState.IDLE);
       default -> setStateFailSafe(RobotState.PREPARE_SCORE);
     }
+  }
+
+  public void scoreRequest() {
+    setStateFailSafe(RobotState.PREPARE_SCORE);
   }
 
   public void intakeRequest() {
