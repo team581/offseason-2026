@@ -50,6 +50,13 @@ public class Trailblazer {
 
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose, ChassisSpeeds currentFieldRelativeSpeeds) {
+    return this.getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
+  }
+
+  public ChassisSpeeds getFieldRelativeSetpoint(
+      Pose2d currentPose,
+      ChassisSpeeds currentFieldRelativeSpeeds,
+      @Nullable Rotation2d rotationOverride) {
     if (currentSegment.isEmpty()) {
       return new ChassisSpeeds();
     }
@@ -65,6 +72,10 @@ public class Trailblazer {
 
     var targetPose = pathTracker.getTargetPose();
     DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
+
+    if (rotationOverride != null) {
+      targetPose = new Pose2d(targetPose.getTranslation(), rotationOverride);
+    }
 
     // Calculate speeds using follower
     return pathFollower.calculateSpeeds(
