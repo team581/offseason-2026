@@ -27,7 +27,6 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
               AutoPoint.ofRed(new Pose2d(10.218, 2.885, Rotation2d.kCW_90deg)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-
   private final AutoSegment segment3DriveBack =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(10.218, 2.885, Rotation2d.kCW_90deg)),
@@ -36,13 +35,11 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
               AutoPoint.ofRed(new Pose2d(11.912, 5.482, Rotation2d.k180deg)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-
   private final AutoSegment segment4DriveToShoot =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(13.751, 5.482, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(14.305, 4.797, Rotation2d.fromDegrees(-145))))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
-
 
   public BumpR6MidlineAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(BumpR6MidlineAutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
@@ -81,8 +78,8 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
         robotManager.cancelIntakeRequest();
       }
       case SEGMENT_4_DRIVE_TO_SHOOT -> {
-          trailblazer.setActiveSegment(segment4DriveToShoot);
-          robotManager.forceShootRequest();
+        trailblazer.setActiveSegment(segment4DriveToShoot);
+        robotManager.forceShootRequest();
       }
       case DONE -> {}
     }
