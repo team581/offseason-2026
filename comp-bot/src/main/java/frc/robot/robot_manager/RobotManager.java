@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
+import frc.robot.health.HealthManager;
 import frc.robot.intake.Intake;
 import frc.robot.lights.Lights;
 import frc.robot.lights.LightsState;
@@ -32,6 +33,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
   private final Vision vision;
   private final Lights lights;
+  private final HealthManager health;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
 
@@ -55,7 +57,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Intake intake,
       Deploy deploy,
       Vision vision,
-      Lights lights) {
+      Lights lights,
+      HealthManager health) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
     this.localization = localization;
@@ -67,18 +70,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.deploy = deploy;
     this.vision = vision;
     this.lights = lights;
+    this.health = health;
   }
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case PREPARE_SCORE -> {
+        // TODO: This should check trust factor
         if (shooter.atGoal()
+            && localization.isTrustworthy()
             && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
             && dyeRotor.atGoal()
             && turret.atGoal()
-            && shooterHood.atGoal()
-            && vision.seeingTagDebounced()) {
+            && shooterHood.atGoal()) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -91,18 +96,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED ->
           shooter.atGoal()
-                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
-                      && dyeRotor.atGoal()
-                      && turret.atGoal()
-                      && shooterHood.atGoal())
+                  && (!health.isLocalizationHealthy() || FieldUtil.isRobotInNoFeedZone(robotPose))
+                  && dyeRotor.atGoal()
+                  && turret.atGoal()
+                  && shooterHood.atGoal()
               ? RobotState.FEED
               : currentState;
       case SCORE -> {
         // If we are not in the alliance zone while vision is online, stop tracking the hub.
         // Otherwise, if vision is dead and we cannot reliable track whether we are in the alliance
         // zone, we still want to be able to score
-        if (!FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
-            && vision.isAnyCameraOnlineForTags()) {
+        if (health.isLocalizationHealthy()
+            && !FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
           yield RobotState.IDLE;
         }
         if (shooter.atGoal() == false) {
@@ -249,7 +254,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
-    if (!vision.isAnyCameraOnlineForTags() || nearTrench) {
+    if (!health.isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NearTrench");
     } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {

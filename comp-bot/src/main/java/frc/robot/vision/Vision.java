@@ -1,7 +1,6 @@
 package frc.robot.vision;
 
 import com.team581.math.MathHelpers;
-import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
@@ -11,7 +10,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -180,22 +178,5 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
     DogLog.log("Vision/SeeingTag", seeingTag);
     DogLog.log("Vision/SeeingTagLast5Seconds", seenTagRecentlyForReset);
-  }
-
-  public boolean isAnyCameraOffline() {
-    return DSOptions.VISION_DISABLE.get()
-        || turretLimelight.getCameraHealth() == CameraHealth.OFFLINE;
-  }
-
-  public boolean isAnyCameraOnlineForTags() {
-    if (RobotBase.isSimulation()) {
-      return true;
-    }
-
-    if (DSOptions.VISION_DISABLE.get()) {
-      return false;
-    }
-
-    return turretLimelight.isOnlineForTags() || backLimelight.isOnlineForTags();
   }
 }

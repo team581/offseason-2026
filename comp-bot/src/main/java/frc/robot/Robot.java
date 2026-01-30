@@ -16,6 +16,7 @@ import frc.robot.autos.Autos;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.generated.BuildConstants;
+import frc.robot.health.HealthManager;
 import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
 import frc.robot.lights.Lights;
@@ -83,7 +84,7 @@ public class Robot extends Base581Robot {
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, vision);
-
+  private final HealthManager health = new HealthManager(turretLimelight, backLimelight);
   private final RobotManager robotManager =
       new RobotManager(
           shooterHood,
@@ -95,7 +96,8 @@ public class Robot extends Base581Robot {
           intake,
           deploy,
           vision,
-          lights);
+          lights,
+        health);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer, teleopDriveSource);
