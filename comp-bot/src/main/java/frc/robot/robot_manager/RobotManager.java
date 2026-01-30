@@ -272,11 +272,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       switch (getState()) {
         case PREPARE_FEED, FEED -> setStateFromRequest(RobotState.IDLE);
         default -> {
-          if (feedLocation == FeedLocation.LEFT) {
-            setStateFromRequest(RobotState.PREPARE_FEED);
-          } else {
-            setStateFromRequest(RobotState.PREPARE_FEED);
-          }
+          setStateFromRequest(RobotState.PREPARE_FEED);
         }
       }
     }
