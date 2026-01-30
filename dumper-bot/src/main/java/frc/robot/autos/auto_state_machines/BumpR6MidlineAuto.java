@@ -72,16 +72,16 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
     switch (newState) {
       case SEGMENT_1_DRIVE_TO_MIDLINE -> trailblazer.setActiveSegment(segment1DriveToMidline);
       case INTAKE_ACROSS_MIDLINE -> {
-      //  robotManager.intakeRequest();
+        //  robotManager.intakeRequest();
         trailblazer.setActiveSegment(segment2IntakeAcrossMidline);
       }
       case SEGMENT_3_DRIVE_BACK -> {
         trailblazer.setActiveSegment(segment3DriveBack);
-      //  robotManager.cancelIntakeRequest();
+        //  robotManager.cancelIntakeRequest();
       }
       case SEGMENT_4_DRIVE_TO_SHOOT -> {
         trailblazer.setActiveSegment(segment4DriveToShoot);
-      //  robotManager.forceShootRequest();
+        //  robotManager.forceShootRequest();
       }
       case DONE -> {}
     }
