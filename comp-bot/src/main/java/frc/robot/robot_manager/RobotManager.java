@@ -33,8 +33,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Vision vision;
   private final Lights lights;
 
-  private FeedLocation feedLocation = FeedLocation.CLOSEST;
-
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
@@ -229,13 +227,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  public void setFeedGoalLeftRequest() {
-    feedLocation = FeedLocation.LEFT;
-  }
+  public void setFeedGoalLeftRequest() {}
 
-  public void setFeedGoalRightRequest() {
-    feedLocation = FeedLocation.RIGHT;
-  }
+  public void setFeedGoalRightRequest() {}
 
   public void intakeRequest() {
     intake.intakeRequest();

@@ -162,7 +162,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
     ableToBumpAssist =
-        SwerveAssist.ableToBumpAssist(drivetrain.getState().Pose, fieldRelativeSpeeds) && visionOnline;
+        SwerveAssist.ableToBumpAssist(drivetrain.getState().Pose, fieldRelativeSpeeds)
+            && visionOnline;
 
     if (getState() == SwerveState.INTAKE) {
       lastWallIntakePoint =
