@@ -78,12 +78,8 @@ public class Trailblazer {
     currentIndex = pathTracker.getCurrentPointIndex();
     DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
 
-    var targetPose = pathTracker.getTargetPose();
+    var targetPose = pathTracker.getTargetPose(rotationOverride);
     DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
-
-    if (rotationOverride != null) {
-      targetPose = new Pose2d(targetPose.getTranslation(), rotationOverride);
-    }
 
     // Calculate speeds using follower
     return pathFollower.calculateSpeeds(
