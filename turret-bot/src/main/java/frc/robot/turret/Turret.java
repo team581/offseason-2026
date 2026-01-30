@@ -1,5 +1,7 @@
 package frc.robot.turret;
 
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -26,9 +28,6 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
-
-import static edu.wpi.first.units.Units.DegreesPerSecond;
-
 import java.util.Map;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
@@ -122,11 +121,18 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void whileInState(TurretState currentState) {
-    DogLog.log("Turret/Velocity", Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble()), DegreesPerSecond);
+    DogLog.log(
+        "Turret/Velocity",
+        Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble()),
+        DegreesPerSecond);
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/Goal", goalAngle);
-    DogLog.log("Turret/RequestedVelocity", positionRequest.getVelocityMeasure().baseUnitMagnitude());
-    DogLog.log("Turret/Acceleration", Units.rotationsToDegrees(motor.getAcceleration().getValueAsDouble()), DegreesPerSecond);
+    DogLog.log(
+        "Turret/RequestedVelocity", positionRequest.getVelocityMeasure().baseUnitMagnitude());
+    DogLog.log(
+        "Turret/Acceleration",
+        Units.rotationsToDegrees(motor.getAcceleration().getValueAsDouble()),
+        DegreesPerSecond);
     DogLog.log("Turret/Current", rawCurrent);
     DogLog.log("Turret/FilteredCurrent", filteredCurrent);
   }
