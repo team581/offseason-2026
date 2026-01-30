@@ -25,6 +25,7 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
               AutoPoint.ofRed(new Pose2d(10.218, 5.8, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(10.218, 4.341, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(10.218, 2.885, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment3DriveBack =
@@ -33,6 +34,7 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
               AutoPoint.ofRed(new Pose2d(10.218, 4.341, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(10.218, 5.482, Rotation2d.k180deg)),
               AutoPoint.ofRed(new Pose2d(11.912, 5.482, Rotation2d.k180deg)))
+          .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment4DriveToShoot =
@@ -70,16 +72,16 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
     switch (newState) {
       case SEGMENT_1_DRIVE_TO_MIDLINE -> trailblazer.setActiveSegment(segment1DriveToMidline);
       case INTAKE_ACROSS_MIDLINE -> {
-        robotManager.intakeRequest();
+      //  robotManager.intakeRequest();
         trailblazer.setActiveSegment(segment2IntakeAcrossMidline);
       }
       case SEGMENT_3_DRIVE_BACK -> {
         trailblazer.setActiveSegment(segment3DriveBack);
-        robotManager.cancelIntakeRequest();
+      //  robotManager.cancelIntakeRequest();
       }
       case SEGMENT_4_DRIVE_TO_SHOOT -> {
         trailblazer.setActiveSegment(segment4DriveToShoot);
-        robotManager.forceShootRequest();
+      //  robotManager.forceShootRequest();
       }
       case DONE -> {}
     }
