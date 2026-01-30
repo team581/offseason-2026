@@ -97,7 +97,7 @@ public class Robot extends Base581Robot {
           deploy,
           vision,
           lights,
-        health);
+          health);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer, teleopDriveSource);
