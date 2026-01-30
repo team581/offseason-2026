@@ -87,7 +87,7 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
   @Override
   protected IntegrationTestState getNextState(IntegrationTestState currentState) {
-    if (trailblazer.atGoal(robotManager.localization.getPose())) {
+    if (trailblazer.atGoal(robotManager.localization.getPose().getTranslation())) {
       return switch (currentState) {
         case SEGMENT_2_CLOSE_CENTERED_WITH_HUB ->
             timeout(2.0) ? IntegrationTestState.SEGMENT_3_BACK_CENTERED_WITH_HUB : currentState;
