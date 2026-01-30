@@ -19,6 +19,8 @@ import frc.robot.vision.limelight.LimelightHelpers.PoseEstimate;
 import java.util.Locale;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
+  private static final double USE_MT1_ROTATION_THRESHOLD_INCHES = 40;
+
   private static final int[] VALID_APRILTAGS =
       new int[] {
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
@@ -97,7 +99,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
       mTEstimateTimestamp = mT2Estimate.timestampSeconds;
       mTPose = mT2Estimate.pose;
-      if (distance < Units.inchesToMeters(40)) {
+      if (distance < Units.inchesToMeters(USE_MT1_ROTATION_THRESHOLD_INCHES)) {
         mTPose = new Pose2d(mTPose.getTranslation(), mT1Estimate.pose.getRotation());
         thetaDev = 0.03 * Math.pow(distance, 1.2);
       }
