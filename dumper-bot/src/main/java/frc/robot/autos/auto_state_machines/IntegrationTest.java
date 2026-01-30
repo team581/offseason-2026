@@ -1,6 +1,7 @@
 package frc.robot.autos.auto_state_machines;
 
 import com.team581.autos.Point;
+import com.team581.config.FeatureFlag;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
@@ -12,6 +13,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_states.IntegrationTestState;
+import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
@@ -125,5 +127,10 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
         robotManager.idleRequest();
       }
     }
+  }
+
+  @Override
+  public boolean shouldRun() {
+      return FeatureFlags.INTEGRATION_TEST.getAsBoolean();
   }
 }
