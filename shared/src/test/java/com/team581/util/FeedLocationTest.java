@@ -6,7 +6,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import org.junit.jupiter.api.Test;
 
-public class FeedLocationTest {
+final class FeedLocationTest {
   @Test
   void feedLocationLeftTest() {
     Pose2d robotPose = new Pose2d(1, 1.65, new Rotation2d());
