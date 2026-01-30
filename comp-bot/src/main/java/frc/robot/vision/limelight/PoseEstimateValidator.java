@@ -1,8 +1,8 @@
 package frc.robot.vision.limelight;
 
+import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.vision.limelight.LimelightHelpers.PoseEstimate;
 
 public class PoseEstimateValidator {
 
