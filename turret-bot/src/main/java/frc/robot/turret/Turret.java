@@ -26,6 +26,9 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
 import java.util.Map;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
@@ -102,7 +105,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     currentAngle =
         MathHelpers.angleModulus(Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()));
-    DogLog.log("Turret/Angle", currentAngle);
 
     // Predict the turret's current angle to account for sensor latency
     double latencyCompensatedAngle =
@@ -116,6 +118,17 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         Timer.getFPGATimestamp(),
         Rotation2d.fromDegrees(latencyCompensatedAngle),
         getVelocityDegreesPerSecond());
+  }
+
+  @Override
+  protected void whileInState(TurretState currentState) {
+    DogLog.log("Turret/Velocity", Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble()), DegreesPerSecond);
+    DogLog.log("Turret/Angle", currentAngle);
+    DogLog.log("Turret/Goal", goalAngle);
+    DogLog.log("Turret/RequestedVelocity", positionRequest.getVelocityMeasure().baseUnitMagnitude());
+    DogLog.log("Turret/Acceleration", Units.rotationsToDegrees(motor.getAcceleration().getValueAsDouble()), DegreesPerSecond);
+    DogLog.log("Turret/Current", rawCurrent);
+    DogLog.log("Turret/FilteredCurrent", filteredCurrent);
   }
 
   @Override
