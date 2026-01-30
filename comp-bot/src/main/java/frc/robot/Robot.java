@@ -118,10 +118,15 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
+    var driverStart = enabledEvent.and(hardware.driverController.start(buttonBindingsLoop));
+    // TODO: This should be an automatic climb request, not just a single step forward
+    driverStart.rising().ifHigh(robotManager::climbSequenceForward);
+
     var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
 
-    var driverY = enabledEvent.and(hardware.driverController.y(buttonBindingsLoop));
-    driverY.rising().ifHigh(shooter::scoreRequest);
+    var driverLeftTrigger =
+        enabledEvent.and(hardware.driverController.leftTrigger(buttonBindingsLoop));
+    driverLeftTrigger.ifHigh(robotManager::intakeRequest);
   }
 }
