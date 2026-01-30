@@ -12,6 +12,7 @@ public class FeatureFlags {
   public static final BooleanSupplier INTAKE_DIRECTIONAL_SNAPS =
       FeatureFlag.of("IntakeDirectionalSnaps", false);
   public static final BooleanSupplier BUMP_ASSIST = FeatureFlag.of("BumpAssist", false);
+  public static final BooleanSupplier INTEGRATION_TEST = FeatureFlag.of("IntegrationTest", false);
 
   private FeatureFlags() {}
 }

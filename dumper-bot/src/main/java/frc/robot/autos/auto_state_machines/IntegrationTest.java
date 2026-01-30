@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_states.IntegrationTestState;
+import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
@@ -86,7 +87,7 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
   @Override
   protected IntegrationTestState getNextState(IntegrationTestState currentState) {
-    if (trailblazer.atGoal(robotManager.localization.getPose())) {
+    if (trailblazer.atGoal(robotManager.localization.getPose().getTranslation())) {
       return switch (currentState) {
         case SEGMENT_2_CLOSE_CENTERED_WITH_HUB ->
             timeout(2.0) ? IntegrationTestState.SEGMENT_3_BACK_CENTERED_WITH_HUB : currentState;
@@ -125,5 +126,10 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
         robotManager.idleRequest();
       }
     }
+  }
+
+  @Override
+  public boolean shouldRun() {
+    return FeatureFlags.INTEGRATION_TEST.getAsBoolean();
   }
 }

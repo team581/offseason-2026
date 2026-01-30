@@ -1,10 +1,12 @@
 package frc.robot.robot_manager;
 
 import com.team581.math.SwerveAssist;
+import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.intake.Intake;
@@ -31,7 +33,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Vision vision;
   private final Lights lights;
 
-  private FeedLocation feedLocation = FeedLocation.LEFT;
+  private FeedLocation feedLocation = FeedLocation.CLOSEST;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -39,13 +41,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double hubGoalAngle = 0.0;
   private double hubDistance = 0.0;
 
-  private double feedLeftGoalAngle = 0.0;
-  private double feedLeftDistance = 0.0;
-
-  private double feedRightGoalAngle = 0.0;
-  private double feedRightDistance = 0.0;
-
-  private double usedFeedDistance = 0.0;
+  private Translation2d feedGoalPose = Translation2d.kZero;
+  private double feedGoalAngle = 0.0;
+  private double feedDistance = 0.0;
 
   public RobotManager(
       ShooterHood shooterHood,
@@ -91,21 +89,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case PREPARE_FEED_LEFT ->
+      case PREPARE_FEED ->
           shooter.atGoal()
                   && (!FieldUtil.isRobotInNoFeedZone(robotPose)
                       && dyeRotor.atGoal()
                       && turret.atGoal()
                       && shooterHood.atGoal())
-              ? RobotState.FEED_LEFT
-              : currentState;
-      case PREPARE_FEED_RIGHT ->
-          shooter.atGoal()
-                  && (!FieldUtil.isRobotInNoFeedZone(robotPose)
-                      && dyeRotor.atGoal()
-                      && turret.atGoal()
-                      && shooterHood.atGoal())
-              ? RobotState.FEED_RIGHT
+              ? RobotState.FEED
               : currentState;
       case SCORE -> {
         // If we are not in the alliance zone while vision is online, stop tracking the hub.
@@ -155,37 +145,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.shootingRequest();
         swerve.normalDriveRequest();
       }
-      case PREPARE_FEED_LEFT -> {
+      case PREPARE_FEED -> {
         vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedLeftDistance);
-        shooterHood.feedRequest(feedLeftDistance);
+        shooter.feedRequest(feedDistance);
+        shooterHood.feedRequest(feedDistance);
         dyeRotor.shootRequest();
         turret.feedAimRequest();
         // Intake is controlled separately
         swerve.normalDriveRequest();
       }
-      case PREPARE_FEED_RIGHT -> {
+      case FEED -> {
         vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedRightDistance);
-        shooterHood.feedRequest(feedRightDistance);
-        dyeRotor.shootRequest();
-        turret.feedAimRequest();
-        // Intake is controlled separately
-        swerve.normalDriveRequest();
-      }
-      case FEED_LEFT -> {
-        vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedLeftDistance);
-        shooterHood.feedRequest(feedLeftDistance);
-        dyeRotor.shootRequest();
-        turret.feedAimRequest();
-        intake.shootingRequest();
-        swerve.normalDriveRequest();
-      }
-      case FEED_RIGHT -> {
-        vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedRightDistance);
-        shooterHood.feedRequest(feedRightDistance);
+        shooter.feedRequest(feedDistance);
+        shooterHood.feedRequest(feedDistance);
         dyeRotor.shootRequest();
         turret.feedAimRequest();
         intake.shootingRequest();
@@ -216,13 +188,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void whileInState(RobotState state) {
     switch (state) {
       case IDLE -> shooterHoodSmartIdleRequest();
-      case PREPARE_FEED_LEFT, FEED_LEFT -> {
-        turret.setFeedAimAngle(feedLeftGoalAngle);
-        usedFeedDistance = feedLeftDistance;
-      }
-      case PREPARE_FEED_RIGHT, FEED_RIGHT -> {
-        turret.setFeedAimAngle(feedRightGoalAngle);
-        usedFeedDistance = feedRightDistance;
+      case PREPARE_FEED, FEED -> {
+        turret.setFeedAimAngle(feedGoalAngle);
       }
       case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
       default -> {}
@@ -247,15 +214,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  public void feedLeftWaitRequest() {
+  public void feedPrepareRequest() {
     if (!getState().isClimbingOrRehoming()) {
-      setStateFromRequest(RobotState.PREPARE_FEED_LEFT);
-    }
-  }
-
-  public void feedRightWaitRequest() {
-    if (!getState().isClimbingOrRehoming()) {
-      setStateFromRequest(RobotState.PREPARE_FEED_RIGHT);
+      setStateFromRequest(RobotState.PREPARE_FEED);
     }
   }
 
@@ -295,7 +256,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       shooterHood.scoreRequest(hubDistance);
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "InAllianceZone");
     } else {
-      shooterHood.feedRequest(usedFeedDistance);
+      shooterHood.feedRequest(feedDistance);
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
     }
   }
@@ -309,13 +270,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void toggleFeedRequest() {
     if (!getState().isClimbingOrRehoming()) {
       switch (getState()) {
-        case PREPARE_FEED_LEFT, PREPARE_FEED_RIGHT, FEED_LEFT, FEED_RIGHT ->
-            setStateFromRequest(RobotState.IDLE);
+        case PREPARE_FEED, FEED -> setStateFromRequest(RobotState.IDLE);
         default -> {
           if (feedLocation == FeedLocation.LEFT) {
-            setStateFromRequest(RobotState.PREPARE_FEED_LEFT);
+            setStateFromRequest(RobotState.PREPARE_FEED);
           } else {
-            setStateFromRequest(RobotState.PREPARE_FEED_RIGHT);
+            setStateFromRequest(RobotState.PREPARE_FEED);
           }
         }
       }
@@ -374,17 +334,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     hubGoalAngle = 0.0;
     hubDistance = 0.0;
-    feedLeftGoalAngle = 0.0;
-    feedLeftDistance = 0.0;
-    feedRightGoalAngle = 0.0;
-    feedRightDistance = 0.0;
-    var yDistanceToLeft = Math.abs(robotPose.getY() - FieldUtil.FEED_LEFT_POSE.getY());
-    var yDistanceToRight = Math.abs(robotPose.getY() - FieldUtil.FEED_RIGHT_POSE.getY());
-    var closestFeedLocation = Math.min(yDistanceToLeft, yDistanceToRight);
-    if (closestFeedLocation == yDistanceToLeft) {
-      feedLocation = FeedLocation.LEFT;
+    feedGoalAngle = 0.0;
+    // TODO: Shoot on the move tech
+    if (FeedLocation.getNearest(robotPose) == FeedLocation.LEFT) {
+      feedGoalPose = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();
     } else {
-      feedLocation = FeedLocation.RIGHT;
+      feedGoalPose = FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation();
     }
+    feedDistance = robotPose.getTranslation().getDistance(feedGoalPose);
   }
 }

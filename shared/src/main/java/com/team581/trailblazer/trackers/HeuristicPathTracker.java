@@ -4,10 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
 
 public class HeuristicPathTracker implements PathTracker {
   private final PoseErrorTolerance defaultTransitionTolerance;
@@ -25,7 +23,7 @@ public class HeuristicPathTracker implements PathTracker {
   }
 
   @Override
-  public Pose2d getTargetPose(@Nullable Rotation2d rotationOverride) {
+  public Pose2d getTargetPose() {
     var currentPoint = points.get(getCurrentPointIndex());
     var currentTargetPose = currentPoint.poseSupplier().get().getPose();
 
@@ -37,13 +35,7 @@ public class HeuristicPathTracker implements PathTracker {
       currentPointIndex++;
     }
 
-    var targetPose = points.get(currentPointIndex).poseSupplier().get().getPose();
-
-    if (rotationOverride != null) {
-      return new Pose2d(targetPose.getTranslation(), rotationOverride);
-    }
-
-    return targetPose;
+    return points.get(currentPointIndex).poseSupplier().get().getPose();
   }
 
   @Override
