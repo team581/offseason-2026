@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_states.IntegrationTestState;
+import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
@@ -125,5 +126,10 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
         robotManager.idleRequest();
       }
     }
+  }
+
+  @Override
+  public boolean shouldRun() {
+    return FeatureFlags.INTEGRATION_TEST.getAsBoolean();
   }
 }
