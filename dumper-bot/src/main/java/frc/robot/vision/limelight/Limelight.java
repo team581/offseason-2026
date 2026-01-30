@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
+import frc.robot.vision.limelight.LimelightHelpers.PoseEstimate;
+
 import java.util.Locale;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
@@ -73,7 +75,12 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       return tagResult.empty();
     }
 
-    var mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
+    PoseEstimate mTEstimate;
+    if (config.useMt1AndMt2Hybrid()) {
+      mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
+    } else {
+      mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
+    }
 
     if (mTEstimate == null) {
       return tagResult.empty();
