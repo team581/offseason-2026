@@ -2,10 +2,8 @@ package com.team581.trailblazer.trackers;
 
 import com.team581.trailblazer.AutoPoint;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A path tracker takes a list of points making up a path, and decides which intermediary point
@@ -25,18 +23,7 @@ public interface PathTracker {
    *
    * @return The pose the robot should drive to next.
    */
-  public default Pose2d getTargetPose() {
-    return getTargetPose(null);
-  }
-
-  /**
-   * Calculate the pose the robot should drive to next, based on its progress following the path.
-   *
-   * @param rotationOverride If provided, the rotation of the returned pose will be overridden with
-   *     this value.
-   * @return The pose the robot should drive to next.
-   */
-  public Pose2d getTargetPose(@Nullable Rotation2d rotationOverride);
+  public Pose2d getTargetPose();
 
   /**
    * Reset the state of the path tracker, as well as set the new list of points to consider in
