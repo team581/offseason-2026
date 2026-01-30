@@ -214,7 +214,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         }
       }
       case SCORE -> {
-        var speeds = driveSource.getRequestedSpeeds();
+        var speeds = driveSource.getRequestedSpeeds(scoreAngle);
         var swerveRequest =
             driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
                 ? driverPerspectiveSnapsOpenLoop
@@ -236,7 +236,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 .withTargetDirection(usedSnapAngle));
       }
       case FEED -> {
-        var speeds = driveSource.getRequestedSpeeds();
+        var speeds = driveSource.getRequestedSpeeds(feedAngle);
         var swerveRequest =
             driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
                 ? driverPerspectiveSnapsOpenLoop
