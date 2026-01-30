@@ -74,57 +74,41 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       return tagResult.empty();
     }
 
-    PoseEstimate mTEstimate;
+    PoseEstimate mT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
+
+    if (!PoseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity, name)) {
+      return tagResult.empty();
+    }
+
+    var mTEstimateTimestamp = mT1Estimate.timestampSeconds;
+    var mTPose = mT1Estimate.pose;
+    var distance = mT1Estimate.avgTagDist;
+
+    var xyDev = 0.01 * Math.pow(distance, 1.2);
+    var thetaDev = Double.POSITIVE_INFINITY;
+
     if (config.useMt1AndMt2Hybrid()) {
-      mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
-    } else {
-      mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
-    }
+      PoseEstimate mT2Estimate =
+          LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
-    if (mTEstimate == null) {
-      return tagResult.empty();
-    }
-
-    var mTEstimateTimestamp = mTEstimate.timestampSeconds;
-
-    if (Math.abs(angularVelocity) > 360) {
-      return tagResult.empty();
-    }
-    if (mTEstimate.tagCount == 0) {
-      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
-
-      return tagResult.empty();
-    }
-    if (mTEstimate.rawFiducials.length == 1) {
-      double ambiguity = mTEstimate.rawFiducials[0].ambiguity;
-      if (ambiguity >= 0.7) {
-        DogLog.timestamp("Vision/" + name + "/Tags/AmbiguityFilter");
+      if (!PoseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, name)) {
         return tagResult.empty();
       }
-    }
 
-    var mtPose = mTEstimate.pose;
-
-    // This prevents pose estimator from having crazy poses if the Limelight loses power
-    if (mtPose.getX() == 0.0 && mtPose.getY() == 0.0) {
-      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
-      return tagResult.empty();
-    }
-
-    var distance = mTEstimate.avgTagDist;
-    var xyDev = 0.01 * Math.pow(distance, 1.2);
-    var thetaDev = 0.03 * Math.pow(distance, 1.2);
-
-    if (distance > Units.inchesToMeters(40) || !config.useMt1AndMt2Hybrid()) {
-      thetaDev = Double.POSITIVE_INFINITY;
+      mTEstimateTimestamp = mT2Estimate.timestampSeconds;
+      mTPose = mT2Estimate.pose;
+      if (distance < Units.inchesToMeters(40)) {
+        mTPose = new Pose2d(mTPose.getTranslation(), mT1Estimate.pose.getRotation());
+        thetaDev = 0.03 * Math.pow(distance, 1.2);
+      }
     }
 
     var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
 
-    DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mtPose);
+    DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
     DogLog.log("Vision/" + name + "/Tags/MT2Timestamp", mTEstimateTimestamp);
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
-    return tagResult.update(mtPose, mTEstimateTimestamp, devs);
+    return tagResult.update(mTPose, mTEstimateTimestamp, devs);
   }
 
   @Override
