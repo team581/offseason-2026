@@ -25,18 +25,7 @@ public interface PathTracker {
    *
    * @return The pose the robot should drive to next.
    */
-  public default Pose2d getTargetPose() {
-    return getTargetPose(null);
-  }
-
-  /**
-   * Calculate the pose the robot should drive to next, based on its progress following the path.
-   *
-   * @param rotationOverride If provided, the rotation of the returned pose will be overridden with
-   *     this value.
-   * @return The pose the robot should drive to next.
-   */
-  public Pose2d getTargetPose(@Nullable Rotation2d rotationOverride);
+  public Pose2d getTargetPose(@Nullable Rotation2d trackerRotationOverride);
 
   /**
    * Reset the state of the path tracker, as well as set the new list of points to consider in

@@ -5,6 +5,7 @@ import com.team581.math.MathHelpers;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.XboxController;
+import org.jspecify.annotations.Nullable;
 
 public class XboxControllerDriveSource implements DriveSource {
   private final XboxController controller;
@@ -24,7 +25,7 @@ public class XboxControllerDriveSource implements DriveSource {
   }
 
   @Override
-  public ChassisSpeeds getRequestedSpeeds() {
+  public ChassisSpeeds getRequestedSpeeds(@Nullable Rotation2d snapAngle) {
     var leftX = controller.getLeftX();
     var leftY = -controller.getLeftY();
     var rightX = controller.getRightX();

@@ -1,6 +1,8 @@
 package com.team581.swerve;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A drive source is an abstraction over something that outputs requested chassis speeds. These
@@ -13,5 +15,9 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 public interface DriveSource {
   DriveSourceType getDriveSourceType();
 
-  ChassisSpeeds getRequestedSpeeds();
+  default ChassisSpeeds getRequestedSpeeds() {
+    return getRequestedSpeeds(null);
+  }
+
+  ChassisSpeeds getRequestedSpeeds(@Nullable Rotation2d snapAngle);
 }

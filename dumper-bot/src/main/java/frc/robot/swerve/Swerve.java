@@ -11,6 +11,7 @@ import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
+import com.team581.math.SwerveAssist;
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
 import com.team581.util.FieldUtil;
@@ -68,7 +69,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
 
-  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnapsOpenLoop =
+  private final SwerveRequest.FieldCentricFacingAngle driverPerspectiveSnapsOpenLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
@@ -126,6 +127,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private PolarChassisSpeeds intakeAssistSpeeds = new PolarChassisSpeeds();
   private Rotation2d scoreAngle = Rotation2d.kZero;
   private Rotation2d feedAngle = Rotation2d.kZero;
+  private boolean ableToBumpAssist = false;
 
   public Swerve(TunerSwerveDrivetrain drivetrain, DriveSource driveSource) {
     super(SubsystemPriority.SWERVE, SwerveState.MANUAL);
@@ -158,6 +160,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
+
+    ableToBumpAssist =
+        SwerveAssist.ableToBumpAssist(drivetrain.getState().Pose, fieldRelativeSpeeds)
+            && visionOnline;
 
     if (getState() == SwerveState.INTAKE) {
       lastWallIntakePoint =
@@ -197,17 +203,21 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 ? driverPerspectiveOpenLoop
                 : fieldCentricClosedLoop;
 
-        drivetrain.setControl(
-            swerveRequest
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withRotationalRate(speeds.omegaRadiansPerSecond));
+        if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
+          // TODO: Use swerve request with current velocity with target direction bump snap angle
+        } else {
+          drivetrain.setControl(
+              swerveRequest
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withRotationalRate(speeds.omegaRadiansPerSecond));
+        }
       }
       case SCORE -> {
-        var speeds = driveSource.getRequestedSpeeds();
+        var speeds = driveSource.getRequestedSpeeds(scoreAngle);
         var swerveRequest =
             driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                ? drivePerspectiveSnapsOpenLoop
+                ? driverPerspectiveSnapsOpenLoop
                 : fieldCentricSnapsClosedLoop;
 
         // We want just the translation to be operator perspective, rotation is always blue alliance
@@ -226,10 +236,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 .withTargetDirection(usedSnapAngle));
       }
       case FEED -> {
-        var speeds = driveSource.getRequestedSpeeds();
+        var speeds = driveSource.getRequestedSpeeds(feedAngle);
         var swerveRequest =
             driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                ? drivePerspectiveSnapsOpenLoop
+                ? driverPerspectiveSnapsOpenLoop
                 : fieldCentricSnapsClosedLoop;
 
         // We want just the translation to be operator perspective, rotation is always blue alliance
@@ -303,6 +313,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
+    DogLog.log("SwerveAssist/Bump/AbleToBumpAssist", ableToBumpAssist);
   }
 
   public void normalDriveRequest() {

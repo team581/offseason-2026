@@ -52,19 +52,13 @@ public class Trailblazer {
 
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose, ChassisSpeeds currentFieldRelativeSpeeds) {
-    return this.getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
+    return getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
   }
 
-  /**
-   * @deprecated I (Jonah) want to delete this. It only really makes sense for robots where swerve
-   *     is aware of auto vs teleop, but we migrated off of that via {@link
-   *     com.team581.swerve.DriveSource}. Please remind me to delete this in 2027.
-   */
-  @Deprecated(since = "2026-01-28", forRemoval = true)
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose,
       ChassisSpeeds currentFieldRelativeSpeeds,
-      @Nullable Rotation2d rotationOverride) {
+      @Nullable Rotation2d trackerRotationOverride) {
     if (currentSegment.isEmpty()) {
       return new ChassisSpeeds();
     }
@@ -78,7 +72,7 @@ public class Trailblazer {
     currentIndex = pathTracker.getCurrentPointIndex();
     DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
 
-    var targetPose = pathTracker.getTargetPose(rotationOverride);
+    var targetPose = pathTracker.getTargetPose(trackerRotationOverride);
     DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
 
     // Calculate speeds using follower

@@ -11,6 +11,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 public class SwerveAssist {
   private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 0.75;
   private static final double TRENCH_ASSIST_ANGLE_TOLERANCE = 30.0;
+  private static final double BUMP_ASSIST_VELOCITY_THRESHOLD = 0.5;
   private static final double BUMP_ASSIST_ANGLE_TOLERANCE = 45.0;
   private static final double ROBOT_INTAKE_TO_BUMP_ANGLE = 0.0;
 
@@ -21,6 +22,13 @@ public class SwerveAssist {
     if (FieldUtil.getCurrentBumpAssistZone(robotPose.getTranslation()).isEmpty()) {
       return false;
     }
+
+    // Check if velocity meets threshold
+    if (MathHelpers.getLinearVelocity(fieldRelativeSpeeds) <= BUMP_ASSIST_VELOCITY_THRESHOLD) {
+      DogLog.log("SwerveAssist/Bump/VelocityThreshold", false);
+      return false;
+    }
+    DogLog.log("SwerveAssist/Bump/VelocityThreshold", true);
 
     // Check if our angle is within the tolerance
     var angleTolerance =

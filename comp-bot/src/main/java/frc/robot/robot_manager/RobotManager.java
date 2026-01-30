@@ -35,8 +35,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Lights lights;
   private final HealthManager health;
 
-  private FeedLocation feedLocation = FeedLocation.CLOSEST;
-
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
@@ -234,13 +232,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  public void setFeedGoalLeftRequest() {
-    feedLocation = FeedLocation.LEFT;
-  }
+  public void setFeedGoalLeftRequest() {}
 
-  public void setFeedGoalRightRequest() {
-    feedLocation = FeedLocation.RIGHT;
-  }
+  public void setFeedGoalRightRequest() {}
 
   public void intakeRequest() {
     intake.intakeRequest();
@@ -277,11 +271,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       switch (getState()) {
         case PREPARE_FEED, FEED -> setStateFromRequest(RobotState.IDLE);
         default -> {
-          if (feedLocation == FeedLocation.LEFT) {
-            setStateFromRequest(RobotState.PREPARE_FEED);
-          } else {
-            setStateFromRequest(RobotState.PREPARE_FEED);
-          }
+          setStateFromRequest(RobotState.PREPARE_FEED);
         }
       }
     }

@@ -140,7 +140,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 .withRotationalRate(speeds.omegaRadiansPerSecond));
       }
       case HUB_AIM -> {
-        var speeds = driveSource.getRequestedSpeeds();
+        var speeds = driveSource.getRequestedSpeeds(hubAimAngle);
         var swerveRequest =
             driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
                 ? drivePerspectiveSnapsOpenLoop
