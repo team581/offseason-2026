@@ -34,6 +34,7 @@ public class Trailblazer {
   private final PathFollower pathFollower;
   private int currentIndex = -1;
   private Optional<AutoSegment> currentSegment = Optional.empty();
+  private boolean needsFollowerReset = false;
 
   public Trailblazer(PathTracker pathTracker, PathFollower pathFollower) {
     this.pathTracker = pathTracker;
@@ -61,6 +62,15 @@ public class Trailblazer {
       @Nullable Rotation2d trackerRotationOverride) {
     if (currentSegment.isEmpty()) {
       return new ChassisSpeeds();
+    }
+
+    // Reset the path follower's constraint calculator when starting a new segment.
+    // This ensures the profiled controller knows the actual current angular velocity.
+    // Technically you could call reset over and over, but that creates a lot of objects and may
+    // cause jerky motion since we are effectively replanning a trajectory over and over.
+    if (needsFollowerReset) {
+      pathFollower.reset(currentFieldRelativeSpeeds, currentPose.getRotation().getRadians());
+      needsFollowerReset = false;
     }
 
     var segment = currentSegment.orElseThrow();
@@ -93,5 +103,6 @@ public class Trailblazer {
     currentSegment = Optional.of(segment);
     pathTracker.resetAndSetPoints(segment.points);
     currentIndex = pathTracker.getCurrentPointIndex();
+    needsFollowerReset = true;
   }
 }

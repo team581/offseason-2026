@@ -59,4 +59,9 @@ public class PidPathFollower implements PathFollower {
 
     return new PolarChassisSpeeds(driveVelocity, driveDirection, angularVelocity);
   }
+
+  @Override
+  public void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians) {
+    velocityConstrainer.reset(currentSpeeds, currentAngleRadians);
+  }
 }

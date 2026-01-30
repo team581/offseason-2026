@@ -27,4 +27,13 @@ public interface PathFollower {
       AutoPoint currentPoint,
       AutoSegment segment,
       int currentPointIndex);
+
+  /**
+   * Reset the internal state of the path follower to match the current robot state. This should be
+   * called when starting to follow a new path segment.
+   *
+   * @param currentSpeeds The current field relative speeds of the robot.
+   * @param currentAngleRadians The current heading of the robot in radians.
+   */
+  public void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians);
 }
