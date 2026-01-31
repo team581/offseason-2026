@@ -180,6 +180,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     if (getState() == TurretState.UNHOMED) {
       motor.setPosition(0);
+      setStateFromRequest(TurretState.HUB_AIM);
     }
 
     turretSimulation.update();
