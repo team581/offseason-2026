@@ -35,6 +35,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private final String limelightTableName;
   private final String name;
   private final CameraConfig config;
+  private final PoseEstimateValidator poseEstimateValidator;
 
   private final Timer limelightTimer = new Timer();
   private final Timer seedImuTimer = new Timer();
@@ -53,6 +54,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     this.name = name;
     limelightTimer.start();
     this.config = config;
+    this.poseEstimateValidator = new PoseEstimateValidator(name);
   }
 
   public void sendImuData(
@@ -79,7 +81,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     PoseEstimate mT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
 
-    if (!PoseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity, name)) {
+    if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity)) {
       return tagResult.empty();
     }
 
@@ -94,7 +96,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       PoseEstimate mT2Estimate =
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
-      if (!PoseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, name)) {
+      if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity)) {
         return tagResult.empty();
       }
 

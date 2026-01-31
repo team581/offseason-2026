@@ -6,8 +6,13 @@ import edu.wpi.first.math.geometry.Pose2d;
 
 public class PoseEstimateValidator {
 
-  public static boolean shouldTrust(
-      PoseEstimate poseEstimate, double angularVelocity, String name) {
+  private final String name;
+
+  public PoseEstimateValidator(String name) {
+    this.name = name;
+  }
+
+  public boolean shouldTrust(PoseEstimate poseEstimate, double angularVelocity) {
     if (poseEstimate == null) {
       return false;
     }
