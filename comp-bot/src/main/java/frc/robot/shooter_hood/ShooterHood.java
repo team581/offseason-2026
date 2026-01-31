@@ -22,6 +22,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private double feedAngle = 0;
   private double statorCurrent = 0;
 
+
   public ShooterHood(TalonFX motor) {
     super(SubsystemPriority.SHOOTER_HOOD, ShooterHoodState.UNHOMED);
 
@@ -108,6 +109,12 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       default -> currentState;
     };
   }
+    private static double clamp(double angleDegrees) {
+      return MathUtil.clamp(
+      angleDegrees,
+      ShooterHoodConfig.MIN_ANGLE,
+      ShooterHoodConfig.MAX_ANGLE);
+    }
 
   @Override
   protected void afterTransition(ShooterHoodState newState) {
@@ -119,7 +126,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case IDLE -> {
         motor.setControl(
             positionVoltageRequest.withPosition(
-                Units.degreesToRotations(ShooterHoodConfig.IDLE_ANGLE)));
+                Units.degreesToRotations(clamp(ShooterHoodConfig.IDLE_ANGLE))));
         DogLog.log("ShooterHood/CurrentSetpoint", ShooterHoodConfig.IDLE_ANGLE);
       }
 
@@ -131,16 +138,18 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void whileInState(ShooterHoodState state) {
     switch (state) {
       case SCORING -> {
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(hubAngle)));
+        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(hubAngle))));
         DogLog.log("ShooterHood/CurrentSetpoint", hubAngle);
       }
 
       case FEEDING -> {
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(feedAngle)));
+        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(feedAngle))));
         DogLog.log("ShooterHood/CurrentSetpoint", feedAngle);
       }
 
       default -> {}
+
+
     }
   }
 
