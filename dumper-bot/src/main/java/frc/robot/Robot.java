@@ -9,6 +9,7 @@ import com.team581.swerve.XboxControllerDriveSource;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
@@ -37,8 +38,6 @@ public class Robot extends Base581Robot {
   private final DriveSource teleopDriveSource =
       new XboxControllerDriveSource(
           hardware.driverController, Swerve.MAX_SPEED, Swerve.TELEOP_MAX_ANGULAR_RATE);
-  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriveSource);
-  private final Imu imu = new Imu(swerve.drivetrain);
   private final Limelight mainLimelight =
       new Limelight(
           "main",
@@ -66,6 +65,9 @@ public class Robot extends Base581Robot {
               -20,
               0,
               0));
+  private final HealthManager health = new HealthManager(mainLimelight, groundLimelight);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriveSource, health);
+  private final Imu imu = new Imu(swerve.drivetrain);
   private final Vision vision = new Vision(imu, mainLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
@@ -76,10 +78,18 @@ public class Robot extends Base581Robot {
       new Shooter(
           hardware.leftShooterMotor, hardware.rightShooterMotor, hardware.kickerShooterMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
-  private final HealthManager health = new HealthManager(mainLimelight, groundLimelight);
   private final RobotManager robotManager =
       new RobotManager(
-          health, intake, hopper, shooter, feeder, swerve, vision, clusterMap, localization);
+          hardware,
+          health,
+          intake,
+          hopper,
+          shooter,
+          feeder,
+          swerve,
+          vision,
+          clusterMap,
+          localization);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer, teleopDriveSource);
@@ -94,6 +104,8 @@ public class Robot extends Base581Robot {
         BuildConstants.DIRTY);
 
     finalizeInit();
+
+    FieldUtil.debugLogFieldZones();
   }
 
   @Override
