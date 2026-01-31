@@ -1,22 +1,13 @@
 package frc.robot.dye_rotor;
 
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
@@ -48,7 +39,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     verticalMotor.getConfigurator().apply(DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
     TunablePid.register("DyeRotor/Rotor", rotorMotor, DyeRotorConfig.ROTOR_MOTOR_CONFIG);
-    TunablePid.register("DyeRotor/Horizontal", horizontalMotor, DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
+    TunablePid.register(
+        "DyeRotor/Horizontal", horizontalMotor, DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
     TunablePid.register("DyeRotor/Vertical", verticalMotor, DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
     this.rotorMotor = rotorMotor;
@@ -121,7 +113,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
       case IDLE -> true;
       case UNJAM -> timeout(1) || !isJammed();
       case SHOOTING -> true;
-      case WARMUP -> MathUtil.isNear(horizontalMotorRpm, warmupRpm,DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
+      case WARMUP ->
+          MathUtil.isNear(horizontalMotorRpm, warmupRpm, DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
     };
   }
 
