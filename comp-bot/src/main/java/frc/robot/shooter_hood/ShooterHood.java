@@ -42,6 +42,10 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
   }
 
+  public double getAngle() {
+    return measuredAngle;
+  }
+
   public void feedRequest(double distance) {
     this.feedDistance = distance;
     switch (getState()) {
@@ -161,7 +165,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
                     .withMaxPosition(Units.degreesToRotations(ShooterHoodConfig.MAX_ANGLE))
                     .withMinPosition(Units.degreesToRotations(ShooterHoodConfig.MIN_ANGLE)));
 
-    if (getState() == ShooterHoodState.UNHOMED || getState() == ShooterHoodState.HOMING) {
+    if (getState() == ShooterHoodState.HOMING) {
       motor.setPosition(0);
       setStateFromRequest(ShooterHoodState.IDLE);
     }
