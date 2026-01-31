@@ -184,6 +184,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/FeedLocation", feedLocation);
     DogLog.log("RobotManager/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/ScoringParameters", scoringParameters);
+
+    MechanismVisualizer.log(
+        robotPose, turret.getAngle(), shooterHood.getAngle(), deploy.getPosition(), 0);
   }
 
   public void idleRequest() {

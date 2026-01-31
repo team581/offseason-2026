@@ -83,6 +83,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
+  public double getPosition() {
+    return Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
+  }
+
   @Override
   public void simulationPeriodic() {
     var deploySimulation =

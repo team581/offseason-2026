@@ -42,6 +42,10 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
   }
 
+  public double getAngle() {
+    return measuredAngle;
+  }
+
   public void feedRequest(double distance) {
     this.feedDistance = distance;
     switch (getState()) {
