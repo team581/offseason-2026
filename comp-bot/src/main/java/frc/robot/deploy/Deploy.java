@@ -2,6 +2,7 @@ package frc.robot.deploy;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import edu.wpi.first.math.MathUtil;
@@ -80,5 +81,24 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
               positionVoltageRequest.withPosition(
                   Units.degreesToRotations(clamp(DeployConfig.HOMING_END_ANGLE))));
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    var deploySimulation =
+        SimKit.positionMechanism(
+            "Deploy",
+            mechanism ->
+                mechanism
+                    .addMotor(motor)
+                    .withMinPosition(DeployConfig.MIN_ANGLE)
+                    .withMaxPosition(DeployConfig.MAX_ANGLE));
+
+    if (getState() == DeployState.HOMING) {
+      motor.setPosition(0);
+      setStateFromRequest(DeployState.STOWED);
+    }
+
+    deploySimulation.update();
   }
 }
