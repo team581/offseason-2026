@@ -226,7 +226,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               swerveAssistSnapsRequest
                   .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
+                      Rotation2d.fromDegrees(
+                              SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
           drivetrain.setControl(
@@ -244,7 +245,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               swerveAssistSnapsRequest
                   .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
+                      Rotation2d.fromDegrees(
+                              SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
           drivetrain.setControl(
@@ -272,7 +274,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               swerveAssistSnapsRequest
                   .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
+                      Rotation2d.fromDegrees(
+                              SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
           drivetrain.setControl(

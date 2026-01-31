@@ -57,10 +57,8 @@ public class SwerveAssist {
     }
     DogLog.log("SwerveAssist/Trench/VelocityThreshold", true);
 
-    var allianceZoneAssistPoint =
-        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation);
-    var neutralZoneAssistPoint =
-        FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotTranslation);
+    var allianceZoneAssistPoint = FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation);
+    var neutralZoneAssistPoint = FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotTranslation);
 
     DogLog.log(
         "SwerveAssist/Trench/ClosestAllianceZoneTrenchMidpoint",
