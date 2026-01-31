@@ -173,7 +173,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     var robotTranslation = robotPose.getTranslation();
-    var robotRotation = robotPose.getRotation();
 
     timeSinceMatchStart = Timer.getFPGATimestamp() - startOfMatchPeriod;
 
