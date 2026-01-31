@@ -9,11 +9,10 @@ public enum DeployState {
   HOMING(0),
   UNHOMED(0);
 
-  private final double defaultLength;
   private final DoubleSubscriber tunableLength;
 
   private DeployState(double length) {
-    this.defaultLength = length;
+
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
   DeployState(DeployState other){
