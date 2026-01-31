@@ -8,10 +8,10 @@ import com.team581.trailblazer.segments.AutoSegment;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_states.BumpR6MidlineAutoState;
+import frc.robot.autos.auto_state_machines.auto_states.BumpMidlineAutoState;
 import frc.robot.robot_manager.RobotManager;
 
-public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState> {
+public class BumpMidlineAuto extends BaseImperativeAuto<BumpMidlineAutoState> {
 
   private final AutoSegment segment1DriveToMidline =
       Trailblazer.segment(
@@ -43,8 +43,8 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
               AutoPoint.ofRed(new Pose2d(14.305, 4.797, Rotation2d.fromDegrees(-145))))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-  public BumpR6MidlineAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(BumpR6MidlineAutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
+  public BumpMidlineAuto(RobotManager robotManager, Trailblazer trailblazer) {
+    super(BumpMidlineAutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
   }
 
   @Override
@@ -53,22 +53,22 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
   }
 
   @Override
-  protected BumpR6MidlineAutoState getNextState(BumpR6MidlineAutoState currentState) {
+  protected BumpMidlineAutoState getNextState(BumpMidlineAutoState currentState) {
 
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
-        case SEGMENT_1_DRIVE_TO_MIDLINE -> BumpR6MidlineAutoState.INTAKE_ACROSS_MIDLINE;
-        case INTAKE_ACROSS_MIDLINE -> BumpR6MidlineAutoState.SEGMENT_3_DRIVE_BACK;
-        case SEGMENT_3_DRIVE_BACK -> BumpR6MidlineAutoState.SEGMENT_4_DRIVE_TO_SHOOT;
-        case SEGMENT_4_DRIVE_TO_SHOOT -> BumpR6MidlineAutoState.DONE;
-        case DONE -> BumpR6MidlineAutoState.DONE;
+        case SEGMENT_1_DRIVE_TO_MIDLINE -> BumpMidlineAutoState.INTAKE_ACROSS_MIDLINE;
+        case INTAKE_ACROSS_MIDLINE -> BumpMidlineAutoState.SEGMENT_3_DRIVE_BACK;
+        case SEGMENT_3_DRIVE_BACK -> BumpMidlineAutoState.SEGMENT_4_DRIVE_TO_SHOOT;
+        case SEGMENT_4_DRIVE_TO_SHOOT -> BumpMidlineAutoState.DONE;
+        case DONE -> BumpMidlineAutoState.DONE;
       };
     }
     return currentState;
   }
 
   @Override
-  protected void whileInState(BumpR6MidlineAutoState newState) {
+  protected void whileInState(BumpMidlineAutoState newState) {
     switch (newState) {
       case SEGMENT_1_DRIVE_TO_MIDLINE -> trailblazer.setActiveSegment(segment1DriveToMidline);
       case INTAKE_ACROSS_MIDLINE -> {

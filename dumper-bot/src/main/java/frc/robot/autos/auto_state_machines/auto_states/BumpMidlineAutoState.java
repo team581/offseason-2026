@@ -1,6 +1,6 @@
 package frc.robot.autos.auto_state_machines.auto_states;
 
-public enum BumpR6MidlineAutoState {
+public enum BumpMidlineAutoState {
   SEGMENT_1_DRIVE_TO_MIDLINE,
   INTAKE_ACROSS_MIDLINE,
   SEGMENT_3_DRIVE_BACK,
