@@ -216,9 +216,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  public void setFeedGoalLeftRequest() {}
+  public void setFeedGoalLeftRequest() {
+    feedLocation = FeedLocation.LEFT;
+  }
 
-  public void setFeedGoalRightRequest() {}
+  public void setFeedGoalRightRequest() {
+    feedLocation = FeedLocation.RIGHT;
+  }
 
   public void intakeRequest() {
     intake.intakeRequest();
