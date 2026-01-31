@@ -86,12 +86,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
-          yield RobotState.FORCE_SCORE;
-        }
-        yield currentState;
-      }
       case PREPARE_FEED ->
           shooter.atGoal()
                   && (!health.isLocalizationHealthy() || FieldUtil.isRobotInNoFeedZone(robotPose))
@@ -129,24 +123,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_EMPTY);
-      }
-      case PREPARE_FORCE_SCORE -> {
-        vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(hubDistance);
-        shooterHood.scoreRequest(hubDistance);
-        dyeRotor.shootRequest();
-        turret.hubAimRequest();
-        // Intake is controlled separately
-        swerve.normalDriveRequest();
-      }
-      case FORCE_SCORE -> {
-        vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(hubDistance);
-        shooterHood.scoreRequest(hubDistance);
-        dyeRotor.shootRequest();
-        turret.hubAimRequest();
-        intake.shootingRequest();
-        swerve.normalDriveRequest();
       }
       case PREPARE_FEED -> {
         vision.setState(VisionState.TAGS);
@@ -202,12 +178,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void idleRequest() {
     if (!getState().isClimbingOrRehoming()) {
       setStateFromRequest(RobotState.IDLE);
-    }
-  }
-
-  public void forceShootRequest() {
-    if (!getState().isClimbingOrRehoming()) {
-      setStateFromRequest(RobotState.PREPARE_FORCE_SCORE);
     }
   }
 
