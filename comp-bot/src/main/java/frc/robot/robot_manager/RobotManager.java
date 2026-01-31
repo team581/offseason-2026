@@ -308,6 +308,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
+    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
 
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
