@@ -1,9 +1,21 @@
 package frc.robot.dye_rotor;
 
+<<<<<<< HEAD
+=======
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+>>>>>>> 8916757 (Applied the dye rotor configs and values to a sperate file)
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class DyeRotorConfig {
+<<<<<<< HEAD
 
   public static final int RPM_TOLERANCE_HORIZONTAL = 100;
   public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
@@ -13,4 +25,61 @@ public class DyeRotorConfig {
 
   // TODO: Move unjam timeout duration here
 
+=======
+  public static final int RPM_TOLERANCE_HORIZONTAL = 100;
+  public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
+      DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
+  public static final double ROTOR_UNJAM_RPM = 0;
+
+  public static final TalonFXConfiguration ROTOR_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(0.0)
+                  .withMotionMagicAcceleration(0.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.CounterClockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0).withKA(0.0));
+
+  public static final TalonFXConfiguration VERTICAL_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(2))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive));
+
+  public static final TalonFXConfiguration HORIZONTAL_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(0.0)
+                  .withMotionMagicAcceleration(0.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0));
+
+  private DyeRotorConfig() {}
+>>>>>>> 8916757 (Applied the dye rotor configs and values to a sperate file)
 }

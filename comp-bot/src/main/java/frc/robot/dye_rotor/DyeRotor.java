@@ -20,11 +20,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
-  private static final int RPM_TOLERANCE_HORIZONTAL = 100;
-
   private final LinearFilter currentFilter = LinearFilter.movingAverage(5);
-  private static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
-      DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
 
   private final TalonFX rotorMotor;
   private final TalonFX horizontalMotor;
@@ -47,60 +43,13 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   public DyeRotor(TalonFX rotorMotor, TalonFX horizontalMotor, TalonFX verticalMotor) {
     super(SubsystemPriority.DYE_ROTOR, DyeRotorState.IDLE);
 
-    var rotorConfigs =
-        new TalonFXConfiguration()
-            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-            .withMotionMagic(
-                new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(0.0)
-                    .withMotionMagicAcceleration(0.0))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withSupplyCurrentLimitEnable(true)
-                    .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(100)
-                    .withSupplyCurrentLimit(100))
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Coast)
-                    .withInverted(InvertedValue.CounterClockwise_Positive))
-            .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0).withKA(0.0));
-    var verticalConfigs =
-        new TalonFXConfiguration()
-            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(2))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withSupplyCurrentLimitEnable(true)
-                    .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(100)
-                    .withSupplyCurrentLimit(100))
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withNeutralMode(NeutralModeValue.Coast)
-                    .withInverted(InvertedValue.Clockwise_Positive));
-    var horizontalConfigs =
-        new TalonFXConfiguration()
-            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-            .withMotionMagic(
-                new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(0.0)
-                    .withMotionMagicAcceleration(0.0))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withSupplyCurrentLimitEnable(true)
-                    .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(100)
-                    .withSupplyCurrentLimit(100))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0));
+    rotorMotor.getConfigurator().apply(DyeRotorConfig.ROTOR_MOTOR_CONFIG);
+    horizontalMotor.getConfigurator().apply(DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
+    verticalMotor.getConfigurator().apply(DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
-    rotorMotor.getConfigurator().apply(rotorConfigs);
-    horizontalMotor.getConfigurator().apply(horizontalConfigs);
-    verticalMotor.getConfigurator().apply(verticalConfigs);
-
-    TunablePid.register("DyeRotor/Rotor", rotorMotor, rotorConfigs);
-    TunablePid.register("DyeRotor/Horizontal", horizontalMotor, horizontalConfigs);
-    TunablePid.register("DyeRotor/Vertical", verticalMotor, verticalConfigs);
+    TunablePid.register("DyeRotor/Rotor", rotorMotor, DyeRotorConfig.ROTOR_MOTOR_CONFIG);
+    TunablePid.register("DyeRotor/Horizontal", horizontalMotor, DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
+    TunablePid.register("DyeRotor/Vertical", verticalMotor, DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
     this.rotorMotor = rotorMotor;
     this.horizontalMotor = horizontalMotor;
@@ -172,12 +121,12 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
       case IDLE -> true;
       case UNJAM -> timeout(1) || !isJammed();
       case SHOOTING -> true;
-      case WARMUP -> MathUtil.isNear(horizontalMotorRpm, warmupRpm, RPM_TOLERANCE_HORIZONTAL);
+      case WARMUP -> MathUtil.isNear(horizontalMotorRpm, warmupRpm,DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
     };
   }
 
   public boolean isJammed() {
-    return rotorFilteredCurrent > JAM_CURRENT_THRESHOLD.getAsDouble();
+    return rotorFilteredCurrent > DyeRotorConfig.JAM_CURRENT_THRESHOLD.getAsDouble();
   }
 
   @Override
