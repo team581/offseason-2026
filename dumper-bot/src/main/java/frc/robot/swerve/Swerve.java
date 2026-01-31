@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.health.HealthManager;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.function.DoubleSupplier;
 import org.jspecify.annotations.Nullable;
@@ -114,6 +115,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
+  private final HealthManager health;
+
   private double lastSimTime;
   private @Nullable Notifier simNotifier = null;
 
@@ -122,17 +125,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Translation2d lastWallIntakePoint = Translation2d.kZero;
   private double distanceToWallIntakePoint = 0.0;
-  private boolean visionOnline = false;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
   private PolarChassisSpeeds intakeAssistSpeeds = new PolarChassisSpeeds();
   private Rotation2d scoreAngle = Rotation2d.kZero;
   private Rotation2d feedAngle = Rotation2d.kZero;
   private boolean ableToBumpAssist = false;
 
-  public Swerve(TunerSwerveDrivetrain drivetrain, DriveSource driveSource) {
+  public Swerve(TunerSwerveDrivetrain drivetrain, DriveSource driveSource, HealthManager health) {
     super(SubsystemPriority.SWERVE, SwerveState.MANUAL);
     this.drivetrain = drivetrain;
     this.driveSource = driveSource;
+    this.health = health;
 
     if (Utils.isSimulation()) {
       startSimThread();
@@ -162,8 +165,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
     ableToBumpAssist =
-        SwerveAssist.ableToBumpAssist(drivetrain.getState().Pose, fieldRelativeSpeeds)
-            && visionOnline;
+        FeatureFlags.BUMP_ASSIST.getAsBoolean()
+            && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+            && health.isLocalizationHealthy()
+            && SwerveAssist.ableToBumpAssist(drivetrain.getState().Pose, fieldRelativeSpeeds);
 
     if (getState() == SwerveState.INTAKE) {
       lastWallIntakePoint =
@@ -198,14 +203,21 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     switch (currentState) {
       case MANUAL -> {
         var speeds = driveSource.getRequestedSpeeds();
-        var swerveRequest =
-            driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                ? driverPerspectiveOpenLoop
-                : fieldCentricClosedLoop;
 
-        if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
-          // TODO: Use swerve request with current velocity with target direction bump snap angle
+        if (ableToBumpAssist) {
+          drivetrain.setControl(
+              driverPerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
         } else {
+          var swerveRequest =
+              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+                  ? driverPerspectiveOpenLoop
+                  : fieldCentricClosedLoop;
+
           drivetrain.setControl(
               swerveRequest
                   .withVelocityX(speeds.vxMetersPerSecond)
@@ -215,50 +227,82 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       }
       case SCORE -> {
         var speeds = driveSource.getRequestedSpeeds(scoreAngle);
-        var swerveRequest =
-            driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                ? driverPerspectiveSnapsOpenLoop
-                : fieldCentricSnapsClosedLoop;
 
-        // We want just the translation to be operator perspective, rotation is always blue alliance
-        // perspective
-        var usedSnapAngle =
-            swerveRequest.ForwardPerspective == ForwardPerspectiveValue.BlueAlliance
-                ? scoreAngle
-                : scoreAngle.rotateBy(Rotation2d.k180deg);
+        if (ableToBumpAssist) {
+          drivetrain.setControl(
+              driverPerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+        } else {
+          var swerveRequest =
+              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+                  ? driverPerspectiveSnapsOpenLoop
+                  : fieldCentricSnapsClosedLoop;
 
-        DogLog.log("Swerve/UsedSnapAngle", usedSnapAngle.getDegrees(), Degrees);
+          // We want just the translation to be operator perspective, rotation is always blue
+          // alliance
+          // perspective
+          var usedSnapAngle =
+              swerveRequest.ForwardPerspective == ForwardPerspectiveValue.BlueAlliance
+                  ? scoreAngle
+                  : scoreAngle.rotateBy(Rotation2d.k180deg);
 
-        drivetrain.setControl(
-            swerveRequest
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withTargetDirection(usedSnapAngle));
+          DogLog.log("Swerve/UsedSnapAngle", usedSnapAngle.getDegrees(), Degrees);
+
+          drivetrain.setControl(
+              swerveRequest
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(usedSnapAngle));
+        }
       }
       case FEED -> {
         var speeds = driveSource.getRequestedSpeeds(feedAngle);
-        var swerveRequest =
-            driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                ? driverPerspectiveSnapsOpenLoop
-                : fieldCentricSnapsClosedLoop;
 
-        // We want just the translation to be operator perspective, rotation is always blue alliance
-        // perspective
-        var usedSnapAngle =
-            swerveRequest.ForwardPerspective == ForwardPerspectiveValue.BlueAlliance
-                ? feedAngle
-                : feedAngle.rotateBy(Rotation2d.k180deg);
+        if (ableToBumpAssist) {
+          drivetrain.setControl(
+              driverPerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+        } else {
+          var swerveRequest =
+              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+                  ? driverPerspectiveSnapsOpenLoop
+                  : fieldCentricSnapsClosedLoop;
 
-        drivetrain.setControl(
-            swerveRequest
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withTargetDirection(usedSnapAngle));
+          // We want just the translation to be operator perspective, rotation is always blue
+          // alliance
+          // perspective
+          var usedSnapAngle =
+              swerveRequest.ForwardPerspective == ForwardPerspectiveValue.BlueAlliance
+                  ? feedAngle
+                  : feedAngle.rotateBy(Rotation2d.k180deg);
+
+          drivetrain.setControl(
+              swerveRequest
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(usedSnapAngle));
+        }
       }
       case INTAKE -> {
         var speeds = driveSource.getRequestedSpeeds().plus(intakeAssistSpeeds);
 
-        if (ableToWallSnap()) {
+        if (ableToBumpAssist) {
+          drivetrain.setControl(
+              driverPerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+        } else if (ableToWallSnap()) {
           DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
               MathHelpers.getClosestPointOnRectanglePerimeter(
@@ -346,7 +390,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   private boolean ableToWallSnap() {
-    if (!visionOnline || !FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()) {
+    if (!health.isLocalizationHealthy() || !FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()) {
       return false;
     }
     var robotPose = drivetrainState.Pose;
@@ -406,10 +450,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("Swerve/WallSnaps/VelocityAngleTowardWall", velocityAngleTowardWall);
     DogLog.log("Swerve/WallSnaps/RotationAngleTowardWall", rotationAngleTowardWall);
     return distanceToWallThreshold && velocityAngleTowardWall && rotationAngleTowardWall;
-  }
-
-  public void setVisionOnline(boolean online) {
-    visionOnline = online;
   }
 
   private void startSimThread() {

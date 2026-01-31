@@ -6,9 +6,6 @@ public enum RobotState {
   PREPARE_SCORE,
   SCORE,
 
-  PREPARE_FORCE_SCORE,
-  FORCE_SCORE,
-
   PREPARE_FEED,
   FEED,
 

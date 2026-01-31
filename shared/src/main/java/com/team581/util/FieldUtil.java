@@ -158,11 +158,11 @@ public class FieldUtil {
           RED_OUTPOST_BUMP_ASSIST_ZONE,
           RED_DEPOT_BUMP_ASSIST_ZONE);
 
-  public static Translation2d clampPoseToAllianceZone(Translation2d robot) {
-    if (isRobotInAllianceZone(robot)) {
+  public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
+    if (isRobotInAllianceZone(robot.getTranslation())) {
       return robot;
     }
-    return new Translation2d(getAllianceZoneX(), robot.getY());
+    return new Pose2d(getAllianceZoneX(), robot.getY(), robot.getRotation());
   }
 
   // Logs all zone points; only needs to run once

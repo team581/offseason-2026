@@ -75,7 +75,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case HUB_AIM -> goalAngle = hubAimAngle;
       case FEED_AIM -> goalAngle = feedAimAngle;
-      case IDLE -> {}
     }
 
     currentAngle =
@@ -105,9 +104,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case HOMING -> {
         motor.setVoltage(HOMING_VOLTAGE.get());
       }
-      case IDLE -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(0.0))));
-      }
       case HUB_AIM -> {
         motor.setControl(
             positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
@@ -128,7 +124,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         if (filteredCurrent > HOMING_CURRENT_THRESHOLD.get()) {
           motor.setPosition(Units.degreesToRotations(HOMING_END_POSITION));
           motor.disable();
-          yield TurretState.IDLE;
         }
         yield currentState;
       }
@@ -185,10 +180,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.FEED_AIM);
   }
 
-  public void idleRequest() {
-    setState(TurretState.IDLE);
-  }
-
   public void setHubAimAngle(double angle) {
     hubAimAngle = angle;
   }
@@ -199,7 +190,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public boolean atGoal() {
     return switch (getState()) {
-      case UNHOMED, HOMING, IDLE -> false;
+      case UNHOMED, HOMING -> false;
       default -> MathUtil.isNear(clamp(goalAngle), currentAngle, TOLERANCE);
     };
   }
@@ -229,7 +220,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     if (getState() == TurretState.UNHOMED || getState() == TurretState.HOMING) {
       motor.setPosition(0);
-      setStateFromRequest(TurretState.IDLE);
     }
 
     turretSimulation.update();

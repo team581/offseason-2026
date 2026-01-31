@@ -84,7 +84,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     return switch (currentState) {
       case PREPARE_SCORE -> {
         if (shooter.atGoal()
-            && vision.seeingTagDebounced()
+            && localization.isTrustworthy()
             && FieldUtil.isRobotInAllianceZone(robotTranslation)) {
           yield RobotState.SCORE;
         }
@@ -240,8 +240,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void collectInputs() {
-
     robotPose = localization.getPose();
+    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
     timeOfFlight = shooter.getCurrentTimeOfFlight();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
@@ -273,7 +273,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hubDistance = robotPose.getTranslation().getDistance(hubGoalPose);
     feed1Distance = robotPose.getTranslation().getDistance(feed1GoalPose);
     feed2Distance = robotPose.getTranslation().getDistance(feed2GoalPose);
-    swerve.setVisionOnline(health.isLocalizationHealthy());
   }
 
   private double getSwerveAimingAngle(Translation2d goal) {

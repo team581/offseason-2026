@@ -1,6 +1,5 @@
 package frc.robot.vision;
 
-import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
@@ -108,16 +107,5 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
     DogLog.log("Vision/SeeingTag", seeingTag);
     DogLog.log("Vision/SeeingTagLast5Seconds", seenTagRecentlyForReset);
-  }
-
-  public boolean isAnyCameraOffline() {
-    return mainLimelight.getCameraHealth() == CameraHealth.OFFLINE;
-  }
-
-  public boolean isAnyCameraOnlineForTags() {
-    if (RobotBase.isSimulation()) {
-      return true;
-    }
-    return mainLimelight.isOnlineForTags();
   }
 }

@@ -5,6 +5,9 @@ import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.ReusableOptional;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.vision.limelight.LimelightHelpers;
+import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
+import com.team581.vision.limelight.PoseEstimateValidator;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.VecBuilder;
@@ -18,6 +21,8 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Locale;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
+  private static final double USE_MT1_ROTATION_THRESHOLD_INCHES = 40;
+
   private static final int[] VALID_APRILTAGS =
       new int[] {
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
@@ -31,6 +36,8 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   public final String limelightTableName;
   private final String name;
   public final CameraConfig config;
+
+  private final PoseEstimateValidator poseEstimateValidator;
 
   private final Timer limelightTimer = new Timer();
   private final Timer seedImuTimer = new Timer();
@@ -49,6 +56,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     this.name = name;
     limelightTimer.start();
     this.config = config;
+    this.poseEstimateValidator = new PoseEstimateValidator(name);
   }
 
   public void sendImuData(
@@ -73,52 +81,41 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       return tagResult.empty();
     }
 
-    var mTEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
+    PoseEstimate mT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
 
-    if (mTEstimate == null) {
+    if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity)) {
       return tagResult.empty();
     }
 
-    var mTEstimateTimestamp = mTEstimate.timestampSeconds;
+    var mTEstimateTimestamp = mT1Estimate.timestampSeconds;
+    var mTPose = mT1Estimate.pose;
+    var distance = mT1Estimate.avgTagDist;
 
-    if (Math.abs(angularVelocity) > 360) {
-      return tagResult.empty();
-    }
-    if (mTEstimate.tagCount == 0) {
-      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
+    var xyDev = 0.01 * Math.pow(distance, 1.2);
+    var thetaDev = Double.POSITIVE_INFINITY;
 
-      return tagResult.empty();
-    }
-    if (mTEstimate.rawFiducials.length == 1) {
-      double ambiguity = mTEstimate.rawFiducials[0].ambiguity;
-      if (ambiguity >= 0.7) {
-        DogLog.timestamp("Vision/" + name + "/Tags/AmbiguityFilter");
+    if (config.useMt1AndMt2Hybrid()) {
+      PoseEstimate mT2Estimate =
+          LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
+
+      if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity)) {
         return tagResult.empty();
       }
-    }
 
-    var mtPose = mTEstimate.pose;
-
-    // This prevents pose estimator from having crazy poses if the Limelight loses power
-    if (mtPose.getX() == 0.0 && mtPose.getY() == 0.0) {
-      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
-      return tagResult.empty();
-    }
-
-    var distance = mTEstimate.avgTagDist;
-    var xyDev = 0.01 * Math.pow(distance, 1.2);
-    var thetaDev = 0.03 * Math.pow(distance, 1.2);
-
-    if (distance > Units.inchesToMeters(40) || !config.useMegatag1RotationWhenClose()) {
-      thetaDev = Double.POSITIVE_INFINITY;
+      mTEstimateTimestamp = mT2Estimate.timestampSeconds;
+      mTPose = mT2Estimate.pose;
+      if (distance < Units.inchesToMeters(USE_MT1_ROTATION_THRESHOLD_INCHES)) {
+        mTPose = new Pose2d(mTPose.getTranslation(), mT1Estimate.pose.getRotation());
+        thetaDev = 0.03 * Math.pow(distance, 1.2);
+      }
     }
 
     var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
 
-    DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mtPose);
+    DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
     DogLog.log("Vision/" + name + "/Tags/MT2Timestamp", mTEstimateTimestamp);
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
-    return tagResult.update(mtPose, mTEstimateTimestamp, devs);
+    return tagResult.update(mTPose, mTEstimateTimestamp, devs);
   }
 
   @Override

@@ -39,6 +39,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private DriveSource driveSource;
 
+  /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
   private final SwerveRequest.FieldCentric driverPerspectiveOpenLoop =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
@@ -46,6 +47,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
 
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
   private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnapsOpenLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
@@ -56,11 +61,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
+  /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnapsClosedLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)

@@ -1,5 +1,6 @@
 package frc.robot.robot_manager;
 
+import com.team581.math.ShootOnTheMove;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
@@ -18,6 +19,7 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
+import frc.robot.turret.TurretCalculator;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
@@ -41,7 +43,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double hubGoalAngle = 0.0;
   private double hubDistance = 0.0;
 
-  private Translation2d feedGoalPose = Translation2d.kZero;
+  private FeedLocation feedLocation = FeedLocation.CLOSEST;
+  private Translation2d feedGoalTranslation = Translation2d.kZero;
   private double feedGoalAngle = 0.0;
   private double feedDistance = 0.0;
 
@@ -75,7 +78,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       case PREPARE_SCORE -> {
-        // TODO: This should check trust factor
         if (shooter.atGoal()
             && localization.isTrustworthy()
             && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
@@ -83,12 +85,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && turret.atGoal()
             && shooterHood.atGoal()) {
           yield RobotState.SCORE;
-        }
-        yield currentState;
-      }
-      case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
-          yield RobotState.FORCE_SCORE;
         }
         yield currentState;
       }
@@ -125,28 +121,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         // Set hood behavior separately while idling
         dyeRotor.idleRequest();
-        turret.idleRequest();
+        turret.feedAimRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_EMPTY);
-      }
-      case PREPARE_FORCE_SCORE -> {
-        vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(hubDistance);
-        shooterHood.scoreRequest(hubDistance);
-        dyeRotor.shootRequest();
-        turret.hubAimRequest();
-        // Intake is controlled separately
-        swerve.normalDriveRequest();
-      }
-      case FORCE_SCORE -> {
-        vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(hubDistance);
-        shooterHood.scoreRequest(hubDistance);
-        dyeRotor.shootRequest();
-        turret.hubAimRequest();
-        intake.shootingRequest();
-        swerve.normalDriveRequest();
       }
       case PREPARE_FEED -> {
         vision.setState(VisionState.TAGS);
@@ -184,6 +162,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.shootingRequest();
         swerve.normalDriveRequest();
       }
+      case CLIMB_1_LINEUP_L1 -> {}
+      case CLIMB_2_RAISING_L1 -> {}
+      case CLIMB_3_HANGING_L1 -> {}
+      case CLIMB_4_RAISING_L2 -> {}
+      case CLIMB_5_HANGING_L2 -> {}
+      case CLIMB_6_RAISING_L3 -> {}
+      case CLIMB_7_HANGING_L3 -> {}
+      case CLIMB_1_LINEUP_L1_AUTO -> {}
+      case CLIMB_2_RAISING_L1_AUTO -> {}
+      case CLIMB_3_HANGING_L1_AUTO -> {}
     }
   }
 
@@ -197,17 +185,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
       default -> {}
     }
+    DogLog.log("RobotManager/FeedGoalTranslation", feedGoalTranslation);
+    DogLog.log("RobotManager/FeedDistance", feedDistance);
+    DogLog.log("RobotManager/FeedLocation", feedLocation);
   }
 
   public void idleRequest() {
     if (!getState().isClimbingOrRehoming()) {
       setStateFromRequest(RobotState.IDLE);
-    }
-  }
-
-  public void forceShootRequest() {
-    if (!getState().isClimbingOrRehoming()) {
-      setStateFromRequest(RobotState.PREPARE_FORCE_SCORE);
     }
   }
 
@@ -323,19 +308,26 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
+    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
+
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
 
-    hubGoalAngle = 0.0;
-    hubDistance = 0.0;
-    feedGoalAngle = 0.0;
-    // TODO: Shoot on the move tech
-    if (FeedLocation.getNearest(robotPose) == FeedLocation.LEFT) {
-      feedGoalPose = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();
-    } else {
-      feedGoalPose = FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation();
-    }
-    feedDistance = robotPose.getTranslation().getDistance(feedGoalPose);
+    var hubGoalPose =
+        ShootOnTheMove.getVelocityCompensatedGoal(
+            FieldUtil.HUB_POSE.getPose().getTranslation(),
+            swerve.getFieldRelativeSpeeds(),
+            shooter.getCurrentTimeOfFlight());
+
+    var robotPoseInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose);
+
+    hubGoalAngle =
+        TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, hubGoalPose);
+    hubDistance = robotPoseInAllianceZone.getTranslation().getDistance(hubGoalPose);
+
+    feedGoalTranslation = FeedLocation.CLOSEST.getTranslation(robotPose);
+    feedGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, feedGoalTranslation);
+    feedDistance = robotPose.getTranslation().getDistance(feedGoalTranslation);
   }
 }

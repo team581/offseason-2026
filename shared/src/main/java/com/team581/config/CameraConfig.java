@@ -2,7 +2,7 @@ package com.team581.config;
 
 public record CameraConfig(
     LimelightModel model,
-    boolean useMegatag1RotationWhenClose,
+    boolean useMt1AndMt2Hybrid,
     double forward,
     double right,
     double up,
