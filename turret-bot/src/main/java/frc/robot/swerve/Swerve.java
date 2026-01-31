@@ -224,9 +224,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           drivetrain.setControl(
               swerveAssistSnapsRequest
-                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
+                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose))
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
           drivetrain.setControl(
@@ -242,9 +242,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           drivetrain.setControl(
               swerveAssistSnapsRequest
-                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
+                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose))
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
           drivetrain.setControl(
@@ -270,9 +270,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           drivetrain.setControl(
               swerveAssistSnapsRequest
-                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose))
+                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
                   .withTargetDirection(
-                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose))
+                      Rotation2d.fromDegrees(SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (FeatureFlags.BUMP_ASSIST.getAsBoolean() && ableToBumpAssist) {
           drivetrain.setControl(

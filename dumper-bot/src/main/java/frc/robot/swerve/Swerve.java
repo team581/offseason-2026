@@ -121,6 +121,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private @Nullable Notifier simNotifier = null;
 
   private SwerveDriveState drivetrainState = new SwerveDriveState();
+  private Pose2d robotPose = Pose2d.kZero;
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Translation2d lastWallIntakePoint = Translation2d.kZero;
@@ -159,25 +160,26 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   @Override
   protected void collectInputs() {
     drivetrainState = drivetrain.getState();
+    robotPose = drivetrainState.Pose;
     robotRelativeSpeeds = drivetrainState.Speeds;
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(
-            robotRelativeSpeeds, drivetrainState.Pose.getRotation());
+            robotRelativeSpeeds, robotPose.getRotation());
 
     ableToBumpAssist =
         FeatureFlags.BUMP_ASSIST.getAsBoolean()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
-            && SwerveAssist.ableToBumpAssist(drivetrain.getState().Pose, fieldRelativeSpeeds);
+            && SwerveAssist.ableToBumpAssist(robotPose, fieldRelativeSpeeds);
 
     if (getState() == SwerveState.INTAKE) {
       lastWallIntakePoint =
           MathHelpers.getIntersectionOnRectanglePerimeter(
-              drivetrainState.Pose.getTranslation(),
+              robotPose.getTranslation(),
               FieldUtil.FIELD_BOUNDS,
               filteredLastDriveDirection);
       distanceToWallIntakePoint =
-          lastWallIntakePoint.getDistance(drivetrainState.Pose.getTranslation());
+          lastWallIntakePoint.getDistance(robotPose.getTranslation());
 
       filteredLastDriveDirection =
           Rotation2d.fromDegrees(
@@ -306,12 +308,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
               MathHelpers.getClosestPointOnRectanglePerimeter(
-                  drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
-          var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
+                  robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+          var angleToWall = MathHelpers.getDriveDirection(robotPose, closestWallPose);
           var centerOfRotationRobotRelative =
               lastWallIntakePoint
-                  .minus(drivetrainState.Pose.getTranslation())
-                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+                  .minus(robotPose.getTranslation())
+                  .rotateBy(robotPose.getRotation().unaryMinus());
           DogLog.log(
               "Swerve/WallSnaps/CenterOfRotation",
               new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
@@ -393,7 +395,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     if (!health.isLocalizationHealthy() || !FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()) {
       return false;
     }
-    var robotPose = drivetrainState.Pose;
     var closestWallTranslation =
         MathHelpers.getClosestPointOnRectanglePerimeter(
             robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
