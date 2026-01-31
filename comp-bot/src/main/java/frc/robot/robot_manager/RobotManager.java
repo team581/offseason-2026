@@ -1,13 +1,11 @@
 package frc.robot.robot_manager;
 
-import com.team581.math.ShootOnTheMove;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.health.HealthManager;
@@ -19,7 +17,8 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
-import frc.robot.turret.TurretCalculator;
+import frc.robot.util.AimParameterUtil;
+import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
@@ -40,13 +39,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
-  private double hubGoalAngle = 0.0;
-  private double hubDistance = 0.0;
+  private AimingParameters scoringParameters = new AimingParameters(0, 0);
+  private AimingParameters feedingParameters = new AimingParameters(0, 0);
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
-  private Translation2d feedGoalTranslation = Translation2d.kZero;
-  private double feedGoalAngle = 0.0;
-  private double feedDistance = 0.0;
 
   public RobotManager(
       ShooterHood shooterHood,
@@ -128,8 +124,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED -> {
         vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedDistance);
-        shooterHood.feedRequest(feedDistance);
+        shooter.feedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
         turret.feedAimRequest();
         // Intake is controlled separately
@@ -137,8 +133,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FEED -> {
         vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedDistance);
-        shooterHood.feedRequest(feedDistance);
+        shooter.feedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
         turret.feedAimRequest();
         intake.shootingRequest();
@@ -146,8 +142,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(hubDistance);
-        shooterHood.scoreRequest(hubDistance);
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
         turret.hubAimRequest();
         // Intake is controlled separately
@@ -155,8 +151,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(hubDistance);
-        shooterHood.scoreRequest(hubDistance);
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
         turret.hubAimRequest();
         intake.shootingRequest();
@@ -180,14 +176,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (state) {
       case IDLE -> shooterHoodSmartIdleRequest();
       case PREPARE_FEED, FEED -> {
-        turret.setFeedAimAngle(feedGoalAngle);
+        turret.setFeedAimAngle(feedingParameters.angle());
       }
-      case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
+      case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(scoringParameters.angle());
       default -> {}
     }
-    DogLog.log("RobotManager/FeedGoalTranslation", feedGoalTranslation);
-    DogLog.log("RobotManager/FeedDistance", feedDistance);
     DogLog.log("RobotManager/FeedLocation", feedLocation);
+    DogLog.log("RobotManager/FeedParameters", feedingParameters);
+    DogLog.log("RobotManager/ScoringParameters", scoringParameters);
   }
 
   public void idleRequest() {
@@ -237,10 +233,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NearTrench");
     } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
-      shooterHood.scoreRequest(hubDistance);
+      shooterHood.scoreRequest(scoringParameters.distance());
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "InAllianceZone");
     } else {
-      shooterHood.feedRequest(feedDistance);
+      shooterHood.feedRequest(feedingParameters.distance());
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
     }
   }
@@ -314,20 +310,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         FieldUtil.inTrench(robotPose.getTranslation())
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
 
-    var hubGoalPose =
-        ShootOnTheMove.getVelocityCompensatedGoal(
-            FieldUtil.HUB_POSE.getPose().getTranslation(),
+    scoringParameters =
+        AimParameterUtil.getScoringParameters(
+            robotPose, swerve.getFieldRelativeSpeeds(), shooter.getCurrentTimeOfFlight());
+    feedingParameters =
+        AimParameterUtil.getFeedingParameters(
+            feedLocation,
+            robotPose,
             swerve.getFieldRelativeSpeeds(),
             shooter.getCurrentTimeOfFlight());
-
-    var robotPoseInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose);
-
-    hubGoalAngle =
-        TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, hubGoalPose);
-    hubDistance = robotPoseInAllianceZone.getTranslation().getDistance(hubGoalPose);
-
-    feedGoalTranslation = FeedLocation.CLOSEST.getTranslation(robotPose);
-    feedGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, feedGoalTranslation);
-    feedDistance = robotPose.getTranslation().getDistance(feedGoalTranslation);
   }
 }
