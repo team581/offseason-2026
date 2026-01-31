@@ -12,10 +12,10 @@ public class TalonFXUtil {
     var rotorPosition = motor.getPosition().getValueAsDouble();
 
     // Modulo the position to be within [0, 1] rotations
-    var absolutePosition = rotorPosition % 1.0;
+    return rotorPosition % 1.0;
 
     // Return the absolute position
-    return absolutePosition;
+
   }
 
   private TalonFXUtil() {}
