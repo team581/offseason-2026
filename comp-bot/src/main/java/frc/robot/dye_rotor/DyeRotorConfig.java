@@ -1,7 +1,5 @@
 package frc.robot.dye_rotor;
 
-<<<<<<< HEAD
-=======
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -10,22 +8,10 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
->>>>>>> 8916757 (Applied the dye rotor configs and values to a sperate file)
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class DyeRotorConfig {
-<<<<<<< HEAD
-
-  public static final int RPM_TOLERANCE_HORIZONTAL = 100;
-  public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
-      DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
-
-  // TODO: Add all three motor configs here
-
-  // TODO: Move unjam timeout duration here
-
-=======
   public static final int RPM_TOLERANCE_HORIZONTAL = 100;
   public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
       DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
@@ -81,5 +67,4 @@ public class DyeRotorConfig {
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0));
 
   private DyeRotorConfig() {}
->>>>>>> 8916757 (Applied the dye rotor configs and values to a sperate file)
 }
