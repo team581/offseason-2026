@@ -10,12 +10,12 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> {
-  // TODO: These are just place holders we should update these when we do find out these angle
+  // TODO: These are just place holders we should update these when we do find out these position
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
 
-  // TODO: Find angle eventually
+  // TODO: Find position eventually
 
   public Deploy(TalonFX motor) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -56,7 +56,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       case HOMING -> {
         if (motor.getStatorCurrent().getValueAsDouble() > 20) {
           motor.setPosition(
-              0); // TODO: reset the encoder to a homed position (this is some angle we dont know
+              0); // TODO: reset the encoder to a homed position (this is some position we dont know
           // yet)
           yield DeployState.STOWED;
         } else {
@@ -67,8 +67,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     };
   }
 
-  private static double clamp(double deployAngle) {
-    return MathUtil.clamp(deployAngle, DeployConfig.MIN_ANGLE, DeployConfig.MAX_ANGLE);
+  private static double clamp(double deployLength) {
+    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
   }
 
   @Override
@@ -79,7 +79,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       default ->
           motor.setControl(
               positionVoltageRequest.withPosition(
-                  Units.degreesToRotations(clamp(DeployConfig.HOMING_END_ANGLE))));
+                  Units.degreesToRotations(clamp(DeployConfig.HOMING_END_POSITION))));
     }
   }
 
@@ -95,8 +95,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
             mechanism ->
                 mechanism
                     .addMotor(motor)
-                    .withMinPosition(DeployConfig.MIN_ANGLE)
-                    .withMaxPosition(DeployConfig.MAX_ANGLE));
+                    .withMinPosition(DeployConfig.MIN_LENGTH)
+                    .withMaxPosition(DeployConfig.MAX_LENGTH));
 
     if (getState() == DeployState.HOMING) {
       motor.setPosition(0);
