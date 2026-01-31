@@ -7,7 +7,6 @@ import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,10 +29,11 @@ final class FieldUtilTest {
     setAlliance(AllianceStationID.Blue1);
 
     // Far left side of field, clearly inside blue alliance zone
-    var robotTranslation = new Translation2d(2.417, 5.409);
-    var clamped = FieldUtil.clampPoseToAllianceZone(robotTranslation);
+    var robotPose = new Pose2d(2.417, 5.409, Rotation2d.kZero);
 
-    assertThat(clamped).isEqualTo(robotTranslation);
+    var clamped = FieldUtil.clampPoseToAllianceZone(robotPose);
+
+    assertThat(clamped).isEqualTo(robotPose);
   }
 
   @Test
@@ -41,10 +41,10 @@ final class FieldUtilTest {
     setAlliance(AllianceStationID.Red1);
 
     // Far right side of field, clearly inside red alliance zone
-    var robotTranslation = new Translation2d(14.340, 2.534);
-    var clamped = FieldUtil.clampPoseToAllianceZone(robotTranslation);
+    var robotPose = new Pose2d(14.340, 2.534, Rotation2d.kZero);
+    var clamped = FieldUtil.clampPoseToAllianceZone(robotPose);
 
-    assertThat(clamped).isEqualTo(robotTranslation);
+    assertThat(clamped).isEqualTo(robotPose);
   }
 
   // Blue alliance tests
@@ -54,11 +54,12 @@ final class FieldUtilTest {
     setAlliance(AllianceStationID.Blue1);
 
     // Middle of field, outside blue alliance zone
-    var robotTranslation = new Translation2d(6.768, 0.842);
-    var clamped = FieldUtil.clampPoseToAllianceZone(robotTranslation);
+    var robotPose = new Pose2d(6.768, 0.842, Rotation2d.kZero);
+
+    var clamped = FieldUtil.clampPoseToAllianceZone(robotPose);
 
     assertThat(clamped.getX()).isLessThan(4.628);
-    assertThat(clamped.getY()).isCloseTo(robotTranslation.getY(), offset(0.01));
+    assertThat(clamped.getY()).isCloseTo(robotPose.getY(), offset(0.01));
   }
 
   @Test
@@ -66,11 +67,12 @@ final class FieldUtilTest {
     setAlliance(AllianceStationID.Red1);
 
     // Middle of field, outside red alliance zone
-    var robotTranslation = new Translation2d(10.758, 0.7509);
-    var clamped = FieldUtil.clampPoseToAllianceZone(robotTranslation);
+    var robotPose = new Pose2d(10.758, 0.7509, Rotation2d.kZero);
+
+    var clamped = FieldUtil.clampPoseToAllianceZone(robotPose);
 
     assertThat(clamped.getX()).isGreaterThan(12.527);
-    assertThat(clamped.getY()).isCloseTo(robotTranslation.getY(), offset(0.01));
+    assertThat(clamped.getY()).isCloseTo(robotPose.getY(), offset(0.01));
   }
 
   @Test
