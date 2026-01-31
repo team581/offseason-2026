@@ -46,9 +46,9 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
 
   @Override
   protected void whileInState(IntakeState state) {
-    DogLog.log("Intake/LeftMotor/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Intake/LeftMotor/SupplyCurrent", motor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Intake/LeftMotor/Velocity", motor.getVelocity().getValueAsDouble());
+    DogLog.log("Intake/Motor/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Intake/Motor/SupplyCurrent", motor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Intake/Motor/Velocity", motor.getVelocity().getValueAsDouble());
   }
 
   public void intakeRequest() {
