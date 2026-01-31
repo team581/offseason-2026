@@ -240,8 +240,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void collectInputs() {
-
     robotPose = localization.getPose();
+    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
     timeOfFlight = shooter.getCurrentTimeOfFlight();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {

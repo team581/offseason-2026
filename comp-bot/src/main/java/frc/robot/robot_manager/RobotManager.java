@@ -43,7 +43,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double hubGoalAngle = 0.0;
   private double hubDistance = 0.0;
 
-  private Translation2d feedGoalPose = Translation2d.kZero;
+  private FeedLocation feedLocation = FeedLocation.CLOSEST;
+  private Translation2d feedGoalTranslation = Translation2d.kZero;
   private double feedGoalAngle = 0.0;
   private double feedDistance = 0.0;
 
@@ -120,7 +121,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         // Set hood behavior separately while idling
         dyeRotor.idleRequest();
-        turret.idleRequest();
+        turret.feedAimRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_EMPTY);
@@ -184,6 +185,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(hubGoalAngle);
       default -> {}
     }
+    DogLog.log("RobotManager/FeedGoalTranslation", feedGoalTranslation);
+    DogLog.log("RobotManager/FeedDistance", feedDistance);
+    DogLog.log("RobotManager/FeedLocation", feedLocation);
   }
 
   public void idleRequest() {
@@ -304,6 +308,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
+    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
 
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
@@ -321,14 +326,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, hubGoalPose);
     hubDistance = robotPoseInAllianceZone.getTranslation().getDistance(hubGoalPose);
 
-    if (FeedLocation.getNearest(robotPose) == FeedLocation.LEFT) {
-      feedGoalPose = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();
-    } else {
-      feedGoalPose = FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation();
-    }
-
-    feedGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, feedGoalPose);
-
-    feedDistance = robotPose.getTranslation().getDistance(feedGoalPose);
+    feedGoalTranslation = FeedLocation.CLOSEST.getTranslation(robotPose);
+    feedGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, feedGoalTranslation);
+    feedDistance = robotPose.getTranslation().getDistance(feedGoalTranslation);
   }
 }

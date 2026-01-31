@@ -10,8 +10,8 @@ final class FeedLocationTest {
   @Test
   void feedLocationLeftTest() {
     Pose2d robotPose = new Pose2d(1, 1.65, new Rotation2d());
-    var result = FeedLocation.getNearest(robotPose);
-    var exected = FeedLocation.LEFT;
+    var result = FeedLocation.CLOSEST.getTranslation(robotPose);
+    var exected = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();
 
     assertEquals(exected, result);
   }
@@ -19,8 +19,8 @@ final class FeedLocationTest {
   @Test
   void feedLocationRightTest() {
     Pose2d robotPose = new Pose2d(1, 6.5, new Rotation2d());
-    var result = FeedLocation.getNearest(robotPose);
-    var exected = FeedLocation.RIGHT;
+    var result = FeedLocation.CLOSEST.getTranslation(robotPose);
+    var exected = FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation();
 
     assertEquals(exected, result);
   }
