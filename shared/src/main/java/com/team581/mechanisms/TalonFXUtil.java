@@ -6,6 +6,8 @@ public class TalonFXUtil {
   /**
    * Get the absolute position of a {@link TalonFX}. Only works if you have not yet called {@link
    * TalonFX#setPosition(double)} on the motor.
+   *
+   * @return The absolute position of the motor in rotations
    */
   public static double getAbsolutePosition(TalonFX motor) {
     // Get the rotor position

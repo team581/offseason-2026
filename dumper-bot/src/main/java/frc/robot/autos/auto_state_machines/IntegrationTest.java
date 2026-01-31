@@ -6,6 +6,7 @@ import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -17,9 +18,11 @@ import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
-  private IntegrationTestState beforePauseState = IntegrationTestState.PAUSED;
   private static final double MAX_VELOCITY = 1.0;
   private static final double MAX_ACCELERATION = 1.0;
+
+  private boolean bButtonReleased = true;
+  private boolean xButtonReleased = true;
 
   private static final Pose2d RED_START_POSE =
       FieldUtil.HUB_POSE
@@ -63,15 +66,6 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
     super(IntegrationTestState.SEGMENT_1_DRIVE_TO_START, robotManager, trailblazer);
   }
 
-  public void pauseRequest() {
-    if (getState() == IntegrationTestState.PAUSED) {
-      setStateFromRequest(beforePauseState);
-    }
-
-    beforePauseState = getState();
-    setStateFromRequest(IntegrationTestState.PAUSED);
-  }
-
   public void skipRequest() {
     setStateFromRequest(getState().nextState());
   }
@@ -91,7 +85,6 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
       return switch (currentState) {
         case SEGMENT_2_CLOSE_CENTERED_WITH_HUB ->
             timeout(2.0) ? IntegrationTestState.SEGMENT_3_BACK_CENTERED_WITH_HUB : currentState;
-        case PAUSED -> currentState;
         default -> currentState.nextState();
       };
     }
@@ -100,6 +93,28 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
   @Override
   protected void whileInState(IntegrationTestState newState) {
+    if (FeatureFlags.INTEGRATION_TEST.getAsBoolean()) {
+      if (robotManager.hardware.operatorController.getBButton()) {
+        if (bButtonReleased) {
+          DogLog.timestamp("IntegrationTest/BButton");
+
+          bButtonReleased = false;
+          skipRequest();
+        }
+      } else {
+        bButtonReleased = true;
+      }
+      if (robotManager.hardware.operatorController.getXButton()) {
+        if (xButtonReleased) {
+          DogLog.timestamp("IntegrationTest/XButton");
+
+          xButtonReleased = false;
+          previousRequest();
+        }
+      } else {
+        xButtonReleased = true;
+      }
+    }
     switch (newState) {
       case SEGMENT_1_DRIVE_TO_START -> {
         trailblazer.setActiveSegment(segment1DriveToStart);
@@ -120,10 +135,6 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
       case SEGMENT_5_LEFT_RAMP -> {
         trailblazer.setActiveSegment(segment5RightTrench);
         robotManager.scoreRequest();
-      }
-      case PAUSED -> {
-        trailblazer.setActiveSegment(segment1DriveToStart);
-        robotManager.idleRequest();
       }
     }
   }

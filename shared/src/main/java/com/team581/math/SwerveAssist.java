@@ -6,6 +6,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class SwerveAssist {
@@ -43,8 +44,9 @@ public class SwerveAssist {
   }
 
   public static boolean ableToTrenchAssist(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+    var robotTranslation = robotPose.getTranslation();
     // Check if in trench assist zone
-    if (FieldUtil.getCurrentTrenchAssistZone(robotPose.getTranslation()).isEmpty()) {
+    if (FieldUtil.getCurrentTrenchAssistZone(robotTranslation).isEmpty()) {
       return false;
     }
 
@@ -55,10 +57,8 @@ public class SwerveAssist {
     }
     DogLog.log("SwerveAssist/Trench/VelocityThreshold", true);
 
-    var allianceZoneAssistPoint =
-        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation());
-    var neutralZoneAssistPoint =
-        FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotPose.getTranslation());
+    var allianceZoneAssistPoint = FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation);
+    var neutralZoneAssistPoint = FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotTranslation);
 
     DogLog.log(
         "SwerveAssist/Trench/ClosestAllianceZoneTrenchMidpoint",
@@ -100,13 +100,13 @@ public class SwerveAssist {
         : ROBOT_INTAKE_TO_BUMP_ANGLE + 180.0;
   }
 
-  public static double getTrenchAssistVelocity(Pose2d robotPose) {
+  public static double getTrenchAssistVelocity(Translation2d robotTranslation) {
     return -TRENCH_PID_CONTROLLER.calculate(
-        robotPose.getY(),
-        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotPose.getTranslation()).getY());
+        robotTranslation.getY(),
+        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
   }
 
-  public static double getTrenchSnapAngle(Pose2d robotPose) {
-    return Math.round(robotPose.getRotation().getDegrees() / 90.0) * 90.0;
+  public static double getTrenchSnapAngle(Rotation2d robotHeading) {
+    return Math.round(robotHeading.getDegrees() / 90.0) * 90.0;
   }
 }

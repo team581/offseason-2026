@@ -15,10 +15,8 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -34,15 +32,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private static final double MIN_ANGLE = -149.105;
   private static final double MAX_ANGLE = 149.105;
   private static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
-  private static final DoubleSubscriber HOMING_VOLTAGE =
-      DogLog.tunable("TurretHomingVoltage", -2.0);
-  private static final DoubleSubscriber HOMING_CURRENT_THRESHOLD =
-      DogLog.tunable("TurretCurrentThreshold", 5.0);
-  private static final double HOMING_END_POSITION = MIN_ANGLE;
   private static final double TOLERANCE = 1.0;
-  private final LinearFilter currentFilter = LinearFilter.movingAverage(7);
-  private double rawCurrent = 0.0;
-  private double filteredCurrent = 0.0;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   private final Vision vision;
@@ -69,10 +59,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   protected void collectInputs() {
 
     switch (getState()) {
-      case UNHOMED, HOMING -> {
-        rawCurrent = motor.getStatorCurrent().getValueAsDouble();
-        filteredCurrent = currentFilter.calculate(rawCurrent);
-      }
       case HUB_AIM -> goalAngle = hubAimAngle;
       case FEED_AIM -> goalAngle = feedAimAngle;
     }
@@ -101,9 +87,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case UNHOMED -> {
         motor.disable();
       }
-      case HOMING -> {
-        motor.setVoltage(HOMING_VOLTAGE.get());
-      }
       case HUB_AIM -> {
         motor.setControl(
             positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
@@ -117,28 +100,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  @Override
-  protected TurretState getNextState(TurretState currentState) {
-    return switch (currentState) {
-      case HOMING -> {
-        if (filteredCurrent > HOMING_CURRENT_THRESHOLD.get()) {
-          motor.setPosition(Units.degreesToRotations(HOMING_END_POSITION));
-          motor.disable();
-        }
-        yield currentState;
-      }
-      default -> currentState;
-    };
-  }
-
   public void setState(TurretState newState) {
     switch (getState()) {
-      case HOMING -> {}
-      case UNHOMED -> {
-        if (newState == TurretState.HOMING) {
-          setStateFromRequest(TurretState.HOMING);
-        }
-      }
+      case UNHOMED -> {}
       default -> {
         setStateFromRequest(newState);
       }
@@ -190,7 +154,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public boolean atGoal() {
     return switch (getState()) {
-      case UNHOMED, HOMING -> false;
+      case UNHOMED -> false;
       default -> MathUtil.isNear(clamp(goalAngle), currentAngle, TOLERANCE);
     };
   }
@@ -201,10 +165,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public double getVelocityDegreesPerSecond() {
     return Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
-  }
-
-  public void homeRequest() {
-    setState(TurretState.HOMING);
   }
 
   @Override
@@ -218,7 +178,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                     .withMinPosition(Units.degreesToRotations(MIN_ANGLE))
                     .withMaxPosition(Units.degreesToRotations(MAX_ANGLE)));
 
-    if (getState() == TurretState.UNHOMED || getState() == TurretState.HOMING) {
+    if (getState() == TurretState.UNHOMED) {
       motor.setPosition(0);
     }
 
