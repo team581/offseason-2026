@@ -55,7 +55,8 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   @Override
   protected void whileInState(AutoSelection state) {
     if (DriverStation.isDisabled()) {
-      if (!hasEnabledAuto && autoChooser.getSelectedAuto() != AutoSelection.INTEGRATION_TEST
+      if (!hasEnabledAuto
+          && autoChooser.getSelectedAuto() != AutoSelection.INTEGRATION_TEST
           && (RobotBase.isSimulation()
               || DriverStation.isAutonomous()
               || DriverStation.isFMSAttached())) {
