@@ -273,7 +273,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hubDistance = robotPose.getTranslation().getDistance(hubGoalPose);
     feed1Distance = robotPose.getTranslation().getDistance(feed1GoalPose);
     feed2Distance = robotPose.getTranslation().getDistance(feed2GoalPose);
-    swerve.setVisionOnline(health.isLocalizationHealthy());
   }
 
   private double getSwerveAimingAngle(Translation2d goal) {
