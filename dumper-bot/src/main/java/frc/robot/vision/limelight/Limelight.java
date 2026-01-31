@@ -21,7 +21,7 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Locale;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
-    private static final double USE_MT1_ROTATION_THRESHOLD_INCHES = 40;
+  private static final double USE_MT1_ROTATION_THRESHOLD_INCHES = 40;
 
   private static final int[] VALID_APRILTAGS =
       new int[] {
@@ -37,8 +37,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private final String name;
   public final CameraConfig config;
 
-    private final PoseEstimateValidator poseEstimateValidator;
-
+  private final PoseEstimateValidator poseEstimateValidator;
 
   private final Timer limelightTimer = new Timer();
   private final Timer seedImuTimer = new Timer();
@@ -57,8 +56,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     this.name = name;
     limelightTimer.start();
     this.config = config;
-        this.poseEstimateValidator = new PoseEstimateValidator(name);
-
+    this.poseEstimateValidator = new PoseEstimateValidator(name);
   }
 
   public void sendImuData(
@@ -76,7 +74,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   public void setState(LimelightState state) {
     setStateFromRequest(state);
   }
-
 
   public OptionalTagResult getTagResult() {
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
@@ -120,7 +117,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
     return tagResult.update(mTPose, mTEstimateTimestamp, devs);
   }
-
 
   @Override
   protected void collectInputs() {
