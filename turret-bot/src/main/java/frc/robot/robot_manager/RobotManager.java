@@ -8,7 +8,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.wpilibj.Timer;
@@ -35,7 +34,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private Pose2d robotPose = Pose2d.kZero;
 
   /** The robot translation clamped to be within the alliance zone. */
-  private Translation2d robotTranslationInAllianceZone = Translation2d.kZero;
+  private Pose2d robotPoseInAllianceZone = Pose2d.kZero;
 
   private double startOfMatchPeriod = 0;
   private double timeSinceMatchStart = 0;
@@ -146,8 +145,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 swerve.getFieldRelativeSpeeds(),
                 TIME_OF_FLIGHT.get());
         var aimingAngle =
-            TurretCalculator.calculateTurretAimingAngle(
-                robotTranslationInAllianceZone, robotPose.getRotation(), goalPose);
+            TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, goalPose);
         turret.setHubAimAngle(aimingAngle);
       }
       case TAG_AIM -> {
@@ -155,9 +153,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (goalPose != null) {
           var aimingAngle =
               TurretCalculator.calculateTurretAimingAngle(
-                  robotTranslationInAllianceZone,
-                  robotPose.getRotation(),
-                  goalPose.getTranslation());
+                  robotPoseInAllianceZone, goalPose.getTranslation());
           turret.setTagAimAngle(aimingAngle);
           DogLog.clearFault("Tag Aim: No valid ID");
         } else {
@@ -188,7 +184,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     readyToShootAtHub = FmsUtil.isHubActive(timeSinceMatchStart + TIME_OF_FLIGHT.get());
     inAllianceZone = FieldUtil.isRobotInAllianceZone(robotTranslation);
-    robotTranslationInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotTranslation);
+    robotPoseInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose);
     DogLog.log("RobotManager/Autoscore", autoscore);
     DogLog.log("RobotManager/ReadyToShootAtHub", readyToShootAtHub);
     DogLog.log("RobotManager/InAllianceZone", inAllianceZone);
@@ -203,8 +199,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
 
     turretHubGoalAngle =
-        TurretCalculator.calculateTurretAimingAngle(
-            robotTranslationInAllianceZone, robotRotation, goalPose);
+        TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, goalPose);
 
     swerve.setVisionOnline(vision.isAnyCameraOnlineForTags());
   }
