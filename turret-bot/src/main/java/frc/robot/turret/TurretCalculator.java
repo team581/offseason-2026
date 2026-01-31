@@ -1,6 +1,7 @@
 package frc.robot.turret;
 
 import com.team581.math.BaseTurretCalculator;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -21,10 +22,8 @@ public class TurretCalculator {
         wantedTurretAngle, robotRotation, MIN_TURRET_ANGLE, MAX_TURRET_ANGLE);
   }
 
-  public static double calculateTurretAimingAngle(
-      Translation2d robot, Rotation2d robotRotation, Translation2d target) {
-    return BaseTurretCalculator.calculateTurretAimingAngle(
-        robot, robotRotation, target, TURRET_TO_ROBOT);
+  public static double calculateTurretAimingAngle(Pose2d robot, Translation2d target) {
+    return BaseTurretCalculator.calculateTurretAimingAngle(robot, target, TURRET_TO_ROBOT);
   }
 
   public static boolean doesTurretHaveRoom(double turretAngle) {
