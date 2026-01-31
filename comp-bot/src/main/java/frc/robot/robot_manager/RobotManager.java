@@ -305,7 +305,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             FieldUtil.HUB_POSE.getPose().getTranslation(),
             swerve.getFieldRelativeSpeeds(),
             shooter.getCurrentTimeOfFlight());
-    ;
 
     var robotPoseInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose);
 
