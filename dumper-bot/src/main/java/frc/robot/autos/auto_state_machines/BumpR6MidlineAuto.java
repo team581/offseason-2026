@@ -15,9 +15,9 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
 
   private final AutoSegment segment1DriveToMidline =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.996, 6.0, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(11.912, 6.0, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(10.218, 6.0, Rotation2d.k180deg)))
+              AutoPoint.ofRed(new Pose2d(12.996, 6.0, Rotation2d.kZero)),
+              AutoPoint.ofRed(new Pose2d(11.912, 6.0, Rotation2d.kZero)),
+              AutoPoint.ofRed(new Pose2d(10.218, 6.0, Rotation2d.kZero)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment2IntakeAcrossMidline =
@@ -49,7 +49,7 @@ public class BumpR6MidlineAuto extends BaseImperativeAuto<BumpR6MidlineAutoState
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.996, 6.0, Rotation2d.k180deg));
+    return Point.ofRed(new Pose2d(12.996, 6.0, Rotation2d.kZero));
   }
 
   @Override
