@@ -121,7 +121,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         // Set hood behavior separately while idling
         dyeRotor.idleRequest();
-        turret.idleRequest();
+        turret.feedAimRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_EMPTY);
