@@ -1,5 +1,6 @@
 package frc.robot.robot_manager;
 
+import com.team581.math.ShootOnTheMove;
 import com.team581.math.SwerveAssist;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
@@ -18,6 +19,7 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
+import frc.robot.turret.TurretCalculator;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
@@ -293,19 +295,32 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void collectInputs() {
     robotPose = localization.getPose();
+
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
 
-    hubGoalAngle = 0.0;
-    hubDistance = 0.0;
-    feedGoalAngle = 0.0;
-    // TODO: Shoot on the move tech
+    var hubGoalPose =
+        ShootOnTheMove.getVelocityCompensatedGoal(
+            FieldUtil.HUB_POSE.getPose().getTranslation(),
+            swerve.getFieldRelativeSpeeds(),
+            shooter.getCurrentTimeOfFlight());
+    ;
+
+    var robotPoseInAllianceZone = FieldUtil.clampPoseToAllianceZone(robotPose);
+
+    hubGoalAngle =
+        TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, hubGoalPose);
+    hubDistance = robotPoseInAllianceZone.getTranslation().getDistance(hubGoalPose);
+
     if (FeedLocation.getNearest(robotPose) == FeedLocation.LEFT) {
       feedGoalPose = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();
     } else {
       feedGoalPose = FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation();
     }
+
+    feedGoalAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, feedGoalPose);
+
     feedDistance = robotPose.getTranslation().getDistance(feedGoalPose);
   }
 }
