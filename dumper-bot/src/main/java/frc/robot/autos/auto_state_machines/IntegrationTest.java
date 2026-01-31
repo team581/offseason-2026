@@ -18,8 +18,8 @@ import frc.robot.robot_manager.RobotManager;
 
 public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
 
-  private static final double MAX_VELOCITY = 1.0;
-  private static final double MAX_ACCELERATION = 1.0;
+  private static final double MAX_VELOCITY = 3.0;
+  private static final double MAX_ACCELERATION = 0.75;
 
   private boolean bButtonReleased = true;
   private boolean xButtonReleased = true;
@@ -27,16 +27,16 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
   private static final Pose2d RED_START_POSE =
       FieldUtil.HUB_POSE
           .redPose()
-          .plus(new Transform2d(Units.inchesToMeters(60.0), 0.0, Rotation2d.kZero));
+          .plus(new Transform2d(Units.inchesToMeters(60.0), 0.0, Rotation2d.k180deg));
 
   private final AutoSegment segment1DriveToStart =
       Trailblazer.segment(AutoPoint.ofRed(RED_START_POSE))
-          .withLinearConstraints(MAX_VELOCITY, MAX_ACCELERATION)
+          .withLinearConstraints(1.0, 0.5)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment2CloseCenteredWithHub =
       Trailblazer.segment(
-              AutoPoint.ofRed(RED_START_POSE.plus(new Transform2d(-0.25, 0.0, Rotation2d.kZero))))
+              AutoPoint.ofRed(RED_START_POSE.plus(new Transform2d(0.25, 0.0, Rotation2d.kZero))))
           .withLinearConstraints(MAX_VELOCITY, MAX_ACCELERATION)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
