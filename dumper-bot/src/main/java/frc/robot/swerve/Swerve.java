@@ -163,8 +163,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     robotPose = drivetrainState.Pose;
     robotRelativeSpeeds = drivetrainState.Speeds;
     fieldRelativeSpeeds =
-        ChassisSpeeds.fromRobotRelativeSpeeds(
-            robotRelativeSpeeds, robotPose.getRotation());
+        ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
 
     ableToBumpAssist =
         FeatureFlags.BUMP_ASSIST.getAsBoolean()
@@ -175,11 +174,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     if (getState() == SwerveState.INTAKE) {
       lastWallIntakePoint =
           MathHelpers.getIntersectionOnRectanglePerimeter(
-              robotPose.getTranslation(),
-              FieldUtil.FIELD_BOUNDS,
-              filteredLastDriveDirection);
-      distanceToWallIntakePoint =
-          lastWallIntakePoint.getDistance(robotPose.getTranslation());
+              robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS, filteredLastDriveDirection);
+      distanceToWallIntakePoint = lastWallIntakePoint.getDistance(robotPose.getTranslation());
 
       filteredLastDriveDirection =
           Rotation2d.fromDegrees(
