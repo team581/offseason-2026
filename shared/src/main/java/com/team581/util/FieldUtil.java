@@ -98,13 +98,13 @@ public class FieldUtil {
 
   // Midpoints of the entryways of trenches to check if we are driving toward it
   private static final Translation2d BLUE_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
+      new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
   private static final Translation2d BLUE_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
+      new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
   private static final Translation2d RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
+      new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
   private static final Translation2d RED_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
+      new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
 
   private static final List<Translation2d> ALLIANCE_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
@@ -112,13 +112,13 @@ public class FieldUtil {
           RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT, RED_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT);
 
   private static final Translation2d BLUE_OUTPOST_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
+      new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
   private static final Translation2d BLUE_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
+      new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
   private static final Translation2d RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
+      new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
   private static final Translation2d RED_OUTPOST_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
+      new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
 
   private static final List<Translation2d> NEUTRAL_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
@@ -216,103 +216,117 @@ public class FieldUtil {
   public static void debugLogFieldZones() {
     // Trenches
     DogLog.log(
-        "FieldUtil/Trenches/BlueOutpost/Corner1",
+        "FieldUtil/BlueOutpost/Trenches/Corner1",
         new Pose2d(MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/BlueOutpost/Corner2",
+        "FieldUtil/BlueOutpost/Trenches/Corner2",
         new Pose2d(MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/BlueDepot/Corner1",
+        "FieldUtil/BlueDepot/Trenches/Corner1",
         new Pose2d(MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/BlueDepot/Corner2",
+        "FieldUtil/BlueDepot/Trenches/Corner2",
         new Pose2d(MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/RedDepot/Corner1",
+        "FieldUtil/RedDepot/Trenches/Corner1",
         new Pose2d(MathHelpers.getCorners(RED_DEPOT_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/RedDepot/Corner2",
+        "FieldUtil/RedDepot/Trenches/Corner2",
         new Pose2d(MathHelpers.getCorners(RED_DEPOT_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/RedOutpost/Corner1",
+        "FieldUtil/RedOutpost/Trenches/Corner1",
         new Pose2d(MathHelpers.getCorners(RED_OUTPOST_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/Trenches/RedOutpost/Corner2",
+        "FieldUtil/RedOutpost/Trenches/Corner2",
         new Pose2d(MathHelpers.getCorners(RED_OUTPOST_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
 
     // Trench assist zones
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/BlueOutpost/Corner1",
+        "FieldUtil/BlueOutpost/TrenchAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/BlueOutpost/Corner2",
+        "FieldUtil/BlueOutpost/TrenchAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(BLUE_OUTPOST_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/BlueDepot/Corner1",
+        "FieldUtil/BlueDepot/TrenchAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/BlueDepot/Corner2",
+        "FieldUtil/BlueDepot/TrenchAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(BLUE_DEPOT_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/RedDepot/Corner1",
+        "FieldUtil/RedDepot/TrenchAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(RED_DEPOT_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/RedDepot/Corner2",
+        "FieldUtil/RedDepot/TrenchAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(RED_DEPOT_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/RedOutpost/Corner1",
+        "FieldUtil/RedOutpost/TrenchAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(RED_OUTPOST_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/TrenchAssistZones/RedOutpost/Corner2",
+        "FieldUtil/RedOutpost/TrenchAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(RED_OUTPOST_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
 
+    // Trench assist points
+    DogLog.log("FieldUtil/BlueOutpost/TrenchAssistPoints/AllianceZoneTrenchMidpoint", new Pose2d(BLUE_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/BlueOutpost/TrenchAssistPoints/NeutralZoneTrenchMidpoint", new Pose2d(BLUE_OUTPOST_NEUTRAL_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/BlueDepot/TrenchAssistPoints/AllianceZoneTrenchMidpoint", new Pose2d(BLUE_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/BlueDepot/TrenchAssistPoints/NeutralZoneTrenchMidpoint", new Pose2d(BLUE_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedDepot/TrenchAssistPoints/AllianceZoneTrenchMidpoint", new Pose2d(RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedDepot/TrenchAssistPoints/NeutralZoneTrenchMidpoint", new Pose2d(RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedOutpost/TrenchAssistPoints/AllianceZoneTrenchMidpoint", new Pose2d(RED_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedOutpost/TrenchAssistPoints/NeutralZoneTrenchMidpoint", new Pose2d(RED_OUTPOST_NEUTRAL_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
+
     // Bump assist zones
     DogLog.log(
-        "FieldUtil/BumpAssistZones/BlueOutpost/Corner1",
+        "FieldUtil/BlueOutpost/BumpAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(BLUE_OUTPOST_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/BlueOutpost/Corner2",
+        "FieldUtil/BlueOutpost/BumpAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(BLUE_OUTPOST_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/BlueDepot/Corner1",
+        "FieldUtil/BlueDepot/BumpAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(BLUE_DEPOT_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/BlueDepot/Corner2",
+        "FieldUtil/BlueDepot/BumpAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(BLUE_DEPOT_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/RedDepot/Corner1",
+        "FieldUtil/RedDepot/BumpAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(RED_DEPOT_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/RedDepot/Corner2",
+        "FieldUtil/RedDepot/BumpAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(RED_DEPOT_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/RedOutpost/Corner1",
+        "FieldUtil/RedOutpost/BumpAssistZones/Corner1",
         new Pose2d(
             MathHelpers.getCorners(RED_OUTPOST_BUMP_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
-        "FieldUtil/BumpAssistZones/RedOutpost/Corner2",
+        "FieldUtil/RedOutpost/BumpAssistZones/Corner2",
         new Pose2d(
             MathHelpers.getCorners(RED_OUTPOST_BUMP_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
 
-    // TODO: Log all trench & bump points
-
-    // Temporary logging to mark the lists as used fields
-    DogLog.log("FieldUtil/HubSideBumpPoint", HUB_SIDE_BUMP_POINTS.get(0));
-    DogLog.log("FieldUtil/TrenchSideBumpPoint", TRENCH_SIDE_BUMP_POINTS.get(0));
+    // Bump assist points
+    DogLog.log("FieldUtil/BlueOutpost/BumpAssistPoints/HubSideBumpPoint", new Pose2d(BLUE_OUTPOST_HUB_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/BlueOutpost/BumpAssistPoints/TrenchSideBumpPoint", new Pose2d(BLUE_OUTPOST_TRENCH_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/BlueDepot/BumpAssistPoints/HubSideBumpPoint", new Pose2d(BLUE_DEPOT_HUB_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/BlueDepot/BumpAssistPoints/TrenchSideBumpPoint", new Pose2d(BLUE_DEPOT_TRENCH_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedDepot/BumpAssistPoints/HubSideBumpPoint", new Pose2d(RED_DEPOT_HUB_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedDepot/BumpAssistPoints/TrenchSideBumpPoint", new Pose2d(RED_DEPOT_TRENCH_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedOutpost/BumpAssistPoints/HubSideBumpPoint", new Pose2d(RED_OUTPOST_HUB_SIDE_BUMP_POINT, Rotation2d.kZero));
+    DogLog.log("FieldUtil/RedOutpost/BumpAssistPoints/TrenchSideBumpPoint", new Pose2d(RED_OUTPOST_TRENCH_SIDE_BUMP_POINT, Rotation2d.kZero));
   }
 
   public static double getAllianceZoneX() {
