@@ -102,12 +102,12 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  public void hubAimRequest(double goalAngle) {
+  public void scoreRequest(double goalAngle) {
     this.goalAngle = goalAngle;
     setState(TurretState.SCORE);
   }
 
-  public void feedAimRequest(double goalAngle) {
+  public void feedRequest(double goalAngle) {
     this.goalAngle = goalAngle;
     setState(TurretState.FEED);
   }

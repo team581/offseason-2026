@@ -203,7 +203,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
-        turret.feedAimRequest(feedingParameters.turretAngle());
+        turret.feedRequest(feedingParameters.turretAngle());
         // Intake is controlled separately
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
@@ -213,7 +213,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
-        turret.feedAimRequest(feedingParameters.turretAngle());
+        turret.feedRequest(feedingParameters.turretAngle());
         intake.shootingRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
@@ -223,7 +223,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
-        turret.hubAimRequest(scoringParameters.turretAngle());
+        turret.scoreRequest(scoringParameters.turretAngle());
         // Intake is controlled separately
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
@@ -233,7 +233,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
-        turret.hubAimRequest(scoringParameters.turretAngle());
+        turret.scoreRequest(scoringParameters.turretAngle());
         intake.shootingRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
@@ -332,16 +332,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turretSmartIdleRequest();
       }
       case PREPARE_SCORE -> {
-        turret.hubAimRequest(scoringParameters.turretAngle());
+        turret.scoreRequest(scoringParameters.turretAngle());
       }
       case SCORE -> {
-        turret.hubAimRequest(scoringParameters.turretAngle());
+        turret.scoreRequest(scoringParameters.turretAngle());
       }
       case PREPARE_FEED -> {
-        turret.feedAimRequest(feedingParameters.turretAngle());
+        turret.feedRequest(feedingParameters.turretAngle());
       }
       case FEED -> {
-        turret.feedAimRequest(feedingParameters.turretAngle());
+        turret.feedRequest(feedingParameters.turretAngle());
       }
       default -> {}
     }

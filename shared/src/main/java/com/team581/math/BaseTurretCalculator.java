@@ -92,7 +92,7 @@ public class BaseTurretCalculator {
   }
 
   // Look at UnwrapAngleDiagram.png
-  public static double getUnwrapAngle(
+  public static double getSmartUnwrapAngle(
       double target,
       double current,
       double minTurretAngle,
