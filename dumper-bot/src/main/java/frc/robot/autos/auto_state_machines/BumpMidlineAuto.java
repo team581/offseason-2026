@@ -32,15 +32,15 @@ public class BumpMidlineAuto extends BaseImperativeAuto<BumpMidlineAutoState> {
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.32, 2.885, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(9.32, 4.341, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.32, 5.482, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(11.912, 5.482, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(12.9, 5.482, Rotation2d.k180deg)))
+              AutoPoint.ofRed(new Pose2d(9.32, 5.6, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(11.912, 5.6, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(12.9, 5.6, Rotation2d.k180deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment4DriveToShoot =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(13.751, 5.482, Rotation2d.fromDegrees(-134.0))),
+              AutoPoint.ofRed(new Pose2d(13.751, 5.6, Rotation2d.fromDegrees(-134.0))),
               AutoPoint.ofRed(new Pose2d(14.305, 4.797, Rotation2d.fromDegrees(-164.0))))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 

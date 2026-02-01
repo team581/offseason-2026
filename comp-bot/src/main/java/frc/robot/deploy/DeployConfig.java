@@ -11,9 +11,9 @@ public class DeployConfig {
   // TODO: These are just placeholders - we should update these when we find out these angles
   public static final double MAX_LENGTH = 90;
   public static final double MIN_LENGTH = 0;
-
   public static final double HOMING_END_POSITION = 0;
   public static final double HOMING_VOLTAGE = 0;
+  public static final double HOMING_CURRENT = 40.0;
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()

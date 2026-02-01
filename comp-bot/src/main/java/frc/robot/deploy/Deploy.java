@@ -10,12 +10,9 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> {
-  // TODO: These are just place holders we should update these when we do find out these position
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
-
-  // TODO: Find position eventually
 
   public Deploy(TalonFX motor) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -54,10 +51,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
       case HOMING -> {
-        if (motor.getStatorCurrent().getValueAsDouble() > 20) {
-          motor.setPosition(
-              0); // TODO: reset the encoder to a homed position (this is some position we dont know
-          // yet)
+        if (motor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
+          motor.setPosition(Units.degreesToRotations(DeployConfig.HOMING_END_POSITION));
           yield DeployState.STOWED;
         } else {
           yield currentState;
@@ -79,7 +74,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       default ->
           motor.setControl(
               positionVoltageRequest.withPosition(
-                  Units.degreesToRotations(clamp(DeployConfig.HOMING_END_POSITION))));
+                  Units.degreesToRotations(clamp(newState.getLength()))));
     }
   }
 
@@ -99,7 +94,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
     if (getState() == DeployState.HOMING) {
-      motor.setPosition(0);
+      motor.setPosition(Units.degreesToRotations(DeployConfig.HOMING_END_POSITION));
       setStateFromRequest(DeployState.STOWED);
     }
 

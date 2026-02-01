@@ -8,6 +8,7 @@ import com.team581.trailblazer.segments.AutoSegment;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.autos.BaseImperativeAuto;
+import frc.robot.autos.auto_state_machines.auto_state.TestAutoState;
 import frc.robot.robot_manager.RobotManager;
 
 /**
