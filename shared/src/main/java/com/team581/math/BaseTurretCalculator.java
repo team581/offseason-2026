@@ -108,19 +108,14 @@ public class BaseTurretCalculator {
     var maxTolerance = (totalRangeOfMotion - 360) / 4;
     tolerance = MathUtil.clamp(tolerance, 0, maxTolerance);
     target = getOptimalAngle(target, current, minTurretAngle, maxTurretAngle);
-    DogLog.log("Turret/TARGET", target);
     if (MathUtil.isNear(maxTurretAngle - tolerance, target, tolerance)) {
-      DogLog.timestamp("Turret/BY_UPPER_END");
       return MathUtil.clamp(target - 360, minTurretAngle, maxTurretAngle);
     }
 
     if (MathUtil.isNear(minTurretAngle + tolerance, target, tolerance)) {
-      DogLog.timestamp("Turret/BY_LOWER_END");
 
       return MathUtil.clamp(target + 360, minTurretAngle, maxTurretAngle);
     }
-
-    DogLog.timestamp("Turret/NO_UNWRAP_NEEDED");
 
     return target;
   }
