@@ -7,18 +7,32 @@ import edu.wpi.first.wpilibj.util.Color;
 import java.util.Optional;
 
 public enum LightsState {
+  // Blink slow duration -> 0.25, blink fast duration -> 0.08
+  PLACEHOLDER(Color.kBlack, 0.0),
+  BLINK(Color.kWhite, 0.08),
+
   ERROR(Color.kRed, 0.08),
   UNHOMED(Color.kOrangeRed, 0.25),
   HOMED_NO_TAGS(Color.kYellow),
   HOMED_SEES_TAGS(Color.kGreen),
 
-  BLINK(Color.kWhite, 0.08),
-  OTHER(Color.kPurple, 0.25),
+  LIMELIGHTS_DEAD(Color.kRed, 0.08),
 
-  IDLE_EMPTY(Color.kBlack),
-  IDLE_FULL(Color.kWhite, 0.08),
+  WAITING_TO_SHOOT(Color.kYellow, 0.25),
+  SHOOTING(Color.kGreen, 0.08),
+  DONE_SCORING(Color.kWhite, 0.08),
 
-  PLACEHOLDER(Color.kBlack, 0.0);
+  IDLE_INTAKE_NOT_FULL(Color.kYellow, 0.25),
+  IDLE_INTAKE_FULL(Color.kWhite, 0.08),
+
+  CLIMB_1(Color.kRed),
+  CLIMB_2(Color.kOrange),
+  CLIMB_3(Color.kYellow),
+  CLIMB_4(Color.kGreen),
+  CLIMB_5(Color.kBlue),
+  CLIMB_6(Color.kIndigo),
+  CLIMB_7(Color.kViolet);
+
 
   public final Optional<StrobeAnimation> stateBlinkRequest;
   public final Optional<SolidColor> stateColorRequest;

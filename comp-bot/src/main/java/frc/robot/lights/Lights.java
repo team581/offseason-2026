@@ -8,11 +8,11 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Lights extends StateMachineSubsystem<LightsState> {
   private final CANdle candle;
-  private LightsState storedState = LightsState.IDLE_EMPTY;
+  private LightsState storedState = LightsState.IDLE_INTAKE_NOT_FULL;
   private LightsState disabledState = LightsState.HOMED_SEES_TAGS;
 
   public Lights(CANdle candle) {
-    super(SubsystemPriority.LIGHTS, LightsState.IDLE_EMPTY);
+    super(SubsystemPriority.LIGHTS, LightsState.IDLE_INTAKE_NOT_FULL);
     this.candle = candle;
   }
 

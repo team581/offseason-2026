@@ -109,6 +109,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     };
   }
 
+  // TODO: Set light states
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
@@ -120,7 +121,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedAimRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
-        lights.setState(LightsState.IDLE_EMPTY);
+        lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
       }
       case PREPARE_FEED -> {
         vision.setState(VisionState.TAGS);
