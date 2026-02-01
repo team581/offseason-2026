@@ -109,7 +109,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     };
   }
 
-  // TODO: Set light states
   @Override
   protected void afterTransition(RobotState newState) {
     switch (newState) {
@@ -131,6 +130,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedAimRequest();
         // Intake is controlled separately
         swerve.normalDriveRequest();
+        lights.setState(LightsState.WAITING_TO_SHOOT);
       }
       case FEED -> {
         vision.setState(VisionState.TAGS);
@@ -140,6 +140,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedAimRequest();
         intake.shootingRequest();
         swerve.normalDriveRequest();
+        lights.setState(LightsState.SHOOTING);
       }
       case PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
@@ -149,6 +150,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.hubAimRequest();
         // Intake is controlled separately
         swerve.normalDriveRequest();
+        lights.setState(LightsState.WAITING_TO_SHOOT);
       }
       case SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
@@ -158,17 +160,38 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.hubAimRequest();
         intake.shootingRequest();
         swerve.normalDriveRequest();
+        lights.setState(LightsState.SHOOTING);
       }
-      case CLIMB_1_LINEUP_L1 -> {}
-      case CLIMB_2_RAISING_L1 -> {}
-      case CLIMB_3_HANGING_L1 -> {}
-      case CLIMB_4_RAISING_L2 -> {}
-      case CLIMB_5_HANGING_L2 -> {}
-      case CLIMB_6_RAISING_L3 -> {}
-      case CLIMB_7_HANGING_L3 -> {}
-      case CLIMB_1_LINEUP_L1_AUTO -> {}
-      case CLIMB_2_RAISING_L1_AUTO -> {}
-      case CLIMB_3_HANGING_L1_AUTO -> {}
+      case CLIMB_1_LINEUP_L1 -> {
+        lights.setState(LightsState.CLIMB_1);
+      }
+      case CLIMB_2_RAISING_L1 -> {
+        lights.setState(LightsState.CLIMB_2);
+      }
+      case CLIMB_3_HANGING_L1 -> {
+        lights.setState(LightsState.CLIMB_3);
+      }
+      case CLIMB_4_RAISING_L2 -> {
+        lights.setState(LightsState.CLIMB_4);
+      }
+      case CLIMB_5_HANGING_L2 -> {
+        lights.setState(LightsState.CLIMB_5);
+      }
+      case CLIMB_6_RAISING_L3 -> {
+        lights.setState(LightsState.CLIMB_6);
+      }
+      case CLIMB_7_HANGING_L3 -> {
+        lights.setState(LightsState.CLIMB_7);
+      }
+      case CLIMB_1_LINEUP_L1_AUTO -> {
+        lights.setState(LightsState.CLIMB_1);
+      }
+      case CLIMB_2_RAISING_L1_AUTO -> {
+        lights.setState(LightsState.CLIMB_2);
+      }
+      case CLIMB_3_HANGING_L1_AUTO -> {
+        lights.setState(LightsState.CLIMB_3);
+      }
     }
   }
 
