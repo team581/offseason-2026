@@ -74,7 +74,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
+    // TODO: Check all proper requirements for transitions
     return switch (currentState) {
+      // No auto transitions for these states
+      case IDLE,
+          MANUAL_CLIMB_1_LINEUP_L1,
+          MANUAL_CLIMB_2_RAISING_L1,
+          MANUAL_CLIMB_3_HANGING_L1,
+          MANUAL_CLIMB_4_RAISING_L2,
+          MANUAL_CLIMB_5_HANGING_L2,
+          MANUAL_CLIMB_6_RAISING_L3,
+          MANUAL_CLIMB_7_HANGING_L3,
+          AUTOMATIC_CLIMB_7_HANGING_L3 ->
+          currentState;
       case REHOME_DEPLOY -> {
         if (deploy.getState() == DeployState.STOWED) {
           yield RobotState.IDLE;
@@ -119,7 +131,55 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      default -> currentState;
+      // TODO: Add behavior for feed and unjam states
+      case FEED -> {
+        yield currentState;
+      }
+      case UNJAM -> {
+        yield currentState;
+      }
+
+      // TODO: When climber is done, fill out the automatic climb logic
+      case AUTOMATIC_CLIMB_1_LINEUP_L1 -> {
+        // If climber is at goal, set state to AUTOMATIC_CLIMB_2
+        yield currentState;
+      }
+      case AUTOMATIC_CLIMB_2_RAISING_L1 -> {
+        // If climber is at goal, set state to AUTOMATIC_CLIMB_3
+        yield currentState;
+      }
+      case AUTOMATIC_CLIMB_3_HANGING_L1 -> {
+        // If climber is at goal, set state to AUTOMATIC_CLIMB_4
+        yield currentState;
+      }
+      case AUTOMATIC_CLIMB_4_RAISING_L2 -> {
+        // If climber is at goal, set state to AUTOMATIC_CLIMB_5
+        yield currentState;
+      }
+      case AUTOMATIC_CLIMB_5_HANGING_L2 -> {
+        // If climber is at goal, set state to AUTOMATIC_CLIMB_6
+        yield currentState;
+      }
+      case AUTOMATIC_CLIMB_6_RAISING_L3 -> {
+        // If climber is at goal, set state to AUTOMATIC_CLIMB_7
+        yield currentState;
+      }
+      case CLIMB_1_LINEUP_L1_AUTONOMOUS -> {
+        // If climber is at goal, set state to CLIMB_2_AUTONOMOUS
+        yield currentState;
+      }
+      case CLIMB_2_RAISING_L1_AUTONOMOUS -> {
+        // If climber is at goal, set state to CLIMB_3_AUTONOMOUS
+        yield currentState;
+      }
+      case CLIMB_3_HANGING_L1_AUTONOMOUS -> {
+        // If climber is at goal && we have transitioned into teleop, set state to CLIMB_4_RELEASE_AUTONOMOUS
+        yield currentState;
+      }
+      case CLIMB_4_RELEASE_L1_AUTONOMOUS -> {
+        // If climber is at goal(we are completely released), set state to IDLE
+        yield currentState;
+      }
     };
   }
 
@@ -208,34 +268,55 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
       }
-      case CLIMB_1_LINEUP_L1 -> {
+      case MANUAL_CLIMB_1_LINEUP_L1 -> {
         lights.setState(LightsState.CLIMB_1);
       }
-      case CLIMB_2_RAISING_L1 -> {
+      case MANUAL_CLIMB_2_RAISING_L1 -> {
         lights.setState(LightsState.CLIMB_2);
       }
-      case CLIMB_3_HANGING_L1 -> {
+      case MANUAL_CLIMB_3_HANGING_L1 -> {
         lights.setState(LightsState.CLIMB_3);
       }
-      case CLIMB_4_RAISING_L2 -> {
+      case MANUAL_CLIMB_4_RAISING_L2 -> {
         lights.setState(LightsState.CLIMB_4);
       }
-      case CLIMB_5_HANGING_L2 -> {
+      case MANUAL_CLIMB_5_HANGING_L2 -> {
         lights.setState(LightsState.CLIMB_5);
       }
-      case CLIMB_6_RAISING_L3 -> {
+      case MANUAL_CLIMB_6_RAISING_L3 -> {
         lights.setState(LightsState.CLIMB_6);
       }
-      case CLIMB_7_HANGING_L3 -> {
+      case MANUAL_CLIMB_7_HANGING_L3 -> {
         lights.setState(LightsState.CLIMB_7);
       }
-      case CLIMB_1_LINEUP_L1_AUTO -> {
+      case AUTOMATIC_CLIMB_1_LINEUP_L1 -> {
         lights.setState(LightsState.CLIMB_1);
       }
-      case CLIMB_2_RAISING_L1_AUTO -> {
+      case AUTOMATIC_CLIMB_2_RAISING_L1 -> {
         lights.setState(LightsState.CLIMB_2);
       }
-      case CLIMB_3_HANGING_L1_AUTO -> {
+      case AUTOMATIC_CLIMB_3_HANGING_L1 -> {
+        lights.setState(LightsState.CLIMB_3);
+      }
+      case AUTOMATIC_CLIMB_4_RAISING_L2 -> {
+        lights.setState(LightsState.CLIMB_4);
+      }
+      case AUTOMATIC_CLIMB_5_HANGING_L2 -> {
+        lights.setState(LightsState.CLIMB_5);
+      }
+      case AUTOMATIC_CLIMB_6_RAISING_L3 -> {
+        lights.setState(LightsState.CLIMB_6);
+      }
+      case AUTOMATIC_CLIMB_7_HANGING_L3 -> {
+        lights.setState(LightsState.CLIMB_7);
+      }
+      case CLIMB_1_LINEUP_L1_AUTONOMOUS -> {
+        lights.setState(LightsState.CLIMB_1);
+      }
+      case CLIMB_2_RAISING_L1_AUTONOMOUS -> {
+        lights.setState(LightsState.CLIMB_2);
+      }
+      case CLIMB_3_HANGING_L1_AUTONOMOUS -> {
         lights.setState(LightsState.CLIMB_3);
       }
     }
@@ -258,9 +339,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void shooterHoodSmartIdleRequest() {
-    // TODO: Remove logs later
-    DogLog.timestamp("RobotManager/HoodSmartIdle");
-
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
@@ -346,51 +424,67 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void rehomeShooterHoodRequest() {
-     if (!getState().isClimbingOrRehoming()) {
-       setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
     }
   }
 
-  public void climbSequenceForward() {
+  public void startAutoClimbSequence() {
+    setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTONOMOUS);
+  }
+
+  public void teleopAutomaticClimbSequenceForward() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.AUTOMATIC_CLIMB_1_LINEUP_L1);
+    }
+  }
+
+  public void manualClimbSequenceForward() {
     switch (getState()) {
-      default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1);
-      case CLIMB_1_LINEUP_L1 -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1);
-      case CLIMB_2_RAISING_L1 -> setStateFromRequest(RobotState.CLIMB_3_HANGING_L1);
-      case CLIMB_3_HANGING_L1 -> setStateFromRequest(RobotState.CLIMB_4_RAISING_L2);
+      default -> setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
+      case MANUAL_CLIMB_1_LINEUP_L1, AUTOMATIC_CLIMB_1_LINEUP_L1 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_2_RAISING_L1);
+      case MANUAL_CLIMB_2_RAISING_L1, AUTOMATIC_CLIMB_2_RAISING_L1 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_3_HANGING_L1);
+      case MANUAL_CLIMB_3_HANGING_L1, AUTOMATIC_CLIMB_3_HANGING_L1 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_4_RAISING_L2);
 
-      case CLIMB_4_RAISING_L2 -> setStateFromRequest(RobotState.CLIMB_5_HANGING_L2);
-      case CLIMB_5_HANGING_L2 -> setStateFromRequest(RobotState.CLIMB_6_RAISING_L3);
+      case MANUAL_CLIMB_4_RAISING_L2, AUTOMATIC_CLIMB_4_RAISING_L2 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_5_HANGING_L2);
+      case MANUAL_CLIMB_5_HANGING_L2, AUTOMATIC_CLIMB_5_HANGING_L2 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_6_RAISING_L3);
 
-      case CLIMB_6_RAISING_L3 -> setStateFromRequest(RobotState.CLIMB_7_HANGING_L3);
-      case CLIMB_7_HANGING_L3 -> {}
+      case MANUAL_CLIMB_6_RAISING_L3, AUTOMATIC_CLIMB_6_RAISING_L3 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_7_HANGING_L3);
+      case MANUAL_CLIMB_7_HANGING_L3, AUTOMATIC_CLIMB_7_HANGING_L3 -> {}
     }
   }
 
-  public void climbSequenceForwardAuto() {
-    switch (getState()) {
-      default -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTO);
-      case CLIMB_1_LINEUP_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTO);
-      case CLIMB_2_RAISING_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_3_HANGING_L1_AUTO);
-      case CLIMB_3_HANGING_L1_AUTO -> {}
-    }
-  }
-
-  public void climbSequenceBackward() {
+  public void manualClimbSequenceBackward() {
     switch (getState()) {
       default -> {}
-      case CLIMB_1_LINEUP_L1 -> setStateFromRequest(RobotState.IDLE);
-      case CLIMB_2_RAISING_L1 -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1);
-      case CLIMB_3_HANGING_L1 -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1);
+      case CLIMB_1_LINEUP_L1_AUTONOMOUS -> setStateFromRequest(RobotState.IDLE);
+      case CLIMB_2_RAISING_L1_AUTONOMOUS ->
+          setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTONOMOUS);
+      case CLIMB_3_HANGING_L1_AUTONOMOUS ->
+          setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTONOMOUS);
 
-      case CLIMB_1_LINEUP_L1_AUTO -> setStateFromRequest(RobotState.IDLE);
-      case CLIMB_2_RAISING_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTO);
-      case CLIMB_3_HANGING_L1_AUTO -> setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTO);
+      case MANUAL_CLIMB_1_LINEUP_L1, AUTOMATIC_CLIMB_1_LINEUP_L1 ->
+          setStateFromRequest(RobotState.IDLE);
+      case MANUAL_CLIMB_2_RAISING_L1, AUTOMATIC_CLIMB_2_RAISING_L1 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
+      case MANUAL_CLIMB_3_HANGING_L1, AUTOMATIC_CLIMB_3_HANGING_L1 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_2_RAISING_L1);
 
-      case CLIMB_4_RAISING_L2 -> setStateFromRequest(RobotState.CLIMB_3_HANGING_L1);
-      case CLIMB_5_HANGING_L2 -> setStateFromRequest(RobotState.CLIMB_4_RAISING_L2);
+      case MANUAL_CLIMB_4_RAISING_L2, AUTOMATIC_CLIMB_4_RAISING_L2 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_3_HANGING_L1);
+      case MANUAL_CLIMB_5_HANGING_L2, AUTOMATIC_CLIMB_5_HANGING_L2 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_4_RAISING_L2);
 
-      case CLIMB_6_RAISING_L3 -> setStateFromRequest(RobotState.CLIMB_5_HANGING_L2);
-      case CLIMB_7_HANGING_L3 -> setStateFromRequest(RobotState.CLIMB_6_RAISING_L3);
+      case MANUAL_CLIMB_6_RAISING_L3, AUTOMATIC_CLIMB_6_RAISING_L3 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_5_HANGING_L2);
+      case MANUAL_CLIMB_7_HANGING_L3, AUTOMATIC_CLIMB_7_HANGING_L3 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_6_RAISING_L3);
     }
   }
 
