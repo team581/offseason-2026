@@ -386,9 +386,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void turretSmartIdleRequest() {
-    // TODO: Remove logs later
-    DogLog.timestamp("RobotManager/HoodSmartIdle");
-
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
