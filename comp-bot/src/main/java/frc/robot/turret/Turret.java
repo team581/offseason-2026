@@ -113,7 +113,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.FEED);
   }
 
-
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
