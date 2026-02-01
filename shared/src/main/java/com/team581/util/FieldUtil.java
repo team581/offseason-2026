@@ -323,12 +323,12 @@ public class FieldUtil {
     return robotTranslation.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
   }
 
-  public static Translation2d getClosestNeutralZoneTrenchMidpoint(Translation2d robotTranslation) {
-    return robotTranslation.nearest(NEUTRAL_ZONE_TRENCH_MIDPOINTS);
-  }
-
   public static Translation2d getClosestHubSideBumpPoint(Translation2d robotTranslation) {
     return robotTranslation.nearest(HUB_SIDE_BUMP_POINTS);
+  }
+
+  public static Translation2d getClosestNeutralZoneTrenchMidpoint(Translation2d robotTranslation) {
+    return robotTranslation.nearest(NEUTRAL_ZONE_TRENCH_MIDPOINTS);
   }
 
   public static Translation2d getClosestTrenchSideBumpPoint(Translation2d robotTranslation) {

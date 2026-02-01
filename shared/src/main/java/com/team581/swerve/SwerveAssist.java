@@ -36,21 +36,30 @@ public class SwerveAssist {
     DogLog.log("SwerveAssist/Bump/VelocityThreshold", true);
 
     // Check if robot is facing the bump
-    if (!MathUtil.isNear(robotPose.getRotation().getDegrees(), getBumpSnapAngle(fieldRelativeSpeeds.vxMetersPerSecond), BUMP_ASSIST_ROBOT_ANGLE_TOLERANCE, -180.0, 180.0)) {
-          DogLog.log("SwerveAssist/Bump/RobotAngleTolerance", false);
-          return false;
-        };
+    if (!MathUtil.isNear(
+        robotPose.getRotation().getDegrees(),
+        getBumpSnapAngle(fieldRelativeSpeeds.vxMetersPerSecond),
+        BUMP_ASSIST_ROBOT_ANGLE_TOLERANCE,
+        -180.0,
+        180.0)) {
+      DogLog.log("SwerveAssist/Bump/RobotAngleTolerance", false);
+      return false;
+    }
+    ;
     DogLog.log("SwerveAssist/Bump/RobotAngleTolerance", true);
 
     // Check if velocity angle is toward bump
     var hubSideBumpAssistPoint = FieldUtil.getClosestHubSideBumpPoint(robotTranslation);
     var trenchSideBumpAssistPoint = FieldUtil.getClosestTrenchSideBumpPoint(robotTranslation);
-    DogLog.log("SwerveAssist/Bump/ClosestHubSideBumpPoint", new Pose2d(hubSideBumpAssistPoint, Rotation2d.kZero));
-    DogLog.log("SwerveAssist/Bump/ClosestTremchSideBumpPoint", new Pose2d(trenchSideBumpAssistPoint, Rotation2d.kZero));
+    DogLog.log(
+        "SwerveAssist/Bump/ClosestHubSideBumpPoint",
+        new Pose2d(hubSideBumpAssistPoint, Rotation2d.kZero));
+    DogLog.log(
+        "SwerveAssist/Bump/ClosestTremchSideBumpPoint",
+        new Pose2d(trenchSideBumpAssistPoint, Rotation2d.kZero));
 
     var velocityAngle = MathHelpers.getDriveDirection(fieldRelativeSpeeds);
-    var angleToHubSideBumpPoint =
-        MathHelpers.getDriveDirection(robotPose, hubSideBumpAssistPoint);
+    var angleToHubSideBumpPoint = MathHelpers.getDriveDirection(robotPose, hubSideBumpAssistPoint);
     var angleToTrenchSideBumpPoint =
         MathHelpers.getDriveDirection(robotPose, trenchSideBumpAssistPoint);
 
@@ -65,8 +74,7 @@ public class SwerveAssist {
             angleToTrenchSideBumpPoint.getDegrees(),
             BUMP_ASSIST_VELOCITY_ANGLE_TOLERANCE,
             -180.0,
-            180.0
-    )) {
+            180.0)) {
       DogLog.log("SwerveAssist/Bump/VelocityAngleTolerance", true);
       return true;
     }
