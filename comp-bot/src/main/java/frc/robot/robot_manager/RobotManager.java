@@ -321,6 +321,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case CLIMB_3_HANGING_L1_AUTONOMOUS -> {
         lights.setState(LightsState.CLIMB_3);
       }
+      case CLIMB_4_RELEASE_L1_AUTONOMOUS -> {
+        lights.setState(LightsState.CLIMB_4);
+      }
     }
   }
 
