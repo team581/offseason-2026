@@ -17,8 +17,11 @@ public class Hardware {
   public final TalonFX horizontalMotor = new TalonFX(19);
   public final TalonFX verticalMotor = new TalonFX(20);
   public final TalonFX intakeMotor = new TalonFX(21);
-  public final TalonFX deployMotor = new TalonFX(22);
-  public final TalonFX shooterHoodMotor = new TalonFX(23);
+  public final TalonFX leftDeployMotor = new TalonFX(22);
+    public final TalonFX rightDeployMotor = new TalonFX(23);
+  public final TalonFX shooterHoodMotor = new TalonFX(24);
+  public final TalonFX climbMotor = new TalonFX(25);
+
   public final CANdle candle = new CANdle(0);
 
   public final TunerSwerveDrivetrain drivetrain =
