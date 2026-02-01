@@ -16,7 +16,7 @@ public enum DeployState {
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
 
-  public double getHeight() {
+  public double getLength() {
     return tunableLength.get();
   }
 }
