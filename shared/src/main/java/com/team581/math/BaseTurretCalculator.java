@@ -1,5 +1,6 @@
 package com.team581.math;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -58,5 +59,34 @@ public class BaseTurretCalculator {
       }
     }
     return false;
+  }
+
+  public static double getOptimalAngle(
+      double target, double current, double minTurretAngle, double maxTurretAngle) {
+    target = MathUtil.inputModulus(target, -180, 180);
+
+    // Get smallest delta
+    var delta = ((target - current + 180) % 360 + 360) % 360 - 180;
+
+    var option1 = current + delta;
+
+    var option2 = (option1 > 0) ? option1 - 360 : option1 + 360;
+
+    var opt1Valid = (option1 >= minTurretAngle && option1 <= maxTurretAngle);
+    var opt2Valid = (option2 >= minTurretAngle && option2 <= maxTurretAngle);
+
+    if (opt1Valid && opt2Valid) {
+      // If both are reachable, pick the with the least movement
+      return MathUtil.clamp(
+          (Math.abs(option1 - current) <= Math.abs(option2 - current)) ? option1 : option2,
+          minTurretAngle,
+          maxTurretAngle);
+    } else if (opt1Valid) {
+      return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
+    } else if (opt2Valid) {
+      return MathUtil.clamp(option2, minTurretAngle, maxTurretAngle);
+    } else {
+      return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
+    }
   }
 }
