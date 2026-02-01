@@ -55,13 +55,13 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case UNHOMED -> {
         motor.disable();
       }
-      case HUB_AIM -> {
+      case SCORE -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
                     TurretCalculator.getUnwrapAngle(goalAngle, currentAngle))));
       }
-      case FEED_AIM -> {
+      case FEED -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
@@ -90,7 +90,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void robotPeriodic() {
     super.robotPeriodic();
     switch (getState()) {
-      case HUB_AIM, FEED_AIM -> {
+      case SCORE, FEED -> {
         afterTransition(getState());
         DogLog.clearFault("Turret is not homed");
       }
@@ -105,12 +105,12 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public void hubAimRequest(double goalAngle) {
     this.goalAngle = goalAngle;
-    setState(TurretState.HUB_AIM);
+    setState(TurretState.SCORE);
   }
 
   public void feedAimRequest(double goalAngle) {
     this.goalAngle = goalAngle;
-    setState(TurretState.FEED_AIM);
+    setState(TurretState.FEED);
   }
 
 
@@ -146,7 +146,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     if (getState() == TurretState.UNHOMED) {
       motor.setPosition(0);
-      setStateFromRequest(TurretState.HUB_AIM);
+      setStateFromRequest(TurretState.SCORE);
     }
 
     turretSimulation.update();
