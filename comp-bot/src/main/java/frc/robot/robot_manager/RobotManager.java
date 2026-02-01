@@ -340,11 +340,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void rehomeDeployRequest() {
-    setStateFromRequest(RobotState.REHOME_DEPLOY);
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.REHOME_DEPLOY);
+    }
   }
 
   public void rehomeShooterHoodRequest() {
-    setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
+     if (!getState().isClimbingOrRehoming()) {
+       setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
+    }
   }
 
   public void climbSequenceForward() {
