@@ -40,6 +40,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     switch (getState()) {
       case HUB_AIM -> goalAngle = hubAimAngle;
       case FEED_AIM -> goalAngle = feedAimAngle;
+      case UNHOMED -> {}
     }
 
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
@@ -67,13 +68,13 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
+                    TurretCalculator.getUnwrapAngle(goalAngle, currentAngle))));
       }
       case FEED_AIM -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
+                    TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
       }
 
       default -> {}

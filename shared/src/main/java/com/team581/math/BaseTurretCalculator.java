@@ -1,5 +1,6 @@
 package com.team581.math;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -88,5 +89,38 @@ public class BaseTurretCalculator {
     } else {
       return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
     }
+  }
+
+  public static double getUnwrapAngle(
+      double target,
+      double current,
+      double minTurretAngle,
+      double maxTurretAngle,
+      double tolerance) {
+
+    var totalRangeOfMotion = Math.abs(maxTurretAngle) + Math.abs(minTurretAngle);
+    if (totalRangeOfMotion <= 360) {
+      return target;
+    }
+
+    // Make sure that no angle can be equally in both ends' bad range
+    var maxTolerance = (totalRangeOfMotion - 360) / 4;
+    tolerance = MathUtil.clamp(tolerance, 0, maxTolerance);
+    target = getOptimalAngle(target, current, minTurretAngle, maxTurretAngle);
+    DogLog.log("Turret/TARGET", target);
+    if (MathUtil.isNear(maxTurretAngle - tolerance, target, tolerance)) {
+      DogLog.timestamp("Turret/BY_UPPER_END");
+      return MathUtil.clamp(target - 360, minTurretAngle, maxTurretAngle);
+    }
+
+    if (MathUtil.isNear(minTurretAngle + tolerance, target, tolerance)) {
+      DogLog.timestamp("Turret/BY_LOWER_END");
+
+      return MathUtil.clamp(target + 360, minTurretAngle, maxTurretAngle);
+    }
+
+    DogLog.timestamp("Turret/NO_UNWRAP_NEEDED");
+
+    return target;
   }
 }
