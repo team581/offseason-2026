@@ -8,7 +8,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
@@ -55,9 +54,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     // Add the predicted angle to the vision buffer at the current timestamp
     vision.addTurretObservation(
-        Timer.getFPGATimestamp(),
-        Rotation2d.fromDegrees(latencyCompensatedAngle),
-        getVelocityDegreesPerSecond());
+        Timer.getFPGATimestamp(), latencyCompensatedAngle, getVelocityDegreesPerSecond());
   }
 
   @Override
