@@ -73,8 +73,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   // Call this in turret's periodic() or a fast telemetry thread
-  public void addTurretObservation(
-      double timestamp, double angle, double turretAngularVelocity) {
+  public void addTurretObservation(double timestamp, double angle, double turretAngularVelocity) {
     turretBuffer.addSample(timestamp, MathHelpers.angleModulus(angle));
     turretLimelight.sendImuData(
         robotHeading, turretAngularVelocity + robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
@@ -117,7 +116,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     // Create transform representing the rotation from Turret back to Robot
     // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
     var turretToRobot =
-        MathHelpers.transform2dFromRotation(Rotation2d.fromDegrees(robotToTurretObservation.orElseThrow()));
+        MathHelpers.transform2dFromRotation(
+            Rotation2d.fromDegrees(robotToTurretObservation.orElseThrow()));
 
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
