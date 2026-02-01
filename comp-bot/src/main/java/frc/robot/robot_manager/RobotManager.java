@@ -74,10 +74,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
-    // TODO: Check all proper requirements for transitions
     return switch (currentState) {
       // No auto transitions for these states
       case IDLE,
+          UNJAM,
           MANUAL_CLIMB_1_LINEUP_L1,
           MANUAL_CLIMB_2_RAISING_L1,
           MANUAL_CLIMB_3_HANGING_L1,
@@ -112,7 +112,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED ->
           shooter.atGoal()
-                  && (!health.isLocalizationHealthy() || FieldUtil.isRobotInNoFeedZone(robotPose))
+                  // If localization is healthy, you can feed if we're not in a no-feed zone
+                  // If localization is dead, you can always shoot
+                  && (health.isLocalizationHealthy()
+                      ? !FieldUtil.isRobotInNoFeedZone(robotPose)
+                      : true)
                   && dyeRotor.atGoal()
                   && turret.atGoal()
                   && shooterHood.atGoal()
@@ -126,18 +130,27 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && !FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
           yield RobotState.IDLE;
         }
-        if (shooter.atGoal() == false) {
-          yield RobotState.PREPARE_SCORE;
+
+        if (shooter.atGoal()
+            && localization.isTrustworthy()
+            && dyeRotor.atGoal()
+            && turret.atGoal()
+            && shooterHood.atGoal()) {
+          yield currentState;
         }
-        yield currentState;
+
+        yield RobotState.PREPARE_SCORE;
       }
-      // TODO: Add behavior for feed and unjam states
-      case FEED -> {
-        yield currentState;
-      }
-      case UNJAM -> {
-        yield currentState;
-      }
+      case FEED ->
+          shooter.atGoal()
+                  && (health.isLocalizationHealthy()
+                      ? !FieldUtil.isRobotInNoFeedZone(robotPose)
+                      : true)
+                  && dyeRotor.atGoal()
+                  && turret.atGoal()
+                  && shooterHood.atGoal()
+              ? currentState
+              : RobotState.PREPARE_FEED;
 
       // TODO: When climber is done, fill out the automatic climb logic
       case AUTOMATIC_CLIMB_1_LINEUP_L1 -> {
@@ -173,7 +186,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case CLIMB_3_HANGING_L1_AUTONOMOUS -> {
-        // If climber is at goal && we have transitioned into teleop, set state to CLIMB_4_RELEASE_AUTONOMOUS
+        // If climber is at goal && we have transitioned into teleop, set state to
+        // CLIMB_4_RELEASE_AUTONOMOUS
         yield currentState;
       }
       case CLIMB_4_RELEASE_L1_AUTONOMOUS -> {
