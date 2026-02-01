@@ -50,8 +50,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   @Override
-  protected void afterTransition(TurretState newState) {
-    switch (newState) {
+  protected void whileInState(TurretState currentState) {
+    switch (currentState) {
       case UNHOMED -> {
         motor.disable();
       }
@@ -125,10 +125,12 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
+
+      // TODO: Reconsider for turret wrapping
       default ->
           MathUtil.isNear(
-              TurretCalculator.getOptimalAngle(goalAngle, currentAngle),
-              currentAngle,
+              goalAngle,
+              MathUtil.inputModulus(currentAngle, -180, 180),
               TurretConfig.TOLERANCE);
     };
   }
