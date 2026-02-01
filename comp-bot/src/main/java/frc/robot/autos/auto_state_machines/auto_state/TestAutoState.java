@@ -1,4 +1,4 @@
-package frc.robot.autos.auto_state_machines;
+package frc.robot.autos.auto_state_machines.auto_state;
 
 public enum TestAutoState {
   SEGMENT_1_STRAIGHT,
