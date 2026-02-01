@@ -9,6 +9,10 @@ public enum RobotState {
   PREPARE_FEED,
   FEED,
 
+  UNJAM,
+  REHOME_DEPLOY,
+  REHOME_SHOOTER_HOOD,
+
   CLIMB_1_LINEUP_L1_AUTO,
   CLIMB_2_RAISING_L1_AUTO,
   CLIMB_3_HANGING_L1_AUTO,
@@ -35,6 +39,9 @@ public enum RobotState {
       case CLIMB_5_HANGING_L2 -> true;
       case CLIMB_6_RAISING_L3 -> true;
       case CLIMB_7_HANGING_L3 -> true;
+
+      case REHOME_DEPLOY -> true;
+      case REHOME_SHOOTER_HOOD -> true;
 
       default -> false;
     };

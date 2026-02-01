@@ -7,6 +7,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.deploy.Deploy;
+import frc.robot.deploy.DeployState;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.health.HealthManager;
 import frc.robot.intake.Intake;
@@ -15,6 +16,7 @@ import frc.robot.lights.LightsState;
 import frc.robot.localization.Localization;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
+import frc.robot.shooter_hood.ShooterHoodState;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
 import frc.robot.util.AimParameterUtil;
@@ -73,6 +75,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
+      case REHOME_DEPLOY -> {
+        if (deploy.getState() == DeployState.STOWED) {
+          yield RobotState.IDLE;
+        }
+        yield currentState;
+      }
+      case REHOME_SHOOTER_HOOD -> {
+        if (shooterHood.getState() == ShooterHoodState.IDLE) {
+          yield RobotState.IDLE;
+        }
+        yield currentState;
+      }
       case PREPARE_SCORE -> {
         if (shooter.atGoal()
             && localization.isTrustworthy()
@@ -115,7 +129,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE -> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
-        // Set hood behavior separately while idling
+        // Set hood behavior separately whiile idling/unjamming/rehoming
         dyeRotor.idleRequest();
         turret.feedAimRequest();
         intake.idleRequest();
@@ -162,6 +176,38 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
       }
+      case UNJAM -> {
+        vision.setState(VisionState.TAGS);
+        shooter.idleRequest();
+        shooterHood.idleRequest();
+        dyeRotor.unjamRequest();
+        turret.feedAimRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
+      }
+      case REHOME_DEPLOY -> {
+        deploy.homingRequest();
+
+        vision.setState(VisionState.TAGS);
+        shooter.idleRequest();
+        shooterHood.idleRequest();
+        dyeRotor.idleRequest();
+        turret.feedAimRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
+      }
+      case REHOME_SHOOTER_HOOD -> {
+        vision.setState(VisionState.TAGS);
+        shooter.idleRequest();
+        shooterHood.homingRequest();
+        dyeRotor.idleRequest();
+        turret.feedAimRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
+      }
       case CLIMB_1_LINEUP_L1 -> {
         lights.setState(LightsState.CLIMB_1);
       }
@@ -198,10 +244,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE -> shooterHoodSmartIdleRequest();
-      case PREPARE_FEED, FEED -> {
-        turret.setFeedAimAngle(feedingParameters.angle());
-      }
+      case IDLE-> shooterHoodSmartIdleRequest();
+      case PREPARE_FEED, FEED -> turret.setFeedAimAngle(feedingParameters.angle());
       case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(scoringParameters.angle());
       default -> {}
     }
@@ -213,19 +257,38 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         robotPose, turret.getAngle(), shooterHood.getAngle(), deploy.getPosition(), 0);
   }
 
+  private void shooterHoodSmartIdleRequest() {
+    // TODO: Remove logs later
+    DogLog.timestamp("RobotManager/HoodSmartIdle");
+
+    // -First, if cameras are offline or we are near a trench, always be idle
+    // -Otherwise if we are in our alliance zone, point towards hub
+    // -And if we are not in alliance zone, point towards feed pose
+    if (!health.isLocalizationHealthy() || nearTrench) {
+      shooterHood.idleRequest();
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NearTrench");
+    } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
+      shooterHood.scoreRequest(scoringParameters.distance());
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "InAllianceZone");
+    } else {
+      shooterHood.feedRequest(feedingParameters.distance());
+      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
+    }
+  }
+
   public void idleRequest() {
     if (!getState().isClimbingOrRehoming()) {
       setStateFromRequest(RobotState.IDLE);
     }
   }
 
-  public void shootHubWaitRequest() {
+  public void prepareScoreRequest() {
     if (!getState().isClimbingOrRehoming()) {
       setStateFromRequest(RobotState.PREPARE_SCORE);
     }
   }
 
-  public void feedPrepareRequest() {
+  public void prepareFeedRequest() {
     if (!getState().isClimbingOrRehoming()) {
       setStateFromRequest(RobotState.PREPARE_FEED);
     }
@@ -253,25 +316,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     deploy.intakeRequest();
   }
 
-  private void shooterHoodSmartIdleRequest() {
-    // TODO: Remove logs later
-    DogLog.timestamp("RobotManager/HoodSmartIdle");
-
-    // -First, if cameras are offline or we are near a trench, always be idle
-    // -Otherwise if we are in our alliance zone, point towards hub
-    // -And if we are not in alliance zone, point towards feed pose
-    if (!health.isLocalizationHealthy() || nearTrench) {
-      shooterHood.idleRequest();
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NearTrench");
-    } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
-      shooterHood.scoreRequest(scoringParameters.distance());
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "InAllianceZone");
-    } else {
-      shooterHood.feedRequest(feedingParameters.distance());
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
-    }
-  }
-
   public void cancelIntakeRequest() {
     intake.idleRequest();
     deploy.stowRequest();
@@ -287,6 +331,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
       }
     }
+  }
+
+  public void unjamRequest() {
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.UNJAM);
+    }
+  }
+
+  public void rehomeDeployRequest() {
+    setStateFromRequest(RobotState.REHOME_DEPLOY);
+  }
+
+  public void rehomeShooterHoodRequest() {
+    setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
   }
 
   public void climbSequenceForward() {
