@@ -128,5 +128,16 @@ public class Robot extends Base581Robot {
     var driverLeftTrigger =
         enabledEvent.and(hardware.driverController.leftTrigger(buttonBindingsLoop));
     driverLeftTrigger.ifHigh(robotManager::intakeRequest);
+
+    var driverRightTrigger =
+        enabledEvent.and(hardware.driverController.rightTrigger(buttonBindingsLoop));
+    // Start shooting when trigger pressed
+    driverRightTrigger.rising().ifHigh(robotManager::toggleHubRequest);
+    // Stop shooting when trigger released
+    driverRightTrigger.falling().ifHigh(robotManager::toggleHubRequest);
+
+    var driverRightBumper =
+        enabledEvent.and(hardware.driverController.rightBumper(buttonBindingsLoop));
+    driverRightBumper.ifHigh(robotManager::toggleFeedRequest);
   }
 }
