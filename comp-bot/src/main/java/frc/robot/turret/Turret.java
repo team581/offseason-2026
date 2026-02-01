@@ -50,8 +50,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case FEED_AIM -> goalAngle = feedAimAngle;
     }
 
-    currentAngle =
-        MathHelpers.angleModulus(Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()));
+    currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     DogLog.log("Turret/Angle", currentAngle);
 
     // Predict the turret's current angle to account for sensor latency
@@ -76,11 +75,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case HUB_AIM -> {
         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
+            positionRequest.withPosition(Units.degreesToRotations(TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
       }
       case FEED_AIM -> {
         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(feedAimAngle))));
+            positionRequest.withPosition(Units.degreesToRotations(TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
       }
 
       default -> {}
@@ -96,12 +95,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  private static double clamp(double turretAngle) {
-    var newTurretAngle = MathHelpers.angleModulus(turretAngle);
-    return MathUtil.clamp(newTurretAngle, MIN_ANGLE, MAX_ANGLE);
-  }
-
-  public boolean goalOutOfBounds() {
+    public boolean goalOutOfBounds() {
     return goalAngle > (TurretConfig.MAX_ANGLE - TurretConfig.OUT_OF_BOUNDS_THRESHOLD)
         || goalAngle < (TurretConfig.MIN_ANGLE + TurretConfig.OUT_OF_BOUNDS_THRESHOLD);
   }
