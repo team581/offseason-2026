@@ -319,12 +319,20 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
   }
 
-  public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotPose) {
-    return robotPose.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
+  public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotTranslation) {
+    return robotTranslation.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
   }
 
-  public static Translation2d getClosestNeutralZoneTrenchMidpoint(Translation2d robotPose) {
-    return robotPose.nearest(NEUTRAL_ZONE_TRENCH_MIDPOINTS);
+  public static Translation2d getClosestNeutralZoneTrenchMidpoint(Translation2d robotTranslation) {
+    return robotTranslation.nearest(NEUTRAL_ZONE_TRENCH_MIDPOINTS);
+  }
+
+  public static Translation2d getClosestHubSideBumpPoint(Translation2d robotTranslation) {
+    return robotTranslation.nearest(HUB_SIDE_BUMP_POINTS);
+  }
+
+  public static Translation2d getClosestTrenchSideBumpPoint(Translation2d robotTranslation) {
+    return robotTranslation.nearest(TRENCH_SIDE_BUMP_POINTS);
   }
 
   public static Optional<Rectangle2d> getCurrentBumpAssistZone(Translation2d robotPose) {
