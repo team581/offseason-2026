@@ -346,8 +346,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void rehomeShooterHoodRequest() {
-     if (!getState().isClimbingOrRehoming()) {
-       setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
+    if (!getState().isClimbingOrRehoming()) {
+      setStateFromRequest(RobotState.REHOME_SHOOTER_HOOD);
     }
   }
 
