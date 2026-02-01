@@ -377,13 +377,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
     if (health.isLocalizationHealthy() && nearTrench) {
-      turret.hubAimRequest(scoringParameters.turretAngle());
+      turret.idleScoreRequest(scoringParameters.turretAngle());
       DogLog.log("RobotManager/TurretSmartIdleRequest", "NearTrench");
     } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
-      turret.hubAimRequest(scoringParameters.turretAngle());
+      turret.idleScoreRequest(scoringParameters.turretAngle());
       DogLog.log("RobotManager/TurretSmartIdleRequest", "InAllianceZone");
     } else {
-      turret.hubAimRequest(scoringParameters.turretAngle());
+      turret.idleFeedReuqest(feedingParameters.turretAngle());
       DogLog.log("RobotManager/TurretSmartIdleRequest", "NotInAlliance");
     }
   }

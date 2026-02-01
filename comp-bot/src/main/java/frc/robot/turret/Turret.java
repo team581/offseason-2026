@@ -55,19 +55,18 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case UNHOMED -> {
         motor.disable();
       }
-      case SCORE -> {
-        motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(
-                    TurretCalculator.getUnwrapAngle(goalAngle, currentAngle))));
-      }
-      case FEED -> {
+      case SCORE, FEED -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
                     TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
       }
-
+      case IDLE_SCORE, IDLE_FEED-> {
+        motor.setControl(
+            positionRequest.withPosition(
+                Units.degreesToRotations(
+                    TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))));
+      }
       default -> {}
     }
   }
@@ -112,6 +111,17 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     this.goalAngle = goalAngle;
     setState(TurretState.FEED);
   }
+
+  public void idleScoreRequest(double goalAngle) {
+    this.goalAngle = goalAngle;
+    setState(TurretState.IDLE_SCORE);
+  }
+
+  public void idleFeedReuqest(double goalAngle) {
+    this.goalAngle = goalAngle;
+    setState(TurretState.IDLE_FEED);
+  }
+
 
   public boolean atGoal() {
     return switch (getState()) {
