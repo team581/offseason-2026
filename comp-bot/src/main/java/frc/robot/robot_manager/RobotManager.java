@@ -244,7 +244,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE-> shooterHoodSmartIdleRequest();
+      case IDLE -> shooterHoodSmartIdleRequest();
       case PREPARE_FEED, FEED -> turret.setFeedAimAngle(feedingParameters.angle());
       case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(scoringParameters.angle());
       default -> {}
