@@ -61,7 +61,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 Units.degreesToRotations(
                     TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
       }
-      case IDLE_SCORE, IDLE_FEED-> {
+      case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
@@ -121,7 +121,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     this.goalAngle = goalAngle;
     setState(TurretState.IDLE_FEED);
   }
-
 
   public boolean atGoal() {
     return switch (getState()) {
