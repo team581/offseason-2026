@@ -3,6 +3,7 @@ package frc.robot.turret;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -129,9 +130,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       // TODO: Reconsider for turret wrapping
       default ->
           MathUtil.isNear(
-              goalAngle,
-              MathUtil.inputModulus(currentAngle, -180, 180),
-              TurretConfig.TOLERANCE);
+              goalAngle, MathHelpers.angleModulus(currentAngle), TurretConfig.TOLERANCE);
     };
   }
 
