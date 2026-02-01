@@ -3,6 +3,7 @@ package frc.robot.robot_manager;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -90,25 +91,38 @@ public final class MechanismVisualizer {
       double shooterHoodAngleDegrees,
       double deployLengthInches,
       double climberHeightInches) {
-    // Transform from robot center to turret, including height and turret rotation
-    var turretTransform =
-        new Transform3d(
-            new Translation3d(0, 0, TURRET_HEIGHT_METERS),
-            new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
-
-    // Convert robot pose to 3D and apply the turret transform
-    var robotPose3d = new Pose3d(robotPose);
-    var turretPose = robotPose3d.transformBy(turretTransform);
-
-    // Add this as a Pose3d displayed as a cone in the 3D field view
-    // Or as an arrow in the 2D field view
-    DogLog.log("Turret/Pose3d", turretPose);
-
     SmartDashboard.putData("SuperstructureVisualization", MECHANISM);
 
     SHOOTER_HOOD_PIVOT.setAngle(SHOOTER_HOOD_ANGLE_FROM_HORIZONTAL + shooterHoodAngleDegrees);
     CLIMBER_ELEVATOR.setLength(Units.inchesToMeters(climberHeightInches));
     DEPLOY_EXTENSION.setLength(Units.inchesToMeters(deployLengthInches));
+
+    var turretPose =
+        new Pose3d(Translation3d.kZero, new Rotation3d(Rotation2d.fromDegrees(turretAngleDegrees)));
+    var shooterHoodPose =
+        turretPose.plus(new Transform3d(Translation3d.kZero, new Rotation3d(0, 0, 0)));
+    var deployPose =
+        new Pose3d(
+            new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0), Rotation3d.kZero);
+    var climberPose =
+        new Pose3d(
+            new Translation3d(0, 0, Units.inchesToMeters(climberHeightInches)), Rotation3d.kZero);
+
+    DogLog.log(
+        "SuperstructureVisualization/Components",
+        new Pose3d[] {turretPose, shooterHoodPose, deployPose, climberPose});
+
+    // Transform from robot center to turret
+    var turretTransform =
+        new Transform3d(
+            turretPose.getTranslation().plus(new Translation3d(0, 0, TURRET_HEIGHT_METERS)),
+            turretPose.getRotation());
+
+    var turretPoseStandalone = new Pose3d(robotPose).transformBy(turretTransform);
+
+    // Add this as a Pose3d displayed as a cone in the 3D field view
+    // Or as an arrow in the 2D field view
+    DogLog.log("Turret/Pose3d", turretPoseStandalone);
   }
 
   private MechanismVisualizer() {}

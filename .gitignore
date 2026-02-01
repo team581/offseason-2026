@@ -183,3 +183,7 @@ __pycache__/
 *.egg-info/
 .python-version
 uv.lock
+
+
+# PathPlanner
+**/deploy/pathplanner

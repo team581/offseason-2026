@@ -204,8 +204,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         // Set hood behavior separately whiile idling/unjamming/rehoming
+        // Set turret behavior separately while
+        shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        turret.feedAimRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -215,7 +216,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
-        turret.feedAimRequest();
+        turret.feedRequest(feedingParameters.turretAngle());
         // Intake is controlled separately
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
@@ -225,7 +226,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
-        turret.feedAimRequest();
+        turret.feedRequest(feedingParameters.turretAngle());
         intake.shootingRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
@@ -235,7 +236,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
-        turret.hubAimRequest();
+        turret.scoreRequest(scoringParameters.turretAngle());
         // Intake is controlled separately
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
@@ -245,7 +246,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
-        turret.hubAimRequest();
+        turret.scoreRequest(scoringParameters.turretAngle());
         intake.shootingRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
@@ -255,7 +256,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.unjamRequest();
-        turret.feedAimRequest();
+        // Set turret behavior separately
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -267,7 +268,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        turret.feedAimRequest();
+        // Set turret behavior separately
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -277,7 +278,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.homingRequest();
         dyeRotor.idleRequest();
-        turret.feedAimRequest();
+        // Set turret behavior separately
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -333,15 +334,31 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case CLIMB_3_HANGING_L1_AUTONOMOUS -> {
         lights.setState(LightsState.CLIMB_3);
       }
+      case CLIMB_4_RELEASE_L1_AUTONOMOUS -> {
+        lights.setState(LightsState.CLIMB_4);
+      }
     }
   }
 
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE -> shooterHoodSmartIdleRequest();
-      case PREPARE_FEED, FEED -> turret.setFeedAimAngle(feedingParameters.angle());
-      case PREPARE_SCORE, SCORE -> turret.setHubAimAngle(scoringParameters.angle());
+      case IDLE, REHOME_DEPLOY, REHOME_SHOOTER_HOOD, UNJAM -> {
+        shooterHoodSmartIdleRequest();
+        turretSmartIdleRequest();
+      }
+      case PREPARE_SCORE -> {
+        turret.scoreRequest(scoringParameters.turretAngle());
+      }
+      case SCORE -> {
+        turret.scoreRequest(scoringParameters.turretAngle());
+      }
+      case PREPARE_FEED -> {
+        turret.feedRequest(feedingParameters.turretAngle());
+      }
+      case FEED -> {
+        turret.feedRequest(feedingParameters.turretAngle());
+      }
       default -> {}
     }
     DogLog.log("RobotManager/FeedLocation", feedLocation);
@@ -365,6 +382,25 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     } else {
       shooterHood.feedRequest(feedingParameters.distance());
       DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
+    }
+  }
+
+  private void turretSmartIdleRequest() {
+    // TODO: Remove logs later
+    DogLog.timestamp("RobotManager/HoodSmartIdle");
+
+    // -First, if cameras are offline or we are near a trench, always be idle
+    // -Otherwise if we are in our alliance zone, point towards hub
+    // -And if we are not in alliance zone, point towards feed pose
+    if (health.isLocalizationHealthy() && nearTrench) {
+      turret.idleScoreRequest(scoringParameters.turretAngle());
+      DogLog.log("RobotManager/TurretSmartIdleRequest", "NearTrench");
+    } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
+      turret.idleScoreRequest(scoringParameters.turretAngle());
+      DogLog.log("RobotManager/TurretSmartIdleRequest", "InAllianceZone");
+    } else {
+      turret.idleFeedReuqest(feedingParameters.turretAngle());
+      DogLog.log("RobotManager/TurretSmartIdleRequest", "NotInAlliance");
     }
   }
 
@@ -520,8 +556,5 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             robotPose,
             swerve.getFieldRelativeSpeeds(),
             shooter.getCurrentTimeOfFlight());
-
-    turret.setHubAimAngle(scoringParameters.angle());
-    turret.setFeedAimAngle(feedingParameters.angle());
   }
 }
