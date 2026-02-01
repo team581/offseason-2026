@@ -14,30 +14,31 @@ public class AimParameterUtil {
       ChassisSpeeds fieldRelativeSpeeds,
       double currentTimeofFlight) {
 
-    var feedGoalTranslation =
+    var feedTranslation =
         ShootOnTheMove.getVelocityCompensatedGoal(
             feedLocation.getTranslation(robot), fieldRelativeSpeeds, currentTimeofFlight);
-    var feedGoalAngle = TurretCalculator.calculateTurretAimingAngle(robot, feedGoalTranslation);
-    var feedDistance = robot.getTranslation().getDistance(feedGoalTranslation);
 
-    return new AimingParameters(feedGoalAngle, feedDistance);
+    var turretAngle = TurretCalculator.calculateTurretAimingAngle(robot, feedTranslation);
+    var distanceToGoal = robot.getTranslation().getDistance(feedTranslation);
+
+    return new AimingParameters(turretAngle, distanceToGoal);
   }
 
   public static AimingParameters getScoringParameters(
       Pose2d robot, ChassisSpeeds fieldRelativeSpeeds, double currentTimeofFlight) {
-    var hubGoalPose =
+    var hubTranslation =
         ShootOnTheMove.getVelocityCompensatedGoal(
             FieldUtil.HUB_POSE.getPose().getTranslation(),
             fieldRelativeSpeeds,
             currentTimeofFlight);
 
     var robotPoseInAllianceZone = FieldUtil.clampPoseToAllianceZone(robot);
-    double scoringAngle =
-        TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, hubGoalPose);
-    double hubDistance = robotPoseInAllianceZone.getTranslation().getDistance(hubGoalPose);
+    double turretAngle =
+        TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, hubTranslation);
+    double distanceToGoal = robotPoseInAllianceZone.getTranslation().getDistance(hubTranslation);
 
-    return new AimingParameters(scoringAngle, hubDistance);
+    return new AimingParameters(turretAngle, distanceToGoal);
   }
 
-  public record AimingParameters(double angle, double distance) {}
+  public record AimingParameters(double turretAngle, double distance) {}
 }
