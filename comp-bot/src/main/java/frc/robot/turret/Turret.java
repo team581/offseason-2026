@@ -3,6 +3,7 @@ package frc.robot.turret;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -50,8 +51,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   @Override
-  protected void afterTransition(TurretState newState) {
-    switch (newState) {
+  protected void whileInState(TurretState currentState) {
+    switch (currentState) {
       case UNHOMED -> {
         motor.disable();
       }
@@ -125,11 +126,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
+
+      // TODO: Reconsider for turret wrapping
       default ->
           MathUtil.isNear(
-              TurretCalculator.getOptimalAngle(goalAngle, currentAngle),
-              currentAngle,
-              TurretConfig.TOLERANCE);
+              goalAngle, MathHelpers.angleModulus(currentAngle), TurretConfig.TOLERANCE);
     };
   }
 
