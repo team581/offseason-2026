@@ -40,7 +40,7 @@ public class Lights extends StateMachineSubsystem<LightsState> {
   @Override
   public void whileInState(LightsState currentState) {
     var usedState = DriverStation.isDisabled() ? disabledState : currentState;
-    if (getState().blinks()) {
+    if (usedState.blinks()) {
       candle.setControl(usedState.stateBlinkRequest.orElseThrow());
     } else {
       candle.setControl(usedState.stateColorRequest.orElseThrow());

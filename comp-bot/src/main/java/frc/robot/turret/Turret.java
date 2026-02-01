@@ -1,15 +1,8 @@
 package frc.robot.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -29,10 +22,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double hubAimAngle = 0.0;
   private double feedAimAngle = 0.0;
 
-  private static final double MIN_ANGLE = -149.105;
-  private static final double MAX_ANGLE = 149.105;
-  private static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
-  private static final double TOLERANCE = 1.0;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   private final Vision vision;
@@ -40,17 +29,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public Turret(TalonFX motor, Vision vision) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
     this.vision = vision;
-    var configs =
-        new TalonFXConfiguration()
-            .withFeedback(
-                new FeedbackConfigs().withSensorToMechanismRatio((280.0 / 12.0) * (40.0 / 12.0)))
-            .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs().withStatorCurrentLimit(30).withStatorCurrentLimit(30))
-            .withSlot0(new Slot0Configs().withKP(150.0).withKV(0.0).withKG(0.0));
-    motor.getConfigurator().apply(configs);
 
-    TunablePid.register("Turret", motor, configs);
+    TunablePid.register("Turret", motor, TurretConfig.MOTOR_CONFIG);
 
     this.motor = motor;
   }
@@ -63,8 +43,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case FEED_AIM -> goalAngle = feedAimAngle;
     }
 
-    currentAngle =
-        MathHelpers.angleModulus(Units.rotationsToDegrees(motor.getPosition().getValueAsDouble()));
+    currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     DogLog.log("Turret/Angle", currentAngle);
 
     // Predict the turret's current angle to account for sensor latency
@@ -89,11 +68,15 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case HUB_AIM -> {
         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
+            positionRequest.withPosition(
+                Units.degreesToRotations(
+                    TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
       }
       case FEED_AIM -> {
         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(feedAimAngle))));
+            positionRequest.withPosition(
+                Units.degreesToRotations(
+                    TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
       }
 
       default -> {}
@@ -109,14 +92,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  private static double clamp(double turretAngle) {
-    var newTurretAngle = MathHelpers.angleModulus(turretAngle);
-    return MathUtil.clamp(newTurretAngle, MIN_ANGLE, MAX_ANGLE);
-  }
-
   public boolean goalOutOfBounds() {
-    return goalAngle > (MAX_ANGLE - OUT_OF_BOUNDS_THRESHOLD)
-        || goalAngle < (MIN_ANGLE + OUT_OF_BOUNDS_THRESHOLD);
+    return goalAngle > (TurretConfig.MAX_ANGLE - TurretConfig.OUT_OF_BOUNDS_THRESHOLD)
+        || goalAngle < (TurretConfig.MIN_ANGLE + TurretConfig.OUT_OF_BOUNDS_THRESHOLD);
   }
 
   @Override
@@ -155,7 +133,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
-      default -> MathUtil.isNear(clamp(goalAngle), currentAngle, TOLERANCE);
+      default ->
+          MathUtil.isNear(
+              TurretCalculator.getOptimalAngle(goalAngle, currentAngle),
+              currentAngle,
+              TurretConfig.TOLERANCE);
     };
   }
 
@@ -175,8 +157,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             (mechanism) ->
                 mechanism
                     .addMotor(motor)
-                    .withMinPosition(Units.degreesToRotations(MIN_ANGLE))
-                    .withMaxPosition(Units.degreesToRotations(MAX_ANGLE)));
+                    .withMinPosition(Units.degreesToRotations(TurretConfig.MIN_ANGLE))
+                    .withMaxPosition(Units.degreesToRotations(TurretConfig.MAX_ANGLE)));
 
     if (getState() == TurretState.UNHOMED) {
       motor.setPosition(0);

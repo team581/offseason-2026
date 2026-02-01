@@ -29,4 +29,9 @@ public class TurretCalculator {
         SPACE_FROM_HARDSTOP,
         SPACE_FROM_HARDSTOP_TOLERANCE);
   }
+
+  public static double getOptimalAngle(double target, double current) {
+    return BaseTurretCalculator.getOptimalAngle(
+        target, current, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
+  }
 }

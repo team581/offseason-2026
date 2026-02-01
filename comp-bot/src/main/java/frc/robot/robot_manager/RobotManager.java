@@ -327,5 +327,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             robotPose,
             swerve.getFieldRelativeSpeeds(),
             shooter.getCurrentTimeOfFlight());
+
+    turret.setHubAimAngle(scoringParameters.angle());
+    turret.setFeedAimAngle(feedingParameters.angle());
   }
 }
