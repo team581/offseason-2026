@@ -8,7 +8,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
@@ -41,6 +40,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     switch (getState()) {
       case HUB_AIM -> goalAngle = hubAimAngle;
       case FEED_AIM -> goalAngle = feedAimAngle;
+      case UNHOMED -> {}
     }
 
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
@@ -55,9 +55,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     // Add the predicted angle to the vision buffer at the current timestamp
     vision.addTurretObservation(
-        Timer.getFPGATimestamp(),
-        Rotation2d.fromDegrees(latencyCompensatedAngle),
-        getVelocityDegreesPerSecond());
+        Timer.getFPGATimestamp(), latencyCompensatedAngle, getVelocityDegreesPerSecond());
   }
 
   @Override
@@ -70,13 +68,13 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
+                    TurretCalculator.getUnwrapAngle(goalAngle, currentAngle))));
       }
       case FEED_AIM -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
+                    TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
       }
 
       default -> {}
