@@ -33,7 +33,6 @@ public enum LightsState {
   CLIMB_6(Color.kIndigo),
   CLIMB_7(Color.kViolet);
 
-
   public final Optional<StrobeAnimation> stateBlinkRequest;
   public final Optional<SolidColor> stateColorRequest;
 
