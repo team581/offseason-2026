@@ -18,8 +18,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
-  private double hubAimAngle = 0.0;
-  private double feedAimAngle = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
@@ -36,13 +34,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
-
-    switch (getState()) {
-      case HUB_AIM -> goalAngle = hubAimAngle;
-      case FEED_AIM -> goalAngle = feedAimAngle;
-      case UNHOMED -> {}
-    }
-
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     DogLog.log("Turret/Angle", currentAngle);
 
@@ -112,21 +103,16 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  public void hubAimRequest() {
+  public void hubAimRequest(double goalAngle) {
+    this.goalAngle = goalAngle;
     setState(TurretState.HUB_AIM);
   }
 
-  public void feedAimRequest() {
+  public void feedAimRequest(double goalAngle) {
+    this.goalAngle = goalAngle;
     setState(TurretState.FEED_AIM);
   }
 
-  public void setHubAimAngle(double angle) {
-    hubAimAngle = angle;
-  }
-
-  public void setFeedAimAngle(double angle) {
-    feedAimAngle = angle;
-  }
 
   public boolean atGoal() {
     return switch (getState()) {

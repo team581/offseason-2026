@@ -192,7 +192,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         // Set hood behavior separately whiile idling/unjamming/rehoming
         dyeRotor.idleRequest();
-        turret.feedAimRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -202,7 +201,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
-        turret.feedAimRequest();
+        turret.feedAimRequest(feedingParameters.turretAngle());
         // Intake is controlled separately
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
@@ -212,7 +211,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
-        turret.feedAimRequest();
+        turret.feedAimRequest(feedingParameters.turretAngle());
         intake.shootingRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
@@ -222,7 +221,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
-        turret.hubAimRequest();
+        turret.hubAimRequest(scoringParameters.turretAngle());
         // Intake is controlled separately
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
@@ -232,7 +231,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
-        turret.hubAimRequest();
+        turret.hubAimRequest(scoringParameters.turretAngle());
         intake.shootingRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
@@ -242,7 +241,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.unjamRequest();
-        turret.feedAimRequest();
+        // Set turret behavior separately
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -254,7 +253,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        turret.feedAimRequest();
+        // Set turret behavior separately
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
@@ -264,7 +263,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.homingRequest();
         dyeRotor.idleRequest();
-        turret.feedAimRequest();
+        // Set turret behavior separately
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
