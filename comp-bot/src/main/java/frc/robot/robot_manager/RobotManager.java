@@ -173,7 +173,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case CLIMB_3_HANGING_L1_AUTONOMOUS -> {
-        // If climber is at goal && we have transitioned into teleop, set state to CLIMB_4_RELEASE_AUTONOMOUS
+        // If climber is at goal && we have transitioned into teleop, set state to
+        // CLIMB_4_RELEASE_AUTONOMOUS
         yield currentState;
       }
       case CLIMB_4_RELEASE_L1_AUTONOMOUS -> {
