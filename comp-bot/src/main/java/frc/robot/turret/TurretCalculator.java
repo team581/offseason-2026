@@ -1,6 +1,7 @@
 package frc.robot.turret;
 
 import com.team581.math.BaseTurretCalculator;
+import com.team581.math.MathHelpers;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -23,6 +24,11 @@ public class TurretCalculator {
         robot, target, TurretConfig.TURRET_TO_ROBOT);
   }
 
+  public static double clamp(double wantedAngle) {
+
+    return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
+  }
+
   public static boolean doesTurretHaveRoom(double turretAngle) {
     return BaseTurretCalculator.doesTurretHaveRoom(
         turretAngle,
@@ -32,13 +38,8 @@ public class TurretCalculator {
         SPACE_FROM_HARDSTOP_TOLERANCE);
   }
 
-  public static double clamp(double wantedAngle) {
-
-    return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
-  }
-
   public static double getOptimalAngle(double target, double current) {
-    target = MathUtil.inputModulus(target, -180, 180);
+    target = MathHelpers.angleModulus(target);
 
     // Get smallest delta
     var delta = ((target - current + 180) % 360 + 360) % 360 - 180;
@@ -56,7 +57,7 @@ public class TurretCalculator {
     if (opt1Valid && opt2Valid) {
       // If both are reachable, pick the with the least movement
       return clamp(
-          (Math.abs(option1 - current) <= Math.abs(option2 - current)) ? option1 : option2);
+          (MathUtil.isNear(option1, current, Math.abs(option2 - current))) ? option1 : option2);
     } else if (opt1Valid) {
       return clamp(option1);
     } else if (opt2Valid) {

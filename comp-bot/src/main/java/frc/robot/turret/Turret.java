@@ -1,15 +1,8 @@
 package frc.robot.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -75,11 +68,15 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case HUB_AIM -> {
         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
+            positionRequest.withPosition(
+                Units.degreesToRotations(
+                    TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
       }
       case FEED_AIM -> {
         motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
+            positionRequest.withPosition(
+                Units.degreesToRotations(
+                    TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
       }
 
       default -> {}
@@ -95,7 +92,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-    public boolean goalOutOfBounds() {
+  public boolean goalOutOfBounds() {
     return goalAngle > (TurretConfig.MAX_ANGLE - TurretConfig.OUT_OF_BOUNDS_THRESHOLD)
         || goalAngle < (TurretConfig.MIN_ANGLE + TurretConfig.OUT_OF_BOUNDS_THRESHOLD);
   }
@@ -136,7 +133,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
-      default -> MathUtil.isNear(TurretCalculator.getOptimalAngle(goalAngle, currentAngle), currentAngle, TurretConfig.TOLERANCE);
+      default ->
+          MathUtil.isNear(
+              TurretCalculator.getOptimalAngle(goalAngle, currentAngle),
+              currentAngle,
+              TurretConfig.TOLERANCE);
     };
   }
 
