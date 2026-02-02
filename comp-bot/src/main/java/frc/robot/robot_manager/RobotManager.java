@@ -443,8 +443,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void cancelIntakeRequest() {
     intake.idleRequest();
-    deploy.stowRequest();
-    swerve.normalDriveRequest();
   }
 
   public void toggleFeedRequest() {
@@ -480,7 +478,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTONOMOUS);
   }
 
-  public void teleopAutomaticClimbSequenceForward() {
+  public void startTeleopAutoClimbSequence() {
     if (!getState().isClimbingOrRehoming()) {
       setStateFromRequest(RobotState.AUTOMATIC_CLIMB_1_LINEUP_L1);
     }

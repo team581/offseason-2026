@@ -118,26 +118,65 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
-    var driverStart = enabledEvent.and(hardware.driverController.start(buttonBindingsLoop));
-    // TODO: This should be an automatic climb request, not just a single step forward
-    driverStart.rising().ifHigh(robotManager::manualClimbSequenceForward);
+    var driverStart =
+      enabledEvent.and(hardware.driverController.start(buttonBindingsLoop));
+    driverStart.rising().ifHigh(robotManager::startTeleopAutoClimbSequence);
 
-    var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
+    var driverBack =
+      enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
 
     var driverLeftTrigger =
-        enabledEvent.and(hardware.driverController.leftTrigger(buttonBindingsLoop));
-    driverLeftTrigger.ifHigh(robotManager::intakeRequest);
+      enabledEvent.and(hardware.driverController.leftTrigger(buttonBindingsLoop));
+    driverLeftTrigger.rising().ifHigh(robotManager::intakeRequest);
+    driverLeftTrigger.falling().ifHigh(robotManager::cancelIntakeRequest);
 
     var driverRightTrigger =
-        enabledEvent.and(hardware.driverController.rightTrigger(buttonBindingsLoop));
-    // Start shooting when trigger pressed
-    driverRightTrigger.rising().ifHigh(robotManager::toggleHubRequest);
-    // Stop shooting when trigger released
-    driverRightTrigger.falling().ifHigh(robotManager::toggleHubRequest);
+      enabledEvent.and(hardware.driverController.rightTrigger(buttonBindingsLoop));
+    driverRightTrigger.rising().ifHigh(robotManager::prepareScoreRequest);
+    driverRightTrigger.falling().ifHigh(robotManager::idleRequest);
 
     var driverRightBumper =
-        enabledEvent.and(hardware.driverController.rightBumper(buttonBindingsLoop));
-    driverRightBumper.ifHigh(robotManager::toggleFeedRequest);
-  }
+      enabledEvent.and(hardware.driverController.rightBumper(buttonBindingsLoop));
+    driverRightBumper.rising().ifHigh(robotManager::prepareFeedRequest);
+    driverRightBumper.falling().ifHigh(robotManager::idleRequest);
+
+    var operatorStart =
+      enabledEvent.and(hardware.operatorController.start(buttonBindingsLoop));
+    operatorStart.rising().ifHigh(robotManager::rehomeDeployRequest);
+
+    var operatorBack =
+      enabledEvent.and(hardware.operatorController.back(buttonBindingsLoop));
+    operatorBack.rising().ifHigh(robotManager::rehomeShooterHoodRequest);
+
+    var operatorX =
+      enabledEvent.and(hardware.operatorController.x(buttonBindingsLoop));
+    operatorX.rising().ifHigh(robotManager::unjamRequest);
+    operatorX.falling().ifHigh(robotManager::idleRequest);
+
+    var operatorY =
+      enabledEvent.and(hardware.operatorController.y(buttonBindingsLoop));
+    operatorY.rising().ifHigh(robotManager::manualClimbSequenceForward);
+
+    var operatorA =
+      enabledEvent.and(hardware.operatorController.a(buttonBindingsLoop));
+    operatorA.rising().ifHigh(robotManager::manualClimbSequenceBackward);
+
+    var operatorDpad =
+      enabledEvent.and(hardware.operatorController.pov(90, buttonBindingsLoop));
+    operatorDpad.rising().ifHigh(robotManager::idleRequest);
+
+    var operatorLeftTrigger =
+      enabledEvent.and(hardware.operatorController.leftTrigger(buttonBindingsLoop));
+    operatorLeftTrigger.rising().ifHigh(robotManager::cancelIntakeRequest);
+    operatorLeftTrigger.falling().ifHigh(deploy::intakeRequest);
+
+    var operatorLeftBumper =
+      enabledEvent.and(hardware.operatorController.leftBumper(buttonBindingsLoop));
+    operatorLeftBumper.rising().ifHigh(robotManager::setFeedGoalLeftRequest);
+
+    var operatorRightBumper =
+      enabledEvent.and(hardware.operatorController.rightBumper(buttonBindingsLoop));
+    operatorRightBumper.rising().ifHigh(robotManager::setFeedGoalRightRequest);
+    }
 }
