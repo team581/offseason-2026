@@ -93,9 +93,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> {
         statorCurrent = motor.getStatorCurrent().getValueAsDouble();
       }
-      case SCORING -> measuredAngle = hubAngle;
-      case FEEDING -> measuredAngle = feedAngle;
-      case IDLE -> {}
+      default -> {}
     }
   }
 

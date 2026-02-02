@@ -32,10 +32,10 @@ public class ShooterHoodConfig {
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "ShooterHood/DistanceToScore", Map.entry(0.0, 0.0));
+          "ShooterHood/DistanceToScore", Map.entry(0.0, 0.0), Map.entry(10.0, 100.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0));
+          "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0),Map.entry(0.0, 100.0));
 
   private ShooterHoodConfig() {}
 }
