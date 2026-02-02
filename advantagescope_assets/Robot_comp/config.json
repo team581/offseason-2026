@@ -1,6 +1,6 @@
 {
-  "$schema": "../config-schema.json",
   "components": [],
+  "$schema": "../config-schema.json",
   "name": "581 Comp Bot",
   "position": [
     0,

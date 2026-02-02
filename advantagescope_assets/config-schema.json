@@ -1,205 +1,209 @@
 {
+  "oneOf": [
+    {"$ref": "#/$defs/robotConfig"},
+    {"$ref": "#/$defs/joystickConfig"},
+    {"$ref": "#/$defs/field2dConfig"},
+    {"$ref": "#/$defs/field3dConfig"}
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "coordinateSystem": {
-      "description": "The coordinate system to use. wall-alliance: FRC 2022, wall-blue: FRC 2023-2026, center-rotated: FTC traditional, center-red: Systemcore",
-      "enum": ["wall-alliance", "wall-blue", "center-rotated", "center-red"],
-      "type": "string"
-    },
-    "field2dConfig": {
+    "joystickStick": {
+      "description": "A two-axis joystick component",
       "additionalProperties": false,
-      "description": "Configuration for a flat field image",
+      "type": "object",
       "properties": {
-        "bottomRight": {
-          "$ref": "#/$defs/position2d",
-          "description": "Pixel coordinate of the bottom-right corner (origin at upper left)"
-        },
-        "coordinateSystem": {
-          "$ref": "#/$defs/coordinateSystem",
-          "description": "The default coordinate system to use"
-        },
-        "heightInches": {
-          "description": "Real height of the field in inches (short side)",
+        "buttonSourceIndex": {
+          "description": "Optional button index for joystick click",
           "type": "number"
         },
-        "isFTC": {
-          "description": "Whether this is an FTC field instead of an FRC field",
+        "ySourceIndex": {
+          "description": "Axis index for Y movement",
+          "type": "number"
+        },
+        "xSourceIndex": {
+          "description": "Axis index for X movement",
+          "type": "number"
+        },
+        "isYellow": {"type": "boolean"},
+        "ySourceInverted": {
+          "description": "If not inverted, up is positive",
           "type": "boolean"
         },
-        "name": {
-          "description": "Unique name for the asset, displayed by AdvantageScope",
+        "centerPx": {
+          "description": "Center position in pixels",
+          "$ref": "#/$defs/position2d"
+        },
+        "type": {
+          "const": "joystick",
           "type": "string"
         },
-        "sourceUrl": {
-          "description": "Link to the original file",
-          "type": "string"
+        "xSourceInverted": {
+          "description": "If not inverted, right is positive",
+          "type": "boolean"
         },
-        "topLeft": {
-          "$ref": "#/$defs/position2d",
-          "description": "Pixel coordinate of the top-left corner (origin at upper left)"
-        },
-        "widthInches": {
-          "description": "Real width of the field in inches (long side)",
+        "radiusPx": {
+          "description": "Radius in pixels",
           "type": "number"
         }
       },
       "required": [
-        "name",
-        "coordinateSystem",
-        "topLeft",
-        "bottomRight",
-        "widthInches",
-        "heightInches"
-      ],
-      "type": "object"
+        "type",
+        "isYellow",
+        "centerPx",
+        "radiusPx",
+        "xSourceIndex",
+        "xSourceInverted",
+        "ySourceIndex",
+        "ySourceInverted"
+      ]
     },
-    "field3dConfig": {
+    "robotConfig": {
+      "description": "Configuration for a 3D robot model",
       "additionalProperties": false,
-      "description": "Configuration for a 3D field model",
+      "type": "object",
       "properties": {
-        "aprilTags": {
-          "description": "List of supplemental AprilTag models (if not part of field model). Always positioned using center/red coordinate system",
+        "cameras": {
+          "description": "Fixed camera positions",
+          "type": "array",
           "items": {
             "additionalProperties": false,
-            "properties": {
-              "id": {
-                "description": "AprilTag ID",
-                "type": "number"
-              },
-              "position": {
-                "$ref": "#/$defs/position3d",
-                "description": "Position offset in meters, applied after rotation"
-              },
-              "rotations": {
-                "description": "Sequence of rotations along the x, y, and z axes",
-                "items": {
-                  "$ref": "#/$defs/rotation"
-                },
-                "type": "array"
-              },
-              "variant": {
-                "description": "Format as 'FAMILY-SIZEin' where FAMILY is '36h11' or '16h5' and SIZE is the length of the black section",
-                "pattern": "^(36h11|16h5)-[0-9]+(\\.[0-9]+)?in$",
-                "type": "string"
-              }
-            },
-            "required": ["variant", "id", "rotations", "position"],
-            "type": "object"
-          },
-          "type": "array"
-        },
-        "coordinateSystem": {
-          "$ref": "#/$defs/coordinateSystem",
-          "description": "The default coordinate system to use"
-        },
-        "defaultOrigin": {
-          "default": "auto",
-          "description": "Default origin location",
-          "enum": ["auto", "blue", "red"],
-          "type": "string"
-        },
-        "driverStations": {
-          "description": "Driver station positions (X & Y in meters relative to the center of the field). For FRC: 6 elements [B1, B2, B3, R1, R2, R3]. For FTC: 4 elements [BL, BR, RL, RR]",
-          "items": {
-            "$ref": "#/$defs/position2d"
-          },
-          "maxItems": 6,
-          "minItems": 4,
-          "type": "array"
-        },
-        "gamePieces": {
-          "description": "List of game piece types",
-          "items": {
-            "additionalProperties": false,
+            "type": "object",
             "properties": {
               "name": {
-                "description": "Game piece name",
+                "description": "Camera name",
                 "type": "string"
               },
               "position": {
-                "$ref": "#/$defs/position3d",
-                "description": "Position offset in meters, applied after rotation"
+                "description": "Position offset in meters relative to the robot, applied after rotation",
+                "$ref": "#/$defs/position3d"
+              },
+              "fov": {
+                "description": "Horizontal field of view in degrees",
+                "type": "number"
+              },
+              "resolution": {
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Resolution in pixels [width, height], used to set the fixed aspect ratio",
+                "type": "array",
+                "items": {"type": "number"}
               },
               "rotations": {
                 "description": "Sequence of rotations along the x, y, and z axes",
-                "items": {
-                  "$ref": "#/$defs/rotation"
-                },
-                "type": "array"
-              },
-              "stagedObjects": {
-                "description": "Names of staged game piece objects, to hide if user poses are supplied",
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "array",
+                "items": {"$ref": "#/$defs/rotation"}
               }
             },
-            "required": ["name", "rotations", "position"],
-            "type": "object"
-          },
-          "type": "array"
+            "required": [
+              "name",
+              "rotations",
+              "position",
+              "resolution",
+              "fov"
+            ]
+          }
         },
-        "heightInches": {
-          "description": "Real height of the field in inches (short side)",
-          "type": "number"
+        "components": {
+          "description": "Articulated components for visualizing mechanism data",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "properties": {
+              "zeroedRotations": {
+                "description": "Sequence of rotations along the x, y, and z axes",
+                "type": "array",
+                "items": {"$ref": "#/$defs/rotation"}
+              },
+              "zeroedPosition": {
+                "description": "Position offset in meters relative to the robot, applied after rotation",
+                "$ref": "#/$defs/position3d"
+              }
+            },
+            "required": [
+              "zeroedRotations",
+              "zeroedPosition"
+            ]
+          }
         },
         "isFTC": {
-          "description": "Whether this is an FTC field instead of an FRC field",
+          "default": false,
+          "description": "Whether the model is intended for use on FTC fields instead of FRC fields",
+          "type": "boolean"
+        },
+        "disableSimplification": {
+          "description": "Whether to disable model simplification",
           "type": "boolean"
         },
         "name": {
           "description": "Unique name for the asset, displayed by AdvantageScope",
           "type": "string"
+        },
+        "position": {
+          "description": "Position offset in meters, applied after rotation",
+          "$ref": "#/$defs/position3d"
         },
         "rotations": {
           "description": "Sequence of rotations along the x, y, and z axes",
-          "items": {
-            "$ref": "#/$defs/rotation"
-          },
-          "type": "array"
-        },
-        "widthInches": {
-          "description": "Real width of the field in inches (long side)",
-          "type": "number"
+          "type": "array",
+          "items": {"$ref": "#/$defs/rotation"}
         }
       },
       "required": [
         "name",
-        "coordinateSystem",
         "rotations",
-        "widthInches",
-        "heightInches",
-        "driverStations"
-      ],
-      "type": "object"
+        "position",
+        "cameras"
+      ]
+    },
+    "rotation": {
+      "description": "A rotation along a single axis",
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "axis": {
+          "description": "The axis to rotate around",
+          "type": "string",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "degrees": {
+          "description": "The rotation angle in degrees",
+          "type": "number"
+        }
+      },
+      "required": [
+        "axis",
+        "degrees"
+      ]
     },
     "joystickAxis": {
-      "additionalProperties": false,
       "description": "A single axis value component",
+      "additionalProperties": false,
+      "type": "object",
       "properties": {
-        "centerPx": {
-          "$ref": "#/$defs/position2d",
-          "description": "Center position in pixels"
-        },
-        "isYellow": {
-          "type": "boolean"
-        },
         "sizePx": {
-          "$ref": "#/$defs/position2d",
-          "description": "Size in pixels [width, height]"
+          "description": "Size in pixels [width, height]",
+          "$ref": "#/$defs/position2d"
+        },
+        "sourceRange": {
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Value range [min, max]. Min greater than max to invert",
+          "type": "array",
+          "items": {"type": "number"}
+        },
+        "isYellow": {"type": "boolean"},
+        "centerPx": {
+          "description": "Center position in pixels",
+          "$ref": "#/$defs/position2d"
         },
         "sourceIndex": {
           "description": "Axis index",
           "type": "number"
-        },
-        "sourceRange": {
-          "description": "Value range [min, max]. Min greater than max to invert",
-          "items": {
-            "type": "number"
-          },
-          "maxItems": 2,
-          "minItems": 2,
-          "type": "array"
         },
         "type": {
           "const": "axis",
@@ -213,35 +217,36 @@
         "sizePx",
         "sourceIndex",
         "sourceRange"
-      ],
-      "type": "object"
+      ]
     },
     "joystickButton": {
-      "additionalProperties": false,
       "description": "A single button or POV value component",
+      "additionalProperties": false,
+      "type": "object",
       "properties": {
-        "centerPx": {
-          "$ref": "#/$defs/position2d",
-          "description": "Center position in pixels"
-        },
-        "isEllipse": {
-          "type": "boolean"
-        },
-        "isYellow": {
-          "type": "boolean"
-        },
+        "isEllipse": {"type": "boolean"},
         "sizePx": {
-          "$ref": "#/$defs/position2d",
-          "description": "Size in pixels [width, height]"
+          "description": "Size in pixels [width, height]",
+          "$ref": "#/$defs/position2d"
+        },
+        "isYellow": {"type": "boolean"},
+        "sourcePov": {
+          "description": "If provided, sourceIndex refers to a POV and this is the direction",
+          "type": "string",
+          "enum": [
+            "up",
+            "right",
+            "down",
+            "left"
+          ]
+        },
+        "centerPx": {
+          "description": "Center position in pixels",
+          "$ref": "#/$defs/position2d"
         },
         "sourceIndex": {
           "description": "Button index, or POV index if sourcePov is provided",
           "type": "number"
-        },
-        "sourcePov": {
-          "description": "If provided, sourceIndex refers to a POV and this is the direction",
-          "enum": ["up", "right", "down", "left"],
-          "type": "string"
         },
         "type": {
           "const": "button",
@@ -255,235 +260,229 @@
         "centerPx",
         "sizePx",
         "sourceIndex"
-      ],
-      "type": "object"
+      ]
+    },
+    "position3d": {
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "A 3D position offset in meters [x, y, z]",
+      "type": "array",
+      "items": {"type": "number"}
+    },
+    "coordinateSystem": {
+      "description": "The coordinate system to use. wall-alliance: FRC 2022, wall-blue: FRC 2023-2026, center-rotated: FTC traditional, center-red: Systemcore",
+      "type": "string",
+      "enum": [
+        "wall-alliance",
+        "wall-blue",
+        "center-rotated",
+        "center-red"
+      ]
     },
     "joystickConfig": {
-      "additionalProperties": false,
       "description": "Configuration for a joystick visualization",
+      "additionalProperties": false,
+      "type": "object",
       "properties": {
         "components": {
           "description": "Array of joystick component configurations",
-          "items": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/joystickButton"
-              },
-              {
-                "$ref": "#/$defs/joystickStick"
-              },
-              {
-                "$ref": "#/$defs/joystickAxis"
-              }
-            ]
-          },
-          "type": "array"
+          "type": "array",
+          "items": {"oneOf": [
+            {"$ref": "#/$defs/joystickButton"},
+            {"$ref": "#/$defs/joystickStick"},
+            {"$ref": "#/$defs/joystickAxis"}
+          ]}
         },
         "name": {
           "description": "Unique name for the asset, displayed by AdvantageScope",
           "type": "string"
-        }
-      },
-      "required": ["name", "components"],
-      "type": "object"
-    },
-    "joystickStick": {
-      "additionalProperties": false,
-      "description": "A two-axis joystick component",
-      "properties": {
-        "buttonSourceIndex": {
-          "description": "Optional button index for joystick click",
-          "type": "number"
-        },
-        "centerPx": {
-          "$ref": "#/$defs/position2d",
-          "description": "Center position in pixels"
-        },
-        "isYellow": {
-          "type": "boolean"
-        },
-        "radiusPx": {
-          "description": "Radius in pixels",
-          "type": "number"
-        },
-        "type": {
-          "const": "joystick",
-          "type": "string"
-        },
-        "xSourceIndex": {
-          "description": "Axis index for X movement",
-          "type": "number"
-        },
-        "xSourceInverted": {
-          "description": "If not inverted, right is positive",
-          "type": "boolean"
-        },
-        "ySourceIndex": {
-          "description": "Axis index for Y movement",
-          "type": "number"
-        },
-        "ySourceInverted": {
-          "description": "If not inverted, up is positive",
-          "type": "boolean"
         }
       },
       "required": [
-        "type",
-        "isYellow",
-        "centerPx",
-        "radiusPx",
-        "xSourceIndex",
-        "xSourceInverted",
-        "ySourceIndex",
-        "ySourceInverted"
-      ],
-      "type": "object"
+        "name",
+        "components"
+      ]
     },
     "position2d": {
-      "description": "A 2D position [x, y]",
-      "items": {
-        "type": "number"
-      },
-      "maxItems": 2,
       "minItems": 2,
-      "type": "array"
+      "maxItems": 2,
+      "description": "A 2D position [x, y]",
+      "type": "array",
+      "items": {"type": "number"}
     },
-    "position3d": {
-      "description": "A 3D position offset in meters [x, y, z]",
-      "items": {
-        "type": "number"
-      },
-      "maxItems": 3,
-      "minItems": 3,
-      "type": "array"
-    },
-    "robotConfig": {
+    "field2dConfig": {
+      "description": "Configuration for a flat field image",
       "additionalProperties": false,
-      "description": "Configuration for a 3D robot model",
+      "type": "object",
       "properties": {
-        "cameras": {
-          "description": "Fixed camera positions",
+        "sourceUrl": {
+          "description": "Link to the original file",
+          "type": "string"
+        },
+        "bottomRight": {
+          "description": "Pixel coordinate of the bottom-right corner (origin at upper left)",
+          "$ref": "#/$defs/position2d"
+        },
+        "heightInches": {
+          "description": "Real height of the field in inches (short side)",
+          "type": "number"
+        },
+        "widthInches": {
+          "description": "Real width of the field in inches (long side)",
+          "type": "number"
+        },
+        "isFTC": {
+          "description": "Whether this is an FTC field instead of an FRC field",
+          "type": "boolean"
+        },
+        "topLeft": {
+          "description": "Pixel coordinate of the top-left corner (origin at upper left)",
+          "$ref": "#/$defs/position2d"
+        },
+        "name": {
+          "description": "Unique name for the asset, displayed by AdvantageScope",
+          "type": "string"
+        },
+        "coordinateSystem": {
+          "description": "The default coordinate system to use",
+          "$ref": "#/$defs/coordinateSystem"
+        }
+      },
+      "required": [
+        "name",
+        "coordinateSystem",
+        "topLeft",
+        "bottomRight",
+        "widthInches",
+        "heightInches"
+      ]
+    },
+    "field3dConfig": {
+      "description": "Configuration for a 3D field model",
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "aprilTags": {
+          "description": "List of supplemental AprilTag models (if not part of field model). Always positioned using center/red coordinate system",
+          "type": "array",
           "items": {
             "additionalProperties": false,
+            "type": "object",
             "properties": {
-              "fov": {
-                "description": "Horizontal field of view in degrees",
-                "type": "number"
-              },
-              "name": {
-                "description": "Camera name",
+              "variant": {
+                "pattern": "^(36h11|16h5)-[0-9]+(\\.[0-9]+)?in$",
+                "description": "Format as 'FAMILY-SIZEin' where FAMILY is '36h11' or '16h5' and SIZE is the length of the black section",
                 "type": "string"
               },
-              "position": {
-                "$ref": "#/$defs/position3d",
-                "description": "Position offset in meters relative to the robot, applied after rotation"
+              "id": {
+                "description": "AprilTag ID",
+                "type": "number"
               },
-              "resolution": {
-                "description": "Resolution in pixels [width, height], used to set the fixed aspect ratio",
-                "items": {
-                  "type": "number"
-                },
-                "maxItems": 2,
-                "minItems": 2,
-                "type": "array"
+              "position": {
+                "description": "Position offset in meters, applied after rotation",
+                "$ref": "#/$defs/position3d"
               },
               "rotations": {
                 "description": "Sequence of rotations along the x, y, and z axes",
-                "items": {
-                  "$ref": "#/$defs/rotation"
-                },
-                "type": "array"
+                "type": "array",
+                "items": {"$ref": "#/$defs/rotation"}
               }
             },
-            "required": ["name", "rotations", "position", "resolution", "fov"],
-            "type": "object"
-          },
-          "type": "array"
+            "required": [
+              "variant",
+              "id",
+              "rotations",
+              "position"
+            ]
+          }
         },
-        "components": {
-          "description": "Articulated components for visualizing mechanism data",
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "zeroedPosition": {
-                "$ref": "#/$defs/position3d",
-                "description": "Position offset in meters relative to the robot, applied after rotation"
-              },
-              "zeroedRotations": {
-                "description": "Sequence of rotations along the x, y, and z axes",
-                "items": {
-                  "$ref": "#/$defs/rotation"
-                },
-                "type": "array"
-              }
-            },
-            "required": ["zeroedRotations", "zeroedPosition"],
-            "type": "object"
-          },
-          "type": "array"
+        "defaultOrigin": {
+          "default": "auto",
+          "description": "Default origin location",
+          "type": "string",
+          "enum": [
+            "auto",
+            "blue",
+            "red"
+          ]
         },
-        "disableSimplification": {
-          "description": "Whether to disable model simplification",
-          "type": "boolean"
+        "driverStations": {
+          "minItems": 4,
+          "maxItems": 6,
+          "description": "Driver station positions (X & Y in meters relative to the center of the field). For FRC: 6 elements [B1, B2, B3, R1, R2, R3]. For FTC: 4 elements [BL, BR, RL, RR]",
+          "type": "array",
+          "items": {"$ref": "#/$defs/position2d"}
+        },
+        "heightInches": {
+          "description": "Real height of the field in inches (short side)",
+          "type": "number"
+        },
+        "widthInches": {
+          "description": "Real width of the field in inches (long side)",
+          "type": "number"
         },
         "isFTC": {
-          "default": false,
-          "description": "Whether the model is intended for use on FTC fields instead of FRC fields",
+          "description": "Whether this is an FTC field instead of an FRC field",
           "type": "boolean"
         },
         "name": {
           "description": "Unique name for the asset, displayed by AdvantageScope",
           "type": "string"
         },
-        "position": {
-          "$ref": "#/$defs/position3d",
-          "description": "Position offset in meters, applied after rotation"
+        "coordinateSystem": {
+          "description": "The default coordinate system to use",
+          "$ref": "#/$defs/coordinateSystem"
+        },
+        "gamePieces": {
+          "description": "List of game piece types",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "Game piece name",
+                "type": "string"
+              },
+              "position": {
+                "description": "Position offset in meters, applied after rotation",
+                "$ref": "#/$defs/position3d"
+              },
+              "rotations": {
+                "description": "Sequence of rotations along the x, y, and z axes",
+                "type": "array",
+                "items": {"$ref": "#/$defs/rotation"}
+              },
+              "stagedObjects": {
+                "description": "Names of staged game piece objects, to hide if user poses are supplied",
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            },
+            "required": [
+              "name",
+              "rotations",
+              "position"
+            ]
+          }
         },
         "rotations": {
           "description": "Sequence of rotations along the x, y, and z axes",
-          "items": {
-            "$ref": "#/$defs/rotation"
-          },
-          "type": "array"
+          "type": "array",
+          "items": {"$ref": "#/$defs/rotation"}
         }
       },
-      "required": ["name", "rotations", "position", "cameras"],
-      "type": "object"
-    },
-    "rotation": {
-      "additionalProperties": false,
-      "description": "A rotation along a single axis",
-      "properties": {
-        "axis": {
-          "description": "The axis to rotate around",
-          "enum": ["x", "y", "z"],
-          "type": "string"
-        },
-        "degrees": {
-          "description": "The rotation angle in degrees",
-          "type": "number"
-        }
-      },
-      "required": ["axis", "degrees"],
-      "type": "object"
+      "required": [
+        "name",
+        "coordinateSystem",
+        "rotations",
+        "widthInches",
+        "heightInches",
+        "driverStations"
+      ]
     }
   },
-  "$id": "https://docs.advantagescope.org/config.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Schema for AdvantageScope custom asset config.json files",
-  "oneOf": [
-    {
-      "$ref": "#/$defs/robotConfig"
-    },
-    {
-      "$ref": "#/$defs/joystickConfig"
-    },
-    {
-      "$ref": "#/$defs/field2dConfig"
-    },
-    {
-      "$ref": "#/$defs/field3dConfig"
-    }
-  ],
-  "title": "AdvantageScope Custom Asset Configuration"
+  "title": "AdvantageScope Custom Asset Configuration",
+  "$id": "https://docs.advantagescope.org/config.schema.json"
 }
