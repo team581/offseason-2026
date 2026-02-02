@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class FieldUtil {
-  private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
 
   public static final double FIELD_LENGTH_X = AprilTags.FIELD_LAYOUT.getFieldLength();
   public static final double FIELD_WIDTH_Y = AprilTags.FIELD_LAYOUT.getFieldWidth();
@@ -396,9 +395,9 @@ public class FieldUtil {
 
   public static boolean isRobotInAllianceZone(Translation2d robot) {
     if (FmsUtil.isRedAlliance()) {
-      return robot.getX() > getAllianceZoneX() + EXTRA_NEUTRAL_ZONE_THRESHOLD;
+      return robot.getX() > getAllianceZoneX();
     }
-    return robot.getX() < getAllianceZoneX() - EXTRA_NEUTRAL_ZONE_THRESHOLD;
+    return robot.getX() < getAllianceZoneX();
   }
 
   public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
