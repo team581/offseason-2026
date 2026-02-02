@@ -16,13 +16,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 
-/** See simulation-example.png for an example of what your AdvantageScope setup should look like. */
 public final class MechanismVisualizer {
   /** Distance from the pivot point of the shooter hood to the edge of the hood. */
   private static final double SHOOTER_HOOD_RADIUS = Units.inchesToMeters(6.475600);
-
-  /** Height from the floor to the bottom of the turret. */
-  private static final double TURRET_HEIGHT_METERS = Units.inchesToMeters(14.547500);
 
   /** Height from the turret to the pivot point of the shooter hood. */
   private static final double SHOOTER_HOOD_HEIGHT_METERS = Units.inchesToMeters(2.867553);
@@ -45,13 +41,6 @@ public final class MechanismVisualizer {
   private static final Mechanism2d MECHANISM =
       new Mechanism2d(
           MECHANISM_AREA.getX(), MECHANISM_AREA.getY(), new Color8Bit(new Color("#121212")));
-
-  /**
-   * Used to have a virtual robot that's underneath the field. This is because AdvantageScope
-   * doesn't allow you to add mechanisms to anything other than a literal robot type object on the
-   * 3D field.
-   */
-  private static final double SHOOTER_HOOD_MECHANISM_AREA_Z_OFFSET = -10;
 
   /** Separate mechanism for the shooter hood, which rotates with the turret. */
   private static final Translation2d SHOOTER_HOOD_MECHANISM_AREA = new Translation2d(1, 1);
@@ -88,7 +77,7 @@ public final class MechanismVisualizer {
       SHOOTER_HOOD_MECHANISM.getRoot(
           "shooterHoodRoot",
           SHOOTER_HOOD_MECHANISM_CENTER_X - Units.inchesToMeters(4.686288),
-          SHOOTER_HOOD_HEIGHT_METERS - SHOOTER_HOOD_MECHANISM_AREA_Z_OFFSET);
+          SHOOTER_HOOD_HEIGHT_METERS);
 
   static {
     SHOOTER_HOOD.append(
@@ -121,7 +110,10 @@ public final class MechanismVisualizer {
     var turretPose =
         new Pose3d(Translation3d.kZero, new Rotation3d(Rotation2d.fromDegrees(turretAngleDegrees)));
     var shooterHoodPose =
-        turretPose.plus(new Transform3d(Translation3d.kZero, new Rotation3d(0, 0, 0)));
+        turretPose.plus(
+            new Transform3d(
+                Translation3d.kZero,
+                new Rotation3d(0, Math.toRadians(shooterHoodAngleDegrees), 0)));
     var deployPose =
         new Pose3d(
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0), Rotation3d.kZero);
@@ -132,20 +124,6 @@ public final class MechanismVisualizer {
     DogLog.log(
         "SuperstructureVisualization/Components",
         new Pose3d[] {turretPose, shooterHoodPose, deployPose, climberPose});
-
-    // Transform from robot center to turret
-    var turretTransform =
-        new Transform3d(
-            turretPose
-                .getTranslation()
-                .plus(
-                    new Translation3d(
-                        0, 0, SHOOTER_HOOD_MECHANISM_AREA_Z_OFFSET + TURRET_HEIGHT_METERS)),
-            turretPose.getRotation());
-
-    var turretPoseStandalone = new Pose3d(robotPose).transformBy(turretTransform);
-
-    DogLog.log("Turret/Pose3d", turretPoseStandalone);
   }
 
   private MechanismVisualizer() {}
