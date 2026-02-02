@@ -48,7 +48,7 @@ public abstract class StateMachine<S extends Enum<S>> {
 
   /** Run side effects that occur when a state transition happens. */
   private void doTransition() {
-    DogLog.log(name + "/State", state);
+    DogLog.log(name + "/State", state.toString());
 
     lastTransitionTimestamp = Timer.getFPGATimestamp();
 
