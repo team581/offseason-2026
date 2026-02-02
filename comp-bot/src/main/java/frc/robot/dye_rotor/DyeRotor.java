@@ -73,13 +73,13 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     DogLog.log("DyeRotor/AtGoal", atGoal());
   }
 
-
   @Override
   protected void afterTransition(DyeRotorState newState) {
     rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM));
     horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(newState.horizontalRPM));
     verticalMotor.setVoltage(newState.verticalVoltage);
   }
+
   @Override
   protected void collectInputs() {
     rotorRawCurrent = rotorMotor.getStatorCurrent().getValueAsDouble();
@@ -95,7 +95,10 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
       case UNJAM -> timeout(1) || !isJammed();
       case SHOOTING -> true;
       case WARMUP ->
-          MathUtil.isNear(DyeRotorState.WARMUP.horizontalRPM, horizontalMotorRpm, DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
+          MathUtil.isNear(
+              DyeRotorState.WARMUP.horizontalRPM,
+              horizontalMotorRpm,
+              DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
     };
   }
 
