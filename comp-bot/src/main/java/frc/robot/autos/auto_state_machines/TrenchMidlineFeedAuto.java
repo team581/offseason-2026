@@ -5,7 +5,6 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.autos.BaseImperativeAuto;
@@ -13,20 +12,19 @@ import frc.robot.autos.auto_state_machines.auto_state.TrenchMidlineFeedAutoState
 import frc.robot.robot_manager.RobotManager;
 
 @SuppressWarnings("unused")
-
 public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedAutoState> {
 
   private final AutoSegment segment1DriveToMidline =
-    // TODO: update poses
+      // TODO: update poses
 
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(14.0, 5.9, Rotation2d.kZero)),
               AutoPoint.ofRed(new Pose2d(11.912, 5.9, Rotation2d.kZero)),
               AutoPoint.ofRed(new Pose2d(10.218, 5.9, Rotation2d.kZero)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
-          
+
   private final AutoSegment intakeAcrossMidline =
-    // TODO: update poses
+      // TODO: update poses
 
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.32, 5.8, Rotation2d.kCW_90deg)),
@@ -36,7 +34,7 @@ public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedA
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment2DriveToFeed =
-    // TODO: update poses
+      // TODO: update poses
 
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.32, 2.885, Rotation2d.kCW_90deg)),
@@ -48,21 +46,21 @@ public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedA
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment segment3DriveBack =
-  // TODO: update poses
+      // TODO: update poses
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(13.751, 5.6, Rotation2d.fromDegrees(-134.0))),
               AutoPoint.ofRed(new Pose2d(14.305, 4.797, Rotation2d.fromDegrees(-164.0))))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-  private final AutoSegment segment4IntakeAllianceSide =   
-    // TODO: update poses
-Trailblazer.segment(AutoPoint.ofRed(new Pose2d()))
-  .untilFinished(new PoseErrorTolerance(0, null));
+  private final AutoSegment segment4IntakeAllianceSide =
+      // TODO: update poses
+      Trailblazer.segment(AutoPoint.ofRed(Pose2d.kZero))
+          .untilFinished(new PoseErrorTolerance(0, null));
 
-  private final AutoSegment segment5DriveToShoot = 
-    // TODO: update poses
-  Trailblazer.segment(AutoPoint.ofRed(new Pose2d()))
-  .untilFinished(new PoseErrorTolerance(0, null));
+  private final AutoSegment segment5DriveToShoot =
+      // TODO: update poses
+      Trailblazer.segment(AutoPoint.ofRed(Pose2d.kZero))
+          .untilFinished(new PoseErrorTolerance(0, null));
 
   public TrenchMidlineFeedAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(TrenchMidlineFeedAutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
@@ -70,7 +68,7 @@ Trailblazer.segment(AutoPoint.ofRed(new Pose2d()))
 
   @Override
   public Point getStartingPoint() {
-      // TODO: update pose
+    // TODO: update pose
     return Point.ofRed(new Pose2d(14.0, 6.0, Rotation2d.kZero));
   }
 
@@ -98,19 +96,19 @@ Trailblazer.segment(AutoPoint.ofRed(new Pose2d()))
   @Override
   protected void whileInState(TrenchMidlineFeedAutoState newState) {
     switch (newState) {
-  // TODO: update state actions
-  case SEGMENT_1_DRIVE_TO_MIDLINE -> {}
-  case INTAKE_ACROSS_MIDLINE_1 -> {}
-  case INTAKE_ACROSS_MIDLINE_2 -> {}
-  case SEGMENT_2_DRIVE_TO_FEED_1 -> {}
-  case SEGMENT_3_DRIVE_TO_FEED_2 -> {}
-  case FEED_1 -> {}
-  case FEED_2 -> {}
-  case SEGMENT_4_DRIVE_BACK -> {}
-  case SEGMENT_5_INTAKE_ALLIANCE_SIDE -> {}
-  case SEGMENT_6_DRIVE_TO_SHOOT -> {}
-  case SHOOT -> {}
-  case DONE -> {}
+      // TODO: update state actions
+      case SEGMENT_1_DRIVE_TO_MIDLINE -> {}
+      case INTAKE_ACROSS_MIDLINE_1 -> {}
+      case INTAKE_ACROSS_MIDLINE_2 -> {}
+      case SEGMENT_2_DRIVE_TO_FEED_1 -> {}
+      case SEGMENT_3_DRIVE_TO_FEED_2 -> {}
+      case FEED_1 -> {}
+      case FEED_2 -> {}
+      case SEGMENT_4_DRIVE_BACK -> {}
+      case SEGMENT_5_INTAKE_ALLIANCE_SIDE -> {}
+      case SEGMENT_6_DRIVE_TO_SHOOT -> {}
+      case SHOOT -> {}
+      case DONE -> {}
     }
   }
 }
