@@ -111,8 +111,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         rightMotor.disable();
       }
       default -> {
-        leftMotor.setControl(positionVoltageRequest.withPosition((clamp(newState.getLength()))));
-        rightMotor.setControl(positionVoltageRequest.withPosition((clamp(newState.getLength()))));
+        leftMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
+        rightMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
       }
     }
   }
