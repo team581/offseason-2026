@@ -3,12 +3,12 @@ package frc.robot.turret;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
@@ -19,8 +19,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
-  private double hubAimAngle = 0.0;
-  private double feedAimAngle = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
@@ -37,12 +35,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
-
-    switch (getState()) {
-      case HUB_AIM -> goalAngle = hubAimAngle;
-      case FEED_AIM -> goalAngle = feedAimAngle;
-    }
-
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     DogLog.log("Turret/Angle", currentAngle);
 
@@ -55,30 +47,27 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     // Add the predicted angle to the vision buffer at the current timestamp
     vision.addTurretObservation(
-        Timer.getFPGATimestamp(),
-        Rotation2d.fromDegrees(latencyCompensatedAngle),
-        getVelocityDegreesPerSecond());
+        Timer.getFPGATimestamp(), latencyCompensatedAngle, getVelocityDegreesPerSecond());
   }
 
   @Override
-  protected void afterTransition(TurretState newState) {
-    switch (newState) {
+  protected void whileInState(TurretState currentState) {
+    switch (currentState) {
       case UNHOMED -> {
         motor.disable();
       }
-      case HUB_AIM -> {
+      case SCORE, FEED -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(hubAimAngle, currentAngle))));
+                    TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
       }
-      case FEED_AIM -> {
+      case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
             positionRequest.withPosition(
                 Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(feedAimAngle, currentAngle))));
+                    TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))));
       }
-
       default -> {}
     }
   }
@@ -101,7 +90,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void robotPeriodic() {
     super.robotPeriodic();
     switch (getState()) {
-      case HUB_AIM, FEED_AIM -> {
+      case SCORE, FEED -> {
         afterTransition(getState());
         DogLog.clearFault("Turret is not homed");
       }
@@ -114,30 +103,34 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  public void hubAimRequest() {
-    setState(TurretState.HUB_AIM);
+  public void scoreRequest(double goalAngle) {
+    this.goalAngle = goalAngle;
+    setState(TurretState.SCORE);
   }
 
-  public void feedAimRequest() {
-    setState(TurretState.FEED_AIM);
+  public void feedRequest(double goalAngle) {
+    this.goalAngle = goalAngle;
+    setState(TurretState.FEED);
   }
 
-  public void setHubAimAngle(double angle) {
-    hubAimAngle = angle;
+  public void idleScoreRequest(double goalAngle) {
+    this.goalAngle = goalAngle;
+    setState(TurretState.IDLE_SCORE);
   }
 
-  public void setFeedAimAngle(double angle) {
-    feedAimAngle = angle;
+  public void idleFeedReuqest(double goalAngle) {
+    this.goalAngle = goalAngle;
+    setState(TurretState.IDLE_FEED);
   }
 
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
+
+      // TODO: Reconsider for turret wrapping
       default ->
           MathUtil.isNear(
-              TurretCalculator.getOptimalAngle(goalAngle, currentAngle),
-              currentAngle,
-              TurretConfig.TOLERANCE);
+              goalAngle, MathHelpers.angleModulus(currentAngle), TurretConfig.TOLERANCE);
     };
   }
 
@@ -162,7 +155,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     if (getState() == TurretState.UNHOMED) {
       motor.setPosition(0);
-      setStateFromRequest(TurretState.HUB_AIM);
+      setStateFromRequest(TurretState.SCORE);
     }
 
     turretSimulation.update();

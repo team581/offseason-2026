@@ -120,7 +120,7 @@ public class Robot extends Base581Robot {
   protected void configureBindings() {
     var driverStart = enabledEvent.and(hardware.driverController.start(buttonBindingsLoop));
     // TODO: This should be an automatic climb request, not just a single step forward
-    driverStart.rising().ifHigh(robotManager::climbSequenceForward);
+    driverStart.rising().ifHigh(robotManager::manualClimbSequenceForward);
 
     var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);

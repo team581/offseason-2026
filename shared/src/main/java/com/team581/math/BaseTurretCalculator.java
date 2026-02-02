@@ -89,4 +89,33 @@ public class BaseTurretCalculator {
       return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
     }
   }
+
+  // Look at UnwrapAngleDiagram.png
+  public static double getSmartUnwrapAngle(
+      double target,
+      double current,
+      double minTurretAngle,
+      double maxTurretAngle,
+      double tolerance) {
+
+    var totalRangeOfMotion = Math.abs(maxTurretAngle) + Math.abs(minTurretAngle);
+    if (totalRangeOfMotion <= 360) {
+      return target;
+    }
+
+    // Make sure that no angle can be equally in both ends' bad range
+    var maxTolerance = (totalRangeOfMotion - 360) / 4;
+    tolerance = MathUtil.clamp(tolerance, 0, maxTolerance);
+    target = getOptimalAngle(target, current, minTurretAngle, maxTurretAngle);
+    if (MathUtil.isNear(maxTurretAngle - tolerance, target, tolerance)) {
+      return MathUtil.clamp(target - 360, minTurretAngle, maxTurretAngle);
+    }
+
+    if (MathUtil.isNear(minTurretAngle + tolerance, target, tolerance)) {
+
+      return MathUtil.clamp(target + 360, minTurretAngle, maxTurretAngle);
+    }
+
+    return target;
+  }
 }

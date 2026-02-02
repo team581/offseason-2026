@@ -22,8 +22,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private final Debouncer seeingTagForPoseResetDebouncer =
       new Debouncer(5.0, DebounceType.kFalling);
 
-  private final TimeInterpolatableBuffer<Rotation2d> turretBuffer =
-      TimeInterpolatableBuffer.createBuffer(2.0);
+  private final TimeInterpolatableBuffer<Double> turretBuffer =
+      TimeInterpolatableBuffer.createDoubleBuffer(2.0);
 
   private final Imu imu;
   private final Limelight turretLimelight;
@@ -73,14 +73,13 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   // Call this in turret's periodic() or a fast telemetry thread
-  public void addTurretObservation(
-      double timestamp, Rotation2d angle, double turretAngularVelocity) {
-    turretBuffer.addSample(timestamp, angle);
+  public void addTurretObservation(double timestamp, double angle, double turretAngularVelocity) {
+    turretBuffer.addSample(timestamp, MathHelpers.angleModulus(angle));
     turretLimelight.sendImuData(
         robotHeading, turretAngularVelocity + robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
   }
 
-  private Optional<Rotation2d> getAngleAtTimestamp(double timestamp) {
+  private Optional<Double> getAngleAtTimestamp(double timestamp) {
     return turretBuffer.getSample(timestamp);
   }
 
@@ -111,13 +110,14 @@ public class Vision extends StateMachineSubsystem<VisionState> {
       DogLog.logFault("Could not get turret angle at timestamp");
       return adjustedTurretResult.empty();
     }
-    DogLog.log("Vision/TurretObservation", robotToTurretObservation.orElseThrow().getDegrees());
+    DogLog.log("Vision/TurretObservation", robotToTurretObservation.orElseThrow());
     DogLog.clearFault("Could not get turret angle at timestamp");
 
     // Create transform representing the rotation from Turret back to Robot
     // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
     var turretToRobot =
-        MathHelpers.transform2dFromRotation(robotToTurretObservation.orElseThrow().unaryMinus());
+        MathHelpers.transform2dFromRotation(
+            Rotation2d.fromDegrees(robotToTurretObservation.orElseThrow()));
 
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
