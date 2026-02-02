@@ -15,7 +15,6 @@ public class DyeRotorConfig {
   public static final int RPM_TOLERANCE_HORIZONTAL = 100;
   public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
       DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
-  public static final double ROTOR_UNJAM_RPM = 0;
 
   public static final TalonFXConfiguration ROTOR_MOTOR_CONFIG =
       new TalonFXConfiguration()
