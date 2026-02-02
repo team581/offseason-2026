@@ -8,8 +8,8 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public class DeployConfig {
-  // TODO: These are just placeholders - we should update these when we find out these angles
-  public static final double MAX_LENGTH = 90;
+  // TODO: These are just placeholders - we should update these when we find out these lengths
+  public static final double MAX_LENGTH = 12;
   public static final double MIN_LENGTH = 0;
   public static final double HOMING_END_POSITION = 0;
   public static final double HOMING_VOLTAGE = 0;

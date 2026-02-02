@@ -11,7 +11,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import java.util.Map;
 
 public class ShooterHoodConfig {
-  public static final double MAX_ANGLE = 100;
+  public static final double MAX_ANGLE = 30;
   public static final double MIN_ANGLE = 0;
   public static final double IDLE_ANGLE = 0.0;
 
