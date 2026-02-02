@@ -15,7 +15,14 @@ public class DeployConfig {
   public static final double HOMING_VOLTAGE = 0;
   public static final double HOMING_CURRENT = 40.0;
 
-  public static final TalonFXConfiguration MOTOR_CONFIG =
+  public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(1).withStatorCurrentLimit(1))
+          .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
+  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))

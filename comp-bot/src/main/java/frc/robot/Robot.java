@@ -50,7 +50,7 @@ public class Robot extends Base581Robot {
   private final Shooter shooter =
       new Shooter(hardware.shooterRightMotor, hardware.shooterLeftMotor);
   private final Intake intake = new Intake(hardware.intakeMotor);
-  private final Deploy deploy = new Deploy(hardware.leftDeployMotor);
+  private final Deploy deploy = new Deploy(hardware.leftDeployMotor, hardware.rightDeployMotor);
   private final DyeRotor dyeRotor =
       new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
   private final Lights lights = new Lights(hardware.candle);
