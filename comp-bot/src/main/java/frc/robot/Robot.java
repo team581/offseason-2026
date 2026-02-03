@@ -160,7 +160,7 @@ public class Robot extends Base581Robot {
 
     var operatorLeftTrigger =
         enabledEvent.and(hardware.operatorController.leftTrigger(buttonBindingsLoop));
-    operatorLeftTrigger.rising().ifHigh(robotManager::cancelIntakeRequest);
+    operatorLeftTrigger.rising().ifHigh(robotManager::stowDeployRequest);
     operatorLeftTrigger.falling().ifHigh(deploy::intakeRequest);
 
     var operatorLeftBumper =

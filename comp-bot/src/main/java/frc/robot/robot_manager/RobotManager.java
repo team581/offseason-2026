@@ -445,6 +445,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     intake.idleRequest();
   }
 
+   public void stowDeployRequest() {
+     intake.idleRequest();
+    deploy.stowRequest();
+  }
+
   public void toggleFeedRequest() {
     if (!getState().isClimbingOrRehoming()) {
       switch (getState()) {
