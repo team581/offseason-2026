@@ -563,6 +563,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             feedLocation,
             robotPose,
             swerve.getFieldRelativeSpeeds(),
-            shooter.getCurrentTimeOfFlight());
+            shooter.getFeedTimeOfFlight());
   }
 }
