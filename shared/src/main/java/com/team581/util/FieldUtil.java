@@ -404,6 +404,13 @@ public class FieldUtil {
     return robot.getX() < getAllianceZoneX();
   }
 
+   public static boolean isRobotPastObstacleTowardAllianceZone(Translation2d robot) {
+    if (FmsUtil.isRedAlliance()) {
+      return robot.getX() > getObstacleX();
+    }
+    return robot.getX() < getObstacleX();
+  }
+
   public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
     // Check if line from robot to target collides with hub no feed zone
     var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
