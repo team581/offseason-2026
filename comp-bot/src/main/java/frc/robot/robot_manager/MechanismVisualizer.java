@@ -105,7 +105,8 @@ public final class MechanismVisualizer {
       double turretAngleDegrees,
       double shooterHoodAngleDegrees,
       double deployLengthInches,
-      double climberHeightInches) {
+      double climberHeightInches,
+      double dyeRotorAngleDegrees) {
     SmartDashboard.putData("Visualization/Static", MECHANISM);
     SmartDashboard.putData("Visualization/Turret", SHOOTER_HOOD_MECHANISM);
 
@@ -129,10 +130,14 @@ public final class MechanismVisualizer {
     var climberPose =
         new Pose3d(
             new Translation3d(0, 0, Units.inchesToMeters(climberHeightInches)), Rotation3d.kZero);
+    var dyeRotorPose =
+        new Pose3d(
+            new Translation3d(0, 0, 0),
+            new Rotation3d(Rotation2d.fromDegrees(-dyeRotorAngleDegrees)));
 
     DogLog.log(
         "SuperstructureVisualization/Components",
-        new Pose3d[] {turretPose, shooterHoodPose, deployPose, climberPose});
+        new Pose3d[] {turretPose, shooterHoodPose, deployPose, climberPose, dyeRotorPose});
   }
 
   private MechanismVisualizer() {}

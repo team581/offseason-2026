@@ -8,6 +8,7 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
@@ -104,6 +105,10 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   public boolean isJammed() {
     return rotorFilteredCurrent > DyeRotorConfig.JAM_CURRENT_THRESHOLD.getAsDouble();
+  }
+
+  public double getAngle() {
+    return Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble());
   }
 
   @Override
