@@ -557,7 +557,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     feedLocation =
         DSOptions.FEED_LOCATION_OVERRIDE.get() && feedLocationOverride.isPresent()
-            ? feedLocationOverride.get()
+            ? feedLocationOverride.orElseThrow()
             : FeedLocation.CLOSEST;
 
     nearTrench =
