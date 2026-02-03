@@ -364,6 +364,10 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
   }
 
+    public static double getObstacleX() {
+    return FmsUtil.isRedAlliance() ? RED_OBSTACLE_X : BLUE_OBSTACLE_X;
+  }
+
   public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotTranslation) {
     return robotTranslation.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
   }
