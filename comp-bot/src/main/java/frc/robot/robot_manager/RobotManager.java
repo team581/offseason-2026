@@ -1,7 +1,5 @@
 package frc.robot.robot_manager;
 
-import java.util.Optional;
-
 import com.team581.swerve.SwerveAssist;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
@@ -27,6 +25,7 @@ import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
+import java.util.Optional;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Localization localization;
@@ -48,8 +47,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private AimingParameters feedingParameters = new AimingParameters(0, 0);
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
-    private Optional<FeedLocation> feedLocationOverride = Optional.empty();
-
+  private Optional<FeedLocation> feedLocationOverride = Optional.empty();
 
   public RobotManager(
       ShooterHood shooterHood,
@@ -548,10 +546,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     robotPose = localization.getPose();
     vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
 
-    feedLocation = DSOptions.FEED_LOCATION_OVERRIDE.get() && feedLocationOverride.isPresent()
-        ? feedLocationOverride.get()
-        : FeedLocation.CLOSEST;
-
+    feedLocation =
+        DSOptions.FEED_LOCATION_OVERRIDE.get() && feedLocationOverride.isPresent()
+            ? feedLocationOverride.orElseThrow()
+            : FeedLocation.CLOSEST;
 
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
