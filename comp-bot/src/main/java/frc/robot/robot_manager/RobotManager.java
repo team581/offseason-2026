@@ -1,11 +1,14 @@
 package frc.robot.robot_manager;
 
+import java.util.Optional;
+
 import com.team581.swerve.SwerveAssist;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.config.DSOptions;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.dye_rotor.DyeRotor;
@@ -45,6 +48,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private AimingParameters feedingParameters = new AimingParameters(0, 0);
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
+    private Optional<FeedLocation> feedLocationOverride = Optional.empty();
+
 
   public RobotManager(
       ShooterHood shooterHood,
@@ -429,11 +434,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void setFeedGoalLeftRequest() {
-    feedLocation = FeedLocation.LEFT;
+    feedLocationOverride = Optional.of(FeedLocation.LEFT);
   }
 
   public void setFeedGoalRightRequest() {
-    feedLocation = FeedLocation.RIGHT;
+    feedLocationOverride = Optional.of(FeedLocation.RIGHT);
   }
 
   public void intakeRequest() {
@@ -542,6 +547,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
+
+    feedLocation = DSOptions.FEED_LOCATION_OVERRIDE.get() && feedLocationOverride.isPresent()
+        ? feedLocationOverride.get()
+        : FeedLocation.CLOSEST;
+
 
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
