@@ -445,8 +445,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     intake.idleRequest();
   }
 
-   public void stowDeployRequest() {
-     intake.idleRequest();
+  public void stowDeployRequest() {
+    intake.idleRequest();
     deploy.stowRequest();
   }
 
