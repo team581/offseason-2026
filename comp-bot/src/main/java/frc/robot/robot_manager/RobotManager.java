@@ -372,19 +372,25 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         robotPose, turret.getAngle(), shooterHood.getAngle(), deploy.getPosition(), 0);
   }
 
-  private void shooterHoodSmartIdleRequest() {
+  private void smartTurretHoodIdleRequest() {
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
     if (!health.isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NearTrench");
-    } else if (FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
+      turret.idleScoreRequest(scoringParameters.turretAngle());
+
+      DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "NearTrench");
+    } else if (FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation())) {
       shooterHood.scoreRequest(scoringParameters.distance());
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "InAllianceZone");
+      turret.idleScoreRequest(scoringParameters.turretAngle());
+
+      DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "InAllianceZone");
     } else {
       shooterHood.feedRequest(feedingParameters.distance());
-      DogLog.log("RobotManager/ShooterHoodSmartIdleRequest", "NotInAlliance");
+      turret.idleFeedReuqest(feedingParameters.turretAngle());
+
+      DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "NotInAlliance");
     }
   }
 
