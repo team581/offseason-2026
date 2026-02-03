@@ -364,10 +364,6 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
   }
 
-    public static double getObstacleX() {
-    return FmsUtil.isRedAlliance() ? RED_OBSTACLE_X : BLUE_OBSTACLE_X;
-  }
-
   public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotTranslation) {
     return robotTranslation.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
   }
@@ -393,6 +389,10 @@ public class FieldUtil {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
   }
 
+  public static double getObstacleX() {
+    return FmsUtil.isRedAlliance() ? RED_OBSTACLE_X : BLUE_OBSTACLE_X;
+  }
+
   public static boolean inTrench(Translation2d robotPose) {
     return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
@@ -404,18 +404,18 @@ public class FieldUtil {
     return robot.getX() < getAllianceZoneX();
   }
 
-   public static boolean isRobotPastObstacleTowardAllianceZone(Translation2d robot) {
-    if (FmsUtil.isRedAlliance()) {
-      return robot.getX() > getObstacleX();
-    }
-    return robot.getX() < getObstacleX();
-  }
-
   public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
     // Check if line from robot to target collides with hub no feed zone
     var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
 
     return noFeedZone.contains(robotPose.getTranslation());
+  }
+
+  public static boolean isRobotPastObstacleTowardAllianceZone(Translation2d robot) {
+    if (FmsUtil.isRedAlliance()) {
+      return robot.getX() > getObstacleX();
+    }
+    return robot.getX() < getObstacleX();
   }
 
   /**
