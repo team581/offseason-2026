@@ -1,5 +1,6 @@
 package frc.robot;
 
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.CANdle;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.XboxController;
@@ -22,7 +23,9 @@ public class Hardware {
   public final TalonFX shooterHoodMotor = new TalonFX(24);
   public final TalonFX climbMotor = new TalonFX(25);
 
-  public final CANdle candle = new CANdle(0);
+  public final CANcoder turretEncoder = new CANcoder(26);
+
+  public final CANdle candle = new CANdle(27);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(

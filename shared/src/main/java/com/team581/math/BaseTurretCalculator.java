@@ -63,7 +63,7 @@ public class BaseTurretCalculator {
 
   public static double getOptimalAngle(
       double target, double current, double minTurretAngle, double maxTurretAngle) {
-    target = MathUtil.inputModulus(target, -180, 180);
+    target = MathHelpers.angleModulus(target);
 
     // Get smallest delta
     var delta = ((target - current + 180) % 360 + 360) % 360 - 180;
@@ -81,13 +81,17 @@ public class BaseTurretCalculator {
           (Math.abs(option1 - current) <= Math.abs(option2 - current)) ? option1 : option2,
           minTurretAngle,
           maxTurretAngle);
-    } else if (opt1Valid) {
-      return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
-    } else if (opt2Valid) {
-      return MathUtil.clamp(option2, minTurretAngle, maxTurretAngle);
-    } else {
+    }
+
+    if (opt1Valid) {
       return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
     }
+
+    if (opt2Valid) {
+      return MathUtil.clamp(option2, minTurretAngle, maxTurretAngle);
+    }
+
+    return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
   }
 
   // Look at UnwrapAngleDiagram.png

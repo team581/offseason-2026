@@ -28,7 +28,9 @@ public abstract class Base581Robot extends TimedRobot {
     DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
 
     SignalLogger.start();
-    SignalLogger.setPath("/media/sda1/hoot/");
+    if (RobotBase.isReal()) {
+      SignalLogger.setPath("/media/sda1/hoot/");
+    }
 
     DogLog.setOptions(
         new DogLogOptions()

@@ -218,6 +218,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
   }
 
+  // Note: Trench/bump assist has some inverted behavior on blue alliance, fixed on dumper/comp bot
   private void sendSwerveRequest() {
     switch (getState()) {
       case TELEOP -> {

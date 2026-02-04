@@ -45,12 +45,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
 
+  private static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
+
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
 
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
 
-  private double hubDistance = 0;
+  private double scoreDistance = 0;
   private double feedDistance = 0;
 
   private double shootingRpm = 0;
@@ -117,7 +121,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public void scoreRequest(double distance) {
-    this.hubDistance = distance;
+    this.scoreDistance = distance;
     setStateFromRequest(ShooterState.SCORE);
   }
 
@@ -169,7 +173,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_SCORE_RPM.get(hubDistance));
+    shootingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_SCORE_RPM.get(scoreDistance));
     feedingRpm = Math.min(MAX_SAFE_RPM, DISTANCE_TO_FEEDING_RPM.get(feedDistance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
@@ -204,11 +208,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     shooterSimulation.update();
   }
 
-  public double getCurrentTimeOfFlight() {
-    return switch (getState()) {
-      case SCORE -> DISTANCE_TO_SCORE_TOF.get(feedDistance);
-      case FEEDING -> DISTANCE_TO_FEEDING_RPM.get(feedDistance);
-      default -> 0.0;
-    };
+  public double getScoreTimeOfFlight() {
+    return DISTANCE_TO_SCORE_TOF.get(scoreDistance);
+  }
+
+  public double getFeedTimeOfFlight() {
+    return DISTANCE_TO_FEED_TOF.get(feedDistance);
   }
 }

@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class FieldUtil {
-  private static final double EXTRA_NEUTRAL_ZONE_THRESHOLD = 0.5;
 
   public static final double FIELD_LENGTH_X = AprilTags.FIELD_LAYOUT.getFieldLength();
   public static final double FIELD_WIDTH_Y = AprilTags.FIELD_LAYOUT.getFieldWidth();
@@ -390,15 +389,19 @@ public class FieldUtil {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotPose)).findFirst();
   }
 
+  public static double getObstacleX() {
+    return FmsUtil.isRedAlliance() ? RED_OBSTACLE_X : BLUE_OBSTACLE_X;
+  }
+
   public static boolean inTrench(Translation2d robotPose) {
     return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 
   public static boolean isRobotInAllianceZone(Translation2d robot) {
     if (FmsUtil.isRedAlliance()) {
-      return robot.getX() > getAllianceZoneX() + EXTRA_NEUTRAL_ZONE_THRESHOLD;
+      return robot.getX() > getAllianceZoneX();
     }
-    return robot.getX() < getAllianceZoneX() - EXTRA_NEUTRAL_ZONE_THRESHOLD;
+    return robot.getX() < getAllianceZoneX();
   }
 
   public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
@@ -406,6 +409,13 @@ public class FieldUtil {
     var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
 
     return noFeedZone.contains(robotPose.getTranslation());
+  }
+
+  public static boolean isRobotPastObstacleTowardAllianceZone(Translation2d robot) {
+    if (FmsUtil.isRedAlliance()) {
+      return robot.getX() > getObstacleX();
+    }
+    return robot.getX() < getObstacleX();
   }
 
   /**

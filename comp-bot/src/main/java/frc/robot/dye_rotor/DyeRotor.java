@@ -8,6 +8,7 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
@@ -23,13 +24,9 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   private double rotorRawCurrent = 0.0;
   private double rotorFilteredCurrent = 0.0;
-  private double rotorShootingRpm = 0;
-  private double horizontalShootingRpm = 0;
-  private double warmupRpm = 0;
-  private double horizontalUnjamRpm = 0;
-  private double rotorMotorRpm = 0;
-  private double horizontalMotorRpm = 0;
-  private double rotorUnjamRpm = -0.0;
+
+  private double rotorMotorRpm = 0.0;
+  private double horizontalMotorRpm = 0.0;
 
   public DyeRotor(TalonFX rotorMotor, TalonFX horizontalMotor, TalonFX verticalMotor) {
     super(SubsystemPriority.DYE_ROTOR, DyeRotorState.IDLE);
@@ -67,36 +64,21 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   @Override
   protected void whileInState(DyeRotorState state) {
     DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
-    DogLog.log("DyeRotor/Rotor/GoalShootingRPM", rotorShootingRpm);
+    DogLog.log("DyeRotor/Rotor/GoalRPM", state.rotorRPM);
     DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("DyeRotor/Horizontal/RPM", horizontalShootingRpm);
-    DogLog.log("DyeRotor/Horizontal/GoalShootingRPM", horizontalShootingRpm);
+    DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
+    DogLog.log("DyeRotor/Horizontal/GoalRPM", state.horizontalRPM);
     DogLog.log("DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("DyeRotor/Vertical/GoalVoltage", state.verticalVoltage);
     DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/AtGoal", atGoal());
+  }
 
-    switch (state) {
-      case SHOOTING -> {
-        rotorMotor.setControl(rotorVelocityRequest.withVelocity(rotorShootingRpm));
-        horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(horizontalShootingRpm));
-        verticalMotor.setVoltage(getState().volts);
-      }
-      case WARMUP -> {
-        rotorMotor.disable();
-        horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(warmupRpm));
-        verticalMotor.disable();
-      }
-      case UNJAM -> {
-        rotorMotor.setControl(rotorVelocityRequest.withVelocity(rotorUnjamRpm));
-        horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(horizontalUnjamRpm));
-        verticalMotor.disable();
-      }
-      case IDLE -> {
-        rotorMotor.disable();
-        horizontalMotor.disable();
-        verticalMotor.disable();
-      }
-    }
+  @Override
+  protected void afterTransition(DyeRotorState newState) {
+    rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM));
+    horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(newState.horizontalRPM));
+    verticalMotor.setVoltage(newState.verticalVoltage);
   }
 
   @Override
@@ -114,12 +96,19 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
       case UNJAM -> timeout(1) || !isJammed();
       case SHOOTING -> true;
       case WARMUP ->
-          MathUtil.isNear(horizontalMotorRpm, warmupRpm, DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
+          MathUtil.isNear(
+              DyeRotorState.WARMUP.horizontalRPM,
+              horizontalMotorRpm,
+              DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
     };
   }
 
   public boolean isJammed() {
     return rotorFilteredCurrent > DyeRotorConfig.JAM_CURRENT_THRESHOLD.getAsDouble();
+  }
+
+  public double getAngle() {
+    return Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble());
   }
 
   @Override

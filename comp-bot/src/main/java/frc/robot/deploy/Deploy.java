@@ -128,6 +128,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       }
     }
     DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
+
+    DogLog.log("Deploy/Position", getPosition());
   }
 
   public double getPosition() {

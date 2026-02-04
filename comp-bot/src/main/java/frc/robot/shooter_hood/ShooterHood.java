@@ -81,7 +81,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
   @Override
   protected void collectInputs() {
-    measuredAngle = motor.getPosition().getValueAsDouble();
+    measuredAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
     hubAngle = ShooterHoodConfig.DISTANCE_TO_SCORE.get(hubDistance);
     feedAngle = ShooterHoodConfig.DISTANCE_TO_FEED.get(feedDistance);
@@ -93,9 +93,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> {
         statorCurrent = motor.getStatorCurrent().getValueAsDouble();
       }
-      case SCORING -> measuredAngle = hubAngle;
-      case FEEDING -> measuredAngle = feedAngle;
-      case IDLE -> {}
+      default -> {}
     }
   }
 
