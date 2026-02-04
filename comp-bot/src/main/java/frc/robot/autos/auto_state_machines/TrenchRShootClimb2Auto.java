@@ -32,7 +32,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment driveBack =
-  //update for trench
+      // update for trench
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.32, 2.885, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(9.32, 4.341, Rotation2d.kCW_90deg)),
@@ -42,13 +42,14 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-private final AutoSegment driveToShoot =
-//update for this auto
-    Trailblazer.segment(
-        AutoPoint.ofRed(new Pose2d(0,0, Rotation2d.kZero))).withLinearConstraints(0, 0).untilFinished();
+  private final AutoSegment driveToShoot =
+      // update for this auto
+      Trailblazer.segment(AutoPoint.ofRed(Pose2d.kZero))
+          .withLinearConstraints(0, 0)
+          .untilFinished();
 
   private final AutoSegment driveToClimb =
-  //update
+      // update
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(13.751, 5.6, Rotation2d.fromDegrees(-134.0))),
               AutoPoint.ofRed(new Pose2d(14.305, 4.797, Rotation2d.fromDegrees(-164.0))))
