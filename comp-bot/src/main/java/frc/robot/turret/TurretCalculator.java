@@ -10,6 +10,17 @@ public class TurretCalculator {
   private static final double SPACE_FROM_HARDSTOP = 0.0;
   private static final double SPACE_FROM_HARDSTOP_TOLERANCE = 0.0;
 
+  public static double calculateHomedPositionFromMotorAndEncoder(
+      double turretMotorPosition, double turretEncoderPosition) {
+    return BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
+        turretMotorPosition,
+        turretEncoderPosition,
+        TurretConfig.ROTOR_CAL_OFFSET,
+        TurretConfig.MOTOR_TO_TURRET,
+        TurretConfig.ENCODER_TO_TURRET,
+        TurretConfig.MOTOR_ROTATION_RESOLUTION);
+  }
+
   public static double calculateSwerveTurretCompensationAngle(
       double wantedTurretAngle, Rotation2d robotRotation) {
     return BaseTurretCalculator.calculateSwerveTurretCompensationAngle(

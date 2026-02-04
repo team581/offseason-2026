@@ -18,7 +18,7 @@ import frc.robot.vision.Vision;
 
 public class Turret extends StateMachineSubsystem<TurretState> {
   private final TalonFX motor;
-  private final CANcoder turretEncoder;
+  private final CANcoder encoder;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
 
@@ -26,57 +26,24 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   private final Vision vision;
 
-  public Turret(TalonFX motor, CANcoder turretEncoder, Vision vision) {
+  public Turret(TalonFX motor, CANcoder encoder, Vision vision) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
     this.vision = vision;
 
     TunablePid.register("Turret", motor, TurretConfig.MOTOR_CONFIG);
 
     this.motor = motor;
-    this.turretEncoder = turretEncoder;
+    this.encoder = encoder;
   }
 
   @Override
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
       case UNHOMED -> {
-        double rotor_position =
-            (motor.getRotorPosition().getValueAsDouble() - TurretConfig.ROTOR_CAL_OFFSET) % 1;
-        double rotorRotationsRelativeToTurret = rotor_position / TurretConfig.MOTOR_TO_TURRET;
-        double roughAbsolutePosition =
-            turretEncoder.getAbsolutePosition().getValueAsDouble() * TurretConfig.ENCODER_TO_TURRET;
-
-        int potentialMotorWrapA =
-            (int)
-                (roughAbsolutePosition
-                    / (1 / TurretConfig.MOTOR_ROTATION_RESOLUTION)); // motor_rotation_resolution;
-        double potentialMotorWrapB = potentialMotorWrapA - 1;
-        double potentialMotorWrapC = potentialMotorWrapA + 1;
-
-        double potentialMotorPosA =
-            (potentialMotorWrapA * TurretConfig.MOTOR_ROTATION_RESOLUTION)
-                + rotorRotationsRelativeToTurret;
-        double potentialMotorPosB =
-            (potentialMotorWrapB * TurretConfig.MOTOR_ROTATION_RESOLUTION)
-                + rotorRotationsRelativeToTurret;
-        double potentialMotorPosC =
-            (potentialMotorWrapC * TurretConfig.MOTOR_ROTATION_RESOLUTION)
-                + rotorRotationsRelativeToTurret;
-
-        double potentialMotorPosErrA = Math.abs(roughAbsolutePosition - potentialMotorPosA);
-        double potentialMotorPositionErrB = Math.abs(roughAbsolutePosition - potentialMotorPosB);
-        double potentialMotorPosErrC = Math.abs(roughAbsolutePosition - potentialMotorPosC);
-
-        double turretPos = potentialMotorPosC;
-        if (potentialMotorPosErrA < potentialMotorPositionErrB
-            && potentialMotorPosErrA < potentialMotorPosErrC) {
-          turretPos = potentialMotorPosA;
-        }
-        if (potentialMotorPositionErrB < potentialMotorPosErrA
-            && potentialMotorPositionErrB < potentialMotorPosErrC) {
-          turretPos = potentialMotorPosB;
-        }
-
+        var turretPos =
+            TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
+                motor.getRotorPosition().getValueAsDouble(),
+                encoder.getPosition().getValueAsDouble());
         motor.setPosition(turretPos);
         return TurretState.SCORE;
       }

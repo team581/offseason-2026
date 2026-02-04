@@ -8,6 +8,46 @@ import edu.wpi.first.math.geometry.Translation2d;
 
 public class BaseTurretCalculator {
 
+  public static double calculateHomedPositionFromMotorAndEncoder(
+      double turretMotorPosition,
+      double turretEncoderPosition,
+      double rotorCalibratedOffset,
+      double motorToTurretRatio,
+      double encoderToTurretRatio,
+      double motorRotationResolution) {
+    double rotor_position = (turretMotorPosition - rotorCalibratedOffset) % 1;
+    double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
+    double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
+
+    int potentialMotorWrapA =
+        (int) (roughAbsolutePosition / (1 / motorRotationResolution)); // motor_rotation_resolution;
+    double potentialMotorWrapB = potentialMotorWrapA - 1;
+    double potentialMotorWrapC = potentialMotorWrapA + 1;
+
+    double potentialMotorPosA =
+        (potentialMotorWrapA * motorRotationResolution) + rotorRotationsRelativeToTurret;
+    double potentialMotorPosB =
+        (potentialMotorWrapB * motorRotationResolution) + rotorRotationsRelativeToTurret;
+    double potentialMotorPosC =
+        (potentialMotorWrapC * motorRotationResolution) + rotorRotationsRelativeToTurret;
+
+    double potentialMotorPosErrA = Math.abs(roughAbsolutePosition - potentialMotorPosA);
+    double potentialMotorPositionErrB = Math.abs(roughAbsolutePosition - potentialMotorPosB);
+    double potentialMotorPosErrC = Math.abs(roughAbsolutePosition - potentialMotorPosC);
+
+    double turretPos = potentialMotorPosC;
+    if (potentialMotorPosErrA < potentialMotorPositionErrB
+        && potentialMotorPosErrA < potentialMotorPosErrC) {
+      turretPos = potentialMotorPosA;
+    }
+    if (potentialMotorPositionErrB < potentialMotorPosErrA
+        && potentialMotorPositionErrB < potentialMotorPosErrC) {
+      turretPos = potentialMotorPosB;
+    }
+
+    return turretPos;
+  }
+
   public static double calculateSwerveTurretCompensationAngle(
       double wantedTurretAngle,
       Rotation2d robotRotation,
