@@ -393,7 +393,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "InAllianceZone");
     } else {
       shooterHood.feedRequest(feedingParameters.distance());
-      turret.idleFeedReuqest(feedingParameters.turretAngle());
+      turret.idleFeedRequest(feedingParameters.turretAngle());
 
       DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "NotInAlliance");
     }
