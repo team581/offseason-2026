@@ -17,6 +17,12 @@ public class TurretConfig {
   public static final double HOMING_END_POSITION = MIN_ANGLE;
   public static final double TOLERANCE = 1.0;
 
+  // CAL NUMBER
+  public static final double ROTOR_CAL_OFFSET = 0;
+  public static final double MOTOR_TO_TURRET = 40; // Motor rot to turret rot
+  public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
+  public static final double ENCODER_TO_TURRET = (float) 1.5; // Encoder rot to turret rot
+
   // Turret 2d transform relative to robot center
   public static final Transform2d TURRET_TO_ROBOT =
       new Transform2d(Units.inchesToMeters(0.0), Units.inchesToMeters(0.0), Rotation2d.kZero);
