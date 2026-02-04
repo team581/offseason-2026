@@ -8,8 +8,7 @@ public class FeatureFlags {
       FeatureFlag.of("OnlyUseHubTags", true);
 
   public static final BooleanSupplier BUMP_ASSIST = FeatureFlag.of("BumpAssist", true);
-    public static final BooleanSupplier TRENCH_ASSIST = FeatureFlag.of("TrenchAssist", true);
-
+  public static final BooleanSupplier TRENCH_ASSIST = FeatureFlag.of("TrenchAssist", true);
 
   private FeatureFlags() {}
 }

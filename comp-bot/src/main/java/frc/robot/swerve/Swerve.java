@@ -169,7 +169,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                       Rotation2d.fromDegrees(
                               SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
-        }else if (ableToBumpAssist) {
+        } else if (ableToBumpAssist) {
           drivetrain.setControl(
               drivePerspectiveSnapsOpenLoop
                   .withVelocityX(speeds.vxMetersPerSecond)
@@ -202,7 +202,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                       Rotation2d.fromDegrees(
                               SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
                           .rotateBy(Rotation2d.k180deg)));
-        }else if (ableToBumpAssist) {
+        } else if (ableToBumpAssist) {
           drivetrain.setControl(
               drivePerspectiveSnapsOpenLoop
                   .withVelocityX(speeds.vxMetersPerSecond)

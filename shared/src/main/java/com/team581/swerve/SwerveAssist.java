@@ -139,11 +139,12 @@ public class SwerveAssist {
   }
 
   public static double getTrenchAssistVelocity(Translation2d robotTranslation) {
-    double velcoity = -TRENCH_PID_CONTROLLER.calculate(
-        robotTranslation.getY(),
-        FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
+    double velcoity =
+        -TRENCH_PID_CONTROLLER.calculate(
+            robotTranslation.getY(),
+            FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
 
-        DogLog.log("TrenchAssistV", velcoity);
+    DogLog.log("TrenchAssistV", velcoity);
     return velcoity;
   }
 
