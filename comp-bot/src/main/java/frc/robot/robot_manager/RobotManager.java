@@ -1,6 +1,5 @@
 package frc.robot.robot_manager;
 
-import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
@@ -566,12 +565,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             ? feedLocationOverride.orElseThrow()
             : FeedLocation.CLOSEST;
 
-    var speeds = swerve.getFieldRelativeSpeeds();
-    var hypotSpeeds = MathHelpers.getLinearVelocity(speeds);
-    if (hypotSpeeds > 0.01)
-      nearTrench =
-          FieldUtil.inTrench(robotPose.getTranslation())
-              || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
+    nearTrench =
+        FieldUtil.inTrench(robotPose.getTranslation())
+            || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
 
     scoringParameters =
         AimParameterUtil.getScoringParameters(
