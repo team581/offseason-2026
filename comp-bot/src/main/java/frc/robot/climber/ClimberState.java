@@ -1,5 +1,6 @@
 package frc.robot.climber;
 
+// TODO: Include height here, similar to DeployState
 public enum ClimberState {
   STOWED,
   L1_LINEUP,
