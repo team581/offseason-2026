@@ -9,6 +9,5 @@ public class VisionConfig {
   public static final Transform2d TURRET_TO_CAMERA =
       new Transform2d(Units.inchesToMeters(0.0), 0.0, Rotation2d.kZero);
 
-
   private VisionConfig() {}
 }
