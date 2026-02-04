@@ -33,7 +33,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   public void intakeRequest() {
-    setStateFromRequest(DeployState.INTAKE);
     switch (getState()) {
       case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
@@ -43,7 +42,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   public void stowRequest() {
-    setStateFromRequest(DeployState.STOWED);
     switch (getState()) {
       case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
@@ -71,9 +69,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
           rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
-          yield DeployState.STOWED;
+          yield DeployState.INTAKE;
         } else {
-          yield currentState;
+          yield DeployState.HOMING;
         }
       }
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
@@ -100,7 +98,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       }
       case HOMING -> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
-        leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
+        rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
       }
       case CATCHUP_TO_LEFT -> {
         leftMotor.disable();
@@ -164,7 +162,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     if (getState() == DeployState.HOMING) {
       leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
       rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
-      setStateFromRequest(DeployState.STOWED);
+      setStateFromRequest(DeployState.INTAKE);
     }
 
     leftDeploySimulation.update();
