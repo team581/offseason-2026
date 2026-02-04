@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.FeatureFlags;
 import frc.robot.imu.Imu;
+import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
@@ -122,7 +123,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
 
-    fieldToRobotEstimate = fieldToRobotEstimate.plus(VisionConfig.TURRET_TO_ROBOT.inverse());
+    fieldToRobotEstimate = fieldToRobotEstimate.plus(TurretConfig.TURRET_TO_ROBOT.inverse());
 
     DogLog.log("Vision/AdjustedTurretPose", fieldToRobotEstimate);
     return adjustedTurretResult.update(

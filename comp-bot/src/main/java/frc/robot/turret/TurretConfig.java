@@ -25,7 +25,7 @@ public class TurretConfig {
 
   // Turret 2d transform relative to robot center
   public static final Transform2d TURRET_TO_ROBOT =
-      new Transform2d(Units.inchesToMeters(0.0), Units.inchesToMeters(0.0), Rotation2d.kZero);
+      new Transform2d(Units.inchesToMeters(0.5), Units.inchesToMeters(0.0), Rotation2d.kZero);
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
