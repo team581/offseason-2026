@@ -12,7 +12,6 @@ import frc.robot.autos.auto_state_machines.auto_state.TrenchRFeed2AutoState;
 import frc.robot.robot_manager.RobotManager;
 
 @SuppressWarnings("unused")
-
 public class TrenchRFeed2Auto extends BaseImperativeAuto<TrenchRFeed2AutoState> {
 
   private final AutoSegment segment1DriveToMidline =
