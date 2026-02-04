@@ -8,11 +8,16 @@ import com.team581.trailblazer.segments.AutoSegment;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_state.TrenchMidlineFeedAutoState;
+import frc.robot.autos.auto_state_machines.auto_state.TrenchRFeed2AutoState;
 import frc.robot.robot_manager.RobotManager;
 
 @SuppressWarnings("unused")
+<<<<<<< HEAD:comp-bot/src/main/java/frc/robot/autos/auto_state_machines/TrenchMidlineFeedAuto.java
 public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedAutoState> {
+=======
+
+public class TrenchRFeed2Auto extends BaseImperativeAuto<TrenchRFeed2AutoState> {
+>>>>>>> 544e8e8 (rename auto based on new auto naming):comp-bot/src/main/java/frc/robot/autos/auto_state_machines/TrenchRFeed2Auto.java
 
   private final AutoSegment segment1DriveToMidline =
       // TODO: update poses
@@ -62,8 +67,8 @@ public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedA
       Trailblazer.segment(AutoPoint.ofRed(Pose2d.kZero))
           .untilFinished(new PoseErrorTolerance(0, null));
 
-  public TrenchMidlineFeedAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(TrenchMidlineFeedAutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
+  public TrenchRFeed2Auto(RobotManager robotManager, Trailblazer trailblazer) {
+    super(TrenchRFeed2AutoState.SEGMENT_1_DRIVE_TO_MIDLINE, robotManager, trailblazer);
   }
 
   @Override
@@ -73,28 +78,28 @@ public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedA
   }
 
   @Override
-  protected TrenchMidlineFeedAutoState getNextState(TrenchMidlineFeedAutoState currentState) {
+  protected TrenchRFeed2AutoState getNextState(TrenchRFeed2AutoState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
-        case SEGMENT_1_DRIVE_TO_MIDLINE -> TrenchMidlineFeedAutoState.INTAKE_ACROSS_MIDLINE_1;
-        case INTAKE_ACROSS_MIDLINE_1 -> TrenchMidlineFeedAutoState.SEGMENT_2_DRIVE_TO_FEED_1;
-        case SEGMENT_2_DRIVE_TO_FEED_1 -> TrenchMidlineFeedAutoState.FEED_1;
-        case FEED_1 -> TrenchMidlineFeedAutoState.INTAKE_ACROSS_MIDLINE_2;
-        case INTAKE_ACROSS_MIDLINE_2 -> TrenchMidlineFeedAutoState.SEGMENT_3_DRIVE_TO_FEED_2;
-        case SEGMENT_3_DRIVE_TO_FEED_2 -> TrenchMidlineFeedAutoState.FEED_2;
-        case FEED_2 -> TrenchMidlineFeedAutoState.SEGMENT_4_DRIVE_BACK;
-        case SEGMENT_4_DRIVE_BACK -> TrenchMidlineFeedAutoState.SEGMENT_5_INTAKE_ALLIANCE_SIDE;
-        case SEGMENT_5_INTAKE_ALLIANCE_SIDE -> TrenchMidlineFeedAutoState.SEGMENT_6_DRIVE_TO_SHOOT;
-        case SEGMENT_6_DRIVE_TO_SHOOT -> TrenchMidlineFeedAutoState.SHOOT;
-        case SHOOT -> TrenchMidlineFeedAutoState.DONE;
-        case DONE -> TrenchMidlineFeedAutoState.DONE;
+        case SEGMENT_1_DRIVE_TO_MIDLINE -> TrenchRFeed2AutoState.INTAKE_ACROSS_MIDLINE_1;
+        case INTAKE_ACROSS_MIDLINE_1 -> TrenchRFeed2AutoState.SEGMENT_2_DRIVE_TO_FEED_1;
+        case SEGMENT_2_DRIVE_TO_FEED_1 -> TrenchRFeed2AutoState.FEED_1;
+        case FEED_1 -> TrenchRFeed2AutoState.INTAKE_ACROSS_MIDLINE_2;
+        case INTAKE_ACROSS_MIDLINE_2 -> TrenchRFeed2AutoState.SEGMENT_3_DRIVE_TO_FEED_2;
+        case SEGMENT_3_DRIVE_TO_FEED_2 -> TrenchRFeed2AutoState.FEED_2;
+        case FEED_2 -> TrenchRFeed2AutoState.SEGMENT_4_DRIVE_BACK;
+        case SEGMENT_4_DRIVE_BACK -> TrenchRFeed2AutoState.SEGMENT_5_INTAKE_ALLIANCE_SIDE;
+        case SEGMENT_5_INTAKE_ALLIANCE_SIDE -> TrenchRFeed2AutoState.SEGMENT_6_DRIVE_TO_SHOOT;
+        case SEGMENT_6_DRIVE_TO_SHOOT -> TrenchRFeed2AutoState.SHOOT;
+        case SHOOT -> TrenchRFeed2AutoState.DONE;
+        case DONE -> TrenchRFeed2AutoState.DONE;
       };
     }
     return currentState;
   }
 
   @Override
-  protected void whileInState(TrenchMidlineFeedAutoState newState) {
+  protected void whileInState(TrenchRFeed2AutoState newState) {
     switch (newState) {
       // TODO: update state actions
       case SEGMENT_1_DRIVE_TO_MIDLINE -> {}
