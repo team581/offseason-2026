@@ -7,5 +7,7 @@ public class FeatureFlags {
   public static final BooleanSupplier VISION_HUB_TAGS_FILTER =
       FeatureFlag.of("OnlyUseHubTags", true);
 
+  public static final BooleanSupplier BUMP_ASSIST = FeatureFlag.of("BumpAssist", true);
+
   private FeatureFlags() {}
 }

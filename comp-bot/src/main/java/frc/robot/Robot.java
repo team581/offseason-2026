@@ -42,18 +42,6 @@ public class Robot extends Base581Robot {
       new XboxControllerDriveSource(
           hardware.driverController, Swerve.MAX_SPEED, Swerve.TELEOP_MAX_ANGULAR_RATE);
 
-  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriveSource);
-  private final Imu imu = new Imu(swerve.drivetrain);
-
-  private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
-
-  private final Shooter shooter =
-      new Shooter(hardware.shooterRightMotor, hardware.shooterLeftMotor);
-  private final Intake intake = new Intake(hardware.intakeMotor);
-  private final Deploy deploy = new Deploy(hardware.leftDeployMotor, hardware.rightDeployMotor);
-  private final DyeRotor dyeRotor =
-      new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
-  private final Lights lights = new Lights(hardware.candle);
   private final Limelight turretLimelight =
       new Limelight(
           "turret",
@@ -80,11 +68,23 @@ public class Robot extends Base581Robot {
               0.0,
               0.0,
               0.0));
+  private final HealthManager health = new HealthManager(turretLimelight, backLimelight);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriveSource, health);
+  private final Imu imu = new Imu(swerve.drivetrain);
+
+  private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
+
+  private final Shooter shooter =
+      new Shooter(hardware.shooterRightMotor, hardware.shooterLeftMotor);
+  private final Intake intake = new Intake(hardware.intakeMotor);
+  private final Deploy deploy = new Deploy(hardware.leftDeployMotor, hardware.rightDeployMotor);
+  private final DyeRotor dyeRotor =
+      new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
+  private final Lights lights = new Lights(hardware.candle);
   private final Vision vision = new Vision(imu, turretLimelight, backLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, vision);
-  private final HealthManager health = new HealthManager(turretLimelight, backLimelight);
   private final RobotManager robotManager =
       new RobotManager(
           shooterHood,
