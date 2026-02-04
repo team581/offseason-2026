@@ -12,12 +12,8 @@ import frc.robot.autos.auto_state_machines.auto_state.TrenchRFeed2AutoState;
 import frc.robot.robot_manager.RobotManager;
 
 @SuppressWarnings("unused")
-<<<<<<< HEAD:comp-bot/src/main/java/frc/robot/autos/auto_state_machines/TrenchMidlineFeedAuto.java
-public class TrenchMidlineFeedAuto extends BaseImperativeAuto<TrenchMidlineFeedAutoState> {
-=======
 
 public class TrenchRFeed2Auto extends BaseImperativeAuto<TrenchRFeed2AutoState> {
->>>>>>> 544e8e8 (rename auto based on new auto naming):comp-bot/src/main/java/frc/robot/autos/auto_state_machines/TrenchRFeed2Auto.java
 
   private final AutoSegment segment1DriveToMidline =
       // TODO: update poses
