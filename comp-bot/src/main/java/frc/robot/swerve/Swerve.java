@@ -93,6 +93,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private Rotation2d hubAimAngle = Rotation2d.kZero;
   private boolean ableToBumpAssist = false;
+  private boolean ableToTrenchAssist = false;
 
   public Swerve(TunerSwerveDrivetrain drivetrain, DriveSource driveSource, HealthManager health) {
     super(SubsystemPriority.SWERVE, SwerveState.MANUAL);
@@ -127,6 +128,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
+    ableToTrenchAssist =
+        FeatureFlags.TRENCH_ASSIST.getAsBoolean()
+            && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+            && health.isLocalizationHealthy()
+            && SwerveAssist.ableToTrenchAssist(drivetrainState.Pose, fieldRelativeSpeeds);
     ableToBumpAssist =
         FeatureFlags.BUMP_ASSIST.getAsBoolean()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
@@ -151,8 +157,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     switch (currentState) {
       case MANUAL -> {
         var speeds = driveSource.getRequestedSpeeds();
+        if (ableToTrenchAssist) {
 
-        if (ableToBumpAssist) {
+          DogLog.timestamp("TrenchAssistActive");
+          drivetrain.setControl(
+              drivePerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(
+                      SwerveAssist.getTrenchAssistVelocity(drivetrainState.Pose.getTranslation()))
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                          .rotateBy(Rotation2d.k180deg)));
+        }else if (ableToBumpAssist) {
           drivetrain.setControl(
               drivePerspectiveSnapsOpenLoop
                   .withVelocityX(speeds.vxMetersPerSecond)
@@ -175,8 +192,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       }
       case HUB_AIM -> {
         var speeds = driveSource.getRequestedSpeeds(hubAimAngle);
-
-        if (ableToBumpAssist) {
+        if (ableToTrenchAssist) {
+          drivetrain.setControl(
+              drivePerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(
+                      SwerveAssist.getTrenchAssistVelocity(drivetrainState.Pose.getTranslation()))
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                          .rotateBy(Rotation2d.k180deg)));
+        }else if (ableToBumpAssist) {
           drivetrain.setControl(
               drivePerspectiveSnapsOpenLoop
                   .withVelocityX(speeds.vxMetersPerSecond)

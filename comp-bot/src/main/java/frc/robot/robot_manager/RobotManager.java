@@ -565,6 +565,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             ? feedLocationOverride.orElseThrow()
             : FeedLocation.CLOSEST;
 
+
+var speeds = swerve.getFieldRelativeSpeeds();
+var hypotSpeeds = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+if (hypotSpeeds > 0.01)
+
+
+
+
     nearTrench =
         FieldUtil.inTrench(robotPose.getTranslation())
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
