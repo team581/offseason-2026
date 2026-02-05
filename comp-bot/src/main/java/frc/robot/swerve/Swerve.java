@@ -27,6 +27,7 @@ import frc.robot.health.HealthManager;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
+@SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
@@ -144,11 +145,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     setStateFromRequest(SwerveState.MANUAL);
   }
 
-  public void hubAimRequest(double angleToHub) {
-    hubAimAngle = Rotation2d.fromDegrees(angleToHub);
-    setStateFromRequest(SwerveState.HUB_AIM);
-  }
-
   @Override
   public void whileInState(SwerveState currentState) {
     drivetrain.setOperatorPerspectiveForward(
@@ -190,47 +186,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case HUB_AIM -> {
-        var speeds = driveSource.getRequestedSpeeds(hubAimAngle);
-        if (ableToTrenchAssist) {
-          drivetrain.setControl(
-              drivePerspectiveSnapsOpenLoop
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(
-                      SwerveAssist.getTrenchAssistVelocity(drivetrainState.Pose.getTranslation()))
-                  .withTargetDirection(
-                      Rotation2d.fromDegrees(
-                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
-                          .rotateBy(Rotation2d.k180deg)));
-        } else if (ableToBumpAssist) {
-          drivetrain.setControl(
-              drivePerspectiveSnapsOpenLoop
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withTargetDirection(
-                      Rotation2d.fromDegrees(
-                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
-        } else {
-          var swerveRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? drivePerspectiveSnapsOpenLoop
-                  : fieldCentricSnapsClosedLoop;
-
-          // We want just the translation to be operator perspective, rotation is always blue
-          // alliance
-          // perspective
-          var usedSnapAngle =
-              swerveRequest.ForwardPerspective == ForwardPerspectiveValue.BlueAlliance
-                  ? hubAimAngle
-                  : hubAimAngle.rotateBy(Rotation2d.k180deg);
-
-          drivetrain.setControl(
-              swerveRequest
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withTargetDirection(usedSnapAngle));
-        }
-      }
+      case CLIMB_ASSIST -> {}
     }
 
     DogLog.log("Swerve/HubAimAngle", hubAimAngle.getDegrees(), Degrees);
