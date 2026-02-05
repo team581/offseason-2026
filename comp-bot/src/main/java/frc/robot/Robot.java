@@ -4,8 +4,6 @@ import com.team581.Base581Robot;
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.math.PoseErrorTolerance;
-import com.team581.swerve.DriveSource;
-import com.team581.swerve.XboxControllerDriveSource;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
@@ -38,10 +36,6 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
-  private final DriveSource teleopDriveSource =
-      new XboxControllerDriveSource(
-          hardware.driverController, Swerve.MAX_SPEED, Swerve.TELEOP_MAX_ANGULAR_RATE);
-
   private final Limelight turretLimelight =
       new Limelight(
           "turret",
@@ -69,7 +63,8 @@ public class Robot extends Base581Robot {
               0.0,
               0.0));
   private final HealthManager health = new HealthManager(turretLimelight, backLimelight);
-  private final Swerve swerve = new Swerve(hardware.drivetrain, teleopDriveSource, health);
+  private final Swerve swerve =
+      new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Imu imu = new Imu(swerve.drivetrain);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
@@ -100,7 +95,7 @@ public class Robot extends Base581Robot {
           health);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
-  private final Autos autos = new Autos(robotManager, trailblazer, teleopDriveSource);
+  private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(

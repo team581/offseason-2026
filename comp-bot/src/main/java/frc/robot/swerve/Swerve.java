@@ -11,6 +11,9 @@ import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
 import com.team581.swerve.SwerveAssist;
+import com.team581.swerve.TrailblazerDriveSource;
+import com.team581.swerve.XboxControllerDriveSource;
+import com.team581.trailblazer.Trailblazer;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -21,6 +24,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
@@ -41,6 +45,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   public final TunerSwerveDrivetrain drivetrain;
 
+  private final XboxControllerDriveSource teleopDriveSource;
+  private final TrailblazerDriveSource trailblazerDriveSource;
   private DriveSource driveSource;
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
@@ -96,10 +102,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
 
-  public Swerve(TunerSwerveDrivetrain drivetrain, DriveSource driveSource, HealthManager health) {
+  public Swerve(
+      TunerSwerveDrivetrain drivetrain,
+      HealthManager health,
+      XboxController driverController,
+      Trailblazer trailblazer) {
     super(SubsystemPriority.SWERVE, SwerveState.MANUAL);
     this.drivetrain = drivetrain;
-    this.driveSource = driveSource;
     this.health = health;
 
     if (Utils.isSimulation()) {
@@ -107,10 +116,28 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     }
 
     drivetrain.setStateStdDevs(new Matrix<>(VecBuilder.fill(0.003, 0.003, 0.002)));
+
+    this.teleopDriveSource =
+        new XboxControllerDriveSource(
+            driverController, Swerve.MAX_SPEED, Swerve.TELEOP_MAX_ANGULAR_RATE);
+    this.trailblazerDriveSource =
+        new TrailblazerDriveSource(
+            trailblazer, () -> drivetrainState.Pose, this::getFieldRelativeSpeeds);
   }
 
-  public void setDriveSource(DriveSource driveSource) {
-    this.driveSource = driveSource;
+  /**
+   * Set the {@link DriveSource} to use. For some states, this might be ignored (ex. a state where
+   * we are always using Trailblazer speeds instead of teleop).
+   *
+   * <p>This is meant to be called by the autos subsystem periodically, to ensure auto speeds are
+   * being applied at the correct times.
+   */
+  public void setDriveSourceType(DriveSourceType type) {
+    this.driveSource =
+        switch (type) {
+          case DRIVER_PERSPECTIVE_OPEN_LOOP -> teleopDriveSource;
+          case FIELD_CENTRIC_CLOSED_LOOP -> trailblazerDriveSource;
+        };
   }
 
   public ChassisSpeeds getRobotRelativeSpeeds() {
@@ -186,7 +213,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case CLIMB_ASSIST -> {}
+      case CLIMB_ASSIST -> {
+        // Always use Trailblazer drive source for climb alignment
+        var speeds = trailblazerDriveSource.getRequestedSpeeds();
+
+        drivetrain.setControl(
+            fieldCentricClosedLoop
+                .withVelocityX(speeds.vxMetersPerSecond)
+                .withVelocityY(speeds.vyMetersPerSecond)
+                .withRotationalRate(speeds.omegaRadiansPerSecond));
+      }
     }
 
     DogLog.log("Swerve/HubAimAngle", hubAimAngle.getDegrees(), Degrees);
