@@ -1,7 +1,6 @@
 package frc.robot.climber;
 
 import com.team581.autos.Point;
-
 import edu.wpi.first.math.geometry.Pose2d;
 
 public enum ClimbLocation {
