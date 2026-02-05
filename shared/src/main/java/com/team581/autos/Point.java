@@ -6,6 +6,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
@@ -35,6 +36,18 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
 
   public Rotation2d getRotation() {
     return getPose().getRotation();
+  }
+
+  public Point plus(Transform2d other) {
+    return new Point(redPose.plus(other), bluePose.plus(other));
+  }
+
+  public Point transformBy(Transform2d other) {
+    return new Point(redPose.transformBy(other), bluePose.transformBy(other));
+  }
+
+  public Point rotateBy(Rotation2d other) {
+    return new Point(redPose.rotateBy(other), bluePose.rotateBy(other));
   }
 
   public AutoPoint withLinearConstraints(double maxVelocity, double maxAcceleration) {
