@@ -93,8 +93,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
 
-
-    //TODO:Get average velocity to find out what number to compare this against
+    // TODO:Get average velocity to find out what number to compare this against
     isShooting = horizontalMotorRpm > 40;
     isShootingDebounced = debouncer.calculate(isShooting);
   }
