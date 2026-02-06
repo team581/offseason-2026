@@ -122,7 +122,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && dyeRotor.atGoal()
             && turret.atGoal()
             && shooter.atGoal()
-            && shooterHood.atGoal()) {
+            && shooterHood.atGoal()
+            && !isMoving) {
           yield RobotState.PRESET_SCORE;
         }
         yield currentState;
@@ -164,7 +165,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield RobotState.PREPARE_SCORE;
       }
       case PRESET_SCORE -> {
-        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
+        if (shooter.atGoal()
+            && dyeRotor.atGoal()
+            && turret.atGoal()
+            && shooterHood.atGoal()
+            && !isMoving) {
           yield currentState;
         }
         yield RobotState.PREPARE_PRESET_SCORE;
@@ -506,12 +511,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void prepareScoreRequest() {
     if (!getState().isClimbingOrRehoming()) {
+      if (!health.isAllCamerasHealthy()) {
+        setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
+      }
       setStateFromRequest(RobotState.PREPARE_SCORE);
     }
   }
 
   public void prepareFeedRequest() {
     if (!getState().isClimbingOrRehoming()) {
+      if (!health.isAllCamerasHealthy()) {
+        setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
+      }
       setStateFromRequest(RobotState.PREPARE_FEED);
     }
   }
