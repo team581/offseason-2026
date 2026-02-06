@@ -7,6 +7,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
@@ -39,6 +40,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   public void scoreRequest(double distance) {
     this.scoreDistance = distance;
+
     setStateFromRequest(ShooterState.SCORE);
   }
 
@@ -90,12 +92,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void collectInputs() {
-    shootingRpm =
-        Math.min(
-            ShooterConfig.MAX_SAFE_RPM, ShooterConfig.DISTANCE_TO_SCORE_RPM.get(scoreDistance));
+    shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, getScoringRPMFromDistance(scoreDistance));
     feedingRpm =
         Math.min(
-            ShooterConfig.MAX_SAFE_RPM, ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(feedDistance));
+            ShooterConfig.MAX_SAFE_RPM, getFeedingRPMFromDistance(feedDistance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
@@ -137,5 +137,23 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   public double getFeedTimeOfFlight(double distance) {
     this.feedDistance = distance;
     return ShooterConfig.DISTANCE_TO_FEED_TOF.get(feedDistance);
+  }
+
+  private static double getScoringRPMFromDistance(double distance) {
+    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
+      return ShooterConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT * Math.pow(distance, 2)
+          + ShooterConfig.SCORING_REGRESSION_MODEL_SLOPE * distance
+          - ShooterConfig.SCORING_REGRESSION_MODEL_Y_INT;
+    }
+    return ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
+  }
+
+  private static double getFeedingRPMFromDistance(double distance) {
+    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
+      return ShooterConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT * Math.pow(distance, 2)
+          + ShooterConfig.FEEDING_REGRESSION_MODEL_SLOPE * distance
+          - ShooterConfig.FEEDING_REGRESSION_MODEL_Y_INT;
+    }
+    return ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
   }
 }
