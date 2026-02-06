@@ -7,6 +7,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -17,6 +18,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private final TalonFX rotorMotor;
   private final TalonFX horizontalMotor;
   private final TalonFX verticalMotor;
+  private final Debouncer debouncer = new Debouncer(1.0);
 
   private final VelocityVoltage rotorVelocityRequest = new VelocityVoltage(0).withEnableFOC(false);
   private final VelocityVoltage horizontalVelocityRequest =
@@ -27,6 +29,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   private double rotorMotorRpm = 0.0;
   private double horizontalMotorRpm = 0.0;
+  private boolean isShooting = false;
+  private boolean isShootingDebounced = false;
 
   public DyeRotor(TalonFX rotorMotor, TalonFX horizontalMotor, TalonFX verticalMotor) {
     super(SubsystemPriority.DYE_ROTOR, DyeRotorState.IDLE);
@@ -88,6 +92,11 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
+
+
+    //TODO:Get average velocity to find out what number to compare this against
+    isShooting = horizontalMotorRpm > 40;
+    isShootingDebounced = debouncer.calculate(isShooting);
   }
 
   public boolean atGoal() {
@@ -105,6 +114,13 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   public boolean isJammed() {
     return rotorFilteredCurrent > DyeRotorConfig.JAM_CURRENT_THRESHOLD.getAsDouble();
+  }
+
+  public boolean isShooting() {
+    if (isShootingDebounced) {
+      return true;
+    }
+    return false;
   }
 
   public double getAngle() {
