@@ -57,8 +57,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final PIDController INTAKE_ASSIST_CONTROLLER = new PIDController(3.0, 0.0, 0.0);
   private final double INTAKE_ASSIST_MAX_SPEED = 1.0;
 
-  private double timeOfFlight = 0.0;
-
   public RobotManager(
       Hardware hardware,
       HealthManager health,
@@ -250,7 +248,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
-    timeOfFlight = shooter.getCurrentTimeOfFlight();
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       hubGoalPose =
