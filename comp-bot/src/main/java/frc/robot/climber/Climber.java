@@ -25,12 +25,16 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     TunablePid.register("Climber", this.motor, ClimberConfig.MOTOR_CONFIG);
   }
 
-  public void l1LineupRequest() {
-    setStateFromRequest(ClimberState.L1_LINEUP);
+  public boolean atGoal() {
+    return MathUtil.isNear(getState().height, motorPosition, ClimberConfig.TOLERANCE);
   }
 
   public void l1HangingRequest() {
     setStateFromRequest(ClimberState.L1_HANGING);
+  }
+
+  public void l1LineupRequest() {
+    setStateFromRequest(ClimberState.L1_LINEUP);
   }
 
   public void l2HangingRequest() {
@@ -53,17 +57,13 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     setStateFromRequest(ClimberState.STOWED);
   }
 
-  public boolean atGoal() {
-    return MathUtil.isNear(getState().height, motorPosition, ClimberConfig.TOLERANCE);
+  @Override
+  protected void afterTransition(ClimberState newState) {
+    motor.setControl(positionRequest.withPosition(newState.height));
   }
 
   @Override
   protected void collectInputs() {
     motorPosition = motor.getPosition().getValueAsDouble();
-  }
-
-  @Override
-  protected void afterTransition(ClimberState newState) {
-    motor.setControl(positionRequest.withPosition(newState.height));
   }
 }

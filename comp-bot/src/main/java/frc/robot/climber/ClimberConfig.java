@@ -25,5 +25,5 @@ public class ClimberConfig {
   public static final Point CLIMB_RIGHT_LOCATION =
       Point.ofRed(new Pose2d(15.0, 7.0, Rotation2d.kZero));
 
-      public static final double TOLERANCE = 0.1;
+  public static final double TOLERANCE = 0.1;
 }
