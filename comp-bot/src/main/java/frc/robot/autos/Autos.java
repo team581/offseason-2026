@@ -4,6 +4,8 @@ import com.team581.autos.AutoChooser;
 import com.team581.swerve.DriveSourceType;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.util.state_machines.StateMachineSubsystem;
+
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.robot_manager.RobotManager;
@@ -62,9 +64,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       selectedAuto.beforePeriodic();
       selectedAuto.periodic();
       robotManager.swerve.setDriveSourceType(DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP);
+      DogLog.log("Autos/ShouldRun", true);
     } else {
       // Restore teleop drive source
       robotManager.swerve.setDriveSourceType(DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP);
+      DogLog.log("Autos/ShouldRun", false);
     }
   }
 }
