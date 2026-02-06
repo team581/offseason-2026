@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.CANdle;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.generated.RobotTunerConstants;
@@ -26,6 +27,8 @@ public class Hardware {
   public final CANcoder turretEncoder = new CANcoder(26);
 
   public final CANdle candle = new CANdle(27);
+
+  public final CANrange hopperCANRange = new CANrange(28);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
