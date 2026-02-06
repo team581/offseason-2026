@@ -44,7 +44,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private AimingParameters scoringParameters = new AimingParameters(0, 0);
   private AimingParameters feedingParameters = new AimingParameters(0, 0);
-  private static final double presetFeedDistance = 0.0;
+  private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
@@ -285,16 +285,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         lights.setState(LightsState.SHOOTING);
       }
       case PREPARE_PRESET_FEED -> {
-        shooter.feedRequest(presetFeedDistance);
-        shooterHood.feedRequest(presetFeedDistance);
+        shooter.feedRequest(PRESET_FEED_DISTANCE);
+        shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.shootRequest();
         turret.feedRequest(0);
         swerve.normalDriveRequest();
         lights.setState(LightsState.WAITING_TO_SHOOT);
       }
       case PRESET_FEED -> {
-        shooter.feedRequest(presetFeedDistance);
-        shooterHood.feedRequest(presetFeedDistance);
+        shooter.feedRequest(PRESET_FEED_DISTANCE);
+        shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.shootRequest();
         turret.feedRequest(0);
         intake.shootingRequest();
