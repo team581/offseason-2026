@@ -4,7 +4,6 @@ import com.team581.autos.AutoChooser;
 import com.team581.swerve.DriveSourceType;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.util.state_machines.StateMachineSubsystem;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
