@@ -41,7 +41,6 @@ public class ShooterHoodConfig {
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0), Map.entry(0.0, 100.0));
 
-
   public static final double SCORING_REGRESSION_MODEL_Y_INT = 0.0;
   public static final double SCORING_REGRESSION_MODEL_SLOPE = 0.0;
   public static final double SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
