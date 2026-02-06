@@ -1,6 +1,7 @@
 package frc.robot.deploy;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
@@ -14,23 +15,29 @@ import frc.robot.util.scheduling.SubsystemPriority;
 public class Deploy extends StateMachineSubsystem<DeployState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
+  private final CANrange hopperCANRange;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
   private DeployState storedState = DeployState.UNHOMED;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
+  private double hopperCANRangeDistance = 0.0;
 
-  public Deploy(TalonFX leftMotor, TalonFX rightMotor) {
+  public Deploy(TalonFX leftMotor, TalonFX rightMotor, CANrange hopperCANRange) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
+    this.hopperCANRange = hopperCANRange;
 
     leftMotor.getConfigurator().apply(DeployConfig.LEFT_MOTOR_CONFIG);
     rightMotor.getConfigurator().apply(DeployConfig.RIGHT_MOTOR_CONFIG);
+    hopperCANRange.getConfigurator().apply(DeployConfig.CAN_RANGE_CONFIG);
 
     TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
   }
+
+  // TODO: Use SHOOTING state and canRange to determine whether we should hopper shuffle
 
   public void intakeRequest() {
     switch (getState()) {
@@ -128,6 +135,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
 
     DogLog.log("Deploy/Position", getPosition());
+    DogLog.log("Deploy/CanRageDistance", hopperCANRangeDistance);
   }
 
   public double getPosition() {
@@ -138,6 +146,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   protected void collectInputs() {
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
+
+    hopperCANRangeDistance = hopperCANRange.getDistance().getValueAsDouble();
   }
 
   @Override

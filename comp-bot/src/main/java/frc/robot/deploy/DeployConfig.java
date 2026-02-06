@@ -1,5 +1,6 @@
 package frc.robot.deploy;
 
+import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -29,4 +30,6 @@ public class DeployConfig {
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(1).withStatorCurrentLimit(1))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
+  public static final CANrangeConfiguration CAN_RANGE_CONFIG =
+      new CANrangeConfiguration();
 }
