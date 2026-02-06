@@ -7,7 +7,6 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.config.DSOptions;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.dye_rotor.DyeRotor;
@@ -26,7 +25,6 @@ import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
-import java.util.Optional;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Localization localization;
@@ -120,7 +118,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && dyeRotor.atGoal()
             && turret.atGoal()
             && shooter.atGoal()
-            && shooterHood.atGoal()) {
+            && shooterHood.atGoal()
+            && !isMoving) {
           yield RobotState.PRESET_SCORE;
         }
         yield currentState;
@@ -162,7 +161,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield RobotState.PREPARE_SCORE;
       }
       case PRESET_SCORE -> {
-        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
+        if (shooter.atGoal()
+            && dyeRotor.atGoal()
+            && turret.atGoal()
+            && shooterHood.atGoal()
+            && !isMoving) {
           yield currentState;
         }
         yield RobotState.PREPARE_PRESET_SCORE;
@@ -504,12 +507,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void prepareScoreRequest() {
     if (!getState().isClimbingOrRehoming()) {
+      if (!health.isAllCamerasHealthy()) {
+        setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
+      }
       setStateFromRequest(RobotState.PREPARE_SCORE);
     }
   }
 
   public void prepareFeedRequest() {
     if (!getState().isClimbingOrRehoming()) {
+      if (!health.isAllCamerasHealthy()) {
+        setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
+      }
       setStateFromRequest(RobotState.PREPARE_FEED);
     }
   }
@@ -519,7 +528,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void setFeedGoalRightRequest() {
-    feedLocation =FeedLocation.RIGHT;
+    feedLocation = FeedLocation.RIGHT;
   }
 
   public void setFeedGoalClosestRequest() {
