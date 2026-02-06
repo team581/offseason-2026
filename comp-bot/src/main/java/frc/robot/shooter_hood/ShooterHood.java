@@ -8,6 +8,7 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
+import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
@@ -15,10 +16,10 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
 
-  private double hubDistance = 0;
+  private double scoreDistance = 0;
   private double feedDistance = 0;
   private double measuredAngle = 0;
-  private double hubAngle = 0;
+  private double scoreAngle = 0;
   private double feedAngle = 0;
   private double statorCurrent = 0;
 
@@ -33,7 +34,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   }
 
   public void scoreRequest(double distance) {
-    this.hubDistance = distance;
+    this.scoreDistance = distance;
     switch (getState()) {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
@@ -74,8 +75,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> false;
       case IDLE ->
           MathUtil.isNear(ShooterHoodConfig.IDLE_ANGLE, measuredAngle, ShooterHoodConfig.TOLERANCE);
+      case SCORING -> MathUtil.isNear(scoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
       case FEEDING -> MathUtil.isNear(feedAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
-      case SCORING -> MathUtil.isNear(hubAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
     };
   }
 
@@ -83,8 +84,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void collectInputs() {
     measuredAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    hubAngle = ShooterHoodConfig.DISTANCE_TO_SCORE.get(hubDistance);
-    feedAngle = ShooterHoodConfig.DISTANCE_TO_FEED.get(feedDistance);
+    scoreAngle = getScoringAngleFromDistance(scoreDistance);
+    feedAngle = getFeedingAngleFromDistance(feedDistance);
 
     DogLog.log("ShooterHood/MeasuredAngle", measuredAngle);
     DogLog.log("ShooterHood/FeedingAngle", feedAngle);
@@ -138,8 +139,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     switch (state) {
       case SCORING -> {
         motor.setControl(
-            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(hubAngle))));
-        DogLog.log("ShooterHood/CurrentSetpoint", hubAngle);
+            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(scoreAngle))));
+        DogLog.log("ShooterHood/CurrentSetpoint", scoreAngle);
       }
 
       case FEEDING -> {
@@ -169,5 +170,23 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
 
     shooterHoodSimulation.update();
+  }
+
+  private static double getScoringAngleFromDistance(double distance) {
+    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
+      return ShooterHoodConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT * Math.pow(distance, 2)
+          + ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE * distance
+          - ShooterHoodConfig.SCORING_REGRESSION_MODEL_Y_INT;
+    }
+    return ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
+  }
+
+  private static double getFeedingAngleFromDistance(double distance) {
+    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
+      return ShooterHoodConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT * Math.pow(distance, 2)
+          + ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE * distance
+          - ShooterHoodConfig.FEEDING_REGRESSION_MODEL_Y_INT;
+    }
+    return ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }
 }

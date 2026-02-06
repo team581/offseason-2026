@@ -1,0 +1,97 @@
+package frc.robot.shooter;
+
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.util.Units;
+import java.util.Map;
+
+public class ShooterConfig {
+  public static final int RPM_TOLERANCE_SHOOTER = 50;
+
+  public static final double MAX_SAFE_RPM = 4000;
+
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreRPM",
+          Map.entry(Units.inchesToMeters(57.0), 2250.0),
+          Map.entry(3.376, 3300.0),
+          Map.entry(3.8, 3000.0),
+          Map.entry(3.97, 2700.0));
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToFeedingRPM",
+          Map.entry(1.0, 2000.0),
+          Map.entry(2.0, 3500.0),
+          Map.entry(5.0, 5000.0));
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
+
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
+
+  public static final TalonFXConfiguration LEFT_MOTOR_CONFIGS =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(100.0)
+                  .withMotionMagicAcceleration(20.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.CounterClockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.13).withKV(0.132).withKS(0.0).withKA(0.0))
+          .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+                  .withPeakForwardTorqueCurrent(200)
+                  .withPeakReverseTorqueCurrent(0));
+  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(100.0)
+                  .withMotionMagicAcceleration(20.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.13).withKV(0.132).withKS(0.0).withKA(0.0))
+          .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+                  .withPeakForwardTorqueCurrent(200)
+                  .withPeakReverseTorqueCurrent(0));
+
+  public static final double SCORING_REGRESSION_MODEL_Y_INT = 0.0;
+  public static final double SCORING_REGRESSION_MODEL_SLOPE = 0.0;
+  public static final double SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
+
+  public static final double FEEDING_REGRESSION_MODEL_Y_INT = 0.0;
+  public static final double FEEDING_REGRESSION_MODEL_SLOPE = 0.0;
+  public static final double FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
+
+  private ShooterConfig() {}
+}
