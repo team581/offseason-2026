@@ -511,7 +511,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void prepareScoreRequest() {
     if (!getState().isClimbingOrRehoming()) {
-      if (!health.isAllCamerasHealthy()) {
+      if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
       }
       setStateFromRequest(RobotState.PREPARE_SCORE);
@@ -520,7 +520,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void prepareFeedRequest() {
     if (!getState().isClimbingOrRehoming()) {
-      if (!health.isAllCamerasHealthy()) {
+      if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
       }
       setStateFromRequest(RobotState.PREPARE_FEED);
@@ -646,7 +646,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     scoringParameters =
         AimParameterUtil.getScoringParameters(
             // TODO: This should require you to pass in the distance to get the ToF
-            health.isAllCamerasHealthy() ? robotPose : FieldUtil.getFallbackScorePoint(),
+            health.isLocalizationHealthy() ? robotPose : FieldUtil.getFallbackScorePoint(),
             swerve.getFieldRelativeSpeeds(),
             shooter.getScoreTimeOfFlight(scoringDistance));
     feedingParameters =
