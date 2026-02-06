@@ -39,25 +39,25 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   private final AutoSegment driveToShootOne =
       Trailblazer.segment(
-         AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
-         AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg)),
-        AutoPoint.ofRed(new Pose2d(14.0, 7.4, Rotation2d.kCW_90deg))
-          .withLinearConstraints(3, 3))
+              AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(14.0, 7.4, Rotation2d.kCW_90deg))
+                  .withLinearConstraints(3, 3))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment driveToShootTwo =
       Trailblazer.segment(
-         AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
-         AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg)),
-        AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)))
+              AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment driveToClimb =
       Trailblazer.segment(
-        AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)),
-        AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.kCW_90deg)),
-        AutoPoint.ofRed(new Pose2d(14.716, 4.198, Rotation2d.kCW_90deg)))
+              AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(14.716, 4.198, Rotation2d.kCW_90deg)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {
@@ -72,30 +72,20 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   @Override
   protected TrenchRShootClimb2AutoState getNextState(TrenchRShootClimb2AutoState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
-      switch (currentState) {
-        case DRIVE_TO_MIDLINE_1:
-          return TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_1;
-        case INTAKE_ACROSS_MIDLINE_1:
-          return TrenchRShootClimb2AutoState.DRIVE_BACK_1;
-        case DRIVE_BACK_1:
-          return TrenchRShootClimb2AutoState.SHOOT_1;
-        case SHOOT_1:
-          return timeout(3.0) ? TrenchRShootClimb2AutoState.DRIVE_TO_MIDLINE_2 : currentState;
-        case DRIVE_TO_MIDLINE_2:
-          return TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_2;
-        case INTAKE_ACROSS_MIDLINE_2:
-          return TrenchRShootClimb2AutoState.DRIVE_BACK_2;
-        case DRIVE_BACK_2:
-          return TrenchRShootClimb2AutoState.SHOOT_2;
-        case SHOOT_2:
-          return TrenchRShootClimb2AutoState.DRIVE_TO_CLIMB;
-        case DRIVE_TO_CLIMB:
-          return TrenchRShootClimb2AutoState.CLIMB;
-        case CLIMB:
-          return TrenchRShootClimb2AutoState.DONE;
-        case DONE:
-          return TrenchRShootClimb2AutoState.DONE;
-      }
+      return switch (currentState) {
+        case DRIVE_TO_MIDLINE_1 -> TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_1;
+        case INTAKE_ACROSS_MIDLINE_1 -> TrenchRShootClimb2AutoState.DRIVE_BACK_1;
+        case DRIVE_BACK_1 -> TrenchRShootClimb2AutoState.SHOOT_1;
+        case SHOOT_1 ->
+            timeout(3.0) ? TrenchRShootClimb2AutoState.DRIVE_TO_MIDLINE_2 : currentState;
+        case DRIVE_TO_MIDLINE_2 -> TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_2;
+        case INTAKE_ACROSS_MIDLINE_2 -> TrenchRShootClimb2AutoState.DRIVE_BACK_2;
+        case DRIVE_BACK_2 -> TrenchRShootClimb2AutoState.SHOOT_2;
+        case SHOOT_2 -> TrenchRShootClimb2AutoState.DRIVE_TO_CLIMB;
+        case DRIVE_TO_CLIMB -> TrenchRShootClimb2AutoState.CLIMB;
+        case CLIMB -> TrenchRShootClimb2AutoState.DONE;
+        case DONE -> TrenchRShootClimb2AutoState.DONE;
+      };
     }
     return currentState;
   }
