@@ -93,9 +93,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   @Override
   protected void collectInputs() {
     shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, getScoringRPMFromDistance(scoreDistance));
-    feedingRpm =
-        Math.min(
-            ShooterConfig.MAX_SAFE_RPM, getFeedingRPMFromDistance(feedDistance));
+    feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, getFeedingRPMFromDistance(feedDistance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
