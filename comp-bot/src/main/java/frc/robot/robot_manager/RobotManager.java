@@ -7,7 +7,6 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.config.DSOptions;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.dye_rotor.DyeRotor;
@@ -26,7 +25,6 @@ import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
-import java.util.Optional;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Localization localization;
@@ -519,7 +517,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void setFeedGoalRightRequest() {
-    feedLocation =FeedLocation.RIGHT;
+    feedLocation = FeedLocation.RIGHT;
   }
 
   public void setFeedGoalClosestRequest() {
