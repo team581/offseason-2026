@@ -18,7 +18,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
 
     var config =
         new TalonFXConfiguration()
-        .withMotorOutput( new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
+            .withMotorOutput(
+                new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
             // TODO: Fill in the real ratio here
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withCurrentLimits(
