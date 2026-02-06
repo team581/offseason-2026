@@ -92,6 +92,7 @@ public class Robot extends Base581Robot {
           deploy,
           vision,
           lights,
+          hardware.driverController,
           health);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem

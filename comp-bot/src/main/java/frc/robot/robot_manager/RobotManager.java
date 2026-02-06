@@ -7,6 +7,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.dye_rotor.DyeRotor;
@@ -37,6 +38,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Intake intake;
   private final Vision vision;
   private final Lights lights;
+  public final XboxController driverController;
   private final HealthManager health;
 
   private Pose2d robotPose = Pose2d.kZero;
@@ -60,6 +62,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Deploy deploy,
       Vision vision,
       Lights lights,
+      XboxController driverController,
       HealthManager health) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
@@ -72,6 +75,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.deploy = deploy;
     this.vision = vision;
     this.lights = lights;
+    this.driverController = driverController;
     this.health = health;
   }
 
