@@ -50,6 +50,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private double feed2GoalAngle = 0.0;
   private double feed2Distance = 0.0;
 
+  private final ShootOnTheMove SCORING_SOTM = new ShootOnTheMove(Shooter.DISTANCE_TO_SCORE_TOF);
+  // TODO: This should have a separate table for feeding
+  private final ShootOnTheMove FEEDING_SOTM = new ShootOnTheMove(Shooter.DISTANCE_TO_SCORE_TOF);
+
   private final PIDController INTAKE_ASSIST_CONTROLLER = new PIDController(3.0, 0.0, 0.0);
   private final double INTAKE_ASSIST_MAX_SPEED = 1.0;
 
@@ -250,20 +254,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
       hubGoalPose =
-          ShootOnTheMove.getVelocityCompensatedGoal(
+          SCORING_SOTM.getVelocityCompensatedGoal(
+              robotPose.getTranslation(),
               FieldUtil.HUB_POSE.getPose().getTranslation(),
-              swerve.getFieldRelativeSpeeds(),
-              timeOfFlight);
+              swerve.getFieldRelativeSpeeds());
       feed1GoalPose =
-          ShootOnTheMove.getVelocityCompensatedGoal(
+          FEEDING_SOTM.getVelocityCompensatedGoal(
+              robotPose.getTranslation(),
               FieldUtil.FEED_LEFT_POSE.getPose().getTranslation(),
-              swerve.getFieldRelativeSpeeds(),
-              timeOfFlight);
+              swerve.getFieldRelativeSpeeds());
       feed2GoalPose =
-          ShootOnTheMove.getVelocityCompensatedGoal(
+          FEEDING_SOTM.getVelocityCompensatedGoal(
+              robotPose.getTranslation(),
               FieldUtil.FEED_RIGHT_POSE.getPose().getTranslation(),
-              swerve.getFieldRelativeSpeeds(),
-              timeOfFlight);
+              swerve.getFieldRelativeSpeeds());
     } else {
       hubGoalPose = FieldUtil.HUB_POSE.getPose().getTranslation();
       feed1GoalPose = FieldUtil.FEED_LEFT_POSE.getPose().getTranslation();

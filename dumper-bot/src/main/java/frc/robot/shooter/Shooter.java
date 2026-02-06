@@ -44,7 +44,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
           Map.entry(1.0, 2000.0),
           Map.entry(2.0, 3500.0),
           Map.entry(5.0, 5000.0));
-  private static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 1.5));
 
