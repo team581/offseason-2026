@@ -131,24 +131,24 @@ final class BaseTurretCalculatorTest {
   }
 
   @Test
-  void getOptimalAnglePositive() {
-    var minAngle = -270;
-    var maxAngle= 270;
-    var current = 90;
-    var target = 180;
-    var actual = BaseTurretCalculator.getOptimalAngle(target, current, minAngle, maxAngle);
-    var expected = 180;
-    assertEquals(expected, actual, 1e-9);
-}
-
-  @Test
   void getOptimalAngleNegative() {
     var minAngle = -270;
-    var maxAngle= 270;
+    var maxAngle = 270;
     var current = -270;
     var target = 180;
     var actual = BaseTurretCalculator.getOptimalAngle(target, current, minAngle, maxAngle);
     var expected = -180;
     assertEquals(expected, actual, 1e-9);
-}
+  }
+
+  @Test
+  void getOptimalAnglePositive() {
+    var minAngle = -270;
+    var maxAngle = 270;
+    var current = 90;
+    var target = 180;
+    var actual = BaseTurretCalculator.getOptimalAngle(target, current, minAngle, maxAngle);
+    var expected = 180;
+    assertEquals(expected, actual, 1e-9);
+  }
 }
