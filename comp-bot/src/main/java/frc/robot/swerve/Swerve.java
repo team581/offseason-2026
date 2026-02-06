@@ -123,6 +123,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     this.trailblazerDriveSource =
         new TrailblazerDriveSource(
             trailblazer, () -> drivetrainState.Pose, this::getFieldRelativeSpeeds);
+    driveSource = teleopDriveSource;
   }
 
   /**

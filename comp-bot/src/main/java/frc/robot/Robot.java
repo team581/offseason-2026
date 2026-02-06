@@ -92,6 +92,7 @@ public class Robot extends Base581Robot {
           deploy,
           vision,
           lights,
+          hardware.driverController,
           health);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
@@ -161,9 +162,11 @@ public class Robot extends Base581Robot {
     var operatorLeftBumper =
         enabledEvent.and(hardware.operatorController.leftBumper(buttonBindingsLoop));
     operatorLeftBumper.rising().ifHigh(robotManager::setFeedGoalLeftRequest);
+    operatorLeftBumper.falling().ifHigh(robotManager::setFeedGoalClosestRequest);
 
     var operatorRightBumper =
         enabledEvent.and(hardware.operatorController.rightBumper(buttonBindingsLoop));
     operatorRightBumper.rising().ifHigh(robotManager::setFeedGoalRightRequest);
+    operatorRightBumper.falling().ifHigh(robotManager::setFeedGoalClosestRequest);
   }
 }
