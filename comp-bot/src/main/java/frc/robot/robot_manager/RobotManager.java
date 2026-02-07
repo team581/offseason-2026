@@ -392,6 +392,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         turret.feedRequest(feedingParameters.turretAngle());
       }
+      case PREPARE_PRESET_SCORE -> {
+        // Automatically update scoring parameters with preset pose
+        if (isMoving) {
+          shooterHood.idleRequest();
+        } else {
+          shooterHood.scoreRequest(scoringParameters.distance());
+        }
+        turret.scoreRequest(scoringParameters.turretAngle());
+      }
+      case PRESET_SCORE -> {
+        // Automatically update scoring parameters with preset pose
+        turret.scoreRequest(scoringParameters.turretAngle());
+      }
       case PREPARE_PRESET_FEED -> {
         // TODO: Get turret feed angle
         turret.feedRequest(0);
@@ -399,12 +412,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PRESET_FEED -> {
         // TODO: get turret feed angle
         turret.feedRequest(0);
-      }
-      case PREPARE_PRESET_SCORE -> {
-        turret.scoreRequest(scoringParameters.turretAngle());
-      }
-      case PRESET_SCORE -> {
-        turret.scoreRequest(scoringParameters.turretAngle());
       }
       default -> {}
     }
@@ -451,17 +458,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       turret.idleScoreRequest(scoringParameters.turretAngle());
     }
 
-    // TODO: If localization is unhealthy, we're always stowing hood in prepare score state, which
-    // means we never score/score wrong.
-    // Need to add fallback scoring states for unhealthy localization that check if you're driving
-    // at all and stow hood in that state
     if (!health.isLocalizationHealthy() || nearTrench) {
-      if (isMoving) {
         shooterHood.idleRequest();
         DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "NearTrench");
-      }
-      shooterHood.scoreRequest(scoringParameters.distance());
-
     } else {
       shooterHood.scoreRequest(scoringParameters.distance());
     }
