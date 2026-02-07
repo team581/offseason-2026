@@ -11,6 +11,7 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -189,7 +190,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
     hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
-    ableToHopperShuffle = hopperCANRangeDistance < DeployConfig.CAPACITY_DISTANCE_THRESHOLD;
+    if (RobotBase.isSimulation()) {
+      ableToHopperShuffle = true;
+    } else {
+      ableToHopperShuffle = hopperCANRangeDistance < DeployConfig.CAPACITY_DISTANCE_THRESHOLD;
+    }
   }
 
   @Override
