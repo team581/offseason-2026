@@ -224,7 +224,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       case TELEOP -> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
           var trenchAssistSpeeds =
-              SwerveAssist.getTrenchAssistSpeeds(robotPose.getTranslation(), new ChassisSpeeds(teleopRequest.VelocityX, teleopRequest.VelocityY, 0.0));
+              SwerveAssist.getTrenchAssistSpeeds(
+                  robotPose.getTranslation(),
+                  new ChassisSpeeds(teleopRequest.VelocityX, teleopRequest.VelocityY, 0.0));
           drivetrain.setControl(
               swerveAssistSnapsRequest
                   .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
