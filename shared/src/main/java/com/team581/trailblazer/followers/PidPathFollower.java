@@ -59,18 +59,18 @@ public class PidPathFollower implements PathFollower {
     DogLog.log("Trailblazer/Follower/WantedVelocity", wantedDriveVelocity);
     var currentVelocity =
         Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
-            DogLog.log("Trailblazer/Follower/CurrentVelocity", currentVelocity);
-
+    DogLog.log("Trailblazer/Follower/CurrentVelocity", currentVelocity);
 
     // Calculate how much we can accelerate this loop
     // New Velocity = Old Velocity + (Acceleration * dt)
-    var kDt =Math.min(Timer.getFPGATimestamp() - lastTimestamp, 0.04);
-        var currentAccel = (currentVelocity - lastVelocity) / kDt;
-        DogLog.log("Trailblazer/Follower/CurrentAccel", currentAccel);
+    var kDt = Math.min(Timer.getFPGATimestamp() - lastTimestamp, 0.04);
+    var currentAccel = (currentVelocity - lastVelocity) / kDt;
+    DogLog.log("Trailblazer/Follower/CurrentAccel", currentAccel);
 
     lastTimestamp = Timer.getFPGATimestamp();
 
-    var maxReachableVelocity = Math.max((currentVelocity + (constraints.maxLinearAcceleration() * kDt)),0.5);
+    var maxReachableVelocity =
+        Math.max((currentVelocity + (constraints.maxLinearAcceleration() * kDt)), 0.5);
 
     // Calculate velocity needed to stop in time
     var maxStoppingVelocity =
