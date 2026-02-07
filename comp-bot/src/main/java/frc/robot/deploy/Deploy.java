@@ -3,6 +3,7 @@ package frc.robot.deploy;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -193,20 +194,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   public void simulationPeriodic() {
-    var leftDeploySimulation =
+    var deploySimulation =
         SimKit.positionMechanism(
             "Deploy/Left",
             mechanism ->
                 mechanism
-                    .addMotor(leftMotor)
-                    .withMinPosition(DeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DeployConfig.MAX_LENGTH));
-    var rightDeploySimulation =
-        SimKit.positionMechanism(
-            "Deploy/Right",
-            mechanism ->
-                mechanism
-                    .addMotor(rightMotor)
+                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
@@ -216,7 +210,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       setStateFromRequest(DeployState.INTAKE);
     }
 
-    leftDeploySimulation.update();
-    rightDeploySimulation.update();
+    deploySimulation.update();
   }
 }
