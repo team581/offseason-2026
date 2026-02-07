@@ -9,10 +9,15 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class DyeRotorConfig {
+  public static final Debouncer debouncer = new Debouncer(1.0);
   public static final int RPM_TOLERANCE_HORIZONTAL = 100;
+
+  // TODO:Get this number
+  public static final double RPM_TOLERANCE_SHOOTING = 10;
   public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
       DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
 

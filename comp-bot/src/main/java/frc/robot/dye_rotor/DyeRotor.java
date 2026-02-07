@@ -18,7 +18,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private final TalonFX rotorMotor;
   private final TalonFX horizontalMotor;
   private final TalonFX verticalMotor;
-  private final Debouncer debouncer = new Debouncer(1.0);
 
   private final VelocityVoltage rotorVelocityRequest = new VelocityVoltage(0).withEnableFOC(false);
   private final VelocityVoltage horizontalVelocityRequest =
@@ -93,9 +92,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
 
-    // TODO:Get average velocity to find out what number to compare this against
-    isShooting = horizontalMotorRpm > 40;
-    isShootingDebounced = debouncer.calculate(isShooting);
+    isShooting = horizontalMotorRpm < DyeRotorConfig.RPM_TOLERANCE_SHOOTING;
+    isShootingDebounced = DyeRotorConfig.debouncer.calculate(isShooting);
   }
 
   public boolean atGoal() {
