@@ -10,7 +10,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import org.junit.jupiter.api.Test;
 
-public final class BaseTurretCalculatorTest {
+final class BaseTurretCalculatorTest {
   @Test
   void calculateSwerveTurretCompensationAngleNegative() {
     var actual =
