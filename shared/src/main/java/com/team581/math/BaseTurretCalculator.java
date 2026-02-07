@@ -112,7 +112,6 @@ public class BaseTurretCalculator {
 
     var option2 = (option1 > 0) ? option1 - 360 : option1 + 360;
 
-
     var opt1Valid = (option1 >= minTurretAngle && option1 <= maxTurretAngle);
     var opt2Valid = (option2 >= minTurretAngle && option2 <= maxTurretAngle);
 
