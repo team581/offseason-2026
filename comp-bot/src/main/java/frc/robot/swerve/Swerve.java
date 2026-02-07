@@ -8,18 +8,23 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
+import com.team581.math.CircularFilter;
+import com.team581.math.MathHelpers;
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
 import com.team581.swerve.SwerveAssist;
 import com.team581.swerve.TrailblazerDriveSource;
 import com.team581.swerve.XboxControllerDriveSource;
 import com.team581.trailblazer.Trailblazer;
+import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Notifier;
@@ -39,6 +44,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
+
+  private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
       new PhoenixPIDController(5.75, 0, 0);
@@ -71,6 +78,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
+  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveIntakeSnapsOpenLoop =
+      new SwerveRequest.FieldCentricFacingAngle()
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.5)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
+
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
       new SwerveRequest.FieldCentric()
@@ -90,6 +111,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               ORIGINAL_HEADING_PID.getI(),
               ORIGINAL_HEADING_PID.getD());
 
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
+  private final SwerveRequest.FieldCentricFacingAngle fieldCentricIntakeSnapsClosedLoop =
+      new SwerveRequest.FieldCentricFacingAngle()
+          .withDriveRequestType(DriveRequestType.Velocity)
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
+
   private final HealthManager health;
 
   private double lastSimTime;
@@ -101,6 +135,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private Rotation2d hubAimAngle = Rotation2d.kZero;
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
+  private boolean ableToWallSnap = false;
+  private boolean ableToDirectionSnap = false;
+  private Translation2d lastWallIntakePoint = Translation2d.kZero;
+  private double distanceToWallIntakePoint = 0.0;
+  private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -167,10 +206,48 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
+
+    if (getState() == SwerveState.INTAKE) {
+      lastWallIntakePoint =
+          MathHelpers.getIntersectionOnRectanglePerimeter(
+              drivetrainState.Pose.getTranslation(),
+              FieldUtil.FIELD_BOUNDS,
+              filteredLastDriveDirection);
+      distanceToWallIntakePoint =
+          lastWallIntakePoint.getDistance(drivetrainState.Pose.getTranslation());
+
+      filteredLastDriveDirection =
+          Rotation2d.fromDegrees(
+              lastDriveDirectionFilter.calculate(
+                  new Translation2d(
+                          fieldRelativeSpeeds.vxMetersPerSecond,
+                          fieldRelativeSpeeds.vyMetersPerSecond)
+                      .getAngle()
+                      .getDegrees()));
+
+      ableToWallSnap =
+          FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()
+              && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+              && health.isLocalizationHealthy()
+              && SwerveAssist.ableToWallSnap(
+                  drivetrainState.Pose,
+                  fieldRelativeSpeeds,
+                  filteredLastDriveDirection,
+                  distanceToWallIntakePoint);
+
+      ableToDirectionSnap =
+          FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()
+              && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+              && SwerveAssist.ableToDirectionSnap(fieldRelativeSpeeds);
+    }
   }
 
   public void normalDriveRequest() {
     setStateFromRequest(SwerveState.MANUAL);
+  }
+
+  public void intakeDriveRequest() {
+    setStateFromRequest(SwerveState.INTAKE);
   }
 
   @Override
@@ -202,6 +279,77 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
                           SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+        } else {
+          var swerveRequest =
+              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+                  ? driverPerspectiveOpenLoop
+                  : fieldCentricClosedLoop;
+
+          drivetrain.setControl(
+              swerveRequest
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withRotationalRate(speeds.omegaRadiansPerSecond));
+        }
+      }
+      case INTAKE -> {
+        var speeds = driveSource.getRequestedSpeeds();
+        if (ableToTrenchAssist) {
+          DogLog.timestamp("TrenchAssistActive");
+          var trenchAssistSpeeds =
+              SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
+          drivetrain.setControl(
+              drivePerspectiveSnapsOpenLoop
+                  .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
+                  .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                          .rotateBy(Rotation2d.k180deg)));
+        } else if (ableToBumpAssist) {
+          drivetrain.setControl(
+              drivePerspectiveSnapsOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(
+                      Rotation2d.fromDegrees(
+                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+        } else if (ableToWallSnap) {
+          DogLog.timestamp("Swerve/WallSnaps/Snapping");
+          var closestWallPose =
+              MathHelpers.getClosestPointOnRectanglePerimeter(
+                  drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+          var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
+          var centerOfRotationRobotRelative =
+              lastWallIntakePoint
+                  .minus(drivetrainState.Pose.getTranslation())
+                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+          DogLog.log(
+              "Swerve/WallSnaps/CenterOfRotation",
+              new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
+
+          var swerveSnapsRequest =
+              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+                  ? drivePerspectiveIntakeSnapsOpenLoop
+                  : fieldCentricIntakeSnapsClosedLoop;
+          drivetrain.setControl(
+              swerveSnapsRequest
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(angleToWall.plus(Rotation2d.k180deg))
+                  .withCenterOfRotation(centerOfRotationRobotRelative));
+        } else if (ableToDirectionSnap) {
+          DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
+          var swerveSnapsRequest =
+              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+                  ? drivePerspectiveIntakeSnapsOpenLoop
+                  : fieldCentricIntakeSnapsClosedLoop;
+          drivetrain.setControl(
+              swerveSnapsRequest
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(filteredLastDriveDirection.plus(Rotation2d.k180deg))
+                  .withCenterOfRotation(Translation2d.kZero));
         } else {
           var swerveRequest =
               driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP

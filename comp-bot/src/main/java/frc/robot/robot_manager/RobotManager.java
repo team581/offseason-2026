@@ -12,6 +12,7 @@ import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.health.HealthManager;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import frc.robot.lights.Lights;
 import frc.robot.lights.LightsState;
 import frc.robot.localization.Localization;
@@ -418,6 +419,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/FeedLocation", feedLocation);
     DogLog.log("RobotManager/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/ScoringParameters", scoringParameters);
+
+    if (!getState().isClimbing()) {
+      if (intake.getState() == IntakeState.INTAKING) {
+        swerve.intakeDriveRequest();
+      } else {
+        swerve.normalDriveRequest();
+      }
+    }
 
     MechanismVisualizer.log(
         robotPose,
