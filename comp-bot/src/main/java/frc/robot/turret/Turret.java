@@ -149,7 +149,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public void setRobotRotationRate(double rateRadians) {
-    robotRotationFeedForward = Units.degreesToRadians(getVelocityDegreesPerSecond()) - rateRadians;
+    robotRotationFeedForward = Math.toRadians(getVelocityDegreesPerSecond()) - rateRadians;
   }
 
   public boolean atGoal() {
