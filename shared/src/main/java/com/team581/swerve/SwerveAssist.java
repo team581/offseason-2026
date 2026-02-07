@@ -1,6 +1,7 @@
 package com.team581.swerve;
 
 import com.team581.math.MathHelpers;
+import com.team581.math.PolarChassisSpeeds;
 import com.team581.util.FieldUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -138,14 +139,27 @@ public class SwerveAssist {
         : ROBOT_INTAKE_TO_BUMP_ANGLE + 180.0;
   }
 
-  public static double getTrenchAssistVelocity(Translation2d robotTranslation) {
-    double velcoity =
+  public static PolarChassisSpeeds getTrenchAssistSpeeds(
+      Translation2d robotTranslation, ChassisSpeeds inputSpeeds) {
+    double wantedYVelocity =
         -TRENCH_PID_CONTROLLER.calculate(
             robotTranslation.getY(),
             FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
 
-    DogLog.log("TrenchAssistV", velcoity);
-    return velcoity;
+    var wantedSpeeds =
+        new PolarChassisSpeeds(
+            inputSpeeds.vxMetersPerSecond, wantedYVelocity, inputSpeeds.omegaRadiansPerSecond);
+
+    var polarInputSpeeds = new PolarChassisSpeeds(inputSpeeds);
+
+    if (polarInputSpeeds.vMetersPerSecond > 1e-5) {
+      var scalar = polarInputSpeeds.vMetersPerSecond / 4.75;
+      scalar = Math.min(scalar, 0.75);
+      var newDirection = polarInputSpeeds.direction.interpolate(wantedSpeeds.direction, scalar);
+      return new PolarChassisSpeeds(
+          polarInputSpeeds.vMetersPerSecond, newDirection, wantedSpeeds.omegaRadiansPerSecond);
+    }
+    return polarInputSpeeds;
   }
 
   public static double getTrenchSnapAngle(Rotation2d robotHeading) {
