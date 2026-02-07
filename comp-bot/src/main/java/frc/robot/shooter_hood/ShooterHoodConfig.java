@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import java.util.Map;
@@ -40,14 +41,10 @@ public class ShooterHoodConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0), Map.entry(0.0, 100.0));
-
-  public static final double SCORING_REGRESSION_MODEL_Y_INT = 0.0;
-  public static final double SCORING_REGRESSION_MODEL_SLOPE = 0.0;
-  public static final double SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
-
-  public static final double FEEDING_REGRESSION_MODEL_Y_INT = 0.0;
-  public static final double FEEDING_REGRESSION_MODEL_SLOPE = 0.0;
-  public static final double FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
+  public static final PolynomialRegression SCORING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("ShooterHood/ScoringRegression", DISTANCE_TO_SCORE);
+  public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("ShooterHood/FeedingRegression", DISTANCE_TO_FEED);
 
   private ShooterHoodConfig() {}
 }

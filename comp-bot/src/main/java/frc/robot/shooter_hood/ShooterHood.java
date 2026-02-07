@@ -2,7 +2,6 @@ package frc.robot.shooter_hood;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.team581.math.QuadraticRegression;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -11,23 +10,24 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.function.DoubleUnaryOperator;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
 
-  private final QuadraticRegression scoringRegressionCalculator =
-      new QuadraticRegression(
-          ShooterHoodConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE,
-          ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE);
+  private final DoubleUnaryOperator distanceToScoringAngle =
+      (double distance) ->
+          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+              ? ShooterHoodConfig.SCORING_REGRESSION_MODEL.calculate(distance)
+              : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
 
-  private final QuadraticRegression feedingRegressionCalculator =
-      new QuadraticRegression(
-          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE,
-          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE);
+  private final DoubleUnaryOperator distanceToFeedingAngle =
+      (double distance) ->
+          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+              ? ShooterHoodConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
+              : ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -97,8 +97,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void collectInputs() {
     measuredAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    scoreAngle = getScoringAngleFromDistance(scoreDistance);
-    feedAngle = getFeedingAngleFromDistance(feedDistance);
+    scoreAngle = distanceToScoringAngle.applyAsDouble(scoreDistance);
+    feedAngle = distanceToFeedingAngle.applyAsDouble(feedDistance);
 
     DogLog.log("ShooterHood/MeasuredAngle", measuredAngle);
     DogLog.log("ShooterHood/FeedingAngle", feedAngle);
@@ -183,19 +183,5 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
 
     shooterHoodSimulation.update();
-  }
-
-  private double getScoringAngleFromDistance(double distance) {
-    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return scoringRegressionCalculator.calculate(distance);
-    }
-    return ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
-  }
-
-  private double getFeedingAngleFromDistance(double distance) {
-    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return feedingRegressionCalculator.calculate(distance);
-    }
-    return ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }
 }

@@ -9,6 +9,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
@@ -32,6 +33,11 @@ public class ShooterConfig {
           Map.entry(1.0, 2000.0),
           Map.entry(2.0, 3500.0),
           Map.entry(5.0, 5000.0));
+  public static final PolynomialRegression SCORING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
+  public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/FeedingRegression", DISTANCE_TO_FEEDING_RPM);
+
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
@@ -84,14 +90,6 @@ public class ShooterConfig {
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(200)
                   .withPeakReverseTorqueCurrent(0));
-
-  public static final double SCORING_REGRESSION_MODEL_Y_INT = 0.0;
-  public static final double SCORING_REGRESSION_MODEL_SLOPE = 0.0;
-  public static final double SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
-
-  public static final double FEEDING_REGRESSION_MODEL_Y_INT = 0.0;
-  public static final double FEEDING_REGRESSION_MODEL_SLOPE = 0.0;
-  public static final double FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT = 0.0;
 
   private ShooterConfig() {}
 }

@@ -2,7 +2,6 @@ package frc.robot.shooter;
 
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.team581.math.QuadraticRegression;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -10,24 +9,25 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.function.DoubleUnaryOperator;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
-
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
 
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
-  private final QuadraticRegression scoringRegressionCalculator =
-      new QuadraticRegression(
-          ShooterConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterConfig.SCORING_REGRESSION_MODEL_SLOPE,
-          ShooterConfig.SCORING_REGRESSION_MODEL_SLOPE);
 
-  private final QuadraticRegression feedingRegressionCalculator =
-      new QuadraticRegression(
-          ShooterConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterConfig.FEEDING_REGRESSION_MODEL_SLOPE,
-          ShooterConfig.FEEDING_REGRESSION_MODEL_SLOPE);
+  private final DoubleUnaryOperator distanceToScoringRpm =
+      (double distance) ->
+          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+              ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
+              : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
+
+  private final DoubleUnaryOperator distanceToFeedingRpm =
+      (double distance) ->
+          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+              ? ShooterConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
+              : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -104,8 +104,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, getScoringRPMFromDistance(scoreDistance));
-    feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, getFeedingRPMFromDistance(feedDistance));
+    shootingRpm =
+        Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm.applyAsDouble(scoreDistance));
+    feedingRpm =
+        Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm.applyAsDouble(feedDistance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
@@ -147,19 +149,5 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   public double getFeedTimeOfFlight(double distance) {
     this.feedDistance = distance;
     return ShooterConfig.DISTANCE_TO_FEED_TOF.get(feedDistance);
-  }
-
-  private double getScoringRPMFromDistance(double distance) {
-    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return scoringRegressionCalculator.calculate(distance);
-    }
-    return ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
-  }
-
-  private double getFeedingRPMFromDistance(double distance) {
-    if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return feedingRegressionCalculator.calculate(distance);
-    }
-    return ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
   }
 }
