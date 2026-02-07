@@ -67,8 +67,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 motor.getPosition(), motor.getVelocity()));
 
     // Add the predicted angle to the vision buffer at the current timestamp
-    vision.addTurretObservation(
-        Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
+    vision.addTurretObservation(Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
 
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
