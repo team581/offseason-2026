@@ -3,6 +3,7 @@ package com.team581.localization;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.RobotBase;
 
 public class TrustFactor {
   private static final DoubleSubscriber DISTANCE_TRAVELLED_SCALAR =
@@ -24,6 +25,11 @@ public class TrustFactor {
   }
 
   public boolean isTrustworthy() {
+    // Bypass trust factor checks in simulation, since we don't have simulated cameras
+    if (RobotBase.isSimulation()) {
+      return true;
+    }
+
     return trustFactor <= TRUSTWORTHY_THRESHOLD.get();
   }
 

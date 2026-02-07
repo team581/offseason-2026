@@ -3,6 +3,7 @@ package frc.robot.deploy;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -39,8 +40,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
   }
-
-  // TODO: Use SHOOTING state and canRange to determine whether we should hopper shuffle
 
   public void intakeRequest() {
     switch (getState()) {
@@ -94,7 +93,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         }
       }
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        if (MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
+        if (MathUtil.isNear(
+            leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
           yield storedState;
         }
         yield currentState;
@@ -168,9 +168,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
     DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
 
-    DogLog.log("Deploy/Position", getPosition());
+    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
+    DogLog.log("Deploy/AveragePosition", getPosition());
     DogLog.log("Deploy/HopperCANRangeDistance", hopperCANRangeDistance);
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
+    DogLog.log("Deploy/StoredState", storedState.name());
   }
 
   public double getPosition() {
@@ -178,8 +181,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   private boolean atGoal(double goalDistance) {
-    return MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.TOLERANCE)
-        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.TOLERANCE);
+    return MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
   }
 
   @Override
@@ -192,20 +195,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   public void simulationPeriodic() {
-    var leftDeploySimulation =
+    var deploySimulation =
         SimKit.positionMechanism(
             "Deploy/Left",
             mechanism ->
                 mechanism
-                    .addMotor(leftMotor)
-                    .withMinPosition(DeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DeployConfig.MAX_LENGTH));
-    var rightDeploySimulation =
-        SimKit.positionMechanism(
-            "Deploy/Right",
-            mechanism ->
-                mechanism
-                    .addMotor(rightMotor)
+                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
@@ -215,7 +211,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       setStateFromRequest(DeployState.INTAKE);
     }
 
-    leftDeploySimulation.update();
-    rightDeploySimulation.update();
+    deploySimulation.update();
   }
 }
