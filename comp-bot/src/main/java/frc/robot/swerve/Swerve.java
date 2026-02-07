@@ -106,6 +106,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(),
               ORIGINAL_HEADING_PID.getI(),
@@ -119,6 +121,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(),
               ORIGINAL_HEADING_PID.getI(),

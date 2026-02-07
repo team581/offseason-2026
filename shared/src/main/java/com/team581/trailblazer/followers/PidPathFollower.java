@@ -6,14 +6,19 @@ import com.team581.trailblazer.AutoConstraintOptions;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.ConstraintsCalculator;
 import com.team581.trailblazer.segments.AutoSegment;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Timer;
 
 public class PidPathFollower implements PathFollower {
   private final PIDController translationController;
   private final PIDController rotationController;
   private final ConstraintsCalculator velocityConstrainer;
+
+  private double lastTimestamp = 0.0;
+  private double lastVelocity = 0.0;
 
   public PidPathFollower(PIDController translationController, PIDController rotationController) {
     this.translationController = translationController;
@@ -37,17 +42,50 @@ public class PidPathFollower implements PathFollower {
     var distanceToGoalMeters =
         currentPose.getTranslation().getDistance(targetPose.getTranslation());
 
-    var driveVelocity = Math.abs(translationController.calculate(distanceToGoalMeters, 0));
+    for (int i = currentPointIndex; i < segment.points.size() - 1; i++) {
+      distanceToGoalMeters +=
+          segment
+              .points
+              .get(i)
+              .poseSupplier()
+              .get()
+              .getPose()
+              .getTranslation()
+              .getDistance(
+                  segment.points.get(i + 1).poseSupplier().get().getPose().getTranslation());
+    }
+
+    var wantedDriveVelocity = Math.abs(translationController.calculate(distanceToGoalMeters, 0));
+    DogLog.log("Trailblazer/Follower/WantedVelocity", wantedDriveVelocity);
+    var currentVelocity =
+        Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
+            DogLog.log("Trailblazer/Follower/CurrentVelocity", currentVelocity);
+
+
+    // Calculate how much we can accelerate this loop
+    // New Velocity = Old Velocity + (Acceleration * dt)
+    var kDt =Math.min(Timer.getFPGATimestamp() - lastTimestamp, 0.04);
+        var currentAccel = (currentVelocity - lastVelocity) / kDt;
+        DogLog.log("Trailblazer/Follower/CurrentAccel", currentAccel);
+
+    lastTimestamp = Timer.getFPGATimestamp();
+
+    var maxReachableVelocity = Math.max((currentVelocity + (constraints.maxLinearAcceleration() * kDt)),0.5);
+
+    // Calculate velocity needed to stop in time
+    var maxStoppingVelocity =
+        Math.sqrt(2 * constraints.maxLinearAcceleration() * distanceToGoalMeters);
+
+    // Apply constraints
+    var maxVelocityLimitedWantedVelocity =
+        Math.min(wantedDriveVelocity, constraints.maxLinearVelocity());
+
+    var linearVelocity = Math.min(maxVelocityLimitedWantedVelocity, maxReachableVelocity);
+    linearVelocity = Math.min(linearVelocity, maxStoppingVelocity);
 
     var angularVelocity =
         rotationController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
-
-    var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
-
-    // Apply velocity constraints
-    driveVelocity =
-        velocityConstrainer.constrainLinearVelocity(driveVelocity, currentSpeeds, constraints);
 
     angularVelocity =
         velocityConstrainer.constrainAngularVelocity(
@@ -57,7 +95,9 @@ public class PidPathFollower implements PathFollower {
             currentSpeeds,
             constraints);
 
-    return new PolarChassisSpeeds(driveVelocity, driveDirection, angularVelocity);
+    var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
+    lastVelocity = currentVelocity;
+    return new PolarChassisSpeeds(linearVelocity, driveDirection, angularVelocity);
   }
 
   @Override
