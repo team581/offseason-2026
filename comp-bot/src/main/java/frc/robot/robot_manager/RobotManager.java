@@ -403,6 +403,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PRESET_SCORE -> {
         // Automatically update scoring parameters with preset pose
+        shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters.turretAngle());
       }
       case PREPARE_PRESET_FEED -> {
@@ -476,8 +477,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (!getState().isClimbing()) {
       if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
+      } else {
+        setStateFromRequest(RobotState.PREPARE_SCORE);
       }
-      setStateFromRequest(RobotState.PREPARE_SCORE);
     }
   }
 
@@ -485,8 +487,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (!getState().isClimbing()) {
       if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
+      } else {
+        setStateFromRequest(RobotState.PREPARE_FEED);
       }
-      setStateFromRequest(RobotState.PREPARE_FEED);
     }
   }
 
@@ -609,7 +612,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     scoringParameters =
         AimParameterUtil.getScoringParameters(
             // TODO: This should require you to pass in the distance to get the ToF
-            health.isLocalizationHealthy() ? robotPose : FieldUtil.getFallbackScorePoint(),
+            health.isLocalizationHealthy() ? robotPose : new Pose2d(FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
             swerve.getFieldRelativeSpeeds(),
             shooter.getScoreTimeOfFlight(scoringDistance));
     feedingParameters =
