@@ -5,7 +5,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class ShootOnTheMove {
-  private static final int MaxIterations = 5;
+  private static final int MAX_ITERATIONS = 5;
   private final InterpolatingDoubleTreeMap distanceToTimeOfFlight;
 
   public ShootOnTheMove(InterpolatingDoubleTreeMap distanceToTimeOfFlight) {
@@ -17,9 +17,7 @@ public class ShootOnTheMove {
     var timeOfFlight = 0.0;
     var result = target;
 
-
-
-    for (int i = 0; i < MaxIterations; i++) {
+    for (int i = 0; i < MAX_ITERATIONS; i++) {
       timeOfFlight = distanceToTimeOfFlight.get(robot.getDistance(result));
       // Compensated goal = real goal - (robot velocity * time of flight of ball)
       result =
