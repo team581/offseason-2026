@@ -87,7 +87,7 @@ public class PolynomialRegression {
 
     for (int i = coefficients.length - 1; i >= 1; --i) {
       if (coefficients[i] != 0) {
-        if (s.length() > 0) {
+        if (!s.isEmpty()) {
           if (coefficients[i] < 0) {
             s.append(" - ");
           } else {
@@ -108,17 +108,17 @@ public class PolynomialRegression {
         s.append("x");
         if (i > 1) {
           s.append('^');
-          s.append(Integer.toString(i));
+          s.append(i);
         }
       }
     }
 
     if (coefficients[0] == 0.0) {
-      if (s.length() == 0) {
+      if (s.isEmpty()) {
         return "0";
       }
     } else {
-      if (s.length() > 0) {
+      if (!s.isEmpty()) {
         if (coefficients[0] < 0) {
           s.append(" - ");
           s.append(toString(Math.abs(coefficients[0])));

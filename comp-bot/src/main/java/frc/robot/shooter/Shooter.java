@@ -9,7 +9,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.function.DoubleUnaryOperator;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX leftMotor;
@@ -17,17 +16,17 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
 
-  private final DoubleUnaryOperator distanceToScoringRpm =
-      (double distance) ->
-          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
-              ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
-              : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
+  private double distanceToScoringRpm(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
+  }
 
-  private final DoubleUnaryOperator distanceToFeedingRpm =
-      (double distance) ->
-          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
-              ? ShooterConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
-              : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
+  private double distanceToFeedingRpm(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
+  }
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -104,10 +103,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   protected void collectInputs() {
-    shootingRpm =
-        Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm.applyAsDouble(scoreDistance));
-    feedingRpm =
-        Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm.applyAsDouble(feedDistance));
+    shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
+    feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;

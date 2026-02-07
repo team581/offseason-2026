@@ -10,24 +10,23 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.function.DoubleUnaryOperator;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
 
-  private final DoubleUnaryOperator distanceToScoringAngle =
-      (double distance) ->
-          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
-              ? ShooterHoodConfig.SCORING_REGRESSION_MODEL.calculate(distance)
-              : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
+  private double distanceToScoringAngle(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterHoodConfig.SCORING_REGRESSION_MODEL.calculate(distance)
+        : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
+  }
 
-  private final DoubleUnaryOperator distanceToFeedingAngle =
-      (double distance) ->
-          FeatureFlags.REGRESSION_MODEL.getAsBoolean()
-              ? ShooterHoodConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
-              : ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
+  private double distanceToFeedingAngle(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterHoodConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
+        : ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
+  }
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -97,8 +96,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void collectInputs() {
     measuredAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    scoreAngle = distanceToScoringAngle.applyAsDouble(scoreDistance);
-    feedAngle = distanceToFeedingAngle.applyAsDouble(feedDistance);
+    scoreAngle = distanceToScoringAngle(scoreDistance);
+    feedAngle = distanceToFeedingAngle(feedDistance);
 
     DogLog.log("ShooterHood/MeasuredAngle", measuredAngle);
     DogLog.log("ShooterHood/ScoreAngle", scoreAngle);

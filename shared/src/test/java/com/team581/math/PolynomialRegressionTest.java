@@ -2,7 +2,7 @@ package com.team581.math;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
 final class PolynomialRegressionTest {
@@ -20,7 +20,7 @@ final class PolynomialRegressionTest {
   @Test
   void quadraticFromPointsFitsCorrectly() {
     // Points on y = 2 + 3x + 4x^2
-    var points = Map.of(0.0, 2.0, 1.0, 9.0, 2.0, 24.0, 3.0, 47.0);
+    var points = ImmutableMap.of(0.0, 2.0, 1.0, 9.0, 2.0, 24.0, 3.0, 47.0);
 
     var regression = PolynomialRegression.quadratic("Test", points);
 
