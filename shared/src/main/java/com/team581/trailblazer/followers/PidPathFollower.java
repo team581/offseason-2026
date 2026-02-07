@@ -19,6 +19,7 @@ public class PidPathFollower implements PathFollower {
 
   private double lastTimestamp = 0.0;
   private double lastVelocity = 0.0;
+  private double lastCommandedVelocity = 0.0;
 
   public PidPathFollower(PIDController translationController, PIDController rotationController) {
     this.translationController = translationController;
@@ -69,8 +70,7 @@ public class PidPathFollower implements PathFollower {
 
     lastTimestamp = Timer.getFPGATimestamp();
 
-    var maxReachableVelocity =
-        Math.max((currentVelocity + (constraints.maxLinearAcceleration() * kDt)), 0.5);
+    var maxReachableVelocity = Math.max((currentVelocity + (constraints.maxLinearAcceleration() * kDt)),0.5);
 
     // Calculate velocity needed to stop in time
     var maxStoppingVelocity =
@@ -97,11 +97,15 @@ public class PidPathFollower implements PathFollower {
 
     var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
     lastVelocity = currentVelocity;
+    lastCommandedVelocity = linearVelocity;
     return new PolarChassisSpeeds(linearVelocity, driveDirection, angularVelocity);
   }
 
   @Override
   public void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians) {
     velocityConstrainer.reset(currentSpeeds, currentAngleRadians);
+    lastCommandedVelocity = MathHelpers.getLinearVelocity(currentSpeeds);
+    lastVelocity = lastCommandedVelocity;
+    lastTimestamp = Timer.getFPGATimestamp();
   }
 }
