@@ -162,7 +162,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PRESET_FEED ->
           shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()
               ? currentState
-              : RobotState.PREPARE_FEED;
+              : RobotState.PREPARE_PRESET_FEED;
       case FEED ->
           shooter.atGoal()
                   && (health.isLocalizationHealthy()
