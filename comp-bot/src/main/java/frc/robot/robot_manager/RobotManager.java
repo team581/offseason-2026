@@ -459,8 +459,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
 
     if (!health.isLocalizationHealthy() || nearTrench) {
-        shooterHood.idleRequest();
-        DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "NearTrench");
+      shooterHood.idleRequest();
+      DogLog.log("RobotManager/SmartTurretHoodIdleRequest", "NearTrench");
     } else {
       shooterHood.scoreRequest(scoringParameters.distance());
     }
