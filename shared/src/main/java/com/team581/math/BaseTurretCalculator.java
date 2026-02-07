@@ -112,10 +112,12 @@ public class BaseTurretCalculator {
 
     var option2 = (option1 > 0) ? option1 - 360 : option1 + 360;
 
+
     var opt1Valid = (option1 >= minTurretAngle && option1 <= maxTurretAngle);
     var opt2Valid = (option2 >= minTurretAngle && option2 <= maxTurretAngle);
 
     if (opt1Valid && opt2Valid) {
+
       // If both are reachable, pick the with the least movement
       return MathUtil.clamp(
           (Math.abs(option1 - current) <= Math.abs(option2 - current)) ? option1 : option2,
@@ -124,10 +126,12 @@ public class BaseTurretCalculator {
     }
 
     if (opt1Valid) {
+
       return MathUtil.clamp(option1, minTurretAngle, maxTurretAngle);
     }
 
     if (opt2Valid) {
+
       return MathUtil.clamp(option2, minTurretAngle, maxTurretAngle);
     }
 
@@ -142,6 +146,7 @@ public class BaseTurretCalculator {
       double maxTurretAngle,
       double tolerance) {
 
+    target = getOptimalAngle(target, current, minTurretAngle, maxTurretAngle);
     var totalRangeOfMotion = Math.abs(maxTurretAngle) + Math.abs(minTurretAngle);
     if (totalRangeOfMotion <= 360) {
       return target;
@@ -150,12 +155,11 @@ public class BaseTurretCalculator {
     // Make sure that no angle can be equally in both ends' bad range
     var maxTolerance = (totalRangeOfMotion - 360) / 4;
     tolerance = MathUtil.clamp(tolerance, 0, maxTolerance);
-    target = getOptimalAngle(target, current, minTurretAngle, maxTurretAngle);
-    if (MathUtil.isNear(maxTurretAngle - tolerance, target, tolerance)) {
+    if (target >= (maxTurretAngle - tolerance) && target <= (maxTurretAngle)) {
       return MathUtil.clamp(target - 360, minTurretAngle, maxTurretAngle);
     }
 
-    if (MathUtil.isNear(minTurretAngle + tolerance, target, tolerance)) {
+    if (target >= (minTurretAngle) && target <= (minTurretAngle + tolerance)) {
 
       return MathUtil.clamp(target + 360, minTurretAngle, maxTurretAngle);
     }
