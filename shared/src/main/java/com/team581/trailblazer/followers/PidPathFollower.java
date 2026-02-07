@@ -13,6 +13,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 
 public class PidPathFollower implements PathFollower {
+  // 0-1 scalar
+  private static final double AGGRESSIVENESS_FACTOR = 0.3;
   private final PIDController translationController;
   private final PIDController rotationController;
   private final ConstraintsCalculator velocityConstrainer;
@@ -97,6 +99,14 @@ public class PidPathFollower implements PathFollower {
             constraints);
 
     var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
+
+    if (Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond) > 0.2
+        && distanceToGoalMeters > 0.1) {
+      var polarCurrentSpeeds = new PolarChassisSpeeds(currentSpeeds);
+      var currentDirection = polarCurrentSpeeds.direction;
+      driveDirection = currentDirection.interpolate(driveDirection, AGGRESSIVENESS_FACTOR);
+    }
+
     lastVelocity = currentVelocity;
     lastCommandedVelocity = linearVelocity;
     return new PolarChassisSpeeds(linearVelocity, driveDirection, angularVelocity);

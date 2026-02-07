@@ -11,6 +11,7 @@ import com.team581.util.FieldUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
+import frc.robot.climber.Climber;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.generated.BuildConstants;
@@ -81,6 +82,7 @@ public class Robot extends Base581Robot {
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
+  private final Climber climber = new Climber(hardware.climbMotor);
   private final RobotManager robotManager =
       new RobotManager(
           shooterHood,
@@ -94,7 +96,8 @@ public class Robot extends Base581Robot {
           vision,
           lights,
           hardware.driverController,
-          health);
+          health,
+          climber);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);
