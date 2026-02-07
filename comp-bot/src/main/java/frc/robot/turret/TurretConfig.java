@@ -18,12 +18,11 @@ public class TurretConfig {
   public static final double TOLERANCE = 1.0;
 
   public static final double MOTOR_TO_TURRET = 40.0;
-  
+
   // CAL NUMBER
   public static final double ROTOR_CAL_OFFSET = 0;
   public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double ENCODER_TO_TURRET = (float) 1.5; // Encoder rot to turret rot
-
 
   // Turret 2d transform relative to robot center
   public static final Transform2d TURRET_TO_ROBOT =
@@ -31,8 +30,7 @@ public class TurretConfig {
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withFeedback(
-              new FeedbackConfigs().withSensorToMechanismRatio(MOTOR_TO_TURRET))
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(MOTOR_TO_TURRET))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withSlot0(new Slot0Configs().withKP(150.0).withKV(0.0).withKG(0.0));
