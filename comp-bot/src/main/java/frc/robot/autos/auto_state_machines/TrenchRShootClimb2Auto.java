@@ -15,21 +15,21 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
-          AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(10.489, 7.508 , Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(8.852, 5.442, Rotation2d.kCW_90deg)))
+              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.489, 7.508, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.442, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment intakeAcrossMidlineTwo =
       Trailblazer.segment(
-          AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(10.489, 7.508 , Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
-          AutoPoint.ofRed(new Pose2d(8.852, 4.9, Rotation2d.kCW_90deg)))
+              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.489, 7.508, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(8.852, 4.9, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
@@ -37,7 +37,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.508 , Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.489, 7.508, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
@@ -58,8 +58,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   private final AutoSegment driveToClimb =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(14.716, 4.198, Rotation2d.kCW_90deg)))
+      Trailblazer.segment(AutoPoint.ofRed(new Pose2d(14.716, 4.198, Rotation2d.kCW_90deg)))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {
@@ -129,19 +128,18 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   @Override
   protected void afterTransition(TrenchRShootClimb2AutoState newState) {
     switch (newState) {
-  case INTAKE_ACROSS_MIDLINE_1 -> {
-    robotManager.homeDeployRequest();
-    robotManager.homeShooterHoodRequest();
+      case INTAKE_ACROSS_MIDLINE_1 -> {
+        robotManager.homeDeployRequest();
+        robotManager.homeShooterHoodRequest();
+      }
+      case DRIVE_BACK_1 -> {}
+      case SHOOT_1 -> {}
+      case INTAKE_ACROSS_MIDLINE_2 -> {}
+      case DRIVE_BACK_2 -> {}
+      case SHOOT_2 -> {}
+      case DRIVE_TO_CLIMB -> {}
+      case CLIMB -> {}
+      case DONE -> {}
+    }
   }
-  case DRIVE_BACK_1 -> {}
-  case SHOOT_1 -> {}
-  case INTAKE_ACROSS_MIDLINE_2 -> {}
-  case DRIVE_BACK_2 -> {}
-  case SHOOT_2 -> {}
-  case DRIVE_TO_CLIMB -> {}
-  case CLIMB -> {}
-  case DONE -> {}
-
-}
-}
 }
