@@ -2,6 +2,7 @@ package frc.robot.shooter_hood;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.math.PolynomialRegressionCalculator;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -174,18 +175,22 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
   private static double getScoringAngleFromDistance(double distance) {
     if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return ShooterHoodConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT * Math.pow(distance, 2)
-          + ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE * distance
-          - ShooterHoodConfig.SCORING_REGRESSION_MODEL_Y_INT;
+      return PolynomialRegressionCalculator.polynomialRegression(
+          distance,
+          ShooterHoodConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
+          ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE,
+          ShooterHoodConfig.SCORING_REGRESSION_MODEL_Y_INT);
     }
     return ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
   }
 
   private static double getFeedingAngleFromDistance(double distance) {
     if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return ShooterHoodConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT * Math.pow(distance, 2)
-          + ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE * distance
-          - ShooterHoodConfig.FEEDING_REGRESSION_MODEL_Y_INT;
+      return PolynomialRegressionCalculator.polynomialRegression(
+          distance,
+          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
+          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE,
+          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_Y_INT);
     }
     return ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }
