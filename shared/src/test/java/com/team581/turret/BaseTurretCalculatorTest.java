@@ -1,6 +1,7 @@
 package com.team581.turret;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.team581.math.BaseTurretCalculator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -9,7 +10,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import org.junit.jupiter.api.Test;
 
-final class BaseTurretCalculatorTest {
+public final class BaseTurretCalculatorTest {
   @Test
   void calculateSwerveTurretCompensationAngleNegative() {
     var actual =
@@ -161,5 +162,82 @@ final class BaseTurretCalculatorTest {
     var actual = BaseTurretCalculator.getOptimalAngle(target, current, minAngle, maxAngle);
     var expected = 180;
     assertEquals(expected, actual, 1e-9);
+  }
+
+  @Test
+  void getSmartUnwrapAngleNegative() {
+    double target = -100;
+    double current = 260;
+    double minTurretAngle = -270;
+    double maxTurretAngle = 270;
+    double tolerance = 30;
+
+    var expected = -100;
+    var actual =
+        BaseTurretCalculator.getSmartUnwrapAngle(
+            target, current, minTurretAngle, maxTurretAngle, tolerance);
+    assertEquals(expected, actual, 1e-9);
+  }
+
+  @Test
+  void getSmartUnwrapAngleNegativeNoUnwrapNeeded() {
+    double target = -90;
+    double current = 50;
+    double minTurretAngle = -270;
+    double maxTurretAngle = 270;
+    double tolerance = 30;
+
+    var expected = -90;
+    var actual =
+        BaseTurretCalculator.getSmartUnwrapAngle(
+            target, current, minTurretAngle, maxTurretAngle, tolerance);
+    assertEquals(expected, actual, 1e-9);
+  }
+
+  @Test
+  void getSmartUnwrapAnglePositive() {
+    double target = 110;
+    double current = -250;
+    double minTurretAngle = -270;
+    double maxTurretAngle = 270;
+    double tolerance = 30;
+
+    var expected = 110;
+    var actual =
+        BaseTurretCalculator.getSmartUnwrapAngle(
+            target, current, minTurretAngle, maxTurretAngle, tolerance);
+    assertEquals(expected, actual, 1e-9);
+  }
+
+  @Test
+  void getSmartUnwrapAnglePositiveNoUnwrapNeeded() {
+    double target = 90;
+    double current = 50;
+    double minTurretAngle = -270;
+    double maxTurretAngle = 270;
+    double tolerance = 30;
+
+    var expected = 90;
+    var actual =
+        BaseTurretCalculator.getSmartUnwrapAngle(
+            target, current, minTurretAngle, maxTurretAngle, tolerance);
+    assertEquals(expected, actual, 1e-9);
+  }
+
+  @Test
+  void getSmartUnwrapDifferentThanOptimal() {
+    double target = -90;
+    double current = 270;
+    double minTurretAngle = -270;
+    double maxTurretAngle = 270;
+    double tolerance = 30;
+
+    var optimalAngle =
+        BaseTurretCalculator.getOptimalAngle(target, current, minTurretAngle, maxTurretAngle);
+    var smartUnwrapAngle =
+        BaseTurretCalculator.getSmartUnwrapAngle(
+            target, current, minTurretAngle, maxTurretAngle, tolerance);
+
+    assertNotEquals(optimalAngle, smartUnwrapAngle, 1e-9);
   }
 }
