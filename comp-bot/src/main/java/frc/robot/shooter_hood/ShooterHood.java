@@ -12,21 +12,21 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
-  private final TalonFX motor;
-  private final PositionVoltage positionVoltageRequest =
-      new PositionVoltage(0).withEnableFOC(false);
-
-  private double distanceToScoringAngle(double distance) {
+  private static double distanceToScoringAngle(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterHoodConfig.SCORING_REGRESSION_MODEL.calculate(distance)
         : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
   }
 
-  private double distanceToFeedingAngle(double distance) {
+  private static double distanceToFeedingAngle(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterHoodConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
         : ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }
+
+  private final TalonFX motor;
+  private final PositionVoltage positionVoltageRequest =
+      new PositionVoltage(0).withEnableFOC(false);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;

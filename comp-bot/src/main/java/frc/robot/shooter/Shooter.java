@@ -11,22 +11,22 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> {
-  private final TalonFX leftMotor;
-  private final TalonFX rightMotor;
-
-  private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
-
-  private double distanceToScoringRpm(double distance) {
+  private static double distanceToScoringRpm(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
         : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
   }
 
-  private double distanceToFeedingRpm(double distance) {
+  private static double distanceToFeedingRpm(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
         : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
   }
+
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
+
+  private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
