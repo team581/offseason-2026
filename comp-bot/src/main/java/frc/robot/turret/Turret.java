@@ -21,6 +21,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private final CANcoder encoder;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
+  private double robotRotationFeedForward = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
@@ -78,15 +79,19 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case SCORE, FEED -> {
         motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
+            positionRequest
+                .withPosition(
+                    Units.degreesToRotations(
+                        TurretCalculator.getOptimalAngle(goalAngle, currentAngle)))
+                .withVelocity(robotRotationFeedForward));
       }
       case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(
-                    TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))));
+            positionRequest
+                .withPosition(
+                    Units.degreesToRotations(
+                        TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))
+                .withVelocity(robotRotationFeedForward));
       }
       default -> {}
     }
@@ -141,6 +146,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void idleFeedRequest(double goalAngle) {
     this.goalAngle = goalAngle;
     setState(TurretState.IDLE_FEED);
+  }
+
+  public void setRobotRotationRate(double rateRadians) {
+    robotRotationFeedForward = Units.degreesToRadians(getVelocityDegreesPerSecond()) - rateRadians;
   }
 
   public boolean atGoal() {

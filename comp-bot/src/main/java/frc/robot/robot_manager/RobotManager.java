@@ -600,6 +600,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     robotPose = localization.getPose();
     vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
+    turret.setRobotRotationRate(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
     var speeds = swerve.getFieldRelativeSpeeds();
     isMoving = MathHelpers.getLinearVelocity(speeds) > 0.2;
 
