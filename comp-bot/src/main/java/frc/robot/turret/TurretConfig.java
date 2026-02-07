@@ -32,8 +32,7 @@ public class TurretConfig {
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio((280.0 / 12.0) * (40.0 / 12.0)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(30).withStatorCurrentLimit(30))
+          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withSlot0(new Slot0Configs().withKP(150.0).withKV(0.0).withKG(0.0));
 
   private TurretConfig() {}

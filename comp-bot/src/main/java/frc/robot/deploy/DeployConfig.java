@@ -24,15 +24,13 @@ public class DeployConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(1).withStatorCurrentLimit(1))
+          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(1).withStatorCurrentLimit(1))
+          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   public static final CANrangeConfiguration CAN_RANGE_CONFIG = new CANrangeConfiguration();
 }
