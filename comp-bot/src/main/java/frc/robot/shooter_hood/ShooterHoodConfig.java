@@ -5,7 +5,9 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import java.util.Map;
@@ -27,7 +29,10 @@ public class ShooterHoodConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(20).withSupplyCurrentLimit(20))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Brake)
+                  .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
@@ -36,6 +41,10 @@ public class ShooterHoodConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0), Map.entry(0.0, 100.0));
+  public static final PolynomialRegression SCORING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("ShooterHood/ScoringRegression", DISTANCE_TO_SCORE);
+  public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("ShooterHood/FeedingRegression", DISTANCE_TO_FEED);
 
   private ShooterHoodConfig() {}
 }

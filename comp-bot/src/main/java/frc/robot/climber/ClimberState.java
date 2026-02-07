@@ -1,11 +1,17 @@
 package frc.robot.climber;
 
 public enum ClimberState {
-  STOWED,
-  L1_LINEUP,
-  L1_HANGING,
-  L2_LINEUP,
-  L2_HANGING,
-  L3_LINEUP,
-  L3_HANGING;
+  STOWED(0),
+  L1_LINEUP(1),
+  L1_HANGING(1),
+  L2_LINEUP(1),
+  L2_HANGING(1),
+  L3_LINEUP(1),
+  L3_HANGING(1);
+
+  public final double height;
+
+  ClimberState(double height) {
+    this.height = height;
+  }
 }

@@ -3,11 +3,31 @@ package com.team581.util.tuning;
 import com.team581.GlobalConfig;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.DoubleStream;
 
 public class TunableInterpolatingDoubleTreeMap {
+  @SuppressWarnings("unchecked")
+  public static Map<Double, Double> getEntries(InterpolatingDoubleTreeMap map) {
+    // Do evil reflection to read the private m_map field from InterpolatingTreeMap
+    Field mapField;
+    try {
+      mapField = InterpolatingTreeMap.class.getDeclaredField("m_map");
+    } catch (NoSuchFieldException | SecurityException e) {
+      throw new RuntimeException("Failed to get entries from InterpolatingDoubleTreeMap", e);
+    }
+    mapField.setAccessible(true);
+
+    try {
+      return (Map<Double, Double>) mapField.get(map);
+    } catch (IllegalArgumentException | IllegalAccessException e) {
+      throw new RuntimeException("Failed to get entries from InterpolatingDoubleTreeMap", e);
+    }
+  }
+
   @SafeVarargs
   public static InterpolatingDoubleTreeMap ofEntries(
       String key, Map.Entry<Double, Double>... entries) {

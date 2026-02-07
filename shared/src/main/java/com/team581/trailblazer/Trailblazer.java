@@ -104,5 +104,11 @@ public class Trailblazer {
     pathTracker.resetAndSetPoints(segment.points);
     currentIndex = pathTracker.getCurrentPointIndex();
     needsFollowerReset = true;
+
+    DogLog.log(
+        "Trailblazer/Tracker/InitialSegmentPoints",
+        segment.points.stream()
+            .map(point -> point.poseSupplier().get().getPose())
+            .toArray(Pose2d[]::new));
   }
 }

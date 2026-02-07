@@ -206,14 +206,14 @@ public class FieldUtil {
           RED_OUTPOST_TRENCH_SIDE_BUMP_POINT);
   // TODO: Validate these points
   private static final Pose2d BLUE_LEFT_FALLBACK =
-      new Pose2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY(), new Rotation2d());
+      new Pose2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY(), new Rotation2d());
   private static final Pose2d BLUE_RIGHT_FALLBACK =
       new Pose2d(
-          BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY(), new Rotation2d());
+          BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY(), new Rotation2d());
   private static final Pose2d RED_LEFT_FALLBACK =
-      new Pose2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY(), new Rotation2d());
+      new Pose2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY(), new Rotation2d());
   private static final Pose2d RED_RIGHT_FALLBACK =
-      new Pose2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY(), new Rotation2d());
+      new Pose2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY(), new Rotation2d());
 
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {

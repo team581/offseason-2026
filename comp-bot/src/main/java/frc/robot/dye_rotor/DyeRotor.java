@@ -27,6 +27,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   private double rotorMotorRpm = 0.0;
   private double horizontalMotorRpm = 0.0;
+  private boolean isShooting = false;
+  private boolean isShootingDebounced = false;
 
   public DyeRotor(TalonFX rotorMotor, TalonFX horizontalMotor, TalonFX verticalMotor) {
     super(SubsystemPriority.DYE_ROTOR, DyeRotorState.IDLE);
@@ -88,6 +90,9 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
+
+    isShooting = horizontalMotorRpm < DyeRotorConfig.RPM_TOLERANCE_SHOOTING;
+    isShootingDebounced = DyeRotorConfig.debouncer.calculate(isShooting);
   }
 
   public boolean atGoal() {
@@ -105,6 +110,13 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   public boolean isJammed() {
     return rotorFilteredCurrent > DyeRotorConfig.JAM_CURRENT_THRESHOLD.getAsDouble();
+  }
+
+  public boolean isShooting() {
+    if (isShootingDebounced) {
+      return true;
+    }
+    return false;
   }
 
   public double getAngle() {

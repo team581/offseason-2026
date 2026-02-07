@@ -16,8 +16,6 @@ public enum RobotState {
   FEED,
 
   UNJAM,
-  REHOME_DEPLOY,
-  REHOME_SHOOTER_HOOD,
 
   CLIMB_1_LINEUP_L1_AUTONOMOUS,
   CLIMB_2_RAISING_L1_AUTONOMOUS,
@@ -44,7 +42,7 @@ public enum RobotState {
   MANUAL_CLIMB_6_RAISING_L3,
   MANUAL_CLIMB_7_HANGING_L3;
 
-  public boolean isClimbingOrRehoming() {
+  public boolean isClimbing() {
     return switch (this) {
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> true;
       case CLIMB_2_RAISING_L1_AUTONOMOUS -> true;
@@ -65,9 +63,6 @@ public enum RobotState {
       case MANUAL_CLIMB_5_HANGING_L2 -> true;
       case MANUAL_CLIMB_6_RAISING_L3 -> true;
       case MANUAL_CLIMB_7_HANGING_L3 -> true;
-
-      case REHOME_DEPLOY -> true;
-      case REHOME_SHOOTER_HOOD -> true;
 
       default -> false;
     };

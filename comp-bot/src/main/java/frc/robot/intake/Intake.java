@@ -5,6 +5,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -17,6 +18,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
 
     var config =
         new TalonFXConfiguration()
+            .withMotorOutput(
+                new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
             // TODO: Fill in the real ratio here
             .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
             .withCurrentLimits(

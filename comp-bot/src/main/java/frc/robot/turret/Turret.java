@@ -21,6 +21,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private final CANcoder encoder;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
+  private double velocity = 0.0;
+  private double robotRotationFeedForward = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
@@ -56,18 +58,19 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   @Override
   protected void collectInputs() {
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
-    DogLog.log("Turret/Angle", currentAngle);
+    velocity = Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
 
     // Predict the turret's current angle to account for sensor latency
     double latencyCompensatedAngle =
         Units.rotationsToDegrees(
             BaseStatusSignal.getLatencyCompensatedValueAsDouble(
                 motor.getPosition(), motor.getVelocity()));
-    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
 
     // Add the predicted angle to the vision buffer at the current timestamp
-    vision.addTurretObservation(
-        Timer.getFPGATimestamp(), latencyCompensatedAngle, getVelocityDegreesPerSecond());
+    vision.addTurretObservation(Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
+
+    DogLog.log("Turret/Angle", currentAngle);
+    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
   }
 
   @Override
@@ -78,15 +81,19 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case SCORE, FEED -> {
         motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(
-                    TurretCalculator.getOptimalAngle(goalAngle, currentAngle))));
+            positionRequest
+                .withPosition(
+                    Units.degreesToRotations(
+                        TurretCalculator.getOptimalAngle(goalAngle, currentAngle)))
+                .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(
-                    TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))));
+            positionRequest
+                .withPosition(
+                    Units.degreesToRotations(
+                        TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))
+                .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       default -> {}
     }
@@ -143,6 +150,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.IDLE_FEED);
   }
 
+  public void setRobotRotationRate(double rateDegrees) {
+    robotRotationFeedForward = -rateDegrees;
+  }
+
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED -> false;
@@ -158,8 +169,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     return currentAngle;
   }
 
-  public double getVelocityDegreesPerSecond() {
-    return Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
+  public double getVelocity() {
+    return velocity;
   }
 
   @Override

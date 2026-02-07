@@ -1,6 +1,5 @@
 package frc.robot.robot_manager;
 
-import com.team581.math.ShootOnTheMove;
 import com.team581.util.AprilTags;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
@@ -11,7 +10,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.config.FeatureFlags;
 import frc.robot.localization.Localization;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
@@ -139,11 +137,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case HUB_AIM_ADJUSTING_SWERVE -> {
         swerve.hubAimRequest(swerveTurretCompensationAngle);
-        var goalPose =
-            ShootOnTheMove.getVelocityCompensatedGoal(
-                FieldUtil.HUB_POSE.getTranslation(),
-                swerve.getFieldRelativeSpeeds(),
-                TIME_OF_FLIGHT.get());
+        var goalPose = FieldUtil.HUB_POSE.getTranslation();
+        // Disabled since new shoot on the move implementation has a different interface
+        // var goalPose =
+        //     ShootOnTheMove.getVelocityCompensatedGoal(
+        //         FieldUtil.HUB_POSE.getTranslation(),
+        //         swerve.getFieldRelativeSpeeds(),
+        //         TIME_OF_FLIGHT.get());
         var aimingAngle =
             TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, goalPose);
         turret.setHubAimAngle(aimingAngle);
@@ -191,11 +191,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var goalPose = FieldUtil.HUB_POSE.getTranslation();
 
     turret.setDistance(robotTranslation.getDistance(goalPose));
-    if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
-      goalPose =
-          ShootOnTheMove.getVelocityCompensatedGoal(
-              goalPose, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
-    }
+    // Disabled since new shoot on the move implementation has a different interface
+    // if (FeatureFlags.SHOOT_ON_THE_MOVE.getAsBoolean()) {
+    //   goalPose =
+    //       ShootOnTheMove.getVelocityCompensatedGoal(
+    //           goalPose, swerve.getFieldRelativeSpeeds(), TIME_OF_FLIGHT.get());
+    // }
 
     turretHubGoalAngle =
         TurretCalculator.calculateTurretAimingAngle(robotPoseInAllianceZone, goalPose);
