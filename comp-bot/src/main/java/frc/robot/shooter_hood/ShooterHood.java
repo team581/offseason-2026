@@ -2,7 +2,7 @@ package frc.robot.shooter_hood;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.team581.math.PolynomialRegressionCalculator;
+import com.team581.math.QuadraticRegression;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -16,6 +16,18 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private final TalonFX motor;
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
+
+  private final QuadraticRegression scoringRegressionCalculator =
+      new QuadraticRegression(
+          ShooterHoodConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
+          ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE,
+          ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE);
+
+  private final QuadraticRegression feedingRegressionCalculator =
+      new QuadraticRegression(
+          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
+          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE,
+          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -173,24 +185,16 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     shooterHoodSimulation.update();
   }
 
-  private static double getScoringAngleFromDistance(double distance) {
+  private double getScoringAngleFromDistance(double distance) {
     if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return PolynomialRegressionCalculator.polynomialRegression(
-          distance,
-          ShooterHoodConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterHoodConfig.SCORING_REGRESSION_MODEL_SLOPE,
-          ShooterHoodConfig.SCORING_REGRESSION_MODEL_Y_INT);
+      return scoringRegressionCalculator.calculate(distance);
     }
     return ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
   }
 
-  private static double getFeedingAngleFromDistance(double distance) {
+  private double getFeedingAngleFromDistance(double distance) {
     if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return PolynomialRegressionCalculator.polynomialRegression(
-          distance,
-          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_SLOPE,
-          ShooterHoodConfig.FEEDING_REGRESSION_MODEL_Y_INT);
+      return feedingRegressionCalculator.calculate(distance);
     }
     return ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }

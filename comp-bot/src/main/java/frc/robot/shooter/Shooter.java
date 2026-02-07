@@ -2,7 +2,7 @@ package frc.robot.shooter;
 
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.team581.math.PolynomialRegressionCalculator;
+import com.team581.math.QuadraticRegression;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -17,6 +17,17 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX rightMotor;
 
   private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
+  private final QuadraticRegression scoringRegressionCalculator =
+      new QuadraticRegression(
+          ShooterConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
+          ShooterConfig.SCORING_REGRESSION_MODEL_SLOPE,
+          ShooterConfig.SCORING_REGRESSION_MODEL_SLOPE);
+
+  private final QuadraticRegression feedingRegressionCalculator =
+      new QuadraticRegression(
+          ShooterConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
+          ShooterConfig.FEEDING_REGRESSION_MODEL_SLOPE,
+          ShooterConfig.FEEDING_REGRESSION_MODEL_SLOPE);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -138,24 +149,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return ShooterConfig.DISTANCE_TO_FEED_TOF.get(feedDistance);
   }
 
-  private static double getScoringRPMFromDistance(double distance) {
+  private double getScoringRPMFromDistance(double distance) {
     if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return PolynomialRegressionCalculator.polynomialRegression(
-          distance,
-          ShooterConfig.SCORING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterConfig.SCORING_REGRESSION_MODEL_SLOPE,
-          ShooterConfig.SCORING_REGRESSION_MODEL_Y_INT);
+      return scoringRegressionCalculator.calculate(distance);
     }
     return ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
   }
 
-  private static double getFeedingRPMFromDistance(double distance) {
+  private double getFeedingRPMFromDistance(double distance) {
     if (FeatureFlags.REGRESSION_MODEL.getAsBoolean()) {
-      return PolynomialRegressionCalculator.polynomialRegression(
-          distance,
-          ShooterConfig.FEEDING_REGRESSION_MODEL_LEADING_COEFFICIENT,
-          ShooterConfig.FEEDING_REGRESSION_MODEL_SLOPE,
-          ShooterConfig.FEEDING_REGRESSION_MODEL_Y_INT);
+      return feedingRegressionCalculator.calculate(distance);
     }
     return ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
   }
