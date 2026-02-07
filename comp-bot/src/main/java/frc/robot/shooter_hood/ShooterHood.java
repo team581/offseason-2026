@@ -101,6 +101,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     feedAngle = distanceToFeedingAngle.applyAsDouble(feedDistance);
 
     DogLog.log("ShooterHood/MeasuredAngle", measuredAngle);
+    DogLog.log("ShooterHood/ScoreAngle", scoreAngle);
     DogLog.log("ShooterHood/FeedingAngle", feedAngle);
     DogLog.log("ShooterHood/StatorCurrent", statorCurrent);
     switch (getState()) {
