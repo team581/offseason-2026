@@ -6,10 +6,12 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
+import com.team581.util.AprilTags;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.Timer;
@@ -79,7 +81,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case UNHOMED -> {
         motor.disable();
       }
-      case SCORE, FEED -> {
+      case SCORE, FEED, CLIMB -> {
         motor.setControl(
             positionRequest
                 .withPosition(
@@ -133,6 +135,13 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void scoreRequest(double goalAngle) {
     this.goalAngle = goalAngle;
     setState(TurretState.SCORE);
+  }
+
+  public void climbRequest(Pose2d robotPose) {
+    goalAngle =
+        TurretCalculator.calculateTurretAimingAngle(
+            robotPose, AprilTags.getClimbTagPose().getTranslation());
+    setState(TurretState.CLIMB);
   }
 
   public void feedRequest(double goalAngle) {

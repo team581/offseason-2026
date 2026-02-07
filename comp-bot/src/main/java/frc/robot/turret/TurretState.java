@@ -5,5 +5,6 @@ public enum TurretState {
   SCORE,
   FEED,
   IDLE_SCORE,
-  IDLE_FEED;
+  IDLE_FEED,
+  CLIMB;
 }

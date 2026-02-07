@@ -43,6 +43,10 @@ public class AprilTags {
   public static final Pose3d TAG_31 = FIELD_LAYOUT.getTagPose(31).orElseThrow();
   public static final Pose3d TAG_32 = FIELD_LAYOUT.getTagPose(32).orElseThrow();
 
+  public static Pose2d getClimbTagPose() {
+    return FmsUtil.isRedAlliance() ? TAG_15.toPose2d() : TAG_31.toPose2d();
+  }
+
   /**
    * Gets the Pose2d of a specific AprilTag ID.
    *
