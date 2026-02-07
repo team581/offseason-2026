@@ -13,8 +13,8 @@
     "matchStrings": ["jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }"]
   }],
   "packageRules": [{
-    "matchPackageNames": ["com.google.errorprone:**"],
-    "groupName": "Error Prone"
+    "groupName": "error-prone",
+    "matchSourceUrls": ["https://github.com/google/error-prone"]
   }],
   "semanticCommits": "disabled",
   "labels": ["dependencies"],

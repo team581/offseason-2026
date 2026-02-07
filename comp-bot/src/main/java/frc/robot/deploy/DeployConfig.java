@@ -35,6 +35,5 @@ public class DeployConfig {
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   // TODO: Discuss/set CANrange config during bringup
-  public static final CANrangeConfiguration CAN_RANGE_CONFIG =
-      new CANrangeConfiguration();
+  public static final CANrangeConfiguration CAN_RANGE_CONFIG = new CANrangeConfiguration();
 }
