@@ -137,10 +137,10 @@ public class Robot extends Base581Robot {
     driverRightBumper.falling().ifHigh(robotManager::idleRequest);
 
     var operatorStart = enabledEvent.and(hardware.operatorController.start(buttonBindingsLoop));
-    operatorStart.rising().ifHigh(robotManager::rehomeDeployRequest);
+    operatorStart.rising().ifHigh(robotManager::homeDeployRequest);
 
     var operatorBack = enabledEvent.and(hardware.operatorController.back(buttonBindingsLoop));
-    operatorBack.rising().ifHigh(robotManager::rehomeShooterHoodRequest);
+    operatorBack.rising().ifHigh(robotManager::homeShooterHoodRequest);
 
     var operatorX = enabledEvent.and(hardware.operatorController.x(buttonBindingsLoop));
     operatorX.rising().ifHigh(robotManager::unjamRequest);
