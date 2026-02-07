@@ -113,10 +113,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
   }
 
-  public void scoreRequest() {
-    setStateFromRequest(ShooterState.SCORE);
-  }
-
   public boolean atGoal() {
     return switch (getState()) {
       case IDLE -> true;
