@@ -48,6 +48,6 @@ public class TurretCalculator {
 
   public static double getSmartUnwrapAngle(double target, double current) {
     return BaseTurretCalculator.getSmartUnwrapAngle(
-        target, current, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE, 40);
+        target, current, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE, 80);
   }
 }
