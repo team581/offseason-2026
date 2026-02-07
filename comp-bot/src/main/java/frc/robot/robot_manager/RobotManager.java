@@ -612,7 +612,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     scoringParameters =
         AimParameterUtil.getScoringParameters(
             // TODO: This should require you to pass in the distance to get the ToF
-            health.isLocalizationHealthy() ? robotPose : new Pose2d(FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
+            health.isLocalizationHealthy()
+                ? robotPose
+                : new Pose2d(
+                    FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
             swerve.getFieldRelativeSpeeds(),
             shooter.getScoreTimeOfFlight(scoringDistance));
     feedingParameters =
