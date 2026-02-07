@@ -4,7 +4,6 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -71,4 +70,4 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     DogLog.log("Climber/Position", motorPosition);
     DogLog.log("Climber/AtGoal", atGoal());
   }
-   }
+}
