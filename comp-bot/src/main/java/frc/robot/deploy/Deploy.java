@@ -40,8 +40,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
   }
 
-  // TODO: Use SHOOTING state and canRange to determine whether we should hopper shuffle
-
   public void intakeRequest() {
     switch (getState()) {
       case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
@@ -94,7 +92,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         }
       }
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        if (MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
+        if (MathUtil.isNear(leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
           yield storedState;
         }
         yield currentState;
@@ -168,9 +166,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
     DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
 
-    DogLog.log("Deploy/Position", getPosition());
+    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
+    DogLog.log("Deploy/AveragePosition", getPosition());
     DogLog.log("Deploy/HopperCANRangeDistance", hopperCANRangeDistance);
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
+    DogLog.log("Deploy/StoredState", storedState.name());
   }
 
   public double getPosition() {
@@ -178,8 +179,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   private boolean atGoal(double goalDistance) {
-    return MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.TOLERANCE)
-        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.TOLERANCE);
+    return MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
   }
 
   @Override

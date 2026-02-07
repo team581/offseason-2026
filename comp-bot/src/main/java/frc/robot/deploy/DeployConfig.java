@@ -17,7 +17,7 @@ public class DeployConfig {
   public static final double HOMING_VOLTAGE = 0;
   public static final double HOMING_CURRENT = 40.0;
   public static final double CAPACITY_DISTANCE_THRESHOLD = 0.0;
-  public static final double TOLERANCE = 0.0;
+  public static final double POSITION_TOLERANCE = 0.25;
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
