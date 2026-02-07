@@ -70,7 +70,8 @@ public class PidPathFollower implements PathFollower {
 
     lastTimestamp = Timer.getFPGATimestamp();
 
-    var maxReachableVelocity = Math.max((currentVelocity + (constraints.maxLinearAcceleration() * kDt)),0.5);
+    var maxReachableVelocity =
+        Math.max((lastCommandedVelocity + (constraints.maxLinearAcceleration() * kDt)), 0.5);
 
     // Calculate velocity needed to stop in time
     var maxStoppingVelocity =
