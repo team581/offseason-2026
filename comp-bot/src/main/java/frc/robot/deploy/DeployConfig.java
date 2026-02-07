@@ -15,6 +15,8 @@ public class DeployConfig {
   public static final double HOMING_END_POSITION = 0;
   public static final double HOMING_VOLTAGE = 0;
   public static final double HOMING_CURRENT = 40.0;
+  public static final double CAPACITY_DISTANCE_THRESHOLD = 0.0;
+  public static final double TOLERANCE = 0.0;
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -30,6 +32,7 @@ public class DeployConfig {
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(1).withStatorCurrentLimit(1))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
+  // TODO: Discuss/set CANrange config during bringup
   public static final CANrangeConfiguration CAN_RANGE_CONFIG =
       new CANrangeConfiguration();
 }

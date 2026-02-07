@@ -9,7 +9,9 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> {
@@ -22,6 +24,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
   private double hopperCANRangeDistance = 0.0;
+  private boolean ableToHopperShuffle = false;
 
   public Deploy(TalonFX leftMotor, TalonFX rightMotor, CANrange hopperCANRange) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -54,6 +57,15 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         // Do nothing, we aren't homed or need to catchup
       }
       default -> setStateFromRequest(DeployState.STOWED);
+    }
+  }
+
+  public void shootingRequest() {
+    switch (getState()) {
+      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+        // Do nothing, we aren't homed or need to catchup
+      }
+      default -> setStateFromRequest(DeployState.SHOOTING);
     }
   }
 
@@ -115,6 +127,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
         rightMotor.disable();
       }
+      case SHOOTING -> {
+        leftMotor.setControl(
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+        rightMotor.setControl(
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+      }
       default -> {
         leftMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
         rightMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
@@ -124,6 +142,22 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void whileInState(DeployState state) {
+    if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
+        && state == DeployState.SHOOTING
+        && ableToHopperShuffle) {
+      if (atGoal(DeployState.SHOOTING.getLength())) {
+        leftMotor.setControl(
+            positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
+        rightMotor.setControl(
+            positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
+      } else if (atGoal(DeployState.INTAKE.getLength())) {
+        leftMotor.setControl(
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+        rightMotor.setControl(
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+      }
+    }
+
     if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
       DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
       if (leftMotorPosition > rightMotorPosition) {
@@ -135,19 +169,25 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
 
     DogLog.log("Deploy/Position", getPosition());
-    DogLog.log("Deploy/CanRageDistance", hopperCANRangeDistance);
+    DogLog.log("Deploy/HopperCANRangeDistance", hopperCANRangeDistance);
+    DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
   }
 
   public double getPosition() {
     return MathHelpers.average(leftMotorPosition, rightMotorPosition);
   }
 
+  private boolean atGoal(double goalDistance) {
+    return MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.TOLERANCE)
+        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.TOLERANCE);
+  }
+
   @Override
   protected void collectInputs() {
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
-
-    hopperCANRangeDistance = hopperCANRange.getDistance().getValueAsDouble();
+    hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+    ableToHopperShuffle = hopperCANRangeDistance < DeployConfig.CAPACITY_DISTANCE_THRESHOLD;
   }
 
   @Override
