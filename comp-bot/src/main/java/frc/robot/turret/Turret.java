@@ -97,6 +97,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       default -> {}
     }
+
+    DogLog.log("Turret/AtGoal", atGoal());
   }
 
   public void setState(TurretState newState) {

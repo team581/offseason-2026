@@ -164,6 +164,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
       default -> {}
     }
+
+    DogLog.log("ShooterHood/AtGoal", atGoal());
   }
 
   @Override
