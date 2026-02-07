@@ -96,6 +96,11 @@ public class SwerveAssist {
     return false;
   }
 
+  public static boolean ableToDirectionSnap(ChassisSpeeds fieldRelativeSpeeds) {
+    var robotVelocity = MathHelpers.getLinearVelocity(fieldRelativeSpeeds);
+    return robotVelocity > MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS.getAsDouble();
+  }
+
   public static boolean ableToTrenchAssist(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     var robotTranslation = robotPose.getTranslation();
     // Check if in trench assist zone
@@ -206,11 +211,6 @@ public class SwerveAssist {
     DogLog.log("Swerve/WallSnaps/VelocityAngleTowardWall", velocityAngleTowardWall);
     DogLog.log("Swerve/WallSnaps/RotationAngleTowardWall", rotationAngleTowardWall);
     return distanceToWallThreshold && velocityAngleTowardWall && rotationAngleTowardWall;
-  }
-
-  public static boolean ableToDirectionSnap(ChassisSpeeds fieldRelativeSpeeds) {
-    var robotVelocity = MathHelpers.getLinearVelocity(fieldRelativeSpeeds);
-    return robotVelocity > MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS.getAsDouble();
   }
 
   public static double getBumpSnapAngle(double vxMetersPerSecond) {
