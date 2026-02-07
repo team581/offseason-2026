@@ -1,7 +1,5 @@
 package com.team581.trailblazer.followers;
 
-import static edu.wpi.first.units.Units.Degrees;
-
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
 import com.team581.trailblazer.AutoConstraintOptions;
@@ -11,7 +9,6 @@ import com.team581.trailblazer.segments.AutoSegment;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -103,8 +100,7 @@ public class PidPathFollower implements PathFollower {
 
     var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
 
-    if (Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond)
-            > 0.2
+    if (Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond) > 0.2
         && distanceToGoalMeters > 0.1) {
       var polarCurrentSpeeds = new PolarChassisSpeeds(currentSpeeds);
       var currentDirection = polarCurrentSpeeds.direction;
