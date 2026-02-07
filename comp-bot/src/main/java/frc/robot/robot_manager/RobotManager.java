@@ -95,7 +95,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           AUTOMATIC_CLIMB_7_HANGING_L3 ->
           currentState;
       case REHOME_DEPLOY -> {
-        if (deploy.getState() == DeployState.STOWED) {
+        if (deploy.getState() != DeployState.HOMING && deploy.getState() != DeployState.UNHOMED) {
           yield RobotState.IDLE;
         }
         yield currentState;
