@@ -107,7 +107,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (shooter.atGoal()
             && dyeRotor.atGoal()
             && turret.atGoal()
-            && shooter.atGoal()
             && shooterHood.atGoal()
             && !isMoving) {
           yield RobotState.PRESET_SCORE;
