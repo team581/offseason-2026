@@ -86,7 +86,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         TurretCalculator.getOptimalAngle(goalAngle, currentAngle)))
-                .withVelocity(robotRotationFeedForward));
+                .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
@@ -94,7 +94,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))
-                .withVelocity(robotRotationFeedForward));
+                .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       default -> {}
     }
