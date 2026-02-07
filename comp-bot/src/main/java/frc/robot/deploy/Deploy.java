@@ -93,7 +93,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         }
       }
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        if (MathUtil.isNear(leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
+        if (MathUtil.isNear(
+            leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
           yield storedState;
         }
         yield currentState;
