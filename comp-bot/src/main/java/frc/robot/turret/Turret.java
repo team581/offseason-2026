@@ -21,6 +21,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private final CANcoder encoder;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
+  private double velocity = 0.0;
   private double robotRotationFeedForward = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
@@ -57,18 +58,20 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   @Override
   protected void collectInputs() {
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
-    DogLog.log("Turret/Angle", currentAngle);
+    velocity = Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
 
     // Predict the turret's current angle to account for sensor latency
     double latencyCompensatedAngle =
         Units.rotationsToDegrees(
             BaseStatusSignal.getLatencyCompensatedValueAsDouble(
                 motor.getPosition(), motor.getVelocity()));
-    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
 
     // Add the predicted angle to the vision buffer at the current timestamp
     vision.addTurretObservation(
-        Timer.getFPGATimestamp(), latencyCompensatedAngle, getVelocityDegreesPerSecond());
+        Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
+
+    DogLog.log("Turret/Angle", currentAngle);
+    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
   }
 
   @Override
@@ -148,8 +151,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.IDLE_FEED);
   }
 
-  public void setRobotRotationRate(double rateRadians) {
-    robotRotationFeedForward = Math.toRadians(getVelocityDegreesPerSecond()) - rateRadians;
+  public void setRobotRotationRate(double rateDegrees) {
+    robotRotationFeedForward = velocity - rateDegrees;
   }
 
   public boolean atGoal() {
@@ -167,8 +170,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     return currentAngle;
   }
 
-  public double getVelocityDegreesPerSecond() {
-    return Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
+  public double getVelocity() {
+    return velocity;
   }
 
   @Override
