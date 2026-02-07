@@ -184,11 +184,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         if (ableToTrenchAssist) {
 
           DogLog.timestamp("TrenchAssistActive");
+          var trenchAssistSpeeds =
+              SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
           drivetrain.setControl(
               drivePerspectiveSnapsOpenLoop
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(
-                      SwerveAssist.getTrenchAssistVelocity(drivetrainState.Pose.getTranslation()))
+                  .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
+                  .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
                               SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))

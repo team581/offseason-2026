@@ -223,9 +223,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     switch (getState()) {
       case TELEOP -> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
+          var trenchAssistSpeeds =
+              SwerveAssist.getTrenchAssistSpeeds(robotPose.getTranslation(), new ChassisSpeeds(teleopRequest.VelocityX, teleopRequest.VelocityY, 0.0));
           drivetrain.setControl(
               swerveAssistSnapsRequest
-                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
+                  .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
+                  .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
                               SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
@@ -242,9 +245,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       }
       case HUB_AIM_TELEOP -> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
+          var trenchAssistSpeeds =
+              SwerveAssist.getTrenchAssistSpeeds(robotPose.getTranslation(), fieldRelativeSpeeds);
           drivetrain.setControl(
               swerveAssistSnapsRequest
-                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
+                  .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
+                  .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
                               SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
@@ -271,9 +277,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
       case INTAKING -> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {
+          var trenchAssistSpeeds =
+              SwerveAssist.getTrenchAssistSpeeds(robotPose.getTranslation(), fieldRelativeSpeeds);
           drivetrain.setControl(
               swerveAssistSnapsRequest
-                  .withVelocityY(SwerveAssist.getTrenchAssistVelocity(robotPose.getTranslation()))
+                  .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
+                  .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
                               SwerveAssist.getTrenchSnapAngle(robotPose.getRotation()))
