@@ -154,11 +154,11 @@ public class BaseTurretCalculator {
     // Make sure that no angle can be equally in both ends' bad range
     var maxTolerance = (totalRangeOfMotion - 360) / 4;
     tolerance = MathUtil.clamp(tolerance, 0, maxTolerance);
-    if (target >= (maxTurretAngle - tolerance) && target <= (maxTurretAngle)) {
+    if (target >= (maxTurretAngle - tolerance) && target <= maxTurretAngle) {
       return MathUtil.clamp(target - 360, minTurretAngle, maxTurretAngle);
     }
 
-    if (target >= (minTurretAngle) && target <= (minTurretAngle + tolerance)) {
+    if (target >= minTurretAngle && target <= (minTurretAngle + tolerance)) {
 
       return MathUtil.clamp(target + 360, minTurretAngle, maxTurretAngle);
     }
