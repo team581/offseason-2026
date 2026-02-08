@@ -24,7 +24,7 @@ public class DeployConfig {
       new TalonFXConfiguration()
           .withFeedback(
               new FeedbackConfigs()
-                  .withSensorToMechanismRatio((40.0 * 8.0) * (Math.PI * (2 * 0.5))))
+                  .withSensorToMechanismRatio((40.0 / 8.0) * (Math.PI * (2 * 0.5))))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
