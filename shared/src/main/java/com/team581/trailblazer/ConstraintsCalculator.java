@@ -1,7 +1,6 @@
 package com.team581.trailblazer;
 
 import com.team581.math.MathHelpers;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.controller.PIDController;
@@ -84,16 +83,16 @@ public class ConstraintsCalculator {
       double distanceToEnd,
       AutoConstraintOptions constraints) {
 
-        if (constraints.maxLinearVelocity() <= 0) {
-          return desiredVelocity;
-        }
+    if (constraints.maxLinearVelocity() <= 0) {
+      return desiredVelocity;
+    }
 
-        if(constraints.maxLinearAcceleration() <= 0) {
-          return Math.min(constraints.maxLinearVelocity(), desiredVelocity);
-        }
+    if (constraints.maxLinearAcceleration() <= 0) {
+      return Math.min(constraints.maxLinearVelocity(), desiredVelocity);
+    }
 
-        var originalSign = Math.signum(desiredVelocity);
-        desiredVelocity = Math.abs(desiredVelocity);
+    var originalSign = Math.signum(desiredVelocity);
+    desiredVelocity = Math.abs(desiredVelocity);
     var currentVelocity =
         Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
     DogLog.log("Trailblazer/Follower/CurrentVelocity", currentVelocity);

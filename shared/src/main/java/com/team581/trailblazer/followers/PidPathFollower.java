@@ -37,8 +37,7 @@ public class PidPathFollower implements PathFollower {
     // Get constraints for the current point
     var constraints = segment.getConstraints(currentPoint).orElseGet(AutoConstraintOptions::new);
 
-    var distanceToEnd =
-        currentPose.getTranslation().getDistance(targetPose.getTranslation());
+    var distanceToEnd = currentPose.getTranslation().getDistance(targetPose.getTranslation());
 
     // Find total distance to end of segment
     for (int i = currentPointIndex; i < segment.points.size() - 1; i++) {
@@ -64,7 +63,8 @@ public class PidPathFollower implements PathFollower {
 
     // Constrain velocities
     linearVelocity =
-        velocityConstrainer.constrainLinearVelocity(linearVelocity, currentSpeeds, distanceToEnd, constraints);
+        velocityConstrainer.constrainLinearVelocity(
+            linearVelocity, currentSpeeds, distanceToEnd, constraints);
     angularVelocity =
         velocityConstrainer.constrainAngularVelocity(
             angularVelocity,

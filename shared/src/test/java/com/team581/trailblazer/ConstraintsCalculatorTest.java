@@ -2,14 +2,14 @@ package com.team581.trailblazer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 final class ConstraintsCalculatorTest {
   private static final double DELTA = 1e-6;
@@ -119,7 +119,7 @@ final class ConstraintsCalculatorTest {
     assertThat(result).isLessThan(desiredVelocity);
     assertThat(result).isNotNegative();
   }
-  
+
   @Test
   void constrainLinearVelocity_withNoConstraints_returnsDesiredVelocity() {
     var desiredVelocity = 5.0;

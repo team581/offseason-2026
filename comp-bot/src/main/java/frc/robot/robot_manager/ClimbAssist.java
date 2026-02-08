@@ -21,9 +21,11 @@ public class ClimbAssist {
 
   public static AutoSegment getClimbAssistSegment(Pose2d robot, ClimbLocation location) {
     var goalPoint = location.getEndGoalPoint(robot);
-    var approachPoint = goalPoint.transformBy(APPROACH_TRANSFORM).withTransitionTolerance(APPROACH_TOLERANCE);
+    var approachPoint =
+        goalPoint.transformBy(APPROACH_TRANSFORM).withTransitionTolerance(APPROACH_TOLERANCE);
 
     return Trailblazer.segment(approachPoint, AutoPoint.of(goalPoint))
-        .withLinearConstraints(APPROACH_MAX_LINEAR_VELOCITY, MAX_LINEAR_ACCELERATION).forever();
+        .withLinearConstraints(APPROACH_MAX_LINEAR_VELOCITY, MAX_LINEAR_ACCELERATION)
+        .forever();
   }
 }
