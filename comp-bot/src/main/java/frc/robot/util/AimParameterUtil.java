@@ -28,7 +28,7 @@ public class AimParameterUtil {
   }
 
   public static AimingParameters getScoringParameters(
-      Pose2d robot, ChassisSpeeds fieldRelativeSpeeds, double currentTimeofFlight) {
+      Pose2d robot, ChassisSpeeds fieldRelativeSpeeds) {
     var hubTranslationTangential =
         SCORING_SOTM.getTangentialVelocityCompensatedGoal(
             robot.getTranslation(),
