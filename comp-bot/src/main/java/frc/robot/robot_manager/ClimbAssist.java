@@ -16,7 +16,7 @@ public class ClimbAssist {
   private static final PoseErrorTolerance APPROACH_TOLERANCE =
       new PoseErrorTolerance(Units.inchesToMeters(5.0), Rotation2d.fromDegrees(5));
 
-        private static final PoseErrorTolerance FINISHED_TOLERANCE =
+  private static final PoseErrorTolerance FINISHED_TOLERANCE =
       new PoseErrorTolerance(Units.inchesToMeters(1.5), Rotation2d.fromDegrees(5));
 
   private static final double MAX_LINEAR_VELOCITY = 2.0;

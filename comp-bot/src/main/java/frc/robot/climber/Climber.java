@@ -32,6 +32,10 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     return MathUtil.isNear(getState().height, motorPosition, ClimberConfig.TOLERANCE);
   }
 
+  public double getHeight() {
+    return motorPosition;
+  }
+
   public void l1HangingRequest() {
     setStateFromRequest(ClimberState.L1_HANGING);
   }
@@ -56,12 +60,22 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     setStateFromRequest(ClimberState.L3_LINEUP);
   }
 
-  public void stowRequest() {
-    setStateFromRequest(ClimberState.STOWED);
+  @Override
+  public void simulationPeriodic() {
+    var climberSimulation =
+        SimKit.positionMechanism(
+            "Climber",
+            mechanism ->
+                mechanism
+                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
+                    .withMinPosition(ClimberConfig.MIN_HEIGHT)
+                    .withMaxPosition(ClimberConfig.MAX_HEIGHT));
+
+    climberSimulation.update();
   }
 
-  public double getHeight() {
-    return motorPosition;
+  public void stowRequest() {
+    setStateFromRequest(ClimberState.STOWED);
   }
 
   @Override
@@ -75,19 +89,5 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     DogLog.log("Climber/TargetHeight", getState().height);
     DogLog.log("Climber/Position", motorPosition);
     DogLog.log("Climber/AtGoal", atGoal());
-  }
-
-  @Override
-  public void simulationPeriodic() {
-    var climberSimulation =
-        SimKit.positionMechanism(
-            "Climber",
-            mechanism ->
-                mechanism
-                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(ClimberConfig.MIN_HEIGHT)
-                    .withMaxPosition(ClimberConfig.MAX_HEIGHT));
-
-    climberSimulation.update();
   }
 }
