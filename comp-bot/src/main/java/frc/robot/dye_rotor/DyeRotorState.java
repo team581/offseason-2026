@@ -20,7 +20,7 @@ public enum DyeRotorState {
     this.horizontalRPM = horizontalRPM;
     this.verticalVoltage = verticalVoltage;
 
-    this.verticalVoltageTunable = DogLog.tunable("DyeRotor/" + this.toString(), verticalVoltage);
+    this.verticalVoltageTunable = DogLog.tunable("DyeRotor/" + this, verticalVoltage);
   }
 
   public double getVerticalVoltage() {
