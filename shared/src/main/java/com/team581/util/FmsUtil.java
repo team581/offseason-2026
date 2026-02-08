@@ -21,7 +21,7 @@ public class FmsUtil {
       return true;
     }
 
-    return isHubActive(timeSinceMatchStart, maybeIsAutoWinner.get());
+    return isHubActive(timeSinceMatchStart, maybeIsAutoWinner.orElseThrow());
   }
 
   public static boolean isRedAlliance() {
