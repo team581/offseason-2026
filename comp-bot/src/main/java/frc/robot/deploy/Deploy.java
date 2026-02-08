@@ -1,6 +1,6 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
@@ -8,6 +8,7 @@ import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
@@ -20,8 +21,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final CANrange hopperCANRange;
-  private final PositionVoltage positionVoltageRequest =
-      new PositionVoltage(0).withEnableFOC(false);
+  private final MotionMagicVoltage positionVoltageRequest =
+      new MotionMagicVoltage(0).withEnableFOC(false);
   private DeployState storedState = DeployState.UNHOMED;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
