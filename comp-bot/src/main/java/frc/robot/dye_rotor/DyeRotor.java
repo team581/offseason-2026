@@ -130,13 +130,19 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   @Override
   public void simulationPeriodic() {
     var rotorSimulation =
-        SimKit.velocityMechanism("DyeRotor/Rotor", (mechanism) -> mechanism.addMotor(rotorMotor, ChassisReference.Clockwise_Positive));
+        SimKit.velocityMechanism(
+            "DyeRotor/Rotor",
+            (mechanism) -> mechanism.addMotor(rotorMotor, ChassisReference.Clockwise_Positive));
     var horizontalSimulation =
         SimKit.velocityMechanism(
-            "DyeRotor/Horizontal", (mechanism) -> mechanism.addMotor(horizontalMotor, ChassisReference.CounterClockwise_Positive));
+            "DyeRotor/Horizontal",
+            (mechanism) ->
+                mechanism.addMotor(horizontalMotor, ChassisReference.CounterClockwise_Positive));
     var verticalSimulation =
         SimKit.velocityMechanism(
-            "DyeRotor/Vertical", (mechanism) -> mechanism.addMotor(verticalMotor, ChassisReference.CounterClockwise_Positive));
+            "DyeRotor/Vertical",
+            (mechanism) ->
+                mechanism.addMotor(verticalMotor, ChassisReference.CounterClockwise_Positive));
 
     rotorSimulation.update();
     horizontalSimulation.update();

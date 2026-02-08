@@ -100,10 +100,8 @@ public class PidPathFollower implements PathFollower {
 
     var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
 
-    if (Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond) > 0.2
-        && distanceToGoalMeters > 0.1) {
-      var polarCurrentSpeeds = new PolarChassisSpeeds(currentSpeeds);
-      var currentDirection = polarCurrentSpeeds.direction;
+    if (currentVelocity > 0.2 && distanceToGoalMeters > 0.1) {
+      var currentDirection = MathHelpers.getDriveDirection(currentSpeeds);
       driveDirection = currentDirection.interpolate(driveDirection, AGGRESSIVENESS_FACTOR);
     }
 
