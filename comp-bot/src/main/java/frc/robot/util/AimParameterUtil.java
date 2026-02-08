@@ -15,9 +15,7 @@ public class AimParameterUtil {
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
 
   public static AimingParameters getFeedingParameters(
-      FeedLocation feedLocation,
-      Pose2d robot,
-      ChassisSpeeds fieldRelativeSpeeds) {
+      FeedLocation feedLocation, Pose2d robot, ChassisSpeeds fieldRelativeSpeeds) {
     var feedTranslation =
         FEEDING_SOTM.getVelocityCompensatedGoal(
             robot.getTranslation(), feedLocation.getTranslation(robot), fieldRelativeSpeeds);
@@ -27,6 +25,7 @@ public class AimParameterUtil {
 
     return new AimingParameters(turretAngle, distanceToGoal);
   }
+
   public static AimingParameters getScoringParameters(
       Pose2d robot, ChassisSpeeds fieldRelativeSpeeds) {
     var hubTranslation =
