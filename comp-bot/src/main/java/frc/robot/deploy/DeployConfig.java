@@ -31,7 +31,7 @@ public class DeployConfig {
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake).withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   // TODO: Discuss/set CANrange config during bringup

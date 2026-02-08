@@ -2,6 +2,7 @@ package frc.robot.shooter_hood;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -175,7 +176,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
             "ShooterHood",
             (mechanism) ->
                 mechanism
-                    .addMotor(motor)
+                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
                     .withMaxPosition(Units.degreesToRotations(ShooterHoodConfig.MAX_ANGLE))
                     .withMinPosition(Units.degreesToRotations(ShooterHoodConfig.MIN_ANGLE)));
 

@@ -2,6 +2,7 @@ package frc.robot.dye_rotor;
 
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -126,13 +127,13 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   @Override
   public void simulationPeriodic() {
     var rotorSimulation =
-        SimKit.velocityMechanism("DyeRotor/Rotor", (mechanism) -> mechanism.addMotor(rotorMotor));
+        SimKit.velocityMechanism("DyeRotor/Rotor", (mechanism) -> mechanism.addMotor(rotorMotor, ChassisReference.Clockwise_Positive));
     var horizontalSimulation =
         SimKit.velocityMechanism(
-            "DyeRotor/Horizontal", (mechanism) -> mechanism.addMotor(horizontalMotor));
+            "DyeRotor/Horizontal", (mechanism) -> mechanism.addMotor(horizontalMotor, ChassisReference.CounterClockwise_Positive));
     var verticalSimulation =
         SimKit.velocityMechanism(
-            "DyeRotor/Vertical", (mechanism) -> mechanism.addMotor(verticalMotor));
+            "DyeRotor/Vertical", (mechanism) -> mechanism.addMotor(verticalMotor, ChassisReference.CounterClockwise_Positive));
 
     rotorSimulation.update();
     horizontalSimulation.update();
