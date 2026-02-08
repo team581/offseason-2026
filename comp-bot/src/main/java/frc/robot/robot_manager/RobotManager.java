@@ -41,6 +41,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Lights lights;
   public final XboxController driverController;
   private final HealthManager health;
+  private final Trailblazer trailblazer;
   private final Climber climber;
 
   private Pose2d robotPose = Pose2d.kZero;
@@ -66,6 +67,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Lights lights,
       XboxController driverController,
       HealthManager health,
+      Trailblazer trailblazer,
       Climber climber) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
@@ -80,6 +82,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.lights = lights;
     this.driverController = driverController;
     this.health = health;
+    this.trailblazer = trailblazer;
     this.climber = climber;
   }
 
