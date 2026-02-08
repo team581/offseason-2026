@@ -21,9 +21,9 @@ public class ClimberConfig {
 
   // TODO: UPDATE WITH REAL GOAL LOCATIONS FROM CAD
   public static final Point CLIMB_LEFT_LOCATION =
-      Point.ofRed(new Pose2d(15.0, 1.0, Rotation2d.kZero));
+      Point.ofRed(new Pose2d(15.0, 1.0, Rotation2d.kCW_90deg));
   public static final Point CLIMB_RIGHT_LOCATION =
-      Point.ofRed(new Pose2d(15.0, 7.0, Rotation2d.kZero));
+      Point.ofRed(new Pose2d(15.0, 5.5, Rotation2d.kCCW_90deg));
 
   public static final double TOLERANCE = 0.1;
 }
