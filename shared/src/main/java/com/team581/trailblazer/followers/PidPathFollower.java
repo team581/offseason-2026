@@ -10,7 +10,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.Timer;
 
 public class PidPathFollower implements PathFollower {
   // 0-1 scalar
@@ -18,10 +17,6 @@ public class PidPathFollower implements PathFollower {
   private final PIDController translationController;
   private final PIDController rotationController;
   private final ConstraintsCalculator velocityConstrainer;
-
-  private double lastTimestamp = 0.0;
-  private double lastVelocity = 0.0;
-  private double lastCommandedVelocity = 0.0;
 
   public PidPathFollower(PIDController translationController, PIDController rotationController) {
     this.translationController = translationController;
@@ -42,11 +37,12 @@ public class PidPathFollower implements PathFollower {
     // Get constraints for the current point
     var constraints = segment.getConstraints(currentPoint).orElseGet(AutoConstraintOptions::new);
 
-    var distanceToGoalMeters =
+    var distanceToEnd =
         currentPose.getTranslation().getDistance(targetPose.getTranslation());
 
+    // Find total distance to end of segment
     for (int i = currentPointIndex; i < segment.points.size() - 1; i++) {
-      distanceToGoalMeters +=
+      distanceToEnd +=
           segment
               .points
               .get(i)
@@ -58,38 +54,17 @@ public class PidPathFollower implements PathFollower {
                   segment.points.get(i + 1).poseSupplier().get().getPose().getTranslation());
     }
 
-    var wantedDriveVelocity = Math.abs(translationController.calculate(distanceToGoalMeters, 0));
-    DogLog.log("Trailblazer/Follower/WantedVelocity", wantedDriveVelocity);
-    var currentVelocity =
-        Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
-    DogLog.log("Trailblazer/Follower/CurrentVelocity", currentVelocity);
-
-    // Calculate how much we can accelerate this loop
-    // New Velocity = Old Velocity + (Acceleration * dt)
-    var kDt = Math.min(Timer.getFPGATimestamp() - lastTimestamp, 0.04);
-    var currentAccel = (currentVelocity - lastVelocity) / kDt;
-    DogLog.log("Trailblazer/Follower/CurrentAccel", currentAccel);
-
-    lastTimestamp = Timer.getFPGATimestamp();
-
-    var maxReachableVelocity =
-        Math.max((lastCommandedVelocity + (constraints.maxLinearAcceleration() * kDt)), 0.5);
-
-    // Calculate velocity needed to stop in time
-    var maxStoppingVelocity =
-        Math.sqrt(2 * constraints.maxLinearAcceleration() * distanceToGoalMeters);
-
-    // Apply constraints
-    var maxVelocityLimitedWantedVelocity =
-        Math.min(wantedDriveVelocity, constraints.maxLinearVelocity());
-
-    var linearVelocity = Math.min(maxVelocityLimitedWantedVelocity, maxReachableVelocity);
-    linearVelocity = Math.min(linearVelocity, maxStoppingVelocity);
-
+    // Calculate velocities with PID controller
+    var linearVelocity = Math.abs(translationController.calculate(distanceToEnd, 0));
     var angularVelocity =
         rotationController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
+    DogLog.log("Trailblazer/Follower/AngularVelocity", angularVelocity);
+
+    // Constrain velocities
+    linearVelocity =
+        velocityConstrainer.constrainLinearVelocity(linearVelocity, currentSpeeds, distanceToEnd, constraints);
     angularVelocity =
         velocityConstrainer.constrainAngularVelocity(
             angularVelocity,
@@ -98,23 +73,23 @@ public class PidPathFollower implements PathFollower {
             currentSpeeds,
             constraints);
 
+    DogLog.log("Trailblazer/Follower/AngularLimit", constraints.maxAngularVelocity());
+    DogLog.log("Trailblazer/Follower/AngularACCLimit", constraints.maxAngularAcceleration());
+
+    DogLog.log("Trailblazer/Follower/AngularVelocityAfterConstraint", angularVelocity);
+
     var driveDirection = MathHelpers.getDriveDirection(currentPose, targetPose);
 
-    if (currentVelocity > 0.2 && distanceToGoalMeters > 0.1) {
+    if (MathHelpers.getLinearVelocity(currentSpeeds) > 0.2 && distanceToEnd > 0.1) {
       var currentDirection = MathHelpers.getDriveDirection(currentSpeeds);
       driveDirection = currentDirection.interpolate(driveDirection, AGGRESSIVENESS_FACTOR);
     }
 
-    lastVelocity = currentVelocity;
-    lastCommandedVelocity = linearVelocity;
     return new PolarChassisSpeeds(linearVelocity, driveDirection, angularVelocity);
   }
 
   @Override
   public void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians) {
     velocityConstrainer.reset(currentSpeeds, currentAngleRadians);
-    lastCommandedVelocity = MathHelpers.getLinearVelocity(currentSpeeds);
-    lastVelocity = lastCommandedVelocity;
-    lastTimestamp = Timer.getFPGATimestamp();
   }
 }
