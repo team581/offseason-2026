@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class PidPathFollower implements PathFollower {
   // 0-1 scalar
-  private static final double AGGRESSIVENESS_FACTOR = 0.3;
+  private static final double AGGRESSIVENESS_FACTOR = 0.5;
   private final PIDController translationController;
   private final PIDController rotationController;
   private final ConstraintsCalculator velocityConstrainer;
