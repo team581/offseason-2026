@@ -16,6 +16,9 @@ public class ClimbAssist {
   private static final PoseErrorTolerance APPROACH_TOLERANCE =
       new PoseErrorTolerance(Units.inchesToMeters(5.0), Rotation2d.fromDegrees(5));
 
+        private static final PoseErrorTolerance FINISHED_TOLERANCE =
+      new PoseErrorTolerance(Units.inchesToMeters(1.5), Rotation2d.fromDegrees(5));
+
   private static final double MAX_LINEAR_VELOCITY = 2.0;
   private static final double MAX_LINEAR_ACCELERATION = 1.0;
 
@@ -26,6 +29,6 @@ public class ClimbAssist {
 
     return Trailblazer.segment(approachPoint, AutoPoint.of(goalPoint))
         .withLinearConstraints(MAX_LINEAR_VELOCITY, MAX_LINEAR_ACCELERATION)
-        .forever();
+        .untilFinished(FINISHED_TOLERANCE);
   }
 }

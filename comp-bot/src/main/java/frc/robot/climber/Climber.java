@@ -2,6 +2,8 @@ package frc.robot.climber;
 
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -58,6 +60,10 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     setStateFromRequest(ClimberState.STOWED);
   }
 
+  public double getHeight() {
+    return motorPosition;
+  }
+
   @Override
   protected void afterTransition(ClimberState newState) {
     motor.setControl(positionRequest.withPosition(newState.height));
@@ -69,5 +75,19 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     DogLog.log("Climber/TargetHeight", getState().height);
     DogLog.log("Climber/Position", motorPosition);
     DogLog.log("Climber/AtGoal", atGoal());
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    var climberSimulation =
+        SimKit.positionMechanism(
+            "Climber",
+            mechanism ->
+                mechanism
+                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
+                    .withMinPosition(ClimberConfig.MIN_HEIGHT)
+                    .withMaxPosition(ClimberConfig.MAX_HEIGHT));
+
+    climberSimulation.update();
   }
 }
