@@ -28,7 +28,10 @@ public class DeployConfig {
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
-          .withMotionMagic(new MotionMagicConfigs().withMotionMagicCruiseVelocity(10.0).withMotionMagicAcceleration(10.0))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(10.0)
+                  .withMotionMagicAcceleration(10.0))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -38,8 +41,10 @@ public class DeployConfig {
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
-                    .withMotionMagic(new MotionMagicConfigs().withMotionMagicCruiseVelocity(10.0).withMotionMagicAcceleration(10.0))
-
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(10.0)
+                  .withMotionMagicAcceleration(10.0))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   // TODO: Discuss/set CANrange config during bringup
   public static final CANrangeConfiguration CAN_RANGE_CONFIG = new CANrangeConfiguration();
