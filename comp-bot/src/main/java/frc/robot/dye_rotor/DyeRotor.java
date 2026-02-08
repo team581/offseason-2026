@@ -42,7 +42,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     TunablePid.register("DyeRotor/Rotor", rotorMotor, DyeRotorConfig.ROTOR_MOTOR_CONFIG);
     TunablePid.register(
         "DyeRotor/Horizontal", horizontalMotor, DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
-    TunablePid.register("DyeRotor/Vertical", verticalMotor, DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
     this.rotorMotor = rotorMotor;
     this.horizontalMotor = horizontalMotor;
