@@ -15,44 +15,38 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.508, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(8.852, 5.442, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
-
-  private final AutoSegment intakeAcrossMidlineTwo =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.508, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(8.852, 4.9, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.1, 3));
-
-  private final AutoSegment driveBack =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(8.852, 5.882, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.472, 6.867, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.508, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)))
+          AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg)),
+          AutoPoint.ofRed(new Pose2d(10.489, 7.55, Rotation2d.kCW_90deg)),
+          AutoPoint.ofRed(new Pose2d(8.852, 5.442, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
+  private final AutoSegment intakeAcrossMidlineTwo =
+      Trailblazer.segment(
+          AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg)),
+          AutoPoint.ofRed(new Pose2d(10.489, 7.55 , Rotation2d.kCW_90deg)),
+          AutoPoint.ofRed(new Pose2d(8.852, 4.9, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(3, 3)
+          .untilFinished(new PoseErrorTolerance(0.5, 3));
+
+  private final AutoSegment driveBack =
+      Trailblazer.segment(
+              AutoPoint.ofRed(new Pose2d(8.852, 5.8, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(10.489, 7.55 , Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(3, 3)
+          .untilFinished(new PoseErrorTolerance(0.5, 3));
   private final AutoSegment driveToShootOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(12.3, 7.55, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(13.0, 7.55, Rotation2d.kCW_90deg))
                   .withLinearConstraints(3, 3))
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
   private final AutoSegment driveToShootTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(12.3, 7.55, Rotation2d.kCW_90deg)),
+              AutoPoint.ofRed(new Pose2d(13.24, 7.55, Rotation2d.kCW_90deg)),
               AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
@@ -67,7 +61,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg));
+    return Point.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg));
   }
 
   @Override
