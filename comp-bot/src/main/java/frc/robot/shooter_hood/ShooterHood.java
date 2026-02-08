@@ -97,8 +97,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void collectInputs() {
     measuredAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    scoreAngle = distanceToScoringAngle(scoreDistance);
-    feedAngle = distanceToFeedingAngle(feedDistance);
+    scoreAngle = clamp(distanceToScoringAngle(scoreDistance));
+    feedAngle = clamp(distanceToFeedingAngle(feedDistance));
 
     DogLog.log("ShooterHood/MeasuredAngle", measuredAngle);
     DogLog.log("ShooterHood/ScoreAngle", scoreAngle);
