@@ -26,8 +26,8 @@ public class DyeRotorConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(0.0)
-                  .withMotionMagicAcceleration(0.0))
+                  .withMotionMagicCruiseVelocity(10.0)
+                  .withMotionMagicAcceleration(10.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withSupplyCurrentLimitEnable(true)

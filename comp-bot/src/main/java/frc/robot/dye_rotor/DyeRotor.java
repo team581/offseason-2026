@@ -27,6 +27,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private double rotorFilteredCurrent = 0.0;
 
   private double rotorMotorRpm = 0.0;
+  private double rotorAngle = 0.0;
   private double horizontalMotorRpm = 0.0;
   private boolean isShooting = false;
   private boolean isShootingDebounced = false;
@@ -68,6 +69,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   protected void whileInState(DyeRotorState state) {
     DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
     DogLog.log("DyeRotor/Rotor/GoalRPM", state.rotorRPM);
+    DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
     DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
     DogLog.log("DyeRotor/Horizontal/GoalRPM", state.horizontalRPM);
@@ -79,8 +81,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   @Override
   protected void afterTransition(DyeRotorState newState) {
-    rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM));
-    horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(newState.horizontalRPM));
+    rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM / 60.0));
+    horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(newState.horizontalRPM / 60.0));
     verticalMotor.setVoltage(newState.verticalVoltage);
   }
 
@@ -90,6 +92,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     rotorFilteredCurrent = currentFilter.calculate(rotorRawCurrent);
 
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
+    rotorAngle = Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble());
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
 
     isShooting = horizontalMotorRpm < DyeRotorConfig.RPM_TOLERANCE_SHOOTING;
@@ -121,7 +124,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   }
 
   public double getAngle() {
-    return Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble());
+    return rotorAngle;
   }
 
   @Override
