@@ -19,7 +19,7 @@ public class TurretConfig {
   public static final double HOMING_END_POSITION = MIN_ANGLE;
   public static final double TOLERANCE = 1.0;
 
-  public static final double MOTOR_TO_TURRET = 40.0;
+  public static final double MOTOR_TO_TURRET = ((30.0 * 220.0) / (12.0 * 8.0));
 
   // CAL NUMBER
   public static final double ROTOR_CAL_OFFSET = 0;

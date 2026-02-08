@@ -22,7 +22,9 @@ public class DeployConfig {
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio((40.0 * 8.0) * (Math.PI * (2 * 0.5))))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
@@ -35,7 +37,9 @@ public class DeployConfig {
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio((40.0 * 8.0) * (Math.PI * (2 * 0.5))))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
