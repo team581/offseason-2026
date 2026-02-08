@@ -32,15 +32,12 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     switch (newState) {
       case IDLE -> {
         motor.disable();
-        DogLog.log("Intake/Voltage", 0.0);
       }
       case INTAKING -> {
-        motor.setVoltage(12);
-        DogLog.log("Intake/Voltage", 12.0);
+        motor.setVoltage(newState.getIntakeVoltage());
       }
       case SHOOTING -> {
-        motor.setVoltage(12);
-        DogLog.log("Intake/Voltage", 12.0);
+        motor.setVoltage(newState.getIntakeVoltage());
       }
     }
   }
@@ -49,5 +46,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   protected void collectInputs() {
     DogLog.log("Intake/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Intake/VelocityRPM", motor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Intake/Voltage", getState().voltage);
   }
 }
