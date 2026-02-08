@@ -29,7 +29,7 @@ public class DeployConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
+          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(10.0)
@@ -44,7 +44,7 @@ public class DeployConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(1))
+          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(10.0)
