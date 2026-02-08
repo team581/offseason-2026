@@ -5,10 +5,13 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.TrenchRShootClimb2AutoState;
+import frc.robot.climber.ClimbLocation;
+import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
 public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb2AutoState> {
@@ -50,10 +53,6 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
               AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.kCW_90deg)))
           .withLinearConstraints(3, 3)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
-
-  private final AutoSegment driveToClimb =
-      Trailblazer.segment(AutoPoint.ofRed(new Pose2d(14.716, 4.198, Rotation2d.kCW_90deg)))
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {
     super(TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_1, robotManager, trailblazer);
@@ -111,7 +110,9 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
         robotManager.prepareScoreRequest();
       }
       case DRIVE_TO_CLIMB -> {
-        trailblazer.setActiveSegment(driveToClimb);
+        trailblazer.setActiveSegment(
+            ClimbAssist.getClimbAssistSegment(
+                robotManager.localization.getPose(), ClimbLocation.CLOSEST));
         robotManager.startAutoClimbSequence();
       }
       case CLIMB -> {}
