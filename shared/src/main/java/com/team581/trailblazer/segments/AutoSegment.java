@@ -25,7 +25,7 @@ public abstract class AutoSegment {
         tmp.add(points.get(i).marker().get());
       }
 
-      pointToPassedMarkers.set(i, new HashSet<>(tmp));
+      pointToPassedMarkers.add(new HashSet<>(tmp));
     }
   }
 
