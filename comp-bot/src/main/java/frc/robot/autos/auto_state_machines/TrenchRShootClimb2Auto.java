@@ -17,40 +17,40 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(8.852, 5.442, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.5, 3));
+              AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(11.2, 7.55, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.4, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(4.5, 10)
+          .untilFinished(new PoseErrorTolerance(0.2, 3));
 
   private final AutoSegment intakeAcrossMidlineTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(8.852, 4.9, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.5, 3));
+              AutoPoint.ofRed(new Pose2d(11.2, 7.57, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.2, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(4.5, 10)
+          .untilFinished(new PoseErrorTolerance(0.1, 3));
 
   private final AutoSegment driveBack =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(8.852, 5.8, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.489, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
+              AutoPoint.ofRed(new Pose2d(8.85, 5.8, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(4.5, 10)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
+
   private final AutoSegment driveToShootOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.3, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.0, 7.55, Rotation2d.kCW_90deg))
-                  .withLinearConstraints(3, 3))
-          .untilFinished(new PoseErrorTolerance(0.1, 3));
+              AutoPoint.ofRed(new Pose2d(11.3, 7.55, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(12.8, 7.57, Rotation2d.k180deg))
+                  .withLinearConstraints(4.5, 10))
+          .untilFinished(new PoseErrorTolerance(0.7, 3));
 
   private final AutoSegment driveToShootTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.3, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.24, 7.55, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
+              AutoPoint.ofRed(new Pose2d(11.3, 7.55, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(12.3, 7.57, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.k180deg)))
+          .withLinearConstraints(4.5, 10)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {
@@ -59,7 +59,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.0, 7.55, Rotation2d.kCW_90deg));
+    return Point.ofRed(new Pose2d(12.0, 7.55, Rotation2d.k180deg));
   }
 
   @Override
@@ -90,7 +90,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBack);
-        robotManager.idleRequest();
+        robotManager.cancelIntakeRequest();
       }
       case SHOOT_1 -> {
         trailblazer.setActiveSegment(driveToShootOne);
@@ -102,16 +102,13 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
       }
       case DRIVE_BACK_2 -> {
         trailblazer.setActiveSegment(driveBack);
-        robotManager.idleRequest();
+        robotManager.cancelIntakeRequest();
       }
       case SHOOT_2 -> {
         trailblazer.setActiveSegment(driveToShootTwo);
         robotManager.prepareScoreRequest();
       }
       case DRIVE_TO_CLIMB -> {
-        trailblazer.setActiveSegment(
-            ClimbAssist.getClimbAssistSegment(
-                robotManager.localization.getPose(), ClimbLocation.CLOSEST));
         robotManager.startAutoClimbSequence();
       }
       case CLIMB -> {}
@@ -131,7 +128,11 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
       case INTAKE_ACROSS_MIDLINE_2 -> {}
       case DRIVE_BACK_2 -> {}
       case SHOOT_2 -> {}
-      case DRIVE_TO_CLIMB -> {}
+      case DRIVE_TO_CLIMB -> {
+      trailblazer.setActiveSegment(
+        ClimbAssist.getClimbAssistSegment(
+            robotManager.localization.getPose(), ClimbLocation.CLOSEST));
+      }
       case CLIMB -> {}
       case DONE -> {}
     }
