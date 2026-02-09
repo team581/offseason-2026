@@ -3,7 +3,6 @@ package frc.robot.util;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.robot.shooter.ShooterConfig;
@@ -14,6 +13,7 @@ public class AimParameterUtil {
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_FEED_TOF);
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
+
   public static AimingParameters getFeedingParameters(
       FeedLocation feedLocation, Pose2d robot, ChassisSpeeds fieldRelativeSpeeds) {
     var feedTranslation =
@@ -39,5 +39,6 @@ public class AimParameterUtil {
 
     return new AimingParameters(turretAngle, distanceToGoal);
   }
+
   public record AimingParameters(double turretAngle, double distance) {}
 }
