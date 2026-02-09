@@ -286,7 +286,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         turret.feedRequest(feedingParameters.turretAngle());
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -310,7 +310,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         // Turret is controlled depending on what zone we're in
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -334,7 +334,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Vision is busted
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         turret.feedRequest(0);
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -358,7 +358,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Vision is busted
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         turret.scoreRequest(scoringParameters.turretAngle());
         // Deploy is controlled separately
         // Intake is controlled separately
