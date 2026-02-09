@@ -32,8 +32,8 @@ public class DeployConfig {
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(0.0)
-                  .withMotionMagicAcceleration(0.0))
+                  .withMotionMagicCruiseVelocity(70.0)
+                  .withMotionMagicAcceleration(20.0))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -47,8 +47,8 @@ public class DeployConfig {
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(0.0)
-                  .withMotionMagicAcceleration(0.0))
+                  .withMotionMagicCruiseVelocity(70.0)
+                  .withMotionMagicAcceleration(20.0))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   // TODO: Discuss/set CANrange config during bringup
   public static final CANrangeConfiguration CAN_RANGE_CONFIG = new CANrangeConfiguration();
