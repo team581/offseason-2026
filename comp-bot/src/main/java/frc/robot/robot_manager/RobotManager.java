@@ -698,7 +698,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.getAngle(),
         shooterHood.getAngle(),
         deploy.getPosition(),
-        0,
+        climber.getHeight(),
         dyeRotor.getAngle());
   }
 

@@ -11,6 +11,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 public class ClimberConfig {
+  public static final double MIN_HEIGHT = 0.0;
+  public static final double MAX_HEIGHT = 30.0;
+
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
