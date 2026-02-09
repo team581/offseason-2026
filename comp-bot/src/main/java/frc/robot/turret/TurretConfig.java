@@ -49,7 +49,7 @@ public class TurretConfig {
                   // TODO: Fix
                   .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
                   // TODO: Fix
-                  .withAbsoluteSensorDiscontinuityPoint(0.0));
+                  .withAbsoluteSensorDiscontinuityPoint(1.0));
 
   private TurretConfig() {}
 }
