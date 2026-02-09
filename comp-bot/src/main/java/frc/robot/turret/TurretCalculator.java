@@ -15,7 +15,6 @@ public class TurretCalculator {
     return BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
         turretMotorPosition,
         turretEncoderPosition,
-        TurretConfig.ROTOR_CAL_OFFSET,
         TurretConfig.MOTOR_TO_TURRET,
         TurretConfig.ENCODER_TO_TURRET,
         TurretConfig.MOTOR_ROTATION_RESOLUTION,
