@@ -17,8 +17,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.0, 7.55, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(11.2, 7.55, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(11.2, 7.5, Rotation2d.fromDegrees(-150.0))),
               AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
               AutoPoint.ofRed(new Pose2d(8.852, 5.4, Rotation2d.kCW_90deg)))
           .withLinearConstraints(4.5, 10)
@@ -26,7 +25,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   private final AutoSegment intakeAcrossMidlineTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(11.2, 7.57, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(11.2, 7.5, Rotation2d.fromDegrees(-150.0))),
               AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
               AutoPoint.ofRed(new Pose2d(8.852, 5.2, Rotation2d.kCW_90deg)))
           .withLinearConstraints(4.5, 10)
