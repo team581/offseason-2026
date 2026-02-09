@@ -16,7 +16,7 @@ public class BaseTurretCalculator {
       double motorRotationResolution,
       double minTurretAngle,
       double maxTurretAngle) {
-    double rotor_position = (turretMotorPosition) % 1;
+    double rotor_position = turretMotorPosition % 1;
     double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
     double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
 
