@@ -52,4 +52,7 @@ public class DeployConfig {
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0));
   // TODO: Discuss/set CANrange config during bringup
   public static final CANrangeConfiguration CAN_RANGE_CONFIG = new CANrangeConfiguration();
+
+  public static final double HIGH_CAPACITY_THRESHOLD = 10;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 5;
 }
