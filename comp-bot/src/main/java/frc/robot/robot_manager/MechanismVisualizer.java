@@ -93,11 +93,7 @@ public final class MechanismVisualizer {
   private static final MechanismLigament2d SHOOTER_HOOD_PIVOT =
       SHOOTER_HOOD.append(
           new MechanismLigament2d(
-              "shooterHood",
-              SHOOTER_HOOD_RADIUS,
-              ShooterHoodConfig.ANGLE_FROM_HORIZONTAL,
-              10,
-              new Color8Bit(Color.kFirstRed)));
+              "shooterHood", SHOOTER_HOOD_RADIUS, 0, 10, new Color8Bit(Color.kFirstRed)));
 
   public static void log(
       Pose2d robotPose,
@@ -119,7 +115,11 @@ public final class MechanismVisualizer {
         Pose3d.kZero
             .rotateAround(
                 SHOOTER_HOOD_PIVOT_POINT,
-                new Rotation3d(0, Math.toRadians(shooterHoodAngleDegrees), 0))
+                new Rotation3d(
+                    0,
+                    Math.toRadians(
+                        shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
+                    0))
             .rotateBy(turretPose.getRotation());
     var deployPose =
         new Pose3d(
