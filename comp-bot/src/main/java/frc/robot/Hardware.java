@@ -5,8 +5,8 @@ import com.ctre.phoenix6.hardware.CANdle;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.generated.RobotTunerConstants;
-import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.PracticeTunerConstants;
+import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -32,9 +32,9 @@ public class Hardware {
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
-          RobotTunerConstants.DrivetrainConstants,
-          RobotTunerConstants.FrontLeft,
-          RobotTunerConstants.FrontRight,
-          RobotTunerConstants.BackLeft,
-          RobotTunerConstants.BackRight);
+          PracticeTunerConstants.DrivetrainConstants,
+          PracticeTunerConstants.FrontLeft,
+          PracticeTunerConstants.FrontRight,
+          PracticeTunerConstants.BackLeft,
+          PracticeTunerConstants.BackRight);
 }
