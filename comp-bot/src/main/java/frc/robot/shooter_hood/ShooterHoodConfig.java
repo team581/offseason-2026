@@ -17,8 +17,8 @@ public class ShooterHoodConfig {
   public static final double MIN_ANGLE = 0;
   public static final double IDLE_ANGLE = 0.0;
 
-  public static final double HOMING_VOLTAGE = 0;
-  public static final double HOMING_CURRENT_THRESHOLD = 0;
+  public static final double HOMING_VOLTAGE = -2;
+  public static final double HOMING_CURRENT_THRESHOLD = 10;
   public static final double HOMING_END_POSITION = 0;
 
   public static final double TOLERANCE = 1;
