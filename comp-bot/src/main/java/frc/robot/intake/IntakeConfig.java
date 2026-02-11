@@ -10,10 +10,11 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 public class IntakeConfig {
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withMotorOutput( new MotorOutputConfigs()
-              .withInverted(InvertedValue.CounterClockwise_Positive)
-              .withNeutralMode(NeutralModeValue.Coast))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Coast))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
-          .withCurrentLimits(new CurrentLimitsConfigs()
-              .withStatorCurrentLimit(20).withSupplyCurrentLimit(20));
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(20).withSupplyCurrentLimit(20));
 }
