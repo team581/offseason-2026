@@ -285,7 +285,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         turret.feedRequest(feedingParameters.turretAngle());
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -299,8 +299,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
         turret.feedRequest(feedingParameters.turretAngle());
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -309,7 +309,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         // Turret is controlled depending on what zone we're in
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -323,8 +323,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
         turret.scoreRequest(scoringParameters.turretAngle());
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -333,7 +333,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Vision is busted
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         turret.feedRequest(0);
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -347,8 +347,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.shootRequest();
         turret.feedRequest(0);
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -357,7 +357,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Vision is busted
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.shootRequest();
+        dyeRotor.idleRequest();
         turret.scoreRequest(scoringParameters.turretAngle());
         // Deploy is controlled separately
         // Intake is controlled separately
@@ -371,8 +371,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
         turret.scoreRequest(scoringParameters.turretAngle());
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -672,7 +672,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/TimeSinceTeleopEnable", teleopTimer.get());
 
     if (!getState().isClimbing()) {
-      if (intake.getState() == IntakeState.INTAKING) {
+      if (intake.getState() == IntakeState.INTAKE) {
         swerve.intakeDriveRequest();
       } else {
         swerve.normalDriveRequest();

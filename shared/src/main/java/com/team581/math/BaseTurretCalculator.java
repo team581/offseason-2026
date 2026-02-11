@@ -11,13 +11,12 @@ public class BaseTurretCalculator {
   public static double calculateHomedPositionFromMotorAndEncoder(
       double turretMotorPosition,
       double turretEncoderPosition,
-      double rotorCalibratedOffset,
       double motorToTurretRatio,
       double encoderToTurretRatio,
       double motorRotationResolution,
       double minTurretAngle,
       double maxTurretAngle) {
-    double rotor_position = (turretMotorPosition - rotorCalibratedOffset) % 1;
+    double rotor_position = turretMotorPosition % 1;
     double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
     double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
 

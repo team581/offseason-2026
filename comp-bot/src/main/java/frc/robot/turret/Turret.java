@@ -89,7 +89,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             positionRequest
                 .withPosition(
                     Units.degreesToRotations(
-                        TurretCalculator.getOptimalAngle(goalAngle, currentAngle)))
+                        clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       case IDLE_SCORE, IDLE_FEED -> {
@@ -97,7 +97,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             positionRequest
                 .withPosition(
                     Units.degreesToRotations(
-                        TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))
+                        clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       default -> {}
@@ -185,6 +185,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public double getVelocity() {
     return velocity;
+  }
+
+  private static double clamp(double wantedAngle) {
+    return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
   }
 
   @Override

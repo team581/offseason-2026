@@ -15,7 +15,7 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder1() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            17.4, 0.001, 0.0, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
+            17.4, 0.001, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
     assertEquals(0.01, homedPosition, 1e-9);
   }
 
@@ -23,7 +23,7 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder2() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            0.4, 0.0, 0.0, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
+            0.4, 0.0, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
     assertEquals(0.01, homedPosition, 1e-9);
   }
 
@@ -31,7 +31,7 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder3() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            0.4, -0.001, 0.0, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
+            0.4, -0.001, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
     assertEquals(0.01, homedPosition, 1e-9);
   }
 
@@ -39,7 +39,7 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder4() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            0.2, -0.5, 0.0, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
+            0.2, -0.5, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
     assertEquals(-0.745, homedPosition, 1e-9);
   }
 
@@ -47,7 +47,7 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder5() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            0.75, 0.95, 0.0, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
+            0.75, 0.95, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
     assertEquals(1.41875, homedPosition, 1e-9);
   }
 

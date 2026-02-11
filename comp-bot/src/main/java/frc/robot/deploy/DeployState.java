@@ -5,9 +5,9 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DeployState {
   INTAKE(0.0),
-  STOWED(0),
-  SHOOTING(0.0),
-  HOMING(0),
+  STOW(0),
+  SHOOT(0.0),
+  HOME(0),
   UNHOMED(0),
   CATCHUP_TO_LEFT(0),
   CATCHUP_TO_RIGHT(0);

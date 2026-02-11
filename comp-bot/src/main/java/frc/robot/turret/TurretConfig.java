@@ -25,7 +25,7 @@ public class TurretConfig {
   public static final double MOTOR_TO_TURRET = ((30.0 * 220.0) / (12.0 * 8.0));
 
   // CAL NUMBER
-  public static final double ROTOR_CAL_OFFSET = 0;
+  public static final double ROTOR_CAL_OFFSET = -0.03857421875;
   public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double ENCODER_TO_TURRET =
       (float) 220.0 / 25.0 * 8.0 / 30.0 * 8.0 / 35.0; // Encoder rot to turret rot
@@ -45,11 +45,11 @@ public class TurretConfig {
           .withMagnetSensor(
               new MagnetSensorConfigs()
                   //  TODO: Measure
-                  .withMagnetOffset(0.0)
+                  .withMagnetOffset(ROTOR_CAL_OFFSET)
                   // TODO: Fix
                   .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
                   // TODO: Fix
-                  .withAbsoluteSensorDiscontinuityPoint(0.0));
+                  .withAbsoluteSensorDiscontinuityPoint(1.0));
 
   private TurretConfig() {}
 }
