@@ -5,8 +5,10 @@ import com.ctre.phoenix6.hardware.CANdle;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.config.RobotKind;
+import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.PracticeTunerConstants;
-import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -31,10 +33,17 @@ public class Hardware {
   public final CANrange hopperCANRange = new CANrange(28);
 
   public final TunerSwerveDrivetrain drivetrain =
-      new TunerSwerveDrivetrain(
-          PracticeTunerConstants.DrivetrainConstants,
-          PracticeTunerConstants.FrontLeft,
-          PracticeTunerConstants.FrontRight,
-          PracticeTunerConstants.BackLeft,
-          PracticeTunerConstants.BackRight);
+      RobotKind.IS_COMP_BOT
+          ? new TunerSwerveDrivetrain(
+              CompTunerConstants.DrivetrainConstants,
+              CompTunerConstants.FrontLeft,
+              CompTunerConstants.FrontRight,
+              CompTunerConstants.BackLeft,
+              CompTunerConstants.BackRight)
+          : new TunerSwerveDrivetrain(
+              PracticeTunerConstants.DrivetrainConstants,
+              PracticeTunerConstants.FrontLeft,
+              PracticeTunerConstants.FrontRight,
+              PracticeTunerConstants.BackLeft,
+              PracticeTunerConstants.BackRight);
 }
