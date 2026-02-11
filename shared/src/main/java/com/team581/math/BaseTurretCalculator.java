@@ -1,5 +1,6 @@
 package com.team581.math;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -17,11 +18,16 @@ public class BaseTurretCalculator {
       double minTurretAngle,
       double maxTurretAngle) {
     double rotor_position = turretMotorPosition % 1;
+    DogLog.log("Turret/Calculator/motor_mod", rotor_position);
     double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
     double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
+        DogLog.log("Turret/Calculator/rough_abs_pos", roughAbsolutePosition);
+
 
     int potentialMotorWrapA =
         (int) (roughAbsolutePosition / motorRotationResolution); // motor_rotation_resolution;
+            DogLog.log("Turret/Calculator/potentialA", potentialMotorWrapA);
+
     double potentialMotorWrapB = potentialMotorWrapA - 1;
     double potentialMotorWrapC = potentialMotorWrapA + 1;
 
@@ -45,6 +51,7 @@ public class BaseTurretCalculator {
         && potentialMotorPositionErrB < potentialMotorPosErrC) {
       turretPos = potentialMotorPosB;
     }
+    DogLog.log("Turret/Calculator/turretPos", turretPos);
 
     return MathUtil.inputModulus(turretPos, minTurretAngle, maxTurretAngle);
   }

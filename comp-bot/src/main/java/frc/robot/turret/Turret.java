@@ -47,12 +47,22 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
       case UNHOMED -> {
-        var turretPos =
-            TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-                motor.getRotorPosition().getValueAsDouble(),
-                encoder.getPosition().getValueAsDouble());
-        motor.setPosition(turretPos);
-        return TurretState.SCORE;
+        if (motor.isAlive() && motor.isConnected() && encoder.isConnected()) {
+          double motorPosition = motor.getRotorPosition().getValueAsDouble();
+          double encoderPosition = encoder.getAbsolutePosition().getValueAsDouble();
+          var turretPosDegrees =
+              TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
+                  motorPosition, encoderPosition);
+          DogLog.log("Turret/MotorPos", motorPosition);
+          DogLog.log("Turret/EncoderPos", encoderPosition);
+          DogLog.log("Turret/CalculatedPos", turretPosDegrees);
+
+          DogLog.timestamp("Turret/Homing");
+          motor.setPosition((turretPosDegrees));
+          return TurretState.SCORE;
+        } else {
+          return currentState;
+        }
       }
       default -> {
         return currentState;
@@ -76,6 +86,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
+    DogLog.log("Turret/EncoderAngle", Units.rotationsToDegrees(encoder.getPosition().getValueAsDouble()));
   }
 
   @Override
