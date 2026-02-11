@@ -16,6 +16,7 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
   public static final BooleanSupplier CLAMPED_POINTS_FEATURE_FLAG =
       FeatureFlag.of("ClampedAutoPoints", false);
 
+  // TODO(@fcuellar13): Update the clamped area to reflect home practice field
   private static final Rectangle2d CLAMPED_AREA =
       new Rectangle2d(Translation2d.kZero, new Translation2d(5, 5));
 
