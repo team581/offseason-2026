@@ -302,7 +302,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         deploy.shootRequest();
         intake.shootRequest();
         swerve.normalDriveRequest();
-        lights.setState(LightsState.SHOOTING);
+        lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
       case PREPARE_SCORE -> {
@@ -326,7 +326,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         deploy.shootRequest();
         intake.shootRequest();
         swerve.normalDriveRequest();
-        lights.setState(LightsState.SHOOTING);
+        lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
       case PREPARE_PRESET_FEED -> {
@@ -350,7 +350,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         deploy.shootRequest();
         intake.shootRequest();
         swerve.normalDriveRequest();
-        lights.setState(LightsState.SHOOTING);
+        lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
       case PREPARE_PRESET_SCORE -> {
@@ -374,7 +374,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         deploy.shootRequest();
         intake.shootRequest();
         swerve.normalDriveRequest();
-        lights.setState(LightsState.SHOOTING);
+        lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
       case UNJAM -> {
