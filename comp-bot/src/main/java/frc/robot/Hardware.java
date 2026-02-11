@@ -7,8 +7,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.RobotKind;
 import frc.robot.generated.CompTunerConstants;
-import frc.robot.generated.PracticeTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.PracticeTunerConstants;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
