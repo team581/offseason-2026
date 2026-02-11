@@ -300,8 +300,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.feedRequest(feedingParameters.distance());
         dyeRotor.shootRequest();
         turret.feedRequest(feedingParameters.turretAngle());
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -324,8 +324,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
         turret.scoreRequest(scoringParameters.turretAngle());
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -348,8 +348,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.shootRequest();
         turret.feedRequest(0);
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();
@@ -372,8 +372,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
         turret.scoreRequest(scoringParameters.turretAngle());
-        deploy.shootingRequest();
-        intake.shootingRequest();
+        deploy.shootRequest();
+        intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOTING);
         climber.stowRequest();

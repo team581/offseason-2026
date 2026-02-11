@@ -65,7 +65,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
-  public void shootingRequest() {
+  public void shootRequest() {
     switch (getState()) {
       case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup

@@ -15,7 +15,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     this.motor = motor;
   }
 
-  public void shootingRequest() {
+  public void shootRequest() {
     setStateFromRequest(IntakeState.SHOOTING);
   }
 
