@@ -14,11 +14,11 @@ import java.util.function.BooleanSupplier;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
   public static final BooleanSupplier CLAMPED_POINTS_FEATURE_FLAG =
-      FeatureFlag.of("ClampedAutoPoints", false);
+      FeatureFlag.of("ClampedAutoPoints", true);
 
   // TODO(@fcuellar13): Update the clamped area to reflect home practice field
   private static final Rectangle2d CLAMPED_AREA =
-      new Rectangle2d(Translation2d.kZero, new Translation2d(5, 5));
+      new Rectangle2d(new Translation2d(16.54, 8.069), new Translation2d(8.25, 1.649));
 
   private static Pose2d clamp(Pose2d input) {
     return new Pose2d(CLAMPED_AREA.nearest(input.getTranslation()), input.getRotation());
