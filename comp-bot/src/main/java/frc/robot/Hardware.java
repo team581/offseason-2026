@@ -15,8 +15,8 @@ public class Hardware {
   public final XboxController driverController = new XboxController(0);
   public final XboxController operatorController = new XboxController(1);
 
-    private final CANBus canivore = new CANBus("581CANivore");
-    private final CANBus rio = new CANBus();
+  private final CANBus canivore = new CANBus("581CANivore");
+  private final CANBus rio = new CANBus();
 
   public final TalonFX shooterLeftMotor = new TalonFX(15, rio);
   public final TalonFX shooterRightMotor = new TalonFX(16, rio);

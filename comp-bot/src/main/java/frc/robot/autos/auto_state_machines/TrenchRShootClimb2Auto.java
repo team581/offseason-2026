@@ -19,10 +19,10 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(10.489, 7.5, Rotation2d.fromDegrees(-150.0)))
-                .withTransitionTolerance(new PoseErrorTolerance(0.7, 10)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 10)),
               AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
               AutoPoint.ofRed(new Pose2d(8.852, 5.4, Rotation2d.kCW_90deg))
-              .withTransitionTolerance(new PoseErrorTolerance(2, 3)))
+                  .withTransitionTolerance(new PoseErrorTolerance(2, 3)))
           .withLinearConstraints(4.5, 10)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
@@ -30,9 +30,9 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   private final AutoSegment intakeAcrossMidlineTwo =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(11.2, 7.5, Rotation2d.fromDegrees(-150.0))),
-             AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
+              AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
               AutoPoint.ofRed(new Pose2d(8.852, 5.2, Rotation2d.kCW_90deg))
-                            .withTransitionTolerance(new PoseErrorTolerance(2, 3)))
+                  .withTransitionTolerance(new PoseErrorTolerance(2, 3)))
           .withLinearConstraints(4.5, 10)
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
@@ -52,7 +52,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(11.3, 7.55, Rotation2d.k180deg)),
               AutoPoint.ofRed(new Pose2d(13.5, 7.5, Rotation2d.k180deg)))
-                        .withLinearConstraints(4.5, 10)
+          .withLinearConstraints(4.5, 10)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {

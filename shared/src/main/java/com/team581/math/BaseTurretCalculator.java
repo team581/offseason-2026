@@ -21,12 +21,11 @@ public class BaseTurretCalculator {
     DogLog.log("Turret/Calculator/motor_mod", rotor_position);
     double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
     double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
-        DogLog.log("Turret/Calculator/rough_abs_pos", roughAbsolutePosition);
-
+    DogLog.log("Turret/Calculator/rough_abs_pos", roughAbsolutePosition);
 
     int potentialMotorWrapA =
         (int) (roughAbsolutePosition / motorRotationResolution); // motor_rotation_resolution;
-            DogLog.log("Turret/Calculator/potentialA", potentialMotorWrapA);
+    DogLog.log("Turret/Calculator/potentialA", potentialMotorWrapA);
 
     double potentialMotorWrapB = potentialMotorWrapA - 1;
     double potentialMotorWrapC = potentialMotorWrapA + 1;
