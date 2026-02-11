@@ -49,7 +49,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   }
 
   public void shootRequest() {
-    setStateFromRequest(DyeRotorState.SHOOTING);
+    setStateFromRequest(DyeRotorState.SHOOT);
   }
 
   public void warmupRequest() {
@@ -103,7 +103,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     return switch (getState()) {
       case IDLE -> true;
       case UNJAM -> timeout(1) || !isJammed();
-      case SHOOTING -> true;
+      case SHOOT -> true;
       case WARMUP ->
           MathUtil.isNear(
               DyeRotorState.WARMUP.horizontalRPM,
