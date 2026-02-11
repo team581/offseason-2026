@@ -49,7 +49,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
       default -> setStateFromRequest(DeployState.INTAKE);
@@ -58,24 +58,24 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
-      default -> setStateFromRequest(DeployState.STOWED);
+      default -> setStateFromRequest(DeployState.STOW);
     }
   }
 
   public void shootRequest() {
     switch (getState()) {
-      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
-      default -> setStateFromRequest(DeployState.SHOOTING);
+      default -> setStateFromRequest(DeployState.SHOOT);
     }
   }
 
   public void homingRequest() {
-    setStateFromRequest(DeployState.HOMING);
+    setStateFromRequest(DeployState.HOME);
   }
 
   @Override
@@ -88,14 +88,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
-      case HOMING -> {
+      case HOME -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
           rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
           yield DeployState.INTAKE;
         } else {
-          yield DeployState.HOMING;
+          yield DeployState.HOME;
         }
       }
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
@@ -121,7 +121,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.disable();
         rightMotor.disable();
       }
-      case HOMING -> {
+      case HOME -> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
       }
@@ -133,11 +133,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
         rightMotor.disable();
       }
-      case SHOOTING -> {
+      case SHOOT -> {
         leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
         rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
       }
       default -> {
         leftMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
@@ -149,18 +149,18 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   @Override
   protected void whileInState(DeployState state) {
     if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
-        && state == DeployState.SHOOTING
+        && state == DeployState.SHOOT
         && ableToHopperShuffle) {
-      if (atGoal(DeployState.SHOOTING.getLength())) {
+      if (atGoal(DeployState.SHOOT.getLength())) {
         leftMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
         rightMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
       } else if (atGoal(DeployState.INTAKE.getLength())) {
         leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
         rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
       }
     }
 
@@ -226,7 +226,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
-    if (getState() == DeployState.HOMING) {
+    if (getState() == DeployState.HOME) {
       leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
       rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
       setStateFromRequest(DeployState.INTAKE);
