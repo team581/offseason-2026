@@ -13,7 +13,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import java.util.Map;
 
 public class ShooterHoodConfig {
-  public static final double MAX_ANGLE = 35;
+  public static final double MAX_ANGLE = 24;
   public static final double MIN_ANGLE = 0;
   public static final double IDLE_ANGLE = 0.0;
 
@@ -32,7 +32,7 @@ public class ShooterHoodConfig {
               new CurrentLimitsConfigs().withStatorCurrentLimit(20).withSupplyCurrentLimit(20))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Brake)
+                  .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
 
