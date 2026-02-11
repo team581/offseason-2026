@@ -13,7 +13,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import java.util.Map;
 
 public class ShooterHoodConfig {
-  public static final double MAX_ANGLE = 30;
+  public static final double MAX_ANGLE = 35;
   public static final double MIN_ANGLE = 0;
   public static final double IDLE_ANGLE = 0.0;
 
@@ -26,7 +26,8 @@ public class ShooterHoodConfig {
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           // TODO: Figure out gearing ratio
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(0))
+          .withFeedback(
+              new FeedbackConfigs().withSensorToMechanismRatio((340.0 * 42.0) / (14.0 * 8.0)))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(20).withSupplyCurrentLimit(20))
           .withMotorOutput(

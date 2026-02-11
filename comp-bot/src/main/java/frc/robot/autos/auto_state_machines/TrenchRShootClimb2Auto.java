@@ -9,76 +9,65 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.TrenchRShootClimb2AutoState;
+import frc.robot.climber.ClimbLocation;
+import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
 public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb2AutoState> {
 
-  private final AutoSegment driveToMidline =
+  private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.682, 7.024, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.32, 5.859, Rotation2d.kCW_90deg)))
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
+              AutoPoint.ofRed(new Pose2d(11.2, 7.5, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.4, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(4.5, 10)
+          .untilFinished(new PoseErrorTolerance(0.2, 3));
 
-  private final AutoSegment intakeAcrossMidline =
+  private final AutoSegment intakeAcrossMidlineTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(9.32, 4.341, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.32, 2.885, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
+              AutoPoint.ofRed(new Pose2d(11.2, 7.5, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
+              AutoPoint.ofRed(new Pose2d(8.852, 5.2, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(4.5, 10)
+          .untilFinished(new PoseErrorTolerance(0.1, 3));
 
   private final AutoSegment driveBack =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(9.32, 2.885, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.32, 4.341, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(9.32, 5.859, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.682, 7.024, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
+      Trailblazer.segment(AutoPoint.ofRed(new Pose2d(8.85, 5.8, Rotation2d.kCW_90deg)))
+          .withLinearConstraints(4.5, 10)
+          .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   private final AutoSegment driveToShootOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(14.0, 7.4, Rotation2d.kCW_90deg))
-                  .withLinearConstraints(3, 3))
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
+              AutoPoint.ofRed(new Pose2d(11.3, 7.55, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(12.8, 7.57, Rotation2d.k180deg))
+                  .withLinearConstraints(4.5, 10))
+          .untilFinished(new PoseErrorTolerance(0.7, 3));
 
   private final AutoSegment driveToShootTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(12.3, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.0, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)))
-          .withLinearConstraints(3, 3)
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
-
-  private final AutoSegment driveToClimb =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(13.24, 7.4, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(14.716, 4.198, Rotation2d.kCW_90deg)))
-          .untilFinished(new PoseErrorTolerance(0.05, 3));
+              AutoPoint.ofRed(new Pose2d(11.3, 7.55, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(12.3, 7.57, Rotation2d.k180deg)),
+              AutoPoint.ofRed(new Pose2d(13.9, 5.92, Rotation2d.k180deg)))
+          .withLinearConstraints(4.5, 10)
+          .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(TrenchRShootClimb2AutoState.DRIVE_TO_MIDLINE_1, robotManager, trailblazer);
+    super(TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_1, robotManager, trailblazer);
   }
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.0, 7.4, Rotation2d.kCW_90deg));
+    return Point.ofRed(new Pose2d(12.0, 7.55, Rotation2d.k180deg));
   }
 
   @Override
   protected TrenchRShootClimb2AutoState getNextState(TrenchRShootClimb2AutoState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
-        case DRIVE_TO_MIDLINE_1 -> TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_1;
         case INTAKE_ACROSS_MIDLINE_1 -> TrenchRShootClimb2AutoState.DRIVE_BACK_1;
         case DRIVE_BACK_1 -> TrenchRShootClimb2AutoState.SHOOT_1;
         case SHOOT_1 ->
-            timeout(3.0) ? TrenchRShootClimb2AutoState.DRIVE_TO_MIDLINE_2 : currentState;
-        case DRIVE_TO_MIDLINE_2 -> TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_2;
+            timeout(3.0) ? TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_2 : currentState;
         case INTAKE_ACROSS_MIDLINE_2 -> TrenchRShootClimb2AutoState.DRIVE_BACK_2;
         case DRIVE_BACK_2 -> TrenchRShootClimb2AutoState.SHOOT_2;
         case SHOOT_2 -> TrenchRShootClimb2AutoState.DRIVE_TO_CLIMB;
@@ -93,39 +82,56 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   @Override
   protected void whileInState(TrenchRShootClimb2AutoState newState) {
     switch (newState) {
-      case DRIVE_TO_MIDLINE_1 -> trailblazer.setActiveSegment(driveToMidline);
       case INTAKE_ACROSS_MIDLINE_1 -> {
-        trailblazer.setActiveSegment(intakeAcrossMidline);
+        trailblazer.setActiveSegment(intakeAcrossMidlineOne);
         robotManager.intakeRequest();
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBack);
-        robotManager.idleRequest();
+        robotManager.cancelIntakeRequest();
       }
       case SHOOT_1 -> {
         trailblazer.setActiveSegment(driveToShootOne);
         robotManager.prepareScoreRequest();
       }
-      case DRIVE_TO_MIDLINE_2 -> trailblazer.setActiveSegment(driveToMidline);
       case INTAKE_ACROSS_MIDLINE_2 -> {
-        trailblazer.setActiveSegment(intakeAcrossMidline);
+        trailblazer.setActiveSegment(intakeAcrossMidlineTwo);
         robotManager.intakeRequest();
       }
       case DRIVE_BACK_2 -> {
         trailblazer.setActiveSegment(driveBack);
-        robotManager.idleRequest();
+        robotManager.cancelIntakeRequest();
       }
       case SHOOT_2 -> {
         trailblazer.setActiveSegment(driveToShootTwo);
         robotManager.prepareScoreRequest();
       }
       case DRIVE_TO_CLIMB -> {
-        trailblazer.setActiveSegment(driveToClimb);
-        // raise climber as you shoot & drive to climb?
+        robotManager.startAutoClimbSequence();
       }
-      case CLIMB -> {
-        // climb request
+      case CLIMB -> {}
+      case DONE -> {}
+    }
+  }
+
+  @Override
+  protected void afterTransition(TrenchRShootClimb2AutoState newState) {
+    switch (newState) {
+      case INTAKE_ACROSS_MIDLINE_1 -> {
+        robotManager.homeDeployRequest();
+        robotManager.homeShooterHoodRequest();
       }
+      case DRIVE_BACK_1 -> {}
+      case SHOOT_1 -> {}
+      case INTAKE_ACROSS_MIDLINE_2 -> {}
+      case DRIVE_BACK_2 -> {}
+      case SHOOT_2 -> {}
+      case DRIVE_TO_CLIMB -> {
+        trailblazer.setActiveSegment(
+            ClimbAssist.getClimbAssistSegment(
+                robotManager.localization.getPose(), ClimbLocation.CLOSEST));
+      }
+      case CLIMB -> {}
       case DONE -> {}
     }
   }

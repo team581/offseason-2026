@@ -1,6 +1,6 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
@@ -10,8 +10,10 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -19,12 +21,16 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final CANrange hopperCANRange;
-  private final PositionVoltage positionVoltageRequest =
-      new PositionVoltage(0).withEnableFOC(false);
+  private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
+  private final MotionMagicVoltage positionVoltageRequest =
+      new MotionMagicVoltage(0).withEnableFOC(false);
+
+  private HopperCapacity hopperCapacity = HopperCapacity.HIGH;
   private DeployState storedState = DeployState.UNHOMED;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
   private double hopperCANRangeDistance = 0.0;
+  private double filteredHopperCANRangeDistance;
   private boolean ableToHopperShuffle = false;
 
   public Deploy(TalonFX leftMotor, TalonFX rightMotor, CANrange hopperCANRange) {
@@ -174,6 +180,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.log("Deploy/HopperCANRangeDistance", hopperCANRangeDistance);
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
     DogLog.log("Deploy/StoredState", storedState.name());
+    DogLog.log("Deploy/Capacity", hopperCapacity);
   }
 
   public double getPosition() {
@@ -190,7 +197,21 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
     hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
-    ableToHopperShuffle = hopperCANRangeDistance < DeployConfig.CAPACITY_DISTANCE_THRESHOLD;
+    filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
+
+    if (filteredHopperCANRangeDistance >= DeployConfig.HIGH_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.HIGH;
+    } else if (filteredHopperCANRangeDistance >= DeployConfig.MEDIUM_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.MEDIUM;
+    } else {
+      hopperCapacity = HopperCapacity.LOW;
+    }
+
+    if (RobotBase.isSimulation()) {
+      ableToHopperShuffle = true;
+    } else {
+      ableToHopperShuffle = hopperCapacity != HopperCapacity.LOW;
+    }
   }
 
   @Override

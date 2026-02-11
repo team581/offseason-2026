@@ -2,6 +2,7 @@ package frc.robot.dye_rotor;
 
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -26,6 +27,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private double rotorFilteredCurrent = 0.0;
 
   private double rotorMotorRpm = 0.0;
+  private double rotorAngle = 0.0;
   private double horizontalMotorRpm = 0.0;
   private boolean isShooting = false;
   private boolean isShootingDebounced = false;
@@ -40,7 +42,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     TunablePid.register("DyeRotor/Rotor", rotorMotor, DyeRotorConfig.ROTOR_MOTOR_CONFIG);
     TunablePid.register(
         "DyeRotor/Horizontal", horizontalMotor, DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
-    TunablePid.register("DyeRotor/Vertical", verticalMotor, DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
     this.rotorMotor = rotorMotor;
     this.horizontalMotor = horizontalMotor;
@@ -67,20 +68,22 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   protected void whileInState(DyeRotorState state) {
     DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
     DogLog.log("DyeRotor/Rotor/GoalRPM", state.rotorRPM);
+    DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
     DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
     DogLog.log("DyeRotor/Horizontal/GoalRPM", state.horizontalRPM);
     DogLog.log("DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("DyeRotor/Vertical/GoalVoltage", state.verticalVoltage);
+    DogLog.log("DyeRotor/Vertical/GoalVoltage", state.getVerticalVoltage());
     DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/AtGoal", atGoal());
   }
 
   @Override
   protected void afterTransition(DyeRotorState newState) {
-    rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM));
-    horizontalMotor.setControl(horizontalVelocityRequest.withVelocity(newState.horizontalRPM));
-    verticalMotor.setVoltage(newState.verticalVoltage);
+    rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM / 60.0));
+    horizontalMotor.setControl(
+        horizontalVelocityRequest.withVelocity(newState.horizontalRPM / 60.0));
+    verticalMotor.setVoltage(newState.getVerticalVoltage());
   }
 
   @Override
@@ -89,6 +92,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     rotorFilteredCurrent = currentFilter.calculate(rotorRawCurrent);
 
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
+    rotorAngle = Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble());
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
 
     isShooting = horizontalMotorRpm < DyeRotorConfig.RPM_TOLERANCE_SHOOTING;
@@ -120,19 +124,25 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   }
 
   public double getAngle() {
-    return Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble());
+    return rotorAngle;
   }
 
   @Override
   public void simulationPeriodic() {
     var rotorSimulation =
-        SimKit.velocityMechanism("DyeRotor/Rotor", (mechanism) -> mechanism.addMotor(rotorMotor));
+        SimKit.velocityMechanism(
+            "DyeRotor/Rotor",
+            (mechanism) -> mechanism.addMotor(rotorMotor, ChassisReference.Clockwise_Positive));
     var horizontalSimulation =
         SimKit.velocityMechanism(
-            "DyeRotor/Horizontal", (mechanism) -> mechanism.addMotor(horizontalMotor));
+            "DyeRotor/Horizontal",
+            (mechanism) ->
+                mechanism.addMotor(horizontalMotor, ChassisReference.CounterClockwise_Positive));
     var verticalSimulation =
         SimKit.velocityMechanism(
-            "DyeRotor/Vertical", (mechanism) -> mechanism.addMotor(verticalMotor));
+            "DyeRotor/Vertical",
+            (mechanism) ->
+                mechanism.addMotor(verticalMotor, ChassisReference.CounterClockwise_Positive));
 
     rotorSimulation.update();
     horizontalSimulation.update();

@@ -15,10 +15,11 @@ public class TurretCalculator {
     return BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
         turretMotorPosition,
         turretEncoderPosition,
-        TurretConfig.ROTOR_CAL_OFFSET,
         TurretConfig.MOTOR_TO_TURRET,
         TurretConfig.ENCODER_TO_TURRET,
-        TurretConfig.MOTOR_ROTATION_RESOLUTION);
+        TurretConfig.MOTOR_ROTATION_RESOLUTION,
+        TurretConfig.MIN_ANGLE_HOMING,
+        TurretConfig.MAX_ANGLE_HOMING);
   }
 
   public static double calculateSwerveTurretCompensationAngle(

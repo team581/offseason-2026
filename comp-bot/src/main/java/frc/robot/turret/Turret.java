@@ -34,6 +34,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
     this.vision = vision;
 
+    motor.getConfigurator().apply(TurretConfig.MOTOR_CONFIG);
+    encoder.getConfigurator().apply(TurretConfig.ENCODER_CONFIG);
+
     TunablePid.register("Turret", motor, TurretConfig.MOTOR_CONFIG);
 
     this.motor = motor;
@@ -86,7 +89,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             positionRequest
                 .withPosition(
                     Units.degreesToRotations(
-                        TurretCalculator.getOptimalAngle(goalAngle, currentAngle)))
+                        clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       case IDLE_SCORE, IDLE_FEED -> {
@@ -94,11 +97,13 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             positionRequest
                 .withPosition(
                     Units.degreesToRotations(
-                        TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))
+                        clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       default -> {}
     }
+
+    DogLog.log("Turret/AtGoal", atGoal());
   }
 
   public void setState(TurretState newState) {
@@ -180,6 +185,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public double getVelocity() {
     return velocity;
+  }
+
+  private static double clamp(double wantedAngle) {
+    return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
   }
 
   @Override

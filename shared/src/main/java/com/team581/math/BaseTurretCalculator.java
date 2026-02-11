@@ -11,16 +11,17 @@ public class BaseTurretCalculator {
   public static double calculateHomedPositionFromMotorAndEncoder(
       double turretMotorPosition,
       double turretEncoderPosition,
-      double rotorCalibratedOffset,
       double motorToTurretRatio,
       double encoderToTurretRatio,
-      double motorRotationResolution) {
-    double rotor_position = (turretMotorPosition - rotorCalibratedOffset) % 1;
+      double motorRotationResolution,
+      double minTurretAngle,
+      double maxTurretAngle) {
+    double rotor_position = turretMotorPosition % 1;
     double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
     double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
 
     int potentialMotorWrapA =
-        (int) (roughAbsolutePosition / (1 / motorRotationResolution)); // motor_rotation_resolution;
+        (int) (roughAbsolutePosition / motorRotationResolution); // motor_rotation_resolution;
     double potentialMotorWrapB = potentialMotorWrapA - 1;
     double potentialMotorWrapC = potentialMotorWrapA + 1;
 
@@ -45,7 +46,7 @@ public class BaseTurretCalculator {
       turretPos = potentialMotorPosB;
     }
 
-    return turretPos;
+    return MathUtil.inputModulus(turretPos, minTurretAngle, maxTurretAngle);
   }
 
   public static double calculateSwerveTurretCompensationAngle(
