@@ -166,8 +166,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       } else {
         setStateFromRequest(DeployState.CATCHUP_TO_RIGHT);
       }
+    } else {
+      DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
     }
-    DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
