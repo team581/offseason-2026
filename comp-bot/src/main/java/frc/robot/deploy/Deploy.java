@@ -177,10 +177,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
     DogLog.log("Deploy/AveragePosition", getPosition());
-    DogLog.log("Deploy/HopperCANRangeDistance", hopperCANRangeDistance);
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
     DogLog.log("Deploy/StoredState", storedState.name());
     DogLog.log("Deploy/Capacity", hopperCapacity);
+    DogLog.log("Hopper/RawDistance", hopperCANRangeDistance);
+    DogLog.log("Hopper/FilteredDistance", filteredHopperCANRangeDistance);
   }
 
   public double getPosition() {
