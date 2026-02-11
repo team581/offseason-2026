@@ -218,7 +218,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   public void simulationPeriodic() {
     var deploySimulation =
         SimKit.positionMechanism(
-            "Deploy/Left",
+            "Deploy",
             mechanism ->
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
