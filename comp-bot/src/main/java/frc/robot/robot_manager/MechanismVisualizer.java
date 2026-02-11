@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import frc.robot.shooter_hood.ShooterHoodConfig;
 
 public final class MechanismVisualizer {
   /**
@@ -28,8 +29,6 @@ public final class MechanismVisualizer {
 
   /** Height from the turret to the pivot point of the shooter hood. */
   private static final double SHOOTER_HOOD_HEIGHT_METERS = Units.inchesToMeters(2.867553);
-
-  private static final double SHOOTER_HOOD_ANGLE_FROM_HORIZONTAL = 22.558525;
 
   /** Height from the floor to the bottom of the climber. */
   private static final double CLIMBER_HEIGHT_METERS = Units.inchesToMeters(0.941267);
@@ -96,7 +95,7 @@ public final class MechanismVisualizer {
           new MechanismLigament2d(
               "shooterHood",
               SHOOTER_HOOD_RADIUS,
-              SHOOTER_HOOD_ANGLE_FROM_HORIZONTAL,
+              ShooterHoodConfig.ANGLE_FROM_HORIZONTAL,
               10,
               new Color8Bit(Color.kFirstRed)));
 
@@ -110,7 +109,7 @@ public final class MechanismVisualizer {
     SmartDashboard.putData("Visualization/Static", MECHANISM);
     SmartDashboard.putData("Visualization/Turret", SHOOTER_HOOD_MECHANISM);
 
-    SHOOTER_HOOD_PIVOT.setAngle(SHOOTER_HOOD_ANGLE_FROM_HORIZONTAL + shooterHoodAngleDegrees);
+    SHOOTER_HOOD_PIVOT.setAngle(shooterHoodAngleDegrees);
     CLIMBER_ELEVATOR.setLength(Units.inchesToMeters(climberHeightInches));
     DEPLOY_EXTENSION.setLength(Units.inchesToMeters(deployLengthInches));
 
