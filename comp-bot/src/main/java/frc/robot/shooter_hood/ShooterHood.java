@@ -181,7 +181,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
                     .withMinPosition(Units.degreesToRotations(ShooterHoodConfig.MIN_ANGLE)));
 
     if (getState() == ShooterHoodState.HOMING) {
-      motor.setPosition(0);
+      motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
       setStateFromRequest(ShooterHoodState.IDLE);
     }
 
