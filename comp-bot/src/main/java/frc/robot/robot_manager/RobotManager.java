@@ -686,7 +686,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/TimeSinceTeleopEnable", teleopTimer.get());
 
     if (!getState().isClimbing()) {
-      if (intake.getState() == IntakeState.INTAKING) {
+      if (intake.getState() == IntakeState.INTAKE) {
         swerve.intakeDriveRequest();
       } else {
         swerve.normalDriveRequest();
