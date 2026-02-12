@@ -1,11 +1,13 @@
 package com.team581.math;
 
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 
 public class BaseTurretCalculator {
 
@@ -51,8 +53,12 @@ public class BaseTurretCalculator {
       turretPos = potentialMotorPosB;
     }
     DogLog.log("Turret/Calculator/turretPos", turretPos);
+    DogLog.log("Turret/Calculator/turretPosDegrees", Units.rotationsToDegrees(turretPos));
 
-    return MathUtil.inputModulus(turretPos, minTurretAngle, maxTurretAngle);
+    return MathUtil.inputModulus(
+        turretPos,
+        Units.degreesToRotations(minTurretAngle),
+        Units.degreesToRotations(maxTurretAngle));
   }
 
   public static double calculateSwerveTurretCompensationAngle(

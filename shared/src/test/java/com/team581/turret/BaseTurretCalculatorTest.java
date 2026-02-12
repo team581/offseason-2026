@@ -2,13 +2,16 @@ package com.team581.turret;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import org.junit.jupiter.api.Test;
 
 import com.team581.math.BaseTurretCalculator;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import org.junit.jupiter.api.Test;
+import edu.wpi.first.math.util.Units;
 
 final class BaseTurretCalculatorTest {
   @Test
@@ -47,8 +50,8 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder5() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            0.75, 0.95, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
-    assertEquals(1.41875, homedPosition, 1e-9);
+            0.75, 0.95, 40.0, 1.5, (1.0 / 40.0), -270.0, 270.0);
+    assertEquals(MathUtil.inputModulus(1.41875, Units.degreesToRotations(-270), Units.degreesToRotations(270)), homedPosition, 1e-9);
   }
 
   @Test
