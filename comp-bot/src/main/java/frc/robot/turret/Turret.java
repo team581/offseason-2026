@@ -9,11 +9,13 @@ import com.team581.simkit.SimKit;
 import com.team581.util.AprilTags;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
@@ -47,7 +49,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
       case UNHOMED -> {
-        if (motor.isAlive() && motor.isConnected() && encoder.isConnected()) {
+        if (motor.isAlive()
+            && motor.isConnected()
+            && encoder.isConnected()
+            && RobotBase.isReal()) {
           double motorPosition = motor.getRotorPosition().getValueAsDouble();
           double encoderPosition = encoder.getAbsolutePosition().getValueAsDouble();
           var turretPos =
