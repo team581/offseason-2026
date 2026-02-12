@@ -16,12 +16,12 @@ public class BaseTurretCalculator {
       double motorToTurretRatio,
       double encoderToTurretRatio,
       double motorRotationResolution,
-      double minTurretAngle,
-      double maxTurretAngle) {
+      double minTurretAngleRotations,
+      double maxTurretAngleRotations) {
     double rotor_position = turretMotorPosition % 1;
     DogLog.log("Turret/Calculator/motor_mod", rotor_position);
     double rotorRotationsRelativeToTurret = rotor_position / motorToTurretRatio;
-    double roughAbsolutePosition = turretEncoderPosition * encoderToTurretRatio;
+    double roughAbsolutePosition = turretEncoderPosition / encoderToTurretRatio;
     DogLog.log("Turret/Calculator/rough_abs_pos", roughAbsolutePosition);
 
     int potentialMotorWrapA =
@@ -56,8 +56,8 @@ public class BaseTurretCalculator {
 
     return MathUtil.inputModulus(
         turretPos,
-        Units.degreesToRotations(minTurretAngle),
-        Units.degreesToRotations(maxTurretAngle));
+        minTurretAngleRotations,
+        maxTurretAngleRotations);
   }
 
   public static double calculateSwerveTurretCompensationAngle(
