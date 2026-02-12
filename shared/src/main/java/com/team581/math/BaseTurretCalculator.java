@@ -54,10 +54,7 @@ public class BaseTurretCalculator {
     DogLog.log("Turret/Calculator/turretPos", turretPos);
     DogLog.log("Turret/Calculator/turretPosDegrees", Units.rotationsToDegrees(turretPos));
 
-    return MathUtil.inputModulus(
-        turretPos,
-        minTurretAngleRotations,
-        maxTurretAngleRotations);
+    return MathUtil.inputModulus(turretPos, minTurretAngleRotations, maxTurretAngleRotations);
   }
 
   public static double calculateSwerveTurretCompensationAngle(
