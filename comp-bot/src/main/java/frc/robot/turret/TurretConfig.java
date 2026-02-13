@@ -50,7 +50,7 @@ public class TurretConfig {
                   // TODO: Fix
                   .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
                   // TODO: Fix
-                  .withAbsoluteSensorDiscontinuityPoint(1.0));
+                  .withAbsoluteSensorDiscontinuityPoint(0.5));
 
   private TurretConfig() {}
 }
