@@ -19,8 +19,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private final TalonFX verticalMotor;
 
   private final VelocityVoltage rotorVelocityRequest = new VelocityVoltage(0).withEnableFOC(false);
-  private final VelocityVoltage horizontalVelocityRequest =
-      new VelocityVoltage(0).withEnableFOC(false);
 
   private double rotorRawCurrent = 0.0;
   private double rotorFilteredCurrent = 0.0;
@@ -60,10 +58,9 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   @Override
   protected void whileInState(DyeRotorState currentState) {
     // TODO: Move to afterTransitiondouble rotorRpm = currentState.rotorRPM;
-    double targetRotorRpm = currentState.rotorRPM;
 
     if (currentState == DyeRotorState.SHOOT && DyeRotorConfig.ROTOR_STOP) {
-      targetRotorRpm = 0.0;
+
       rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
       horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
       verticalMotor.setVoltage(currentState.getVerticalVoltage());
