@@ -14,7 +14,7 @@ public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING(DoNothingAuto::new),
   RIGHT_STRAIGHT_FEED(RightStraightFeedAuto::new),
   RIGHT_STRAIGHT_SHOOT_CLIMB(RightStraightShootClimbAuto::new),
-  
+
   RIGHT_SWOOP_SHOOT_CLIMB(RightSwoopShootClimbAuto::new),
   INTEGRATION_TEST(IntegrationTest::new);
 
