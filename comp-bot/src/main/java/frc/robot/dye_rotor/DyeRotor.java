@@ -60,7 +60,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   @Override
   protected void whileInState(DyeRotorState currentState) {
-    //TODO: Move to afterTransition
+    // TODO: Move to afterTransition
     rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
     horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
     verticalMotor.setVoltage(currentState.getVerticalVoltage());
