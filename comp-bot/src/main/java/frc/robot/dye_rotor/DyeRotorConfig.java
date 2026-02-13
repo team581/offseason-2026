@@ -54,7 +54,7 @@ public class DyeRotorConfig {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.CounterClockwise_Positive));
+                  .withInverted(InvertedValue.Clockwise_Positive));
 
   public static final TalonFXConfiguration HORIZONTAL_MOTOR_CONFIG =
       new TalonFXConfiguration()

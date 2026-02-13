@@ -5,8 +5,8 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DyeRotorState {
   IDLE(0.0, 0.0, 0.0),
-  WARMUP(60.0, 0.0, 0.0),
-  SHOOT(150.0, 150.0, 0.0),
+  WARMUP(60.0, 0.0, 3.0),
+  SHOOT(150.0, 150.0, 6.0),
   UNJAM(0.0, 0.0, 0.0);
 
   public final double rotorRPM;
