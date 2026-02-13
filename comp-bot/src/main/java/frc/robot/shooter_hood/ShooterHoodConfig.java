@@ -20,9 +20,11 @@ public class ShooterHoodConfig {
    */
   public static final double ANGLE_FROM_HORIZONTAL = 22.558525;
 
-  public static final double MAX_ANGLE = 24 + ANGLE_FROM_HORIZONTAL;
-  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL;
-  public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL;
+
+  // TODO Update safe zone amount
+  public static final double MAX_ANGLE = 46.5 - 2;
+  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 2;
+  public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 2;
 
   public static final double HOMING_VOLTAGE = -2;
   public static final double HOMING_CURRENT_THRESHOLD = 10;
@@ -43,7 +45,7 @@ public class ShooterHoodConfig {
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(0)
+                  .withKP(250)
                   .withKV(0)
                   .withKS(0)
                   .withGravityType(GravityTypeValue.Arm_Cosine));
