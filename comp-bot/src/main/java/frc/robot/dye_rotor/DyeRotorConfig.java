@@ -13,32 +13,50 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class DyeRotorConfig {
-	public static final Debouncer debouncer = new Debouncer(1.0);
-	public static final int RPM_TOLERANCE_HORIZONTAL = 100;
+  public static final Debouncer debouncer = new Debouncer(1.0);
+  public static final int RPM_TOLERANCE_HORIZONTAL = 100;
 
-	// TODO:Get this number
-	public static final double RPM_TOLERANCE_SHOOTING = 10;
-	public static final DoubleSubscriber JAM_CURRENT_THRESHOLD = DogLog
-			.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
+  // TODO:Get this number
+  public static final double RPM_TOLERANCE_SHOOTING = 10;
+  public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
+      DogLog.tunable("DyeRotor/Horizontal/JamCurrentThreshold", 75.0);
 
-	public static final TalonFXConfiguration ROTOR_MOTOR_CONFIG = new TalonFXConfiguration()
-			.withFeedback(new FeedbackConfigs().withSensorToMechanismRatio((40.0 * 36.0 * 84.0) / (8.0 * 18.0 * 18.0)))
-			.withMotionMagic(
-					new MotionMagicConfigs().withMotionMagicCruiseVelocity(10.0).withMotionMagicAcceleration(10.0))
-			.withCurrentLimits(new CurrentLimitsConfigs().withSupplyCurrentLimitEnable(true)
-					.withStatorCurrentLimitEnable(true).withStatorCurrentLimit(100).withSupplyCurrentLimit(100))
-			.withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)
-					.withInverted(InvertedValue.Clockwise_Positive))
-			.withSlot0(new Slot0Configs().withKP(0.0).withKV(5.0).withKS(0.0).withKA(0.0));
+  public static final TalonFXConfiguration ROTOR_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio((40.0 * 36.0 * 84.0) / (8.0 * 18.0 * 18.0)))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(10.0)
+                  .withMotionMagicAcceleration(10.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.0).withKV(5.0).withKS(0.0).withKA(0.0));
 
-	public static final TalonFXConfiguration VERTICAL_MOTOR_CONFIG = new TalonFXConfiguration()
-			.withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(12.0 / 18.0))
-			.withCurrentLimits(new CurrentLimitsConfigs().withSupplyCurrentLimitEnable(true)
-					.withStatorCurrentLimitEnable(true).withStatorCurrentLimit(100).withSupplyCurrentLimit(100))
-			.withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast)
-					.withInverted(InvertedValue.Clockwise_Positive));
+  public static final TalonFXConfiguration VERTICAL_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(12.0 / 18.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive));
 
-	public static final TalonFXConfiguration HORIZONTAL_MOTOR_CONFIG =
+  public static final TalonFXConfiguration HORIZONTAL_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(15.0 / 15.0))
           .withMotionMagic(
@@ -54,13 +72,9 @@ public class DyeRotorConfig {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-<<<<<<< HEAD
-                  .withInverted(InvertedValue.CounterClockwise_Positive));
-=======
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0));
-	public static boolean ROTOR_STOP;>>>>>>>138096b3 (Dyerotor started on fixing clog issue with fuel)
+  public static boolean ROTOR_STOP = false;
 
-	private DyeRotorConfig() {
-	}
+  private DyeRotorConfig() {}
 }
