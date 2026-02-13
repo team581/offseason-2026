@@ -150,12 +150,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
         rightMotor.disable();
       }
-      case SHOOT -> {
-        leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
-        rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
-      }
       default -> {
         leftMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
         rightMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
@@ -183,6 +177,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
+    DogLog.log("Deploy/GoalPosition", getState().getLength());
     DogLog.log("Deploy/AveragePosition", getPosition());
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
     DogLog.log("Deploy/StoredState", storedState.name());
