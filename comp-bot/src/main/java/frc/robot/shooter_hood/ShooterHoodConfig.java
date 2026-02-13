@@ -45,7 +45,7 @@ public class ShooterHoodConfig {
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(250)
+                  .withKP(350)
                   .withKV(0)
                   .withKS(0)
                   .withGravityType(GravityTypeValue.Arm_Cosine));
