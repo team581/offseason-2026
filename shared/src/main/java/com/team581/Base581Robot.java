@@ -28,6 +28,10 @@ public abstract class Base581Robot extends TimedRobot {
     DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
 
     SignalLogger.start();
+    if (RobotBase.isReal()) {
+      //  TODO: This will error if the directory doesn't exist
+      SignalLogger.setPath("/media/sda1/hoot/");
+    }
 
     DogLog.setOptions(
         new DogLogOptions()
