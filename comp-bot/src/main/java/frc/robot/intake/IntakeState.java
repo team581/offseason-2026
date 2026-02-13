@@ -6,7 +6,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 public enum IntakeState {
   INTAKE(6),
   IDLE(0),
-  SHOOT(0);
+  SHOOT(3);
 
   public final double voltage;
   public final DoubleSubscriber intakeTunableVoltage;
