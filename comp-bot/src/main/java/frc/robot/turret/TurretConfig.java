@@ -40,7 +40,7 @@ public class TurretConfig {
           // TODO: Switch back to brake mode once bringup concluded
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
+          .withSlot0(new Slot0Configs().withKP(200.0).withKV(0.0).withKG(0.0).withKD(1.7));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
           .withMagnetSensor(
