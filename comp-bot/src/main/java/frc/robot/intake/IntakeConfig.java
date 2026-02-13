@@ -16,5 +16,5 @@ public class IntakeConfig {
                   .withNeutralMode(NeutralModeValue.Coast))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(20).withSupplyCurrentLimit(20));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
 }
