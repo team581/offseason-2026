@@ -61,7 +61,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.0, 7.55, Rotation2d.k180deg));
+    return Point.ofRed(new Pose2d(12.15, 7.55, Rotation2d.k180deg));
   }
 
   @Override
