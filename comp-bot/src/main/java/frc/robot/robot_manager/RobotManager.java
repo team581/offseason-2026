@@ -56,6 +56,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
+  private boolean climbLocationIsLeft = true;
+
   private AimingParameters scoringParameters = new AimingParameters(0, 0);
   private AimingParameters feedingParameters = new AimingParameters(0, 0);
   private static final double PRESET_FEED_DISTANCE = 0.0;
@@ -122,7 +124,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           MANUAL_CLIMB_4_HANGING_L2,
           MANUAL_CLIMB_5_RAISING_L3,
           MANUAL_CLIMB_6_HANGING_L3,
-          AUTOMATIC_CLIMB_6_HANGING_L3 ->
+          AUTOMATIC_CLIMB_6_HANGING_L3,
+          CLIMB_8_SCORING_L3 ->
           currentState;
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
@@ -155,6 +158,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && shooterHood.atGoal()
             && !isMoving) {
           yield RobotState.PRESET_SCORE;
+        }
+        yield currentState;
+      }
+      case CLIMB_7_PREPARE_SCORING_L3 -> {
+        if (shooter.atGoal()
+            && turret.atGoal()
+            && shooterHood.atGoal() && dyeRotor.atGoal()) {
+          yield RobotState.CLIMB_8_SCORING_L3;
         }
         yield currentState;
       }
@@ -585,6 +596,30 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         lights.setState(LightsState.CLIMB_7);
         climber.l3HangingRequest();
       }
+      case CLIMB_7_PREPARE_SCORING_L3 -> {
+        vision.setState(VisionState.TAGS);
+        shooter.climbScoreRequest(climbLocationIsLeft);
+        shooterHood.climbScoreRequest(climbLocationIsLeft);
+        dyeRotor.idleRequest();
+        // Set turret behavior separate climbing
+        deploy.stowRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.CLIMB_7);
+        climber.l3HangingRequest();
+      }
+      case CLIMB_8_SCORING_L3 -> {
+        vision.setState(VisionState.TAGS);
+        shooter.climbScoreRequest(climbLocationIsLeft);
+        shooterHood.climbScoreRequest(climbLocationIsLeft);
+        dyeRotor.shootRequest();
+        // Set turret behavior separate climbing
+        deploy.shootRequest();
+        intake.shootRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.CLIMB_7);
+        climber.l3HangingRequest();
+      }
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
@@ -676,6 +711,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PRESET_FEED -> {
         // TODO: get turret feed angle
         turret.feedRequest(0);
+      }
+      case CLIMB_8_SCORING_L3, CLIMB_7_PREPARE_SCORING_L3 -> {
+        turret.climbScoreRequest(climbLocationIsLeft);
       }
       case AUTOMATIC_CLIMB_1_LINEUP_L1 -> {
         turret.climbRequest(robotPose);
@@ -865,7 +903,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           setStateFromRequest(RobotState.MANUAL_CLIMB_5_RAISING_L3);
       case MANUAL_CLIMB_5_RAISING_L3, AUTOMATIC_CLIMB_5_RAISING_L3 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
-      case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_6_HANGING_L3 -> {}
+      case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_6_HANGING_L3 ->
+          setStateFromRequest(RobotState.CLIMB_7_PREPARE_SCORING_L3);
     }
   }
 
@@ -895,6 +934,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           setStateFromRequest(RobotState.MANUAL_CLIMB_4_HANGING_L2);
       case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_6_HANGING_L3 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_5_RAISING_L3);
+      case CLIMB_7_PREPARE_SCORING_L3 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
+      case CLIMB_8_SCORING_L3 ->
+          setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
     }
   }
 
@@ -903,6 +946,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     robotPose = localization.getPose();
     vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
     turret.setRobotRotationRate(swerve.getFieldRelativeSpeeds().omegaRadiansPerSecond);
+    if (health.isLocalizationHealthy()) {
+      climbLocationIsLeft = ClimbLocation.getNearest(robotPose) == ClimbLocation.LEFT;
+    } else {
+      // TODO: This is an optional, need to see how getFallbackScorePoint() handles this logic
+      climbLocationIsLeft = DriverStation.getLocation().getAsInt() != 1;
+    }
     var speeds = swerve.getFieldRelativeSpeeds();
     isMoving = MathHelpers.getLinearVelocity(speeds) > 0.2;
 

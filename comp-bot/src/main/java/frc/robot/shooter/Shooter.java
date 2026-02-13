@@ -31,6 +31,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(true);
 
   private double scoreDistance = 0;
+  private double climbScoreRpm = 0;
   private double feedDistance = 0;
 
   private double shootingRpm = 0;
@@ -53,8 +54,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   public void scoreRequest(double distance) {
     this.scoreDistance = distance;
-
     setStateFromRequest(ShooterState.SCORE);
+  }
+
+  public void climbScoreRequest(boolean isLeft) {
+    climbScoreRpm = isLeft ? 0.0 : 0.0;
+    setStateFromRequest(ShooterState.CLIMB_SCORE);
   }
 
   public void feedRequest(double distance) {
@@ -87,6 +92,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
+      case CLIMB_SCORE -> {
+        var setpoint = climbScoreRpm / 60.0;
+        leftMotor.setControl(voltageRequest.withVelocity(setpoint));
+        rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+
+        DogLog.log("Shooter/RpmSetpoint", climbScoreRpm);
+      }
       case FEEDING -> {
         var setpoint = feedingRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
@@ -118,6 +130,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       case SCORE ->
           MathUtil.isNear(leftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_SHOOTER)
               && MathUtil.isNear(rightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_SHOOTER);
+      case CLIMB_SCORE ->
+          MathUtil.isNear(leftMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE_SHOOTER)
+              && MathUtil.isNear(rightMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE_SHOOTER);
 
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_SHOOTER)

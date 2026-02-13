@@ -35,6 +35,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private double scoreAngle = 0;
   private double feedAngle = 0;
   private double statorCurrent = 0;
+  private double climbScoreAngle = 0;
 
   public ShooterHood(TalonFX motor) {
     super(SubsystemPriority.SHOOTER_HOOD, ShooterHoodState.UNHOMED);
@@ -70,6 +71,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
   }
 
+  public void climbScoreRequest(boolean isLeft) {
+    climbScoreAngle = isLeft ? 0.0 : 0.0;
+    setStateFromRequest(ShooterHoodState.CLIMB_SCORING);
+  }
+
   public void idleRequest() {
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -88,7 +94,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> false;
       case IDLE ->
           MathUtil.isNear(ShooterHoodConfig.IDLE_ANGLE, measuredAngle, ShooterHoodConfig.TOLERANCE);
-      case SCORING -> MathUtil.isNear(scoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
+          case SCORING -> MathUtil.isNear(scoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
+          case CLIMB_SCORING -> MathUtil.isNear(climbScoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
       case FEEDING -> MathUtil.isNear(feedAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
     };
   }
@@ -155,6 +162,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
         motor.setControl(
             positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(scoreAngle))));
         DogLog.log("ShooterHood/CurrentSetpoint", scoreAngle);
+      }
+      case CLIMB_SCORING -> {
+        motor.setControl(
+            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(climbScoreAngle))));
+        DogLog.log("ShooterHood/CurrentSetpoint", climbScoreAngle);
       }
 
       case FEEDING -> {

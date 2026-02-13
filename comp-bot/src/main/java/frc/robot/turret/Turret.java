@@ -113,6 +113,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                         clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
+      case CLIMB_SCORE -> {
+        motor.setControl(
+            positionRequest
+                .withPosition(
+                    Units.degreesToRotations(
+                        clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
+               );
+      }
       default -> {}
     }
 
@@ -162,6 +170,11 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void scoreRequest(double goalAngle) {
     this.goalAngle = goalAngle;
     setState(TurretState.SCORE);
+  }
+
+  public void climbScoreRequest(boolean isLeft) {
+    this.goalAngle = isLeft ? 0.0 : 0.0;
+    setState(TurretState.CLIMB_SCORE);
   }
 
   public void climbRequest(Pose2d robotPose) {
