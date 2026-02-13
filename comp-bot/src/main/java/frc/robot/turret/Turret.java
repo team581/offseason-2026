@@ -115,11 +115,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       }
       case CLIMB_SCORE -> {
         motor.setControl(
-            positionRequest
-                .withPosition(
-                    Units.degreesToRotations(
-                        clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
-               );
+            positionRequest.withPosition(
+                Units.degreesToRotations(
+                    clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))));
       }
       default -> {}
     }

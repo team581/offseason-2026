@@ -162,9 +162,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case CLIMB_7_PREPARE_SCORING_L3 -> {
-        if (shooter.atGoal()
-            && turret.atGoal()
-            && shooterHood.atGoal() && dyeRotor.atGoal()) {
+        if (shooter.atGoal() && turret.atGoal() && shooterHood.atGoal() && dyeRotor.atGoal()) {
           yield RobotState.CLIMB_8_SCORING_L3;
         }
         yield currentState;
@@ -934,10 +932,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           setStateFromRequest(RobotState.MANUAL_CLIMB_4_HANGING_L2);
       case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_6_HANGING_L3 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_5_RAISING_L3);
-      case CLIMB_7_PREPARE_SCORING_L3 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
-      case CLIMB_8_SCORING_L3 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
+      case CLIMB_7_PREPARE_SCORING_L3 -> setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
+      case CLIMB_8_SCORING_L3 -> setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
     }
   }
 

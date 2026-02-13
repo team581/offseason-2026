@@ -94,8 +94,9 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED, HOMING -> false;
       case IDLE ->
           MathUtil.isNear(ShooterHoodConfig.IDLE_ANGLE, measuredAngle, ShooterHoodConfig.TOLERANCE);
-          case SCORING -> MathUtil.isNear(scoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
-          case CLIMB_SCORING -> MathUtil.isNear(climbScoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
+      case SCORING -> MathUtil.isNear(scoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
+      case CLIMB_SCORING ->
+          MathUtil.isNear(climbScoreAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
       case FEEDING -> MathUtil.isNear(feedAngle, measuredAngle, ShooterHoodConfig.TOLERANCE);
     };
   }
