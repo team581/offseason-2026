@@ -37,6 +37,7 @@ public class TurretConfig {
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(MOTOR_TO_TURRET))
+          // TODO: Switch back to brake mode once bringup concluded
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKG(0.0));
