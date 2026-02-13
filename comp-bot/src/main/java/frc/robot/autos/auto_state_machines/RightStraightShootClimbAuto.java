@@ -9,12 +9,12 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_state.TrenchRShootClimb2AutoState;
+import frc.robot.autos.auto_state_machines.auto_state.RightStraightShootClimbAutoState;
 import frc.robot.climber.ClimbLocation;
 import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
-public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb2AutoState> {
+public class RightStraightShootClimbAuto extends BaseImperativeAuto<RightStraightShootClimbAutoState> {
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
@@ -55,8 +55,8 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
           .withLinearConstraints(4.5, 10)
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
-  public TrenchRShootClimb2Auto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_1, robotManager, trailblazer);
+  public RightStraightShootClimbAuto(RobotManager robotManager, Trailblazer trailblazer) {
+    super(RightStraightShootClimbAutoState.INTAKE_ACROSS_MIDLINE_1, robotManager, trailblazer);
   }
 
   @Override
@@ -65,26 +65,26 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   }
 
   @Override
-  protected TrenchRShootClimb2AutoState getNextState(TrenchRShootClimb2AutoState currentState) {
+  protected RightStraightShootClimbAutoState getNextState(RightStraightShootClimbAutoState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
-        case INTAKE_ACROSS_MIDLINE_1 -> TrenchRShootClimb2AutoState.DRIVE_BACK_1;
-        case DRIVE_BACK_1 -> TrenchRShootClimb2AutoState.SHOOT_1;
+        case INTAKE_ACROSS_MIDLINE_1 -> RightStraightShootClimbAutoState.DRIVE_BACK_1;
+        case DRIVE_BACK_1 -> RightStraightShootClimbAutoState.SHOOT_1;
         case SHOOT_1 ->
-            timeout(3.0) ? TrenchRShootClimb2AutoState.INTAKE_ACROSS_MIDLINE_2 : currentState;
-        case INTAKE_ACROSS_MIDLINE_2 -> TrenchRShootClimb2AutoState.DRIVE_BACK_2;
-        case DRIVE_BACK_2 -> TrenchRShootClimb2AutoState.SHOOT_2;
-        case SHOOT_2 -> TrenchRShootClimb2AutoState.DRIVE_TO_CLIMB;
-        case DRIVE_TO_CLIMB -> TrenchRShootClimb2AutoState.CLIMB;
-        case CLIMB -> TrenchRShootClimb2AutoState.DONE;
-        case DONE -> TrenchRShootClimb2AutoState.DONE;
+            timeout(3.0) ? RightStraightShootClimbAutoState.INTAKE_ACROSS_MIDLINE_2 : currentState;
+        case INTAKE_ACROSS_MIDLINE_2 -> RightStraightShootClimbAutoState.DRIVE_BACK_2;
+        case DRIVE_BACK_2 -> RightStraightShootClimbAutoState.SHOOT_2;
+        case SHOOT_2 -> RightStraightShootClimbAutoState.DRIVE_TO_CLIMB;
+        case DRIVE_TO_CLIMB -> RightStraightShootClimbAutoState.CLIMB;
+        case CLIMB -> RightStraightShootClimbAutoState.DONE;
+        case DONE -> RightStraightShootClimbAutoState.DONE;
       };
     }
     return currentState;
   }
 
   @Override
-  protected void whileInState(TrenchRShootClimb2AutoState newState) {
+  protected void whileInState(RightStraightShootClimbAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE_1 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineOne);
@@ -119,7 +119,7 @@ public class TrenchRShootClimb2Auto extends BaseImperativeAuto<TrenchRShootClimb
   }
 
   @Override
-  protected void afterTransition(TrenchRShootClimb2AutoState newState) {
+  protected void afterTransition(RightStraightShootClimbAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE_1 -> {
         robotManager.homeDeployRequest();
