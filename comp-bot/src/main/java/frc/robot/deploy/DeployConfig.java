@@ -15,8 +15,8 @@ public class DeployConfig {
   public static final double MAX_LENGTH = 12;
   public static final double MIN_LENGTH = 0;
   public static final double HOMING_END_POSITION = 0;
-  public static final double HOMING_VOLTAGE = 0;
-  public static final double HOMING_CURRENT = 40.0;
+  public static final double HOMING_VOLTAGE = -2;
+  public static final double HOMING_CURRENT = 10.0;
   public static final double CAPACITY_DISTANCE_THRESHOLD = 0.0;
   public static final double POSITION_TOLERANCE = 0.25;
 
