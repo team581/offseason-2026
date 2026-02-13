@@ -5,25 +5,29 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DyeRotorState {
   IDLE(0.0, 0.0, 0.0),
-  WARMUP(60.0, 0.0, 3.0),
-  SHOOT(150.0, 150.0, 6.0),
+  SHOOT(150.0, 12.0, 12.0),
   UNJAM(0.0, 0.0, 0.0);
 
   public final double rotorRPM;
-  public final double horizontalRPM;
+  public final double horizontalVoltage;
   public final double verticalVoltage;
 
   private final DoubleSubscriber verticalVoltageTunable;
+  private final DoubleSubscriber horizontalVoltageTunable;
 
-  private DyeRotorState(double rotorRPM, double horizontalRPM, double verticalVoltage) {
+  private DyeRotorState(double rotorRPM, double horizontalVoltage, double verticalVoltage) {
     this.rotorRPM = rotorRPM;
-    this.horizontalRPM = horizontalRPM;
+    this.horizontalVoltage = horizontalVoltage;
     this.verticalVoltage = verticalVoltage;
 
-    this.verticalVoltageTunable = DogLog.tunable("DyeRotor/" + this, verticalVoltage);
+    this.verticalVoltageTunable = DogLog.tunable("DyeRotor/VerticalVoltage/" + this, verticalVoltage);
+    this.horizontalVoltageTunable = DogLog.tunable("DyeRotor/HorizontalVoltage/" + this, horizontalVoltage);
   }
 
   public double getVerticalVoltage() {
     return verticalVoltageTunable.get();
+  }
+  public double getHorizontalVoltage() {
+    return horizontalVoltageTunable.get();
   }
 }

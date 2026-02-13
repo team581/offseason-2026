@@ -40,8 +40,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     verticalMotor.getConfigurator().apply(DyeRotorConfig.VERTICAL_MOTOR_CONFIG);
 
     TunablePid.register("DyeRotor/Rotor", rotorMotor, DyeRotorConfig.ROTOR_MOTOR_CONFIG);
-    TunablePid.register(
-        "DyeRotor/Horizontal", horizontalMotor, DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG);
 
     this.rotorMotor = rotorMotor;
     this.horizontalMotor = horizontalMotor;
@@ -50,10 +48,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   public void shootRequest() {
     setStateFromRequest(DyeRotorState.SHOOT);
-  }
-
-  public void warmupRequest() {
-    setStateFromRequest(DyeRotorState.WARMUP);
   }
 
   public void unjamRequest() {
@@ -68,8 +62,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   protected void whileInState(DyeRotorState currentState) {
     //TODO: Move to afterTransition
     rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
-    horizontalMotor.setControl(
-        horizontalVelocityRequest.withVelocity(currentState.horizontalRPM / 60.0));
+    horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
     verticalMotor.setVoltage(currentState.getVerticalVoltage());
 
     DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
@@ -77,7 +70,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
     DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
-    DogLog.log("DyeRotor/Horizontal/GoalRPM", currentState.horizontalRPM);
+    DogLog.log("DyeRotor/Horizontal/GoalVoltage", currentState.getHorizontalVoltage());
     DogLog.log("DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Vertical/GoalVoltage", currentState.getVerticalVoltage());
     DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
@@ -103,11 +96,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
       case IDLE -> true;
       case UNJAM -> timeout(1) || !isJammed();
       case SHOOT -> true;
-      case WARMUP ->
-          MathUtil.isNear(
-              DyeRotorState.WARMUP.horizontalRPM,
-              horizontalMotorRpm,
-              DyeRotorConfig.RPM_TOLERANCE_HORIZONTAL);
     };
   }
 
