@@ -124,6 +124,24 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           MANUAL_CLIMB_6_HANGING_L3,
           AUTOMATIC_CLIMB_6_HANGING_L3 ->
           currentState;
+      case PREPARE_FORCE_SCORE -> {
+        if (shooter.atGoal()
+        && dyeRotor.atGoal()
+        && turret.atGoal()
+        && shooterHood.atGoal()) {
+          yield RobotState.FORCE_SCORE;
+        }
+        yield currentState;
+      }
+      case FORCE_SCORE -> {
+        if (shooter.atGoal()
+            && dyeRotor.atGoal()
+            && turret.atGoal()
+            && shooterHood.atGoal()) {
+          yield currentState;
+        }
+        yield RobotState.PREPARE_FORCE_SCORE;
+      }
       case PREPARE_SCORE -> {
         if (shooter.atGoal()
             && localization.isTrustworthy()
@@ -283,6 +301,28 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
+        climber.stowRequest();
+      }
+      case PREPARE_FORCE_SCORE -> {
+        vision.setState(VisionState.TAGS);
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        dyeRotor.idleRequest();
+        turret.scoreRequest(scoringParameters.turretAngle());
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.WAITING_TO_SHOOT);
+        climber.stowRequest();
+      }
+      case FORCE_SCORE -> {
+        vision.setState(VisionState.TAGS);
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        dyeRotor.shootRequest();
+        turret.scoreRequest(scoringParameters.turretAngle());
+        deploy.shootRequest();
+        intake.shootRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
       case PREPARE_FEED -> {
@@ -733,6 +773,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void idleRequest() {
     if (!getState().isClimbing()) {
       setStateFromRequest(RobotState.IDLE);
+    }
+  }
+
+  public void forceShootRequest() {
+    if (!getState().isClimbing()) {
+      setStateFromRequest(RobotState.PREPARE_FORCE_SCORE);
     }
   }
 

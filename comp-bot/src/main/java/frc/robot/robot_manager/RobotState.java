@@ -2,6 +2,9 @@ package frc.robot.robot_manager;
 
 public enum RobotState {
   IDLE,
+  // for tuning shooter purposes only
+  PREPARE_FORCE_SCORE,
+  FORCE_SCORE,
 
   PREPARE_SCORE,
   SCORE,
