@@ -18,7 +18,7 @@ import java.util.Map;
 public class ShooterConfig {
   public static final int RPM_TOLERANCE_SHOOTER = 50;
 
-  public static final double MAX_SAFE_RPM = 4000;
+  public static final double MAX_SAFE_RPM = 5000;
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
