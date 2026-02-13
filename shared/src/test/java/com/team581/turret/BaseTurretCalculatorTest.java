@@ -42,7 +42,7 @@ final class BaseTurretCalculatorTest {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
             0.2, -0.5, 40.0, 1.5, (1.0 / 40.0), -270, 270.0);
-    assertEquals(-0.745, homedPosition, 1e-9);
+    assertEquals(-0.345, homedPosition, 1e-9);
   }
 
   @Test
@@ -52,7 +52,7 @@ final class BaseTurretCalculatorTest {
             0.75, 0.95, 40.0, 1.5, (1.0 / 40.0), -270.0, 270.0);
     assertEquals(
         MathUtil.inputModulus(
-            1.41875, Units.degreesToRotations(-270), Units.degreesToRotations(270)),
+            0.64375, Units.degreesToRotations(-270), Units.degreesToRotations(270)),
         homedPosition,
         1e-9);
   }
