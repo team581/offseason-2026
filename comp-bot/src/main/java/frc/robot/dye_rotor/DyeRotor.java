@@ -65,26 +65,24 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   }
 
   @Override
-  protected void whileInState(DyeRotorState state) {
+  protected void whileInState(DyeRotorState currentState) {
+    //TODO: Move to afterTransition
+    rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
+    horizontalMotor.setControl(
+        horizontalVelocityRequest.withVelocity(currentState.horizontalRPM / 60.0));
+    verticalMotor.setVoltage(currentState.getVerticalVoltage());
+
     DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
-    DogLog.log("DyeRotor/Rotor/GoalRPM", state.rotorRPM);
+    DogLog.log("DyeRotor/Rotor/GoalRPM", currentState.rotorRPM);
     DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
     DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
-    DogLog.log("DyeRotor/Horizontal/GoalRPM", state.horizontalRPM);
+    DogLog.log("DyeRotor/Horizontal/GoalRPM", currentState.horizontalRPM);
     DogLog.log("DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("DyeRotor/Vertical/GoalVoltage", state.getVerticalVoltage());
+    DogLog.log("DyeRotor/Vertical/GoalVoltage", currentState.getVerticalVoltage());
     DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
     DogLog.log("DyeRotor/AtGoal", atGoal());
-  }
-
-  @Override
-  protected void afterTransition(DyeRotorState newState) {
-    rotorMotor.setControl(rotorVelocityRequest.withVelocity(newState.rotorRPM / 60.0));
-    horizontalMotor.setControl(
-        horizontalVelocityRequest.withVelocity(newState.horizontalRPM / 60.0));
-    verticalMotor.setVoltage(newState.getVerticalVoltage());
   }
 
   @Override
