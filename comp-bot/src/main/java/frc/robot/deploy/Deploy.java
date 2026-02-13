@@ -88,6 +88,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
+      // Do nothing
+      case UNHOMED -> currentState;
+
       case HOME -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
@@ -98,6 +101,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
           yield DeployState.HOME;
         }
       }
+
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         if (MathUtil.isNear(
             leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
@@ -106,7 +110,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         yield currentState;
       }
 
-      default -> currentState;
+      case INTAKE, STOW, SHOOT -> {
+        if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
+          DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
+          if (leftMotorPosition > rightMotorPosition) {
+            yield DeployState.CATCHUP_TO_LEFT;
+          }
+
+          yield DeployState.CATCHUP_TO_RIGHT;
+        } else {
+          DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
+        }
+
+        yield currentState;
+      }
     };
   }
 
@@ -162,17 +179,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         rightMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
       }
-    }
-
-    if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
-      DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
-      if (leftMotorPosition > rightMotorPosition) {
-        setStateFromRequest(DeployState.CATCHUP_TO_LEFT);
-      } else {
-        setStateFromRequest(DeployState.CATCHUP_TO_RIGHT);
-      }
-    } else {
-      DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
     }
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
