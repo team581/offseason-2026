@@ -11,9 +11,9 @@ import java.util.function.BiFunction;
 
 public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING(DoNothingAuto::new),
- // TRENCH_FEED_2(TrenchRFeed2Auto::new),
+  // TRENCH_FEED_2(TrenchRFeed2Auto::new),
   RIGHT_STRAIGHT_SHOOT_CLIMB(RightStraightShootClimbAuto::new),
- // RIGHT_SWOOP_SHOOT_CLIMB(),
+  // RIGHT_SWOOP_SHOOT_CLIMB(),
   INTEGRATION_TEST(IntegrationTest::new);
 
   public final BiFunction<RobotManager, Trailblazer, BaseImperativeAuto<?>> auto;

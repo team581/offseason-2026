@@ -14,7 +14,8 @@ import frc.robot.climber.ClimbLocation;
 import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
-public class RightStraightShootClimbAuto extends BaseImperativeAuto<RightStraightShootClimbAutoState> {
+public class RightStraightShootClimbAuto
+    extends BaseImperativeAuto<RightStraightShootClimbAutoState> {
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
@@ -65,7 +66,8 @@ public class RightStraightShootClimbAuto extends BaseImperativeAuto<RightStraigh
   }
 
   @Override
-  protected RightStraightShootClimbAutoState getNextState(RightStraightShootClimbAutoState currentState) {
+  protected RightStraightShootClimbAutoState getNextState(
+      RightStraightShootClimbAutoState currentState) {
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
         case INTAKE_ACROSS_MIDLINE_1 -> RightStraightShootClimbAutoState.DRIVE_BACK_1;
