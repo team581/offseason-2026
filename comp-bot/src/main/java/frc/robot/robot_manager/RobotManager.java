@@ -125,19 +125,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           AUTOMATIC_CLIMB_6_HANGING_L3 ->
           currentState;
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoal()
-        && dyeRotor.atGoal()
-        && turret.atGoal()
-        && shooterHood.atGoal()) {
+        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
       }
       case FORCE_SCORE -> {
-        if (shooter.atGoal()
-            && dyeRotor.atGoal()
-            && turret.atGoal()
-            && shooterHood.atGoal()) {
+        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
           yield currentState;
         }
         yield RobotState.PREPARE_FORCE_SCORE;
