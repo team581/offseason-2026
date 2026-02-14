@@ -17,17 +17,14 @@ import edu.wpi.first.math.util.Units;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final int RPM_TOLERANCE_SHOOTER = 200;
+  public static final int RPM_TOLERANCE_SHOOTER = 100;
 
   public static final double MAX_SAFE_RPM = 5000;
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(Units.inchesToMeters(57.0), 2250.0),
-          Map.entry(3.376, 3300.0),
-          Map.entry(3.8, 3000.0),
-          Map.entry(3.97, 2700.0));
+          Map.entry(Units.inchesToMeters(5.5), 4500.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
