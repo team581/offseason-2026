@@ -70,7 +70,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
-      default -> setStateFromRequest(DeployState.SHOOT);
+      default -> {
+        if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()) {
+          setStateFromRequest(DeployState.SHOOT);
+        }
+      }
     }
   }
 
