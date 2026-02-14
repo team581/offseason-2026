@@ -51,8 +51,8 @@ public class ShooterConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(0.0)
-                  .withMotionMagicAcceleration(0.0))
+                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
+                  .withMotionMagicAcceleration(4000.0 / 60.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withSupplyCurrentLimitEnable(true)
@@ -74,8 +74,8 @@ public class ShooterConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(0.0)
-                  .withMotionMagicAcceleration(0.0))
+                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
+                  .withMotionMagicAcceleration(4000.0 / 60.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withSupplyCurrentLimitEnable(true)
