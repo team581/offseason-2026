@@ -178,7 +178,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
                 mechanism
                     .addMotor(motor, ChassisReference.CounterClockwise_Positive)
                     .withMaxPosition(Units.degreesToRotations(ShooterHoodConfig.MAX_ANGLE))
-                    .withMinPosition(Units.degreesToRotations(ShooterHoodConfig.MIN_ANGLE)));
+                    .withMinPosition(Units.degreesToRotations(ShooterHoodConfig.ANGLE_FROM_HORIZONTAL)));
 
     if (getState() == ShooterHoodState.HOMING) {
       motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
