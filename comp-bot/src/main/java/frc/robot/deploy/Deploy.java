@@ -65,14 +65,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
-  public void shootRequest() {
+  public void shuffleRequest() {
     switch (getState()) {
       case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
       default -> {
         if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()) {
-          setStateFromRequest(DeployState.SHOOT);
+          setStateFromRequest(DeployState.HOPPER_SHUFFLING);
         }
       }
     }
@@ -114,7 +114,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         yield currentState;
       }
 
-      case INTAKE, STOW, SHOOT -> {
+      case INTAKE, STOW, HOPPER_SHUFFLING -> {
         if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
           DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
           if (leftMotorPosition > rightMotorPosition) {
@@ -164,18 +164,18 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   @Override
   protected void whileInState(DeployState state) {
     if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
-        && state == DeployState.SHOOT
+        && state == DeployState.HOPPER_SHUFFLING
         && ableToHopperShuffle) {
-      if (atGoal(DeployState.SHOOT.getLength())) {
+      if (atGoal(DeployState.HOPPER_SHUFFLING.getLength())) {
         leftMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
         rightMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
       } else if (atGoal(DeployState.INTAKE.getLength())) {
         leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
         rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
       }
     }
 
