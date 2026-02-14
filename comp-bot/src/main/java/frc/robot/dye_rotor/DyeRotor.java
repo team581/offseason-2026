@@ -57,13 +57,10 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   @Override
   protected void whileInState(DyeRotorState currentState) {
-    // TODO: Move to afterTransitiondouble rotorRpm = currentState.rotorRPM;
-
-
-
-      rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
-      horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
-      verticalMotor.setVoltage(currentState.getVerticalVoltage());
+    // TODO: Move to afterTransition once we are done tuning
+    rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.getRotorRPM() / 60.0));
+    horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
+    verticalMotor.setVoltage(currentState.getVerticalVoltage());
 
     DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
     DogLog.log("DyeRotor/Rotor/GoalRPM", currentState.rotorRPM);
@@ -88,7 +85,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     horizontalMotorRpm = horizontalMotor.getVelocity().getValueAsDouble() * 60.0;
 
     isShooting = horizontalMotorRpm < DyeRotorConfig.RPM_TOLERANCE_SHOOTING;
-    isShootingDebounced = DyeRotorConfig.debouncer.calculate(isShooting);
+    isShootingDebounced = DyeRotorConfig.IS_SHOOTING_DEBOUNCER.calculate(isShooting);
   }
 
   public boolean atGoal() {
