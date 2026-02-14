@@ -100,7 +100,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         leftMotor.disable();
         rightMotor.disable();
 
-        DogLog.log("Shooter/RpmSetpoint", -1);
+        DogLog.log("Shooter/RpmSetpoint", -1.0);
       }
     }
   }
