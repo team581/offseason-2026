@@ -17,7 +17,7 @@ import edu.wpi.first.math.util.Units;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final int RPM_TOLERANCE_SHOOTER = 50;
+  public static final int RPM_TOLERANCE_SHOOTER = 100;
 
   public static final double MAX_SAFE_RPM = 5000;
 
