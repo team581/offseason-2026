@@ -1,6 +1,6 @@
 package frc.robot.shooter;
 
-import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.simkit.SimKit;
@@ -27,7 +27,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
 
-  private final VelocityVoltage voltageRequest = new VelocityVoltage(0).withEnableFOC(true);
+  private final VelocityTorqueCurrentFOC voltageRequest =
+      new VelocityTorqueCurrentFOC(0).withLimitReverseMotion(true);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -72,11 +73,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
-    //   DogLog.log("Shooter/Right/StatorCurrent",
-    // rightMotor.getStatorCurrent().getValueAsDouble());
-    //   DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
+
+    DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
 
     switch (state) {
       case SCORE -> {

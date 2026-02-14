@@ -29,6 +29,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private final Imu imu;
   private final Limelight turretLimelight;
   private final Limelight backLimelight;
+  private final Limelight groundLimelight;
 
   private OptionalTagResult turretResult = new OptionalTagResult();
   private OptionalTagResult adjustedTurretResult = new OptionalTagResult();
@@ -43,11 +44,13 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private boolean seeingTagDebounced = false;
   private boolean seenTagRecentlyForReset = true;
 
-  public Vision(Imu imu, Limelight turretLimelight, Limelight backLimelight) {
+  public Vision(
+      Imu imu, Limelight turretLimelight, Limelight backLimelight, Limelight groundLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
     this.turretLimelight = turretLimelight;
     this.backLimelight = backLimelight;
+    this.groundLimelight = groundLimelight;
   }
 
   @Override
@@ -163,10 +166,12 @@ public class Vision extends StateMachineSubsystem<VisionState> {
       case TAGS -> {
         turretLimelight.setState(LimelightState.TAGS);
         backLimelight.setState(LimelightState.TAGS);
+        groundLimelight.setState(LimelightState.CLUSTER_MAP);
       }
       case HUB_TAGS -> {
         turretLimelight.setState(LimelightState.HUB_TAGS);
         backLimelight.setState(LimelightState.HUB_TAGS);
+        groundLimelight.setState(LimelightState.CLUSTER_MAP);
       }
     }
   }

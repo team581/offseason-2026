@@ -31,7 +31,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.FeatureFlags;
-import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;

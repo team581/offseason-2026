@@ -10,6 +10,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -20,12 +21,16 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final CANrange hopperCANRange;
+  private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
   private final MotionMagicVoltage positionVoltageRequest =
       new MotionMagicVoltage(0).withEnableFOC(false);
+
+  private HopperCapacity hopperCapacity = HopperCapacity.HIGH;
   private DeployState storedState = DeployState.UNHOMED;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
   private double hopperCANRangeDistance = 0.0;
+  private double filteredHopperCANRangeDistance;
   private boolean ableToHopperShuffle = false;
 
   public Deploy(TalonFX leftMotor, TalonFX rightMotor, CANrange hopperCANRange) {
@@ -44,7 +49,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
       default -> setStateFromRequest(DeployState.INTAKE);
@@ -53,24 +58,24 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
-      default -> setStateFromRequest(DeployState.STOWED);
+      default -> setStateFromRequest(DeployState.STOW);
     }
   }
 
-  public void shootingRequest() {
+  public void shootRequest() {
     switch (getState()) {
-      case UNHOMED, HOMING, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
+      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         // Do nothing, we aren't homed or need to catchup
       }
-      default -> setStateFromRequest(DeployState.SHOOTING);
+      default -> setStateFromRequest(DeployState.SHOOT);
     }
   }
 
   public void homingRequest() {
-    setStateFromRequest(DeployState.HOMING);
+    setStateFromRequest(DeployState.HOME);
   }
 
   @Override
@@ -83,16 +88,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
-      case HOMING -> {
+      // Do nothing
+      case UNHOMED -> currentState;
+
+      case HOME -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
           rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
           yield DeployState.INTAKE;
         } else {
-          yield DeployState.HOMING;
+          yield DeployState.HOME;
         }
       }
+
       case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
         if (MathUtil.isNear(
             leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
@@ -101,7 +110,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         yield currentState;
       }
 
-      default -> currentState;
+      case INTAKE, STOW, SHOOT -> {
+        if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
+          DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
+          if (leftMotorPosition > rightMotorPosition) {
+            yield DeployState.CATCHUP_TO_LEFT;
+          }
+
+          yield DeployState.CATCHUP_TO_RIGHT;
+        } else {
+          DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
+        }
+
+        yield currentState;
+      }
     };
   }
 
@@ -116,7 +138,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.disable();
         rightMotor.disable();
       }
-      case HOMING -> {
+      case HOME -> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
       }
@@ -128,12 +150,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
         rightMotor.disable();
       }
-      case SHOOTING -> {
-        leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
-        rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
-      }
       default -> {
         leftMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
         rightMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
@@ -144,37 +160,35 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   @Override
   protected void whileInState(DeployState state) {
     if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
-        && state == DeployState.SHOOTING
+        && state == DeployState.SHOOT
         && ableToHopperShuffle) {
-      if (atGoal(DeployState.SHOOTING.getLength())) {
+      if (atGoal(DeployState.SHOOT.getLength())) {
         leftMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
         rightMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
       } else if (atGoal(DeployState.INTAKE.getLength())) {
         leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
         rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.SHOOTING.getLength())));
+            positionVoltageRequest.withPosition(clamp(DeployState.SHOOT.getLength())));
       }
     }
-
-    if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
-      DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
-      if (leftMotorPosition > rightMotorPosition) {
-        setStateFromRequest(DeployState.CATCHUP_TO_LEFT);
-      } else {
-        setStateFromRequest(DeployState.CATCHUP_TO_RIGHT);
-      }
-    }
-    DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
+    DogLog.log("Deploy/GoalPosition", getState().getLength());
     DogLog.log("Deploy/AveragePosition", getPosition());
-    DogLog.log("Deploy/HopperCANRangeDistance", hopperCANRangeDistance);
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
     DogLog.log("Deploy/StoredState", storedState.name());
+    DogLog.log("Deploy/Capacity", hopperCapacity);
+    DogLog.log("Hopper/RawDistance", hopperCANRangeDistance);
+    DogLog.log("Hopper/FilteredDistance", filteredHopperCANRangeDistance);
+    // TODO: We call getStatorCurrent() twice per motor per loop
+    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
   }
 
   public double getPosition() {
@@ -191,10 +205,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
     hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+    filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
+
+    if (filteredHopperCANRangeDistance >= DeployConfig.HIGH_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.HIGH;
+    } else if (filteredHopperCANRangeDistance >= DeployConfig.MEDIUM_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.MEDIUM;
+    } else {
+      hopperCapacity = HopperCapacity.LOW;
+    }
+
     if (RobotBase.isSimulation()) {
       ableToHopperShuffle = true;
     } else {
-      ableToHopperShuffle = hopperCANRangeDistance < DeployConfig.CAPACITY_DISTANCE_THRESHOLD;
+      ableToHopperShuffle = hopperCapacity != HopperCapacity.LOW;
     }
   }
 
@@ -202,7 +226,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   public void simulationPeriodic() {
     var deploySimulation =
         SimKit.positionMechanism(
-            "Deploy/Left",
+            "Deploy",
             mechanism ->
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
@@ -210,7 +234,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
-    if (getState() == DeployState.HOMING) {
+    if (getState() == DeployState.HOME) {
       leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
       rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
       setStateFromRequest(DeployState.INTAKE);

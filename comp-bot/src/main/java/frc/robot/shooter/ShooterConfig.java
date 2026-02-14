@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.PolynomialRegression;
@@ -16,9 +17,9 @@ import edu.wpi.first.math.util.Units;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final int RPM_TOLERANCE_SHOOTER = 50;
+  public static final int RPM_TOLERANCE_SHOOTER = 100;
 
-  public static final double MAX_SAFE_RPM = 4000;
+  public static final double MAX_SAFE_RPM = 5000;
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
@@ -65,7 +66,8 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0).withKA(0.0))
+          .withSlot0(new Slot0Configs().withKP(1.5).withKV(0.00375).withKS(4.0))
+          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(200)
@@ -87,7 +89,8 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0).withKA(0.0))
+          .withSlot0(new Slot0Configs().withKP(1.5).withKV(0.00375).withKS(4.0))
+          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(200)

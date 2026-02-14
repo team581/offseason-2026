@@ -14,6 +14,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
@@ -47,12 +48,22 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
       case UNHOMED -> {
-        var turretPos =
-            TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-                motor.getRotorPosition().getValueAsDouble(),
-                encoder.getPosition().getValueAsDouble());
-        motor.setPosition(turretPos);
-        return TurretState.SCORE;
+        if (motor.isAlive() && motor.isConnected() && encoder.isConnected() && RobotBase.isReal()) {
+          double motorPosition = motor.getRotorPosition().getValueAsDouble();
+          double encoderPosition = encoder.getAbsolutePosition().getValueAsDouble();
+          var turretPos =
+              TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
+                  motorPosition, encoderPosition);
+          DogLog.log("Turret/MotorPos", motorPosition);
+          DogLog.log("Turret/EncoderPos", encoderPosition);
+          DogLog.log("Turret/CalculatedPos", turretPos);
+
+          DogLog.timestamp("Turret/Homing");
+          motor.setPosition(turretPos);
+          return TurretState.SCORE;
+        } else {
+          return currentState;
+        }
       }
       default -> {
         return currentState;
@@ -76,6 +87,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
+    DogLog.log(
+        "Turret/EncoderAngle", Units.rotationsToDegrees(encoder.getPosition().getValueAsDouble()));
   }
 
   @Override
@@ -89,7 +102,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             positionRequest
                 .withPosition(
                     Units.degreesToRotations(
-                        TurretCalculator.getOptimalAngle(goalAngle, currentAngle)))
+                        clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       case IDLE_SCORE, IDLE_FEED -> {
@@ -97,13 +110,22 @@ public class Turret extends StateMachineSubsystem<TurretState> {
             positionRequest
                 .withPosition(
                     Units.degreesToRotations(
-                        TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))
+                        clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.degreesToRotations(robotRotationFeedForward)));
       }
       default -> {}
     }
 
     DogLog.log("Turret/AtGoal", atGoal());
+
+    // DEBUG LOGS
+    double motorPosition = motor.getRotorPosition().getValueAsDouble();
+    double encoderPosition = encoder.getAbsolutePosition().getValueAsDouble();
+    var turretPos =
+        TurretCalculator.calculateHomedPositionFromMotorAndEncoder(motorPosition, encoderPosition);
+    DogLog.log("Turret/MotorPos", motorPosition);
+    DogLog.log("Turret/EncoderPos", encoderPosition);
+    DogLog.log("Turret/CalculatedPos", turretPos);
   }
 
   public void setState(TurretState newState) {
@@ -185,6 +207,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   public double getVelocity() {
     return velocity;
+  }
+
+  private static double clamp(double wantedAngle) {
+    return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
   }
 
   @Override

@@ -117,7 +117,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     return switch (currentState) {
       case HOMING -> {
         if (statorCurrent >= ShooterHoodConfig.HOMING_CURRENT_THRESHOLD) {
-          motor.setPosition(ShooterHoodConfig.HOMING_END_POSITION);
+          motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
           yield ShooterHoodState.IDLE;
         }
         yield currentState;
@@ -181,7 +181,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
                     .withMinPosition(Units.degreesToRotations(ShooterHoodConfig.MIN_ANGLE)));
 
     if (getState() == ShooterHoodState.HOMING) {
-      motor.setPosition(0);
+      motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
       setStateFromRequest(ShooterHoodState.IDLE);
     }
 

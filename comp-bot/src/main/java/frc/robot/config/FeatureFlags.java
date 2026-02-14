@@ -1,5 +1,6 @@
 package frc.robot.config;
 
+import com.team581.autos.Point;
 import com.team581.config.FeatureFlag;
 import java.util.function.BooleanSupplier;
 
@@ -13,12 +14,16 @@ public class FeatureFlags {
   public static final BooleanSupplier INTAKE_DIRECTIONAL_SNAPS =
       FeatureFlag.of("IntakeDirectionalSnaps", false);
 
+  public static final BooleanSupplier INTEGRATION_TEST = FeatureFlag.of("IntegrationTest", false);
+
   public static final BooleanSupplier INTAKE_WALL_SNAPS = FeatureFlag.of("IntakeWallSnaps", false);
 
   public static final BooleanSupplier LOOKAHEAD_SCORING =
       FeatureFlag.of("TimeOfFlightInHubActivity", false);
 
   public static final BooleanSupplier REGRESSION_MODEL = FeatureFlag.of("RegressionModel", false);
+
+  public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
   private FeatureFlags() {}
 }
