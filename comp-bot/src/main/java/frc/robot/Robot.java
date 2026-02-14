@@ -99,7 +99,7 @@ public class Robot extends Base581Robot {
   private final DyeRotor dyeRotor =
       new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
   private final Lights lights = new Lights(hardware.candle);
-  private final Vision vision = new Vision(imu, turretLimelight, backLimelight);
+  private final Vision vision = new Vision(imu, turretLimelight, backLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
