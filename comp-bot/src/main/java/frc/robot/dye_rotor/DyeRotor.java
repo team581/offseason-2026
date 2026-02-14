@@ -65,19 +65,19 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
       horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
       verticalMotor.setVoltage(currentState.getVerticalVoltage());
 
-      DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
-      DogLog.log("DyeRotor/Rotor/GoalRPM", currentState.rotorRPM);
-      DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
-      DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
-      DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
-      DogLog.log("DyeRotor/Horizontal/GoalVoltage", currentState.getHorizontalVoltage());
-      DogLog.log(
-          "DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
-      DogLog.log("DyeRotor/Vertical/GoalVoltage", currentState.getVerticalVoltage());
-      DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
-      DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
-      DogLog.log("DyeRotor/AtGoal", atGoal());
     }
+    DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
+    DogLog.log("DyeRotor/Rotor/GoalRPM", currentState.rotorRPM);
+    DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
+    DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
+    DogLog.log("DyeRotor/Horizontal/GoalVoltage", currentState.getHorizontalVoltage());
+    DogLog.log(
+        "DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("DyeRotor/Vertical/GoalVoltage", currentState.getVerticalVoltage());
+    DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
+    DogLog.log("DyeRotor/AtGoal", atGoal());
   }
 
   @Override
