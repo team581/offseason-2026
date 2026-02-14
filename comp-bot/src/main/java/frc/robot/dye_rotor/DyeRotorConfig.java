@@ -39,7 +39,7 @@ public class DyeRotorConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(5.0).withKS(0.0).withKA(0.0));
+          .withSlot0(new Slot0Configs().withKP(10.0).withKV(4.65).withKS(0.0));
 
   public static final TalonFXConfiguration VERTICAL_MOTOR_CONFIG =
       new TalonFXConfiguration()
