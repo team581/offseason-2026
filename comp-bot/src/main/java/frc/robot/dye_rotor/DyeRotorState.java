@@ -4,8 +4,8 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DyeRotorState {
-  IDLE(30.0, 0.0, 0.0),
-  SHOOT(30.0, 0.0, 0.0),
+  IDLE(0.0, 0.0, 0.0),
+  SHOOT(15.0, 12.0, 12.0),
   UNJAM(0.0, 0.0, 0.0);
 
   private static double bpsToRpm(double bps) {
