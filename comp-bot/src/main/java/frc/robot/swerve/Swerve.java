@@ -227,11 +227,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       filteredLastDriveDirection =
           Rotation2d.fromDegrees(
               lastDriveDirectionFilter.calculate(
-                  new Translation2d(
-                          fieldRelativeSpeeds.vxMetersPerSecond,
-                          fieldRelativeSpeeds.vyMetersPerSecond)
-                      .getAngle()
-                      .getDegrees()));
+                  MathHelpers.getDriveDirection(fieldRelativeSpeeds).getDegrees()));
 
       ableToWallSnap =
           FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()
