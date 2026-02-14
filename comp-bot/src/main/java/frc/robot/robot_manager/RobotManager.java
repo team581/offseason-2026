@@ -124,6 +124,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           MANUAL_CLIMB_6_HANGING_L3,
           AUTOMATIC_CLIMB_6_HANGING_L3 ->
           currentState;
+      case STOP_SHOOTING_SCORE,
+          STOP_SHOOTING_PRESET_SCORE,
+          STOP_SHOOTING_PRESET_FEED,
+          STOP_SHOOTING_FEED ->
+          timeout(1) ? RobotState.UNJAM : currentState;
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
@@ -343,6 +348,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
+      case STOP_SHOOTING_FEED -> {
+        vision.setState(VisionState.TAGS);
+        shooter.feedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
+        dyeRotor.idleRequest();
+        turret.feedRequest(feedingParameters.turretAngle());
+        deploy.intakeRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.SHOOT);
+        climber.stowRequest();
+      }
       case PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
@@ -363,6 +380,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.scoreRequest(scoringParameters.turretAngle());
         deploy.shuffleRequest();
         intake.shootRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.SHOOT);
+        climber.stowRequest();
+      }
+      case STOP_SHOOTING_SCORE -> {
+        vision.setState(VisionState.HUB_TAGS);
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        dyeRotor.idleRequest();
+        turret.scoreRequest(scoringParameters.turretAngle());
+        deploy.intakeRequest();
+        intake.idleRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOT);
         climber.stowRequest();
@@ -391,6 +420,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         lights.setState(LightsState.SHOOT);
         climber.stowRequest();
       }
+      case STOP_SHOOTING_PRESET_FEED -> {
+        // Vision is busted
+        shooter.feedRequest(PRESET_FEED_DISTANCE);
+        shooterHood.feedRequest(PRESET_FEED_DISTANCE);
+        dyeRotor.idleRequest();
+        turret.feedRequest(0);
+        deploy.intakeRequest();
+        intake.idleRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
+        climber.stowRequest();
+      }
       case PREPARE_PRESET_SCORE -> {
         // Vision is busted
         shooter.scoreRequest(scoringParameters.distance());
@@ -413,6 +454,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.shootRequest();
         swerve.normalDriveRequest();
         lights.setState(LightsState.SHOOT);
+        climber.stowRequest();
+      }
+      case STOP_SHOOTING_PRESET_SCORE -> {
+        // Vision is busted
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        dyeRotor.idleRequest();
+        turret.scoreRequest(scoringParameters.turretAngle());
+        intake.idleRequest();
+        deploy.intakeRequest();
+        swerve.normalDriveRequest();
+        lights.setState(LightsState.IDLE_INTAKE_NOT_FULL);
         climber.stowRequest();
       }
       case UNJAM -> {
@@ -765,8 +818,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void idleRequest() {
-    if (!getState().isClimbing()) {
-      setStateFromRequest(RobotState.IDLE);
+    if (FeatureFlags.STOP_SHOOTING_STATE.getAsBoolean()) {
+      if (!getState().isClimbing()) {
+        switch (getState()) {
+          case SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_SCORE);
+          case PRESET_SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_SCORE);
+          case FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_FEED);
+          case PRESET_FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_FEED);
+          default -> setStateFromRequest(RobotState.IDLE);
+        }
+      }
+    } else {
+      if (!getState().isClimbing()) {
+        setStateFromRequest(RobotState.IDLE);
+      }
     }
   }
 

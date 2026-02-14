@@ -23,6 +23,9 @@ public class FeatureFlags {
 
   public static final BooleanSupplier REGRESSION_MODEL = FeatureFlag.of("RegressionModel", false);
 
+  public static final BooleanSupplier STOP_SHOOTING_STATE =
+      FeatureFlag.of("UseStopShootingState", false);
+
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
   private FeatureFlags() {}
