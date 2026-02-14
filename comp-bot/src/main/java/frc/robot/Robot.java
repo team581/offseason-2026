@@ -55,12 +55,31 @@ public class Robot extends Base581Robot {
           "back",
           LimelightState.TAGS,
           new CameraConfig(
-              LimelightModel.THREEG,
+              LimelightModel.FOUR,
               true,
+              Units.inchesToMeters(-13.389),
+              Units.inchesToMeters(-8.3370),
+              Units.inchesToMeters(19.7564),
+              18.52,
+              180.0 + 4.5,
+              0.83));
+
+  // ground when stowed
+  // Units.inchesToMeters(12.9742),
+  // Units.inchesToMeters(0.0),
+  // Units.inchesToMeters(16.8886)
+
+  private final Limelight groundLimelight =
+      new Limelight(
+          "backl",
+          LimelightState.TAGS,
+          new CameraConfig(
+              LimelightModel.THREE,
+              true,
+              Units.inchesToMeters(25.671),
               Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
-              0.0,
+              Units.inchesToMeters(12.9525),
+              -20.0,
               0.0,
               0.0));
   private final HealthManager health = new HealthManager(turretLimelight, backLimelight);
@@ -78,7 +97,7 @@ public class Robot extends Base581Robot {
   private final DyeRotor dyeRotor =
       new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
   private final Lights lights = new Lights(hardware.candle);
-  private final Vision vision = new Vision(imu, turretLimelight, backLimelight);
+  private final Vision vision = new Vision(imu, turretLimelight, backLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
