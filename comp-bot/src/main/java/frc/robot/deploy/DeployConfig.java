@@ -26,7 +26,8 @@ public class DeployConfig {
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Brake)
+                  // TODO: Put back in brake mode once bringup finished
+                  .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withMotionMagic(
@@ -41,7 +42,8 @@ public class DeployConfig {
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Brake)
+                  // TODO: Put back in brake mode once bringup finished
+                  .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30))
           .withMotionMagic(

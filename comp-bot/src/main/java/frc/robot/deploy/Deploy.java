@@ -184,6 +184,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.log("Deploy/Capacity", hopperCapacity);
     DogLog.log("Hopper/RawDistance", hopperCANRangeDistance);
     DogLog.log("Hopper/FilteredDistance", filteredHopperCANRangeDistance);
+    // TODO: We call getStatorCurrent() twice per motor per loop
+    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
   }
 
   public double getPosition() {
