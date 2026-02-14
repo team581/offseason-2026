@@ -73,8 +73,8 @@ public class Robot extends Base581Robot {
 
   private final Limelight groundLimelight =
       new Limelight(
-          "backl",
-          LimelightState.TAGS,
+          "ground",
+          LimelightState.CLUSTER_MAP,
           new CameraConfig(
               LimelightModel.THREE,
               true,
