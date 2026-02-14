@@ -397,7 +397,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         climber.stowRequest();
       }
       case PREPARE_PRESET_FEED -> {
-        // Vision is busted
+        vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.idleRequest();
@@ -409,7 +409,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         climber.stowRequest();
       }
       case PRESET_FEED -> {
-        // Vision is busted
+        vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.shootRequest();
@@ -421,7 +421,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         climber.stowRequest();
       }
       case STOP_SHOOTING_PRESET_FEED -> {
-        // Vision is busted
+        vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.idleRequest();
@@ -433,7 +433,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         climber.stowRequest();
       }
       case PREPARE_PRESET_SCORE -> {
-        // Vision is busted
+        vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.idleRequest();
@@ -445,7 +445,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         climber.stowRequest();
       }
       case PRESET_SCORE -> {
-        // Vision is busted
+        vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.shootRequest();
@@ -457,7 +457,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         climber.stowRequest();
       }
       case STOP_SHOOTING_PRESET_SCORE -> {
-        // Vision is busted
+        vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         dyeRotor.idleRequest();
