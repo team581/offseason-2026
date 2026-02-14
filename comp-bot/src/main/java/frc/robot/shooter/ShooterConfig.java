@@ -17,7 +17,7 @@ import edu.wpi.first.math.util.Units;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final int RPM_TOLERANCE_SHOOTER = 100;
+  public static final int RPM_TOLERANCE_SHOOTER = 200;
 
   public static final double MAX_SAFE_RPM = 5000;
 
@@ -66,7 +66,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(1.5).withKV(0.00375).withKS(4.0))
+          .withSlot0(new Slot0Configs().withKP(5.5).withKV(0.005).withKS(4.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
@@ -89,7 +89,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(1.5).withKV(0.00375).withKS(4.0))
+          .withSlot0(new Slot0Configs().withKP(5.5).withKV(0.005).withKS(4.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
