@@ -54,11 +54,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
           var turretPos =
               TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
                   motorPosition, encoderPosition);
-          DogLog.log("Turret/MotorPos", motorPosition);
-          DogLog.log("Turret/EncoderPos", encoderPosition);
-          DogLog.log("Turret/CalculatedPos", turretPos);
-
-          DogLog.timestamp("Turret/Homing");
           motor.setPosition(turretPos);
           return TurretState.SCORE;
         } else {
