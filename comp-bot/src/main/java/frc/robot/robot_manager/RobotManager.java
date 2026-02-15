@@ -773,7 +773,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
       }
 
-
       // Fallback states
       case PREPARE_PRESET_SCORE -> {
         // Automatically update scoring parameters with preset pose
