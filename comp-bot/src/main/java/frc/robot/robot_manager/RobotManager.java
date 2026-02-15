@@ -738,7 +738,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_SCORE -> {
         smartTurretHoodPrepareScoreRequest();
-
+        if (intake.getState() == IntakeState.INTAKE) {
+          swerve.intakeScoringDriveRequest();
+        } else {
+          swerve.scoringDriveRequest();
+        }
         // isHubActive always logged
       }
       case SCORE -> {
@@ -760,7 +764,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           shooterHood.scoreRequest(scoringParameters.distance());
         }
         turret.scoreRequest(scoringParameters.turretAngle());
-        if (intake.getState() == IntakeState.INTAKING) {
+        if (intake.getState() == IntakeState.INTAKE) {
           swerve.intakeDriveRequest();
         } else {
           swerve.normalDriveRequest();
@@ -770,7 +774,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Automatically update scoring parameters with preset pose
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters.turretAngle());
-        if (intake.getState() == IntakeState.INTAKING) {
+        if (intake.getState() == IntakeState.INTAKE) {
           swerve.intakeDriveRequest();
         } else {
           swerve.normalDriveRequest();
@@ -779,7 +783,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_PRESET_FEED -> {
         // TODO: Get turret feed angle
         turret.feedRequest(0);
-        if (intake.getState() == IntakeState.INTAKING) {
+        if (intake.getState() == IntakeState.INTAKE) {
           swerve.intakeDriveRequest();
         } else {
           swerve.normalDriveRequest();
@@ -788,7 +792,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PRESET_FEED -> {
         // TODO: get turret feed angle
         turret.feedRequest(0);
-        if (intake.getState() == IntakeState.INTAKING) {
+        if (intake.getState() == IntakeState.INTAKE) {
           swerve.intakeDriveRequest();
         } else {
           swerve.normalDriveRequest();
