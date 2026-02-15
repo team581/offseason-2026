@@ -1,7 +1,5 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Degrees;
-
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;

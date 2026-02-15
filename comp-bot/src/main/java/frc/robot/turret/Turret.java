@@ -83,7 +83,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/Motor/LatencyCompensatedAngle", latencyCompensatedAngle);
     DogLog.log(
-        "Turret/Encoder/EncoderAngle", Units.rotationsToDegrees(encoder.getPosition().getValueAsDouble()));
+        "Turret/Encoder/EncoderAngle",
+        Units.rotationsToDegrees(encoder.getPosition().getValueAsDouble()));
   }
 
   @Override
@@ -112,7 +113,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
 
     DogLog.log("Turret/AtGoal", atGoal());
-
   }
 
   public void setState(TurretState newState) {
