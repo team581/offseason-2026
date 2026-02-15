@@ -15,7 +15,6 @@ import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
 @SuppressWarnings("unused")
-
 public class RightSwoopShootClimbAuto extends BaseImperativeAuto<RightSwoopShootClimbAutoState> {
 
   public enum Markers {
@@ -28,7 +27,7 @@ public class RightSwoopShootClimbAuto extends BaseImperativeAuto<RightSwoopShoot
               AutoPoint.ofRed(new Pose2d(10.358, 7.4, Rotation2d.fromDegrees(-163.0))),
               AutoPoint.ofRed(new Pose2d(8.859, 7.15, Rotation2d.fromDegrees(-140.0))),
               AutoPoint.ofRed(new Pose2d(7.778, 5.665, Rotation2d.kCW_90deg))
-              .withTransitionTolerance(new PoseErrorTolerance(1, 3)),
+                  .withTransitionTolerance(new PoseErrorTolerance(1, 3)),
               AutoPoint.ofRed(new Pose2d(7.778, 5.665, Rotation2d.kZero)),
               AutoPoint.ofRed(new Pose2d(9.227, 4.549, Rotation2d.kZero)))
           .withLinearConstraints(3.5, 10)
@@ -38,7 +37,8 @@ public class RightSwoopShootClimbAuto extends BaseImperativeAuto<RightSwoopShoot
   private final AutoSegment driveBackAndShoot =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.505, 5.933, Rotation2d.kCW_90deg)),
-              AutoPoint.ofRed(new Pose2d(10.293, 7.5, Rotation2d.k180deg)).withMarker(Markers.START_SHOOT_RQ),
+              AutoPoint.ofRed(new Pose2d(10.293, 7.5, Rotation2d.k180deg))
+                  .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(new Pose2d(12.787, 7.5, Rotation2d.k180deg)))
           .withLinearConstraints(3.5, 10)
           .withAngularConstraints(Units.rotationsToDegrees(4), Units.rotationsToDegrees(4))
@@ -98,7 +98,7 @@ public class RightSwoopShootClimbAuto extends BaseImperativeAuto<RightSwoopShoot
           yield currentState;
         }
       }
-      case DRIVE_TO_CLIMB ->  {
+      case DRIVE_TO_CLIMB -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
           yield RightSwoopShootClimbAutoState.CLIMB;
         } else {

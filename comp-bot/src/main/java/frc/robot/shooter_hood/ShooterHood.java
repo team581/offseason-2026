@@ -103,16 +103,15 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
         goalAngle = ShooterHoodConfig.IDLE_ANGLE;
       }
       case SCORING -> {
-        goalAngle =  clamp(distanceToScoringAngle(scoreDistance));;
+        goalAngle = clamp(distanceToScoringAngle(scoreDistance));
+        ;
       }
       case FEEDING -> {
         goalAngle = clamp(distanceToFeedingAngle(feedDistance));
-;
+        ;
       }
       default -> {}
     }
-
-
   }
 
   @Override
@@ -141,9 +140,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case UNHOMED -> motor.disable();
 
       case IDLE -> {
-        motor.setControl(
-            positionVoltageRequest.withPosition(
-                Units.degreesToRotations(goalAngle)));
+        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(goalAngle)));
       }
 
       default -> {}
@@ -161,7 +158,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
 
     DogLog.log("ShooterHood/AtGoal", atGoal());
-      DogLog.log("ShooterHood/Angle", currentAngle);
+    DogLog.log("ShooterHood/Angle", currentAngle);
     DogLog.log("ShooterHood/GoalAngle", goalAngle);
     DogLog.log("ShooterHood/Motor/StatorCurrent", statorCurrent);
   }
