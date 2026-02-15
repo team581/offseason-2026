@@ -264,7 +264,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         var speeds = driveSource.getRequestedSpeeds();
         if (ableToTrenchAssist) {
 
-          DogLog.timestamp("TrenchAssistActive");
+          DogLog.timestamp("Swerve/TrenchAssistActive");
           var trenchAssistSpeeds =
               SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
           drivetrain.setControl(
@@ -299,7 +299,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       case INTAKE -> {
         var speeds = driveSource.getRequestedSpeeds();
         if (ableToTrenchAssist) {
-          DogLog.timestamp("TrenchAssistActive");
+          DogLog.timestamp("Swerve/TrenchAssistActive");
           var trenchAssistSpeeds =
               SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
           drivetrain.setControl(
