@@ -30,7 +30,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private final MotionMagicVoltage positionVoltageRequest =
       new MotionMagicVoltage(0).withEnableFOC(false);
 
-  private HopperCapacity hopperCapacity = HopperCapacity.HIGH;
+  private HopperCapacity hopperCapacity = HopperCapacity.LOW;
   private DeployState storedState = DeployState.UNHOMED;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
