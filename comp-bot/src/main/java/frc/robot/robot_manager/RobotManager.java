@@ -599,7 +599,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.climbScoreRequest(climbLocationIsLeft);
         shooterHood.climbScoreRequest(climbLocationIsLeft);
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
+        turret.climbScoreRequest(climbLocationIsLeft);
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -611,7 +611,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.climbScoreRequest(climbLocationIsLeft);
         shooterHood.climbScoreRequest(climbLocationIsLeft);
         dyeRotor.shootRequest();
-        // Set turret behavior separate climbing
+        turret.climbScoreRequest(climbLocationIsLeft);
         deploy.shootRequest();
         intake.shootRequest();
         swerve.normalDriveRequest();
@@ -709,9 +709,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PRESET_FEED -> {
         // TODO: get turret feed angle
         turret.feedRequest(0);
-      }
-      case CLIMB_8_SCORING_L3, CLIMB_7_PREPARE_SCORING_L3 -> {
-        turret.climbScoreRequest(climbLocationIsLeft);
       }
       case AUTOMATIC_CLIMB_1_LINEUP_L1 -> {
         turret.climbRequest(robotPose);
@@ -945,8 +942,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (health.isLocalizationHealthy()) {
       climbLocationIsLeft = ClimbLocation.getNearest(robotPose) == ClimbLocation.LEFT;
     } else {
-      // TODO: This is an optional, need to see how getFallbackScorePoint() handles this logic
-      climbLocationIsLeft = DriverStation.getLocation().getAsInt() != 1;
+      climbLocationIsLeft = ClimbAssist.getClimbLocation() == ClimbLocation.LEFT;
     }
     var speeds = swerve.getFieldRelativeSpeeds();
     isMoving = MathHelpers.getLinearVelocity(speeds) > 0.2;
