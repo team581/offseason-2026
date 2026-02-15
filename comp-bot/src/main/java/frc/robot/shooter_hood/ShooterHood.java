@@ -72,7 +72,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   }
 
   public void climbScoreRequest(boolean isLeft) {
-    climbScoreAngle = isLeft ? 0.0 : 0.0;
+    climbScoreAngle = 0.0;
     setStateFromRequest(ShooterHoodState.CLIMB_SCORING);
   }
 

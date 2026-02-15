@@ -58,7 +58,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public void climbScoreRequest(boolean isLeft) {
-    climbScoreRpm = isLeft ? 0.0 : 0.0;
+    climbScoreRpm = 0.0;
     setStateFromRequest(ShooterState.CLIMB_SCORE);
   }
 

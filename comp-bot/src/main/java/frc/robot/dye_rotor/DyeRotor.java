@@ -7,7 +7,6 @@ import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -20,8 +19,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private final TalonFX verticalMotor;
 
   private final VelocityVoltage rotorVelocityRequest = new VelocityVoltage(0).withEnableFOC(false);
-  private final VelocityVoltage horizontalVelocityRequest =
-      new VelocityVoltage(0).withEnableFOC(false);
 
   private double rotorRawCurrent = 0.0;
   private double rotorFilteredCurrent = 0.0;
@@ -61,25 +58,26 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   @Override
   protected void whileInState(DyeRotorState currentState) {
     // TODO: Move to afterTransitiondouble rotorRpm = currentState.rotorRPM;
-    double targetRotorRpm = currentState.rotorRPM;
 
     if (currentState == DyeRotorState.SHOOT && DyeRotorConfig.ROTOR_STOP) {
-        targetRotorRpm = 0.0;
-    rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
-    horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
-    verticalMotor.setVoltage(currentState.getVerticalVoltage());
 
-    DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
-    DogLog.log("DyeRotor/Rotor/GoalRPM", currentState.rotorRPM);
-    DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
-    DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
-    DogLog.log("DyeRotor/Horizontal/GoalVoltage", currentState.getHorizontalVoltage());
-    DogLog.log("DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("DyeRotor/Vertical/GoalVoltage", currentState.getVerticalVoltage());
-    DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
-    DogLog.log("DyeRotor/AtGoal", atGoal());}
+      rotorMotor.setControl(rotorVelocityRequest.withVelocity(currentState.rotorRPM / 60.0));
+      horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
+      verticalMotor.setVoltage(currentState.getVerticalVoltage());
+
+      DogLog.log("DyeRotor/Rotor/RPM", rotorMotorRpm);
+      DogLog.log("DyeRotor/Rotor/GoalRPM", currentState.rotorRPM);
+      DogLog.log("DyeRotor/Rotor/Angle", rotorAngle);
+      DogLog.log("DyeRotor/Rotor/Voltage", rotorMotor.getMotorVoltage().getValueAsDouble());
+      DogLog.log("DyeRotor/Horizontal/RPM", horizontalMotorRpm);
+      DogLog.log("DyeRotor/Horizontal/GoalVoltage", currentState.getHorizontalVoltage());
+      DogLog.log(
+          "DyeRotor/Horizontal/Voltage", horizontalMotor.getMotorVoltage().getValueAsDouble());
+      DogLog.log("DyeRotor/Vertical/GoalVoltage", currentState.getVerticalVoltage());
+      DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
+      DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
+      DogLog.log("DyeRotor/AtGoal", atGoal());
+    }
   }
 
   @Override

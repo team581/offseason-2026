@@ -171,7 +171,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public void climbScoreRequest(boolean isLeft) {
-    this.goalAngle = isLeft ? 0.0 : 0.0;
+    this.goalAngle = 0.0;
     setState(TurretState.CLIMB_SCORE);
   }
 
