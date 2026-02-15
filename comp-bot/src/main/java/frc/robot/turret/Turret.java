@@ -81,9 +81,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     vision.addTurretObservation(Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
 
     DogLog.log("Turret/Angle", currentAngle);
-    DogLog.log("Turret/LatencyCompensatedAngle", latencyCompensatedAngle);
+    DogLog.log("Turret/Motor/LatencyCompensatedAngle", latencyCompensatedAngle);
     DogLog.log(
-        "Turret/EncoderAngle", Units.rotationsToDegrees(encoder.getPosition().getValueAsDouble()));
+        "Turret/Encoder/EncoderAngle", Units.rotationsToDegrees(encoder.getPosition().getValueAsDouble()));
   }
 
   @Override
@@ -113,14 +113,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     DogLog.log("Turret/AtGoal", atGoal());
 
-    // DEBUG LOGS
-    double motorPosition = motor.getRotorPosition().getValueAsDouble();
-    double encoderPosition = encoder.getAbsolutePosition().getValueAsDouble();
-    var turretPos =
-        TurretCalculator.calculateHomedPositionFromMotorAndEncoder(motorPosition, encoderPosition);
-    DogLog.log("Turret/MotorPos", motorPosition);
-    DogLog.log("Turret/EncoderPos", encoderPosition);
-    DogLog.log("Turret/CalculatedPos", turretPos);
   }
 
   public void setState(TurretState newState) {
