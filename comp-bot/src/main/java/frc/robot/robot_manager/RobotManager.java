@@ -760,19 +760,39 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           shooterHood.scoreRequest(scoringParameters.distance());
         }
         turret.scoreRequest(scoringParameters.turretAngle());
+        if (intake.getState() == IntakeState.INTAKING) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
       }
       case PRESET_SCORE -> {
         // Automatically update scoring parameters with preset pose
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters.turretAngle());
+        if (intake.getState() == IntakeState.INTAKING) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
       }
       case PREPARE_PRESET_FEED -> {
         // TODO: Get turret feed angle
         turret.feedRequest(0);
+        if (intake.getState() == IntakeState.INTAKING) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
       }
       case PRESET_FEED -> {
         // TODO: get turret feed angle
         turret.feedRequest(0);
+        if (intake.getState() == IntakeState.INTAKING) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
       }
       case AUTOMATIC_CLIMB_1_LINEUP_L1 -> {
         turret.climbRequest(robotPose);
