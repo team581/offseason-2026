@@ -151,15 +151,18 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     }
     DogLog.log("Vision/" + name + "/State", getState());
 
-    var lastTagTimestamp =
-        lastGoodTagResult.isPresent()
-            ? lastGoodTagResult.orElseThrow().timestamp()
-            : Double.MIN_VALUE;
+    if (getState() == LimelightState.TAGS || getState() == LimelightState.HUB_TAGS) {
+      var lastTagTimestamp =
+          lastGoodTagResult.isPresent()
+              ? lastGoodTagResult.orElseThrow().timestamp()
+              : Double.MIN_VALUE;
 
-    if (Timer.getTimestamp() - lastTagTimestamp > 30) {
-      DogLog.logFault(
-          limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
+      if (Timer.getTimestamp() - lastTagTimestamp > 30) {
+        DogLog.logFault(
+            limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
+      }
     } else {
+
       DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
     }
 
