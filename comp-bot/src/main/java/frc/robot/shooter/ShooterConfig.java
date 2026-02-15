@@ -23,7 +23,8 @@ public class ShooterConfig {
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/DistanceToScoreRPM", Map.entry(Units.inchesToMeters(5.5), 4500.0));
+          "Shooter/DistanceToScoreRPM",
+          Map.entry(Units.inchesToMeters(5.5), 4200.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
@@ -62,7 +63,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(5.5).withKV(0.005).withKS(4.0))
+          .withSlot0(new Slot0Configs().withKP(0.8).withKV(0.1225).withKS(0.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
@@ -85,7 +86,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(5.5).withKV(0.005).withKS(4.0))
+          .withSlot0(new Slot0Configs().withKP(0.8).withKV(0.1225).withKS(0.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
