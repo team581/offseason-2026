@@ -6,7 +6,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 public enum DeployState {
   INTAKE(DeployConfig.MAX_LENGTH),
   STOW(1.0),
-  HOPPER_SHUFFLING(DeployConfig.MAX_LENGTH - 3.0),
+  HOPPER_SHUFFLING(INTAKE.getLength()),
   HOME(0),
   UNHOMED(0),
   CATCHUP_TO_LEFT(0),
