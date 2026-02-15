@@ -72,13 +72,9 @@ public class DyeRotorConfig {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-<<<<<<< HEAD
-                  .withInverted(InvertedValue.CounterClockwise_Positive));
-=======
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0).withKS(0.0));
   public static boolean ROTOR_STOP;
->>>>>>> 138096b3 (Dyerotor started on fixing clog issue with fuel)
 
   private DyeRotorConfig() {}
 }
