@@ -46,7 +46,9 @@ public enum RobotState {
   MANUAL_CLIMB_4_HANGING_L2,
 
   MANUAL_CLIMB_5_RAISING_L3,
-  MANUAL_CLIMB_6_HANGING_L3;
+  MANUAL_CLIMB_6_HANGING_L3,
+  CLIMB_7_PREPARE_SCORING_L3,
+  CLIMB_8_SCORING_L3;
 
   public boolean isClimbing() {
     return switch (this) {
@@ -68,6 +70,9 @@ public enum RobotState {
       case MANUAL_CLIMB_4_HANGING_L2 -> true;
       case MANUAL_CLIMB_5_RAISING_L3 -> true;
       case MANUAL_CLIMB_6_HANGING_L3 -> true;
+
+      case CLIMB_7_PREPARE_SCORING_L3 -> true;
+      case CLIMB_8_SCORING_L3 -> true;
 
       default -> false;
     };
