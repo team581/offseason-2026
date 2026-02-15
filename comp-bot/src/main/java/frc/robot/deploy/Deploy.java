@@ -243,7 +243,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     if (RobotBase.isSimulation()) {
       ableToHopperShuffle = true;
     } else {
-      ableToHopperShuffle = DSOptions.USE_CANRANGE.getAsBoolean() && hopperCapacity != HopperCapacity.HIGH;
+      ableToHopperShuffle =
+          DSOptions.USE_CANRANGE.getAsBoolean() && hopperCapacity != HopperCapacity.HIGH;
     }
   }
 
