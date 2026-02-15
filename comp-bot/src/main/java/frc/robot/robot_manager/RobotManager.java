@@ -740,9 +740,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SCORE -> {
         smartTurretHoodPrepareScoreRequest();
         if (intake.getState() == IntakeState.INTAKE) {
-          swerve.intakeScoringDriveRequest();
+          swerve.intakeRateLimitedDriveRequest();
         } else {
-          swerve.scoringDriveRequest();
+          swerve.rateLimitedDriveRequest();
         }
         // isHubActive always logged
       }
@@ -750,9 +750,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.scoreRequest(scoringParameters.turretAngle());
         shooterHood.scoreRequest(scoringParameters.distance());
         if (intake.getState() == IntakeState.INTAKE) {
-          swerve.intakeScoringDriveRequest();
+          swerve.intakeRateLimitedDriveRequest();
         } else {
-          swerve.scoringDriveRequest();
+          swerve.rateLimitedDriveRequest();
         }
       }
       case PREPARE_FEED -> {

@@ -201,12 +201,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     setStateFromRequest(SwerveState.CLIMB_ASSIST);
   }
 
-  public void scoringDriveRequest() {
-    setStateFromRequest(SwerveState.MANUAL_SCORING);
+  public void rateLimitedDriveRequest() {
+    setStateFromRequest(SwerveState.MANUAL_RATE_LIMITED);
   }
 
-  public void intakeScoringDriveRequest() {
-    setStateFromRequest(SwerveState.INTAKE_SCORING);
+  public void intakeRateLimitedDriveRequest() {
+    setStateFromRequest(SwerveState.INTAKE_RATE_LIMITED);
   }
 
   @Override
@@ -260,7 +260,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     if (FeatureFlags.RATE_LIMITED_DRIVING.getAsBoolean()
-        && (getState() == SwerveState.INTAKE_SCORING || getState() == SwerveState.MANUAL_SCORING)) {
+        && (getState() == SwerveState.INTAKE_RATE_LIMITED || getState() == SwerveState.MANUAL_RATE_LIMITED)) {
 
       if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
         var rateLimitedXVelocity =
@@ -327,7 +327,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case MANUAL_SCORING -> {
+      case MANUAL_RATE_LIMITED -> {
         if (ableToTrenchAssist) {
 
           DogLog.timestamp("TrenchAssistActive");
@@ -438,7 +438,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case INTAKE_SCORING -> {
+      case INTAKE_RATE_LIMITED -> {
         if (ableToTrenchAssist) {
           DogLog.timestamp("TrenchAssistActive");
           var trenchAssistSpeeds =
@@ -530,7 +530,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   @Override
   protected void beforeTransition(SwerveState fromState, SwerveState toState) {
     if (FeatureFlags.RATE_LIMITED_DRIVING.getAsBoolean()
-        && (toState == SwerveState.INTAKE_SCORING || toState == SwerveState.MANUAL_SCORING)) {
+        && (toState == SwerveState.INTAKE_RATE_LIMITED || toState == SwerveState.MANUAL_RATE_LIMITED)) {
       var requestedSpeeds = driveSource.getRequestedSpeeds();
       if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
         scoringXLinearVelocitySlewRateLimiter.reset(requestedSpeeds.vxMetersPerSecond);
