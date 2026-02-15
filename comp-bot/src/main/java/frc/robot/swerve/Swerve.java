@@ -260,7 +260,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     if (FeatureFlags.RATE_LIMITED_DRIVING.getAsBoolean()
-        && (getState() == SwerveState.INTAKE_RATE_LIMITED || getState() == SwerveState.MANUAL_RATE_LIMITED)) {
+        && (getState() == SwerveState.INTAKE_RATE_LIMITED
+            || getState() == SwerveState.MANUAL_RATE_LIMITED)) {
 
       if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
         var rateLimitedXVelocity =
@@ -530,7 +531,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   @Override
   protected void beforeTransition(SwerveState fromState, SwerveState toState) {
     if (FeatureFlags.RATE_LIMITED_DRIVING.getAsBoolean()
-        && (toState == SwerveState.INTAKE_RATE_LIMITED || toState == SwerveState.MANUAL_RATE_LIMITED)) {
+        && (toState == SwerveState.INTAKE_RATE_LIMITED
+            || toState == SwerveState.MANUAL_RATE_LIMITED)) {
       var requestedSpeeds = driveSource.getRequestedSpeeds();
       if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
         scoringXLinearVelocitySlewRateLimiter.reset(requestedSpeeds.vxMetersPerSecond);
