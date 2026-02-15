@@ -32,7 +32,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private double scoreDistance = 0;
   private double feedDistance = 0;
   private double currentAngle = 0;
-  private double goalAngle = 0;
   private double statorCurrent = 0;
 
   public ShooterHood(TalonFX motor) {
@@ -85,9 +84,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   public boolean atGoal() {
     return switch (getState()) {
       case UNHOMED, HOMING -> false;
-      case IDLE ->
-          MathUtil.isNear(ShooterHoodConfig.IDLE_ANGLE, currentAngle, ShooterHoodConfig.TOLERANCE);
-      default -> MathUtil.isNear(goalAngle, currentAngle, ShooterHoodConfig.TOLERANCE);
+      default -> MathUtil.isNear(getGoalAngle(), currentAngle, ShooterHoodConfig.TOLERANCE);
     };
   }
 
@@ -95,23 +92,15 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   protected void collectInputs() {
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    switch (getState()) {
-      case UNHOMED, HOMING -> {
-        statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-      }
-      case IDLE -> {
-        goalAngle = ShooterHoodConfig.IDLE_ANGLE;
-      }
-      case SCORING -> {
-        goalAngle = clamp(distanceToScoringAngle(scoreDistance));
-        ;
-      }
-      case FEEDING -> {
-        goalAngle = clamp(distanceToFeedingAngle(feedDistance));
-        ;
-      }
-      default -> {}
-    }
+  }
+
+  private double getGoalAngle() {
+    return switch (getState()) {
+      case UNHOMED, HOMING -> -1;
+      case IDLE -> ShooterHoodConfig.IDLE_ANGLE;
+      case SCORING -> distanceToScoringAngle(scoreDistance);
+      case FEEDING -> distanceToFeedingAngle(feedDistance);
+    };
   }
 
   @Override
@@ -139,22 +128,25 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
       case UNHOMED -> motor.disable();
 
-      case IDLE -> {
-        motor.setControl(positionVoltageRequest.withPosition(Units.degreesToRotations(goalAngle)));
+      default -> {
+        motor.setControl(
+            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(getGoalAngle()))));
       }
-
-      default -> {}
     }
   }
 
   @Override
   protected void whileInState(ShooterHoodState state) {
+    var goalAngle = getGoalAngle();
+
     switch (state) {
       case SCORING, FEEDING -> {
         motor.setControl(
             positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
       }
-      default -> {}
+      default -> {
+        // Do nothing in the other states, they have static setpoints
+      }
     }
 
     DogLog.log("ShooterHood/AtGoal", atGoal());
