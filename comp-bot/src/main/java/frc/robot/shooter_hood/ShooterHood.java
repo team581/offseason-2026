@@ -33,6 +33,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
   private double feedDistance = 0;
   private double currentAngle = 0;
   private double statorCurrent = 0;
+  private double climbScoreAngle = 0;
 
   public ShooterHood(TalonFX motor) {
     super(SubsystemPriority.SHOOTER_HOOD, ShooterHoodState.UNHOMED);
@@ -68,6 +69,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     }
   }
 
+  public void climbScoreRequest(boolean isLeft) {
+    climbScoreAngle = 0.0;
+    setStateFromRequest(ShooterHoodState.CLIMB_SCORING);
+  }
+
   public void idleRequest() {
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -100,6 +106,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
       case IDLE -> ShooterHoodConfig.IDLE_ANGLE;
       case SCORING -> distanceToScoringAngle(scoreDistance);
       case FEEDING -> distanceToFeedingAngle(feedDistance);
+      case CLIMB_SCORING -> climbScoreAngle;
     };
   }
 
@@ -144,9 +151,13 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
         motor.setControl(
             positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
       }
-      default -> {
-        // Do nothing in the other states, they have static setpoints
+      case CLIMB_SCORING -> {
+        motor.setControl(
+            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(climbScoreAngle))));
+        DogLog.log("ShooterHood/CurrentSetpoint", climbScoreAngle);
       }
+      // Do nothing in the other states, they have static setpoints
+      default -> {}
     }
 
     DogLog.log("ShooterHood/AtGoal", atGoal());
