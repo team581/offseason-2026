@@ -880,6 +880,23 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void cancelIntakeRequest() {
     intake.idleRequest();
+
+    // If we are shooting while cancelling a previous intake request, send a new hopper shuffle
+    // request
+    switch (getState()) {
+      case PREPARE_FORCE_SCORE,
+          FORCE_SCORE,
+          PREPARE_PRESET_SCORE,
+          PRESET_SCORE,
+          PREPARE_SCORE,
+          SCORE,
+          PREPARE_PRESET_FEED,
+          PRESET_FEED,
+          PREPARE_FEED,
+          FEED ->
+          deploy.shuffleRequest();
+      default -> {}
+    }
   }
 
   public void stowDeployRequest() {
