@@ -736,6 +736,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE, UNJAM -> {
         smartTurretHoodIdleRequest();
       }
+
       case PREPARE_SCORE -> {
         smartTurretHoodPrepareScoreRequest();
         if (intake.getState() == IntakeState.INTAKE) {
@@ -748,14 +749,32 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case SCORE -> {
         turret.scoreRequest(scoringParameters.turretAngle());
         shooterHood.scoreRequest(scoringParameters.distance());
+        if (intake.getState() == IntakeState.INTAKE) {
+          swerve.intakeScoringDriveRequest();
+        } else {
+          swerve.scoringDriveRequest();
+        }
       }
       case PREPARE_FEED -> {
         smartTurretHoodPrepareFeedRequest();
+        if (intake.getState() == IntakeState.INTAKE) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
       }
       case FEED -> {
         turret.feedRequest(feedingParameters.turretAngle());
         shooterHood.feedRequest(feedingParameters.distance());
+        if (intake.getState() == IntakeState.INTAKE) {
+          swerve.intakeDriveRequest();
+        } else {
+          swerve.normalDriveRequest();
+        }
       }
+
+
+      // Fallback states
       case PREPARE_PRESET_SCORE -> {
         // Automatically update scoring parameters with preset pose
         if (isMoving) {
@@ -829,14 +848,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Scoring/ScoreTransition/IsHubActive", isHubActive);
     DogLog.log("RobotManager/TimeSinceMatchStart", timeSinceMatchStart);
     DogLog.log("RobotManager/TimeSinceTeleopEnable", teleopTimer.get());
-
-    if (!getState().isClimbing()) {
-      if (intake.getState() == IntakeState.INTAKE) {
-        swerve.intakeDriveRequest();
-      } else {
-        swerve.normalDriveRequest();
-      }
-    }
 
     MechanismVisualizer.log(
         robotPose,
