@@ -166,25 +166,26 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void whileInState(DeployState state) {
-    if(DriverStation.isDisabled()){
+    if (DriverStation.isDisabled()) {
       leftMotor.setControl(coastRequest);
       rightMotor.setControl(coastRequest);
     } else {
-    if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
-        && state == DeployState.HOPPER_SHUFFLING
-        && ableToHopperShuffle) {
-      if (atGoal(DeployState.HOPPER_SHUFFLING.getLength())) {
-        leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
-        rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
-      } else if (atGoal(DeployState.INTAKE.getLength())) {
-        leftMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
-        rightMotor.setControl(
-            positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
+      if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
+          && state == DeployState.HOPPER_SHUFFLING
+          && ableToHopperShuffle) {
+        if (atGoal(DeployState.HOPPER_SHUFFLING.getLength())) {
+          leftMotor.setControl(
+              positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
+          rightMotor.setControl(
+              positionVoltageRequest.withPosition(clamp(DeployState.INTAKE.getLength())));
+        } else if (atGoal(DeployState.INTAKE.getLength())) {
+          leftMotor.setControl(
+              positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
+          rightMotor.setControl(
+              positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
+        }
       }
-    }}
+    }
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
@@ -233,13 +234,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
-@Override
-public void disabledPeriodic() {
-  if(DriverStation.isDisabled()){
-    leftMotor.setControl(new CoastOut());
-    rightMotor.setControl(new CoastOut());
+  @Override
+  public void disabledPeriodic() {
+    if (DriverStation.isDisabled()) {
+      leftMotor.setControl(new CoastOut());
+      rightMotor.setControl(new CoastOut());
+    }
   }
-}
+
   @Override
   public void simulationPeriodic() {
     var deploySimulation =
