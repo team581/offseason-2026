@@ -527,6 +527,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("SwerveAssist/Bump/AbleToBumpAssist", ableToBumpAssist);
   }
 
+  @Override
+  protected void beforeTransition(SwerveState fromState, SwerveState toState) {
+    if (FeatureFlags.RATE_LIMITED_DRIVING.getAsBoolean()
+        && (toState == SwerveState.INTAKE_SCORING || toState == SwerveState.MANUAL_SCORING)) {
+      var requestedSpeeds = driveSource.getRequestedSpeeds();
+      if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+        scoringXLinearVelocitySlewRateLimiter.reset(requestedSpeeds.vxMetersPerSecond);
+        scoringYLinearVelocitySlewRateLimiter.reset(requestedSpeeds.vyMetersPerSecond);
+        scoringAngularVelocitySlewRateLimiter.reset(requestedSpeeds.omegaRadiansPerSecond);
+      }
+    }
+  }
+
   private void startSimThread() {
     lastSimTime = Utils.getCurrentTimeSeconds();
 
