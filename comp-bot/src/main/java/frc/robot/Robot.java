@@ -43,7 +43,7 @@ public class Robot extends Base581Robot {
           LimelightState.TAGS,
           new CameraConfig(
               LimelightModel.FOUR,
-              false,
+              true,
               Units.inchesToMeters(0.0),
               Units.inchesToMeters(0.0),
               Units.inchesToMeters(20.432677 + 0.25),
