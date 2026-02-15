@@ -104,7 +104,8 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
       mTEstimateTimestamp = mT2Estimate.timestampSeconds;
       mTPose = mT2Estimate.pose;
-      if (config.useMt1RotationCloseUp() && distance < Units.inchesToMeters(USE_MT1_ROTATION_THRESHOLD_INCHES)) {
+      if (config.useMt1RotationCloseUp()
+          && distance < Units.inchesToMeters(USE_MT1_ROTATION_THRESHOLD_INCHES)) {
         mTPose = new Pose2d(mTPose.getTranslation(), mT1Estimate.pose.getRotation());
         thetaDev = 0.03 * Math.pow(distance, 1.2);
       }
