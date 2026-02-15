@@ -1,143 +1,137 @@
 {
-  "version": 1.0,
   "grid_size": 128,
-  "tabs": [
-    {
-      "name": "Operator",
-      "grid_layout": {
-        "layouts": [
+  "tabs": [{
+    "name": "Operator",
+    "grid_layout": {
+      "containers": [
+        {
+          "x": 384,
+          "width": 512,
+          "y": 0,
+          "title": "Alerts",
+          "type": "Alerts",
+          "properties": {
+            "period": 0.06,
+            "topic": "/SmartDashboard/Alerts"
+          },
+          "height": 256
+        },
+        {
+          "x": 0,
+          "width": 384,
+          "y": 0,
+          "title": "SelectedAuto",
+          "type": "ComboBox Chooser",
+          "properties": {
+            "period": 0.06,
+            "topic": "/SmartDashboard/Autos/SelectedAuto",
+            "sort_options": false
+          },
+          "height": 128
+        },
+        {
+          "x": 1152,
+          "width": 384,
+          "y": 128,
+          "title": "LocalizationHealthy",
+          "type": "Boolean Box",
+          "properties": {
+            "true_color": 4283215696,
+            "period": 0.06,
+            "false_color": 4294198070,
+            "false_icon": "None",
+            "data_type": "boolean",
+            "topic": "/Robot/Health/LocalizationHealthy",
+            "true_icon": "None"
+          },
+          "height": 128
+        },
+        {
+          "x": 1152,
+          "width": 384,
+          "y": 0,
+          "title": "AllCamerasHealthy",
+          "type": "Boolean Box",
+          "properties": {
+            "true_color": 4283215696,
+            "period": 0.06,
+            "false_color": 4294198070,
+            "false_icon": "None",
+            "data_type": "boolean",
+            "topic": "/Robot/Health/AllCamerasHealthy",
+            "true_icon": "None"
+          },
+          "height": 128
+        },
+        {
+          "x": 1152,
+          "width": 384,
+          "y": 256,
+          "title": "FuelDetectionHealthy",
+          "type": "Boolean Box",
+          "properties": {
+            "true_color": 4283215696,
+            "period": 0.06,
+            "false_color": 4294198070,
+            "false_icon": "None",
+            "data_type": "boolean",
+            "topic": "/Robot/Health/FuelDetectionHealthy",
+            "true_icon": "None"
+          },
+          "height": 128
+        }
+      ],
+      "layouts": [{
+        "children": [
           {
-            "title": "Fallback toggles",
-            "x": 896.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 384.0,
-            "type": "List Layout",
+            "x": 768,
+            "width": 256,
+            "y": 128,
+            "title": "UseTagLimelights",
+            "type": "Toggle Switch",
             "properties": {
-              "label_position": "TOP"
+              "period": 0.06,
+              "data_type": "boolean",
+              "topic": "/DSOptions/UseTagLimelights"
             },
-            "children": [
-              {
-                "title": "UseTagLimelights",
-                "x": 768.0,
-                "y": 128.0,
-                "width": 256.0,
-                "height": 128.0,
-                "type": "Toggle Switch",
-                "properties": {
-                  "topic": "/DSOptions/UseTagLimelights",
-                  "period": 0.06,
-                  "data_type": "boolean"
-                }
-              },
-              {
-                "title": "UseHubState",
-                "x": 768.0,
-                "y": 128.0,
-                "width": 256.0,
-                "height": 128.0,
-                "type": "Toggle Switch",
-                "properties": {
-                  "topic": "/DSOptions/UseHubState",
-                  "period": 0.06,
-                  "data_type": "boolean"
-                }
-              },
-              {
-                "title": "UseCANRange",
-                "x": 896.0,
-                "y": 256.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Toggle Switch",
-                "properties": {
-                  "topic": "/DSOptions/UseCANRange",
-                  "period": 0.06,
-                  "data_type": "boolean"
-                }
-              }
-            ]
+            "height": 128
+          },
+          {
+            "x": 768,
+            "width": 256,
+            "y": 128,
+            "title": "UseHubState",
+            "type": "Toggle Switch",
+            "properties": {
+              "period": 0.06,
+              "data_type": "boolean",
+              "topic": "/DSOptions/UseHubState"
+            },
+            "height": 128
+          },
+          {
+            "x": 896,
+            "width": 128,
+            "y": 256,
+            "title": "UseCANRange",
+            "type": "Toggle Switch",
+            "properties": {
+              "period": 0.06,
+              "data_type": "boolean",
+              "topic": "/DSOptions/UseCANRange"
+            },
+            "height": 128
           }
         ],
-        "containers": [
-          {
-            "title": "Alerts",
-            "x": 384.0,
-            "y": 0.0,
-            "width": 512.0,
-            "height": 256.0,
-            "type": "Alerts",
-            "properties": {
-              "topic": "/SmartDashboard/Alerts",
-              "period": 0.06
-            }
-          },
-          {
-            "title": "SelectedAuto",
-            "x": 0.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "ComboBox Chooser",
-            "properties": {
-              "topic": "/SmartDashboard/Autos/SelectedAuto",
-              "period": 0.06,
-              "sort_options": false
-            }
-          },
-          {
-            "title": "LocalizationHealthy",
-            "x": 1152.0,
-            "y": 128.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/Robot/Health/LocalizationHealthy",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "AllCamerasHealthy",
-            "x": 1152.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/Robot/Health/AllCamerasHealthy",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          },
-          {
-            "title": "FuelDetectionHealthy",
-            "x": 1152.0,
-            "y": 256.0,
-            "width": 384.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/Robot/Health/FuelDetectionHealthy",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "None",
-              "false_icon": "None"
-            }
-          }
-        ]
-      }
+        "x": 896,
+        "width": 256,
+        "y": 0,
+        "title": "Fallback toggles",
+        "type": "List Layout",
+        "properties": {"label_position": "TOP"},
+        "height": 384
+      }]
     }
-  ]
+  }],
+  "version": 1
 }
