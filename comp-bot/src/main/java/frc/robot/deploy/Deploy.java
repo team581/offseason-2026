@@ -1,5 +1,6 @@
 package frc.robot.deploy;
 
+import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -13,6 +14,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -22,6 +24,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private final TalonFX rightMotor;
   private final CANrange hopperCANRange;
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
+  private final CoastOut coastRequest = new CoastOut();
   private final MotionMagicVoltage positionVoltageRequest =
       new MotionMagicVoltage(0).withEnableFOC(false);
 
@@ -163,6 +166,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void whileInState(DeployState state) {
+    if(DriverStation.isDisabled()){
+      leftMotor.setControl(coastRequest);
+      rightMotor.setControl(coastRequest);
+    } else {
     if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
         && state == DeployState.HOPPER_SHUFFLING
         && ableToHopperShuffle) {
@@ -177,7 +184,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         rightMotor.setControl(
             positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
       }
-    }
+    }}
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
@@ -226,6 +233,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
+@Override
+public void disabledPeriodic() {
+  if(DriverStation.isDisabled()){
+    leftMotor.setControl(new CoastOut());
+    rightMotor.setControl(new CoastOut());
+  }
+}
   @Override
   public void simulationPeriodic() {
     var deploySimulation =
