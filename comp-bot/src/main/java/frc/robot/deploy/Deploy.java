@@ -250,6 +250,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   public void robotPeriodic() {
+    super.robotPeriodic();
     if (previousCanRangeDistance != hopperCANRangeDistance) {
       canRangeUpdateTimer.reset();
     }
