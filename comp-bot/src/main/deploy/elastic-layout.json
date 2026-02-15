@@ -1,114 +1,143 @@
 {
+  "version": 1.0,
   "grid_size": 128,
   "tabs": [
     {
-      "name": "Drive Team",
+      "name": "Operator",
       "grid_layout": {
-        "containers": [],
-        "layouts": []
-      }
-    },
-    {
-      "name": "Debug",
-      "grid_layout": {
-        "containers": [
+        "layouts": [
           {
-            "x": 896,
-            "width": 512,
-            "y": 0,
-            "title": "SelectedAuto",
-            "type": "ComboBox Chooser",
+            "title": "Fallback toggles",
+            "x": 896.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "List Layout",
             "properties": {
-              "period": 0.06,
-              "topic": "/SmartDashboard/Autos/SelectedAuto",
-              "sort_options": false
+              "label_position": "TOP"
             },
-            "height": 128
-          },
-          {
-            "x": 896,
-            "width": 128,
-            "y": 128,
-            "title": "AtGoal",
-            "type": "Boolean Box",
-            "properties": {
-              "true_color": 4283215696,
-              "period": 0.06,
-              "false_color": 4294198070,
-              "false_icon": "None",
-              "data_type": "boolean",
-              "topic": "/Robot/Shooter/AtGoal",
-              "true_icon": "None"
-            },
-            "height": 128
-          },
-          {
-            "x": 1280,
-            "width": 128,
-            "y": 128,
-            "title": "SeeingTag",
-            "type": "Boolean Box",
-            "properties": {
-              "true_color": 4283215696,
-              "period": 0.06,
-              "false_color": 4294198070,
-              "false_icon": "None",
-              "data_type": "boolean",
-              "topic": "/Robot/Vision/SeeingTag",
-              "true_icon": "None"
-            },
-            "height": 128
-          },
-          {
-            "x": 256,
-            "width": 640,
-            "y": 0,
-            "title": "Alerts",
-            "type": "Alerts",
-            "properties": {
-              "period": 0.06,
-              "topic": "/SmartDashboard/Alerts"
-            },
-            "height": 384
-          },
-          {
-            "x": 1024,
-            "width": 128,
-            "y": 128,
-            "title": "TrustFactor",
-            "type": "Text Display",
-            "properties": {
-              "period": 0.06,
-              "show_submit_button": false,
-              "data_type": "double",
-              "topic": "/Robot/Localization/TrustFactor"
-            },
-            "height": 128
-          },
-          {
-            "x": 0,
-            "width": 256,
-            "y": 0,
-            "title": "Field",
-            "type": "Field",
-            "properties": {
-              "period": 0.06,
-              "robot_width": 0.85,
-              "robot_color": 4294198070,
-              "trajectory_color": 4294967295,
-              "show_other_objects": true,
-              "show_trajectories": true,
-              "topic": "/SmartDashboard/Field",
-              "field_game": "Rebuilt",
-              "robot_length": 0.85,
-              "field_rotation": 90
-            },
-            "height": 640
+            "children": [
+              {
+                "title": "UseTagLimelights",
+                "x": 768.0,
+                "y": 128.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Toggle Switch",
+                "properties": {
+                  "topic": "/DSOptions/UseTagLimelights",
+                  "period": 0.06,
+                  "data_type": "boolean"
+                }
+              },
+              {
+                "title": "UseHubState",
+                "x": 768.0,
+                "y": 128.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Toggle Switch",
+                "properties": {
+                  "topic": "/DSOptions/UseHubState",
+                  "period": 0.06,
+                  "data_type": "boolean"
+                }
+              },
+              {
+                "title": "UseCANRange",
+                "x": 896.0,
+                "y": 256.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Toggle Switch",
+                "properties": {
+                  "topic": "/DSOptions/UseCANRange",
+                  "period": 0.06,
+                  "data_type": "boolean"
+                }
+              }
+            ]
           }
         ],
-        "layouts": []
+        "containers": [
+          {
+            "title": "Alerts",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Alerts",
+            "properties": {
+              "topic": "/SmartDashboard/Alerts",
+              "period": 0.06
+            }
+          },
+          {
+            "title": "SelectedAuto",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Autos/SelectedAuto",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "LocalizationHealthy",
+            "x": 1152.0,
+            "y": 128.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/Health/LocalizationHealthy",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "AllCamerasHealthy",
+            "x": 1152.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/Health/AllCamerasHealthy",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "FuelDetectionHealthy",
+            "x": 1152.0,
+            "y": 256.0,
+            "width": 384.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/Health/FuelDetectionHealthy",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          }
+        ]
       }
     }
-  ],
-  "version": 1
+  ]
 }
