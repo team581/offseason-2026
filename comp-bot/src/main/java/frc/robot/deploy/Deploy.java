@@ -16,6 +16,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -33,14 +35,18 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
   private double hopperCANRangeDistance = 0.0;
+  private double previousCanRangeDistance = 0.0;
   private double filteredHopperCANRangeDistance;
   private boolean ableToHopperShuffle = false;
+
+  private final Timer canRangeUpdateTimer = new Timer();
 
   public Deploy(TalonFX leftMotor, TalonFX rightMotor, CANrange hopperCANRange) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
     this.hopperCANRange = hopperCANRange;
+    canRangeUpdateTimer.start();
 
     leftMotor.getConfigurator().apply(DeployConfig.LEFT_MOTOR_CONFIG);
     rightMotor.getConfigurator().apply(DeployConfig.RIGHT_MOTOR_CONFIG);
@@ -237,7 +243,21 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     if (RobotBase.isSimulation()) {
       ableToHopperShuffle = true;
     } else {
-      ableToHopperShuffle = hopperCapacity != HopperCapacity.LOW;
+      ableToHopperShuffle = DSOptions.USE_CANRANGE.getAsBoolean() && hopperCapacity != HopperCapacity.HIGH;
+    }
+  }
+
+  @Override
+  public void robotPeriodic() {
+    if (previousCanRangeDistance != hopperCANRangeDistance) {
+      canRangeUpdateTimer.reset();
+    }
+    previousCanRangeDistance = hopperCANRangeDistance;
+
+    if (canRangeUpdateTimer.hasElapsed(DeployConfig.NOT_UPDATING_TIMEOUT)) {
+      DogLog.logFault("CANrange distance not updating", AlertType.kError);
+    } else {
+      DogLog.clearFault("CANrange distance not updating");
     }
   }
 

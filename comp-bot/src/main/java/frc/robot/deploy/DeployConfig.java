@@ -19,6 +19,7 @@ public class DeployConfig {
   public static final double CAPACITY_DISTANCE_THRESHOLD = 0.0;
   public static final double POSITION_TOLERANCE = 0.25;
   public static final double HOPPER_SHUFFLE_DISTANCE = 3.0;
+  public static final double NOT_UPDATING_TIMEOUT = 3.0;
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
