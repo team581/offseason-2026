@@ -175,10 +175,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
           && ableToHopperShuffle) {
         if (atGoal(DeployState.HOPPER_SHUFFLING.getLength())) {
           leftMotor.setControl(
-              positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE)));
+              positionVoltageRequest.withPosition(
+                  clamp(
+                      DeployState.HOPPER_SHUFFLING.getLength()
+                          - DeployConfig.HOPPER_SHUFFLE_DISTANCE)));
           rightMotor.setControl(
-              positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE)));
-        } else if (atGoal(DeployState.HOPPER_SHUFFLING.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE)) {
+              positionVoltageRequest.withPosition(
+                  clamp(
+                      DeployState.HOPPER_SHUFFLING.getLength()
+                          - DeployConfig.HOPPER_SHUFFLE_DISTANCE)));
+        } else if (atGoal(
+            DeployState.HOPPER_SHUFFLING.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE)) {
           leftMotor.setControl(
               positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
           rightMotor.setControl(
