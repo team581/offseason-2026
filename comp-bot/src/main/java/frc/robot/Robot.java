@@ -44,6 +44,7 @@ public class Robot extends Base581Robot {
           new CameraConfig(
               LimelightModel.FOUR,
               true,
+              false,
               Units.inchesToMeters(0.0),
               Units.inchesToMeters(0.0),
               Units.inchesToMeters(20.432677 + 0.25),
@@ -56,6 +57,7 @@ public class Robot extends Base581Robot {
           LimelightState.TAGS,
           new CameraConfig(
               LimelightModel.FOUR,
+              true,
               true,
               // back
               Units.inchesToMeters(-13.389),
@@ -77,7 +79,8 @@ public class Robot extends Base581Robot {
           LimelightState.CLUSTER_MAP,
           new CameraConfig(
               LimelightModel.THREE,
-              true,
+              false,
+              false,
               Units.inchesToMeters(25.671),
               Units.inchesToMeters(0.0),
               Units.inchesToMeters(12.9525),
