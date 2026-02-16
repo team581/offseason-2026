@@ -244,7 +244,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       ableToHopperShuffle = true;
     } else {
       ableToHopperShuffle =
-          DSOptions.USE_CANRANGE.getAsBoolean() && hopperCapacity != HopperCapacity.HIGH;
+          !DSOptions.USE_CANRANGE.getAsBoolean() || hopperCapacity != HopperCapacity.HIGH;
     }
   }
 
