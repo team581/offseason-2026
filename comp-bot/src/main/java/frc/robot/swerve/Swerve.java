@@ -44,10 +44,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
-  private final SlewRateLimiter scoringXLinearVelocitySlewRateLimiter = new SlewRateLimiter(10);
-  private final SlewRateLimiter scoringYLinearVelocitySlewRateLimiter = new SlewRateLimiter(10);
+  private final SlewRateLimiter scoringXLinearVelocitySlewRateLimiter = new SlewRateLimiter(7);
+  private final SlewRateLimiter scoringYLinearVelocitySlewRateLimiter = new SlewRateLimiter(7);
 
-  private final SlewRateLimiter scoringAngularVelocitySlewRateLimiter = new SlewRateLimiter(5);
+  private final SlewRateLimiter scoringAngularVelocitySlewRateLimiter = new SlewRateLimiter(20);
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
