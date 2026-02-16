@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import dev.doglog.DogLog;
@@ -44,6 +45,7 @@ public class TurretConfig {
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(20))
+          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(10))
           .withSlot0(new Slot0Configs().withKP(200.0).withKV(0.0).withKG(0.0).withKD(1.7));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
