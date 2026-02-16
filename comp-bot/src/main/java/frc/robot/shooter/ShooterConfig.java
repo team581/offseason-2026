@@ -23,7 +23,7 @@ public class ShooterConfig {
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/DistanceToScoreRPM", Map.entry(Units.inchesToMeters(5.5), 4200.0));
+          "Shooter/DistanceToScoreRPM", Map.entry(5.5, 4200.0), Map.entry(3.57, 3200.0), Map.entry(1.25, 2500.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
@@ -38,8 +38,9 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF",
-          Map.entry(Units.inchesToMeters(36.0), 0.2),
-          Map.entry(Units.inchesToMeters(96.0), 0.5));
+          Map.entry(3.57, 0.953),
+          Map.entry(1.25, 0.933),
+          Map.entry(5.5, 1.0));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
@@ -62,7 +63,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.8).withKV(0.1225).withKS(0.0))
+          .withSlot0(new Slot0Configs().withKP(0.5).withKV(0.116).withKS(0.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
@@ -85,7 +86,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.8).withKV(0.1225).withKS(0.0))
+          .withSlot0(new Slot0Configs().withKP(0.5).withKV(0.116).withKS(0.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
