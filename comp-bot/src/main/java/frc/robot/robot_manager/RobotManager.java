@@ -944,13 +944,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void forceShootRequest() {
-    if (!getState().isClimbing()  && getState() != RobotState.FORCE_SCORE) {
+    if (!getState().isClimbing() && getState() != RobotState.FORCE_SCORE) {
       setStateFromRequest(RobotState.PREPARE_FORCE_SCORE);
     }
   }
 
   public void prepareScoreRequest() {
-    if (!getState().isClimbing() && getState() != RobotState.PRESET_SCORE && getState() != RobotState.SCORE) {
+    if (!getState().isClimbing()
+        && getState() != RobotState.PRESET_SCORE
+        && getState() != RobotState.SCORE) {
       if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
       } else {
@@ -960,7 +962,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareFeedRequest() {
-    if (!getState().isClimbing() && getState() != RobotState.PRESET_FEED  && getState() != RobotState.FEED) {
+    if (!getState().isClimbing()
+        && getState() != RobotState.PRESET_FEED
+        && getState() != RobotState.FEED) {
       if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
       } else {
