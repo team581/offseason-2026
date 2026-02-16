@@ -201,12 +201,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.IDLE;
         }
 
-        if (shooter.atGoal()
-            && localization.isTrustworthy()
-            && dyeRotor.atGoal()
-            && turret.atGoal()
-            && shooterHood.atGoal()
-            && isHubActive) {
+        if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
+            || ((!FeatureFlags.STOP_SCORING_RPM_DIP.getAsBoolean() || shooter.atGoal())
+                && localization.isTrustworthy()
+                && dyeRotor.atGoal()
+                && turret.atGoal()
+                && shooterHood.atGoal()
+                && isHubActive)) {
           yield currentState;
         }
 
@@ -861,7 +862,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
-    if (!health.isLocalizationHealthy() || nearTrench) {
+    if (!health.isLocalizationHealthy() || !localization.isTrustworthy() || nearTrench) {
       shooterHood.idleRequest();
       turret.idleScoreRequest(scoringParameters.turretAngle());
 

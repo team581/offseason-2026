@@ -28,7 +28,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX rightMotor;
 
   private final VelocityVoltage voltageRequest =
-      new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(true);
+      new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
 
   private double scoreDistance = 0;
   private double climbScoreRpm = 0;

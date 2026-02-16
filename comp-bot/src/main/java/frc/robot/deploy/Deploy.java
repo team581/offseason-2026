@@ -34,6 +34,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private DeployState storedState = DeployState.UNHOMED;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
+  private double leftStatorCurrent = 0.0;
+  private double rightStatorCurrent = 0.0;
+  private double leftSupplyCurrent = 0.0;
+  private double rightSupplyCurrent = 0.0;
   private double hopperCANRangeDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
   private double filteredHopperCANRangeDistance;
@@ -176,6 +180,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       leftMotor.setControl(coastRequest);
       rightMotor.setControl(coastRequest);
     } else {
+      switch (state) {
+        case HOME -> {
+          leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
+          rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
+        }
+        case CATCHUP_TO_LEFT -> {
+          leftMotor.disable();
+          rightMotor.setControl(positionVoltageRequest.withPosition(leftMotorPosition));
+        }
+        case CATCHUP_TO_RIGHT -> {
+          leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
+          rightMotor.disable();
+        }
+      }
       if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
           && state == DeployState.HOPPER_SHUFFLING
           && ableToHopperShuffle) {
@@ -209,11 +227,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.log("Deploy/Capacity", hopperCapacity);
     DogLog.log("Hopper/RawDistance", hopperCANRangeDistance);
     DogLog.log("Hopper/FilteredDistance", filteredHopperCANRangeDistance);
-    // TODO: We call getStatorCurrent() twice per motor per loop
-    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Deploy/RightMotor/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftStatorCurrent);
+    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftSupplyCurrent);
+    DogLog.log("Deploy/RightMotor/StatorCurrent", rightStatorCurrent);
+    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightSupplyCurrent);
+    // TODO: Remove after bringup
+    afterTransition(state);
   }
 
   public double getPosition() {
@@ -229,6 +248,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   protected void collectInputs() {
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
+    leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
+    rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
+    leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
+    rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
+
     hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
 

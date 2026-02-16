@@ -27,7 +27,7 @@ public class RightSwoopShootClimbAuto extends BaseImperativeAuto<RightSwoopShoot
               AutoPoint.ofRed(new Pose2d(10.358, 7.4, Rotation2d.fromDegrees(-163.0))),
               AutoPoint.ofRed(new Pose2d(8.859, 7.15, Rotation2d.fromDegrees(-140.0))),
               AutoPoint.ofRed(new Pose2d(7.778, 5.665, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(1, 3)),
+                  .withTransitionTolerance(new PoseErrorTolerance(1, 100)),
               AutoPoint.ofRed(new Pose2d(7.778, 5.665, Rotation2d.kZero)),
               AutoPoint.ofRed(new Pose2d(9.227, 4.549, Rotation2d.kZero)))
           .withLinearConstraints(3.5, 10)
