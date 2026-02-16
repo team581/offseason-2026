@@ -119,6 +119,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
 
     DogLog.log("Turret/AtGoal", atGoal());
+    DogLog.log("Turret/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Turret/Voltage", motor.getMotorVoltage().getValueAsDouble());
   }
 
   public void setState(TurretState newState) {

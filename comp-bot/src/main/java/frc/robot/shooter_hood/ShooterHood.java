@@ -164,6 +164,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     DogLog.log("ShooterHood/Angle", currentAngle);
     DogLog.log("ShooterHood/GoalAngle", goalAngle);
     DogLog.log("ShooterHood/Motor/StatorCurrent", statorCurrent);
+    DogLog.log("ShooterHood/Motor/Voltage", motor.getMotorVoltage().getValueAsDouble());
   }
 
   @Override
