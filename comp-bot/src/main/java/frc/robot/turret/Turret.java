@@ -195,7 +195,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       // TODO: Reconsider for turret wrapping
       default ->
           MathUtil.isNear(
-              goalAngle, MathHelpers.angleModulus(currentAngle), TurretConfig.TOLERANCE);
+              goalAngle, MathHelpers.angleModulus(currentAngle), TurretConfig.TOLERANCE.get());
     };
   }
 
