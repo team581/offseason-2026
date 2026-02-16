@@ -22,11 +22,11 @@ public class ShooterHoodConfig {
 
   // TODO Update safe zone amount
   public static final double MAX_ANGLE = 46.5 - 2;
-  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 2;
+  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 1;
   public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 2;
 
   public static final double HOMING_VOLTAGE = -2;
-  public static final double HOMING_CURRENT_THRESHOLD = 10;
+  public static final double HOMING_CURRENT_THRESHOLD = 20;
   public static final double HOMING_END_POSITION = ANGLE_FROM_HORIZONTAL;
 
   public static final double TOLERANCE = 1;
@@ -51,7 +51,7 @@ public class ShooterHoodConfig {
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "ShooterHood/DistanceToScore", Map.entry(5.5, 44.0));
+          "ShooterHood/DistanceToScore", Map.entry(5.5, 44.0), Map.entry(3.57, 40.0), Map.entry(1.25, 23.558525));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed", Map.entry(0.0, 0.0), Map.entry(0.0, 100.0));
