@@ -305,7 +305,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.TRENCH_SNAP_ROUND_ANGLE))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (ableToBumpAssist) {
           drivetrain.setControl(
@@ -314,7 +316,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(speeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.BUMP_SNAP_ROUND_ANGLE))
+                          .rotateBy(Rotation2d.k180deg)));
         } else {
           var swerveRequest =
               driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
@@ -341,7 +346,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.TRENCH_SNAP_ROUND_ANGLE))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (ableToBumpAssist) {
           drivetrain.setControl(
@@ -350,7 +357,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(rateLimitedSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                          SwerveAssist.getBumpSnapAngle(rateLimitedSpeeds.vxMetersPerSecond))));
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.BUMP_SNAP_ROUND_ANGLE))
+                          .rotateBy(Rotation2d.k180deg)));
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
 
@@ -380,7 +390,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.TRENCH_SNAP_ROUND_ANGLE))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (ableToBumpAssist) {
           drivetrain.setControl(
@@ -389,7 +401,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(speeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                          SwerveAssist.getBumpSnapAngle(speeds.vxMetersPerSecond))));
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.BUMP_SNAP_ROUND_ANGLE))
+                          .rotateBy(Rotation2d.k180deg)));
         } else if (ableToWallSnap) {
           DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
@@ -451,7 +466,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                              SwerveAssist.getTrenchSnapAngle(drivetrainState.Pose.getRotation()))
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.TRENCH_SNAP_ROUND_ANGLE))
                           .rotateBy(Rotation2d.k180deg)));
         } else if (ableToBumpAssist) {
           drivetrain.setControl(
@@ -460,7 +477,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withVelocityY(rateLimitedSpeeds.vyMetersPerSecond)
                   .withTargetDirection(
                       Rotation2d.fromDegrees(
-                          SwerveAssist.getBumpSnapAngle(rateLimitedSpeeds.vxMetersPerSecond))));
+                              SwerveAssist.getRoundedSnapAngle(
+                                  drivetrainState.Pose.getRotation(),
+                                  SwerveAssist.BUMP_SNAP_ROUND_ANGLE))
+                          .rotateBy(Rotation2d.k180deg)));
         } else if (ableToWallSnap) {
           DogLog.timestamp("Swerve/WallSnaps/Snapping");
           var closestWallPose =
