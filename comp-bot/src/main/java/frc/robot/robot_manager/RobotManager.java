@@ -861,7 +861,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     // -First, if cameras are offline or we are near a trench, always be idle
     // -Otherwise if we are in our alliance zone, point towards hub
     // -And if we are not in alliance zone, point towards feed pose
-    if (!health.isLocalizationHealthy() || nearTrench) {
+    if (!health.isLocalizationHealthy() || !localization.isTrustworthy() || nearTrench) {
       shooterHood.idleRequest();
       turret.idleScoreRequest(scoringParameters.turretAngle());
 
