@@ -1,5 +1,6 @@
 package frc.robot.robot_manager;
 
+import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
@@ -201,7 +202,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.IDLE;
         }
 
-        if (shooter.atGoal()
+        if ((!FeatureFlags.STOP_SCORING_RPM_DIP.getAsBoolean() || shooter.atGoal())
             && localization.isTrustworthy()
             && dyeRotor.atGoal()
             && turret.atGoal()
