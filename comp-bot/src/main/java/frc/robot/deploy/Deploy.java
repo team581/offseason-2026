@@ -253,7 +253,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
     rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
 
-
     hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
 
