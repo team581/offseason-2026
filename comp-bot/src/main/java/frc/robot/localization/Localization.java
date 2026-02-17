@@ -63,12 +63,12 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor.get();
   }
 
-  public boolean isTrustworthy() {
-    return trustFactor.isTrustworthy();
-  }
-
   public boolean isLost() {
     return trustFactor.isLost();
+  }
+
+  public boolean isTrustworthy() {
+    return trustFactor.isTrustworthy();
   }
 
   public void resetPose(Pose2d estimatedPose) {
