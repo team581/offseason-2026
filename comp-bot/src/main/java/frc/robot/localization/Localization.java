@@ -67,6 +67,10 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor.isTrustworthy();
   }
 
+  public boolean isLost() {
+    return trustFactor.isLost();
+  }
+
   public void resetPose(Pose2d estimatedPose) {
     drivetrain.resetPose(estimatedPose);
     trustFactor.seededPose();
