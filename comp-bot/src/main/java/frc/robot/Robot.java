@@ -180,6 +180,7 @@ public class Robot extends Base581Robot {
     var operatorY = enabledEvent.and(hardware.operatorController.y(buttonBindingsLoop));
     operatorY.rising().ifHigh(robotManager::manualClimbSequenceForward);
 
+    // Use as idle button when not climbing, otherwise does sequence and eventually gets back to idle
     var operatorA = enabledEvent.and(hardware.operatorController.a(buttonBindingsLoop));
     operatorA.rising().ifHigh(robotManager::manualClimbSequenceBackwardOrIdleRequest);
 
