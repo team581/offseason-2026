@@ -13,7 +13,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.math.util.Units;
 import java.util.Map;
 
 public class ShooterConfig {
@@ -30,9 +29,9 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
-          Map.entry(1.0, 2000.0),
-          Map.entry(2.0, 3500.0),
-          Map.entry(5.0, 5000.0));
+          Map.entry(5.5, 4000.0),
+          Map.entry(3.57, 2500.0),
+          Map.entry(1.25, 2000.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
@@ -47,8 +46,10 @@ public class ShooterConfig {
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/DistanceToFeedToF", Map.entry(Units.inchesToMeters(57.0), 0.0));
-
+          "Shooter/DistanceToFeedToF",
+          Map.entry(3.57, 0.953),
+          Map.entry(1.25, 0.933),
+          Map.entry(5.5, 1.0));
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIGS =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1))
