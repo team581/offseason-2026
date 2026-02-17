@@ -272,10 +272,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             scoringAngularVelocitySlewRateLimiter.calculate(requestedSpeeds.omegaRadiansPerSecond);
         rateLimitedSpeeds =
             new ChassisSpeeds(rateLimitedXVelocity, rateLimitedYVelocity, rateLimitedAngularRate);
+      } else {
+        rateLimitedSpeeds = requestedSpeeds;
       }
-       else {
-      rateLimitedSpeeds = requestedSpeeds;
-    }
     } else {
       rateLimitedSpeeds = requestedSpeeds;
     }
