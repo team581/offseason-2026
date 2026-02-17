@@ -16,7 +16,7 @@ public class TrustFactor {
       DogLog.tunable("TrustFactor/TagSeenDenominator", 3.0);
   private static final DoubleSubscriber TAG_SEEN_MAX =
       DogLog.tunable("TrustFactor/TagSeenMax", 5.0);
-        private static final DoubleSubscriber LOST_THRESHOLD =
+  private static final DoubleSubscriber LOST_THRESHOLD =
       DogLog.tunable("TrustFactor/LostThreshold", 10.0);
   private double trustFactor = 0.0;
   private double metersTravelledSinceLastCheck = 0.0;
@@ -24,6 +24,15 @@ public class TrustFactor {
 
   public double get() {
     return trustFactor;
+  }
+
+  public boolean isLost() {
+    // Bypass trust factor checks in simulation, since we don't have simulated cameras
+    if (RobotBase.isSimulation()) {
+      return false;
+    }
+
+    return trustFactor >= LOST_THRESHOLD.get();
   }
 
   public boolean isTrustworthy() {
@@ -35,27 +44,16 @@ public class TrustFactor {
     return trustFactor <= TRUSTWORTHY_THRESHOLD.get();
   }
 
-   public boolean isLost() {
-    // Bypass trust factor checks in simulation, since we don't have simulated cameras
-    if (RobotBase.isSimulation()) {
-      return false;
-    }
-
-    return trustFactor >= LOST_THRESHOLD.get();
-  }
-
-  public void tagSeen() {
-    trustFactor =
-        Math.min(
-            trustFactor / TAG_SEEN_DENOMINATOR.get(), TAG_SEEN_MAX.get());
-  }
-
   public void reset() {
     trustFactor += LOST_THRESHOLD.get();
   }
 
   public void seededPose() {
     trustFactor = TRUSTWORTHY_THRESHOLD.get();
+  }
+
+  public void tagSeen() {
+    trustFactor = Math.min(trustFactor / TAG_SEEN_DENOMINATOR.get(), TAG_SEEN_MAX.get());
   }
 
   public void update(Pose2d robotPose, boolean collisionDetected) {
