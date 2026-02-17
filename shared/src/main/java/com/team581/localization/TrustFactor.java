@@ -18,7 +18,7 @@ public class TrustFactor {
       DogLog.tunable("TrustFactor/TagSeenMax", 5.0);
   private static final DoubleSubscriber LOST_THRESHOLD =
       DogLog.tunable("TrustFactor/LostThreshold", 10.0);
-  private double trustFactor = 0.0;
+  private double trustFactor = Double.POSITIVE_INFINITY;
   private double metersTravelledSinceLastCheck = 0.0;
   private Pose2d lastCheckedPose = Pose2d.kZero;
 
