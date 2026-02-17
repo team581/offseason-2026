@@ -229,7 +229,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               : RobotState.PREPARE_PRESET_FEED;
       case FEED -> {
         logFeedTransition();
-        if (shooter.atGoal()
+        if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
+            || ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT_RPM_DIP.getAsBoolean() || shooter.atGoal()))
             && (health.isLocalizationHealthy() ? !FieldUtil.isRobotInNoFeedZone(robotPose) : true)
             && dyeRotor.atGoal()
             && turret.atGoal()
