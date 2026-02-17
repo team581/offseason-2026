@@ -47,7 +47,15 @@ public class TrustFactor {
   public void tagSeen() {
     trustFactor =
         Math.min(
-            trustFactor / TRUST_FACTOR_TAG_SEEN_DENOMINATOR.get(), TRUST_FACTOR_TAG_SEEN_MAX.get());
+            trustFactor / TAG_SEEN_DENOMINATOR.get(), TAG_SEEN_MAX.get());
+  }
+
+  public void reset() {
+    trustFactor += LOST_THRESHOLD.get();
+  }
+
+  public void seededPose() {
+    trustFactor = TRUSTWORTHY_THRESHOLD.get();
   }
 
   public void update(Pose2d robotPose, boolean collisionDetected) {
