@@ -273,6 +273,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         rateLimitedSpeeds =
             new ChassisSpeeds(rateLimitedXVelocity, rateLimitedYVelocity, rateLimitedAngularRate);
       }
+       else {
+      rateLimitedSpeeds = requestedSpeeds;
+    }
     } else {
       rateLimitedSpeeds = requestedSpeeds;
     }
