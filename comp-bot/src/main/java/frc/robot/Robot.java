@@ -180,10 +180,8 @@ public class Robot extends Base581Robot {
     operatorY.rising().ifHigh(robotManager::manualClimbSequenceForward);
 
     var operatorA = enabledEvent.and(hardware.operatorController.a(buttonBindingsLoop));
-    operatorA.rising().ifHigh(robotManager::manualClimbSequenceBackward);
+    operatorA.rising().ifHigh(robotManager::manualClimbSequenceBackwardOrIdleRequest);
 
-    var operatorDpad = enabledEvent.and(hardware.operatorController.pov(90, buttonBindingsLoop));
-    operatorDpad.rising().ifHigh(robotManager::idleRequest);
 
     var operatorLeftTrigger =
         enabledEvent.and(hardware.operatorController.leftTrigger(buttonBindingsLoop));

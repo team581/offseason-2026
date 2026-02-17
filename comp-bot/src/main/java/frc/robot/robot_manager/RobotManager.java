@@ -1064,9 +1064,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  public void manualClimbSequenceBackward() {
+  public void manualClimbSequenceBackwardOrIdleRequest() {
     switch (getState()) {
-      default -> {}
+      default -> {
+        idleRequest();
+      }
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> setStateFromRequest(RobotState.IDLE);
       case CLIMB_2_RAISING_L1_AUTONOMOUS ->
           setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTONOMOUS);
@@ -1074,21 +1076,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           setStateFromRequest(RobotState.CLIMB_2_RAISING_L1_AUTONOMOUS);
 
       // This is the last step in the climb sequence, so just go to stowed
-      case MANUAL_CLIMB_1_LINEUP_L1, AUTOMATIC_CLIMB_1_LINEUP_L1 ->
+      case MANUAL_CLIMB_1_LINEUP_L1, AUTOMATIC_CLIMB_1_APPROACH_L1 ->
           setStateFromRequest(RobotState.IDLE);
-      case AUTOMATIC_CLIMB_1_POINT_5_RAISING_L1 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
-      case MANUAL_CLIMB_2_HANGING_L1, AUTOMATIC_CLIMB_2_HANGING_L1 ->
+      case AUTOMATIC_CLIMB_2_LINEUP_L1 -> setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
+      case MANUAL_CLIMB_2_HANGING_L1, AUTOMATIC_CLIMB_3_HANGING_L1 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
 
-      case MANUAL_CLIMB_3_RAISING_L2, AUTOMATIC_CLIMB_3_RAISING_L2 ->
+      case MANUAL_CLIMB_3_RAISING_L2, AUTOMATIC_CLIMB_4_RAISING_L2 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_2_HANGING_L1);
-      case MANUAL_CLIMB_4_HANGING_L2, AUTOMATIC_CLIMB_4_HANGING_L2 ->
+      case MANUAL_CLIMB_4_HANGING_L2, AUTOMATIC_CLIMB_5_HANGING_L2 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_3_RAISING_L2);
 
-      case MANUAL_CLIMB_5_RAISING_L3, AUTOMATIC_CLIMB_5_RAISING_L3 ->
+      case MANUAL_CLIMB_5_RAISING_L3, AUTOMATIC_CLIMB_6_RAISING_L3 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_4_HANGING_L2);
-      case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_6_HANGING_L3 ->
+      case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_7_HANGING_L3 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_5_RAISING_L3);
       case CLIMB_7_PREPARE_SCORING_L3 -> setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
       case CLIMB_8_SCORING_L3 -> setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
