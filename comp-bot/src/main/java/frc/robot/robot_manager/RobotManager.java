@@ -1040,7 +1040,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void startTeleopAutoClimbSequence() {
     if (!getState().isClimbing()) {
-      setStateFromRequest(RobotState.AUTOMATIC_CLIMB_1_LINEUP_L1);
+      setStateFromRequest(RobotState.AUTOMATIC_CLIMB_1_APPROACH_L1);
+    }
+  }
+
+  public void stopTeleopAutoClimbAlignment() {
+    switch (getState()) {
+      case AUTOMATIC_CLIMB_1_APPROACH_L1, AUTOMATIC_CLIMB_2_LINEUP_L1 ->
+          setStateFromRequest(RobotState.IDLE);
+      default -> {}
     }
   }
 

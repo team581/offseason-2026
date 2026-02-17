@@ -147,6 +147,7 @@ public class Robot extends Base581Robot {
   protected void configureBindings() {
     var driverStart = enabledEvent.and(hardware.driverController.start(buttonBindingsLoop));
     driverStart.rising().ifHigh(robotManager::startTeleopAutoClimbSequence);
+    driverStart.falling().ifHigh(robotManager::stopTeleopAutoClimbAlignment);
 
     var driverBack = enabledEvent.and(hardware.driverController.back(buttonBindingsLoop));
     driverBack.rising().ifHigh(localization::zeroGyro);
