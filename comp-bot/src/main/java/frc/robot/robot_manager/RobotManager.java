@@ -202,7 +202,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || ((!FeatureFlags.STOP_SCORING_RPM_DIP.getAsBoolean() || shooter.atGoal())
+            || ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT_RPM_DIP.getAsBoolean() || shooter.atGoal())
                 && localization.isTrustworthy()
                 && dyeRotor.atGoal()
                 && turret.atGoal()
