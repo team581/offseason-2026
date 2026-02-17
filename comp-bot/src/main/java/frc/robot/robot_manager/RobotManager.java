@@ -230,11 +230,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT_RPM_DIP.getAsBoolean() || shooter.atGoal()))
-            && (health.isLocalizationHealthy() ? !FieldUtil.isRobotInNoFeedZone(robotPose) : true)
-            && dyeRotor.atGoal()
-            && turret.atGoal()
-            && shooterHood.atGoal()) {
+            || ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT_RPM_DIP.getAsBoolean() || shooter.atGoal())
+                && (health.isLocalizationHealthy()
+                    ? !FieldUtil.isRobotInNoFeedZone(robotPose)
+                    : true)
+                && dyeRotor.atGoal()
+                && turret.atGoal()
+                && shooterHood.atGoal())) {
 
           yield currentState;
         } else {
