@@ -11,7 +11,6 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.RightStraightShootClimbAutoState;
 import frc.robot.climber.ClimbLocation;
-import frc.robot.deploy.DeployConfig;
 import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
@@ -20,7 +19,7 @@ public class RightStraightShootClimbAuto
 
   private final AutoSegment intakeAcrossMidlineOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(10.489, 7.45, Rotation2d.fromDegrees(-150.0)))
+              AutoPoint.ofRed(new Pose2d(10.489, 7.45, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 10)),
               AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
               AutoPoint.ofRed(new Pose2d(8.852, 5.4, Rotation2d.kCW_90deg))
@@ -31,7 +30,7 @@ public class RightStraightShootClimbAuto
 
   private final AutoSegment intakeAcrossMidlineTwo =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(11.2, 7.45, Rotation2d.fromDegrees(-150.0))),
+              AutoPoint.ofRed(new Pose2d(11.2, 7.45, Rotation2d.k180deg)),
               AutoPoint.ofRed(new Pose2d(9.0, 6.865, Rotation2d.fromDegrees(-126.0))),
               AutoPoint.ofRed(new Pose2d(8.852, 5.2, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(2, 3)))
@@ -48,7 +47,7 @@ public class RightStraightShootClimbAuto
               AutoPoint.ofRed(new Pose2d(10.0, 6.9, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(11.3, 7.45, Rotation2d.k180deg)),
-              AutoPoint.ofRed(new Pose2d(12.8, 7.45, Rotation2d.k180deg))
+              AutoPoint.ofRed(new Pose2d(13.0, 7.45, Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 10))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
@@ -62,21 +61,17 @@ public class RightStraightShootClimbAuto
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   public RightStraightShootClimbAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(RightStraightShootClimbAutoState.HOMING, robotManager, trailblazer);
+    super(RightStraightShootClimbAutoState.INTAKE_ACROSS_MIDLINE_1, robotManager, trailblazer);
   }
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(13.0, 7.45, Rotation2d.k180deg));
+    return Point.ofRed(new Pose2d(12.1, 7.45, Rotation2d.k180deg));
   }
 
   @Override
   protected RightStraightShootClimbAutoState getNextState(
       RightStraightShootClimbAutoState currentState) {
-    if (currentState == RightStraightShootClimbAutoState.HOMING
-        && robotManager.deploy.atGoal(DeployConfig.MAX_LENGTH)) {
-      return RightStraightShootClimbAutoState.INTAKE_ACROSS_MIDLINE_1;
-    }
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
       return switch (currentState) {
         case INTAKE_ACROSS_MIDLINE_1 -> RightStraightShootClimbAutoState.DRIVE_BACK_1;
@@ -98,7 +93,6 @@ public class RightStraightShootClimbAuto
   @Override
   protected void whileInState(RightStraightShootClimbAutoState newState) {
     switch (newState) {
-      case HOMING -> {}
       case INTAKE_ACROSS_MIDLINE_1 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineOne);
         robotManager.intakeRequest();
@@ -135,11 +129,10 @@ public class RightStraightShootClimbAuto
   @Override
   protected void afterTransition(RightStraightShootClimbAutoState newState) {
     switch (newState) {
-      case HOMING -> {
+      case INTAKE_ACROSS_MIDLINE_1 -> {
         robotManager.homeDeployRequest();
         robotManager.homeShooterHoodRequest();
       }
-      case INTAKE_ACROSS_MIDLINE_1 -> {}
       case DRIVE_BACK_1 -> {}
       case SHOOT_1 -> {}
       case INTAKE_ACROSS_MIDLINE_2 -> {}
