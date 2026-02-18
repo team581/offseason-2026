@@ -243,7 +243,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       case UNHOMED, HOME -> false;
       default ->
           MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
-        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+              && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
     };
   }
 
