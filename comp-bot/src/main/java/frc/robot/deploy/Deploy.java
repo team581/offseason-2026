@@ -65,7 +65,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME -> {
+      case UNHOMED, HOME_INWARD,HOME_OUTWARD -> {
         // Do nothing, we aren't homed
       }
       default -> setStateFromRequest(DeployState.INTAKE);
@@ -74,7 +74,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME -> {
+      case UNHOMED, HOME_INWARD,HOME_OUTWARD -> {
         // Do nothing, we aren't homed
       }
       default -> setStateFromRequest(DeployState.STOW);
@@ -83,7 +83,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void shuffleRequest() {
     switch (getState()) {
-      case UNHOMED, HOME -> {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
         // Do nothing, we aren't homed
       }
       default -> {
@@ -95,7 +95,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   public void homingRequest() {
-    setStateFromRequest(DeployState.HOME);
+    if(DriverStation.isAutonomous()){
+    setStateFromRequest(DeployState.HOME_INWARD);
+    }
+    setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
   @Override
@@ -104,13 +107,22 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       // Do nothing
       case UNHOMED, INTAKE, STOW -> currentState;
 
-      case HOME -> {
+      case HOME_INWARD -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION);
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
           yield DeployState.INTAKE;
         } else {
-          yield DeployState.HOME;
+          yield currentState;
+        }
+      }
+      case HOME_OUTWARD ->{
+        if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
+            && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+          yield DeployState.INTAKE;
+        } else {
+          yield currentState;
         }
       }
       case HOPPER_SHUFFLING_OUT -> {
@@ -140,9 +152,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.disable();
         rightMotor.disable();
       }
-      case HOME -> {
-        leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
-        rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
+      case HOME_INWARD -> {
+        leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
+        rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
+      }
+      case HOME_OUTWARD ->{
+         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
+        rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
       }
       default -> {
         differentialMechanism.setControl(
@@ -155,18 +171,16 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void whileInState(DeployState state) {
-    if (DriverStation.isDisabled()) {
-      differentialMechanism.setCoastOut();
-      leftMotor.setControl(coastRequest);
-      rightMotor.setControl(coastRequest);
-    } else {
       switch (state) {
-        case HOME -> {
-          leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
-          rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
+        case HOME_INWARD -> {
+          leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
+          rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
+        }
+        case HOME_OUTWARD ->{
+          leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
+          rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
         }
       }
-    }
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
@@ -190,7 +204,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   private boolean atGoal() {
     return switch (getState()) {
-      case UNHOMED, HOME -> false;
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
       default ->
           MathUtil.isNear(
                   getState().getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
@@ -201,7 +215,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public boolean atGoal(double goalDistance) {
     return switch (getState()) {
-      case UNHOMED, HOME -> false;
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
       default ->
           MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
               && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
@@ -265,9 +279,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
-    if (getState() == DeployState.HOME) {
-      leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
-      rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
+    if (getState() == DeployState.HOME_INWARD) {
+      leftMotor.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+      rightMotor.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+      setStateFromRequest(DeployState.INTAKE);
+    }
+    if (getState() == DeployState.HOME_OUTWARD) {
+      leftMotor.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+      rightMotor.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
       setStateFromRequest(DeployState.INTAKE);
     }
 
