@@ -12,6 +12,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
 import frc.robot.climber.Climber;
+import frc.robot.cluster_map.ClusterMap;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.generated.BuildConstants;
@@ -108,6 +109,9 @@ public class Robot extends Base581Robot {
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
   private final Climber climber = new Climber(hardware.climbMotor);
+
+  private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
+
   private final RobotManager robotManager =
       new RobotManager(
           shooterHood,
@@ -124,6 +128,7 @@ public class Robot extends Base581Robot {
           health,
           trailblazer,
           climber,
+          clusterMap,
           hardware);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem

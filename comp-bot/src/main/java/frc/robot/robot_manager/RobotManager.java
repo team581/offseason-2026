@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
 import frc.robot.climber.ClimbLocation;
 import frc.robot.climber.Climber;
+import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.deploy.Deploy;
@@ -52,6 +53,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HealthManager health;
   private final Trailblazer trailblazer;
   private final Climber climber;
+  private final ClusterMap clusterMap;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -86,6 +88,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       HealthManager health,
       Trailblazer trailblazer,
       Climber climber,
+      ClusterMap clusterMap,
       Hardware hardware) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
@@ -102,6 +105,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.health = health;
     this.trailblazer = trailblazer;
     this.climber = climber;
+    this.clusterMap = clusterMap;
     this.hardware = hardware;
     teleopTimer.start();
   }
