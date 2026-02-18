@@ -85,7 +85,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       }
       default -> {
         if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()) {
-          setStateFromRequest(DeployState.HOPPER_SHUFFLING);
+          setStateFromRequest(DeployState.HOPPER_SHUFFLING_OUT);
         }
       }
     }
@@ -106,7 +106,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
       // Do nothing
-      case UNHOMED -> currentState;
+      case UNHOMED, INTAKE, STOW -> currentState;
 
       case HOME -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
@@ -127,18 +127,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         yield currentState;
       }
 
-      case INTAKE, STOW, HOPPER_SHUFFLING -> {
-        if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
-          DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
-          if (leftMotorPosition > rightMotorPosition) {
-            yield DeployState.CATCHUP_TO_LEFT;
-          }
-
-          yield DeployState.CATCHUP_TO_RIGHT;
-        } else {
-          DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
+      case HOPPER_SHUFFLING_OUT -> {
+        if (atGoal() && ableToHopperShuffle) {
+          yield DeployState.HOPPER_SHUFFLING_IN;
         }
+        yield currentState;
+      }
 
+      case HOPPER_SHUFFLING_IN -> {
+        if (atGoal() && ableToHopperShuffle) {
+          yield DeployState.HOPPER_SHUFFLING_OUT;
+        }
         yield currentState;
       }
     };
@@ -176,6 +175,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void whileInState(DeployState state) {
+    if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
+      DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
+      if (leftMotorPosition > rightMotorPosition) {
+        setStateFromRequest(DeployState.CATCHUP_TO_LEFT);
+      } else {
+        setStateFromRequest(DeployState.CATCHUP_TO_RIGHT);
+      }
+    } else {
+      DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
+    }
+
     if (DriverStation.isDisabled()) {
       leftMotor.setControl(coastRequest);
       rightMotor.setControl(coastRequest);
@@ -192,28 +202,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         case CATCHUP_TO_RIGHT -> {
           leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
           rightMotor.disable();
-        }
-      }
-      if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()
-          && state == DeployState.HOPPER_SHUFFLING
-          && ableToHopperShuffle) {
-        if (atGoal(DeployState.HOPPER_SHUFFLING.getLength())) {
-          leftMotor.setControl(
-              positionVoltageRequest.withPosition(
-                  clamp(
-                      DeployState.HOPPER_SHUFFLING.getLength()
-                          - DeployConfig.HOPPER_SHUFFLE_DISTANCE)));
-          rightMotor.setControl(
-              positionVoltageRequest.withPosition(
-                  clamp(
-                      DeployState.HOPPER_SHUFFLING.getLength()
-                          - DeployConfig.HOPPER_SHUFFLE_DISTANCE)));
-        } else if (atGoal(
-            DeployState.HOPPER_SHUFFLING.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE)) {
-          leftMotor.setControl(
-              positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
-          rightMotor.setControl(
-              positionVoltageRequest.withPosition(clamp(DeployState.HOPPER_SHUFFLING.getLength())));
         }
       }
     }
@@ -239,9 +227,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     return MathHelpers.average(leftMotorPosition, rightMotorPosition);
   }
 
-  private boolean atGoal(double goalDistance) {
-    return MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
-        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+  private boolean atGoal() {
+    return MathUtil.isNear(getState().getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+        && MathUtil.isNear(getState().getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
   }
 
   @Override
