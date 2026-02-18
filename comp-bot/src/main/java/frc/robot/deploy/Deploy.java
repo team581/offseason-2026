@@ -239,7 +239,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     return MathHelpers.average(leftMotorPosition, rightMotorPosition);
   }
 
-  private boolean atGoal(double goalDistance) {
+  public boolean atGoal(double goalDistance) {
     return switch (getState()) {
       case UNHOMED, HOME -> false;
       default ->

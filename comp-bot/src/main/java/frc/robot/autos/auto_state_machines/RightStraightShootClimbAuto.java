@@ -11,6 +11,7 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.RightStraightShootClimbAutoState;
 import frc.robot.climber.ClimbLocation;
+import frc.robot.deploy.DeployConfig;
 import frc.robot.robot_manager.ClimbAssist;
 import frc.robot.robot_manager.RobotManager;
 
@@ -72,7 +73,7 @@ public class RightStraightShootClimbAuto
   @Override
   protected RightStraightShootClimbAutoState getNextState(
       RightStraightShootClimbAutoState currentState) {
-    if (currentState == RightStraightShootClimbAutoState.HOMING && timeout(3.0)) {
+    if (currentState == RightStraightShootClimbAutoState.HOMING && robotManager.deploy.atGoal(DeployConfig.MAX_LENGTH)) {
       return RightStraightShootClimbAutoState.INTAKE_ACROSS_MIDLINE_1;
     }
     if (trailblazer.atGoal(robotManager.localization.getPose())) {

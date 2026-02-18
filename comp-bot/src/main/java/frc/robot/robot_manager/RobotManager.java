@@ -43,7 +43,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final ShooterHood shooterHood;
   private final Shooter shooter;
   private final DyeRotor dyeRotor;
-  private final Deploy deploy;
+  public final Deploy deploy;
   private final Turret turret;
   private final Intake intake;
   private final Vision vision;
