@@ -73,7 +73,8 @@ public class RightStraightShootClimbAuto
   @Override
   protected RightStraightShootClimbAutoState getNextState(
       RightStraightShootClimbAutoState currentState) {
-    if (currentState == RightStraightShootClimbAutoState.HOMING && robotManager.deploy.atGoal(DeployConfig.MAX_LENGTH)) {
+    if (currentState == RightStraightShootClimbAutoState.HOMING
+        && robotManager.deploy.atGoal(DeployConfig.MAX_LENGTH)) {
       return RightStraightShootClimbAutoState.INTAKE_ACROSS_MIDLINE_1;
     }
     if (trailblazer.atGoal(robotManager.localization.getPose())) {
