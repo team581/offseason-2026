@@ -19,7 +19,6 @@ import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
-import frc.robot.lights.Lights;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
@@ -103,7 +102,6 @@ public class Robot extends Base581Robot {
       new Deploy(hardware.leftDeployMotor, hardware.rightDeployMotor, hardware.hopperCANRange);
   private final DyeRotor dyeRotor =
       new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
-  private final Lights lights = new Lights(hardware.candle);
   private final Vision vision = new Vision(imu, turretLimelight, backLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
@@ -123,7 +121,6 @@ public class Robot extends Base581Robot {
           intake,
           deploy,
           vision,
-          lights,
           hardware.driverController,
           health,
           trailblazer,
