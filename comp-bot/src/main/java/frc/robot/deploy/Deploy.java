@@ -1,6 +1,5 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.DifferentialMotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -14,7 +13,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Hardware;
@@ -29,7 +27,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       new SimpleDifferentialMechanism<TalonFX>(TalonFX::new, Hardware.differentialConstants);
   private final CANrange hopperCANRange;
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
-  private final CoastOut coastRequest = new CoastOut();
   private final DifferentialMotionMagicVoltage differentialPositionVoltageRequest =
       new DifferentialMotionMagicVoltage(0, 0).withEnableFOC(false);
 
