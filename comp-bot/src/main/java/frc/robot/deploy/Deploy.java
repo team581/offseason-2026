@@ -63,7 +63,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD,HOME_OUTWARD -> {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
         // Do nothing, we aren't homed
       }
       default -> setStateFromRequest(DeployState.INTAKE);
@@ -72,7 +72,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD,HOME_OUTWARD -> {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
         // Do nothing, we aren't homed
       }
       default -> setStateFromRequest(DeployState.STOW);
@@ -93,8 +93,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   public void homingRequest() {
-    if(DriverStation.isAutonomous()){
-    setStateFromRequest(DeployState.HOME_INWARD);
+    if (DriverStation.isAutonomous()) {
+      setStateFromRequest(DeployState.HOME_INWARD);
     }
     setStateFromRequest(DeployState.HOME_OUTWARD);
   }
@@ -114,7 +114,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
           yield currentState;
         }
       }
-      case HOME_OUTWARD ->{
+      case HOME_OUTWARD -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
@@ -154,8 +154,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
       }
-      case HOME_OUTWARD ->{
-         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
+      case HOME_OUTWARD -> {
+        leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
       }
       default -> {
@@ -169,16 +169,16 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void whileInState(DeployState state) {
-      switch (state) {
-        case HOME_INWARD -> {
-          leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
-          rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
-        }
-        case HOME_OUTWARD ->{
-          leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
-          rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
-        }
+    switch (state) {
+      case HOME_INWARD -> {
+        leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
+        rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
       }
+      case HOME_OUTWARD -> {
+        leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
+        rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
+      }
+    }
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
