@@ -45,7 +45,6 @@ public class Hardware {
 
   public final CANcoder turretEncoder = new CANcoder(26, canivore);
 
-
   public final CANrange hopperCANRange = new CANrange(28, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =

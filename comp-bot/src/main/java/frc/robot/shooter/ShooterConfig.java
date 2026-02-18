@@ -97,6 +97,5 @@ public class ShooterConfig {
                   .withPeakForwardTorqueCurrent(200)
                   .withPeakReverseTorqueCurrent(0));
 
-
   private ShooterConfig() {}
 }
