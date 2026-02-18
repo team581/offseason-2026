@@ -34,7 +34,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       new DifferentialMotionMagicVoltage(0, 0).withEnableFOC(false);
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
-  private DeployState storedState = DeployState.UNHOMED;
   private double differentialMechanismPosition = 0.0;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
@@ -173,9 +172,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
     DogLog.log("Deploy/GoalPosition", getState().getLength());
     DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
-    DogLog.log("Deploy/AveragePosition", getPosition());
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
-    DogLog.log("Deploy/StoredState", storedState.name());
     DogLog.log("Deploy/Capacity", hopperCapacity);
     DogLog.log("Hopper/RawDistance", hopperCANRangeDistance);
     DogLog.log("Hopper/FilteredDistance", filteredHopperCANRangeDistance);
