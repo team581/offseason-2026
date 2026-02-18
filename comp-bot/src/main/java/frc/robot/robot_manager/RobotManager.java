@@ -53,7 +53,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HealthManager health;
   private final Trailblazer trailblazer;
   private final Climber climber;
-  private final ClusterMap clusterMap;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -105,7 +104,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.health = health;
     this.trailblazer = trailblazer;
     this.climber = climber;
-    this.clusterMap = clusterMap;
+
     this.hardware = hardware;
     teleopTimer.start();
   }
