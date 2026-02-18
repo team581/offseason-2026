@@ -9,9 +9,7 @@ public enum DeployState {
   HOPPER_SHUFFLING_OUT(INTAKE.getLength()),
   HOPPER_SHUFFLING_IN(INTAKE.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE),
   HOME(0),
-  UNHOMED(0),
-  CATCHUP_TO_LEFT(0),
-  CATCHUP_TO_RIGHT(0);
+  UNHOMED(0);
 
   private final DoubleSubscriber tunableLength;
 

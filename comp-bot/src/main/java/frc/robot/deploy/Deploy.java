@@ -1,9 +1,11 @@
 package frc.robot.deploy;
 
+import com.ctre.phoenix6.controls.DifferentialMotionMagicVoltage;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.SimpleDifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
@@ -13,9 +15,10 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.Hardware;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
@@ -24,14 +27,17 @@ import frc.robot.util.scheduling.SubsystemPriority;
 public class Deploy extends StateMachineSubsystem<DeployState> {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
+  private final SimpleDifferentialMechanism<TalonFX> differentialMechanism =
+      new SimpleDifferentialMechanism<TalonFX>(TalonFX::new, Hardware.differentialConstants);
   private final CANrange hopperCANRange;
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
   private final CoastOut coastRequest = new CoastOut();
-  private final MotionMagicVoltage positionVoltageRequest =
-      new MotionMagicVoltage(0).withEnableFOC(false);
+  private final DifferentialMotionMagicVoltage differentialPositionVoltageRequest =
+      new DifferentialMotionMagicVoltage(0, 0).withEnableFOC(false);
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
   private DeployState storedState = DeployState.UNHOMED;
+  private double differentialMechanismPosition = 0.0;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
   private double leftStatorCurrent = 0.0;
@@ -62,8 +68,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        // Do nothing, we aren't homed or need to catchup
+      case UNHOMED, HOME -> {
+        // Do nothing, we aren't homed
       }
       default -> setStateFromRequest(DeployState.INTAKE);
     }
@@ -71,8 +77,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        // Do nothing, we aren't homed or need to catchup
+      case UNHOMED, HOME -> {
+        // Do nothing, we aren't homed
       }
       default -> setStateFromRequest(DeployState.STOW);
     }
@@ -80,8 +86,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   public void shuffleRequest() {
     switch (getState()) {
-      case UNHOMED, HOME, CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        // Do nothing, we aren't homed or need to catchup
+      case UNHOMED, HOME -> {
+        // Do nothing, we aren't homed
       }
       default -> {
         if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()) {
@@ -96,13 +102,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   @Override
-  protected void beforeTransition(DeployState oldState, DeployState newState) {
-    if (newState == DeployState.CATCHUP_TO_LEFT || newState == DeployState.CATCHUP_TO_RIGHT) {
-      storedState = getState();
-    }
-  }
-
-  @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
       // Do nothing
@@ -111,22 +110,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       case HOME -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
             && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
-          leftMotor.setPosition(DeployConfig.HOMING_END_POSITION);
-          rightMotor.setPosition(DeployConfig.HOMING_END_POSITION);
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION);
           yield DeployState.INTAKE;
         } else {
           yield DeployState.HOME;
         }
       }
-
-      case CATCHUP_TO_LEFT, CATCHUP_TO_RIGHT -> {
-        if (MathUtil.isNear(
-            leftMotorPosition, rightMotorPosition, DeployConfig.POSITION_TOLERANCE)) {
-          yield storedState;
-        }
-        yield currentState;
-      }
-
       case HOPPER_SHUFFLING_OUT -> {
         if (atGoal() && ableToHopperShuffle) {
           yield DeployState.HOPPER_SHUFFLING_IN;
@@ -158,35 +147,19 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
       }
-      case CATCHUP_TO_LEFT -> {
-        leftMotor.disable();
-        rightMotor.setControl(positionVoltageRequest.withPosition(leftMotorPosition));
-      }
-      case CATCHUP_TO_RIGHT -> {
-        leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
-        rightMotor.disable();
-      }
       default -> {
-        leftMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
-        rightMotor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
+        differentialMechanism.setControl(
+            differentialPositionVoltageRequest
+                .withAveragePosition(clamp(newState.getLength()))
+                .withDifferentialPosition(0));
       }
     }
   }
 
   @Override
   protected void whileInState(DeployState state) {
-    if (!MathUtil.isNear(leftMotorPosition, rightMotorPosition, 1)) {
-      DogLog.logFault("DEPLOY MOTORS NOT ALIGNED", AlertType.kError);
-      if (leftMotorPosition > rightMotorPosition) {
-        setStateFromRequest(DeployState.CATCHUP_TO_LEFT);
-      } else {
-        setStateFromRequest(DeployState.CATCHUP_TO_RIGHT);
-      }
-    } else {
-      DogLog.clearFault("DEPLOY MOTORS NOT ALIGNED");
-    }
-
     if (DriverStation.isDisabled()) {
+      differentialMechanism.setCoastOut();
       leftMotor.setControl(coastRequest);
       rightMotor.setControl(coastRequest);
     } else {
@@ -195,20 +168,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
           leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
           rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE);
         }
-        case CATCHUP_TO_LEFT -> {
-          leftMotor.disable();
-          rightMotor.setControl(positionVoltageRequest.withPosition(leftMotorPosition));
-        }
-        case CATCHUP_TO_RIGHT -> {
-          leftMotor.setControl(positionVoltageRequest.withPosition(rightMotorPosition));
-          rightMotor.disable();
-        }
       }
     }
 
     DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
     DogLog.log("Deploy/GoalPosition", getState().getLength());
+    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
     DogLog.log("Deploy/AveragePosition", getPosition());
     DogLog.log("Deploy/AbleToHopperShuffle", ableToHopperShuffle);
     DogLog.log("Deploy/StoredState", storedState.name());
@@ -224,7 +190,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   public double getPosition() {
-    return MathHelpers.average(leftMotorPosition, rightMotorPosition);
+    return differentialMechanismPosition;
   }
 
   private boolean atGoal() {
@@ -249,6 +215,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   protected void collectInputs() {
+    differentialMechanismPosition = differentialMechanism.getAveragePosition().getValueAsDouble();
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
     leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
