@@ -227,12 +227,21 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     return MathHelpers.average(leftMotorPosition, rightMotorPosition);
   }
 
-  public boolean atGoal() {
+  private boolean atGoal() {
     return switch (getState()) {
       case UNHOMED, HOME -> false;
       default ->
           MathUtil.isNear(getState().getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
         && MathUtil.isNear(getState().getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+    };
+  }
+
+  public boolean atGoal(double goalDistance) {
+    return switch (getState()) {
+      case UNHOMED, HOME -> false;
+      default ->
+          MathUtil.isNear(goalDistance, leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+        && MathUtil.isNear(goalDistance, rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
     };
   }
 
