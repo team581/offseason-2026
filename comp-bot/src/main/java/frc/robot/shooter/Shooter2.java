@@ -8,7 +8,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Mechanism;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -150,15 +149,12 @@ public class Shooter2 extends StateMachineSubsystem<ShooterState> {
         SimKit.velocityMechanism(
             "Shooter/Top",
             (mechanism) ->
-                mechanism
-                    .addMotor(topMotor, ChassisReference.CounterClockwise_Positive));
+                mechanism.addMotor(topMotor, ChassisReference.CounterClockwise_Positive));
 
     var bottomshooterSimulation =
-            SimKit.velocityMechanism(
-             "Shooter/Bottom",
-             (mechanism) ->
-                mechanism
-                .addMotor(bottomMotor, ChassisReference.Clockwise_Positive));
+        SimKit.velocityMechanism(
+            "Shooter/Bottom",
+            (mechanism) -> mechanism.addMotor(bottomMotor, ChassisReference.Clockwise_Positive));
 
     topshooterSimulation.update();
     bottomshooterSimulation.update();
