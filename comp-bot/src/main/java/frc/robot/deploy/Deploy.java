@@ -254,13 +254,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
 
   @Override
   public void simulationPeriodic() {
+    // Only add the leader motor to the sim mechanism. SimpleDifferentialMechanism only sets
+    // ClosedLoopReference on the leader, so averaging both motors would halve the target position.
     var deploySimulation =
         SimKit.positionMechanism(
             "Deploy",
             mechanism ->
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
@@ -271,5 +272,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
 
     deploySimulation.update();
+
+    // Sync follower motor sim state. getRotorPosition() already accounts for the leader's
+    // inversion, so the value can be used directly as the raw rotor position for the follower.
+    rightMotor.getSimState().setRawRotorPosition(leftMotor.getRotorPosition().getValueAsDouble());
+    rightMotor.getSimState().setRotorVelocity(leftMotor.getRotorVelocity().getValueAsDouble());
   }
 }
