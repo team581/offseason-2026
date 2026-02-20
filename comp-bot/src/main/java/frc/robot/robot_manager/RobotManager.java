@@ -132,7 +132,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           STOP_SHOOTING_FEED ->
           timeout(1) ? RobotState.UNJAM : currentState;
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()) {
+        if (shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
@@ -142,7 +142,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (shooter.atGoal()
             && localization.isTrustworthy()
             && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
-            && dyeRotor.atGoal()
+            && !dyeRotor.isJammed()
             && turret.atGoal()
             && shooterHood.atGoal()
             && isHubActive) {
@@ -152,7 +152,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_PRESET_SCORE -> {
         if (shooter.atGoal()
-            && dyeRotor.atGoal()
+            && !dyeRotor.isJammed()
             && turret.atGoal()
             && shooterHood.atGoal()
             && !isMoving) {
@@ -161,13 +161,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case CLIMB_7_PREPARE_SCORING_L3 -> {
-        if (shooter.atGoal() && turret.atGoal() && shooterHood.atGoal() && dyeRotor.atGoal()) {
+        if (shooter.atGoal() && turret.atGoal() && shooterHood.atGoal() && !dyeRotor.isJammed()) {
           yield RobotState.CLIMB_8_SCORING_L3;
         }
         yield currentState;
       }
       case PREPARE_PRESET_FEED ->
-          shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()
+          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal() && shooterHood.atGoal()
               ? RobotState.PRESET_FEED
               : currentState;
 
@@ -177,7 +177,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             // If localization is healthy, you can feed if we're not in a no-feed zone
             // If localization is dead, you can always shoot
             && (health.isLocalizationHealthy() ? !FieldUtil.isRobotInNoFeedZone(robotPose) : true)
-            && dyeRotor.atGoal()
+            && !dyeRotor.isJammed()
             && turret.atGoal()
             && shooterHood.atGoal()) {
 
@@ -202,7 +202,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT_RPM_DIP.getAsBoolean() || shooter.atGoal())
                 && localization.isTrustworthy()
-                && dyeRotor.atGoal()
+                && !dyeRotor.isJammed()
                 && turret.atGoal()
                 && shooterHood.atGoal()
                 && isHubActive)) {
@@ -213,7 +213,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PRESET_SCORE -> {
         if (shooter.atGoal()
-            && dyeRotor.atGoal()
+            && !dyeRotor.isJammed()
             && turret.atGoal()
             && shooterHood.atGoal()
             && !isMoving) {
@@ -222,7 +222,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield RobotState.PREPARE_PRESET_SCORE;
       }
       case PRESET_FEED ->
-          shooter.atGoal() && dyeRotor.atGoal() && turret.atGoal() && shooterHood.atGoal()
+          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal() && shooterHood.atGoal()
               ? currentState
               : RobotState.PREPARE_PRESET_FEED;
       case FEED -> {
@@ -232,7 +232,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && (health.isLocalizationHealthy()
                     ? !FieldUtil.isRobotInNoFeedZone(robotPose)
                     : true)
-                && dyeRotor.atGoal()
+                && !dyeRotor.isJammed()
                 && turret.atGoal()
                 && shooterHood.atGoal())) {
 
@@ -1125,7 +1125,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/InAllianceZone",
         FieldUtil.isRobotInAllianceZone(robotPose.getTranslation()));
-    DogLog.log("RobotManager/Scoring/ScoreTransition/DyeRotorAtGoal", dyeRotor.atGoal());
+    DogLog.log("RobotManager/Scoring/ScoreTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
     DogLog.log("RobotManager/Scoring/ScoreTransition/TurretAtGoal", turret.atGoal());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
   }
@@ -1137,7 +1137,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/InNoFeedZone",
         !FieldUtil.isRobotInNoFeedZone(robotPose));
-    DogLog.log("RobotManager/Feeding/FeedTransition/DyeRotorAtGoal", dyeRotor.atGoal());
+    DogLog.log("RobotManager/Feeding/FeedTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
     DogLog.log("RobotManager/Feeding/FeedTransition/TurretAtGoal", turret.atGoal());
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
   }
