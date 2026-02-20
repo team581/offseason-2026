@@ -110,7 +110,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     DogLog.log("DyeRotor/Vertical/Voltage", verticalMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
     DogLog.log("DyeRotor/Vertical/StatorCurrent", verticalRawCurrent);
-    DogLog.log("DyeRotor/AtGoal", atGoal());
+    DogLog.log("DyeRotor/IsJammed", isJammed());
   }
 
   @Override
@@ -128,16 +128,6 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
     isShooting = horizontalMotorRpm < DyeRotorConfig.RPM_TOLERANCE_SHOOTING;
     isShootingDebounced = DyeRotorConfig.IS_SHOOTING_DEBOUNCER.calculate(isShooting);
-  }
-
-  public boolean atGoal() {
-    return switch (getState()) {
-      case UNHOMED -> false;
-      case IDLE -> true;
-      case RESET_TO_IDLE -> false;
-      case UNJAM -> timeout(1) || !isJammed();
-      case SHOOT -> true;
-    };
   }
 
   public boolean isJammed() {
