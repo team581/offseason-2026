@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.Degrees;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
 import com.team581.util.FieldUtil;
+import com.team581.util.FmsUtil;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -138,16 +140,21 @@ public class SwerveAssist {
     return distanceToWallThreshold && velocityAngleTowardWall && rotationAngleTowardWall;
   }
 
-  public static double getRoundedSnapAngle(Rotation2d robotHeading, double roundingAngle) {
+    public static double getRoundedSnapAngle(Rotation2d robotHeading, double roundingAngle) {
+      DogLog.log("SwerveAssist/TrenchAssistDebug/RobotHeading", robotHeading);
+      DogLog.log("SwerveAssist/TrenchAssistDebug/RoundedSnapAngle", Math.round(robotHeading.getDegrees() / roundingAngle) * roundingAngle);
     return Math.round(robotHeading.getDegrees() / roundingAngle) * roundingAngle;
   }
 
   public static PolarChassisSpeeds getTrenchAssistSpeeds(
       Translation2d robotTranslation, ChassisSpeeds inputSpeeds) {
     double wantedYVelocity =
-        -TRENCH_PID_CONTROLLER.calculate(
+        TRENCH_PID_CONTROLLER.calculate(
             robotTranslation.getY(),
             FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
+    if (FmsUtil.isRedAlliance()) {
+      wantedYVelocity *= -1.0;
+    }
 
     var wantedSpeeds =
         new PolarChassisSpeeds(
