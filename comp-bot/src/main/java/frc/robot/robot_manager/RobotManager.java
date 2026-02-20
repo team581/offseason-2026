@@ -644,7 +644,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.climbScoreRequest(climbLocationIsLeft);
         dyeRotor.shootRequest();
         turret.climbScoreRequest(climbLocationIsLeft);
-        deploy.shuffleRequest();
+        deploy.stowRequest();
         intake.shootRequest();
         swerve.normalDriveRequest();
         climber.l3HangingRequest();
