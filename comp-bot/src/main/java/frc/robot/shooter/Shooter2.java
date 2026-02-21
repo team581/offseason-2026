@@ -195,6 +195,7 @@ public class Shooter2 extends StateMachineSubsystem<ShooterState2> {
           timeout(2) ? ShooterState2.SELF_TEST_BOTTOM_MOTOR : currentState;
       case SELF_TEST_BOTTOM_MOTOR ->
           timeout(5) ? ShooterState2.SELF_TEST_STOP_MOTORS : currentState;
+      case SELF_TEST -> currentState;
 
       default -> currentState;
     };
