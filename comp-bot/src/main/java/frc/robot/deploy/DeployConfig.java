@@ -47,7 +47,8 @@ public class DeployConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
@@ -63,7 +64,8 @@ public class DeployConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
