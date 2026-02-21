@@ -28,12 +28,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   }
 
   @Override
-  protected void whileInState(IntakeState state) {
-    // TODO: Remove after bringup
-    afterTransition(state);
-  }
-
-  @Override
   protected void afterTransition(IntakeState newState) {
     switch (newState) {
       case IDLE -> {
@@ -52,6 +46,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   protected void collectInputs() {
     DogLog.log("Intake/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Intake/VelocityRPM", motor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Intake/Voltage", getState().voltage);
+    DogLog.log("Intake/Voltage", getState().getIntakeVoltage());
   }
 }
