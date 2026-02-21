@@ -45,6 +45,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   private boolean ableToHopperShuffle = false;
 
   private final Timer canRangeUpdateTimer = new Timer();
+  private final Timer hopperShuffleTimer = new Timer();
 
   public Deploy(TalonFX leftMotor, TalonFX rightMotor, CANrange hopperCANRange) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -87,6 +88,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       default -> {
         if (FeatureFlags.HOPPER_SHUFFLING.getAsBoolean()) {
           setStateFromRequest(DeployState.HOPPER_SHUFFLING_OUT);
+          hopperShuffleTimer.restart();
         }
       }
     }
@@ -103,7 +105,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
       // Do nothing
-      case UNHOMED, INTAKE, STOW -> currentState;
+      case UNHOMED, INTAKE, STOW, HOPPER_SHUFFLING_FINISH -> currentState;
 
       case HOME_INWARD -> {
         if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
@@ -157,6 +159,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
       case HOME_OUTWARD -> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
+      }
+      case HOPPER_SHUFFLING_OUT -> {
+         var position = MathUtil.interpolate(DeployState.HOPPER_SHUFFLING_OUT.getLength(), DeployState.HOPPER_SHUFFLING_IN.getLength(), hopperShuffleTimer.get() / 3.5);
       }
       default -> {
         differentialMechanism.setControl(

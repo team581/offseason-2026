@@ -8,6 +8,7 @@ public enum DeployState {
   STOW(1.0),
   HOPPER_SHUFFLING_OUT(INTAKE.getLength()),
   HOPPER_SHUFFLING_IN(INTAKE.getLength() - DeployConfig.HOPPER_SHUFFLE_DISTANCE),
+  HOPPER_SHUFFLING_FINISH(STOW.getLength()),
   HOME_INWARD(0),
   HOME_OUTWARD(DeployConfig.MAX_LENGTH),
   UNHOMED(0);
