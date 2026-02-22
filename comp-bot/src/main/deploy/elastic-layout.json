@@ -33,7 +33,7 @@
           {
             "x": 896,
             "width": 256,
-            "y": 256,
+            "y": 0,
             "title": "LocalizationHealthy",
             "type": "Boolean Box",
             "properties": {
@@ -67,7 +67,7 @@
           {
             "x": 896,
             "width": 256,
-            "y": 0,
+            "y": 256,
             "title": "FuelDetectionHealthy",
             "type": "Boolean Box",
             "properties": {
@@ -82,15 +82,35 @@
             "height": 128
           },
           {
-            "x": 0,
-            "width": 384,
+            "x": 128,
+            "width": 256,
             "y": 128,
-            "title": "State",
-            "type": "Large Text Display",
+            "title": "Shift Countdown",
+            "type": "Match Time",
             "properties": {
+              "period": 0.033,
+              "yellow_start_time": 25,
+              "data_type": "double",
+              "topic": "/Robot/RobotManager/TimeUntilNextShift",
+              "red_start_time": 5,
+              "time_display_mode": "Seconds Only"
+            },
+            "height": 256
+          },
+          {
+            "x": 0,
+            "width": 128,
+            "y": 128,
+            "title": "Active",
+            "type": "Boolean Box",
+            "properties": {
+              "true_color": 4283215696,
               "period": 0.06,
-              "data_type": "string",
-              "topic": "/Robot/RobotManager/State"
+              "false_color": 4294198070,
+              "false_icon": "None",
+              "data_type": "boolean",
+              "topic": "/Robot/RobotManager/HubActive",
+              "true_icon": "None"
             },
             "height": 256
           }
@@ -101,12 +121,12 @@
               "x": 0,
               "width": 128,
               "y": 0,
-              "title": "UseTagLimelights",
+              "title": "UseCANRange",
               "type": "Toggle Switch",
               "properties": {
                 "period": 0.06,
                 "data_type": "boolean",
-                "topic": "/DSOptions/UseTagLimelights"
+                "topic": "/DSOptions/UseCANRange"
               },
               "height": 128
             },
@@ -127,12 +147,25 @@
               "x": 0,
               "width": 128,
               "y": 0,
-              "title": "UseCANRange",
+              "title": "UseTagLimelights",
               "type": "Toggle Switch",
               "properties": {
                 "period": 0.06,
                 "data_type": "boolean",
-                "topic": "/DSOptions/UseCANRange"
+                "topic": "/DSOptions/UseTagLimelights"
+              },
+              "height": 128
+            },
+            {
+              "x": 0,
+              "width": 128,
+              "y": 0,
+              "title": "UseTurret",
+              "type": "Toggle Switch",
+              "properties": {
+                "period": 0.06,
+                "data_type": "boolean",
+                "topic": "/DSOptions/UseTurret"
               },
               "height": 128
             }
@@ -140,7 +173,7 @@
           "x": 1152,
           "width": 256,
           "y": 0,
-          "title": "Fallback toggles",
+          "title": "DSOptions",
           "type": "List Layout",
           "properties": {"label_position": "TOP"},
           "height": 384
@@ -153,7 +186,7 @@
         "containers": [
           {
             "x": 384,
-            "width": 512,
+            "width": 384,
             "y": 0,
             "title": "Alerts",
             "type": "Alerts",
@@ -207,7 +240,7 @@
               "topic": "/Robot/Localization/TrustFactor",
               "wrap_value": false,
               "number_of_labels": 5,
-              "max_value": 10
+              "max_value": 100
             },
             "height": 256
           },
@@ -227,7 +260,7 @@
           },
           {
             "x": 896,
-            "width": 512,
+            "width": 384,
             "y": 384,
             "title": "Feeding Angle",
             "type": "Text Display",
@@ -255,7 +288,7 @@
           },
           {
             "x": 896,
-            "width": 512,
+            "width": 384,
             "y": 256,
             "title": "Scoring Angle",
             "type": "Text Display",
@@ -338,7 +371,7 @@
                 "height": 128
               }
             ],
-            "x": 896,
+            "x": 768,
             "width": 256,
             "y": 0,
             "title": "DSOptions",
@@ -544,7 +577,7 @@
                 "height": 128
               }
             ],
-            "x": 1152,
+            "x": 1024,
             "width": 256,
             "y": 0,
             "title": "FeatureFlags",

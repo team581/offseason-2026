@@ -63,6 +63,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isMoving = false;
 
   private double timeSinceMatchStart = 0.0;
+  private double timeUntilNextShift = 0.0;
   private boolean isHubActive = true;
   private final DoubleSubscriber tunableHubStateOffset =
       DogLog.tunable("RobotManager/MatchTimeOffset", 0.0);
@@ -116,8 +117,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // No auto transitions for these states
-      case IDLE,
-          UNJAM,
+      case UNJAM,
           MANUAL_CLIMB_1_LINEUP_L1,
           MANUAL_CLIMB_2_HANGING_L1,
           MANUAL_CLIMB_3_RAISING_L2,
@@ -136,6 +136,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
+        }
+        yield currentState;
+      }
+      case IDLE -> {
+        if (DSOptions.USE_HUB_STATE.getAsBoolean() && isHubActive) {
+          yield RobotState.PREPARE_SCORE;
         }
         yield currentState;
       }
@@ -824,6 +830,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/TimeSinceMatchStart", timeSinceMatchStart);
     DogLog.log("RobotManager/TimeSinceTeleopEnable", teleopTimer.get());
 
+    DogLog.log("RobotManager/TimeUntilNextShift", timeUntilNextShift);
+    DogLog.log("RobotManager/HubActive", getIsHubActive());
+
     MechanismVisualizer.log(
         robotPose,
         turret.getAngle(),
@@ -1127,14 +1136,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     timeSinceMatchStart = teleopTimer.get() + FmsUtil.MATCH_TIME_AT_TELEOP_START;
 
-    isHubActive = getIsHubActive();
+    isHubActive = getIsHubActiveOrNotUsingState();
+    timeUntilNextShift = FmsUtil.timeUntilNextShift(timeSinceMatchStart);
   }
 
-  private boolean getIsHubActive() {
+  private boolean getIsHubActiveOrNotUsingState() {
     if (!DSOptions.USE_HUB_STATE.get() || DriverStation.isAutonomousEnabled()) {
       return true;
     }
 
+    return getIsHubActive();
+  }
+
+  private boolean getIsHubActive() {
     if (FeatureFlags.LOOKAHEAD_SCORING.getAsBoolean()) {
       return FmsUtil.isHubActive(
           timeSinceMatchStart
