@@ -14,6 +14,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
@@ -168,6 +169,12 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         DogLog.logFault("Turret is not homed", AlertType.kError);
       }
       default -> {
+        DogLog.clearFault("Turret is not homed");
+      }
+    }
+    if (DriverStation.isDisabled() && getState() != TurretState.UNHOMED) {
+      if (!MathUtil.isNear(goalAngle, MathHelpers.angleModulus(currentAngle), 10.0)) {
+        DogLog.logFault("Turret is not homed", AlertType.kWarning);
         DogLog.clearFault("Turret is not homed");
       }
     }
