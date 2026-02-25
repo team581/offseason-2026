@@ -31,12 +31,21 @@ public class FeatureFlags {
   public static final BooleanSupplier STOP_SHOOTING_STATE =
       FeatureFlag.of("UseStopShootingState", true);
 
+  public static final BooleanSupplier IGNORE_TURRET = FeatureFlag.of("IgnoreTurret", false);
+
   public static final BooleanSupplier CANCEL_IN_PROGRESS_SHOT_RPM_DIP =
       FeatureFlag.of("StopScoringRPMDip", true);
   public static final BooleanSupplier CANCEL_IN_PROGRESS_SHOT =
       FeatureFlag.of("CancelInProgressShot", false);
 
   public static final BooleanSupplier CLUSTER_MAP = FeatureFlag.of("ClusterMap", false);
+
+  public static final BooleanSupplier HOPPER_SHUFFLE_WHILE_INTAKE =
+      FeatureFlag.of("HopperShuffleWhileIntaking", false);
+
+  public static final BooleanSupplier HOOD_ALWAYS_IDLE = FeatureFlag.of("HoodAlwaysIdle", true);
+  public static final BooleanSupplier DYE_ROTOR_CLEANUP_MODE =
+      FeatureFlag.of("DyeRotorCleanup", false);
 
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
