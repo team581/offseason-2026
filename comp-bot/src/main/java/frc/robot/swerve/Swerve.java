@@ -18,14 +18,15 @@ import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
@@ -40,15 +41,21 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> {
   public static final double MAX_SPEED = 4.75;
 
+  public static final double TRANSLATION_STD_DEV = 0.01;
+
+  public static final double MAX_LINEAR_RATE = 4.75;
+  private static final int MAX_LINEAR_RATE_SHOOTING = 7;
+
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
+  private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING = DogLog.tunable("MaxAngularRateShootingRot", 0.5);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
-  private final SlewRateLimiter scoringXLinearVelocitySlewRateLimiter = new SlewRateLimiter(7);
-  private final SlewRateLimiter scoringYLinearVelocitySlewRateLimiter = new SlewRateLimiter(7);
-
-  private final SlewRateLimiter scoringAngularVelocitySlewRateLimiter = new SlewRateLimiter(20);
+  private final SlewRateLimiter scoringXLinearVelocitySlewRateLimiter =
+      new SlewRateLimiter(MAX_LINEAR_RATE_SHOOTING);
+  private final SlewRateLimiter scoringYLinearVelocitySlewRateLimiter =
+      new SlewRateLimiter(MAX_LINEAR_RATE_SHOOTING);
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
 
@@ -148,7 +155,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
   private boolean ableToWallIntakeDriveAssist = false;
-  private boolean ableToWallSnap = false;
   private boolean ableToDirectionSnap = false;
   private Translation2d lastWallIntakePoint = Translation2d.kZero;
   private double distanceToWallIntakePoint = 0.0;
@@ -171,7 +177,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     this.teleopDriveSource =
         new XboxControllerDriveSource(
-            driverController, Swerve.MAX_SPEED, Swerve.TELEOP_MAX_ANGULAR_RATE);
+            driverController, Swerve.MAX_LINEAR_RATE, Swerve.TELEOP_MAX_ANGULAR_RATE);
     this.trailblazerDriveSource =
         new TrailblazerDriveSource(
             trailblazer, () -> drivetrainState.Pose, this::getFieldRelativeSpeeds);
@@ -228,18 +234,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     ableToTrenchAssist =
         DSOptions.USE_SWERVE_ASSIST.get()
-            && FeatureFlags.TRENCH_ASSIST.getAsBoolean()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToTrenchAssist(drivetrainState.Pose, fieldRelativeSpeeds);
     ableToBumpAssist =
         DSOptions.USE_SWERVE_ASSIST.get()
-            && FeatureFlags.BUMP_ASSIST.getAsBoolean()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
     ableToWallIntakeDriveAssist =
-        FeatureFlags.WALL_INTAKE_DRIVE_ASSIST.getAsBoolean()
+        DSOptions.USE_SWERVE_ASSIST.get()
+            && FeatureFlags.WALL_INTAKE_DRIVE_ASSIST.getAsBoolean()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToWallIntakeDriveAssist(drivetrainState.Pose, fieldRelativeSpeeds);
@@ -258,16 +263,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               lastDriveDirectionFilter.calculate(
                   MathHelpers.getDriveDirection(fieldRelativeSpeeds).getDegrees()));
 
-      ableToWallSnap =
-          FeatureFlags.INTAKE_WALL_SNAPS.getAsBoolean()
-              && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-              && health.isLocalizationHealthy()
-              && SwerveAssist.ableToWallSnap(
-                  drivetrainState.Pose,
-                  fieldRelativeSpeeds,
-                  filteredLastDriveDirection,
-                  distanceToWallIntakePoint);
-
       ableToDirectionSnap =
           FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()
               && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
@@ -284,10 +279,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             scoringXLinearVelocitySlewRateLimiter.calculate(requestedSpeeds.vxMetersPerSecond);
         var rateLimitedYVelocity =
             scoringYLinearVelocitySlewRateLimiter.calculate(requestedSpeeds.vyMetersPerSecond);
-        var rateLimitedAngularRate =
-            scoringAngularVelocitySlewRateLimiter.calculate(requestedSpeeds.omegaRadiansPerSecond);
+
+            var maxAngularRate = Units.rotationsToRadians(MAX_ANGULAR_RATE_SHOOTING.get());
+            var rateLimitedThetaVelocity =
+            MathUtil.clamp(
+                requestedSpeeds.omegaRadiansPerSecond,
+                -maxAngularRate,
+                maxAngularRate);
+
         rateLimitedSpeeds =
-            new ChassisSpeeds(rateLimitedXVelocity, rateLimitedYVelocity, rateLimitedAngularRate);
+            new ChassisSpeeds(
+                rateLimitedXVelocity, rateLimitedYVelocity, rateLimitedThetaVelocity);
       } else {
         rateLimitedSpeeds = requestedSpeeds;
       }
@@ -419,31 +421,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                       .withVelocityY(speeds.vyMetersPerSecond),
                   SwerveAssist.getRoundedSnapAngle(
                       drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-        } else if (ableToWallSnap) {
-          DogLog.timestamp("Swerve/WallSnaps/Snapping");
-          var closestWallPose =
-              MathHelpers.getClosestPointOnRectanglePerimeter(
-                  drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
-          var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
-          var centerOfRotationRobotRelative =
-              lastWallIntakePoint
-                  .minus(drivetrainState.Pose.getTranslation())
-                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
-          DogLog.log(
-              "Swerve/WallSnaps/CenterOfRotation",
-              new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
-
-          var swerveSnapsRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? drivePerspectiveIntakeSnapsOpenLoop
-                  : fieldCentricIntakeSnapsClosedLoop;
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  swerveSnapsRequest
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond)
-                      .withCenterOfRotation(centerOfRotationRobotRelative),
-                  angleToWall));
         } else if (ableToDirectionSnap) {
           DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
           var swerveSnapsRequest =
@@ -491,31 +468,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                       .withVelocityY(rateLimitedSpeeds.vyMetersPerSecond),
                   SwerveAssist.getRoundedSnapAngle(
                       drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-        } else if (ableToWallSnap) {
-          DogLog.timestamp("Swerve/WallSnaps/Snapping");
-          var closestWallPose =
-              MathHelpers.getClosestPointOnRectanglePerimeter(
-                  drivetrainState.Pose.getTranslation(), FieldUtil.FIELD_BOUNDS);
-          var angleToWall = MathHelpers.getDriveDirection(drivetrainState.Pose, closestWallPose);
-          var centerOfRotationRobotRelative =
-              lastWallIntakePoint
-                  .minus(drivetrainState.Pose.getTranslation())
-                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
-          DogLog.log(
-              "Swerve/WallSnaps/CenterOfRotation",
-              new Pose2d(lastWallIntakePoint, Rotation2d.kZero));
-
-          var swerveSnapsRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? drivePerspectiveIntakeSnapsOpenLoop
-                  : fieldCentricIntakeSnapsClosedLoop;
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  swerveSnapsRequest
-                      .withVelocityX(rateLimitedSpeeds.vxMetersPerSecond)
-                      .withVelocityY(rateLimitedSpeeds.vyMetersPerSecond)
-                      .withCenterOfRotation(centerOfRotationRobotRelative),
-                  angleToWall));
         } else if (ableToDirectionSnap) {
           DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
           var swerveSnapsRequest =
@@ -586,7 +538,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
         scoringXLinearVelocitySlewRateLimiter.reset(requestedSpeeds.vxMetersPerSecond);
         scoringYLinearVelocitySlewRateLimiter.reset(requestedSpeeds.vyMetersPerSecond);
-        scoringAngularVelocitySlewRateLimiter.reset(requestedSpeeds.omegaRadiansPerSecond);
       }
     }
   }
