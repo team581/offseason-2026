@@ -12,7 +12,6 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.config.FeatureFlags;
 import frc.robot.imu.Imu;
 import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -187,7 +186,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     if (getState() == VisionState.CALIBRATE_STATIC_TURRET) {
       return;
     }
-    if (state == VisionState.HUB_TAGS && !FeatureFlags.VISION_HUB_TAGS_FILTER.getAsBoolean()) {
+    if (state == VisionState.HUB_TAGS) {
       state = VisionState.TAGS;
     }
 

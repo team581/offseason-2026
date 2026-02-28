@@ -761,12 +761,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           dyeRotor.scoreRequest(scoringParameters.distance());
         }
-        if (FeatureFlags.STOP_HOPPER_SHUFFLE_DURING_INTAKE.getAsBoolean()) {
-          if (drivingToIntake) {
-            deploy.intakeRequest();
-          } else {
-            deploy.shuffleRequest();
-          }
+
+        if (drivingToIntake) {
+          deploy.intakeRequest();
+        } else {
+          deploy.shuffleRequest();
         }
       }
       case PREPARE_FEED -> {
@@ -792,12 +791,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           dyeRotor.feedRequest(feedingParameters.distance());
         }
-        if (FeatureFlags.STOP_HOPPER_SHUFFLE_DURING_INTAKE.getAsBoolean()) {
-          if (drivingToIntake) {
-            deploy.intakeRequest();
-          } else {
-            deploy.shuffleRequest();
-          }
+        if (drivingToIntake) {
+          deploy.intakeRequest();
+        } else {
+          deploy.shuffleRequest();
         }
       }
 
@@ -825,12 +822,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.normalDriveRequest();
         }
-        if (FeatureFlags.STOP_HOPPER_SHUFFLE_DURING_INTAKE.getAsBoolean()) {
-          if (drivingToIntake) {
-            deploy.intakeRequest();
-          } else {
-            deploy.shuffleRequest();
-          }
+        if (drivingToIntake) {
+          deploy.intakeRequest();
+        } else {
+          deploy.shuffleRequest();
         }
       }
       case PREPARE_PRESET_FEED -> {
@@ -850,12 +845,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.normalDriveRequest();
         }
-        if (FeatureFlags.STOP_HOPPER_SHUFFLE_DURING_INTAKE.getAsBoolean()) {
-          if (drivingToIntake) {
-            deploy.intakeRequest();
-          } else {
-            deploy.shuffleRequest();
-          }
+        if (drivingToIntake) {
+          deploy.intakeRequest();
+        } else {
+          deploy.shuffleRequest();
         }
       }
       case AUTOMATIC_CLIMB_1_APPROACH_L1, AUTOMATIC_CLIMB_2_LINEUP_L1 -> {
@@ -881,7 +874,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       default -> {}
     }
-
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
