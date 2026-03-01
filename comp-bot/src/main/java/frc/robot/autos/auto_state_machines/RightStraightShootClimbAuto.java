@@ -84,16 +84,17 @@ public class RightStraightShootClimbAuto
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(8.85, 5.8, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 30)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(10.0, 6.9, Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(
-                  new Pose2d(11.3, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg)),
+                  new Pose2d(11.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(3.0, 10))
+                  .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
+                  .withLinearConstraints(3.5, 10))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
   private final AutoSegment driveBackAndShootTwo =
@@ -104,7 +105,7 @@ public class RightStraightShootClimbAuto
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(
-                  new Pose2d(11.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg)),
+                  new Pose2d(11.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg)),
               AutoPoint.ofRed(
                   new Pose2d(13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg)))
           .withLinearConstraints(3.0, 8)
