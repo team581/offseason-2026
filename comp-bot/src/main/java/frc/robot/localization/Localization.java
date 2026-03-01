@@ -100,12 +100,12 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
         resetPose(visionPose);
       }
       swerve.drivetrain.addVisionMeasurement(
-        visionPose,
-        Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT / 1000)),
+          visionPose,
+          Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT / 1000)),
           result.standardDevs());
-        }
-        averageTimestamp = averageTimestamp/results.size();
-        trustFactor.ingestTagResult(getPose(averageTimestamp), results);
+    }
+    averageTimestamp = averageTimestamp / results.size();
+    trustFactor.ingestTagResult(getPose(averageTimestamp), results);
   }
 
   @Override
