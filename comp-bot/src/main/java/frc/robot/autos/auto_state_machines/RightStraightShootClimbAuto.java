@@ -97,7 +97,7 @@ public class RightStraightShootClimbAuto
                       new Pose2d(
                           13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(4.0, 8))
-                  .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
+          .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
   private final AutoSegment driveBackAndShootTwo =
@@ -136,7 +136,8 @@ public class RightStraightShootClimbAuto
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.1, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg));
+    return Point.ofRed(
+        new Pose2d(12.1, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg));
   }
 
   @Override
