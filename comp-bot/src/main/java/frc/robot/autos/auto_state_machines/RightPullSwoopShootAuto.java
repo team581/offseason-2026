@@ -56,7 +56,7 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
           .withLinearConstraints(4.5, 8)
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
-/////////
+  /////////
   // unused point; meant to be used for a feed auto
   public final AutoSegment cleanUpIntakeAndShoot =
       Trailblazer.segment(
@@ -84,7 +84,7 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
           .withLinearConstraints(3.0, 10)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
-//////////
+  //////////
 
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
