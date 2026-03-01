@@ -281,13 +281,6 @@ public class FieldUtil {
           CLIMB_FRONT_CORNER_OUTPOST_SIDE.bluePose().getTranslation(),
           CLIMB_BACK_CORNER_DEPOT_SIDE.bluePose().getTranslation());
 
-  public static boolean isInNoScoreZone(Pose2d robot) {
-    if (FmsUtil.isRedAlliance()) {
-      return RED_CLIMB_ZONE.contains(robot.getTranslation());
-    }
-    return BLUE_CLIMB_ZONE.contains(robot.getTranslation());
-  }
-
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {
       return robot;
@@ -586,6 +579,13 @@ public class FieldUtil {
 
   public static boolean inTrench(Translation2d robotPose) {
     return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
+  }
+
+  public static boolean isInNoScoreZone(Pose2d robot) {
+    if (FmsUtil.isRedAlliance()) {
+      return RED_CLIMB_ZONE.contains(robot.getTranslation());
+    }
+    return BLUE_CLIMB_ZONE.contains(robot.getTranslation());
   }
 
   public static boolean isRobotInAllianceZone(Translation2d robot) {
