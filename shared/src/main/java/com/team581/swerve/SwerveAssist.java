@@ -78,9 +78,9 @@ public class SwerveAssist {
   }
 
   public static boolean ableToWallSnap(
-      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Rotation2d snapAngle) {
+      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, boolean enteredCorner) {
     // Check if we are in a corner
-    if (FieldUtil.getCurrentWallSnapCornerZone(robotPose.getTranslation()).isPresent()) {
+    if (enteredCorner) {
       DogLog.log("SwerveAssist/WallSnaps/Checks/AbleToCornerTransition", true);
       return true;
     }
@@ -104,7 +104,19 @@ public class SwerveAssist {
     }
     DogLog.log("SwerveAssist/WallSnaps/Checks/CloseToWallCheck", true);
 
-    // Check if we are driving fast enough in the direction of the intake parallel to the wall
+    // Check if we are driving fast enough in the direction of the intake parallel with the wall
+    return drivingInWallSnapDirection(robotPose, fieldRelativeSpeeds);
+  }
+
+  public static boolean drivingInWallSnapDirection(
+      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+    // Check if we are driving fast enough in the direction of the intake parallel with the wall
+    var closestWallTranslation =
+        MathHelpers.getClosestPointOnRectanglePerimeter(
+            robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+    // If the closest wall is a driver station wall, the y component will be equal to the robot's
+    var closestWallIsADriverStationWall =
+        Math.abs(robotPose.getY() - closestWallTranslation.getY()) < 1e-5;
     var roundedDriveDirection =
         getRoundedSnapAngle(
             MathHelpers.getDriveDirection(fieldRelativeSpeeds), WALL_SNAP_ROUND_ANGLE);
@@ -167,7 +179,7 @@ public class SwerveAssist {
   }
 
   public static Rotation2d getWallSnapAngle(
-      Translation2d robotTranslation, ChassisSpeeds fieldRelativeSpeeds, boolean inCorner) {
+      Translation2d robotTranslation, ChassisSpeeds fieldRelativeSpeeds, boolean enteredCorner) {
     // get direction toward wall, then apply offset of snap round angle in that direction
     var closestWallTranslation =
         MathHelpers.getClosestPointOnRectanglePerimeter(robotTranslation, FieldUtil.FIELD_BOUNDS);
@@ -177,9 +189,8 @@ public class SwerveAssist {
     var angleToWall = closestWallTranslation.minus(robotTranslation).getAngle();
     var driveDirection = MathHelpers.getDriveDirection(fieldRelativeSpeeds);
     var roundedSnapAngle = Rotation2d.kZero;
-    // For DS wall, still round snap to 180.0 degrees, but rotated 90.0 degrees to be parallel w/ DS
-    // wall
-    if (inCorner) {
+    // For DS wall, still snap to 180.0 degrees, but rotated 90.0 degrees to be parallel w/ DS wall
+    if (enteredCorner) {
       roundedSnapAngle =
           closestWallIsADriverStationWall
               ? getRoundedSnapAngle(
@@ -206,7 +217,7 @@ public class SwerveAssist {
 
     // Check which direction we are going relative to the wall
     var direction = 0;
-    if (inCorner) {
+    if (enteredCorner) {
       // Signed difference between drive direction and snap angle
       double delta = driveDirection.minus(roundedSnapAngle).getRadians();
 

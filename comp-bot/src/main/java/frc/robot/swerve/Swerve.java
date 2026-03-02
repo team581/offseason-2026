@@ -156,6 +156,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToDirectionSnap = false;
   private boolean inWallSnapCorner = false;
   private boolean previouslyInWallSnapCorner = false;
+  private boolean enteredWallSnapCorner = false;
   private Rotation2d cornerSnapAngle = Rotation2d.kZero;
   private Rotation2d wallSnapAngle = Rotation2d.kZero;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
@@ -248,18 +249,26 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToWallSnap(
-                drivetrainState.Pose, fieldRelativeSpeeds, wallSnapAngle);
+                drivetrainState.Pose, fieldRelativeSpeeds, enteredWallSnapCorner);
 
     // Wall snap logic if we are in a corner
     inWallSnapCorner =
         FieldUtil.getCurrentWallSnapCornerZone(drivetrainState.Pose.getTranslation()).isPresent();
+    if (inWallSnapCorner
+        && !previouslyInWallSnapCorner
+        && SwerveAssist.drivingInWallSnapDirection(drivetrainState.Pose, fieldRelativeSpeeds)) {
+      enteredWallSnapCorner = true;
+    }
+    if (!inWallSnapCorner) {
+      enteredWallSnapCorner = false;
+    }
     if (inWallSnapCorner && !previouslyInWallSnapCorner) {
       cornerSnapAngle =
           SwerveAssist.getWallSnapAngle(
               drivetrainState.Pose.getTranslation(), fieldRelativeSpeeds, inWallSnapCorner);
     }
     wallSnapAngle =
-        inWallSnapCorner
+        enteredWallSnapCorner
             ? cornerSnapAngle
             : SwerveAssist.getWallSnapAngle(
                 drivetrainState.Pose.getTranslation(), fieldRelativeSpeeds, false);
@@ -588,6 +597,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             .getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/CornerSnapAngle", cornerSnapAngle.getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/ChosenAngle", wallSnapAngle.getDegrees());
+  }
+
+  @Override
+  protected void afterTransition(SwerveState newState) {
+    switch (newState) {
+      case MANUAL, MANUAL_RATE_LIMITED, TURRET_STUCK_SCORE, CLIMB_ASSIST -> {}
+      // When entering intake states we shouldnt be able to wall snap corner transition
+      case INTAKE, INTAKE_RATE_LIMITED -> enteredWallSnapCorner = false;
+    }
   }
 
   private void startSimThread() {
