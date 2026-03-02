@@ -34,7 +34,7 @@ public class SwerveAssist {
   private static final Rotation2d WALL_SNAP_ROUND_ANGLE = Rotation2d.fromDegrees(180.0);
 
   private static final DoubleSupplier MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS =
-      DogLog.tunable("Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.5);
+      DogLog.tunable("Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.2);
 
   private static final PIDController SWERVE_ASSIST_PID_CONTROLLER = new PIDController(10, 0, 0);
 
