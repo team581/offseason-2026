@@ -14,13 +14,11 @@ import frc.robot.shooter.ShooterConfig;
 import frc.robot.turret.TurretCalculator;
 
 public class AimParameterUtil {
-  private static final ShootOnTheMove FEEDING_SOTM =
-      new ShootOnTheMove(ShooterConfig.DISTANCE_TO_FEED_TOF);
+
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
 
   private static final double SCORING_TURRET_TOLERANCE = Units.inchesToMeters(20);
-  private static final double FEEDING_TURRET_TOLERANCE = Units.inchesToMeters(50);
 
   private static final double FALLBACK_FEEDING_TURRET_TOLERANCE = 1;
   private static final double FEEDING_FALLBACK_DISTANCE_TO_GOAL = 8.0;
