@@ -41,7 +41,6 @@ import org.jspecify.annotations.Nullable;
 
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> {
-  public static final double MAX_SPEED = 4.75;
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
@@ -174,7 +173,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       startSimThread();
     }
 
-    drivetrain.setStateStdDevs(new Matrix<>(VecBuilder.fill(0.003, 0.003, 0.002)));
+    drivetrain.setStateStdDevs(
+        new Matrix<>(VecBuilder.fill(TRANSLATION_STD_DEV, TRANSLATION_STD_DEV, 0.002)));
 
     this.teleopDriveSource =
         new XboxControllerDriveSource(

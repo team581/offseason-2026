@@ -544,17 +544,6 @@ public class FieldUtil {
         .findFirst();
   }
 
-  // For wall snaps, can't apply offset toward wall under climb tower
-  public static boolean nearClimbZone(Translation2d robotTranslation) {
-    // Based on alliance field side because the climb zones are not bilaterally symmetrical
-    var climbZone =
-        robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0 ? BLUE_CLIMB_ZONE : RED_CLIMB_ZONE;
-    return robotTranslation.getY()
-            < climbZone.getCenter().getY() + NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE
-        && robotTranslation.getY()
-            > climbZone.getCenter().getY() - NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE;
-  }
-
   public static Pose2d getFallbackScorePoint() {
     var location = DriverStation.getLocation().orElse(1);
 
@@ -607,6 +596,17 @@ public class FieldUtil {
       return robot.getX() > getObstacleX();
     }
     return robot.getX() < getObstacleX();
+  }
+
+  // For wall snaps, can't apply offset toward wall under climb tower
+  public static boolean nearClimbZone(Translation2d robotTranslation) {
+    // Based on alliance field side because the climb zones are not bilaterally symmetrical
+    var climbZone =
+        robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0 ? BLUE_CLIMB_ZONE : RED_CLIMB_ZONE;
+    return robotTranslation.getY()
+            < climbZone.getCenter().getY() + NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE
+        && robotTranslation.getY()
+            > climbZone.getCenter().getY() - NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE;
   }
 
   /**
