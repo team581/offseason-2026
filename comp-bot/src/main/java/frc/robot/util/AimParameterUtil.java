@@ -18,6 +18,9 @@ public class AimParameterUtil {
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
 
+      private static final ShootOnTheMove FEEDING_SOTM =
+      new ShootOnTheMove(ShooterConfig.DISTANCE_TO_FEED_TOF);
+
   private static final double SCORING_TURRET_TOLERANCE = Units.inchesToMeters(20);
 
   private static final double FALLBACK_FEEDING_TURRET_TOLERANCE = 1;
@@ -51,7 +54,7 @@ public class AimParameterUtil {
 
     // Get velocity compensated goals
     var separatedVelocityCompensatedGoal =
-        SCORING_SOTM.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
+        FEEDING_SOTM.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
             turretTranslation, feedTranslation, turretFieldRelativeSpeeds);
 
     // Calculate fully compensated distance to goal for shooter and hood
