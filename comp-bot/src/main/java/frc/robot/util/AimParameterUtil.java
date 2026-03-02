@@ -18,7 +18,7 @@ public class AimParameterUtil {
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
 
-      private static final ShootOnTheMove FEEDING_SOTM =
+  private static final ShootOnTheMove FEEDING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_FEED_TOF);
 
   private static final double SCORING_TURRET_TOLERANCE = Units.inchesToMeters(20);
