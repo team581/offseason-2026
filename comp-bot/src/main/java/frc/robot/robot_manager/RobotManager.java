@@ -1268,7 +1268,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void logScoringTransition() {
-    DogLog.log("Debug/TurretScoreTolerance", scoringParameters.turretTolerance());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoal());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
@@ -1285,7 +1284,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void logFeedTransition() {
-    DogLog.log("Debug/TurretFeedTolerance", feedingParameters.turretTolerance());
 
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoal());
     DogLog.log(
