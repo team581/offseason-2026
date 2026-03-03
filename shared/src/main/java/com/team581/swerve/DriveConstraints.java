@@ -7,8 +7,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 public class DriveConstraints {
 
   /**
-   * Scales the driver's requested field-relative speeds to respect
-   * radial and tangential limits
+   * Scales the driver's requested field-relative speeds to respect radial and tangential limits
    *
    * @param requestedSpeeds Field-relative requested speeds
    * @param robotTranslation Current field-relative position of the robot
