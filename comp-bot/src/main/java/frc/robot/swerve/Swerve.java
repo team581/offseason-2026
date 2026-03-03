@@ -8,7 +8,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
-import com.team581.math.SlewRateLimiterStateless;
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
 import com.team581.swerve.SwerveAssist;
@@ -59,8 +58,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
   private final SlewRateLimiter maxLinearVelocityRateLimiter = new SlewRateLimiter(5.0);
-    private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
-
+  private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
 
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
       new PhoenixPIDController(5.75, 0, 0);
@@ -288,7 +286,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
       ableToDirectionSnap =
           FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()
-          && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+              && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
               && SwerveAssist.ableToDirectionSnap(fieldRelativeSpeeds);
     }
 
@@ -297,9 +295,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         || getState() == SwerveState.MANUAL_RATE_LIMITED) {
       teleopDriveSource.setMaxVelocity(
           maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SHOOTING.get()),
-          Rotation2d.fromRotations(maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get())));
+          Rotation2d.fromRotations(
+              maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get())));
     } else {
-      teleopDriveSource.setMaxVelocity(maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE), Rotation2d.fromRotations(maxAngularVelocityRateLimiter.calculate(TELEOP_MAX_ANGULAR_RATE.getRotations())));
+      teleopDriveSource.setMaxVelocity(
+          maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE),
+          Rotation2d.fromRotations(
+              maxAngularVelocityRateLimiter.calculate(TELEOP_MAX_ANGULAR_RATE.getRotations())));
     }
   }
 

@@ -10,7 +10,7 @@ public record PoseErrorTolerance(double linearErrorTolerance, double angularErro
     this(linearErrorTolerance, angularErrorTolerance.getDegrees());
   }
 
-    public PoseErrorTolerance(double linearErrorTolerance) {
+  public PoseErrorTolerance(double linearErrorTolerance) {
     this(linearErrorTolerance, 360);
   }
 
