@@ -43,8 +43,8 @@ public class FieldUtil {
 
   private static final double TRENCH_ZONE_LENGTH_X = TRENCH_LENGTH_X + Units.inchesToMeters(27.0);
   private static final double TRENCH_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
-  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 3;
-  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 5;
+  private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(85.0);
 
   public static final Pose2d BLUE_OUTPOST_TRENCH_CENTER =
       new Pose2d(BLUE_OBSTACLE_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
