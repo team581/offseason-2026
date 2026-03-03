@@ -293,15 +293,23 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     if (getState() == SwerveState.INTAKE_RATE_LIMITED
         || getState() == SwerveState.MANUAL_RATE_LIMITED) {
+      double maxAngularRateRotations = maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
       teleopDriveSource.setMaxVelocity(
           maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SHOOTING.get()),
-          Rotation2d.fromRotations(
-              maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get())));
+          Rotation2d.fromRotations(maxAngularRateRotations));
+
+          drivePerspectiveIntakeSnapsOpenLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+                    drivePerspectiveSnapsOpenLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+          fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+          fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+
     } else {
-      teleopDriveSource.setMaxVelocity(
-          maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE),
-          Rotation2d.fromRotations(
-              maxAngularVelocityRateLimiter.calculate(TELEOP_MAX_ANGULAR_RATE.getRotations())));
+      double maxAngularRateRotations = maxAngularVelocityRateLimiter.calculate(TELEOP_MAX_ANGULAR_RATE.getRotations());
+      teleopDriveSource.setMaxVelocity(maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE), Rotation2d.fromRotations(maxAngularRateRotations));
+       drivePerspectiveIntakeSnapsOpenLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+                    drivePerspectiveSnapsOpenLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+          fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+          fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
     }
   }
 
@@ -409,6 +417,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   swerveSnapsRequest
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
+                      .withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get())))
                       .withCenterOfRotation(Translation2d.kZero),
                   filteredLastDriveDirection));
         } else {
