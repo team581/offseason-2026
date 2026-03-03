@@ -2,6 +2,7 @@ package com.team581.swerve;
 
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
+import com.team581.autos.Point;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
@@ -15,6 +16,9 @@ import edu.wpi.first.math.util.Units;
 import java.util.function.DoubleSupplier;
 
 public class SwerveAssist {
+  // Home field has modified red depot trench, and no red depot bump
+  private static final boolean USE_HOME_FIELD = Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean();
+
   // General swerve assist values
   private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 0.75;
   private static final Rotation2d TRENCH_ASSIST_VELOCITY_ANGLE_TOLERANCE =
@@ -42,7 +46,8 @@ public class SwerveAssist {
     var robotTranslation = robotPose.getTranslation();
 
     // Check if in bump assist zone
-    if (FieldUtil.getCurrentBumpAssistZone(robotTranslation).isEmpty()) {
+    var notInZone = USE_HOME_FIELD ? !FieldUtil.getCurrentHomeFieldBumpAssistZone(robotTranslation) : FieldUtil.getCurrentBumpAssistZone(robotTranslation).isEmpty();
+    if (notInZone) {
       return false;
     } else {
       return ableToSwerveAssist(
@@ -64,10 +69,19 @@ public class SwerveAssist {
     var robotTranslation = robotPose.getTranslation();
 
     // Check if in trench assist zone
-    if (FieldUtil.getCurrentTrenchAssistZone(robotTranslation).isEmpty()) {
+    var notInZone = USE_HOME_FIELD ? FieldUtil.getCurrentHomeFieldTrenchAssistZone(robotTranslation).isEmpty() : FieldUtil.getCurrentTrenchAssistZone(robotTranslation).isEmpty();
+    if (notInZone) {
       return false;
     } else {
-      return ableToSwerveAssist(
+      return USE_HOME_FIELD ? ableToSwerveAssist(
+          robotPose,
+          fieldRelativeSpeeds,
+          TRENCH_ASSIST_VELOCITY_THRESHOLD,
+          FieldUtil.getClosestHomeFieldAllianceZoneTrenchMidpoint(robotTranslation),
+          FieldUtil.getClosestHomeFieldNeutralZoneTrenchMidpoint(robotTranslation),
+          TRENCH_ASSIST_VELOCITY_ANGLE_TOLERANCE)
+            :
+          ableToSwerveAssist(
           robotPose,
           fieldRelativeSpeeds,
           TRENCH_ASSIST_VELOCITY_THRESHOLD,
@@ -157,7 +171,7 @@ public class SwerveAssist {
     double wantedYVelocity =
         SWERVE_ASSIST_PID_CONTROLLER.calculate(
             robotTranslation.getY(),
-            FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
+            USE_HOME_FIELD ? FieldUtil.getClosestHomeFieldAllianceZoneTrenchMidpoint(robotTranslation).getY() : FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
     if (FmsUtil.isRedAlliance()) {
       wantedYVelocity *= -1.0;
     }

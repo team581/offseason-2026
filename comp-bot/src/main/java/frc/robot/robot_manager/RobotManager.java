@@ -1,5 +1,6 @@
 package frc.robot.robot_manager;
 
+import com.team581.autos.Point;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
@@ -1200,8 +1201,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var speeds = swerve.getFieldRelativeSpeeds();
     isMoving = MathHelpers.getLinearVelocity(speeds) > 0.2;
 
+    // If using clamped points FF we are using the HOME FIELD
     nearTrench =
-        FieldUtil.inTrench(robotPose.getTranslation())
+        (Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean() ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation()) : FieldUtil.inTrench(robotPose.getTranslation()))
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
 
     scoringParameters =

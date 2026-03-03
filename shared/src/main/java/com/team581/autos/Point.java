@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import java.util.function.BooleanSupplier;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
+  // Also determines whether or not we are using our HOME FIELD for swerve assist
   public static final BooleanSupplier CLAMPED_POINTS_FEATURE_FLAG =
       FeatureFlag.of("ClampedAutoPoints", true);
 
