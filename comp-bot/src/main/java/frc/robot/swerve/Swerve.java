@@ -149,7 +149,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private SwerveDriveState drivetrainState = new SwerveDriveState();
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
-  private ChassisSpeeds rateLimitedSpeeds = new ChassisSpeeds();
 
   private double turretStuckAimingAngle = 0.0;
 
