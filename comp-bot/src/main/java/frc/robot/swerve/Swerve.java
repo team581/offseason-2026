@@ -274,7 +274,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 drivetrainState.Pose.getTranslation(), fieldRelativeSpeeds, false);
     previouslyInWallSnapCorner = inWallSnapCorner;
 
-    if (getState() == SwerveState.INTAKE) {
+    if (getState() == SwerveState.INTAKE || getState() == SwerveState.INTAKE_RATE_LIMITED) {
       filteredLastDriveDirection =
           Rotation2d.fromDegrees(
               lastDriveDirectionFilter.calculate(
