@@ -22,7 +22,6 @@ import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
-import frc.robot.dye_rotor.DyeRotorState;
 import frc.robot.health.HealthManager;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
