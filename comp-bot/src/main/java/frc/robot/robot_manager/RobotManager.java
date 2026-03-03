@@ -1203,7 +1203,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     // If using clamped points FF we are using the HOME FIELD
     nearTrench =
-        (Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean() ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation()) : FieldUtil.inTrench(robotPose.getTranslation()))
+        (Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
+                ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
+                : FieldUtil.inTrench(robotPose.getTranslation()))
             || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
 
     scoringParameters =

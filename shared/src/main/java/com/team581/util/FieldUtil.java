@@ -234,23 +234,34 @@ public class FieldUtil {
 
   // HOME FIELD ONLY; Modified field util for home field
   // TODO: Need to tune the red depot wall offset on home field
-  private static final double HOME_FIELD_RED_DEPOT_WALL_OFFSET = FIELD_WIDTH_Y - Units.inchesToMeters(252.0);
-  private static final Pose2d HOME_FIELD_RED_DEPOT_TRENCH_CENTER = new Pose2d(RED_DEPOT_TRENCH_CENTER.getX(), RED_DEPOT_TRENCH_CENTER.getY() + HOME_FIELD_RED_DEPOT_WALL_OFFSET, Rotation2d.kZero);
+  private static final double HOME_FIELD_RED_DEPOT_WALL_OFFSET =
+      FIELD_WIDTH_Y - Units.inchesToMeters(252.0);
+  private static final Pose2d HOME_FIELD_RED_DEPOT_TRENCH_CENTER =
+      new Pose2d(
+          RED_DEPOT_TRENCH_CENTER.getX(),
+          RED_DEPOT_TRENCH_CENTER.getY() + HOME_FIELD_RED_DEPOT_WALL_OFFSET,
+          Rotation2d.kZero);
 
-  private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ZONE = new Rectangle2d(HOME_FIELD_RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
-  private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE = new Rectangle2d(HOME_FIELD_RED_DEPOT_TRENCH_CENTER, TRENCH_ASSIST_ZONE_LENGTH_X, TRENCH_ASSIST_ZONE_LENGTH_Y);
-  private static final Translation2d HOME_FIELD_RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT = new Translation2d(RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT.getX(), HOME_FIELD_RED_DEPOT_TRENCH_CENTER.getY());
-  private static final Translation2d HOME_FIELD_RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT = new Translation2d(RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT.getX(), HOME_FIELD_RED_DEPOT_TRENCH_CENTER.getY());
+  private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ZONE =
+      new Rectangle2d(HOME_FIELD_RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+  private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE =
+      new Rectangle2d(
+          HOME_FIELD_RED_DEPOT_TRENCH_CENTER,
+          TRENCH_ASSIST_ZONE_LENGTH_X,
+          TRENCH_ASSIST_ZONE_LENGTH_Y);
+  private static final Translation2d HOME_FIELD_RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT =
+      new Translation2d(
+          RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT.getX(),
+          HOME_FIELD_RED_DEPOT_TRENCH_CENTER.getY());
+  private static final Translation2d HOME_FIELD_RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT =
+      new Translation2d(
+          RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT.getX(), HOME_FIELD_RED_DEPOT_TRENCH_CENTER.getY());
 
   private static final List<Rectangle2d> HOME_FIELD_TRENCH_ZONES =
-      ImmutableList.of(
-          HOME_FIELD_RED_DEPOT_TRENCH_ZONE,
-          RED_OUTPOST_TRENCH_ZONE);
+      ImmutableList.of(HOME_FIELD_RED_DEPOT_TRENCH_ZONE, RED_OUTPOST_TRENCH_ZONE);
 
   private static final List<Rectangle2d> HOME_FIELD_TRENCH_ASSIST_ZONES =
-      ImmutableList.of(
-          HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE,
-          RED_OUTPOST_TRENCH_ASSIST_ZONE);
+      ImmutableList.of(HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE, RED_OUTPOST_TRENCH_ASSIST_ZONE);
 
   private static final List<Translation2d> HOME_FIELD_ALLIANCE_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
@@ -542,18 +553,22 @@ public class FieldUtil {
     // Home field red depot trench zones/points
     DogLog.log(
         "FieldUtil/HomeField/RedDepot/Trenches/Corner1",
-        new Pose2d(MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
+        new Pose2d(
+            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ZONE).get(0), Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/RedDepot/Trenches/Corner2",
-        new Pose2d(MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
+        new Pose2d(
+            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ZONE).get(2), Rotation2d.kCW_90deg));
     DogLog.log(
-    "FieldUtil/HomeField/RedDepot/TrenchAssistZones/Corner1",
-    new Pose2d(
-        MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE).get(0), Rotation2d.kCW_90deg));
+        "FieldUtil/HomeField/RedDepot/TrenchAssistZones/Corner1",
+        new Pose2d(
+            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE).get(0),
+            Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/RedDepot/TrenchAssistZones/Corner2",
         new Pose2d(
-            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE).get(2), Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE).get(2),
+            Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/RedDepot/TrenchAssistPoints/AllianceZoneTrenchMidpoint",
         new Pose2d(HOME_FIELD_RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT, Rotation2d.kZero));
@@ -571,8 +586,15 @@ public class FieldUtil {
   }
 
   // HOME FIELD ONLY
-  public static Translation2d getClosestHomeFieldAllianceZoneTrenchMidpoint(Translation2d robotTranslation) {
+  public static Translation2d getClosestHomeFieldAllianceZoneTrenchMidpoint(
+      Translation2d robotTranslation) {
     return robotTranslation.nearest(HOME_FIELD_ALLIANCE_ZONE_TRENCH_MIDPOINTS);
+  }
+
+  // HOME FIELD ONLY
+  public static Translation2d getClosestHomeFieldNeutralZoneTrenchMidpoint(
+      Translation2d robotTranslation) {
+    return robotTranslation.nearest(HOME_FIELD_NEUTRAL_ZONE_TRENCH_MIDPOINTS);
   }
 
   public static Translation2d getClosestHubSideBumpPoint(Translation2d robotTranslation) {
@@ -581,11 +603,6 @@ public class FieldUtil {
 
   public static Translation2d getClosestNeutralZoneTrenchMidpoint(Translation2d robotTranslation) {
     return robotTranslation.nearest(NEUTRAL_ZONE_TRENCH_MIDPOINTS);
-  }
-
-  // HOME FIELD ONLY
-  public static Translation2d getClosestHomeFieldNeutralZoneTrenchMidpoint(Translation2d robotTranslation) {
-    return robotTranslation.nearest(HOME_FIELD_NEUTRAL_ZONE_TRENCH_MIDPOINTS);
   }
 
   public static Translation2d getClosestTrenchSideBumpPoint(Translation2d robotTranslation) {
@@ -602,14 +619,17 @@ public class FieldUtil {
     return RED_OUTPOST_BUMP_ASSIST_ZONE.contains(robotTranslation);
   }
 
+  // HOME FIELD ONLY
+  public static Optional<Rectangle2d> getCurrentHomeFieldTrenchAssistZone(
+      Translation2d robotTranslation) {
+    return HOME_FIELD_TRENCH_ASSIST_ZONES.stream()
+        .filter(zone -> zone.contains(robotTranslation))
+        .findFirst();
+  }
+
   /** Returns the trench assist zone that the robot is currently in, if it exists. */
   public static Optional<Rectangle2d> getCurrentTrenchAssistZone(Translation2d robotTranslation) {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotTranslation)).findFirst();
-  }
-
-  // HOME FIELD ONLY
-  public static Optional<Rectangle2d> getCurrentHomeFieldTrenchAssistZone(Translation2d robotTranslation) {
-    return HOME_FIELD_TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotTranslation)).findFirst();
   }
 
   public static Optional<Rectangle2d> getCurrentWallSnapCornerZone(Translation2d robotTranslation) {
@@ -640,13 +660,13 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_OBSTACLE_X : BLUE_OBSTACLE_X;
   }
 
-  public static boolean inTrench(Translation2d robotPose) {
-    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
-  }
-
   // HOME FIELD ONLY
   public static boolean inHomeFieldTrench(Translation2d robotPose) {
     return HOME_FIELD_TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
+  }
+
+  public static boolean inTrench(Translation2d robotPose) {
+    return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 
   public static boolean isInNoScoreZone(Pose2d robot) {
