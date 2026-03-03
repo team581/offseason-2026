@@ -99,6 +99,13 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     }
   }
 
+  public boolean isReset() {
+    if (getState() == DyeRotorState.IDLE && Math.abs(rotorMotorRpm) < 1e-2) {
+      return true;
+    }
+    return false;
+  }
+
   private boolean nearIdlePosition() {
     return MathUtil.isNear(DyeRotorState.IDLE.rotorPosition, rotorAngle, 30, -180, 180);
   }
