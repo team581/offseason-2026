@@ -108,8 +108,11 @@ public class SwerveAssist {
 
     // Check if we are close to a wall
     var closestWallTranslation =
-        MathHelpers.getClosestPointOnRectanglePerimeter(
-            robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+        USE_HOME_FIELD
+            ? MathHelpers.getClosestPointOnRectanglePerimeter(
+                robotPose.getTranslation(), FieldUtil.HOME_FIELD_FIELD_BOUNDS)
+            : MathHelpers.getClosestPointOnRectanglePerimeter(
+                robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
     // If the closest wall is a driver station wall, the y component will be equal to the robot's
     var closestWallIsADriverStationWall =
         Math.abs(robotPose.getY() - closestWallTranslation.getY()) < 1e-5;
@@ -132,8 +135,11 @@ public class SwerveAssist {
       Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     // Check if we are driving fast enough in the direction of the intake parallel with the wall
     var closestWallTranslation =
-        MathHelpers.getClosestPointOnRectanglePerimeter(
-            robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+        USE_HOME_FIELD
+            ? MathHelpers.getClosestPointOnRectanglePerimeter(
+                robotPose.getTranslation(), FieldUtil.HOME_FIELD_FIELD_BOUNDS)
+            : MathHelpers.getClosestPointOnRectanglePerimeter(
+                robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
     // If the closest wall is a driver station wall, the y component will be equal to the robot's
     var closestWallIsADriverStationWall =
         Math.abs(robotPose.getY() - closestWallTranslation.getY()) < 1e-5;
@@ -204,7 +210,11 @@ public class SwerveAssist {
       Translation2d robotTranslation, ChassisSpeeds fieldRelativeSpeeds, boolean enteredCorner) {
     // get direction toward wall, then apply offset of snap round angle in that direction
     var closestWallTranslation =
-        MathHelpers.getClosestPointOnRectanglePerimeter(robotTranslation, FieldUtil.FIELD_BOUNDS);
+        USE_HOME_FIELD
+            ? MathHelpers.getClosestPointOnRectanglePerimeter(
+                robotTranslation, FieldUtil.HOME_FIELD_FIELD_BOUNDS)
+            : MathHelpers.getClosestPointOnRectanglePerimeter(
+                robotTranslation, FieldUtil.FIELD_BOUNDS);
     // If the closest wall is a driver station wall, the y component will be equal to the robot's
     var closestWallIsADriverStationWall =
         Math.abs(robotTranslation.getY() - closestWallTranslation.getY()) < 1e-5;

@@ -201,8 +201,8 @@ public class FieldUtil {
           RED_OUTPOST_TRENCH_SIDE_BUMP_POINT);
 
   // Wall snap zone calculations
-  private static final double WALL_SNAP_CORNER_ZONE_LENGTH = Units.inchesToMeters(60.0);
-  private static final double NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE = Units.inchesToMeters(60.0);
+  private static final double WALL_SNAP_CORNER_ZONE_LENGTH = Units.inchesToMeters(54.0);
+  private static final double NO_WALL_SNAP_OFFSET_IN_CLIMB_ZONE_TOLERANCE = Units.inchesToMeters(110.0);
 
   private static final Rectangle2d BLUE_OUTPOST_WALL_SNAP_CORNER_ZONE =
       new Rectangle2d(
@@ -273,21 +273,31 @@ public class FieldUtil {
 
   private static final double HOME_FIELD_LENGTH_X = Units.inchesToMeters(326.0);
   private static final double HOME_FIELD_WIDTH_Y = Units.inchesToMeters(253.5);
+  public static final Rectangle2d HOME_FIELD_FIELD_BOUNDS =
+      new Rectangle2d(
+          new Translation2d(
+              FIELD_LENGTH_X - HOME_FIELD_LENGTH_X, FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y),
+          new Translation2d(FIELD_LENGTH_X, FIELD_WIDTH_Y));
 
   private static final Rectangle2d HOME_FIELD_BLUE_OUTPOST_WALL_SNAP_CORNER_ZONE =
       new Rectangle2d(
-          new Translation2d(FIELD_LENGTH_X - HOME_FIELD_LENGTH_X, FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y),
-          new Translation2d(FIELD_LENGTH_X - HOME_FIELD_LENGTH_X + WALL_SNAP_CORNER_ZONE_LENGTH, FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y + WALL_SNAP_CORNER_ZONE_LENGTH));
+          new Translation2d(
+              FIELD_LENGTH_X - HOME_FIELD_LENGTH_X, FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y),
+          new Translation2d(
+              FIELD_LENGTH_X - HOME_FIELD_LENGTH_X + WALL_SNAP_CORNER_ZONE_LENGTH,
+              FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y + WALL_SNAP_CORNER_ZONE_LENGTH));
   private static final Rectangle2d HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE =
       new Rectangle2d(
           new Translation2d(FIELD_LENGTH_X - HOME_FIELD_LENGTH_X, FIELD_WIDTH_Y),
           new Translation2d(
-              FIELD_LENGTH_X - HOME_FIELD_LENGTH_X + WALL_SNAP_CORNER_ZONE_LENGTH, FIELD_WIDTH_Y - WALL_SNAP_CORNER_ZONE_LENGTH));
+              FIELD_LENGTH_X - HOME_FIELD_LENGTH_X + WALL_SNAP_CORNER_ZONE_LENGTH,
+              FIELD_WIDTH_Y - WALL_SNAP_CORNER_ZONE_LENGTH));
   private static final Rectangle2d HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE =
       new Rectangle2d(
           new Translation2d(FIELD_LENGTH_X, FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y),
           new Translation2d(
-              FIELD_LENGTH_X - WALL_SNAP_CORNER_ZONE_LENGTH, FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y + WALL_SNAP_CORNER_ZONE_LENGTH));
+              FIELD_LENGTH_X - WALL_SNAP_CORNER_ZONE_LENGTH,
+              FIELD_WIDTH_Y - HOME_FIELD_WIDTH_Y + WALL_SNAP_CORNER_ZONE_LENGTH));
 
   private static final List<Rectangle2d> HOME_FIELD_WALL_SNAP_CORNER_ZONES =
       ImmutableList.of(
@@ -613,19 +623,23 @@ public class FieldUtil {
     DogLog.log(
         "FieldUtil/HomeField/BlueDepot/WallSnapCornerZone/Corner1",
         new Pose2d(
-            MathHelpers.getCorners(HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE).get(1), Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE).get(1),
+            Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/BlueDepot/WallSnapCornerZone/Corner2",
         new Pose2d(
-            MathHelpers.getCorners(HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE).get(3), Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE).get(3),
+            Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/RedDepot/WallSnapCornerZone/Corner1",
         new Pose2d(
-            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE).get(1), Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE).get(1),
+            Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/RedDepot/WallSnapCornerZone/Corner2",
         new Pose2d(
-            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE).get(3), Rotation2d.kCW_90deg));
+            MathHelpers.getCorners(HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE).get(3),
+            Rotation2d.kCW_90deg));
     DogLog.log(
         "FieldUtil/HomeField/RedOutpost/WallSnapCornerZone/Corner1",
         new Pose2d(
@@ -700,7 +714,8 @@ public class FieldUtil {
   }
 
   // HOME FIELD ONLY
-  public static Optional<Rectangle2d> getCurrentHomeFieldWallSnapCornerZone(Translation2d robotTranslation) {
+  public static Optional<Rectangle2d> getCurrentHomeFieldWallSnapCornerZone(
+      Translation2d robotTranslation) {
     return HOME_FIELD_WALL_SNAP_CORNER_ZONES.stream()
         .filter(zone -> zone.contains(robotTranslation))
         .findFirst();
@@ -769,11 +784,13 @@ public class FieldUtil {
   public static boolean nearClimbZone(Translation2d robotTranslation) {
     // Based on alliance field side because the climb zones are not bilaterally symmetrical
     var climbZone =
-        robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0 ? BLUE_CLIMB_ZONE : RED_CLIMB_ZONE;
-    return robotTranslation.getY()
-            < climbZone.getCenter().getY() + NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE
-        && robotTranslation.getY()
-            > climbZone.getCenter().getY() - NO_WALL_SNAPS_IN_CLIMB_ZONE_TOLERANCE;
+        // Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
+        //     ? RED_CLIMB_ZONE
+        //     :
+            robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0
+                ? BLUE_CLIMB_ZONE
+                : RED_CLIMB_ZONE;
+    return new Rectangle2d(climbZone.getCenter(), climbZone.getXWidth(), NO_WALL_SNAP_OFFSET_IN_CLIMB_ZONE_TOLERANCE).contains(robotTranslation);
   }
 
   /**
