@@ -19,7 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
-  private static final DoubleSubscriber LATENCY_CONSTANT = DogLog.tunable("Localization/StaticLatencyAdjustment", 10.0);
+  private static final DoubleSubscriber LATENCY_CONSTANT =
+      DogLog.tunable("Localization/StaticLatencyAdjustment", 10.0);
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
