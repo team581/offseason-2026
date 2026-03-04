@@ -132,7 +132,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
 
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
-    DogLog.log("Vision/" + name + "/Tags/MT2Timestamp", mTEstimateTimestamp);
+    DogLog.log("Vision/" + name + "/Tags/MTTimestamp", mTEstimateTimestamp);
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
     return tagResult.update(mTPose, mTEstimateTimestamp, devs);
   }
