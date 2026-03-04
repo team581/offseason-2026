@@ -57,20 +57,16 @@ public class AimParameterUtil {
         FEEDING_SOTM.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
             turretTranslation, feedTranslation, turretFieldRelativeSpeeds);
 
-    // Calculate fully compensated distance to goal for shooter and hood
-    var fullyCompensatedDistanceToGoal =
-        turretTranslation.getDistance(separatedVelocityCompensatedGoal.fullyCompensatedGoal());
+    // Calculate fully compensated distance to goal for shooter, hood, and turret
+    var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
+    var fullyCompensatedDistanceToGoal = turretTranslation.getDistance(compensatedGoal);
 
-    // Use tangentially compensated goal for turret to avoid aiming backwards
-    Translation2d tangentiallyCompensatedGoal =
-        separatedVelocityCompensatedGoal.tangentiallyCompensatedGoal();
-    var turretAngle =
-        TurretCalculator.calculateTurretAimingAngle(robotPose, tangentiallyCompensatedGoal);
+    var turretAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, compensatedGoal);
 
     // Use same goal for goal centric turret tolerance
     var turretTolerance =
         TurretCalculator.getGoalCentricTurretTolerance(
-            tangentiallyCompensatedGoal, robotPose, SCORING_TURRET_TOLERANCE);
+            compensatedGoal, robotPose, SCORING_TURRET_TOLERANCE);
 
     // Calculate translational FF for turret to account for linear turret velocity
     var realDistanceToGoal = turretTranslation.getDistance(feedTranslation);
@@ -102,20 +98,16 @@ public class AimParameterUtil {
         SCORING_SOTM.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
             turretTranslation, hubTranslation, turretFieldRelativeSpeeds);
 
-    // Calculate fully compensated distance to goal for shooter and hood
-    var fullyCompensatedDistanceToGoal =
-        turretTranslation.getDistance(separatedVelocityCompensatedGoal.fullyCompensatedGoal());
+    // Calculate fully compensated distance to goal for shooter, hood, and turret
+    var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
+    var fullyCompensatedDistanceToGoal = turretTranslation.getDistance(compensatedGoal);
 
-    // Use tangentially compensated goal for turret to avoid aiming backwards
-    Translation2d tangentiallyCompensatedGoal =
-        separatedVelocityCompensatedGoal.tangentiallyCompensatedGoal();
-    var turretAngle =
-        TurretCalculator.calculateTurretAimingAngle(robotPose, tangentiallyCompensatedGoal);
+    var turretAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, compensatedGoal);
 
     // Use same goal for goal centric turret tolerance
     var turretTolerance =
         TurretCalculator.getGoalCentricTurretTolerance(
-            tangentiallyCompensatedGoal, robotPose, SCORING_TURRET_TOLERANCE);
+            compensatedGoal, robotPose, SCORING_TURRET_TOLERANCE);
 
     // Calculate translational FF for turret to account for linear turret velocity
     var realDistanceToGoal = turretTranslation.getDistance(hubTranslation);
