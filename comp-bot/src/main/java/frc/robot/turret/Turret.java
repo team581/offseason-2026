@@ -128,7 +128,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
-                .withVelocity(Math.toDegrees(feedForward)));
+                .withVelocity(Units.radiansToRotations(feedForward)));
       }
       case STUCK -> {
         motor.disable();
