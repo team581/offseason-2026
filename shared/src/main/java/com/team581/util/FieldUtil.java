@@ -202,7 +202,8 @@ public class FieldUtil {
 
   // Wall snap zone calculations
   private static final double WALL_SNAP_CORNER_ZONE_LENGTH = Units.inchesToMeters(54.0);
-  private static final double NO_WALL_SNAP_OFFSET_IN_CLIMB_ZONE_TOLERANCE = Units.inchesToMeters(110.0);
+  private static final double NO_WALL_SNAP_OFFSET_IN_CLIMB_ZONE_TOLERANCE =
+      Units.inchesToMeters(110.0);
 
   private static final Rectangle2d BLUE_OUTPOST_WALL_SNAP_CORNER_ZONE =
       new Rectangle2d(
@@ -783,10 +784,12 @@ public class FieldUtil {
   public static boolean nearClimbZone(Translation2d robotTranslation) {
     // Based on alliance field side because the climb zones are not bilaterally symmetrical
     var climbZone =
-            robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0
-                ? BLUE_CLIMB_ZONE
-                : RED_CLIMB_ZONE;
-    return new Rectangle2d(climbZone.getCenter(), climbZone.getXWidth(), NO_WALL_SNAP_OFFSET_IN_CLIMB_ZONE_TOLERANCE).contains(robotTranslation);
+        robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0 ? BLUE_CLIMB_ZONE : RED_CLIMB_ZONE;
+    return new Rectangle2d(
+            climbZone.getCenter(),
+            climbZone.getXWidth(),
+            NO_WALL_SNAP_OFFSET_IN_CLIMB_ZONE_TOLERANCE)
+        .contains(robotTranslation);
   }
 
   /**
