@@ -237,7 +237,7 @@ public class RightStraightShootClimbAuto
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE_1 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineOne);
-        robotManager.intakeRequest();
+        robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
@@ -248,7 +248,7 @@ public class RightStraightShootClimbAuto
       }
       case INTAKE_ACROSS_MIDLINE_2 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineTwoB);
-        robotManager.intakeRequest();
+        robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_2 -> {
         trailblazer.setActiveSegment(driveBackAndShootTwo);
@@ -259,7 +259,7 @@ public class RightStraightShootClimbAuto
       }
       case INTAKE_ACROSS_MIDLINE_3 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineTwoB);
-        robotManager.intakeRequest();
+        robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_3 -> {
         trailblazer.setActiveSegment(driveBackAndShootThree);

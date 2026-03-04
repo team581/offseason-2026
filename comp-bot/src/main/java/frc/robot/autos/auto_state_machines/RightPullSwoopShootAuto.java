@@ -199,20 +199,22 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE_1 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineOne);
-        robotManager.intakeRequest();
+        robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
+        robotManager.cancelIntakeRequest();
       }
       case SHOOT_1 -> {
         robotManager.prepareScoreRequest();
       }
       case INTAKE_ACROSS_MIDLINE_2 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineTwo);
-        robotManager.intakeRequest();
+        robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_2 -> {
         trailblazer.setActiveSegment(driveBackAndShootTwo);
+        robotManager.cancelIntakeRequest();
       }
       case SHOOT_2 -> {
         robotManager.prepareScoreRequest();
@@ -233,12 +235,10 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
         robotManager.homeShooterHoodRequest();
       }
       case DRIVE_BACK_1 -> {
-        robotManager.cancelIntakeRequest();
       }
       case SHOOT_1 -> {}
       case INTAKE_ACROSS_MIDLINE_2 -> {}
       case DRIVE_BACK_2 -> {
-        robotManager.cancelIntakeRequest();
       }
       case SHOOT_2 -> {}
       case DRIVE_TO_CLIMB -> {
