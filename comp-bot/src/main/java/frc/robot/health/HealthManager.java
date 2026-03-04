@@ -17,7 +17,8 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   private boolean fuelDetectionHealthy = true;
   private boolean allCamerasHealthy = true;
 
-  public HealthManager(Limelight turretLimelight, Limelight backLimelight, Limelight groundLimelight) {
+  public HealthManager(
+      Limelight turretLimelight, Limelight backLimelight, Limelight groundLimelight) {
     super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
 
     this.turretLimelight = turretLimelight;
@@ -43,7 +44,9 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   @Override
   protected void collectInputs() {
     localizationHealthy =
-        RobotBase.isSimulation() || (turretLimelight.getCameraHealth() != CameraHealth.OFFLINE || backLimelight.getCameraHealth() != CameraHealth.OFFLINE);
+        RobotBase.isSimulation()
+            || (turretLimelight.getCameraHealth() != CameraHealth.OFFLINE
+                || backLimelight.getCameraHealth() != CameraHealth.OFFLINE);
     fuelDetectionHealthy =
         RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
     allCamerasHealthy = localizationHealthy && fuelDetectionHealthy;
