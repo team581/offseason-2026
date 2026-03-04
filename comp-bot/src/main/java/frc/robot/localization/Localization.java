@@ -7,6 +7,7 @@ import com.team581.vision.results.TagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
@@ -18,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
-  private static final double LATENCY_CONSTANT = 0.0;
+  private static final DoubleSubscriber LATENCY_CONSTANT = DogLog.tunable("Localization/StaticLatencyAdjustment", 10.0);
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
@@ -101,7 +102,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
       }
       swerve.drivetrain.addVisionMeasurement(
           visionPose,
-          Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT / 1000)),
+          Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT.get() / 1000)),
           result.standardDevs());
     }
     averageTimestamp = averageTimestamp / results.size();
