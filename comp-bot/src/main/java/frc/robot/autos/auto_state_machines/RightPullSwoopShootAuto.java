@@ -234,12 +234,10 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
         robotManager.homeDeployRequest();
         robotManager.homeShooterHoodRequest();
       }
-      case DRIVE_BACK_1 -> {
-      }
+      case DRIVE_BACK_1 -> {}
       case SHOOT_1 -> {}
       case INTAKE_ACROSS_MIDLINE_2 -> {}
-      case DRIVE_BACK_2 -> {
-      }
+      case DRIVE_BACK_2 -> {}
       case SHOOT_2 -> {}
       case DRIVE_TO_CLIMB -> {
         //   trailblazer.setActiveSegment(
