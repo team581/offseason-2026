@@ -5,6 +5,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
@@ -15,6 +16,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import frc.robot.shooter_hood.ShooterHoodConfig;
+import frc.robot.turret.TurretConfig;
+import frc.robot.vision.CameraConfigs;
+import frc.robot.vision.VisionConfig;
 
 public final class MechanismVisualizer {
   /**
@@ -137,6 +141,29 @@ public final class MechanismVisualizer {
     DogLog.log(
         "SuperstructureVisualization/Components",
         new Pose3d[] {turretPose, shooterHoodPose, deployPose, climberPose, dyeRotorPose});
+
+    // Field-relative turret camera pose for AdvantageScope Camera Override
+    var cameraTransform = CameraConfigs.TURRET.getTransform3d();
+    var cameraRotation = cameraTransform.getRotation();
+    var turretCameraPose =
+        new Pose3d(robotPose)
+            // Robot center to turret pivot + turret rotation
+            .plus(
+                new Transform3d(
+                    new Translation3d(TurretConfig.TURRET_TO_ROBOT.getX(), 0, 0),
+                    new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees))))
+            // Turret pivot to camera
+            .plus(
+                new Transform3d(
+                    new Translation3d(VisionConfig.TURRET_TO_CAMERA.getX(), 0, 0),
+                    Rotation3d.kZero))
+            // Camera height + orientation (pitch negated for AdvantageScope convention)
+            .plus(
+                new Transform3d(
+                    cameraTransform.getTranslation(),
+                    new Rotation3d(
+                        cameraRotation.getX(), -cameraRotation.getY(), cameraRotation.getZ())));
+    DogLog.log("Vision/TurretCameraOverride", turretCameraPose);
   }
 
   private MechanismVisualizer() {}
