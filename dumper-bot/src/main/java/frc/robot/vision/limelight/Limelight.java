@@ -78,10 +78,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   public int[] getAllianceHubTags() {
-   if (FmsUtil.isRedAlliance()) {
-    return RED_HUB_TAGS;
-   }
-   return BLUE_HUB_TAGS;
+    if (FmsUtil.isRedAlliance()) {
+      return RED_HUB_TAGS;
+    }
+    return BLUE_HUB_TAGS;
   }
 
   public OptionalTagResult getTagResult() {
