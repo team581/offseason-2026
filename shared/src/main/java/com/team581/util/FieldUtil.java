@@ -302,9 +302,8 @@ public class FieldUtil {
   private static final List<Rectangle2d> HOME_FIELD_WALL_SNAP_CORNER_ZONES =
       ImmutableList.of(
           HOME_FIELD_BLUE_OUTPOST_WALL_SNAP_CORNER_ZONE,
-          HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE,
-          HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE,
-          RED_OUTPOST_WALL_SNAP_CORNER_ZONE);
+              HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE,
+          HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE, RED_OUTPOST_WALL_SNAP_CORNER_ZONE);
 
   // TODO: Validate these points
   private static final Pose2d BLUE_LEFT_FALLBACK =
@@ -702,6 +701,14 @@ public class FieldUtil {
         .findFirst();
   }
 
+  // HOME FIELD ONLY
+  public static Optional<Rectangle2d> getCurrentHomeFieldWallSnapCornerZone(
+      Translation2d robotTranslation) {
+    return HOME_FIELD_WALL_SNAP_CORNER_ZONES.stream()
+        .filter(zone -> zone.contains(robotTranslation))
+        .findFirst();
+  }
+
   /** Returns the trench assist zone that the robot is currently in, if it exists. */
   public static Optional<Rectangle2d> getCurrentTrenchAssistZone(Translation2d robotTranslation) {
     return TRENCH_ASSIST_ZONES.stream().filter(zone -> zone.contains(robotTranslation)).findFirst();
@@ -709,14 +716,6 @@ public class FieldUtil {
 
   public static Optional<Rectangle2d> getCurrentWallSnapCornerZone(Translation2d robotTranslation) {
     return WALL_SNAP_CORNER_ZONES.stream()
-        .filter(zone -> zone.contains(robotTranslation))
-        .findFirst();
-  }
-
-  // HOME FIELD ONLY
-  public static Optional<Rectangle2d> getCurrentHomeFieldWallSnapCornerZone(
-      Translation2d robotTranslation) {
-    return HOME_FIELD_WALL_SNAP_CORNER_ZONES.stream()
         .filter(zone -> zone.contains(robotTranslation))
         .findFirst();
   }
@@ -784,9 +783,6 @@ public class FieldUtil {
   public static boolean nearClimbZone(Translation2d robotTranslation) {
     // Based on alliance field side because the climb zones are not bilaterally symmetrical
     var climbZone =
-        // Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
-        //     ? RED_CLIMB_ZONE
-        //     :
             robotTranslation.getX() < FieldUtil.FIELD_LENGTH_X / 2.0
                 ? BLUE_CLIMB_ZONE
                 : RED_CLIMB_ZONE;
