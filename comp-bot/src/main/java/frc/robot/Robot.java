@@ -1,8 +1,6 @@
 package frc.robot;
 
 import com.team581.Base581Robot;
-import com.team581.config.CameraConfig;
-import com.team581.config.LimelightModel;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
@@ -12,7 +10,6 @@ import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.util.Units;
 import frc.robot.autos.Autos;
 import frc.robot.climber.Climber;
 import frc.robot.cluster_map.ClusterMap;
@@ -29,6 +26,7 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
+import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
@@ -42,56 +40,11 @@ public class Robot extends Base581Robot {
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
   private final Limelight turretLimelight =
-      new Limelight(
-          "turret",
-          LimelightState.TAGS,
-          new CameraConfig(
-              LimelightModel.FOUR,
-              true,
-              false,
-              Units.inchesToMeters(0.0),
-              Units.inchesToMeters(0.0),
-              Units.inchesToMeters(20.348),
-              30.0,
-              0.0,
-              0.0));
+      new Limelight("turret", LimelightState.TAGS, CameraConfigs.TURRET);
   private final Limelight backLimelight =
-      new Limelight(
-          "backl",
-          LimelightState.TAGS,
-          new CameraConfig(
-              LimelightModel.FOUR,
-              true,
-              false,
-              // back
-              Units.inchesToMeters(-13.389),
-              // left
-              Units.inchesToMeters(-8.3370),
-              Units.inchesToMeters(19.7564),
-              // TODO: get real number from cad
-              10.00,
-              -175.5,
-              -0.83));
-
-  // ground when stowed
-  // Units.inchesToMeters(12.9742),
-  // Units.inchesToMeters(0.0),
-  // Units.inchesToMeters(16.8886)
-
+      new Limelight("backl", LimelightState.TAGS, CameraConfigs.BACK);
   private final Limelight groundLimelight =
-      new Limelight(
-          "ground",
-          LimelightState.CLUSTER_MAP,
-          new CameraConfig(
-              LimelightModel.THREE,
-              false,
-              false,
-              Units.inchesToMeters(25.671),
-              Units.inchesToMeters(0.0),
-              Units.inchesToMeters(12.9525),
-              -20.0,
-              0.0,
-              0.0));
+      new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
   private final HealthManager health =
       new HealthManager(turretLimelight, backLimelight, groundLimelight);
   private final Swerve swerve =
