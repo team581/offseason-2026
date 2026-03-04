@@ -234,12 +234,11 @@ public class FieldUtil {
 
   // HOME FIELD ONLY; Modified field util for home field
   // TODO: Need to tune the red depot wall offset on home field
-  private static final double HOME_FIELD_RED_DEPOT_WALL_OFFSET =
-      FIELD_WIDTH_Y - Units.inchesToMeters(252.0);
+  private static final double HOME_FIELD_RED_DEPOT_WALL_OFFSET = Units.inchesToMeters(229.0);
   private static final Pose2d HOME_FIELD_RED_DEPOT_TRENCH_CENTER =
       new Pose2d(
           RED_DEPOT_TRENCH_CENTER.getX(),
-          RED_DEPOT_TRENCH_CENTER.getY() + HOME_FIELD_RED_DEPOT_WALL_OFFSET,
+          FIELD_WIDTH_Y - HOME_FIELD_RED_DEPOT_WALL_OFFSET,
           Rotation2d.kZero);
 
   private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ZONE =
