@@ -92,7 +92,7 @@ public class Robot extends Base581Robot {
               -20.0,
               0.0,
               0.0));
-  private final HealthManager health = new HealthManager(turretLimelight, backLimelight);
+  private final HealthManager health = new HealthManager(turretLimelight, backLimelight, groundLimelight);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Imu imu = new Imu(swerve.drivetrain);
