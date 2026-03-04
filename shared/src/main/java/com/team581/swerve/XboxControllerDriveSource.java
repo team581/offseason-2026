@@ -9,8 +9,9 @@ import org.jspecify.annotations.Nullable;
 
 public class XboxControllerDriveSource implements DriveSource {
   private final XboxController controller;
-  private final double maxLinearVelocity;
-  private final Rotation2d maxAngularVelocity;
+
+  private double maxLinearVelocity;
+  private Rotation2d maxAngularVelocity;
 
   public XboxControllerDriveSource(
       XboxController controller, double maxLinearVelocity, Rotation2d maxAngularVelocity) {
@@ -40,5 +41,10 @@ public class XboxControllerDriveSource implements DriveSource {
         rotationMagnitude,
         maxLinearVelocity,
         maxAngularVelocity);
+  }
+
+  public void setMaxVelocity(double maxLinearVelocity, Rotation2d maxAngularVelocity) {
+    this.maxLinearVelocity = maxLinearVelocity;
+    this.maxAngularVelocity = maxAngularVelocity;
   }
 }

@@ -639,6 +639,274 @@
           }
         ]
       }
+    },
+    {
+      "name": "Transitions",
+      "grid_layout": {
+        "containers": [],
+        "layouts": [
+          {
+            "children": [
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "DyeRotorNotJammed",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/DyeRotorNotJammed",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "InNoFeedZone",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/InNoFeedZone",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "LocalizationHealthy",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/LocalizationHealthy",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "ShooterAtGoal",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterAtGoal",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "ShooterHoodAtGoal",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "TurretAtGoal",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/TurretAtGoal",
+                  "true_icon": "None"
+                },
+                "height": 128
+              }
+            ],
+            "x": 896,
+            "width": 512,
+            "y": 0,
+            "title": "FeedTransition",
+            "type": "List Layout",
+            "properties": {"label_position": "RIGHT"},
+            "height": 640
+          },
+          {
+            "children": [
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "DyeRotorNotJammed",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/DyeRotorNotJammed",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "InAllianceZone",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/InAllianceZone",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "IsHubActive",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/IsHubActive",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "IsInScoringZone",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/IsInScoringZone",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "LocalizationTrustworthy",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "ShooterAtGoal",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/ShooterAtGoal",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "ShooterHoodAtGoal",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal",
+                  "true_icon": "None"
+                },
+                "height": 128
+              },
+              {
+                "x": 0,
+                "width": 128,
+                "y": 0,
+                "title": "TurretAtGoal",
+                "type": "Boolean Box",
+                "properties": {
+                  "true_color": 4283215696,
+                  "period": 0.06,
+                  "false_color": 4294198070,
+                  "false_icon": "None",
+                  "data_type": "boolean",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/TurretAtGoal",
+                  "true_icon": "None"
+                },
+                "height": 128
+              }
+            ],
+            "x": 0,
+            "width": 512,
+            "y": 0,
+            "title": "ScoreTransition",
+            "type": "List Layout",
+            "properties": {"label_position": "RIGHT"},
+            "height": 640
+          }
+        ]
+      }
     }
   ],
   "version": 1

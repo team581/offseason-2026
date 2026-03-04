@@ -29,7 +29,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   private double velocity = 0.0;
   private double voltage = 0.0;
   private double statorCurrent = 0.0;
-  private double robotRotationFeedForward = 0.0;
+  private double feedForward = 0.0;
   private double stuckAngle = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
@@ -112,7 +112,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle))))
-                .withVelocity(Units.radiansToRotations(robotRotationFeedForward)));
+                .withVelocity(Units.radiansToRotations(feedForward)));
       }
       case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
@@ -120,13 +120,15 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
-                .withVelocity(Units.radiansToRotations(robotRotationFeedForward)));
+                .withVelocity(Units.radiansToRotations(feedForward)));
       }
       case CLIMB_SCORE -> {
         motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(
-                    clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle)))));
+            positionRequest
+                .withPosition(
+                    Units.degreesToRotations(
+                        clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
+                .withVelocity(Units.radiansToRotations(feedForward)));
       }
       case STUCK -> {
         motor.disable();
@@ -182,7 +184,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     }
   }
 
-  public void scoreRequest(double goalAngle) {
+  public void scoreRequest(double goalAngle, double feedForward) {
+    this.feedForward = feedForward;
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       stuckRequest();
       return;
@@ -191,7 +194,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.SCORE);
   }
 
-  public void climbScoreRequest(boolean isLeft) {
+  public void climbScoreRequest(boolean isLeft, double feedForward) {
+    this.feedForward = feedForward;
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       stuckRequest();
       return;
@@ -200,7 +204,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.CLIMB_SCORE);
   }
 
-  public void climbRequest(Pose2d robotPose) {
+  public void climbRequest(Pose2d robotPose, double feedForward) {
+    this.feedForward = feedForward;
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       stuckRequest();
       return;
@@ -211,7 +216,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.CLIMB);
   }
 
-  public void feedRequest(double goalAngle) {
+  public void feedRequest(double goalAngle, double feedForward) {
+    this.feedForward = feedForward;
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       stuckRequest();
       return;
@@ -220,7 +226,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.FEED);
   }
 
-  public void idleScoreRequest(double goalAngle) {
+  public void idleScoreRequest(double goalAngle, double feedForward) {
+    this.feedForward = feedForward;
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       stuckRequest();
       return;
@@ -229,17 +236,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setState(TurretState.IDLE_SCORE);
   }
 
-  public void idleFeedRequest(double goalAngle) {
+  public void idleFeedRequest(double goalAngle, double feedForward) {
+    this.feedForward = feedForward;
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       stuckRequest();
       return;
     }
     this.goalAngle = goalAngle;
     setState(TurretState.IDLE_FEED);
-  }
-
-  public void setRobotRotationRate(double rateRadians) {
-    robotRotationFeedForward = -rateRadians;
   }
 
   public boolean atGoal(double tolerance) {

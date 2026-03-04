@@ -21,7 +21,11 @@ public class ShootOnTheMove {
   }
 
   public record SeparatedVelocityCompensatedGoal(
-      Translation2d radiallyCompensatedGoal, Translation2d tangentiallyCompensatedGoal) {}
+      double radialVelocity,
+      Translation2d radiallyCompensatedGoal,
+      double tangentialVelocity,
+      Translation2d tangentiallyCompensatedGoal,
+      Translation2d fullyCompensatedGoal) {}
 
   public double getEffectiveTimeOfFlight(double tof) {
     return (1 - Math.pow(Math.E, (-DRAG_CONSTANT.getAsDouble() * tof)))
@@ -69,18 +73,22 @@ public class ShootOnTheMove {
     DogLog.log("ShootOnTheMove/CompensatedGoal", new Pose2d(compensatedGoal, Rotation2d.kZero));
 
     return new SeparatedVelocityCompensatedGoal(
-        radiallyCompensatedGoal, tangentiallyCompensatedGoal);
+        velocityTowardGoal.getX(),
+        radiallyCompensatedGoal,
+        velocityTowardGoal.getY(),
+        tangentiallyCompensatedGoal,
+        compensatedGoal);
   }
 
   public SeparatedVelocityCompensatedGoal getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-      Translation2d robot, Translation2d goal, ChassisSpeeds robotVelocity) {
+      Translation2d turretTranslation, Translation2d goal, ChassisSpeeds robotVelocity) {
 
     var compensatedGoal = goal;
     var timeOfFlight = 0.0;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
-    var robotToGoalAngle = goal.minus(robot).getAngle();
+    var robotToGoalAngle = goal.minus(turretTranslation).getAngle();
     var velocityTowardGoal =
         new Translation2d(robotVelocity.vxMetersPerSecond, robotVelocity.vyMetersPerSecond)
             .rotateBy(robotToGoalAngle.times(-1.0));
@@ -93,7 +101,8 @@ public class ShootOnTheMove {
     // Get time of flight of virtual goal using iterations
     for (int i = 0; i < MAX_ITERATIONS; i++) {
       timeOfFlight =
-          getEffectiveTimeOfFlight(distanceToTimeOfFlight.get(robot.getDistance(compensatedGoal)));
+          getEffectiveTimeOfFlight(
+              distanceToTimeOfFlight.get(turretTranslation.getDistance(compensatedGoal)));
       // Compensated goal = real goal - (robot velocity * time of flight of ball)
       compensatedGoal =
           new Translation2d(
@@ -114,7 +123,11 @@ public class ShootOnTheMove {
     DogLog.log("ShootOnTheMove/CompensatedGoal", new Pose2d(compensatedGoal, Rotation2d.kZero));
 
     return new SeparatedVelocityCompensatedGoal(
-        radiallyCompensatedGoal, tangentiallyCompensatedGoal);
+        velocityTowardGoal.getX(),
+        radiallyCompensatedGoal,
+        velocityTowardGoal.getY(),
+        tangentiallyCompensatedGoal,
+        compensatedGoal);
   }
 
   public Translation2d getVelocityCompensatedGoal(

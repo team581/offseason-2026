@@ -22,6 +22,8 @@ import java.util.OptionalDouble;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
   private final Debouncer seeingTagDebouncer = new Debouncer(1.0, DebounceType.kFalling);
+  private final Debouncer seeingHubTagDebouncer = new Debouncer(0.5, DebounceType.kFalling);
+
   private final Debouncer seeingTagForPoseResetDebouncer =
       new Debouncer(5.0, DebounceType.kFalling);
 
@@ -50,6 +52,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private boolean hasSeenTag = false;
   private boolean seeingTag = false;
   private boolean seeingTagDebounced = false;
+
   private boolean seenTagRecentlyForReset = true;
   private boolean seeingHubTags = false;
 
@@ -97,7 +100,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
       seenTagRecentlyForReset = seeingTagForPoseResetDebouncer.calculate(seeingTag);
     }
 
-    seeingHubTags = turretLimelight.seeingHubTag() || backLimelight.seeingHubTag();
+    seeingHubTags =
+        seeingHubTagDebouncer.calculate(
+            turretLimelight.seeingHubTag() || backLimelight.seeingHubTag());
   }
 
   // Call this in turret's periodic() or a fast telemetry thread
@@ -186,13 +191,13 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     if (getState() == VisionState.CALIBRATE_STATIC_TURRET) {
       return;
     }
-    if (state == VisionState.HUB_TAGS) {
-      state = VisionState.TAGS;
-    }
-
     if (state == VisionState.HUB_TAGS && getState() == VisionState.WAITING_FOR_HUB_TAGS) {
       return;
     }
+    if (state == VisionState.HUB_TAGS) {
+      state = VisionState.WAITING_FOR_HUB_TAGS;
+    }
+
     setStateFromRequest(state);
   }
 

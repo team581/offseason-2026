@@ -1,5 +1,6 @@
 package frc.robot.vision.limelight;
 
+import com.google.common.collect.ImmutableSet;
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
@@ -34,19 +35,20 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   private static final int[] HUB_TAGS = new int[] {2, 3, 4, 5, 8, 9, 10, 11};
   private static final Set<Integer> HUB_TAGS_SET = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
-  private static final Set<Integer> RED_HUB_TAGS = Set.of(2, 3, 4, 5);
-  private static final Set<Integer> BLUE_HUB_TAGS = Set.of(8, 9, 10, 11);
+  private static final Set<Integer> RED_HUB_TAGS = ImmutableSet.of(2, 3, 4, 5);
+  private static final Set<Integer> BLUE_HUB_TAGS = ImmutableSet.of(8, 9, 10, 11);
   private static final double IS_OFFLINE_TIMEOUT = 3;
 
   public Set<Integer> getActiveHubTags() {
     var alliance = edu.wpi.first.wpilibj.DriverStation.getAlliance();
     if (alliance.isPresent()) {
-      return alliance.get() == edu.wpi.first.wpilibj.DriverStation.Alliance.Red
+      return alliance.orElseThrow() == edu.wpi.first.wpilibj.DriverStation.Alliance.Red
           ? RED_HUB_TAGS
           : BLUE_HUB_TAGS;
     }
-    return Set.of();
+    return ImmutableSet.of();
   }
+
   public final String limelightTableName;
   public final CameraConfig config;
   private final String name;
@@ -107,7 +109,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var mTPose = mT1Estimate.pose;
     var distance = mT1Estimate.avgTagDist;
 
-    var xyDev = 0.01 * Math.pow(distance, 1.2);
+    var xyDev = 0.01 * Math.pow(distance, 0.8);
     var thetaDev = Double.POSITIVE_INFINITY;
 
     if (config.useMt2()) {
