@@ -6,6 +6,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
+import com.team581.autos.Point;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.DriveSource;
@@ -257,7 +258,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     // Wall snap logic if we are in a corner
     inWallSnapCorner =
-        FieldUtil.getCurrentWallSnapCornerZone(drivetrainState.Pose.getTranslation()).isPresent();
+        Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
+            ? FieldUtil.getCurrentHomeFieldWallSnapCornerZone(drivetrainState.Pose.getTranslation())
+                .isPresent()
+            : FieldUtil.getCurrentWallSnapCornerZone(drivetrainState.Pose.getTranslation())
+                .isPresent();
     if (inWallSnapCorner
         && !previouslyInWallSnapCorner
         && SwerveAssist.drivingInWallSnapDirection(drivetrainState.Pose, fieldRelativeSpeeds)) {
