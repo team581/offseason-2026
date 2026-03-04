@@ -1257,7 +1257,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     double driveDirection = swerveVector.getDegrees();
     drivingToIntake =
         (intake.getState() == IntakeState.INTAKE || intake.getState() == IntakeState.INTAKE_AUTO)
-            && MathUtil.isNear(robotRotation, driveDirection, 45, -180, 180)
+            && MathUtil.isNear(robotRotation, driveDirection, 55, -180, 180)
             && MathHelpers.getLinearVelocity(speeds) > 1e-5;
     isInScoringZone =
         !health.isLocalizationHealthy()
