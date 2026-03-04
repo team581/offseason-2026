@@ -190,9 +190,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       if (Timer.getTimestamp() - lastTagTimestamp > 30) {
         DogLog.logFault(
             limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
+      } else {
+              DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
       }
     } else {
-
       DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
     }
 
