@@ -27,7 +27,7 @@ public class TurretConfig {
   public static final double MOTOR_TO_TURRET = ((220.0 / 14.0) * (36.0 / 10.0));
 
   // CAL NUMBER
-  public static final double ROTOR_CAL_OFFSET = -0.249267578125;
+  public static final double ROTOR_CAL_OFFSET = 0.214599609375;
 
   public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double ENCODER_TO_TURRET =
