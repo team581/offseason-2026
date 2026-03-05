@@ -1,5 +1,7 @@
 package com.team581.simkit.internal;
 
+import static java.util.stream.Collectors.toCollection;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.ArrayDeque;
@@ -7,7 +9,6 @@ import java.util.List;
 import java.util.OptionalDouble;
 import java.util.Queue;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class SimShooter {
   private final Predicate<ShotGamePiece> shouldKeep;
@@ -45,7 +46,7 @@ public class SimShooter {
   }
 
   public void update() {
-    shots = shots.stream().filter(shouldKeep).collect(Collectors.toCollection(ArrayDeque::new));
+    shots = shots.stream().filter(shouldKeep).collect(toCollection(ArrayDeque::new));
 
     DogLog.log(logKey, shots.stream().map(ShotGamePiece::pose).toArray(Translation3d[]::new));
   }
