@@ -12,6 +12,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import frc.robot.config.RobotKind;
 import java.util.Map;
 
 public class ShooterHoodConfig {
@@ -47,7 +48,7 @@ public class ShooterHoodConfig {
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(350)
+                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 350)
                   .withKV(0)
                   .withKS(0)
                   .withGravityType(GravityTypeValue.Arm_Cosine));
