@@ -1271,7 +1271,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private boolean getIsHubActiveOrNotUsingState() {
-    if (!DSOptions.USE_HUB_STATE.get() || DriverStation.isAutonomousEnabled()) {
+    if (!DSOptions.USE_HUB_STATE.get() || DriverStation.isAutonomous()) {
       return true;
     }
 
