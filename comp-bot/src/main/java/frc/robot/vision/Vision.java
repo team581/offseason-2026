@@ -155,7 +155,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
     var turretToRobot =
         MathHelpers.transform2dFromRotation(
-            Rotation2d.fromDegrees(robotToTurretObservation.orElseThrow()));
+            Rotation2d.fromDegrees(-robotToTurretObservation.orElseThrow()));
 
     // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
     var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);

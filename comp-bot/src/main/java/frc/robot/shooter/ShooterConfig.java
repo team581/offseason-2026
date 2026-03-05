@@ -33,21 +33,22 @@ public class ShooterConfig {
 
   public static final double TEST_VOLTAGE = 6.0;
 
-  public static final double MAX_SAFE_RPM = 5000;
+  public static final double MAX_SAFE_RPM = 6000;
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(4.93, 3100.0),
-          Map.entry(3.47, 2500.0),
-          Map.entry(1.65, 2300.0));
+          Map.entry(5.551, 2350.0),
+          Map.entry(3.42, 2000.0),
+          Map.entry(2.33, 1850.0),
+          Map.entry(1.41, 1650.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
-          Map.entry(9.56, 3500.0),
-          Map.entry(6.0, 2700.0),
-          Map.entry(3.56, 2500.0),
-          Map.entry(1.69, 1840.0));
+          Map.entry(5.551, 1350.0),
+          Map.entry(3.42, 1000.0),
+          Map.entry(2.33, 850.0),
+          Map.entry(1.41, 650.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
@@ -68,7 +69,7 @@ public class ShooterConfig {
           Map.entry(5.5, 1.396666667));
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIGS =
       new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(18.0 / 12.0))
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
@@ -85,8 +86,8 @@ public class ShooterConfig {
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 0.9)
-                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.177)
+                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 0.55)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.123)
                   .withKS(0.0))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
@@ -95,7 +96,7 @@ public class ShooterConfig {
                   .withPeakReverseTorqueCurrent(0));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(18.0 / 12.0))
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
@@ -110,11 +111,15 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
+<<<<<<< HEAD
           .withSlot0(
               new Slot0Configs()
                   .withKP(RobotKind.IS_COMP_BOT ? 0 : 0.9)
                   .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.177)
                   .withKS(0.0))
+=======
+          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.123).withKS(0.0))
+>>>>>>> f2ec951781a7dae75779a281b6eee48fcd9be66a
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()

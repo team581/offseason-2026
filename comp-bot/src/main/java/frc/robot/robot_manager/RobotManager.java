@@ -1244,9 +1244,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
 
     shooter.getScoreTimeOfFlight(scoringParameters.distance());
-    feedingParameters =
-        AimParameterUtil.getFeedingParameters(
-            feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
+    if (!health.isLocalizationHealthy()) {
+      feedingParameters =
+          AimParameterUtil.getFallbackFeedingParameters(
+              feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
+    } else {
+      feedingParameters =
+          AimParameterUtil.getFeedingParameters(
+              feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
+    }
 
     timeSinceMatchStart = teleopTimer.get() + FmsUtil.MATCH_TIME_AT_TELEOP_START;
 
@@ -1265,7 +1271,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private boolean getIsHubActiveOrNotUsingState() {
-    if (!DSOptions.USE_HUB_STATE.get() || DriverStation.isAutonomousEnabled()) {
+    if (!DSOptions.USE_HUB_STATE.get() || DriverStation.isAutonomous()) {
       return true;
     }
 

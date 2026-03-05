@@ -132,7 +132,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
 
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
-    DogLog.log("Vision/" + name + "/Tags/MT2Timestamp", mTEstimateTimestamp);
+    DogLog.log("Vision/" + name + "/Tags/MTTimestamp", mTEstimateTimestamp);
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
     return tagResult.update(mTPose, mTEstimateTimestamp, devs);
   }
@@ -190,9 +190,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       if (Timer.getTimestamp() - lastTagTimestamp > 30) {
         DogLog.logFault(
             limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
+      } else {
+        DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
       }
     } else {
-
       DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
     }
 
