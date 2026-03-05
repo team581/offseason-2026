@@ -111,15 +111,11 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-<<<<<<< HEAD
           .withSlot0(
               new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 0.9)
-                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.177)
+                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 0.55)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.123)
                   .withKS(0.0))
-=======
-          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.123).withKS(0.0))
->>>>>>> f2ec951781a7dae75779a281b6eee48fcd9be66a
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
