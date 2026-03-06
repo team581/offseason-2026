@@ -208,14 +208,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   private boolean atGoal() {
-    return switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
-      default ->
-          MathUtil.isNear(
-                  getState().getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
-              && MathUtil.isNear(
-                  getState().getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
-    };
+    return atGoal(getState().getLength());
   }
 
   public boolean atGoal(double goalDistance) {
