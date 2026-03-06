@@ -49,6 +49,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxLinearRateShooting", 2.0);
 
+  private static final DoubleSubscriber SNAKE_MODE_AGRESSIVENESS =
+      DogLog.tunable("Swerve/SnakeModeAgressiveness", 0.25);
+
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 0.4);
@@ -288,7 +291,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           filteredLastDriveDirection.interpolate(
               MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
                   .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0)),
-              MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds())
+              (SNAKE_MODE_AGRESSIVENESS.get()*MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
                   / teleopDriveSource.maxLinearVelocity);
 
       ableToDirectionSnap =
