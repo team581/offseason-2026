@@ -48,11 +48,11 @@ public class TurretConfig {
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 200.0)
-                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 6.0)
+                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 0.0)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.0)
                   .withKG(0.0)
-                  .withKD(RobotKind.IS_COMP_BOT ? 0 : 1.7)
-                  .withKS(RobotKind.IS_COMP_BOT ? 0 : 0.2));
+                  .withKD(RobotKind.IS_COMP_BOT ? 0 : 0.0)
+                  .withKS(RobotKind.IS_COMP_BOT ? 0 : 0.0));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
           .withMagnetSensor(
