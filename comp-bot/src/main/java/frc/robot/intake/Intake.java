@@ -22,6 +22,18 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     setStateFromRequest(IntakeState.SHOOT);
   }
 
+  public void shootThenIntakeRequest() {
+    setStateFromRequest(IntakeState.SHOOT_THEN_INTAKE);
+  }
+
+  public void stopShootingRequest() {
+    switch (getState()) {
+      case SHOOT -> setStateFromRequest(IntakeState.IDLE);
+      case SHOOT_THEN_INTAKE -> setStateFromRequest(IntakeState.INTAKE);
+      default -> {}
+    }
+  }
+
   public void intakeRequest() {
     setStateFromRequest(IntakeState.INTAKE);
   }
@@ -46,7 +58,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
       case INTAKE_AUTO -> {
         motor.setVoltage(newState.getIntakeVoltage());
       }
-      case SHOOT -> {
+      case SHOOT, SHOOT_THEN_INTAKE -> {
         motor.setVoltage(newState.getIntakeVoltage());
       }
     }

@@ -135,29 +135,13 @@ public class Robot extends Base581Robot {
 
     driver
         .rightTrigger()
-        .onPress(
-            () -> {
-              robotManager.setDriverWantsHubScore(true);
-              robotManager.prepareScoreRequest();
-            })
-        .onRelease(
-            () -> {
-              robotManager.setDriverWantsHubScore(false);
-              robotManager.idleRequest();
-            });
+        .onPress(robotManager::prepareScoreRequest)
+        .onRelease(robotManager::idleRequest);
 
     driver
         .rightBumper()
-        .onPress(
-            () -> {
-              robotManager.setDriverWantsFeed(true);
-              robotManager.prepareFeedRequest();
-            })
-        .onRelease(
-            () -> {
-              robotManager.setDriverWantsFeed(false);
-              robotManager.idleRequest();
-            });
+        .onPress(robotManager::prepareFeedRequest)
+        .onRelease(robotManager::idleRequest);
 
     operator.start().onPress(robotManager::homeDeployRequest);
 
@@ -167,31 +151,12 @@ public class Robot extends Base581Robot {
 
     operator.y().onPress(robotManager::manualClimbSequenceForward);
 
-    operator
-        .b()
-        .onPress(
-            () -> {
-              robotManager.setOperatorWantsFeed(true);
-              robotManager.prepareFeedRequest();
-            })
-        .onRelease(
-            () -> {
-              robotManager.setOperatorWantsFeed(false);
-              robotManager.idleRequest();
-            });
+    operator.b().onPress(robotManager::prepareFeedRequest).onRelease(robotManager::idleRequest);
 
     operator
         .rightTrigger()
-        .onPress(
-            () -> {
-              robotManager.setOperatorWantsHubScore(true);
-              robotManager.prepareScoreRequest();
-            })
-        .onRelease(
-            () -> {
-              robotManager.setOperatorWantsHubScore(false);
-              robotManager.idleRequest();
-            });
+        .onPress(robotManager::prepareScoreRequest)
+        .onRelease(robotManager::idleRequest);
 
     // Use as idle button when not climbing, otherwise does sequence and eventually gets back to
     // idle
@@ -199,8 +164,8 @@ public class Robot extends Base581Robot {
 
     operator
         .leftTrigger()
-        .onPress(() -> robotManager.setOperatorWantsForceStow(true))
-        .onRelease(() -> robotManager.setOperatorWantsForceStow(false));
+        .onPress(robotManager::stowDeployRequest)
+        .onRelease(deploy::intakeRequest);
 
     operator
         .leftBumper()

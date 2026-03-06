@@ -96,6 +96,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
+  public void stopShootingRequest() {
+    switch (getState()) {
+      case HOPPER_SHUFFLING_OUT, HOPPER_SHUFFLING_IN, HOPPER_SHUFFLING_FINISH ->
+          setStateFromRequest(DeployState.INTAKE);
+      default -> {}
+    }
+  }
+
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
