@@ -25,6 +25,14 @@ public class XboxControllerDriveSource implements DriveSource {
     return DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
   }
 
+  public double getLeftX() {
+    return controller.getLeftX();
+  }
+
+  public double getLeftY() {
+    return controller.getLeftY();
+  }
+
   @Override
   public ChassisSpeeds getRequestedSpeeds(@Nullable Rotation2d snapAngle) {
     var leftX = controller.getLeftX();
@@ -41,14 +49,6 @@ public class XboxControllerDriveSource implements DriveSource {
         rotationMagnitude,
         maxLinearVelocity,
         maxAngularVelocity);
-  }
-
-  public double getLeftX() {
-    return controller.getLeftX();
-  }
-
-  public double getLeftY() {
-    return controller.getLeftY();
   }
 
   public double getRightX() {

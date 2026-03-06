@@ -298,7 +298,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       ableToDirectionSnap =
           FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()
               && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-              && SwerveAssist.ableToDirectionSnap(fieldRelativeSpeeds, teleopDriveSource.getRightY());
+              && SwerveAssist.ableToDirectionSnap(
+                  fieldRelativeSpeeds, teleopDriveSource.getRightY());
     }
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
