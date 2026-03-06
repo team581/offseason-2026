@@ -130,8 +130,8 @@ public class Robot extends Base581Robot {
 
     driver
         .leftTrigger()
-        .onPress(robotManager::intakeRequest)
-        .onRelease(robotManager::cancelIntakeRequest);
+        .onPress(() -> robotManager.setDriverWantsIntake(true))
+        .onRelease(() -> robotManager.setDriverWantsIntake(false));
 
     driver
         .rightTrigger()

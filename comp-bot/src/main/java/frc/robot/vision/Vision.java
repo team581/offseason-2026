@@ -87,7 +87,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
     adjustedTurretResult = getAdjustedTurretLimelightTagResult(turretResult);
 
-    if (turretResult.isPresent()) {
+    if (turretResult.isPresent() || backResult.isPresent()) {
       hasSeenTag = true;
       seeingTag = true;
     } else {
@@ -176,6 +176,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   public boolean seenTagRecentlyForReset() {
+    DogLog.log("Vision/SeenTagRecentlyForReset", seenTagRecentlyForReset);
     return seenTagRecentlyForReset || RobotBase.isSimulation();
   }
 
