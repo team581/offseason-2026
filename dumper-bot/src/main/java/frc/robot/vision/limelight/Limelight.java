@@ -3,7 +3,6 @@ package frc.robot.vision.limelight;
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
-import com.team581.util.FmsUtil;
 import com.team581.util.ReusableOptional;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
@@ -30,7 +29,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         26, 27, 28, 29, 30, 31, 32
       };
 
-      private static final double IS_OFFLINE_TIMEOUT = 3;
+  private static final int[] HUB_TAGS = new int[] {2, 3, 4, 5, 8, 9, 10, 11};
+
+  private static final double IS_OFFLINE_TIMEOUT = 3;
 
   public final String limelightTableName;
   private final String name;
@@ -74,16 +75,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     setStateFromRequest(state);
   }
 
-<<<<<<< HEAD
-=======
-  public int[] getAllianceHubTags() {
-    if (FmsUtil.isRedAlliance()) {
-      return RED_HUB_TAGS;
-    }
-    return BLUE_HUB_TAGS;
-  }
-
->>>>>>> cf1f851bf391e0e390bf91b5b601015a29c1e595
   public OptionalTagResult getTagResult() {
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
