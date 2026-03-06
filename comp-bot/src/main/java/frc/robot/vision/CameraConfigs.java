@@ -12,7 +12,7 @@ public class CameraConfigs {
           false,
           Units.inchesToMeters(0.0),
           Units.inchesToMeters(0.0),
-          Units.inchesToMeters(20.348),
+          Units.inchesToMeters(21.0309),
           30.0,
           0.0,
           0.0);
