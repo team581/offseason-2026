@@ -30,10 +30,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         26, 27, 28, 29, 30, 31, 32
       };
 
-  private static final int[] RED_HUB_TAGS = new int[] {2, 3, 4, 5, 8, 9, 10, 11};
-  private static final int[] BLUE_HUB_TAGS = new int[] {18, 19, 20, 21, 24, 25, 26, 27};
-
-  private static final double IS_OFFLINE_TIMEOUT = 3;
+      private static final double IS_OFFLINE_TIMEOUT = 3;
 
   public final String limelightTableName;
   private final String name;
@@ -75,13 +72,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   public void setState(LimelightState state) {
     setStateFromRequest(state);
-  }
-
-  public int[] getAllianceHubTags() {
-   if (FmsUtil.isRedAlliance()) {
-    return RED_HUB_TAGS;
-   }
-   return BLUE_HUB_TAGS;
   }
 
   public OptionalTagResult getTagResult() {
