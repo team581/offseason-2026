@@ -65,6 +65,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
+  private boolean driverWantsIntake = false;
+  private boolean driverWantsHubScore = false;
+  private boolean driverWantsFeed = false;
+  private boolean operatorWantsForceStow = false;
+  private boolean operatorWantsHubScore = false;
+  private boolean operatorWantsFeed = false;
 
   private double timeSinceMatchStart = 0.0;
   private double timeUntilNextShift = 0.0;
@@ -912,6 +918,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       default -> {}
     }
+    teleopDeployRequest();
+
+    DogLog.log("RobotManager/DriverWantsIntake", driverWantsIntake);
+    DogLog.log("RobotManager/OperatorWantsForceStow", operatorWantsForceStow);
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
@@ -1075,9 +1085,28 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     feedLocation = FeedLocation.CLOSEST;
   }
 
-  public void intakeRequest() {
-    intake.intakeRequest();
-    deploy.intakeRequest();
+  public void setDriverWantsIntake(boolean driverWantsIntake) {
+    this.driverWantsIntake = driverWantsIntake;
+  }
+
+  public void setDriverWantsHubScore(boolean driverWantsHubScore) {
+    this.driverWantsHubScore = driverWantsHubScore;
+  }
+
+  public void setDriverWantsFeed(boolean driverWantsFeed) {
+    this.driverWantsFeed = driverWantsFeed;
+  }
+
+  public void setOperatorWantsForceStow(boolean operatorWantsForceStow) {
+    this.operatorWantsForceStow = operatorWantsForceStow;
+  }
+
+  public void setOperatorWantsHubScore(boolean operatorWantsHubScore) {
+    this.operatorWantsHubScore = operatorWantsHubScore;
+  }
+
+  public void setOperatorWantsFeed(boolean operatorWantsFeed) {
+    this.operatorWantsFeed = operatorWantsFeed;
   }
 
   public void intakeAutoRequest() {
@@ -1104,11 +1133,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           deploy.shuffleRequest();
       default -> {}
     }
-  }
-
-  public void stowDeployRequest() {
-    intake.idleRequest();
-    deploy.stowRequest();
   }
 
   public void unjamRequest() {
@@ -1323,15 +1347,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
   }
 
-  // TODO: Every time the driver/operator left/right trigger changes, run this function with the
-  // full state of their requested intake + deploy state
-  public void teleopDeployRequest(
-      boolean operatorWantsForceStow,
-      boolean driverWantsIntake,
-      boolean driverWantsHubScore,
-      boolean driverWantsFeed,
-      boolean operatorWantsHubScore,
-      boolean operatorWantsFeed) {
+  private void teleopDeployRequest() {
+    if (!DriverStation.isTeleop() || getState().isClimbing()) {
+      return;
+    }
+
     if (operatorWantsForceStow) {
       deploy.stowRequest();
       intake.idleRequest();
@@ -1339,8 +1359,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
 
     if (driverWantsIntake) {
-      // TODO: This should check if driver also wants to score, and do smart shuffle stuff based on
-      // drive vector
       deploy.intakeRequest();
       intake.intakeRequest();
       return;
