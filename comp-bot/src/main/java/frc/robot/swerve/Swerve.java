@@ -285,7 +285,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     if (getState() == SwerveState.INTAKE || getState() == SwerveState.INTAKE_RATE_LIMITED) {
       filteredLastDriveDirection =
-         filteredLastDriveDirection.interpolate(MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds()).plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance()?180:0)),(MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))/ teleopDriveSource.maxLinearVelocity);
+          filteredLastDriveDirection.interpolate(
+              MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
+                  .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0)),
+              MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds())
+                  / teleopDriveSource.maxLinearVelocity);
 
       ableToDirectionSnap =
           FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()

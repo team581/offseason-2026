@@ -87,7 +87,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
     adjustedTurretResult = getAdjustedTurretLimelightTagResult(turretResult);
 
-    if (turretResult.isPresent() ||backResult.isPresent()) {
+    if (turretResult.isPresent() || backResult.isPresent()) {
       hasSeenTag = true;
       seeingTag = true;
     } else {
