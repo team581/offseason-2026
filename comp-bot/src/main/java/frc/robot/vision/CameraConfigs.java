@@ -20,8 +20,8 @@ public class CameraConfigs {
   public static final CameraConfig BACK =
       new CameraConfig(
           LimelightModel.FOUR,
-          false,
-          false,
+          true,
+          true,
           // back
           Units.inchesToMeters(-13.389),
           // left
