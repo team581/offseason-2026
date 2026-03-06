@@ -43,6 +43,22 @@ public class XboxControllerDriveSource implements DriveSource {
         maxAngularVelocity);
   }
 
+  public double getLeftX() {
+    return controller.getLeftX();
+  }
+
+  public double getLeftY() {
+    return controller.getLeftY();
+  }
+
+  public double getRightX() {
+    return controller.getRightX();
+  }
+
+  public double getRightY() {
+    return controller.getRightY();
+  }
+
   public void setMaxVelocity(double maxLinearVelocity, Rotation2d maxAngularVelocity) {
     this.maxLinearVelocity = maxLinearVelocity;
     this.maxAngularVelocity = maxAngularVelocity;
