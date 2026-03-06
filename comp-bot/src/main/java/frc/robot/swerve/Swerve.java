@@ -56,7 +56,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
-  private final CircularFilter lastDriveDirectionFilter = new CircularFilter(15);
+  private final CircularFilter lastDriveDirectionFilter = new CircularFilter(1);
   private final SlewRateLimiter maxLinearVelocityRateLimiter = new SlewRateLimiter(5.0);
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
 
@@ -285,9 +285,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
     if (getState() == SwerveState.INTAKE || getState() == SwerveState.INTAKE_RATE_LIMITED) {
       filteredLastDriveDirection =
-          Rotation2d.fromDegrees(
-              lastDriveDirectionFilter.calculate(
-                  MathHelpers.getDriveDirection(fieldRelativeSpeeds).getDegrees()));
+         filteredLastDriveDirection.interpolate(MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds()).plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance()?180:0)),(MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))/ teleopDriveSource.maxLinearVelocity);
 
       ableToDirectionSnap =
           FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()
