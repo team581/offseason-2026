@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import frc.robot.config.RobotKind;
 
 public class TurretConfig {
   // TODO: adjust after bringup
@@ -27,7 +28,7 @@ public class TurretConfig {
   public static final double MOTOR_TO_TURRET = ((220.0 / 14.0) * (36.0 / 10.0));
 
   // CAL NUMBER
-  public static final double ROTOR_CAL_OFFSET = -0.249267578125;
+  public static final double ROTOR_CAL_OFFSET = 0.214599609375;
 
   public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double ENCODER_TO_TURRET =
@@ -46,7 +47,12 @@ public class TurretConfig {
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withSlot0(
-              new Slot0Configs().withKP(200.0).withKV(6.0).withKG(0.0).withKD(1.7).withKS(0.2));
+              new Slot0Configs()
+                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 200.0)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 6.0)
+                  .withKG(0.0)
+                  .withKD(RobotKind.IS_COMP_BOT ? 0 : 1.7)
+                  .withKS(RobotKind.IS_COMP_BOT ? 0 : 0.2));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
           .withMagnetSensor(

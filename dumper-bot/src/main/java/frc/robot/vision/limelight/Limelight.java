@@ -74,6 +74,16 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     setStateFromRequest(state);
   }
 
+<<<<<<< HEAD
+=======
+  public int[] getAllianceHubTags() {
+    if (FmsUtil.isRedAlliance()) {
+      return RED_HUB_TAGS;
+    }
+    return BLUE_HUB_TAGS;
+  }
+
+>>>>>>> cf1f851bf391e0e390bf91b5b601015a29c1e595
   public OptionalTagResult getTagResult() {
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);

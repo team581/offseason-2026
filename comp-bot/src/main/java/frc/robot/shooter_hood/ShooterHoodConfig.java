@@ -12,6 +12,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import frc.robot.config.RobotKind;
 import java.util.Map;
 
 public class ShooterHoodConfig {
@@ -47,7 +48,7 @@ public class ShooterHoodConfig {
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(350)
+                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 350)
                   .withKV(0)
                   .withKS(0)
                   .withGravityType(GravityTypeValue.Arm_Cosine));
@@ -55,9 +56,10 @@ public class ShooterHoodConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToScore",
-          Map.entry(4.93, 38.0),
-          Map.entry(3.47, 30.0),
-          Map.entry(1.65, 21.5));
+          Map.entry(5.551, 37.0),
+          Map.entry(3.42, 30.0),
+          Map.entry(2.33, 25.0),
+          Map.entry(1.41, 23.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed",
