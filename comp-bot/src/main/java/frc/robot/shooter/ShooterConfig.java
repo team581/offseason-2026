@@ -83,11 +83,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKP(0.75)
-                  .withKV(0.127)
-                  .withKD(0.00015))
+          .withSlot0(new Slot0Configs().withKP(0.75).withKV(0.127).withKD(0.00015))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
@@ -110,11 +106,7 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKP(0.75)
-                  .withKV(0.127)
-                  .withKD(0.00015))
+          .withSlot0(new Slot0Configs().withKP(0.75).withKV(0.127).withKD(0.00015))
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
