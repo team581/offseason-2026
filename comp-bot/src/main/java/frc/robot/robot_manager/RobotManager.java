@@ -182,13 +182,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case CLIMB_7_PREPARE_SCORING_L3 -> {
-        if (shooter.atGoal() && turret.atGoal() && shooterHood.atGoal() && !dyeRotor.isJammed()) {
+        if (shooter.atGoal() && turret.atGoal(1) && shooterHood.atGoal() && !dyeRotor.isJammed()) {
           yield RobotState.CLIMB_8_SCORING_L3;
         }
         yield currentState;
       }
       case PREPARE_PRESET_FEED ->
-          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal() && shooterHood.atGoal()
+          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1) && shooterHood.atGoal()
               ? RobotState.PRESET_FEED
               : currentState;
 
@@ -248,7 +248,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield RobotState.PREPARE_PRESET_SCORE;
       }
       case PRESET_FEED ->
-          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal() && shooterHood.atGoal()
+          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1) && shooterHood.atGoal()
               ? currentState
               : RobotState.PREPARE_PRESET_FEED;
       case FEED -> {
