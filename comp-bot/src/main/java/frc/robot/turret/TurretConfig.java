@@ -18,7 +18,6 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.config.RobotKind;
 
 public class TurretConfig {
-  // TODO: adjust after bringup
   public static final double MIN_ANGLE = -355;
   public static final double MAX_ANGLE = 5;
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
