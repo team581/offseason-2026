@@ -16,16 +16,15 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.config.RobotKind;
 
 public class TurretConfig {
-  // TODO: adjust after bringup
-  public static final double MIN_ANGLE = RobotKind.IS_COMP_BOT ? -308 : -355;
-  public static final double MAX_ANGLE = RobotKind.IS_COMP_BOT ? 60 : 5;
+  public static final double MIN_ANGLE = RobotKind.IS_COMP_BOT ? -340.0 : -355.0;
+  public static final double MAX_ANGLE = RobotKind.IS_COMP_BOT ? 70.0 : 5.0;
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
   public static final double HOMING_END_POSITION = MIN_ANGLE;
 
   public static final double MOTOR_TO_TURRET = ((220.0 / 14.0) * (36.0 / 10.0));
 
   // CAL NUMBER
-  public static final double ROTOR_CAL_OFFSET = RobotKind.IS_COMP_BOT ? 0.548095703125 : 0.6796875;
+  public static final double ROTOR_CAL_OFFSET = RobotKind.IS_COMP_BOT ? -0.1845703125 : 0.6796875;
 
   public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double ENCODER_TO_TURRET =
