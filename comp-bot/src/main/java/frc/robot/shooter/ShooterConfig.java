@@ -14,7 +14,6 @@ import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import frc.robot.config.RobotKind;
-
 import java.util.Map;
 
 public class ShooterConfig {
@@ -86,11 +85,9 @@ public class ShooterConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
-              new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0)
-                  .withKV(RobotKind.IS_COMP_BOT? 0.127 : 0.127)
-                 // .withKD(0.00015)
-                  )
+              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0).withKV(0.127)
+              // .withKD(0.00015)
+              )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
@@ -114,11 +111,9 @@ public class ShooterConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
-              new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0)
-                  .withKV(RobotKind.IS_COMP_BOT ? 0.127 : 0.127)
-                  //.withKD(0.00015)
-                  )
+              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0).withKV(0.127)
+              // .withKD(0.00015)
+              )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
