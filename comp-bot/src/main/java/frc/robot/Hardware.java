@@ -36,17 +36,17 @@ public class Hardware {
           TalonFX::new,
           new DifferentialMotorConstants<TalonFXConfiguration>()
               .withCANBusName(canivore.getName())
-              .withLeaderId(22)
-              .withFollowerId(23)
+              .withLeaderId(23)
+              .withFollowerId(24)
               .withAlignment(MotorAlignmentValue.Opposed)
               .withLeaderInitialConfigs(DeployConfig.LEFT_MOTOR_CONFIG)
               .withFollowerInitialConfigs(DeployConfig.RIGHT_MOTOR_CONFIG)
               .withFollowerUsesCommonLeaderConfigs(true));
-  public final TalonFX shooterHoodMotor = new TalonFX(24, rio);
+  public final TalonFX shooterHoodMotor = new TalonFX(25, rio);
 
-  public final TalonFX climbMotor = new TalonFX(25, canivore);
+  public final TalonFX climbMotor = new TalonFX(26, canivore);
 
-  public final CANcoder turretEncoder = new CANcoder(26, canivore);
+  public final CANcoder turretEncoder = new CANcoder(27, canivore);
 
   public final CANrange hopperCANRange = new CANrange(28, canivore);
 

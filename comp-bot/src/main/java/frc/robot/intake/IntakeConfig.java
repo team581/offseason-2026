@@ -17,7 +17,6 @@ public class IntakeConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(80).withSupplyCurrentLimit(80));
-
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
