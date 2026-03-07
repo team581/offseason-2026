@@ -13,6 +13,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import frc.robot.config.RobotKind;
+
 import java.util.Map;
 
 public class ShooterConfig {
@@ -25,7 +27,7 @@ public class ShooterConfig {
   public static final double SELF_TEST_RIGHT_MOTOR_RPM_TOLERANCE = 250;
   public static final double SELF_TEST_RIGHT_MOTOR_EXPECTED_CURRENT = 10.0;
   public static final double SELF_TEST_RIGHT_MOTOR_CURRENT_TOLERANCE = 5;
-  public static final int RPM_TOLERANCE = 100;
+  public static final int RPM_TOLERANCE = 150;
   public static final int RPM_TOLERANCE_FEEDING = 1000;
 
   public static final double IDLE_RPM = 400;
@@ -83,7 +85,12 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.75).withKV(0.127).withKD(0.00015))
+          .withSlot0(
+              new Slot0Configs()
+                  .withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0)
+                  .withKV(RobotKind.IS_COMP_BOT? 0.127 : 0.127)
+                 // .withKD(0.00015)
+                  )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
@@ -106,7 +113,12 @@ public class ShooterConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.75).withKV(0.127).withKD(0.00015))
+          .withSlot0(
+              new Slot0Configs()
+                  .withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0.127 : 0.127)
+                  //.withKD(0.00015)
+                  )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
