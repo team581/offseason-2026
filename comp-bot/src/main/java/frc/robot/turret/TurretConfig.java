@@ -10,11 +10,9 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.config.RobotKind;
 
 public class TurretConfig {
@@ -23,7 +21,6 @@ public class TurretConfig {
   public static final double MAX_ANGLE = RobotKind.IS_COMP_BOT ? 60 : 5;
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
   public static final double HOMING_END_POSITION = MIN_ANGLE;
-  public static final DoubleSubscriber TOLERANCE = DogLog.tunable("Turret/Tolerance", 1.0);
 
   public static final double MOTOR_TO_TURRET = ((220.0 / 14.0) * (36.0 / 10.0));
 
