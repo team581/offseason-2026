@@ -48,7 +48,7 @@ public class ObstructionCalculator {
   }
 
   public boolean isObstructed(Vector2D point) {
-    return region.contains((point));
+    return region.contains(point);
   }
 
   public boolean isObstructed(Vector2D start, Vector2D end) {
