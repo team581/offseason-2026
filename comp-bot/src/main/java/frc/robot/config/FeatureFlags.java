@@ -7,7 +7,6 @@ import java.util.function.BooleanSupplier;
 public class FeatureFlags {
 
   public static final BooleanSupplier WALL_SNAPS = FeatureFlag.of("WallSnaps", false);
-  public static final BooleanSupplier SNAKE_MODE = FeatureFlag.of("SnakeMode", true);
 
   public static final BooleanSupplier INTEGRATION_TEST = FeatureFlag.of("IntegrationTest", false);
 

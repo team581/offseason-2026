@@ -296,8 +296,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   / teleopDriveSource.maxLinearVelocity);
 
       ableToSnakeMode =
-          FeatureFlags.SNAKE_MODE.getAsBoolean()
-              && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+          driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
               && SwerveAssist.ableToSnakeMode(fieldRelativeSpeeds, teleopDriveSource.getRightY());
     }
 
