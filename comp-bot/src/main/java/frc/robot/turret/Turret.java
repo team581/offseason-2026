@@ -103,7 +103,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   @Override
   protected void whileInState(TurretState currentState) {
     switch (currentState) {
-      case UNHOMED -> {
+      case UNHOMED, STUCK -> {
         motor.disable();
       }
       case SCORE, FEED, CLIMB -> {
@@ -129,9 +129,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
                 .withVelocity(Units.radiansToRotations(feedForward)));
-      }
-      case STUCK -> {
-        motor.disable();
       }
       default -> {}
     }
