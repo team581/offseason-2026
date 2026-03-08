@@ -85,7 +85,7 @@ public class ShooterConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
-              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0).withKV(0.127)
+              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.55 : 0.7).withKV(0.127)
               // .withKD(0.00015)
               )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
@@ -111,7 +111,7 @@ public class ShooterConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
-              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.7 : 0.0).withKV(0.127)
+              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.55 : 0.7).withKV(0.127)
               // .withKD(0.00015)
               )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
