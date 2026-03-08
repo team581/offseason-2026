@@ -37,7 +37,7 @@
       "fov": 62.5,
       "rotations": [{
         "axis": "y",
-        "degrees": -20
+        "degrees": 20
       }],
       "resolution": [
         640,
