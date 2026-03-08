@@ -375,7 +375,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         dyeRotor.idleRequest();
         // Deploy is controlled separately
         // Intake is controlled separately
-        swerve.normalDriveRequest();
+        swerve.rateLimitedDriveRequest();
         climber.stowRequest();
       }
       case FEED -> {
@@ -390,7 +390,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           intake.shootRequest();
         }
-        swerve.normalDriveRequest();
+        swerve.rateLimitedDriveRequest();
         climber.stowRequest();
       }
       case STOP_SHOOTING_FEED -> {
@@ -807,9 +807,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FEED -> {
         smartTurretHoodPrepareFeedRequest();
         if (intake.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
+          swerve.intakeRateLimitedDriveRequest();
         } else {
-          swerve.normalDriveRequest();
+          swerve.rateLimitedDriveRequest();
         }
       }
       case FEED -> {
@@ -817,9 +817,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             feedingParameters.turretAngle(), feedingParameters.turretFeedForwardRadians());
         shooterHood.feedRequest(feedingParameters.distance());
         if (intake.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
+          swerve.intakeRateLimitedDriveRequest();
         } else {
-          swerve.normalDriveRequest();
+          swerve.rateLimitedDriveRequest();
         }
 
         if (FeatureFlags.DYE_ROTOR_CLEANUP_MODE.getAsBoolean() && intake.getState().isIntaking()) {
