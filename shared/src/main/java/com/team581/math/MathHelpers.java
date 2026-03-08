@@ -81,6 +81,16 @@ public class MathHelpers {
     return nearestPoint.rotateAround(m_center.getTranslation(), m_center.getRotation());
   }
 
+  public static final Pose2d getLookaheadPose(
+      Pose2d currentPose, ChassisSpeeds speeds, double time) {
+    var x = currentPose.getX() + speeds.vxMetersPerSecond * time;
+    var y = currentPose.getY() + speeds.vyMetersPerSecond * time;
+    var theta =
+        currentPose.getRotation().plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * time));
+
+    return new Pose2d(x, y, theta);
+  }
+
   public static final List<Translation2d> getCorners(Rectangle2d rectangle) {
     var center = rectangle.getCenter();
     var xWidth = rectangle.getXWidth();
