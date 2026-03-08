@@ -792,11 +792,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           swerve.rateLimitedDriveRequest();
         }
 
-        if (FeatureFlags.DYE_ROTOR_CLEANUP_MODE.getAsBoolean() && intake.getState().isIntaking()) {
-          dyeRotor.scoreCleanupRequest(scoringParameters.distance());
-        } else {
-          dyeRotor.scoreRequest(scoringParameters.distance());
-        }
+        dyeRotor.scoreRequest(scoringParameters.distance());
 
         if (drivingToIntake) {
           deploy.intakeRequest();
@@ -822,11 +818,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           swerve.rateLimitedDriveRequest();
         }
 
-        if (FeatureFlags.DYE_ROTOR_CLEANUP_MODE.getAsBoolean() && intake.getState().isIntaking()) {
-          dyeRotor.feedCleanupRequest(feedingParameters.distance());
-        } else {
-          dyeRotor.feedRequest(feedingParameters.distance());
-        }
+        dyeRotor.feedRequest(feedingParameters.distance());
 
         if (drivingToIntake) {
           deploy.intakeRequest();
