@@ -244,7 +244,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
     rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
 
-    hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+    if (DSOptions.USE_CANRANGE.get()) {
+      hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+    }
     filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
 
     if (filteredHopperCANRangeDistance >= DeployConfig.HIGH_CAPACITY_THRESHOLD) {
