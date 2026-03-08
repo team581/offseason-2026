@@ -10,6 +10,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.climber.Climber;
 import frc.robot.cluster_map.ClusterMap;
@@ -33,6 +34,9 @@ import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -107,6 +111,16 @@ public class Robot extends Base581Robot {
     finalizeInit();
 
     FieldUtil.debugLogFieldZones();
+
+    if (RobotBase.isSimulation()) {
+      try {
+        var docsDir = Path.of(System.getProperty("user.dir")).resolve("../docs");
+        Files.writeString(
+            docsDir.resolve("field_obstacles.svg"), FieldUtil.FIELD_OBSTACLES.toSvg());
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to write field obstacles SVG", e);
+      }
+    }
   }
 
   @Override
