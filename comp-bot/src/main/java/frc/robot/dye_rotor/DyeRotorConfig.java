@@ -61,8 +61,8 @@ public class DyeRotorConfig {
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 10.0)
-                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 4.65)
+                  .withKP(10.0)
+                  .withKV(4.65)
                   .withKS(0.0));
 
   public static final TalonFXConfiguration VERTICAL_MOTOR_CONFIG =
