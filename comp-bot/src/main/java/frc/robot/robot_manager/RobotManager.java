@@ -59,8 +59,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private boolean climbLocationIsLeft = true;
 
-  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0);
-  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0);
+  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0, 0);
+  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0, 0);
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
