@@ -1,5 +1,6 @@
 package com.team581.math;
 
+import com.team581.util.AprilTags;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.Arrays;
 import java.util.List;
@@ -55,5 +56,41 @@ public class ObstructionCalculator {
     return region.contains(start)
         || region.contains(end)
         || region.linecastFirst(Lines.segmentFromPoints(start, end, PRECISION)) != null;
+  }
+
+  public String toSvg() {
+    return toSvg(AprilTags.FIELD_LAYOUT.getFieldLength(), AprilTags.FIELD_LAYOUT.getFieldWidth());
+  }
+
+  public String toSvg(double fieldLengthMeters, double fieldWidthMeters) {
+    double scale = 100.0;
+    double svgWidth = fieldLengthMeters * scale;
+    double svgHeight = fieldWidthMeters * scale;
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %s %s\">\n"
+            .formatted((int) svgWidth, (int) svgHeight, svgWidth, svgHeight));
+
+    sb.append(
+        "<rect width=\"%s\" height=\"%s\" fill=\"#e0e0e0\"/>\n".formatted(svgWidth, svgHeight));
+
+    for (ConvexArea convex : region.toConvex()) {
+      List<Vector2D> vertices = convex.getVertices();
+      sb.append("<polygon points=\"");
+      for (int i = 0; i < vertices.size(); i++) {
+        if (i > 0) {
+          sb.append(' ');
+        }
+        // Flip Y so (0,0) is bottom-left
+        sb.append(vertices.get(i).getX() * scale);
+        sb.append(',');
+        sb.append(svgHeight - vertices.get(i).getY() * scale);
+      }
+      sb.append("\" fill=\"red\" stroke=\"darkred\" stroke-width=\"1\"/>\n");
+    }
+
+    sb.append("</svg>\n");
+    return sb.toString();
   }
 }
