@@ -160,7 +160,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
   private boolean ableToWallSnap = false;
-  private boolean ableToDirectionSnap = false;
+  private boolean ableToSnakeMode = false;
   private boolean inWallSnapCorner = false;
   private boolean previouslyInWallSnapCorner = false;
   private boolean enteredWallSnapCorner = false;
@@ -295,11 +295,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                       * MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
                   / teleopDriveSource.maxLinearVelocity);
 
-      ableToDirectionSnap =
-          FeatureFlags.INTAKE_DIRECTIONAL_SNAPS.getAsBoolean()
+      ableToSnakeMode =
+          FeatureFlags.SNAKE_MODE.getAsBoolean()
               && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-              && SwerveAssist.ableToDirectionSnap(
-                  fieldRelativeSpeeds, teleopDriveSource.getRightY());
+              && SwerveAssist.ableToSnakeMode(fieldRelativeSpeeds, teleopDriveSource.getRightY());
     }
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
@@ -427,7 +426,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond),
                   wallSnapAngle));
-        } else if (ableToDirectionSnap) {
+        } else if (ableToSnakeMode) {
           DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
           var swerveSnapsRequest =
               driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
