@@ -104,6 +104,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
+  public boolean isFullyExtended() {
+    return getState() == DeployState.INTAKE && atGoal();
+  }
+
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
