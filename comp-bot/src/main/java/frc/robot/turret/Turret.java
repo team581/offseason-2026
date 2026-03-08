@@ -255,6 +255,21 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     };
   }
 
+  public boolean atGoal(double tolerance, double upcomingAngle) {
+    return switch (getState()) {
+      case UNHOMED -> false;
+      case STUCK -> true;
+      default -> {
+        var potentialSetpoint = TurretCalculator.getOptimalAngle(upcomingAngle, currentAngle);
+
+        if (!MathUtil.isNear(potentialSetpoint, setpoint, 90)) {
+          yield false;
+        }
+        yield MathUtil.isNear(setpoint, currentAngle, tolerance, -180, 180);
+      }
+    };
+  }
+
   public void stuckRequest() {
     setStateFromRequest(TurretState.STUCK);
   }

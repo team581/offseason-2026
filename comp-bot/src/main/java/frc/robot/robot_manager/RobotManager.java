@@ -140,7 +140,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           dyeRotor.isReset() ? RobotState.IDLE : currentState;
       case PREPARE_FORCE_SCORE -> {
         if ((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
-                || turret.atGoal(scoringParameters.turretTolerance()))
+                || turret.atGoal(scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle()))
             && (shooter.atGoal() && !dyeRotor.isJammed() && shooterHood.atGoal())) {
           yield RobotState.FORCE_SCORE;
         }
@@ -159,7 +159,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.STOP_SHOOTING_SCORE;
         }
         if ((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
-                || turret.atGoal(scoringParameters.turretTolerance()))
+                || turret.atGoal(scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle()))
             && (shooter.atGoal()
                 && localization.isTrustworthy()
                 && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
@@ -174,7 +174,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_PRESET_SCORE -> {
         if (shooter.atGoal()
             && !dyeRotor.isJammed()
-            && turret.atGoal(scoringParameters.turretTolerance())
+            && turret.atGoal(scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
             && shooterHood.atGoal()
             && !isMoving) {
           yield RobotState.PRESET_SCORE;
@@ -182,13 +182,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case CLIMB_7_PREPARE_SCORING_L3 -> {
-        if (shooter.atGoal() && turret.atGoal(1) && shooterHood.atGoal() && !dyeRotor.isJammed()) {
+        if (shooter.atGoal() && turret.atGoal(1.0) && shooterHood.atGoal() && !dyeRotor.isJammed()) {
           yield RobotState.CLIMB_8_SCORING_L3;
         }
         yield currentState;
       }
       case PREPARE_PRESET_FEED ->
-          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1) && shooterHood.atGoal()
+          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1, feedingParameters.upcomingTurretAngle()) && shooterHood.atGoal()
               ? RobotState.PRESET_FEED
               : currentState;
 
@@ -200,7 +200,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && (health.isLocalizationHealthy()
                 ? !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose))
                 : true)
-            && turret.atGoal(feedingParameters.turretTolerance())
+            && turret.atGoal(feedingParameters.turretTolerance(),  feedingParameters.upcomingTurretAngle())
             && shooterHood.atGoal()) {
 
           yield RobotState.FEED;
@@ -229,7 +229,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             || (shooter.atGoal()
                 && localization.isTrustworthy()
                 && !dyeRotor.isJammed()
-                && turret.atGoal(scoringParameters.turretTolerance())
+                && turret.atGoal(scoringParameters.turretTolerance()  ,scoringParameters.upcomingTurretAngle())
                 && shooterHood.atGoal()
                 && isInScoringZone)) {
           yield currentState;
@@ -240,7 +240,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PRESET_SCORE -> {
         if (shooter.atGoal()
             && !dyeRotor.isJammed()
-            && turret.atGoal(scoringParameters.turretTolerance())
+            && turret.atGoal(scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
             && shooterHood.atGoal()
             && !isMoving) {
           yield currentState;
@@ -248,7 +248,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield RobotState.PREPARE_PRESET_SCORE;
       }
       case PRESET_FEED ->
-          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1) && shooterHood.atGoal()
+          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1, feedingParameters.upcomingTurretAngle()) && shooterHood.atGoal()
               ? currentState
               : RobotState.PREPARE_PRESET_FEED;
       case FEED -> {
@@ -258,7 +258,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && (health.isLocalizationHealthy()
                     ? !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose))
                     : true)
-                && turret.atGoal(feedingParameters.turretTolerance())
+                && turret.atGoal(feedingParameters.turretTolerance(),  feedingParameters.upcomingTurretAngle())
                 && shooterHood.atGoal())) {
 
           yield currentState;
@@ -1312,7 +1312,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Scoring/ScoreTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/TurretAtGoal",
-        turret.atGoal(scoringParameters.turretTolerance()));
+        turret.atGoal(scoringParameters.turretTolerance(),  scoringParameters.upcomingTurretAngle()));
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log("RobotManager/Scoring/ScoreTransition/IsInScoringZone", isInScoringZone);
   }
@@ -1328,7 +1328,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/TurretAtGoal",
-        turret.atGoal(feedingParameters.turretTolerance()));
+        turret.atGoal(feedingParameters.turretTolerance(), feedingParameters.upcomingTurretAngle()));
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
   }
 }
