@@ -30,29 +30,29 @@ final class ObstructionCalculatorTest {
                 new Translation2d(6, 6),
                 new Translation2d(5, 6)));
 
-    assertThat(calculator.isObstructed(new Translation2d(0.5, 0.5))).isTrue();
-    assertThat(calculator.isObstructed(new Translation2d(5.5, 5.5))).isTrue();
-    assertThat(calculator.isObstructed(new Translation2d(3, 3))).isFalse();
+    assertThat(calculator.contains(new Translation2d(0.5, 0.5))).isTrue();
+    assertThat(calculator.contains(new Translation2d(5.5, 5.5))).isTrue();
+    assertThat(calculator.contains(new Translation2d(3, 3))).isFalse();
   }
 
   @Test
-  void pointInsideObstructionIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(1, 1))).isTrue();
+  void pointInsideObstructionContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(1, 1))).isTrue();
   }
 
   @Test
-  void pointOnCornerIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(0, 0))).isTrue();
+  void pointOnCornerContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(0, 0))).isTrue();
   }
 
   @Test
-  void pointOnEdgeIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(1, 0))).isTrue();
+  void pointOnEdgeContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(1, 0))).isTrue();
   }
 
   @Test
   void pointOutsideObstructionIsNotObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(5, 5))).isFalse();
+    assertThat(CALCULATOR.contains(new Translation2d(5, 5))).isFalse();
   }
 
   @Test
@@ -70,33 +70,33 @@ final class ObstructionCalculatorTest {
                 new Translation2d(4, 1),
                 new Translation2d(3, 1)));
 
-    assertThat(calculator.isObstructed(new Translation2d(1.5, 0.5), new Translation2d(2.5, 0.5)))
+    assertThat(calculator.contains(new Translation2d(1.5, 0.5), new Translation2d(2.5, 0.5)))
         .isFalse();
   }
 
   @Test
-  void segmentEndingAtEdgeIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(-1, 1), new Translation2d(0, 1))).isTrue();
+  void segmentEndingAtEdgeContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(-1, 1), new Translation2d(0, 1))).isTrue();
   }
 
   @Test
-  void segmentEntirelyInsideObstructionIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(0.5, 0.5), new Translation2d(1.5, 1.5)))
+  void segmentEntirelyInsideObstructionContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(0.5, 0.5), new Translation2d(1.5, 1.5)))
         .isTrue();
   }
 
   @Test
   void segmentOutsideObstructionIsNotObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(3, 3), new Translation2d(5, 5))).isFalse();
+    assertThat(CALCULATOR.contains(new Translation2d(3, 3), new Translation2d(5, 5))).isFalse();
   }
 
   @Test
-  void segmentStartingInsideIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(1, 1), new Translation2d(5, 5))).isTrue();
+  void segmentStartingInsideContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(1, 1), new Translation2d(5, 5))).isTrue();
   }
 
   @Test
-  void segmentThroughObstructionIsObstructed() {
-    assertThat(CALCULATOR.isObstructed(new Translation2d(-1, 1), new Translation2d(3, 1))).isTrue();
+  void segmentThroughObstructionContains() {
+    assertThat(CALCULATOR.contains(new Translation2d(-1, 1), new Translation2d(3, 1))).isTrue();
   }
 }

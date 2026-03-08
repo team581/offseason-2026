@@ -40,19 +40,19 @@ public class ObstructionCalculator {
     }
   }
 
-  public boolean isObstructed(Translation2d point) {
-    return isObstructed(vector2d(point));
+  public boolean contains(Translation2d point) {
+    return contains(vector2d(point));
   }
 
-  public boolean isObstructed(Translation2d start, Translation2d end) {
-    return isObstructed(vector2d(start), vector2d(end));
+  public boolean contains(Translation2d start, Translation2d end) {
+    return contains(vector2d(start), vector2d(end));
   }
 
-  public boolean isObstructed(Vector2D point) {
+  public boolean contains(Vector2D point) {
     return region.contains(point);
   }
 
-  public boolean isObstructed(Vector2D start, Vector2D end) {
+  public boolean contains(Vector2D start, Vector2D end) {
     return region.contains(start)
         || region.contains(end)
         || region.linecastFirst(Lines.segmentFromPoints(start, end, PRECISION)) != null;
