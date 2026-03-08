@@ -13,7 +13,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import frc.robot.config.RobotKind;
 import java.util.Map;
 
 public class DyeRotorConfig {
@@ -59,11 +58,7 @@ public class DyeRotorConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKP(10.0)
-                  .withKV(4.65)
-                  .withKS(0.0));
+          .withSlot0(new Slot0Configs().withKP(10.0).withKV(4.65).withKS(0.0));
 
   public static final TalonFXConfiguration VERTICAL_MOTOR_CONFIG =
       new TalonFXConfiguration()
