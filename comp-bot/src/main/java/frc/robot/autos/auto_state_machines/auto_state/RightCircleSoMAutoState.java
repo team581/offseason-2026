@@ -7,5 +7,5 @@ public enum RightCircleSoMAutoState {
   DRIVE_BACK_2,
   SHOOT_1,
   SHOOT_2,
-    DONE;
+  DONE;
 }
