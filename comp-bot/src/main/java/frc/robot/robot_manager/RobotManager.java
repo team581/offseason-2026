@@ -1013,19 +1013,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void idleRequest() {
-    if (FeatureFlags.STOP_SHOOTING_STATE.getAsBoolean()) {
-      if (!getState().isClimbing()) {
-        switch (getState()) {
-          case SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_SCORE);
-          case PRESET_SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_SCORE);
-          case FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_FEED);
-          case PRESET_FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_FEED);
-          default -> setStateFromRequest(RobotState.IDLE);
-        }
-      }
-    } else {
-      if (!getState().isClimbing()) {
-        setStateFromRequest(RobotState.IDLE);
+    if (!getState().isClimbing()) {
+      switch (getState()) {
+        case SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_SCORE);
+        case PRESET_SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_SCORE);
+        case FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_FEED);
+        case PRESET_FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_FEED);
+        default -> setStateFromRequest(RobotState.IDLE);
       }
     }
   }
