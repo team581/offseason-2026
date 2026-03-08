@@ -112,7 +112,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle))))
-                .withVelocity(Units.radiansToRotations(feedForward)));
+                .withVelocity(Units.radiansToRotations(getFeedForward())));
       }
       case IDLE_SCORE, IDLE_FEED -> {
         motor.setControl(
@@ -120,7 +120,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
-                .withVelocity(Units.radiansToRotations(feedForward)));
+                .withVelocity(Units.radiansToRotations(getFeedForward())));
       }
       case CLIMB_SCORE -> {
         motor.setControl(
@@ -128,13 +128,21 @@ public class Turret extends StateMachineSubsystem<TurretState> {
                 .withPosition(
                     Units.degreesToRotations(
                         clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle))))
-                .withVelocity(Units.radiansToRotations(feedForward)));
+                .withVelocity(Units.radiansToRotations(getFeedForward())));
       }
       default -> {}
     }
 
     DogLog.log("Turret/StatorCurrent", statorCurrent);
     DogLog.log("Turret/Voltage", voltage);
+  }
+
+  private double getFeedForward() {
+    if (MathUtil.isNear(TurretConfig.MAX_ANGLE, currentAngle, 3)
+        || MathUtil.isNear(TurretConfig.MIN_ANGLE, currentAngle, 3)) {
+      return 0.0;
+    }
+    return feedForward;
   }
 
   public void setState(TurretState newState) {
