@@ -941,21 +941,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
       DogLog.log("RobotManager/SmartIdle/Status", "NearTrench");
     } else if (FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation())) {
-      if (FeatureFlags.HOOD_ALWAYS_IDLE.getAsBoolean()) {
-        shooterHood.idleRequest();
-      } else {
-        shooterHood.scoreRequest(scoringParameters.distance());
-      }
+      shooterHood.idleRequest();
       turret.idleScoreRequest(
           scoringParameters.turretAngle(), scoringParameters.turretFeedForwardRadians());
 
       DogLog.log("RobotManager/SmartIdle/Status", "InAllianceZone");
     } else {
-      if (FeatureFlags.HOOD_ALWAYS_IDLE.getAsBoolean()) {
-        shooterHood.idleRequest();
-      } else {
-        shooterHood.feedRequest(feedingParameters.distance());
-      }
+      shooterHood.idleRequest();
       turret.idleFeedRequest(
           feedingParameters.turretAngle(), feedingParameters.turretFeedForwardRadians());
 
