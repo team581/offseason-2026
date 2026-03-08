@@ -30,10 +30,10 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(8.734, 4.5, Rotation2d.fromDegrees(-51.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(10.019, 4.837, Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(2, 100))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(4.5, 8)
+            AutoPoint.ofRed(new Pose2d(10.019, 4.837, Rotation2d.kZero))
+                .withTransitionTolerance(new PoseErrorTolerance(2, 100))
+                .withMarker(Markers.CANCEL_INTAKE_RQ))
+          .withLinearConstraints(3.0, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
@@ -46,10 +46,10 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
               AutoPoint.ofRed(new Pose2d(10.174, 5.7, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1)),
               AutoPoint.ofRed(new Pose2d(10.174, 4.3, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
-              AutoPoint.ofRed(new Pose2d(10.25, 4.89, Rotation2d.kCW_90deg))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(4.5, 8)
+              .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
+              AutoPoint.ofRed(new Pose2d(10.25,4.89, Rotation2d.kCW_90deg))
+              .withMarker(Markers.CANCEL_INTAKE_RQ))
+          .withLinearConstraints(3.0, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
@@ -58,12 +58,14 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
               AutoPoint.ofRed(
                       new Pose2d(
                           11.174, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100))
-                  .withMarker(Markers.START_SHOOT_RQ),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 10))
+                  .withMarker(Markers.START_SHOOT_RQ)
+                  .withLinearConstraints(3.0, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.918, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 10))
+                  .withLinearConstraints(3.0, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
@@ -74,9 +76,9 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          12.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(2.0, 20))
+                          13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
+                  .withLinearConstraints(1.0, 20)
           .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
@@ -93,7 +95,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
               AutoPoint.ofRed(
                       new Pose2d(13.0, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)))
-          .withLinearConstraints(4.5, 8)
+            .withLinearConstraints(3.0, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
@@ -125,7 +127,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
         }
       }
       case SHOOT_1 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())) {
+        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(5)) {
           yield RightCircleSoMAutoState.INTAKE_BEHIND_HUB;
         } else {
           yield currentState;
@@ -146,7 +148,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
         }
       }
       case SHOOT_2 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())) {
+        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(5)) {
           yield RightCircleSoMAutoState.DONE;
         } else {
           yield currentState;
