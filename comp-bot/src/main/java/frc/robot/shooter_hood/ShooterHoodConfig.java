@@ -54,7 +54,7 @@ public class ShooterHoodConfig {
               Map.entry(5.551, 37.0),
               Map.entry(4.25, 30.0),
               Map.entry(1.89, 25.0),
-              Map.entry(1.25 , 21.3))
+              Map.entry(1.25, 21.3))
           : TunableInterpolatingDoubleTreeMap.ofEntries(
               "ShooterHood/DistanceToScore",
               Map.entry(5.551, 37.0),
