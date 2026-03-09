@@ -139,10 +139,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           STOP_SHOOTING_FEED ->
           dyeRotor.isReset() ? RobotState.IDLE : currentState;
       case PREPARE_FORCE_SCORE -> {
-        if ((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
-                || turret.atGoal(
-                    scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle()))
-            && (shooter.atGoal() && !dyeRotor.isJammed() && shooterHood.atGoal())) {
+        if (turret.atGoal(
+                scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
+            && shooter.atGoal()
+            && !dyeRotor.isJammed()
+            && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
@@ -159,16 +160,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (DSOptions.AUTO_SCORE.getAsBoolean() && !isHubActive) {
           yield RobotState.STOP_SHOOTING_SCORE;
         }
-        if ((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
-                || turret.atGoal(
-                    scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle()))
-            && (shooter.atGoal()
-                && localization.isTrustworthy()
-                && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
-                && !dyeRotor.isJammed()
-                && shooterHood.atGoal()
-                && isHubActive
-                && isInScoringZone)) {
+        if (turret.atGoal(
+                scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
+            && shooter.atGoal()
+            && localization.isTrustworthy()
+            && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
+            && !dyeRotor.isJammed()
+            && shooterHood.atGoal()
+            && isHubActive
+            && isInScoringZone) {
           yield RobotState.SCORE;
         }
         yield currentState;

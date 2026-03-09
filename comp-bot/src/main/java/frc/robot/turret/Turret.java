@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
+import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
@@ -244,6 +245,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public boolean atGoal(double tolerance) {
+    if (FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()) {
+      return true;
+    }
     return switch (getState()) {
       case UNHOMED -> false;
       case STUCK -> true;
@@ -252,6 +256,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public boolean atGoal(double tolerance, double upcomingAngle) {
+    if (FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()) {
+      return true;
+    }
     return switch (getState()) {
       case UNHOMED -> false;
       case STUCK -> true;
