@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
+import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
@@ -253,6 +254,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case STUCK -> true;
       default -> MathUtil.isNear(setpoint, currentAngle, tolerance);
     };
+  }
+
+  public boolean atGoal(AimingParameters aimingParameters) {
+    return atGoal(aimingParameters.turretTolerance(), aimingParameters.upcomingTurretAngle());
   }
 
   public boolean atGoal(double tolerance, double upcomingAngle) {
