@@ -17,7 +17,7 @@ final class BaseTurretCalculatorTest {
   void calculateHomedPositionFromMotorAndEncoder1() {
     var homedPosition =
         BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-            17.4, 0.001, 40.0, 1.5, (1.0 / 40.0),0.0);
+            17.4, 0.001, 40.0, 1.5, (1.0 / 40.0), 0.0);
     assertEquals(0.01, homedPosition, 1e-9);
   }
 
