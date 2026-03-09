@@ -173,17 +173,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case PREPARE_PRESET_SCORE -> {
-        if (shooter.atGoal()
-            && !dyeRotor.isJammed()
-            && turret.atGoal(
-                scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
-            && shooterHood.atGoal()
-            && !isMoving) {
-          yield RobotState.PRESET_SCORE;
-        }
-        yield currentState;
-      }
+      case PREPARE_PRESET_SCORE, PRESET_SCORE ->
+          shooter.atGoal()
+                  && !dyeRotor.isJammed()
+                  && turret.atGoal(
+                      scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
+                  && shooterHood.atGoal()
+                  && !isMoving
+              ? RobotState.PRESET_SCORE
+              : RobotState.PREPARE_PRESET_SCORE;
       case CLIMB_7_PREPARE_SCORING_L3 -> {
         if (shooter.atGoal()
             && turret.atGoal(1.0)
@@ -193,13 +191,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case PREPARE_PRESET_FEED ->
+      case PREPARE_PRESET_FEED, PRESET_FEED ->
           shooter.atGoal()
                   && !dyeRotor.isJammed()
                   && turret.atGoal(1, feedingParameters.upcomingTurretAngle())
                   && shooterHood.atGoal()
               ? RobotState.PRESET_FEED
-              : currentState;
+              : RobotState.PREPARE_PRESET_FEED;
 
       case PREPARE_FEED -> {
         logFeedTransition();
@@ -246,24 +244,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         yield RobotState.PREPARE_SCORE;
       }
-      case PRESET_SCORE -> {
-        if (shooter.atGoal()
-            && !dyeRotor.isJammed()
-            && turret.atGoal(
-                scoringParameters.turretTolerance(), scoringParameters.upcomingTurretAngle())
-            && shooterHood.atGoal()
-            && !isMoving) {
-          yield currentState;
-        }
-        yield RobotState.PREPARE_PRESET_SCORE;
-      }
-      case PRESET_FEED ->
-          shooter.atGoal()
-                  && !dyeRotor.isJammed()
-                  && turret.atGoal(1, feedingParameters.upcomingTurretAngle())
-                  && shooterHood.atGoal()
-              ? currentState
-              : RobotState.PREPARE_PRESET_FEED;
       case FEED -> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
