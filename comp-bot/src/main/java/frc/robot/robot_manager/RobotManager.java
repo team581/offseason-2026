@@ -161,32 +161,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case PREPARE_PRESET_SCORE -> {
-        if ((!isMoving
-                && shooter.atGoal()
-                && !dyeRotor.isJammed()
-                && turret.atGoal(scoringParameters.turretTolerance())
-                && shooterHood.atGoal())
-            || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
-          yield RobotState.PRESET_SCORE;
-        if (turret.atGoal(scoringParameters)
-            && shooter.atGoal()
-            && localization.isTrustworthy()
-            && FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
-            && !dyeRotor.isJammed()
-            && shooterHood.atGoal()
-            && isHubActive
-            && isInScoringZone) {
-          yield RobotState.SCORE;
-        }
-        yield currentState;
-      }
       case PREPARE_PRESET_SCORE, PRESET_SCORE ->
-          shooter.atGoal()
-                  && !dyeRotor.isJammed()
-                  && turret.atGoal(scoringParameters)
-                  && shooterHood.atGoal()
-                  && !isMoving
+          !isMoving
+                  && ((shooter.atGoal()
+                          && !dyeRotor.isJammed()
+                          && turret.atGoal(scoringParameters)
+                          && shooterHood.atGoal())
+                      || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
               ? RobotState.PRESET_SCORE
               : RobotState.PREPARE_PRESET_SCORE;
       case CLIMB_7_PREPARE_SCORING_L3 -> {
@@ -250,21 +231,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         yield RobotState.PREPARE_SCORE;
       }
-      case PRESET_SCORE -> {
-        if (!isMoving
-            && ((shooter.atGoal()
-                    && !dyeRotor.isJammed()
-                    && turret.atGoal(scoringParameters.turretTolerance())
-                    && shooterHood.atGoal())
-                || hubActivity.ableToForceScoreTransitionEndOfActiveHub())) {
-          yield currentState;
-        }
-        yield RobotState.PREPARE_PRESET_SCORE;
-      }
-      case PRESET_FEED ->
-          shooter.atGoal() && !dyeRotor.isJammed() && turret.atGoal(1) && shooterHood.atGoal()
-              ? currentState
-              : RobotState.PREPARE_PRESET_FEED;
       case FEED -> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
