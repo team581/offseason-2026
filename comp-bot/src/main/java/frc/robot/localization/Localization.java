@@ -37,8 +37,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.vision = vision;
     this.drivetrain = drivetrain;
     this.imu = imu;
-
-    SmartDashboard.putData("Field", field2d);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
