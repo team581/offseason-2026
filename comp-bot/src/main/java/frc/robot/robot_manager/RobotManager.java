@@ -220,10 +220,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case SCORE -> {
         logScoringTransition();
-        // If we are not in the alliance zone while vision is online, stop tracking the
-        // hub.
-        // Otherwise, if vision is dead and we cannot reliable track whether we are in
-        // the alliance
+        // If we are not in the alliance zone while vision is online, stop tracking the hub.
+        // Otherwise, if vision is dead and we cannot reliable track whether we are in the alliance
         // zone, we still want to be able to score
         if (health.isLocalizationHealthy()
             && !FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
