@@ -6,7 +6,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -100,9 +99,9 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
     timeSinceMatchStart = teleopTimer.get() + FmsUtil.MATCH_TIME_AT_TELEOP_START;
     timeUntilNextShift = FmsUtil.timeUntilNextShift(timeSinceMatchStart);
 
-    SmartDashboard.putString("HubActivity/CurrentShift", FmsUtil.currentShift(timeSinceMatchStart));
-    SmartDashboard.putString("HubActivity/Active", getHubStateColor().toHexString());
-    SmartDashboard.putNumber("HubActivity/TimeUntilNextShift", timeUntilNextShift);
+    DogLog.forceNt.log("HubActivity/CurrentShift", FmsUtil.currentShift(timeSinceMatchStart));
+    DogLog.forceNt.log("HubActivity/Active", getHubStateColor().toHexString());
+    DogLog.forceNt.log("HubActivity/TimeUntilNextShift", timeUntilNextShift);
 
     actualHubActive = calculateActualHubActive();
     tofBasedHubActive = calculateTOFBasedHubActive();

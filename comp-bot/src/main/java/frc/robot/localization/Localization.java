@@ -9,7 +9,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
@@ -37,8 +36,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.vision = vision;
     this.drivetrain = drivetrain;
     this.imu = imu;
-
-    SmartDashboard.putData("Field", field2d);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
