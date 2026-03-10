@@ -368,7 +368,7 @@ public class FieldUtil {
           CLIMB_BACK_CORNER_DEPOT_SIDE.bluePose().getTranslation());
 
   // Field Obstacles that get in the way of shooting
-  // TODO: Define obstruction polygons and integrate with shooting logic
+  // TODO: Integrate with shooting logic
   private static final Translation2d BLUE_HUB_CENTER =
       new Translation2d(BLUE_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
   private static final Translation2d RED_HUB_CENTER =
@@ -388,7 +388,8 @@ public class FieldUtil {
               BLUE_HUB_CENTER.getX() + (HUB_WIDTH / 2.0) + HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH,
               BLUE_HUB_CENTER.getY() + HUB_NET_Y_WIDTH / 2.0),
           new Translation2d(
-              BLUE_HUB_CENTER.getX() - (HUB_WIDTH / 2.0), BLUE_HUB_CENTER.getY() + HUB_WIDTH / 2.0));
+              BLUE_HUB_CENTER.getX() - (HUB_WIDTH / 2.0),
+              BLUE_HUB_CENTER.getY() + HUB_WIDTH / 2.0));
 
   private static final List<Translation2d> RED_HUB_CORNERS =
       ImmutableList.of(
@@ -409,9 +410,12 @@ public class FieldUtil {
   private static final List<Translation2d> RED_CLIMB_TOWER_CORNERS =
       MathHelpers.getCorners(RED_CLIMB_ZONE);
 
-  public static final ObstructionCalculator FIELD_OBSTACLES =
+  public static final ObstructionCalculator FEEDING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
           BLUE_HUB_CORNERS, RED_HUB_CORNERS, BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
+
+  public static final ObstructionCalculator HUB_SCORING_OBSTRUCTIONS =
+      ObstructionCalculator.fromTranslations(BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
 
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {
@@ -863,6 +867,13 @@ public class FieldUtil {
     return TRENCH_ZONES.stream().anyMatch(zone -> zone.contains(robotPose));
   }
 
+  public static boolean isFeedPathObstructed(
+      Translation2d robotTranslation, Translation2d feedLocationTranslation) {
+    // Check if line from robot to feed point collides with hub
+
+    return FEEDING_OBSTRUCTIONS.contains(robotTranslation, feedLocationTranslation);
+  }
+
   public static boolean isInNoScoreZone(Pose2d robot) {
     if (FmsUtil.isRedAlliance()) {
       return RED_CLIMB_ZONE.contains(robot.getTranslation());
@@ -877,6 +888,7 @@ public class FieldUtil {
     return robot.getX() < getAllianceZoneX();
   }
 
+  // TODO: This should be removed and replaced with isFeedPathObstructed
   public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
     // Check if line from robot to target collides with hub no feed zone
     var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
@@ -889,6 +901,12 @@ public class FieldUtil {
       return robot.getX() > getObstacleX();
     }
     return robot.getX() < getObstacleX();
+  }
+
+  public static boolean isScorePathObstructed(Translation2d robotTranslation) {
+    // Check if line from robot to hub collides with climb tower
+    return HUB_SCORING_OBSTRUCTIONS.contains(
+        robotTranslation, FmsUtil.isRedAlliance() ? RED_HUB_CENTER : BLUE_HUB_CENTER);
   }
 
   // For wall snaps, can't apply offset toward wall under climb tower
