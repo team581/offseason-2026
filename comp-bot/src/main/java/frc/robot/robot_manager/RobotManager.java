@@ -1177,6 +1177,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     robotPose = localization.getPose();
     double robotRotation = robotPose.getRotation().getDegrees();
+    clusterMap.setDeployFullyExtended(deploy.isFullyExtended());
     vision.setEstimatedPoseAngle(robotRotation);
 
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
