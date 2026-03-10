@@ -29,12 +29,12 @@ public class DeployConfig {
   public static final double CAPACITY_DISTANCE_THRESHOLD = 0.0;
   public static final double POSITION_TOLERANCE = 0.25;
   public static DoubleSubscriber HOPPER_SHUFFLE_DURATION =
-      DogLog.tunable("Deploy/HopperShuffleDuration", 1.75);
+      DogLog.tunable("Deploy/HopperShuffleDuration", 2.5);
 
   public static final DoubleSubscriber HOPPER_SHUFFLING_FINISH_DURATION =
       DogLog.tunable("Deploy/HopperShuffleFinishDuration", 2.0);
   public static final DoubleSubscriber HOPPER_SHUFFLING_IN_OUT_DURATION =
-      DogLog.tunable("Deploy/HopperShuffleInOutDuration", 2.0);
+      DogLog.tunable("Deploy/HopperShuffleInOutDuration", 0.5);
 
   public static final double NOT_UPDATING_TIMEOUT = 3.0;
 
