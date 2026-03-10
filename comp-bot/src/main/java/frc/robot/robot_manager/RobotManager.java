@@ -129,7 +129,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           dyeRotor.isReset() ? RobotState.IDLE : currentState;
       case PREPARE_FORCE_SCORE -> {
         if (turret.atGoal(scoringParameters)
-            && shooter.atGoal()
+            && shooter.atGoalDebounced()
             && !dyeRotor.isJammed()
             && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
@@ -152,7 +152,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && localization.isTrustworthy())
             && (((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
                         || turret.atGoal(scoringParameters.turretTolerance()))
-                    && (shooter.atGoal()
+                    && (shooter.atGoalDebounced()
                         && !dyeRotor.isJammed()
                         && shooterHood.atGoal()
                         && hubActivity.getTOFBasedHubActive()
@@ -164,7 +164,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_PRESET_SCORE, PRESET_SCORE ->
           !isMoving
-                  && ((shooter.atGoal()
+                  && ((shooter.atGoalDebounced()
                           && !dyeRotor.isJammed()
                           && turret.atGoal(scoringParameters)
                           && shooterHood.atGoal())
@@ -172,7 +172,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.PRESET_SCORE
               : RobotState.PREPARE_PRESET_SCORE;
       case CLIMB_7_PREPARE_SCORING_L3 -> {
-        if (shooter.atGoal()
+        if (shooter.atGoalDebounced()
             && turret.atGoal(1.0)
             && shooterHood.atGoal()
             && !dyeRotor.isJammed()) {
@@ -181,7 +181,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case PREPARE_PRESET_FEED, PRESET_FEED ->
-          shooter.atGoal()
+          shooter.atGoalDebounced()
                   && !dyeRotor.isJammed()
                   && turret.atGoal(1, feedingParameters.upcomingTurretAngle())
                   && shooterHood.atGoal()
@@ -190,7 +190,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
       case PREPARE_FEED -> {
         logFeedTransition();
-        if (shooter.atGoal()
+        if (shooter.atGoalDebounced()
             // If localization is healthy, you can feed if we're not in a no-feed zone
             // If localization is dead, you can always shoot
             && (health.isLocalizationHealthy()
@@ -220,7 +220,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.atGoal()
+            || (shooter.atGoalDebounced()
                 && localization.isTrustworthy()
                 && !dyeRotor.isJammed()
                 && turret.atGoal(scoringParameters)
@@ -235,7 +235,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.atGoal()
+            || (shooter.atGoalDebounced()
                 && (health.isLocalizationHealthy()
                     ? !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose))
                     : true)
@@ -1253,7 +1253,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void logScoringTransition() {
-    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoal());
+    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoalDebounced());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
         localization.isTrustworthy());
@@ -1269,7 +1269,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logFeedTransition() {
 
-    DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoal());
+    DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoalDebounced());
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
     DogLog.log(
