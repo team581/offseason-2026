@@ -104,6 +104,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
   }
 
+  public boolean isFullyExtended() {
+    return getState() == DeployState.INTAKE && atGoal();
+  }
+
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
@@ -240,7 +244,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
     rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
 
-    hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+    if (DSOptions.USE_CANRANGE.get()) {
+      hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+    }
     filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
 
     if (filteredHopperCANRangeDistance >= DeployConfig.HIGH_CAPACITY_THRESHOLD) {
