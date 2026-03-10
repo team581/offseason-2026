@@ -59,13 +59,11 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     }
   }
 
-
   public void scoreSlowRequest() {
     if (getState() != DyeRotorState.UNHOMED) {
       setStateFromRequest(DyeRotorState.SCORE_SLOW);
     }
   }
-
 
   public void feedRequest(double distance) {
     feedDistance = distance;
