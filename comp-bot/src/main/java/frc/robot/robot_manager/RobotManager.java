@@ -68,7 +68,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInAllianceZone = false;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
-  private AimingParameters fallbackFeedingParameters = new AimingParameters();
+  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0, 0);
 
   public RobotManager(
       ShooterHood shooterHood,
