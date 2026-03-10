@@ -388,7 +388,8 @@ public class FieldUtil {
               BLUE_HUB_CENTER.getX() + (HUB_WIDTH / 2.0) + HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH,
               BLUE_HUB_CENTER.getY() + HUB_NET_Y_WIDTH / 2.0),
           new Translation2d(
-              BLUE_HUB_CENTER.getX() - (HUB_WIDTH / 2.0), BLUE_HUB_CENTER.getY() + HUB_WIDTH / 2.0));
+              BLUE_HUB_CENTER.getX() - (HUB_WIDTH / 2.0),
+              BLUE_HUB_CENTER.getY() + HUB_WIDTH / 2.0));
 
   private static final List<Translation2d> RED_HUB_CORNERS =
       ImmutableList.of(
