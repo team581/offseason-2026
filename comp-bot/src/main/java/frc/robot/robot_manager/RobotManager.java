@@ -64,7 +64,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
 
-  private boolean isInScoringZone = false;
+  private boolean isInSafeScoringLocation = false;
   private boolean isInAllianceZone = false;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
@@ -137,30 +137,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case IDLE -> {
-        if (DSOptions.AUTO_SCORE.getAsBoolean() && hubActivity.getTOFBasedHubActive()) {
-          yield RobotState.PREPARE_SCORE;
-        }
         yield currentState;
       }
-      case PREPARE_SCORE -> {
-        logScoringTransition();
 
-        if (DSOptions.AUTO_SCORE.getAsBoolean() && !hubActivity.getTOFBasedHubActive()) {
-          yield RobotState.STOP_SHOOTING_SCORE;
-        }
-        if ((FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())
-                && localization.isTrustworthy())
-            && (((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
-                        || turret.atGoal(scoringParameters.turretTolerance()))
-                    && (shooter.atGoalDebounced()
-                        && shooterHood.atGoal()
-                        && hubActivity.getTOFBasedHubActive()
-                        && isInScoringZone))
-                || hubActivity.ableToForceScoreTransitionEndOfActiveHub())) {
-          yield RobotState.SCORE;
-        }
-        yield currentState;
-      }
       case PREPARE_PRESET_SCORE, PRESET_SCORE ->
           !isMoving
                   && ((shooter.atGoalDebounced()
@@ -186,9 +165,53 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                   && shooterHood.atGoal()
               ? RobotState.PRESET_FEED
               : RobotState.PREPARE_PRESET_FEED;
+      case PREPARE_SCORE -> {
+        logScoringTransition();
 
-      case PREPARE_FEED -> {
+        if (!isInAllianceZone) {
+          yield RobotState.PREPARE_FEED;
+        }
+
+        if ((isInAllianceZone
+                && turret.atGoal(scoringParameters.turretTolerance())
+                && shooter.atGoalDebounced()
+                && shooterHood.atGoal()
+                && hubActivity.getTOFBasedHubActive()
+                && isInSafeScoringLocation)
+            || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
+          yield RobotState.SCORE;
+        }
+        yield currentState;
+      }
+      case SCORE -> {
+        logScoringTransition();
+
+        if (!isInAllianceZone) {
+          yield RobotState.PREPARE_FEED;
+        }
+
+        if (!hubActivity.getTOFBasedHubActive()) {
+          yield RobotState.STOP_SHOOTING_SCORE;
+        }
+
+        if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
+            || (localization.isTrustworthy()
+                && turret.atGoal(scoringParameters)
+                && shooterHood.atGoal()
+                && isInSafeScoringLocation)
+            || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
+          yield currentState;
+        }
+
+        yield RobotState.PREPARE_SCORE;
+      }
+       case PREPARE_FEED -> {
         logFeedTransition();
+
+        if (isInAllianceZone) {
+          yield RobotState.PREPARE_SCORE;
+        }
+
         if (shooter.atGoalDebounced()
             // If localization is healthy, you can feed if we're not in a no-feed zone
             // If localization is dead, you can always shoot
@@ -203,34 +226,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
       }
-      case SCORE -> {
-        logScoringTransition();
-        // If we are not in the alliance zone while vision is online, stop tracking the hub.
-        // Otherwise, if vision is dead and we cannot reliable track whether we are in the alliance
-        // zone, we still want to be able to score
-        if (health.isLocalizationHealthy()
-            && !FieldUtil.isRobotInAllianceZone(robotPose.getTranslation())) {
-          DogLog.timestamp("RobotManager/ScoreTransition/RobotNotInAllianceZone");
-          yield RobotState.STOP_SHOOTING_SCORE;
-        }
-
-        if (!hubActivity.getTOFBasedHubActive()) {
-          yield RobotState.STOP_SHOOTING_SCORE;
-        }
-
-        if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (localization.isTrustworthy()
-                && !dyeRotor.isJammed()
-                && turret.atGoal(scoringParameters)
-                && shooterHood.atGoal()
-                && isInScoringZone)
-            || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
-          yield currentState;
-        }
-
-        yield RobotState.PREPARE_SCORE;
-      }
       case FEED -> {
+        if (isInAllianceZone) {
+          yield RobotState.PREPARE_SCORE;
+        }
+
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || ((health.isLocalizationHealthy()
@@ -1029,12 +1029,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareScoreOrFeedRequest() {
-    var shouldScore = isInAllianceZone;
-    if (!health.isLocalizationHealthy()) {
-      shouldScore = hubActivity.getTOFBasedHubActive();
-    }
-
-    if (shouldScore) {
+    if (isInAllianceZone) {
       prepareScoreRequest();
     } else {
       prepareFeedRequest();
@@ -1246,13 +1241,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.getState().isIntaking()
             && MathUtil.isNear(robotRotation, driveDirection, 120.0, -180, 180)
             && MathHelpers.getLinearVelocity(speeds) > 1e-5;
-    isInScoringZone =
+    isInSafeScoringLocation =
         !health.isLocalizationHealthy()
             || !FieldUtil.isInNoScoreZone(TurretCalculator.getTurretPose(robotPose));
 
     isInAllianceZone =
-        FieldUtil.isRobotPastObstacleTowardAllianceZone(
-            TurretCalculator.getTurretPose(robotPose).getTranslation());
+        !health.isLocalizationHealthy()
+            ? hubActivity.getTOFBasedHubActive()
+            : FieldUtil.isRobotPastObstacleTowardAllianceZone(
+                TurretCalculator.getTurretPose(robotPose).getTranslation());
   }
 
   private void logScoringTransition() {
@@ -1267,7 +1264,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/TurretAtGoal", turret.atGoal(scoringParameters));
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
-    DogLog.log("RobotManager/Scoring/ScoreTransition/IsInScoringZone", isInScoringZone);
+    DogLog.log("RobotManager/Scoring/ScoreTransition/IsInScoringZone", isInSafeScoringLocation);
   }
 
   private void logFeedTransition() {

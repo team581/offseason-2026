@@ -9,7 +9,6 @@ public class FeatureFlags {
 
   public static final BooleanSupplier REGRESSION_MODEL = FeatureFlag.of("RegressionModel", false);
 
-  public static final BooleanSupplier IGNORE_TURRET_AT_GOAL = FeatureFlag.of("IgnoreTurret", false);
 
   public static final BooleanSupplier CANCEL_IN_PROGRESS_SHOT =
       FeatureFlag.of("CancelInProgressShot", true);

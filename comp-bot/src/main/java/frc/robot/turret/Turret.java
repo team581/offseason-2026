@@ -246,9 +246,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public boolean atGoal(double tolerance) {
-    if (FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()) {
-      return true;
-    }
     return switch (getState()) {
       case UNHOMED -> false;
       case STUCK -> true;
@@ -261,9 +258,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public boolean atGoal(double tolerance, double upcomingAngle) {
-    if (FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()) {
-      return true;
-    }
     return switch (getState()) {
       case UNHOMED -> false;
       case STUCK -> true;
