@@ -25,13 +25,15 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
               AutoPoint.ofRed(
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 30)),
-              AutoPoint.ofRed(new Pose2d(8.734, 6.849, Rotation2d.fromDegrees(-108.0)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(8.734, 4.5, Rotation2d.fromDegrees(-51.0)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(10.019, 4.837, Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(2, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
+              AutoPoint.ofRed(new Pose2d(8.640, 6.653, Rotation2d.fromDegrees(-134.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
+              AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-86.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),    
+              AutoPoint.ofRed(new Pose2d(8.280, 4.475, Rotation2d.fromDegrees(-50.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 30)),
+              AutoPoint.ofRed(new Pose2d(9.975, 4.755, Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.09, 20))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(3.0, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
@@ -43,11 +45,11 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
                       new Pose2d(
                           10.174, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2)),
-              AutoPoint.ofRed(new Pose2d(10.174, 5.7, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(9.8, 5.7, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1)),
-              AutoPoint.ofRed(new Pose2d(10.174, 4.3, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(9.8, 4.3, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
-              AutoPoint.ofRed(new Pose2d(10.25, 4.89, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(10.617, 4.844, Rotation2d.kCW_90deg))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(3.0, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
