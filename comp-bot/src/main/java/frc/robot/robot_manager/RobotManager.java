@@ -429,7 +429,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.idleRequest();
-        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
+        turret.feedRequest(
+            fallbackFeedingParameters.turretAngle(),
+            fallbackFeedingParameters.turretFeedForwardRadians());
         // Deploy is controlled separately
         // Intake is controlled separately
         swerve.normalDriveRequest();
@@ -442,7 +444,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         // TODO: Update to use fallback feeding parameters
         dyeRotor.feedRequest(feedingParameters.distance());
-        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
+        turret.feedRequest(
+            fallbackFeedingParameters.turretAngle(),
+            fallbackFeedingParameters.turretFeedForwardRadians());
 
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
@@ -459,7 +463,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         dyeRotor.resetToIdleRequest();
 
         // TODO: Update to use fallback feeding parameters
-        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
+        turret.feedRequest(
+            fallbackFeedingParameters.turretAngle(),
+            fallbackFeedingParameters.turretFeedForwardRadians());
 
         deploy.stopShootingRequest();
         intake.stopShootingRequest();
@@ -837,7 +843,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_PRESET_FEED -> {
         // TODO: Use fallback feeding parameters
-        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
+        turret.feedRequest(
+            fallbackFeedingParameters.turretAngle(),
+            fallbackFeedingParameters.turretFeedForwardRadians());
         if (intake.getState().isIntaking()) {
           swerve.intakeDriveRequest();
         } else {
@@ -846,7 +854,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PRESET_FEED -> {
         // TODO: Use fallback feeding parameters
-        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
+        turret.feedRequest(
+            fallbackFeedingParameters.turretAngle(),
+            fallbackFeedingParameters.turretFeedForwardRadians());
         if (intake.getState().isIntaking()) {
           swerve.intakeDriveRequest();
         } else {
@@ -1224,7 +1234,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         AimParameterUtil.getFeedingParameters(
             feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
 
-            fallbackFeedingParameters = AimParameterUtil.getFallbackFeedingParameters(feedLocation, robotPose, speeds);
+    fallbackFeedingParameters =
+        AimParameterUtil.getFallbackFeedingParameters(feedLocation, robotPose, speeds);
 
     var swerveVector = MathHelpers.getDriveDirection(speeds);
     double driveDirection = swerveVector.getDegrees();

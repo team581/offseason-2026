@@ -242,7 +242,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
 
     if (DSOptions.USE_CANRANGE.get()) {
-      hopperCANRangeDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+      hopperCANRangeDistance =
+          Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
     filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
 
