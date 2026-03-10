@@ -66,6 +66,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private boolean isInSafeScoringLocation = false;
   private boolean isInAllianceZone = false;
+  private boolean isFeedPathObstructed = false;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
   private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0, 0);
@@ -213,11 +214,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (shooter.atGoalDebounced()
-            // If localization is healthy, you can feed if we're not in a no-feed zone
-            // If localization is dead, you can always shoot
-            && (health.isLocalizationHealthy()
-                ? !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose))
-                : true)
+            && !isFeedPathObstructed
             && turret.atGoal(feedingParameters)
             && shooterHood.atGoal()) {
 
@@ -233,9 +230,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || ((health.isLocalizationHealthy()
-                    ? !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose))
-                    : true)
+            || (!isFeedPathObstructed
                 && turret.atGoal(feedingParameters)
                 && shooterHood.atGoal())) {
 
@@ -1241,15 +1236,31 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         intake.getState().isIntaking()
             && MathUtil.isNear(robotRotation, driveDirection, 120.0, -180, 180)
             && MathHelpers.getLinearVelocity(speeds) > 1e-5;
-    isInSafeScoringLocation =
-        !health.isLocalizationHealthy()
-            || !FieldUtil.isInNoScoreZone(TurretCalculator.getTurretPose(robotPose));
-
     isInAllianceZone =
         !health.isLocalizationHealthy()
             ? hubActivity.getTOFBasedHubActive()
             : FieldUtil.isRobotPastObstacleTowardAllianceZone(
                 TurretCalculator.getTurretPose(robotPose).getTranslation());
+
+    if (FeatureFlags.OBSTRUCTION_GATING.getAsBoolean()) {
+      isInSafeScoringLocation =
+          !health.isLocalizationHealthy()
+              || !FieldUtil.isScorePathObstructed(robotPose.getTranslation());
+      isFeedPathObstructed =
+          health.isLocalizationHealthy()
+              && FieldUtil.isFeedPathObstructed(
+                  robotPose.getTranslation(), feedLocation.getTranslation(robotPose));
+    } else {
+      isInSafeScoringLocation =
+          !health.isLocalizationHealthy()
+              || !FieldUtil.isInNoScoreZone(TurretCalculator.getTurretPose(robotPose));
+      isFeedPathObstructed =
+          health.isLocalizationHealthy()
+              && FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose));
+    }
+
+    DogLog.log("RobotManager/Scoring/IsInSafeScoringLocation", isInSafeScoringLocation);
+    DogLog.log("RobotManager/Feeding/IsFeedPathObstructed", isFeedPathObstructed);
   }
 
   private void logScoringTransition() {

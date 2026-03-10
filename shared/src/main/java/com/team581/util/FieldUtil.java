@@ -879,6 +879,7 @@ public class FieldUtil {
     return FEEDING_OBSTRUCTIONS.contains(robotTranslation, feedLocationTranslation);
   }
 
+  // TODO: This should be removed and replaced with isScorePathObstructed
   public static boolean isInNoScoreZone(Pose2d robot) {
     if (FmsUtil.isRedAlliance()) {
       return RED_CLIMB_ZONE.contains(robot.getTranslation());
