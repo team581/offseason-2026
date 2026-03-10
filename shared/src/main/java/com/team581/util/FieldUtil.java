@@ -412,10 +412,15 @@ public class FieldUtil {
 
   public static final ObstructionCalculator FEEDING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
-          BLUE_HUB_CORNERS, RED_HUB_CORNERS, BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
+          Units.inchesToMeters(6),
+          BLUE_HUB_CORNERS,
+          RED_HUB_CORNERS,
+          BLUE_CLIMB_TOWER_CORNERS,
+          RED_CLIMB_TOWER_CORNERS);
 
   public static final ObstructionCalculator HUB_SCORING_OBSTRUCTIONS =
-      ObstructionCalculator.fromTranslations(BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
+      ObstructionCalculator.fromTranslations(
+          Units.inchesToMeters(6), BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
 
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {
