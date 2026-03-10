@@ -205,7 +205,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         yield RobotState.PREPARE_SCORE;
       }
-       case PREPARE_FEED -> {
+      case PREPARE_FEED -> {
         logFeedTransition();
 
         if (isInAllianceZone) {

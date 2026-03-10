@@ -24,14 +24,13 @@ public class CameraConfigs {
           true,
           true,
           // back
-          Units.inchesToMeters(RobotKind.IS_COMP_BOT?-13.6791:-13.389 ),
+          Units.inchesToMeters(RobotKind.IS_COMP_BOT ? -13.6791 : -13.389),
           // left
-          Units.inchesToMeters(RobotKind.IS_COMP_BOT?-8.274475:-8.3370),
-          Units.inchesToMeters(RobotKind.IS_COMP_BOT?19.625171:19.7564),
-          RobotKind.IS_COMP_BOT?10.816941: 10.0,
-          RobotKind.IS_COMP_BOT?-175.592715: -175.5,
-          RobotKind.IS_COMP_BOT?0.83:
-          -0.732935);
+          Units.inchesToMeters(RobotKind.IS_COMP_BOT ? -8.274475 : -8.3370),
+          Units.inchesToMeters(RobotKind.IS_COMP_BOT ? 19.625171 : 19.7564),
+          RobotKind.IS_COMP_BOT ? 10.816941 : 10.0,
+          RobotKind.IS_COMP_BOT ? -175.592715 : -175.5,
+          RobotKind.IS_COMP_BOT ? 0.83 : -0.732935);
 
   // ground when stowed
   // Units.inchesToMeters(12.9742),
