@@ -1,6 +1,7 @@
 package frc.robot;
 
 import com.team581.Base581Robot;
+import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
@@ -113,7 +114,9 @@ public class Robot extends Base581Robot {
 
     finalizeInit();
 
-    FieldUtil.debugLogFieldZones();
+    if (GlobalConfig.IS_DEVELOPMENT) {
+      FieldUtil.debugLogFieldZones();
+    }
 
     if (RobotBase.isSimulation()) {
       try {
