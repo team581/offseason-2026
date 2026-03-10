@@ -42,7 +42,6 @@ public class ShooterHoodConfig {
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  // TODO: Change to brake after bringup completed
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(350).withKV(0).withKS(0));

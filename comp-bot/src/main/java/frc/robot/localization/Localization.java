@@ -8,7 +8,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
@@ -25,8 +24,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final Vision vision;
   private final Imu imu;
   private final TrustFactor trustFactor = new TrustFactor();
-
-  private final Field2d field2d = new Field2d();
 
   private Pose2d robotPose = Pose2d.kZero;
 
@@ -81,7 +78,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
-    field2d.setRobotPose(robotPose);
   }
 
   public void zeroGyro() {

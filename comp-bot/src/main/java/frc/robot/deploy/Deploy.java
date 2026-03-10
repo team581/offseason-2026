@@ -139,7 +139,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         if (hopperShuffleTimer.hasElapsed(DeployConfig.HOPPER_SHUFFLE_DURATION.get())) {
           yield DeployState.HOPPER_SHUFFLING_FINISH;
         }
-        if ((atGoal() || timeout(2.0)) && hopperCapacityNotHigh) {
+        if ((atGoal() && timeout(DeployConfig.HOPPER_SHUFFLING_IN_OUT_DURATION.get()))
+            && hopperCapacityNotHigh) {
           yield DeployState.HOPPER_SHUFFLING_IN;
         }
         yield currentState;
@@ -149,13 +150,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         if (hopperShuffleTimer.hasElapsed(DeployConfig.HOPPER_SHUFFLE_DURATION.get())) {
           yield DeployState.HOPPER_SHUFFLING_FINISH;
         }
-        if ((atGoal() || timeout(2.0)) && hopperCapacityNotHigh) {
+        if ((atGoal() && timeout(DeployConfig.HOPPER_SHUFFLING_IN_OUT_DURATION.get()))
+            && hopperCapacityNotHigh) {
           yield DeployState.HOPPER_SHUFFLING_OUT;
         }
         yield currentState;
       }
       case HOPPER_SHUFFLING_FINISH -> {
-        if (atGoal() || timeout(2.0)) {
+        if (atGoal() && timeout(DeployConfig.HOPPER_SHUFFLING_FINISH_DURATION.get())) {
           hopperShuffleTimer.restart();
           yield DeployState.HOPPER_SHUFFLING_OUT;
         }
