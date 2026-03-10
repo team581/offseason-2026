@@ -8,6 +8,8 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -38,6 +40,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
+
+  private boolean atGoal = false;
+    private boolean atGoalDebounced = false;
+
+
+  // Debounce for delay between shots at 15 bps
+  private Debouncer atGoaalDebouncer = new Debouncer(1.0/15.0, DebounceType.kFalling);
 
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
@@ -138,6 +147,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
 
+    atGoal = calculateAtGoal();
+    atGoalDebounced = atGoaalDebouncer.calculate(atGoal);
+
+
     if (getState() == ShooterState.SELF_TEST_LEFT_MOTOR) {
       DogLog.log(
           "Shooter/SelfTest/LeftMotor/VelocityGood",
@@ -170,6 +183,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public boolean atGoal() {
+    return atGoal;
+  }
+
+  public boolean atGoalDebounced() {
+    return atGoalDebounced;
+}
+
+  private boolean calculateAtGoal() {
     return switch (getState()) {
       case IDLE -> true;
       case SCORE ->
