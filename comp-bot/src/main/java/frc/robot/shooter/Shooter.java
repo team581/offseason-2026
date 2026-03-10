@@ -42,11 +42,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double rightMotorRpm = 0;
 
   private boolean atGoal = false;
-    private boolean atGoalDebounced = false;
-
+  private boolean atGoalDebounced = false;
 
   // Debounce for delay between shots at 15 bps
-  private Debouncer atGoaalDebouncer = new Debouncer(1.0/15.0, DebounceType.kFalling);
+  private Debouncer atGoaalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
 
   public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
@@ -150,7 +149,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     atGoal = calculateAtGoal();
     atGoalDebounced = atGoaalDebouncer.calculate(atGoal);
 
-
     if (getState() == ShooterState.SELF_TEST_LEFT_MOTOR) {
       DogLog.log(
           "Shooter/SelfTest/LeftMotor/VelocityGood",
@@ -188,7 +186,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   public boolean atGoalDebounced() {
     return atGoalDebounced;
-}
+  }
 
   private boolean calculateAtGoal() {
     return switch (getState()) {
