@@ -3,6 +3,7 @@ package frc.robot.vision;
 import com.team581.config.CameraConfig;
 import com.team581.config.LimelightModel;
 import edu.wpi.first.math.util.Units;
+import frc.robot.config.RobotKind;
 
 public class CameraConfigs {
   public static final CameraConfig TURRET =
@@ -23,14 +24,14 @@ public class CameraConfigs {
           true,
           true,
           // back
-          Units.inchesToMeters(-13.389),
+          Units.inchesToMeters(RobotKind.IS_COMP_BOT?-13.6791:-13.389 ),
           // left
-          Units.inchesToMeters(-8.3370),
-          Units.inchesToMeters(19.7564),
-          // TODO: get real number from cad
-          10.00,
-          -175.5,
-          -0.83);
+          Units.inchesToMeters(RobotKind.IS_COMP_BOT?-8.274475:-8.3370),
+          Units.inchesToMeters(RobotKind.IS_COMP_BOT?19.625171:19.7564),
+          RobotKind.IS_COMP_BOT?10.816941: 10.0,
+          RobotKind.IS_COMP_BOT?-175.592715: -175.5,
+          RobotKind.IS_COMP_BOT?0.83:
+          -0.732935);
 
   // ground when stowed
   // Units.inchesToMeters(12.9742),
