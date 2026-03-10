@@ -99,10 +99,6 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
     timeSinceMatchStart = teleopTimer.get() + FmsUtil.MATCH_TIME_AT_TELEOP_START;
     timeUntilNextShift = FmsUtil.timeUntilNextShift(timeSinceMatchStart);
 
-    DogLog.forceNt.log("HubActivity/CurrentShift", FmsUtil.currentShift(timeSinceMatchStart));
-    DogLog.forceNt.log("HubActivity/Active", getHubStateColor().toHexString());
-    DogLog.forceNt.log("HubActivity/TimeUntilNextShift", timeUntilNextShift);
-
     actualHubActive = calculateActualHubActive();
     tofBasedHubActive = calculateTOFBasedHubActive();
     forceScoreTransitionEndOfActiveHub =
@@ -113,9 +109,13 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
 
   @Override
   protected void whileInState(HubActivityState state) {
+    // Driver station logging
+    DogLog.forceNt.log("HubActivity/CurrentShift", FmsUtil.currentShift(timeSinceMatchStart));
+    DogLog.forceNt.log("HubActivity/Active", getHubStateColor().toHexString());
+    DogLog.forceNt.log("HubActivity/TimeUntilNextShift", timeUntilNextShift);
+
     DogLog.log("HubActivity/TimeSinceMatchStart", timeSinceMatchStart);
     DogLog.log("HubActivity/TimeSinceTeleopEnable", teleopTimer.get());
-    DogLog.log("HubActivity/TimeUntilNextShift", timeUntilNextShift);
     DogLog.log(
         "HubActivity/Scoring/ScoreTransition/ForceScoreTransitionEndOfActiveHub",
         ableToForceScoreTransitionEndOfActiveHub());
