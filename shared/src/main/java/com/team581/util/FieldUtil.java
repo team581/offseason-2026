@@ -32,10 +32,10 @@ public class FieldUtil {
   private static final double BLUE_STARTING_LINE_X = Units.inchesToMeters(156.61);
   private static final double RED_STARTING_LINE_X = FIELD_LENGTH_X - BLUE_STARTING_LINE_X;
 
-  // OBSTACLE_X referring to the trenches and bumps x coordinate of the corresponding alliance
-  private static final double RED_OBSTACLE_X =
+  // Refers to the x shared by the trenches, bumps, and hub of corresponding alliance
+  private static final double RED_TRENCH_BUMP_HUB_X =
       MathHelpers.average(AprilTags.TAG_7.getX(), AprilTags.TAG_6.getX());
-  private static final double BLUE_OBSTACLE_X =
+  private static final double BLUE_TRENCH_BUMP_HUB_X =
       MathHelpers.average(AprilTags.TAG_17.getX(), AprilTags.TAG_28.getX());
 
   // Trench/assist zone calculations
@@ -48,13 +48,13 @@ public class FieldUtil {
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(85.0);
 
   public static final Pose2d BLUE_OUTPOST_TRENCH_CENTER =
-      new Pose2d(BLUE_OBSTACLE_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
+      new Pose2d(BLUE_TRENCH_BUMP_HUB_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
   private static final Pose2d BLUE_DEPOT_TRENCH_CENTER =
-      new Pose2d(BLUE_OBSTACLE_X, AprilTags.TAG_12.getY(), Rotation2d.kZero);
+      new Pose2d(BLUE_TRENCH_BUMP_HUB_X, AprilTags.TAG_12.getY(), Rotation2d.kZero);
   private static final Pose2d RED_DEPOT_TRENCH_CENTER =
-      new Pose2d(RED_OBSTACLE_X, AprilTags.TAG_17.getY(), Rotation2d.kZero);
+      new Pose2d(RED_TRENCH_BUMP_HUB_X, AprilTags.TAG_17.getY(), Rotation2d.kZero);
   public static final Pose2d RED_OUTPOST_TRENCH_CENTER =
-      new Pose2d(RED_OBSTACLE_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
+      new Pose2d(RED_TRENCH_BUMP_HUB_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
 
   private static final Rectangle2d BLUE_OUTPOST_TRENCH_ZONE =
       new Rectangle2d(BLUE_OUTPOST_TRENCH_CENTER, TRENCH_ZONE_LENGTH_X, TRENCH_ZONE_LENGTH_Y);
@@ -94,13 +94,13 @@ public class FieldUtil {
 
   // Midpoints of the entryways of trenches to check if we are driving toward it
   private static final Translation2d BLUE_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
+      new Translation2d(BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
   private static final Translation2d BLUE_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
+      new Translation2d(BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
   private static final Translation2d RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
+      new Translation2d(RED_TRENCH_BUMP_HUB_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
   private static final Translation2d RED_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
+      new Translation2d(RED_TRENCH_BUMP_HUB_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
 
   private static final List<Translation2d> ALLIANCE_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
@@ -108,13 +108,13 @@ public class FieldUtil {
           RED_DEPOT_ALLIANCE_ZONE_TRENCH_MIDPOINT, RED_OUTPOST_ALLIANCE_ZONE_TRENCH_MIDPOINT);
 
   private static final Translation2d BLUE_OUTPOST_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
+      new Translation2d(BLUE_TRENCH_BUMP_HUB_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY());
   private static final Translation2d BLUE_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(BLUE_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
+      new Translation2d(BLUE_TRENCH_BUMP_HUB_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY());
   private static final Translation2d RED_DEPOT_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
+      new Translation2d(RED_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY());
   private static final Translation2d RED_OUTPOST_NEUTRAL_ZONE_TRENCH_MIDPOINT =
-      new Translation2d(RED_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
+      new Translation2d(RED_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY());
 
   private static final List<Translation2d> NEUTRAL_ZONE_TRENCH_MIDPOINTS =
       ImmutableList.of(
@@ -132,15 +132,19 @@ public class FieldUtil {
   private static final double BUMP_ASSIST_ZONE_LENGTH_Y = BUMP_LENGTH_Y;
 
   private static final Pose2d BLUE_OUTPOST_BUMP_CENTER =
-      new Pose2d(BLUE_OBSTACLE_X, BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
+      new Pose2d(BLUE_TRENCH_BUMP_HUB_X, BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
   private static final Pose2d BLUE_DEPOT_BUMP_CENTER =
       new Pose2d(
-          BLUE_OBSTACLE_X, FIELD_WIDTH_Y - BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
+          BLUE_TRENCH_BUMP_HUB_X,
+          FIELD_WIDTH_Y - BUMP_CENTER_Y_DISTANCE_FROM_WALL,
+          Rotation2d.kZero);
   public static final Pose2d RED_OUTPOST_BUMP_CENTER =
       new Pose2d(
-          RED_OBSTACLE_X, FIELD_WIDTH_Y - BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
+          RED_TRENCH_BUMP_HUB_X,
+          FIELD_WIDTH_Y - BUMP_CENTER_Y_DISTANCE_FROM_WALL,
+          Rotation2d.kZero);
   private static final Pose2d RED_DEPOT_BUMP_CENTER =
-      new Pose2d(RED_OBSTACLE_X, BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
+      new Pose2d(RED_TRENCH_BUMP_HUB_X, BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
 
   private static final Rectangle2d BLUE_OUTPOST_BUMP_ASSIST_ZONE =
       new Rectangle2d(
@@ -163,16 +167,17 @@ public class FieldUtil {
   // Points centered on the bump x to check if we are driving toward it
   private static final Translation2d BLUE_OUTPOST_HUB_SIDE_BUMP_POINT =
       new Translation2d(
-          BLUE_OBSTACLE_X, BLUE_OUTPOST_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          BLUE_TRENCH_BUMP_HUB_X,
+          BLUE_OUTPOST_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
   private static final Translation2d BLUE_DEPOT_HUB_SIDE_BUMP_POINT =
       new Translation2d(
-          BLUE_OBSTACLE_X, BLUE_DEPOT_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          BLUE_TRENCH_BUMP_HUB_X, BLUE_DEPOT_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
   private static final Translation2d RED_DEPOT_HUB_SIDE_BUMP_POINT =
       new Translation2d(
-          RED_OBSTACLE_X, RED_DEPOT_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          RED_TRENCH_BUMP_HUB_X, RED_DEPOT_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
   private static final Translation2d RED_OUTPOST_HUB_SIDE_BUMP_POINT =
       new Translation2d(
-          RED_OBSTACLE_X, RED_OUTPOST_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          RED_TRENCH_BUMP_HUB_X, RED_OUTPOST_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
 
   private static final List<Translation2d> HUB_SIDE_BUMP_POINTS =
       ImmutableList.of(
@@ -183,16 +188,17 @@ public class FieldUtil {
 
   private static final Translation2d BLUE_OUTPOST_TRENCH_SIDE_BUMP_POINT =
       new Translation2d(
-          BLUE_OBSTACLE_X, BLUE_OUTPOST_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          BLUE_TRENCH_BUMP_HUB_X,
+          BLUE_OUTPOST_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
   private static final Translation2d BLUE_DEPOT_TRENCH_SIDE_BUMP_POINT =
       new Translation2d(
-          BLUE_OBSTACLE_X, BLUE_DEPOT_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          BLUE_TRENCH_BUMP_HUB_X, BLUE_DEPOT_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
   private static final Translation2d RED_DEPOT_TRENCH_SIDE_BUMP_POINT =
       new Translation2d(
-          RED_OBSTACLE_X, RED_DEPOT_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          RED_TRENCH_BUMP_HUB_X, RED_DEPOT_BUMP_CENTER.getY() - BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
   private static final Translation2d RED_OUTPOST_TRENCH_SIDE_BUMP_POINT =
       new Translation2d(
-          RED_OBSTACLE_X, RED_OUTPOST_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
+          RED_TRENCH_BUMP_HUB_X, RED_OUTPOST_BUMP_CENTER.getY() + BUMP_ASSIST_ZONE_LENGTH_Y / 6.0);
 
   private static final List<Translation2d> TRENCH_SIDE_BUMP_POINTS =
       ImmutableList.of(
@@ -309,14 +315,19 @@ public class FieldUtil {
 
   // TODO: Validate these points
   private static final Pose2d BLUE_LEFT_FALLBACK =
-      new Pose2d(BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY(), new Rotation2d());
+      new Pose2d(
+          BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY(), new Rotation2d());
   private static final Pose2d BLUE_RIGHT_FALLBACK =
       new Pose2d(
-          BLUE_OBSTACLE_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_12.getY(), new Rotation2d());
+          BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0,
+          AprilTags.TAG_12.getY(),
+          new Rotation2d());
   private static final Pose2d RED_LEFT_FALLBACK =
-      new Pose2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY(), new Rotation2d());
+      new Pose2d(
+          RED_TRENCH_BUMP_HUB_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_17.getY(), new Rotation2d());
   private static final Pose2d RED_RIGHT_FALLBACK =
-      new Pose2d(RED_OBSTACLE_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY(), new Rotation2d());
+      new Pose2d(
+          RED_TRENCH_BUMP_HUB_X + TRENCH_LENGTH_X / 2.0, AprilTags.TAG_22.getY(), new Rotation2d());
 
   private static final Triangle2d RED_HUB_NO_FEED_ZONE =
       new Triangle2d(
@@ -356,9 +367,51 @@ public class FieldUtil {
           CLIMB_FRONT_CORNER_OUTPOST_SIDE.bluePose().getTranslation(),
           CLIMB_BACK_CORNER_DEPOT_SIDE.bluePose().getTranslation());
 
+  // Field Obstacles that get in the way of shooting
   // TODO: Define obstruction polygons and integrate with shooting logic
+  private static final Translation2d BLUE_HUB_CENTER =
+      new Translation2d(BLUE_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
+  private static final Translation2d RED_HUB_CENTER =
+      new Translation2d(RED_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
+  private static final double HUB_WIDTH = Units.inchesToMeters(47.0);
+  private static final double HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH = Units.inchesToMeters(10.26);
+  private static final double HUB_NET_Y_WIDTH = Units.inchesToMeters(58.41);
+
+  private static final List<Translation2d> BLUE_HUB_CORNERS =
+      ImmutableList.of(
+          new Translation2d(
+              BLUE_HUB_CENTER.getX() - (HUB_WIDTH / 2.0), BLUE_HUB_CENTER.getY() - HUB_WIDTH / 2.0),
+          new Translation2d(
+              BLUE_HUB_CENTER.getX() + (HUB_WIDTH / 2.0) + HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH,
+              BLUE_HUB_CENTER.getY() - HUB_NET_Y_WIDTH / 2.0),
+          new Translation2d(
+              BLUE_HUB_CENTER.getX() + (HUB_WIDTH / 2.0) + HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH,
+              BLUE_HUB_CENTER.getY() + HUB_NET_Y_WIDTH / 2.0),
+          new Translation2d(
+              BLUE_HUB_CENTER.getX() - (HUB_WIDTH / 2.0), BLUE_HUB_CENTER.getY() + HUB_WIDTH / 2.0));
+
+  private static final List<Translation2d> RED_HUB_CORNERS =
+      ImmutableList.of(
+          new Translation2d(
+              RED_HUB_CENTER.getX() - (HUB_WIDTH / 2.0) - HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH,
+              RED_HUB_CENTER.getY() - HUB_NET_Y_WIDTH / 2.0),
+          new Translation2d(
+              RED_HUB_CENTER.getX() + (HUB_WIDTH / 2.0), RED_HUB_CENTER.getY() - HUB_WIDTH / 2.0),
+          new Translation2d(
+              RED_HUB_CENTER.getX() + (HUB_WIDTH / 2.0), RED_HUB_CENTER.getY() + HUB_WIDTH / 2.0),
+          new Translation2d(
+              RED_HUB_CENTER.getX() - (HUB_WIDTH / 2.0) - HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH,
+              RED_HUB_CENTER.getY() + HUB_NET_Y_WIDTH / 2.0));
+
+  private static final List<Translation2d> BLUE_CLIMB_TOWER_CORNERS =
+      MathHelpers.getCorners(BLUE_CLIMB_ZONE);
+
+  private static final List<Translation2d> RED_CLIMB_TOWER_CORNERS =
+      MathHelpers.getCorners(RED_CLIMB_ZONE);
+
   public static final ObstructionCalculator FIELD_OBSTACLES =
-      ObstructionCalculator.fromTranslations();
+      ObstructionCalculator.fromTranslations(
+          BLUE_HUB_CORNERS, RED_HUB_CORNERS, BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
 
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {
@@ -655,6 +708,59 @@ public class FieldUtil {
         new Pose2d(
             MathHelpers.getCorners(RED_OUTPOST_WALL_SNAP_CORNER_ZONE).get(2),
             Rotation2d.kCW_90deg));
+
+    // Obstacles - climb tower and hub corners
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/BlueCorner1",
+        new Pose2d(BLUE_HUB_CORNERS.get(0), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/BlueCorner2",
+        new Pose2d(BLUE_HUB_CORNERS.get(1), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/BlueCorner3",
+        new Pose2d(BLUE_HUB_CORNERS.get(2), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/BlueCorner4",
+        new Pose2d(BLUE_HUB_CORNERS.get(3), Rotation2d.kZero));
+
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/RedCorner1",
+        new Pose2d(RED_HUB_CORNERS.get(0), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/RedCorner2",
+        new Pose2d(RED_HUB_CORNERS.get(1), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/RedCorner3",
+        new Pose2d(RED_HUB_CORNERS.get(2), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/Hubs/RedCorner4",
+        new Pose2d(RED_HUB_CORNERS.get(3), Rotation2d.kZero));
+
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/BlueCorner1",
+        new Pose2d(BLUE_CLIMB_TOWER_CORNERS.get(0), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/BlueCorner2",
+        new Pose2d(BLUE_CLIMB_TOWER_CORNERS.get(1), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/BlueCorner3",
+        new Pose2d(BLUE_CLIMB_TOWER_CORNERS.get(2), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/BlueCorner4",
+        new Pose2d(BLUE_CLIMB_TOWER_CORNERS.get(3), Rotation2d.kZero));
+
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/RedCorner1",
+        new Pose2d(RED_CLIMB_TOWER_CORNERS.get(0), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/RedCorner2",
+        new Pose2d(RED_CLIMB_TOWER_CORNERS.get(1), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/RedCorner3",
+        new Pose2d(RED_CLIMB_TOWER_CORNERS.get(2), Rotation2d.kZero));
+    DogLog.log(
+        "FieldUtil/Obstacles/ClimbTowers/RedCorner4",
+        new Pose2d(RED_CLIMB_TOWER_CORNERS.get(3), Rotation2d.kZero));
   }
 
   public static double getAllianceZoneX() {
@@ -745,7 +851,7 @@ public class FieldUtil {
   }
 
   public static double getObstacleX() {
-    return FmsUtil.isRedAlliance() ? RED_OBSTACLE_X : BLUE_OBSTACLE_X;
+    return FmsUtil.isRedAlliance() ? RED_TRENCH_BUMP_HUB_X : BLUE_TRENCH_BUMP_HUB_X;
   }
 
   // HOME FIELD ONLY
