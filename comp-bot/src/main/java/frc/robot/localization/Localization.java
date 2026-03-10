@@ -91,9 +91,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     for (TagResult result : results) {
       var visionPose = result.pose();
       averageTimestamp += result.timestamp();
-      if (!vision.seenTagRecentlyForReset()) {
-        resetPose(visionPose);
-      }
       swerve.drivetrain.addVisionMeasurement(
           visionPose,
           Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT.get() / 1000)),
