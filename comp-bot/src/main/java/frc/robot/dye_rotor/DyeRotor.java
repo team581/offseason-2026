@@ -59,6 +59,14 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     }
   }
 
+
+  public void scoreSlowRequest() {
+    if (getState() != DyeRotorState.UNHOMED) {
+      setStateFromRequest(DyeRotorState.SCORE_SLOW);
+    }
+  }
+
+
   public void feedRequest(double distance) {
     feedDistance = distance;
 
@@ -119,7 +127,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
         yield currentState;
       }
 
-      case SCORE -> {
+      case SCORE, SCORE_SLOW -> {
         if (isJammed() && timeout(1.0)) {
           beforeUnjamState = currentState;
           yield DyeRotorState.UNJAM;
@@ -134,7 +142,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   protected void whileInState(DyeRotorState currentState) {
 
     switch (currentState) {
-      case SCORE -> {
+      case SCORE, SCORE_SLOW -> {
         rotorMotor.setControl(
             rotorVelocityRequest.withVelocity(
                 currentState.getRotorRPM(DyeRotorConfig.DISTANCE_TO_SCORE_BPS.get(scoreDistance))

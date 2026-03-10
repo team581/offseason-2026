@@ -153,7 +153,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && (((FeatureFlags.IGNORE_TURRET_AT_GOAL.getAsBoolean()
                         || turret.atGoal(scoringParameters.turretTolerance()))
                     && (shooter.atGoalDebounced()
-                        && !dyeRotor.isJammed()
                         && shooterHood.atGoal()
                         && hubActivity.getTOFBasedHubActive()
                         && isInScoringZone))
@@ -220,8 +219,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.atGoalDebounced()
-                && localization.isTrustworthy()
+            || (localization.isTrustworthy()
                 && !dyeRotor.isJammed()
                 && turret.atGoal(scoringParameters)
                 && shooterHood.atGoal()
@@ -235,8 +233,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.atGoalDebounced()
-                && (health.isLocalizationHealthy()
+            || ((health.isLocalizationHealthy()
                     ? !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose))
                     : true)
                 && turret.atGoal(feedingParameters)
@@ -839,6 +836,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           deploy.intakeRequest();
         } else {
           deploy.shuffleRequest();
+        }
+
+        if (shooter.atGoal()) {
+          dyeRotor.scoreRequest(scoringParameters.distance());
+        } else {
+          dyeRotor.scoreSlowRequest();
         }
       }
       case PREPARE_PRESET_FEED -> {

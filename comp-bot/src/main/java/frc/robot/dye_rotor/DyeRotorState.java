@@ -9,6 +9,7 @@ public enum DyeRotorState {
   RESET_TO_IDLE(15.0, 180.0, 0.0, 0.0),
   IDLE(0.0, 180.0, 0.0, 0.0),
   SCORE(100.0, 180.0, 10.0, 10.0),
+  SCORE_SLOW(5.0, 180.0, 10.0, 10.0),
   FEED(20.0, 180.0, 10.0, 10.0),
 
   UNJAM(RobotKind.IS_COMP_BOT ? -8.0 : -1.0, 180.0, 0.0, 0.0);
