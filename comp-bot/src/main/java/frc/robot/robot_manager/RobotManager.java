@@ -68,6 +68,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInAllianceZone = false;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
+  private AimingParameters fallbackFeedingParameters = new AimingParameters();
 
   public RobotManager(
       ShooterHood shooterHood,
@@ -428,9 +429,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         dyeRotor.idleRequest();
-
-        // TODO: Update to use fallback feeding parameters
-        turret.feedRequest(0, 0);
+        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
         // Deploy is controlled separately
         // Intake is controlled separately
         swerve.normalDriveRequest();
@@ -443,7 +442,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         // TODO: Update to use fallback feeding parameters
         dyeRotor.feedRequest(feedingParameters.distance());
-        turret.feedRequest(0, 0);
+        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
 
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
@@ -460,7 +459,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         dyeRotor.resetToIdleRequest();
 
         // TODO: Update to use fallback feeding parameters
-        turret.feedRequest(0, 0);
+        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
 
         deploy.stopShootingRequest();
         intake.stopShootingRequest();
@@ -668,8 +667,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.climbScoreRequest(climbLocationIsLeft);
         shooterHood.climbScoreRequest(climbLocationIsLeft);
         dyeRotor.idleRequest();
-
-        // TODO: Use an actual feed forward
         turret.climbScoreRequest(climbLocationIsLeft, 0);
         deploy.stowRequest();
         intake.idleRequest();
@@ -681,8 +678,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.climbScoreRequest(climbLocationIsLeft);
         shooterHood.climbScoreRequest(climbLocationIsLeft);
         dyeRotor.scoreRequest(scoringParameters.distance());
-
-        // TODO: Use an actual feed forward
         turret.climbScoreRequest(climbLocationIsLeft, 0);
         deploy.stowRequest();
         intake.shootRequest();
@@ -842,7 +837,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_PRESET_FEED -> {
         // TODO: Use fallback feeding parameters
-        turret.feedRequest(0, 0);
+        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
         if (intake.getState().isIntaking()) {
           swerve.intakeDriveRequest();
         } else {
@@ -851,7 +846,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PRESET_FEED -> {
         // TODO: Use fallback feeding parameters
-        turret.feedRequest(0, 0);
+        turret.feedRequest(fallbackFeedingParameters.turretAngle(), fallbackFeedingParameters.turretFeedForwardRadians());
         if (intake.getState().isIntaking()) {
           swerve.intakeDriveRequest();
         } else {
@@ -1224,16 +1219,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               swerve.getFieldRelativeSpeeds());
     }
 
-    shooter.getScoreTimeOfFlight(scoringParameters.distance());
-    if (!health.isLocalizationHealthy()) {
-      feedingParameters =
-          AimParameterUtil.getFallbackFeedingParameters(
-              feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
-    } else {
-      feedingParameters =
-          AimParameterUtil.getFeedingParameters(
-              feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
-    }
+    feedingParameters =
+        AimParameterUtil.getFeedingParameters(
+            feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
+
+            fallbackFeedingParameters = AimParameterUtil.getFallbackFeedingParameters(feedLocation, robotPose, speeds);
 
     var swerveVector = MathHelpers.getDriveDirection(speeds);
     double driveDirection = swerveVector.getDegrees();
