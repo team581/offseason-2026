@@ -280,7 +280,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
     }
     previousCanRangeDistance = hopperCANRangeDistance;
 
-    if (canRangeUpdateTimer.hasElapsed(DeployConfig.NOT_UPDATING_TIMEOUT)) {
+    if (canRangeUpdateTimer.hasElapsed(DeployConfig.NOT_UPDATING_TIMEOUT)
+        && DSOptions.USE_CANRANGE.get()) {
       DogLog.logFault("CANrange distance not updating", AlertType.kError);
     } else {
       DogLog.clearFault("CANrange distance not updating");
