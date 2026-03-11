@@ -4,6 +4,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
+import com.team581.mechanisms.VelocityDetector;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -21,6 +22,11 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private final TalonFX verticalMotor;
 
   private final VelocityVoltage rotorVelocityRequest = new VelocityVoltage(0).withEnableFOC(false);
+
+  private final LinearFilter velocityAverage = LinearFilter.movingAverage(8);
+  private double averageRotorRpm = 0.0;
+  private final VelocityDetector autoGpDetection = new VelocityDetector(DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
+
 
   private double horizontalRawCurrent = 0.0;
   private double verticalRawCurrent = 0.0;
@@ -187,6 +193,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     rotorFilteredCurrent = currentFilter.calculate(rotorRawCurrent);
 
     rotorMotorRpm = rotorMotor.getVelocity().getValueAsDouble() * 60.0;
+    averageRotorRpm = velocityAverage.calculate(rotorMotorRpm);
     rotorAngle =
         MathHelpers.angleModulus(
             Units.rotationsToDegrees(rotorMotor.getPosition().getValueAsDouble()));
@@ -209,6 +216,10 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   public double getAngle() {
     return rotorAngle;
+  }
+
+  public boolean velocityDetectsGp() {
+    return autoGpDetection.hasGamePiece(averageRotorRpm, DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
   }
 
   @Override

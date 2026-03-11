@@ -18,6 +18,8 @@ import java.util.Map;
 public class DyeRotorConfig {
   public static final Debouncer IS_SHOOTING_DEBOUNCER = new Debouncer(1.0);
 
+  public static final double GP_DETECT_VELOCITY_THRESHOLD = 150.0;
+
   // TODO: Measure this number
   public static final double RPM_TOLERANCE_SHOOTING = 10;
 

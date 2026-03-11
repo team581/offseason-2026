@@ -897,6 +897,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     DogLog.log("RobotManager/DrivingToIntake", drivingToIntake);
 
+    DogLog.log("RobotManager/gpDetection/Dye", dyeRotor.velocityDetectsGp());
+    DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
+    DogLog.log("RobotManager/gpDetection/both", detectingGp());
+
     MechanismVisualizer.log(
         robotPose,
         turret.getAngle(),
@@ -1085,6 +1089,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           deploy.shuffleRequest();
       default -> {}
     }
+  }
+
+  public boolean detectingGp() {
+    return dyeRotor.velocityDetectsGp() && shooter.currentDetectsGp();
   }
 
   public void unjamRequest() {

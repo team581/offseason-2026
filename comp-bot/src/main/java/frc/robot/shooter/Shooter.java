@@ -41,6 +41,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
 
+  private double leftStatorCurrent = 0.0;
+  private double rightStatorCurrent = 0.0;
+
   private boolean atGoal = false;
   private boolean atGoalDebounced = false;
 
@@ -89,8 +92,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Shooter/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Shooter/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Left/StatorCurrent", leftStatorCurrent);
+    DogLog.log("Shooter/Right/StatorCurrent", rightStatorCurrent);
     DogLog.log("Shooter/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Shooter/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
 
@@ -143,6 +146,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
     feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
 
+    leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
+    rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
+
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
 
@@ -160,7 +166,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
           "Shooter/SelfTest/LeftMotor/CurrentGood",
           MathUtil.isNear(
               ShooterConfig.SELF_TEST_LEFT_MOTOR_EXPECTED_CURRENT,
-              leftMotor.getStatorCurrent().getValueAsDouble(),
+              leftStatorCurrent,
               ShooterConfig.SELF_TEST_RIGHT_MOTOR_CURRENT_TOLERANCE));
     }
 
@@ -175,7 +181,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
           "Shooter/SelfTest/RightMotor/CurrentGood",
           MathUtil.isNear(
               ShooterConfig.SELF_TEST_RIGHT_MOTOR_EXPECTED_CURRENT,
-              rightMotor.getStatorCurrent().getValueAsDouble(),
+              rightStatorCurrent,
               ShooterConfig.SELF_TEST_LEFT_MOTOR_CURRENT_TOLERANCE));
     }
   }
@@ -219,6 +225,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     shooterSimulation.update();
   }
 
+  public boolean currentDetectsGp() {
+    return ShooterConfig.GP_DETECT_CURRENT_THRESHOLD <= (rightStatorCurrent+leftStatorCurrent)/2;
+  }
   public double getScoreTimeOfFlight(double distance) {
     this.scoreDistance = distance;
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()

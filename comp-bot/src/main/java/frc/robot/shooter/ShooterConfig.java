@@ -29,6 +29,8 @@ public class ShooterConfig {
   public static final int RPM_TOLERANCE = 150;
   public static final int RPM_TOLERANCE_FEEDING = 1000;
 
+  public static final double GP_DETECT_CURRENT_THRESHOLD = 70.0;
+
   public static final double IDLE_RPM = 400;
 
   public static final double TEST_VOLTAGE = 6.0;

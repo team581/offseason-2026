@@ -19,6 +19,13 @@ public class VelocityDetector {
     timeout.start();
   }
 
+  public VelocityDetector(double minVelocity) {
+    this.minVelocity = minVelocity;
+    this.minVelocityTimeout = -1.0;
+    this.debouncer = new Debouncer(0.0, DebounceType.kRising);
+    timeout.start();
+  }
+
   public VelocityDetector(double minVelocity, double minVelocityTimeout, double debounceTime) {
     this.minVelocity = minVelocity;
     this.minVelocityTimeout = minVelocityTimeout;
@@ -34,7 +41,7 @@ public class VelocityDetector {
   public boolean hasGamePiece(double motorVelocity, double maxVelocity) {
     hasSeenMinVelocity =
         hasSeenMinVelocity
-            || timeout.hasElapsed(minVelocityTimeout)
+            || (timeout.hasElapsed(minVelocityTimeout) && minVelocityTimeout >= 0.0)
             || Math.abs(motorVelocity) >= minVelocity;
 
     return hasSeenMinVelocity && debouncer.calculate(Math.abs(motorVelocity) <= maxVelocity);
