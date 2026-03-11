@@ -161,6 +161,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToWallSnap = false;
   private boolean intakeAssistControllerInput = false;
   private boolean ableToSnakeMode = false;
+  private boolean previouslyInSnakeMode = false;
   private boolean inWallSnapCorner = false;
   private boolean previouslyInWallSnapCorner = false;
   private boolean enteredWallSnapCorner = false;
@@ -292,13 +293,22 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 drivetrainState.Pose.getTranslation(), fieldRelativeSpeeds, false);
     previouslyInWallSnapCorner = inWallSnapCorner;
 
-    filteredLastDriveDirection =
-        filteredLastDriveDirection.interpolate(
-            MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
-                .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0)),
-            (SNAKE_MODE_AGRESSIVENESS.get()
-                    * MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
-                / teleopDriveSource.maxLinearVelocity);
+    var currentDriveDirection =
+        MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
+            .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0));
+
+    // Reset the filtered drive direction when first entering snake mode so it doesn't lag behind
+    if (ableToSnakeMode && !previouslyInSnakeMode) {
+      filteredLastDriveDirection = currentDriveDirection;
+    } else {
+      filteredLastDriveDirection =
+          filteredLastDriveDirection.interpolate(
+              currentDriveDirection,
+              (SNAKE_MODE_AGRESSIVENESS.get()
+                      * MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
+                  / teleopDriveSource.maxLinearVelocity);
+    }
+    previouslyInSnakeMode = ableToSnakeMode;
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     if (getState() == SwerveState.INTAKE_RATE_LIMITED
