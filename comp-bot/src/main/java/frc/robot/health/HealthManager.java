@@ -1,5 +1,6 @@
 package frc.robot.health;
 
+import com.team581.config.BlinkingBooleanBox;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -16,6 +17,13 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   private boolean localizationHealthy = true;
   private boolean fuelDetectionHealthy = true;
   private boolean allCamerasHealthy = true;
+
+  private BlinkingBooleanBox localizationBlinkingBooleanBox =
+      new BlinkingBooleanBox("Health/LocalizationHealthyBox", false, true);
+  private BlinkingBooleanBox fuelDetectionBlinkingBooleanBox =
+      new BlinkingBooleanBox("Health/FuelDetectionHealthyBox", false, true);
+  private BlinkingBooleanBox allCamerasBlinkingBooleanBox =
+      new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
   public HealthManager(
       Limelight turretLimelight, Limelight backLimelight, Limelight groundLimelight) {
@@ -57,5 +65,9 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
     DogLog.log("Health/LocalizationHealthy", localizationHealthy);
     DogLog.log("Health/FuelDetectionHealthy", fuelDetectionHealthy);
     DogLog.log("Health/AllCamerasHealthy", allCamerasHealthy);
+
+    localizationBlinkingBooleanBox.update(localizationHealthy);
+    fuelDetectionBlinkingBooleanBox.update(fuelDetectionHealthy);
+    allCamerasBlinkingBooleanBox.update(allCamerasHealthy);
   }
 }
