@@ -28,8 +28,7 @@ public class DyeRotorConfig {
   public static final DoubleSubscriber JAM_CURRENT_THRESHOLD =
       DogLog.tunable("DyeRotor/JamCurrentThreshold", 55.0);
 
-  public static final DoubleSubscriber UNJAM_TIMEOUT =
-      DogLog.tunable("DyeRotor/UnjamTimeout", 0.5);
+  public static final DoubleSubscriber UNJAM_TIMEOUT = DogLog.tunable("DyeRotor/UnjamTimeout", 0.5);
 
   public static final DoubleSubscriber SHOOTING_WARMUP_TIME =
       DogLog.tunable("DyeRotor/WarmupTime", 0.25);
