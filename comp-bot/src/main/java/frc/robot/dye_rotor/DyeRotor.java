@@ -15,7 +15,7 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
-  private final LinearFilter currentFilter = LinearFilter.movingAverage(5);
+  private final LinearFilter currentFilter = LinearFilter.movingAverage(10);
 
   private final TalonFX rotorMotor;
   private final TalonFX horizontalMotor;
@@ -138,14 +138,14 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
         yield currentState;
       }
       case UNJAM -> {
-        if (timeout(1.0)) {
+        if (timeout(DyeRotorConfig.UNJAM_TIMEOUT.get())) {
           yield beforeUnjamState;
         }
         yield currentState;
       }
 
-      case SCORE, SCORE_SLOW -> {
-        if (isJammed() && timeout(1.0)) {
+      case SCORE, SCORE_SLOW, FEED -> {
+        if (isJammed()) {
           beforeUnjamState = currentState;
           yield DyeRotorState.UNJAM;
         }
