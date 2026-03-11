@@ -367,8 +367,6 @@ public class FieldUtil {
           CLIMB_FRONT_CORNER_OUTPOST_SIDE.bluePose().getTranslation(),
           CLIMB_BACK_CORNER_DEPOT_SIDE.bluePose().getTranslation());
 
-  // Field Obstacles that get in the way of shooting
-  // TODO: Integrate with shooting logic
   private static final Translation2d BLUE_HUB_CENTER =
       new Translation2d(BLUE_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
   private static final Translation2d RED_HUB_CENTER =

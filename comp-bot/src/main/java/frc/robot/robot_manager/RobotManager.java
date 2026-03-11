@@ -434,8 +434,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
 
-        // TODO: Update to use fallback feeding parameters
-        dyeRotor.feedRequest(feedingParameters.distance());
+        dyeRotor.feedRequest(fallbackFeedingParameters.distance());
         turret.feedRequest(
             fallbackFeedingParameters.turretAngle(),
             fallbackFeedingParameters.turretFeedForwardRadians());

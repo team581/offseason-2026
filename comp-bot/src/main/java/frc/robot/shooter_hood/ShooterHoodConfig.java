@@ -21,7 +21,6 @@ public class ShooterHoodConfig {
    */
   public static final double ANGLE_FROM_HORIZONTAL = 21.4;
 
-  // TODO Update safe zone amount
   public static final double MAX_ANGLE = 43.0;
   public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 1;
   public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 2;
