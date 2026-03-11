@@ -74,6 +74,10 @@ public class ShooterConfig {
           Map.entry(3.57, 1.488888889),
           Map.entry(1.25, 1.491666667),
           Map.entry(5.5, 1.396666667));
+  public static final PolynomialRegression SCORING_TOF_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/ScoringToFRegression", DISTANCE_TO_SCORE_TOF);
+  public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIGS =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
