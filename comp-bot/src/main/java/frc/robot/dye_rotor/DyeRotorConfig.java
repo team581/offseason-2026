@@ -99,7 +99,6 @@ public class DyeRotorConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive));
-  public static boolean ROTOR_STOP;
 
   private DyeRotorConfig() {}
 }
