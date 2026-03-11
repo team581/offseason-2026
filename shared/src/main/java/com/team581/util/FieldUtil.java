@@ -352,11 +352,11 @@ public class FieldUtil {
       Point.ofRed(
           new Pose2d(
               Units.inchesToMeters(608.375814),
-              Units.inchesToMeters(146.718750 - 6.0),
+              Units.inchesToMeters(146.718750),
               Rotation2d.kZero));
   private static final Point CLIMB_BACK_CORNER_DEPOT_SIDE =
       Point.ofRed(
-          new Pose2d(FIELD_LENGTH_X, Units.inchesToMeters(193.718750 + 6.0), Rotation2d.kZero));
+          new Pose2d(FIELD_LENGTH_X, Units.inchesToMeters(193.718750), Rotation2d.kZero));
 
   private static final Rectangle2d RED_CLIMB_ZONE =
       new Rectangle2d(
@@ -412,7 +412,7 @@ public class FieldUtil {
 
   public static final ObstructionCalculator FEEDING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
-          Units.inchesToMeters(6),
+          Units.inchesToMeters(6.0),
           BLUE_HUB_CORNERS,
           RED_HUB_CORNERS,
           BLUE_CLIMB_TOWER_CORNERS,
@@ -420,7 +420,7 @@ public class FieldUtil {
 
   public static final ObstructionCalculator HUB_SCORING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
-          Units.inchesToMeters(6), BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
+          Units.inchesToMeters(6.0), BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
 
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {
