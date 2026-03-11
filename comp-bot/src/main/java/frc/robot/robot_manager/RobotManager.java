@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
 import frc.robot.climber.ClimbLocation;
-import frc.robot.climber.Climber;
+import frc.robot.climber.GenericClimber;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
@@ -51,7 +51,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HubActivity hubActivity;
   private final Trailblazer trailblazer;
   public final ClusterMap clusterMap;
-  private final Climber climber;
+  private final GenericClimber climber;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -85,7 +85,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       HealthManager health,
       HubActivity hubActivity,
       Trailblazer trailblazer,
-      Climber climber,
+      GenericClimber climber,
       ClusterMap clusterMap,
       Hardware hardware) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);

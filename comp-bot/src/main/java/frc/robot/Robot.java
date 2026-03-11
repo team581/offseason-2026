@@ -14,6 +14,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.climber.Climber;
+import frc.robot.climber.GenericClimber;
+import frc.robot.climber.StubClimber;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.config.RobotKind;
@@ -76,7 +78,8 @@ public class Robot extends Base581Robot {
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
-  private final Climber climber = new Climber(hardware.climbMotor);
+  private final GenericClimber climber =
+      RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
@@ -150,10 +153,12 @@ public class Robot extends Base581Robot {
     var operator =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.operatorController);
 
-    driver
-        .start()
-        .onPress(robotManager::startTeleopAutoClimbSequence)
-        .onRelease(robotManager::stopTeleopAutoClimbAlignment);
+    if (!RobotKind.IS_COMP_BOT) {
+      driver
+          .start()
+          .onPress(robotManager::startTeleopAutoClimbSequence)
+          .onRelease(robotManager::stopTeleopAutoClimbAlignment);
+    }
 
     driver.back().onPress(localization::zeroGyro);
 
@@ -172,7 +177,9 @@ public class Robot extends Base581Robot {
 
     operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
 
-    operator.y().onPress(robotManager::manualClimbSequenceForward);
+    if (!RobotKind.IS_COMP_BOT) {
+      operator.y().onPress(robotManager::manualClimbSequenceForward);
+    }
 
     operator.b().onPress(robotManager::prepareFeedRequest).onRelease(robotManager::idleRequest);
 

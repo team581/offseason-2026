@@ -4,21 +4,17 @@ import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.simkit.SimKit;
-import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Climber extends StateMachineSubsystem<ClimberState> {
+public class Climber extends GenericClimber {
 
   private final TalonFX motor;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
   private double motorPosition;
 
   public Climber(TalonFX motor) {
-    super(SubsystemPriority.CLIMBER, ClimberState.STOWED);
-
     this.motor = motor;
 
     motor.getConfigurator().apply(ClimberConfig.MOTOR_CONFIG);
@@ -28,34 +24,42 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     TunablePid.register("Climber", this.motor, ClimberConfig.MOTOR_CONFIG);
   }
 
+  @Override
   public boolean atGoal() {
     return MathUtil.isNear(getState().height, motorPosition, ClimberConfig.TOLERANCE);
   }
 
+  @Override
   public double getHeight() {
     return motorPosition;
   }
 
+  @Override
   public void l1HangingRequest() {
     setStateFromRequest(ClimberState.L1_HANG);
   }
 
+  @Override
   public void l1LineupRequest() {
     setStateFromRequest(ClimberState.L1_LINEUP);
   }
 
+  @Override
   public void l2HangingRequest() {
     setStateFromRequest(ClimberState.L2_HANG);
   }
 
+  @Override
   public void l2LineupRequest() {
     setStateFromRequest(ClimberState.L2_LINEUP);
   }
 
+  @Override
   public void l3HangingRequest() {
     setStateFromRequest(ClimberState.L3_HANG);
   }
 
+  @Override
   public void l3LineupRequest() {
     setStateFromRequest(ClimberState.L3_LINEUP);
   }
@@ -74,6 +78,7 @@ public class Climber extends StateMachineSubsystem<ClimberState> {
     climberSimulation.update();
   }
 
+  @Override
   public void stowRequest() {
     setStateFromRequest(ClimberState.STOWED);
   }
