@@ -60,8 +60,14 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   public void scoreRequest(double distance) {
     scoreDistance = distance;
-    if (getState() != DyeRotorState.UNHOMED) {
-      setStateFromRequest(DyeRotorState.SCORE);
+    switch (getState()) {
+      case UNJAM, UNHOMED -> {}
+      case SCORE, SCORE_SLOW, FEED -> {
+        setStateFromRequest(DyeRotorState.SCORE);
+      }
+      default -> {
+        setStateFromRequest(DyeRotorState.WARMUP_SCORE);
+      }
     }
   }
 
@@ -74,13 +80,20 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   public void feedRequest(double distance) {
     feedDistance = distance;
 
-    if (getState() != DyeRotorState.UNHOMED) {
-      setStateFromRequest(DyeRotorState.FEED);
+    switch (getState()) {
+      case UNJAM, UNHOMED -> {}
+      case SCORE, SCORE_SLOW, FEED -> {
+        setStateFromRequest(DyeRotorState.FEED);
+      }
+      default -> {
+        setStateFromRequest(DyeRotorState.WARMUP_FEED);
+      }
     }
   }
 
   public void unjamRequest() {
     if (getState() != DyeRotorState.UNHOMED) {
+      beforeUnjamState = getState();
       setStateFromRequest(DyeRotorState.UNJAM);
     }
   }
@@ -136,6 +149,20 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
           beforeUnjamState = currentState;
           yield DyeRotorState.UNJAM;
         }
+        yield currentState;
+      }
+      case WARMUP_SCORE -> {
+        if (timeout(DyeRotorConfig.SHOOTING_WARMUP_TIME.getAsDouble())) {
+          yield DyeRotorState.SCORE;
+        }
+
+        yield currentState;
+      }
+      case WARMUP_FEED -> {
+        if (timeout(DyeRotorConfig.SHOOTING_WARMUP_TIME.getAsDouble())) {
+          yield DyeRotorState.FEED;
+        }
+
         yield currentState;
       }
       default -> currentState;

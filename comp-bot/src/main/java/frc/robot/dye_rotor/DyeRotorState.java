@@ -8,8 +8,10 @@ public enum DyeRotorState {
   UNHOMED(0.0, 180.0, 0.0, 0.0),
   RESET_TO_IDLE(15.0, 180.0, 0.0, 0.0),
   IDLE(0.0, 180.0, 0.0, 0.0),
+  WARMUP_SCORE(0.0, 180.0, 10.0,10.0),
   SCORE(10.0, 180.0, 10.0, 10.0),
   SCORE_SLOW(5.0, 180.0, 10.0, 10.0),
+  WARMUP_FEED(0.0, 180.0, 10.0,10.0),
   FEED(20.0, 180.0, 10.0, 10.0),
 
   UNJAM(RobotKind.IS_COMP_BOT ? -8.0 : -1.0, 180.0, 0.0, 0.0);
