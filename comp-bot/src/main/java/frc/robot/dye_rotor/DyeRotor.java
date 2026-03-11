@@ -219,8 +219,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   }
 
   public boolean velocityDetectsGp() {
-    return autoGpDetection.hasGamePiece(
-        averageRotorRpm, DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
+    DogLog.log("RobotManager/gpDetection/AverageRPM", averageRotorRpm);
+    return !autoGpDetection.hasGamePiece(averageRotorRpm, DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
   }
 
   @Override
