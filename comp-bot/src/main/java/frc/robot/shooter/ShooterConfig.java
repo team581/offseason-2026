@@ -67,8 +67,8 @@ public class ShooterConfig {
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF",
           Map.entry(1.85, 1.035897436 + 0.25),
-          Map.entry(3.47, 1.095833333+0.25),
-          Map.entry(5.5, 1.163333333+0.25));
+          Map.entry(3.47, 1.095833333 + 0.25),
+          Map.entry(5.5, 1.163333333 + 0.25));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
