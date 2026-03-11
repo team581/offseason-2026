@@ -139,6 +139,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
     DogLog.log("Turret/StatorCurrent", statorCurrent);
     DogLog.log("Turret/Voltage", voltage);
+    DogLog.log("Turret/Setpoint", setpoint);
   }
 
   private double getFeedForward() {
@@ -262,7 +263,6 @@ public class Turret extends StateMachineSubsystem<TurretState> {
       case STUCK -> true;
       default -> {
         var potentialSetpoint = TurretCalculator.getOptimalAngle(upcomingAngle, currentAngle);
-
         if (!MathUtil.isNear(potentialSetpoint, setpoint, 90)) {
           yield false;
         }
