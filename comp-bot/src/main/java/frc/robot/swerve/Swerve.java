@@ -242,8 +242,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
-    // Make sure right stick Y is either 75% up or down
-    intakeAssistControllerInput = Math.abs(teleopDriveSource.getRightY()) > 0.75;
+    // Make sure right stick Y is either 50% up or down
+    intakeAssistControllerInput = Math.abs(teleopDriveSource.getRightY()) > 0.5;
     ableToTrenchAssist =
         DSOptions.USE_SWERVE_ASSIST.get()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
