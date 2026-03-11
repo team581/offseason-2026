@@ -1,7 +1,5 @@
 package frc.robot.autos.auto_state_machines;
 
-import org.opencv.objdetect.CascadeClassifier;
-
 import com.team581.autos.Point;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
