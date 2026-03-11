@@ -11,24 +11,15 @@ public class BlinkingBooleanBox {
   private final Timer timer = new Timer();
   private boolean currentValue;
 
+  public BlinkingBooleanBox(String name, boolean blinkWhen) {
+    this(name, blinkWhen, false);
+  }
+
   public BlinkingBooleanBox(String name, boolean blinkWhen, boolean forceNt) {
     this.name = name;
     this.blinkWhenValueIsTrue = blinkWhen;
     this.forceNt = forceNt;
     this.timer.start();
-  }
-
-    public BlinkingBooleanBox(String name, boolean blinkWhen) {
-    this(name, blinkWhen, false);
-  }
-
-  public void update(boolean value) {
-    this.currentValue = value;
-    if (forceNt) {
-      DogLog.forceNt.log(name, get().toHexString());
-    } else {
-      DogLog.log(name, get().toHexString());
-    }
   }
 
   public Color get() {
@@ -46,6 +37,15 @@ public class BlinkingBooleanBox {
       } else { // Blinks when false: red/black
         return shouldBlink ? Color.kRed : Color.kBlack;
       }
+    }
+  }
+
+  public void update(boolean value) {
+    this.currentValue = value;
+    if (forceNt) {
+      DogLog.forceNt.log(name, get().toHexString());
+    } else {
+      DogLog.log(name, get().toHexString());
     }
   }
 }
