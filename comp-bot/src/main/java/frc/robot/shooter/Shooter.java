@@ -3,6 +3,7 @@ package frc.robot.shooter;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -226,8 +227,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public boolean currentDetectsGp() {
-    return ShooterConfig.GP_DETECT_CURRENT_THRESHOLD <= (rightStatorCurrent+leftStatorCurrent)/2;
+    return ShooterConfig.GP_DETECT_CURRENT_THRESHOLD
+        <= MathHelpers.average(rightStatorCurrent, leftStatorCurrent);
   }
+
   public double getScoreTimeOfFlight(double distance) {
     this.scoreDistance = distance;
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()

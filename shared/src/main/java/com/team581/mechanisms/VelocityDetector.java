@@ -12,16 +12,16 @@ public class VelocityDetector {
   private final Debouncer debouncer;
   private boolean hasSeenMinVelocity = false;
 
-  public VelocityDetector(double minVelocity, double minVelocityTimeout) {
+  public VelocityDetector(double minVelocity) {
     this.minVelocity = minVelocity;
-    this.minVelocityTimeout = minVelocityTimeout;
+    this.minVelocityTimeout = -1.0;
     this.debouncer = new Debouncer(0.0, DebounceType.kRising);
     timeout.start();
   }
 
-  public VelocityDetector(double minVelocity) {
+  public VelocityDetector(double minVelocity, double minVelocityTimeout) {
     this.minVelocity = minVelocity;
-    this.minVelocityTimeout = -1.0;
+    this.minVelocityTimeout = minVelocityTimeout;
     this.debouncer = new Debouncer(0.0, DebounceType.kRising);
     timeout.start();
   }

@@ -25,8 +25,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
   private final LinearFilter velocityAverage = LinearFilter.movingAverage(8);
   private double averageRotorRpm = 0.0;
-  private final VelocityDetector autoGpDetection = new VelocityDetector(DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
-
+  private final VelocityDetector autoGpDetection =
+      new VelocityDetector(DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
 
   private double horizontalRawCurrent = 0.0;
   private double verticalRawCurrent = 0.0;
@@ -219,7 +219,9 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   }
 
   public boolean velocityDetectsGp() {
-    return autoGpDetection.hasGamePiece(averageRotorRpm, DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
+    DogLog.log("RobotManager/gpDetection/AverageRPM", averageRotorRpm);
+    return !autoGpDetection.hasGamePiece(
+        averageRotorRpm, DyeRotorConfig.GP_DETECT_VELOCITY_THRESHOLD);
   }
 
   @Override
