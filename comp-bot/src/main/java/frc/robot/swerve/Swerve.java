@@ -292,15 +292,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 drivetrainState.Pose.getTranslation(), fieldRelativeSpeeds, false);
     previouslyInWallSnapCorner = inWallSnapCorner;
 
-    if (getState() == SwerveState.INTAKE || getState() == SwerveState.INTAKE_RATE_LIMITED) {
-      filteredLastDriveDirection =
-          filteredLastDriveDirection.interpolate(
-              MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
-                  .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0)),
-              (SNAKE_MODE_AGRESSIVENESS.get()
-                      * MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
-                  / teleopDriveSource.maxLinearVelocity);
-    }
+    filteredLastDriveDirection =
+        filteredLastDriveDirection.interpolate(
+            MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
+                .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0)),
+            (SNAKE_MODE_AGRESSIVENESS.get()
+                    * MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
+                / teleopDriveSource.maxLinearVelocity);
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     if (getState() == SwerveState.INTAKE_RATE_LIMITED
