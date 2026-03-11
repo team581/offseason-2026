@@ -173,10 +173,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.PREPARE_FEED;
         }
 
-        if ((isInAllianceZone
-                && turret.atGoal(scoringParameters.turretTolerance())
+        if ((turret.atGoal(scoringParameters)
                 && shooter.atGoalDebounced()
                 && shooterHood.atGoal()
+                && localization.isTrustworthy()
                 && hubActivity.getTOFBasedHubActive()
                 && isInSafeScoringLocation
                 && !nearTrench)
@@ -200,6 +200,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 || (localization.isTrustworthy()
                     && turret.atGoal(scoringParameters)
                     && shooterHood.atGoal()
+                    && localization.isTrustworthy()
                     && isInSafeScoringLocation)
                 || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
             && !nearTrench) {
@@ -219,6 +220,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && isInSafeFeedingLocation
             && turret.atGoal(feedingParameters)
             && shooterHood.atGoal()
+            && health.isLocalizationHealthy()
             && !nearTrench) {
 
           yield RobotState.FEED;
@@ -236,6 +238,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             || (isInSafeFeedingLocation
                 && turret.atGoal(feedingParameters)
                 && shooterHood.atGoal()
+                && health.isLocalizationHealthy()
                 && !nearTrench)) {
 
           yield currentState;
@@ -1266,32 +1269,30 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void logScoringTransition() {
+    DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/TurretAtGoal", turret.atGoal(scoringParameters));
+
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoalDebounced());
+    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
         localization.isTrustworthy());
     DogLog.log(
-        "RobotManager/Scoring/ScoreTransition/InAllianceZone",
-        FieldUtil.isRobotInAllianceZone(robotPose.getTranslation()));
-    DogLog.log("RobotManager/Scoring/ScoreTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
-    DogLog.log(
-        "RobotManager/Scoring/ScoreTransition/TurretAtGoal", turret.atGoal(scoringParameters));
-    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
+        "RobotManager/Scoring/ScoreTransition/HubActive", hubActivity.getTOFBasedHubActive());
     DogLog.log("RobotManager/Scoring/ScoreTransition/IsInScoringZone", isInSafeScoringLocation);
+    DogLog.log("RobotManager/Scoring/ScoreTransition/NotNearTrench", !nearTrench);
   }
 
   private void logFeedTransition() {
-
+    DogLog.log("RobotManager/Feeding/ScoreTransition/NotInAllianceZone", !isInAllianceZone);
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoalDebounced());
-    DogLog.log(
-        "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
-    DogLog.log(
-        "RobotManager/Feeding/FeedTransition/FeedPathNotObstructed",
-        !FieldUtil.isFeedPathObstructed(
-            robotPose.getTranslation(), feedLocation.getTranslation(robotPose)));
-    DogLog.log("RobotManager/Feeding/FeedTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
+    DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/TurretAtGoal", turret.atGoal(feedingParameters));
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
+    DogLog.log(
+        "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
+    DogLog.log("RobotManager/Feeding/ScoreTransition/NotNearTrench", !nearTrench);
   }
 }
