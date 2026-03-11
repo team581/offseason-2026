@@ -233,9 +233,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (isInSafeFeedingLocation
-                && turret.atGoal(feedingParameters)
-                && shooterHood.atGoal())&& !nearTrench) {
+            || (isInSafeFeedingLocation && turret.atGoal(feedingParameters) && shooterHood.atGoal())
+                && !nearTrench) {
 
           yield currentState;
         } else {
