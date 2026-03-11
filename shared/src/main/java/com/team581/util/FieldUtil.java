@@ -355,8 +355,7 @@ public class FieldUtil {
               Units.inchesToMeters(146.718750),
               Rotation2d.kZero));
   private static final Point CLIMB_BACK_CORNER_DEPOT_SIDE =
-      Point.ofRed(
-          new Pose2d(FIELD_LENGTH_X, Units.inchesToMeters(193.718750), Rotation2d.kZero));
+      Point.ofRed(new Pose2d(FIELD_LENGTH_X, Units.inchesToMeters(193.718750), Rotation2d.kZero));
 
   private static final Rectangle2d RED_CLIMB_ZONE =
       new Rectangle2d(
