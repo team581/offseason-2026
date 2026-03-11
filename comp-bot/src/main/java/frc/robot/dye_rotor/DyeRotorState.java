@@ -6,7 +6,7 @@ import frc.robot.config.RobotKind;
 
 public enum DyeRotorState {
   UNHOMED(0.0, 180.0, 0.0, 0.0),
-  RESET_TO_IDLE(15.0, 180.0, 0.0, 0.0),
+  RESET_TO_IDLE(15.0, 180.0, 10.0, 10.0),
   IDLE(0.0, 180.0, 0.0, 0.0),
   WARMUP_SCORE(0.0, 180.0, 10.0, 10.0),
   SCORE(10.0, 180.0, 10.0, 10.0),
