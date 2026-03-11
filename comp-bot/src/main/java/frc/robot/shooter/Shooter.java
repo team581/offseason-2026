@@ -221,14 +221,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   public double getScoreTimeOfFlight(double distance) {
     this.scoreDistance = distance;
-    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(scoreDistance)
         : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(scoreDistance);
   }
 
   public double getFeedTimeOfFlight(double distance) {
     this.feedDistance = distance;
-    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(feedDistance)
         : ShooterConfig.DISTANCE_TO_FEED_TOF.get(feedDistance);
   }
