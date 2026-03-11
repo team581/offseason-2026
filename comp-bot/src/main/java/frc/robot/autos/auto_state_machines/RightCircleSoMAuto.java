@@ -117,18 +117,14 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
                       new Pose2d(
                           13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-               AutoPoint.ofRed(
-                      new Pose2d(
-                          10.174,7.28, Rotation2d.k180deg))
+              AutoPoint.ofRed(new Pose2d(10.174, 7.28, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-                AutoPoint.ofRed(
-                      new Pose2d(
-                          9.8, 5.708, Rotation2d.k180deg))
+              AutoPoint.ofRed(new Pose2d(9.8, 5.708, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
           .withLinearConstraints(3.0, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
-          
+
   public RightCircleSoMAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(RightCircleSoMAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
   }
