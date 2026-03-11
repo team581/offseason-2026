@@ -5,6 +5,7 @@ public enum RightCircleSoMAutoState {
   INTAKE_BEHIND_HUB,
   DRIVE_BACK_1,
   DRIVE_BACK_2,
+  DRIVE_BACK_TO_NEUTRAL_ZONE,
   SHOOT_1,
   SHOOT_2,
   DONE;

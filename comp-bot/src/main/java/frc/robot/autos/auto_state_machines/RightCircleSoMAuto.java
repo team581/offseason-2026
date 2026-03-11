@@ -1,5 +1,7 @@
 package frc.robot.autos.auto_state_machines;
 
+import org.opencv.objdetect.CascadeClassifier;
+
 import com.team581.autos.Point;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
@@ -89,18 +91,46 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
               AutoPoint.ofRed(
                       new Pose2d(10.77, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
-                  .withMarker(Markers.START_SHOOT_RQ),
+                  .withMarker(Markers.START_SHOOT_RQ)
+                  .withLinearConstraints(3.0, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.878, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withLinearConstraints(3.0, 8),
               AutoPoint.ofRed(
                       new Pose2d(13.0, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.709, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)))
-          .withLinearConstraints(3.0, 8)
+          .withLinearConstraints(1.0, 20)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
+  private final AutoSegment driveBackToNeutralZone =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+               AutoPoint.ofRed(
+                      new Pose2d(
+                          10.174,7.28, Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                AutoPoint.ofRed(
+                      new Pose2d(
+                          9.8, 5.708, Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
+          .withLinearConstraints(3.0, 8)
+          .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
+          .untilFinished(new PoseErrorTolerance(0.3, 3));
+          
   public RightCircleSoMAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(RightCircleSoMAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
   }
@@ -151,6 +181,13 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
       }
       case SHOOT_2 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(5)) {
+          yield RightCircleSoMAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
+        } else {
+          yield currentState;
+        }
+      }
+      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+        if (trailblazer.atGoal(robotManager.localization.getPose())) {
           yield RightCircleSoMAutoState.DONE;
         } else {
           yield currentState;
@@ -192,6 +229,9 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
       case SHOOT_2 -> {
         robotManager.prepareScoreRequest();
       }
+      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+        trailblazer.setActiveSegment(driveBackToNeutralZone);
+      }
       case DONE -> {}
     }
   }
@@ -208,6 +248,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
       case INTAKE_BEHIND_HUB -> {}
       case DRIVE_BACK_2 -> {}
       case SHOOT_2 -> {}
+      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {}
       case DONE -> {}
     }
   }
