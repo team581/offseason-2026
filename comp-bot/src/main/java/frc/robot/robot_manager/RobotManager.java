@@ -1249,22 +1249,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             : FieldUtil.isRobotPastObstacleTowardAllianceZone(
                 TurretCalculator.getTurretPose(robotPose).getTranslation());
 
-    if (FeatureFlags.OBSTRUCTION_GATING.getAsBoolean()) {
-      isInSafeScoringLocation =
-          !health.isLocalizationHealthy()
-              || !FieldUtil.isScorePathObstructed(robotPose.getTranslation());
-      isInSafeFeedingLocation =
-          !health.isLocalizationHealthy()
-              || !FieldUtil.isFeedPathObstructed(
-                  robotPose.getTranslation(), feedLocation.getTranslation(robotPose));
-    } else {
-      isInSafeScoringLocation =
-          !health.isLocalizationHealthy()
-              || !FieldUtil.isInNoScoreZone(TurretCalculator.getTurretPose(robotPose));
-      isInSafeFeedingLocation =
-          !health.isLocalizationHealthy()
-              || !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose));
-    }
+    isInSafeScoringLocation =
+        !health.isLocalizationHealthy()
+            || !FieldUtil.isScorePathObstructed(robotPose.getTranslation());
+    isInSafeFeedingLocation =
+        !health.isLocalizationHealthy()
+            || !FieldUtil.isFeedPathObstructed(
+                robotPose.getTranslation(), feedLocation.getTranslation(robotPose));
 
     DogLog.log("RobotManager/Scoring/IsInSafeScoringLocation", isInSafeScoringLocation);
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
@@ -1291,8 +1282,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
     DogLog.log(
-        "RobotManager/Feeding/FeedTransition/InNoFeedZone",
-        !FieldUtil.isRobotInNoFeedZone(TurretCalculator.getTurretPose(robotPose)));
+        "RobotManager/Feeding/FeedTransition/FeedPathNotObstructed",
+        !FieldUtil.isFeedPathObstructed(
+            robotPose.getTranslation(), feedLocation.getTranslation(robotPose)));
     DogLog.log("RobotManager/Feeding/FeedTransition/DyeRotorNotJammed", !dyeRotor.isJammed());
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/TurretAtGoal", turret.atGoal(feedingParameters));

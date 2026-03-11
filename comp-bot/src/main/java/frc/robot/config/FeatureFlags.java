@@ -19,8 +19,5 @@ public class FeatureFlags {
 
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
-  public static final BooleanSupplier OBSTRUCTION_GATING =
-      FeatureFlag.of("ObstructionGating", false);
-
   private FeatureFlags() {}
 }

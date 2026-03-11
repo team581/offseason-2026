@@ -876,27 +876,11 @@ public class FieldUtil {
     return FEEDING_OBSTRUCTIONS.contains(robotTranslation, feedLocationTranslation);
   }
 
-  // TODO: This should be removed and replaced with isScorePathObstructed
-  public static boolean isInNoScoreZone(Pose2d robot) {
-    if (FmsUtil.isRedAlliance()) {
-      return RED_CLIMB_ZONE.contains(robot.getTranslation());
-    }
-    return BLUE_CLIMB_ZONE.contains(robot.getTranslation());
-  }
-
   public static boolean isRobotInAllianceZone(Translation2d robot) {
     if (FmsUtil.isRedAlliance()) {
       return robot.getX() > getAllianceZoneX();
     }
     return robot.getX() < getAllianceZoneX();
-  }
-
-  // TODO: This should be removed and replaced with isFeedPathObstructed
-  public static boolean isRobotInNoFeedZone(Pose2d robotPose) {
-    // Check if line from robot to target collides with hub no feed zone
-    var noFeedZone = FmsUtil.isRedAlliance() ? RED_HUB_NO_FEED_ZONE : BLUE_HUB_NO_FEED_ZONE;
-
-    return noFeedZone.contains(robotPose.getTranslation());
   }
 
   public static boolean isRobotPastObstacleTowardAllianceZone(Translation2d robot) {

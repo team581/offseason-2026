@@ -104,12 +104,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED_1 ->
           shooter.atGoal()
-                  && (!FieldUtil.isRobotInNoFeedZone(robotPose) && health.isLocalizationHealthy())
+              // && (!FieldUtil.isRobotInNoFeedZone(robotPose) && health.isLocalizationHealthy())
               ? RobotState.FEED_1
               : currentState;
       case PREPARE_FEED_2 ->
           shooter.atGoal()
-                  && (!FieldUtil.isRobotInNoFeedZone(robotPose) && health.isLocalizationHealthy())
+              // && (!FieldUtil.isRobotInNoFeedZone(robotPose) && health.isLocalizationHealthy())
               ? RobotState.FEED_2
               : currentState;
       case SCORE -> {
