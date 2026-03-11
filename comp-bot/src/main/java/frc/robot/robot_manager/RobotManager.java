@@ -178,7 +178,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && shooter.atGoalDebounced()
                 && shooterHood.atGoal()
                 && hubActivity.getTOFBasedHubActive()
-                && isInSafeScoringLocation)
+                && isInSafeScoringLocation
+                && !nearTrench)
             || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
           yield RobotState.SCORE;
         }
@@ -195,12 +196,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.STOP_SHOOTING_SCORE;
         }
 
-        if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (localization.isTrustworthy()
-                && turret.atGoal(scoringParameters)
-                && shooterHood.atGoal()
-                && isInSafeScoringLocation)
-            || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
+        if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
+                || (localization.isTrustworthy()
+                    && turret.atGoal(scoringParameters)
+                    && shooterHood.atGoal()
+                    && isInSafeScoringLocation)
+                || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+            && !nearTrench) {
           yield currentState;
         }
 
@@ -216,7 +218,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (shooter.atGoalDebounced()
             && isInSafeFeedingLocation
             && turret.atGoal(feedingParameters)
-            && shooterHood.atGoal()) {
+            && shooterHood.atGoal()
+            && !nearTrench) {
 
           yield RobotState.FEED;
         } else {
@@ -232,7 +235,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || (isInSafeFeedingLocation
                 && turret.atGoal(feedingParameters)
-                && shooterHood.atGoal())) {
+                && shooterHood.atGoal())&& !nearTrench) {
 
           yield currentState;
         } else {
