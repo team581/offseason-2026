@@ -170,7 +170,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         logScoringTransition();
 
         if (!isInAllianceZone) {
-          yield RobotState.PREPARE_FEED;
+          if (DriverStation.isTeleop()){
+            yield RobotState.PREPARE_FEED;
+          }
+          yield currentState;
         }
 
         if ((turret.atGoal(scoringParameters)
@@ -188,8 +191,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case SCORE -> {
         logScoringTransition();
 
-        if (!isInAllianceZone) {
-          yield RobotState.PREPARE_FEED;
+         if (!isInAllianceZone) {
+          if (DriverStation.isTeleop()){
+            yield RobotState.PREPARE_FEED;
+          }
+          yield currentState;
         }
 
         if (!hubActivity.getTOFBasedHubActive()) {
