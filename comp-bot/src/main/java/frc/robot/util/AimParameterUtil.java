@@ -159,31 +159,53 @@ public class AimParameterUtil {
 
   public static AimingParameters getTurretStuckScoringParameters(
       Pose2d robot, double turretAngle, ChassisSpeeds fieldRelativeSpeeds) {
+
+    var turretPose = TurretCalculator.getTurretPose(robot);
     var turretFieldRelativeSpeeds =
         TurretCalculator.getTurretChassisSpeeds(
             fieldRelativeSpeeds, robot.getRotation().getDegrees());
-    var hubTranslation =
-        SCORING_SOTM.getVelocityCompensatedGoal(
-            robot.getTranslation(),
-            FieldUtil.HUB_POSE.getPose().getTranslation(),
-            turretFieldRelativeSpeeds);
 
-    var turretCompenstatedRobotPose = TurretCalculator.getTurretPose(robot);
-    double distanceToGoal =
-        turretCompenstatedRobotPose.getTranslation().getDistance(hubTranslation);
+    var scoreTranslation =
+        SCORING_SOTM
+            .getSeparatedVelocityCompensatedGoal(
+                turretPose.getTranslation(),
+                FieldUtil.HUB_POSE.getTranslation(),
+                turretFieldRelativeSpeeds)
+            .fullyCompensatedGoal();
+
+    double distanceToGoal = turretPose.getTranslation().getDistance(scoreTranslation);
     var angle =
-        MathHelpers.getDriveDirection(turretCompenstatedRobotPose, hubTranslation)
+        MathHelpers.getDriveDirection(turretPose, scoreTranslation)
             .minus(Rotation2d.fromDegrees(turretAngle));
 
-    var turretTolerance =
-        TurretCalculator.getGoalCentricTurretTolerance(
-            hubTranslation, robot, SCORING_TURRET_TOLERANCE);
-    return new AimingParameters(
-        angle.getDegrees(),
-        distanceToGoal,
-        turretTolerance,
-        -turretFieldRelativeSpeeds.omegaRadiansPerSecond,
-        turretAngle);
+    return new AimingParameters(angle.getDegrees(), distanceToGoal, 1.0, 0.0, turretAngle);
+  }
+
+  public static AimingParameters getTurretStuckFeedingParameters(
+      FeedLocation feedLocation,
+      Pose2d robot,
+      double turretAngle,
+      ChassisSpeeds fieldRelativeSpeeds) {
+
+    var turretPose = TurretCalculator.getTurretPose(robot);
+    var turretFieldRelativeSpeeds =
+        TurretCalculator.getTurretChassisSpeeds(
+            fieldRelativeSpeeds, robot.getRotation().getDegrees());
+
+    var feedTranslation =
+        FEEDING_SOTM
+            .getSeparatedVelocityCompensatedGoal(
+                turretPose.getTranslation(),
+                feedLocation.getTranslation(turretPose),
+                turretFieldRelativeSpeeds)
+            .fullyCompensatedGoal();
+
+    double distanceToGoal = turretPose.getTranslation().getDistance(feedTranslation);
+    var angle =
+        MathHelpers.getDriveDirection(turretPose, feedTranslation)
+            .minus(Rotation2d.fromDegrees(turretAngle));
+
+    return new AimingParameters(angle.getDegrees(), distanceToGoal, 1.0, 0.0, turretAngle);
   }
 
   public record AimingParameters(

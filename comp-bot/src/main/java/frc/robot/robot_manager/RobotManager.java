@@ -781,7 +781,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED -> {
         smartTurretHoodPrepareFeedRequest();
-        if (intake.getState().isIntaking()) {
+        if (!DSOptions.USE_TURRET.getAsBoolean()) {
+          swerve.turretStuckAimRequest(feedingParameters.turretAngle());
+        } else if (intake.getState().isIntaking()) {
           swerve.intakeRateLimitedDriveRequest();
         } else {
           swerve.rateLimitedDriveRequest();
@@ -791,7 +793,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedRequest(
             feedingParameters.turretAngle(), feedingParameters.turretFeedForwardRadians());
         shooterHood.feedRequest(feedingParameters.distance());
-        if (intake.getState().isIntaking()) {
+        if (!DSOptions.USE_TURRET.getAsBoolean()) {
+          swerve.turretStuckAimRequest(feedingParameters.turretAngle());
+        } else if (intake.getState().isIntaking()) {
           swerve.intakeRateLimitedDriveRequest();
         } else {
           swerve.rateLimitedDriveRequest();
@@ -1224,7 +1228,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 ? robotPose
                 : new Pose2d(
                     FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
-            swerve.getFieldRelativeSpeeds());
+            speeds);
 
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
       scoringParameters =
@@ -1234,7 +1238,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                   : new Pose2d(
                       FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
               turret.getAngle(),
-              swerve.getFieldRelativeSpeeds());
+              speeds);
     }
 
     feedingParameters =
@@ -1243,6 +1247,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(feedLocation, robotPose, speeds);
+
+    if (!DSOptions.USE_TURRET.getAsBoolean()) {
+      feedingParameters =
+          AimParameterUtil.getTurretStuckFeedingParameters(
+              feedLocation, robotPose, turret.getAngle(), speeds);
+    }
 
     var swerveVector = MathHelpers.getDriveDirection(speeds);
     double driveDirection = swerveVector.getDegrees();
