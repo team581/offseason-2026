@@ -170,7 +170,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         logScoringTransition();
 
         if (!isInAllianceZone) {
-          if (DriverStation.isTeleop()){
+          if (DriverStation.isTeleop()) {
             yield RobotState.PREPARE_FEED;
           }
           yield currentState;
@@ -191,8 +191,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case SCORE -> {
         logScoringTransition();
 
-         if (!isInAllianceZone) {
-          if (DriverStation.isTeleop()){
+        if (!isInAllianceZone) {
+          if (DriverStation.isTeleop()) {
             yield RobotState.PREPARE_FEED;
           }
           yield currentState;
