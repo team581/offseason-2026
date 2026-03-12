@@ -1060,9 +1060,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     feedLocation = FeedLocation.CLOSEST;
   }
 
-  public void setDriverWantsIntake(boolean driverWantsIntake) {
-    driverWantsIntake = driverWantsToIntake;
-    if (driverWantsIntake) {
+  public void setDriverWantsIntake(boolean wantsIntake) {
+    driverWantsToIntake = wantsIntake;
+    if (driverWantsToIntake) {
       switch (getState()) {
         case SCORE, FEED, FORCE_SCORE, PRESET_SCORE, PRESET_FEED -> intake.shootThenIntakeRequest();
         default -> intake.intakeRequest();
@@ -1076,10 +1076,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void stowDeployRequest() {
-    intake.idleRequest();
     deploy.stowRequest();
-    if (driverWantsToIntake == true) {
+    if (driverWantsToIntake) {
       intake.intakeRequest();
+    } else {
+    intake.idleRequest();
+
     }
   }
 
