@@ -18,11 +18,11 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   private boolean fuelDetectionHealthy = true;
   private boolean allCamerasHealthy = true;
 
-  private BlinkingBooleanBox localizationBlinkingBooleanBox =
+  private final BlinkingBooleanBox localizationBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/LocalizationHealthyBox", false, true);
-  private BlinkingBooleanBox fuelDetectionBlinkingBooleanBox =
+  private final BlinkingBooleanBox fuelDetectionBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/FuelDetectionHealthyBox", false, true);
-  private BlinkingBooleanBox allCamerasBlinkingBooleanBox =
+  private final BlinkingBooleanBox allCamerasBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
   public HealthManager(
