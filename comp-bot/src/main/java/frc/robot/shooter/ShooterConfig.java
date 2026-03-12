@@ -52,19 +52,18 @@ public class ShooterConfig {
               Map.entry(2.33, 1850.0),
               Map.entry(1.41, 1650.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
-        RobotKind.IS_COMP_BOT
-            ? TunableInterpolatingDoubleTreeMap.ofEntries(
-                "Shooter/DistanceToFeedingRPM",
-                Map.entry(6.0, 1800.0),
-                Map.entry(8.71, 2300.0),
-                Map.entry(13.6, 5500.0))
-            :
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/DistanceToFeedingRPM",
-          Map.entry(5.551, 2000.0),
-          Map.entry(3.42, 1500.0),
-          Map.entry(2.33, 1000.0),
-          Map.entry(1.41, 700.0));
+      RobotKind.IS_COMP_BOT
+          ? TunableInterpolatingDoubleTreeMap.ofEntries(
+              "Shooter/DistanceToFeedingRPM",
+              Map.entry(6.0, 1800.0),
+              Map.entry(8.71, 2300.0),
+              Map.entry(13.6, 5500.0))
+          : TunableInterpolatingDoubleTreeMap.ofEntries(
+              "Shooter/DistanceToFeedingRPM",
+              Map.entry(5.551, 2000.0),
+              Map.entry(3.42, 1500.0),
+              Map.entry(2.33, 1000.0),
+              Map.entry(1.41, 700.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =

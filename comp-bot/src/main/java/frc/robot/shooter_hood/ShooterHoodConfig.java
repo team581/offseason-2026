@@ -60,18 +60,17 @@ public class ShooterHoodConfig {
               Map.entry(2.33, 25.0),
               Map.entry(1.41, 23.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
-    RobotKind.IS_COMP_BOT
-        ? TunableInterpolatingDoubleTreeMap.ofEntries(
-            "ShooterHood/DistanceToFeed",
-            Map.entry(6.0, 30.0),
-            Map.entry(8.71, 35.0),
-            Map.entry(13.6, 43.0))
-        :
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "ShooterHood/DistanceToFeed",
-          Map.entry(9.56, 39.0),
-          Map.entry(3.56, 30.0),
-          Map.entry(1.69, 21.5));
+      RobotKind.IS_COMP_BOT
+          ? TunableInterpolatingDoubleTreeMap.ofEntries(
+              "ShooterHood/DistanceToFeed",
+              Map.entry(6.0, 30.0),
+              Map.entry(8.71, 35.0),
+              Map.entry(13.6, 43.0))
+          : TunableInterpolatingDoubleTreeMap.ofEntries(
+              "ShooterHood/DistanceToFeed",
+              Map.entry(9.56, 39.0),
+              Map.entry(3.56, 30.0),
+              Map.entry(1.69, 21.5));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("ShooterHood/ScoringRegression", DISTANCE_TO_SCORE);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
