@@ -1080,8 +1080,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (driverWantsToIntake) {
       intake.intakeRequest();
     } else {
-    intake.idleRequest();
-
+      intake.idleRequest();
     }
   }
 
