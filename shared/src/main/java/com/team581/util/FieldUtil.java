@@ -314,10 +314,10 @@ public class FieldUtil {
           HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE, RED_OUTPOST_WALL_SNAP_CORNER_ZONE);
 
   // TODO: Validate these points
-  private static final Pose2d BLUE_LEFT_FALLBACK =
+  private static final Pose2d BLUE_RIGHT_FALLBACK =
       new Pose2d(
           BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY(), new Rotation2d());
-  private static final Pose2d BLUE_RIGHT_FALLBACK =
+  private static final Pose2d BLUE_LEFT_FALLBACK =
       new Pose2d(
           BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0,
           AprilTags.TAG_12.getY(),
@@ -771,8 +771,8 @@ public class FieldUtil {
     // Fallback poses
     DogLog.log("FieldUtil/FallbackPoses/RedLeft", RED_LEFT_FALLBACK);
     DogLog.log("FieldUtil/FallbackPoses/RedRight", RED_RIGHT_FALLBACK);
-    DogLog.log("FieldUtil/FallbackPoses/BlueLeft", BLUE_LEFT_FALLBACK);
     DogLog.log("FieldUtil/FallbackPoses/BlueRight", BLUE_RIGHT_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/BlueLeft", BLUE_LEFT_FALLBACK);
   }
 
   public static double getAllianceZoneX() {
@@ -856,10 +856,10 @@ public class FieldUtil {
     }
 
     if (location == 3) {
-      return BLUE_LEFT_FALLBACK;
+      return BLUE_RIGHT_FALLBACK;
     }
 
-    return BLUE_RIGHT_FALLBACK;
+    return BLUE_LEFT_FALLBACK;
   }
 
   public static double getObstacleX() {
