@@ -767,6 +767,12 @@ public class FieldUtil {
     DogLog.log(
         "FieldUtil/Obstacles/ClimbTowers/RedCorner4",
         new Pose2d(RED_CLIMB_TOWER_CORNERS.get(3), Rotation2d.kZero));
+
+    // Fallback poses
+    DogLog.log("FieldUtil/FallbackPoses/RedLeft", RED_LEFT_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/RedRight", RED_RIGHT_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/BlueLeft", BLUE_LEFT_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/BlueRight", BLUE_RIGHT_FALLBACK);
   }
 
   public static double getAllianceZoneX() {
