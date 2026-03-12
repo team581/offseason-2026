@@ -11,15 +11,15 @@ public enum IntakeState {
   SHOOT_THEN_INTAKE(10);
 
   public final double voltage;
-  public final DoubleSubscriber intakeTunableVoltage;
+  public final DoubleSubscriber tunableVoltage;
 
   IntakeState(double voltage) {
     this.voltage = voltage;
-    this.intakeTunableVoltage = DogLog.tunable("Intake/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Intake/" + this, voltage);
   }
 
-  public double getIntakeVoltage() {
-    return intakeTunableVoltage.get();
+  public double getVoltage() {
+    return tunableVoltage.get();
   }
 
   public boolean isIntaking() {

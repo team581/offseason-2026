@@ -59,16 +59,16 @@ public class IntakeTwoMotor extends GenericIntake {
         rightMotor.disable();
       }
       case INTAKE -> {
-        leftMotor.setVoltage(newState.getIntakeVoltage());
-        rightMotor.setVoltage(newState.getIntakeVoltage());
+        leftMotor.setVoltage(newState.getVoltage());
+        rightMotor.setVoltage(newState.getVoltage());
       }
       case INTAKE_AUTO -> {
-        leftMotor.setVoltage(newState.getIntakeVoltage());
-        rightMotor.setVoltage(newState.getIntakeVoltage());
+        leftMotor.setVoltage(newState.getVoltage());
+        rightMotor.setVoltage(newState.getVoltage());
       }
       case SHOOT, SHOOT_THEN_INTAKE -> {
-        leftMotor.setVoltage(newState.getIntakeVoltage());
-        rightMotor.setVoltage(newState.getIntakeVoltage());
+        leftMotor.setVoltage(newState.getVoltage());
+        rightMotor.setVoltage(newState.getVoltage());
       }
     }
   }
@@ -79,6 +79,6 @@ public class IntakeTwoMotor extends GenericIntake {
     DogLog.log("Intake/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Intake/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Intake/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Intake/Voltage", getState().getIntakeVoltage());
+    DogLog.log("Intake/Voltage", getState().getVoltage());
   }
 }

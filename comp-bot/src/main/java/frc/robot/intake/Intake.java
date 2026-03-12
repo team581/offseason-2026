@@ -55,13 +55,13 @@ public class Intake extends GenericIntake {
         motor.disable();
       }
       case INTAKE -> {
-        motor.setVoltage(newState.getIntakeVoltage());
+        motor.setVoltage(newState.getVoltage());
       }
       case INTAKE_AUTO -> {
-        motor.setVoltage(newState.getIntakeVoltage());
+        motor.setVoltage(newState.getVoltage());
       }
       case SHOOT, SHOOT_THEN_INTAKE -> {
-        motor.setVoltage(newState.getIntakeVoltage());
+        motor.setVoltage(newState.getVoltage());
       }
     }
   }
@@ -70,6 +70,6 @@ public class Intake extends GenericIntake {
   protected void collectInputs() {
     DogLog.log("Intake/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Intake/VelocityRPM", motor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Intake/Voltage", getState().getIntakeVoltage());
+    DogLog.log("Intake/Voltage", getState().getVoltage());
   }
 }
