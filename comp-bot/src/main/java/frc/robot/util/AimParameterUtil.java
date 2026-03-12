@@ -157,30 +157,6 @@ public class AimParameterUtil {
         upcomingTurretAngle);
   }
 
-  public static AimingParameters getTurretStuckScoringParameters(
-      Pose2d robot, double turretAngle, ChassisSpeeds fieldRelativeSpeeds) {
-
-    var turretPose = TurretCalculator.getTurretPose(robot);
-    var turretFieldRelativeSpeeds =
-        TurretCalculator.getTurretChassisSpeeds(
-            fieldRelativeSpeeds, robot.getRotation().getDegrees());
-
-    var scoreTranslation =
-        SCORING_SOTM
-            .getSeparatedVelocityCompensatedGoal(
-                turretPose.getTranslation(),
-                FieldUtil.HUB_POSE.getTranslation(),
-                turretFieldRelativeSpeeds)
-            .fullyCompensatedGoal();
-
-    double distanceToGoal = turretPose.getTranslation().getDistance(scoreTranslation);
-    var angle =
-        MathHelpers.getDriveDirection(turretPose, scoreTranslation)
-            .minus(Rotation2d.fromDegrees(turretAngle));
-
-    return new AimingParameters(angle.getDegrees(), distanceToGoal, 1.0, 0.0, turretAngle);
-  }
-
   public static AimingParameters getTurretStuckFeedingParameters(
       FeedLocation feedLocation,
       Pose2d robot,
@@ -203,6 +179,30 @@ public class AimParameterUtil {
     double distanceToGoal = turretPose.getTranslation().getDistance(feedTranslation);
     var angle =
         MathHelpers.getDriveDirection(turretPose, feedTranslation)
+            .minus(Rotation2d.fromDegrees(turretAngle));
+
+    return new AimingParameters(angle.getDegrees(), distanceToGoal, 1.0, 0.0, turretAngle);
+  }
+
+  public static AimingParameters getTurretStuckScoringParameters(
+      Pose2d robot, double turretAngle, ChassisSpeeds fieldRelativeSpeeds) {
+
+    var turretPose = TurretCalculator.getTurretPose(robot);
+    var turretFieldRelativeSpeeds =
+        TurretCalculator.getTurretChassisSpeeds(
+            fieldRelativeSpeeds, robot.getRotation().getDegrees());
+
+    var scoreTranslation =
+        SCORING_SOTM
+            .getSeparatedVelocityCompensatedGoal(
+                turretPose.getTranslation(),
+                FieldUtil.HUB_POSE.getTranslation(),
+                turretFieldRelativeSpeeds)
+            .fullyCompensatedGoal();
+
+    double distanceToGoal = turretPose.getTranslation().getDistance(scoreTranslation);
+    var angle =
+        MathHelpers.getDriveDirection(turretPose, scoreTranslation)
             .minus(Rotation2d.fromDegrees(turretAngle));
 
     return new AimingParameters(angle.getDegrees(), distanceToGoal, 1.0, 0.0, turretAngle);
