@@ -41,10 +41,10 @@ public class ShooterConfig {
       RobotKind.IS_COMP_BOT
           ? TunableInterpolatingDoubleTreeMap.ofEntries(
               "Shooter/DistanceToScoreRPM",
-              Map.entry(5.551, 2350.0),
-              Map.entry(4.25, 1850.0),
-              Map.entry(1.89, 1400.0),
-              Map.entry(1.25, 1400.0))
+              Map.entry(5.5, 2350.0),
+              Map.entry(3.54, 1950.0),
+              Map.entry(2.42, 1800.0),
+              Map.entry(1.36, 1550.0))
           : TunableInterpolatingDoubleTreeMap.ofEntries(
               "Shooter/DistanceToScoreRPM",
               Map.entry(5.551, 2350.0),
@@ -52,6 +52,13 @@ public class ShooterConfig {
               Map.entry(2.33, 1850.0),
               Map.entry(1.41, 1650.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
+        RobotKind.IS_COMP_BOT
+            ? TunableInterpolatingDoubleTreeMap.ofEntries(
+                "Shooter/DistanceToFeedingRPM",
+                Map.entry(6.0, 1800.0),
+                Map.entry(8.71, 2300.0),
+                Map.entry(13.6, 5500.0))
+            :
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
           Map.entry(5.551, 2000.0),
