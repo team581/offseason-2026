@@ -11,7 +11,7 @@ public enum TagAlignState {
 
   public final boolean aligned;
 
-  private TagAlignState(boolean aligned) {
+  TagAlignState(boolean aligned) {
     this.aligned = aligned;
   }
 }

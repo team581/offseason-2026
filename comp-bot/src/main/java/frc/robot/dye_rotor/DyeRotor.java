@@ -62,9 +62,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     scoreDistance = distance;
     switch (getState()) {
       case UNJAM, UNHOMED -> {}
-      default -> {
-        setStateFromRequest(DyeRotorState.SCORE);
-      }
+      default -> setStateFromRequest(DyeRotorState.SCORE);
     }
   }
 
@@ -79,9 +77,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
     switch (getState()) {
       case UNJAM, UNHOMED -> {}
-      default -> {
-        setStateFromRequest(DyeRotorState.FEED);
-      }
+      default -> setStateFromRequest(DyeRotorState.FEED);
     }
   }
 

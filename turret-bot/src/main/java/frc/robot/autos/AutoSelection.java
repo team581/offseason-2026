@@ -13,7 +13,7 @@ public enum AutoSelection implements AutoSelectionBase {
 
   public final BiFunction<RobotManager, Trailblazer, BaseImperativeAuto<?>> auto;
 
-  private AutoSelection(BiFunction<RobotManager, Trailblazer, BaseImperativeAuto<?>> auto) {
+  AutoSelection(BiFunction<RobotManager, Trailblazer, BaseImperativeAuto<?>> auto) {
     this.auto = auto;
   }
 }

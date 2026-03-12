@@ -8,5 +8,5 @@ public enum RightCircleSoMAutoState {
   DRIVE_BACK_TO_NEUTRAL_ZONE,
   SHOOT_1,
   SHOOT_2,
-  DONE;
+  DONE
 }

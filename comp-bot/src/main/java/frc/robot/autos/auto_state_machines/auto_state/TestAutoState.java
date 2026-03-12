@@ -6,5 +6,5 @@ public enum TestAutoState {
   SEGMENT_3_CONSTRAINED,
   SEGMENT_4_MULTI_WAYPOINT,
   SEGMENT_5_CIRCLE,
-  DONE;
+  DONE
 }

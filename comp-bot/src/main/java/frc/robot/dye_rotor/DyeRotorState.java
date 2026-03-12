@@ -29,7 +29,7 @@ public enum DyeRotorState {
   private final DoubleSubscriber verticalVoltageTunable;
   private final DoubleSubscriber horizontalVoltageTunable;
 
-  private DyeRotorState(
+  DyeRotorState(
       double rotorBPS, double rotorPosition, double horizontalVoltage, double verticalVoltage) {
     this.rotorRPM = bpsToRpm(rotorBPS);
     this.rotorPosition = rotorPosition;

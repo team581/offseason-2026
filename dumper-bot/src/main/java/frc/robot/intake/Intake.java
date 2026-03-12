@@ -35,12 +35,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   @Override
   protected void afterTransition(IntakeState newState) {
     switch (newState) {
-      case UNTUNED, IDLE -> {
-        motor.disable();
-      }
-      default -> {
-        motor.setVoltage(getState().volts);
-      }
+      case UNTUNED, IDLE -> motor.disable();
+      default -> motor.setVoltage(getState().volts);
     }
   }
 

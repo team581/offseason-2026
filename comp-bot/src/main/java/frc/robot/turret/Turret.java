@@ -99,41 +99,35 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         "Turret/Encoder/EncoderAngle",
         Units.rotationsToDegrees(encoder.getAbsolutePosition().getValueAsDouble()));
 
-    switch (getState()) {
-      case UNHOMED -> {}
-      case SCORE, FEED, CLIMB, CLIMB_SCORE, STUCK -> {
-        setpoint = clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle));
-      }
-      case IDLE_SCORE, IDLE_FEED -> {
-        setpoint = clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle));
-      }
-    }
+    setpoint =
+        switch (getState()) {
+          case UNHOMED -> 0.0;
+          case SCORE, FEED, CLIMB, CLIMB_SCORE, STUCK ->
+              clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle));
+          case IDLE_SCORE, IDLE_FEED ->
+              clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle));
+        };
   }
 
   @Override
   protected void whileInState(TurretState currentState) {
     switch (currentState) {
-      case UNHOMED, STUCK -> {
-        motor.disable();
-      }
-      case SCORE, FEED, CLIMB -> {
-        motor.setControl(
-            positionRequest
-                .withPosition(Units.degreesToRotations(clamp(setpoint)))
-                .withVelocity(Units.radiansToRotations(getFeedForward())));
-      }
-      case IDLE_SCORE, IDLE_FEED -> {
-        motor.setControl(
-            positionRequest
-                .withPosition(Units.degreesToRotations(clamp(setpoint)))
-                .withVelocity(Units.radiansToRotations(getFeedForward())));
-      }
-      case CLIMB_SCORE -> {
-        motor.setControl(
-            positionRequest
-                .withPosition(Units.degreesToRotations(clamp(setpoint)))
-                .withVelocity(Units.radiansToRotations(getFeedForward())));
-      }
+      case UNHOMED, STUCK -> motor.disable();
+      case SCORE, FEED, CLIMB ->
+          motor.setControl(
+              positionRequest
+                  .withPosition(Units.degreesToRotations(clamp(setpoint)))
+                  .withVelocity(Units.radiansToRotations(getFeedForward())));
+      case IDLE_SCORE, IDLE_FEED ->
+          motor.setControl(
+              positionRequest
+                  .withPosition(Units.degreesToRotations(clamp(setpoint)))
+                  .withVelocity(Units.radiansToRotations(getFeedForward())));
+      case CLIMB_SCORE ->
+          motor.setControl(
+              positionRequest
+                  .withPosition(Units.degreesToRotations(clamp(setpoint)))
+                  .withVelocity(Units.radiansToRotations(getFeedForward())));
       default -> {}
     }
 
@@ -153,9 +147,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void setState(TurretState newState) {
     switch (getState()) {
       case UNHOMED -> {}
-      default -> {
-        setStateFromRequest(newState);
-      }
+      default -> setStateFromRequest(newState);
     }
   }
 
@@ -163,9 +155,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   public void robotPeriodic() {
     super.robotPeriodic();
     switch (getState()) {
-      case SCORE, FEED -> {
-        afterTransition(getState());
-      }
+      case SCORE, FEED -> afterTransition(getState());
       default -> {}
     }
 

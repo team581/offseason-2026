@@ -8,5 +8,5 @@ public enum ShooterState {
   SELF_TEST_STOP_MOTORS,
   SELF_TEST_LEFT_MOTOR,
   SELF_TEST_RIGHT_MOTOR,
-  SELF_TEST;
+  SELF_TEST
 }

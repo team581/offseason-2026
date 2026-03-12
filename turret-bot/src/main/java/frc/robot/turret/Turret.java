@@ -140,31 +140,22 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   @Override
   protected void afterTransition(TurretState newState) {
     switch (newState) {
-      case UNHOMED -> {
-        motor.disable();
-      }
-      case HOMING -> {
-        motor.setVoltage(HOMING_VOLTAGE.get());
-      }
-      case IDLE -> {
-        motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(0.0))));
-      }
-      case HUB_AIM -> {
-        motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
-      }
-      case FEED_AIM -> {
-        motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(feedAimAngle))));
-      }
-      case TAG_AIM -> {
-        motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(tagAimAngle))));
-      }
-      case LOCK_FORWARD -> {
-        motor.setControl(
-            positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
-      }
+      case UNHOMED -> motor.disable();
+      case HOMING -> motor.setVoltage(HOMING_VOLTAGE.get());
+      case IDLE ->
+          motor.setControl(positionRequest.withPosition(Units.degreesToRotations(clamp(0.0))));
+      case HUB_AIM ->
+          motor.setControl(
+              positionRequest.withPosition(Units.degreesToRotations(clamp(hubAimAngle))));
+      case FEED_AIM ->
+          motor.setControl(
+              positionRequest.withPosition(Units.degreesToRotations(clamp(feedAimAngle))));
+      case TAG_AIM ->
+          motor.setControl(
+              positionRequest.withPosition(Units.degreesToRotations(clamp(tagAimAngle))));
+      case LOCK_FORWARD ->
+          motor.setControl(
+              positionRequest.withPosition(Units.degreesToRotations(clamp(MANUAL_AIM_ANGLE))));
       default -> {}
     }
   }
@@ -192,9 +183,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
           setStateFromRequest(TurretState.HOMING);
         }
       }
-      default -> {
-        setStateFromRequest(newState);
-      }
+      default -> setStateFromRequest(newState);
     }
   }
 
@@ -216,12 +205,8 @@ public class Turret extends StateMachineSubsystem<TurretState> {
         afterTransition(getState());
         DogLog.clearFault("Turret is not homed");
       }
-      case UNHOMED -> {
-        DogLog.logFault("Turret is not homed", AlertType.kError);
-      }
-      default -> {
-        DogLog.clearFault("Turret is not homed");
-      }
+      case UNHOMED -> DogLog.logFault("Turret is not homed", AlertType.kError);
+      default -> DogLog.clearFault("Turret is not homed");
     }
   }
 

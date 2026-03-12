@@ -5,5 +5,5 @@ public enum BumpMidlineAutoState {
   INTAKE_ACROSS_MIDLINE,
   SEGMENT_3_DRIVE_BACK,
   SEGMENT_4_DRIVE_TO_SHOOT,
-  DONE;
+  DONE
 }

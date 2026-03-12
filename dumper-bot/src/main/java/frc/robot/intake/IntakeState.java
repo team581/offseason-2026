@@ -10,7 +10,7 @@ public enum IntakeState {
 
   public final double volts;
 
-  private IntakeState(double volts) {
+  IntakeState(double volts) {
     this.volts = volts;
   }
 }

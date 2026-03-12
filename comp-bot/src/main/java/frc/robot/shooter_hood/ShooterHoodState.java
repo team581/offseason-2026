@@ -6,5 +6,5 @@ public enum ShooterHoodState {
   IDLE,
   SCORING,
   FEEDING,
-  CLIMB_SCORING;
+  CLIMB_SCORING
 }

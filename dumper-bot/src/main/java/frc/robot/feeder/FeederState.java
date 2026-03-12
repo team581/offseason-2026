@@ -9,7 +9,7 @@ public enum FeederState {
 
   public final double volts;
 
-  private FeederState(double volts) {
+  FeederState(double volts) {
     this.volts = volts;
   }
 }

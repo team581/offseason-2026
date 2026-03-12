@@ -138,9 +138,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case IDLE -> {
-        yield currentState;
-      }
+      case IDLE -> currentState;
 
       case PREPARE_PRESET_SCORE, PRESET_SCORE ->
           !isMoving
@@ -903,10 +901,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           MANUAL_CLIMB_3_RAISING_L2,
           MANUAL_CLIMB_4_HANGING_L2,
           MANUAL_CLIMB_5_RAISING_L3,
-          MANUAL_CLIMB_6_HANGING_L3 -> {
-        // TODO: Use actual feed forward
-        turret.climbRequest(robotPose, 0);
-      }
+          MANUAL_CLIMB_6_HANGING_L3 -> // TODO: Use actual feed forward
+          turret.climbRequest(robotPose, 0);
       default -> {}
     }
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
@@ -1173,9 +1169,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void manualClimbSequenceBackwardOrIdleRequest() {
     switch (getState()) {
-      default -> {
-        idleRequest();
-      }
+      default -> idleRequest();
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> setStateFromRequest(RobotState.IDLE);
       case CLIMB_2_RAISING_L1_AUTONOMOUS ->
           setStateFromRequest(RobotState.CLIMB_1_LINEUP_L1_AUTONOMOUS);

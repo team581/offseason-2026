@@ -4,5 +4,5 @@ public enum SwerveState {
   MANUAL,
   FEED,
   SCORE,
-  INTAKE;
+  INTAKE
 }

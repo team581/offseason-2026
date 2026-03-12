@@ -48,7 +48,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     }
     return ImmutableSet.of();
   }
-  ;
 
   public final String limelightTableName;
   public final CameraConfig config;

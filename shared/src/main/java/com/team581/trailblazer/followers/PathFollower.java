@@ -20,7 +20,7 @@ public interface PathFollower {
    * @param currentPointIndex The index of the current point being tracked.
    * @return The field relative chassis speeds the robot should drive at to reach the target pose.
    */
-  public ChassisSpeeds calculateSpeeds(
+  ChassisSpeeds calculateSpeeds(
       ChassisSpeeds currentSpeeds,
       Pose2d currentPose,
       Pose2d targetPose,
@@ -35,5 +35,5 @@ public interface PathFollower {
    * @param currentSpeeds The current field relative speeds of the robot.
    * @param currentAngleRadians The current heading of the robot in radians.
    */
-  public void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians);
+  void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians);
 }

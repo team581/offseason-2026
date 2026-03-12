@@ -7,5 +7,5 @@ public enum TurretState {
   HUB_AIM,
   FEED_AIM,
   TAG_AIM,
-  LOCK_FORWARD;
+  LOCK_FORWARD
 }

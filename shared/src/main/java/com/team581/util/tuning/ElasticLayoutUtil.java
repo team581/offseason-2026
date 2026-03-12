@@ -25,14 +25,14 @@ public final class ElasticLayoutUtil {
     stopServer();
   }
 
-  public static final void startServer() {
+  public static void startServer() {
     if (!isServerRunning) {
       isServerRunning = true;
       WebServer.start(PORT, Filesystem.getDeployDirectory().getPath());
     }
   }
 
-  private static final void stopServer() {
+  private static void stopServer() {
     WebServer.stop(PORT);
     isServerRunning = false;
   }

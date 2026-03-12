@@ -20,7 +20,7 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
 
   public final int value;
 
-  private SubsystemPriority(int priority) {
+  SubsystemPriority(int priority) {
     this.value = priority;
   }
 

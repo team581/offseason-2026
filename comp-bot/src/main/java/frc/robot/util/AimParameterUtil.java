@@ -86,7 +86,7 @@ public class AimParameterUtil {
     double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
     double translationalFF = tangentialVelocity / realDistanceToGoal;
 
-    // Sum translationall FF and rotational FF
+    // Sum translational FF and rotational FF
     double totalTurretFFRadians =
         -translationalFF - turretFieldRelativeSpeeds.omegaRadiansPerSecond;
 
@@ -139,7 +139,7 @@ public class AimParameterUtil {
     double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
     double translationalFF = tangentialVelocity / realDistanceToGoal;
 
-    // Sum translationall FF and rotational FF
+    // Sum translational FF and rotational FF
     double totalTurretFFRadians =
         -translationalFF - turretFieldRelativeSpeeds.omegaRadiansPerSecond;
 

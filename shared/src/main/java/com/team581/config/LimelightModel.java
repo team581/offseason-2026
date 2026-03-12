@@ -8,7 +8,7 @@ public enum LimelightModel {
   public final int width;
   public final int height;
 
-  private LimelightModel(int width, int height) {
+  LimelightModel(int width, int height) {
     this.width = width;
     this.height = height;
   }

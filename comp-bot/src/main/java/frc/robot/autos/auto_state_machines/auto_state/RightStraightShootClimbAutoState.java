@@ -12,5 +12,5 @@ public enum RightStraightShootClimbAutoState {
   SHOOT_3,
   DRIVE_TO_CLIMB,
   CLIMB,
-  DONE;
+  DONE
 }

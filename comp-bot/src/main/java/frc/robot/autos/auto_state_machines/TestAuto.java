@@ -88,21 +88,11 @@ public class TestAuto extends BaseImperativeAuto<TestAutoState> {
   @Override
   protected void whileInState(TestAutoState newState) {
     switch (newState) {
-      case SEGMENT_1_STRAIGHT -> {
-        trailblazer.setActiveSegment(segment1Straight);
-      }
-      case SEGMENT_2_TURN -> {
-        trailblazer.setActiveSegment(segment2Turn);
-      }
-      case SEGMENT_3_CONSTRAINED -> {
-        trailblazer.setActiveSegment(segment3Constrained);
-      }
-      case SEGMENT_4_MULTI_WAYPOINT -> {
-        trailblazer.setActiveSegment(segment4MultiWaypoint);
-      }
-      case SEGMENT_5_CIRCLE -> {
-        trailblazer.setActiveSegment(segment5Circle);
-      }
+      case SEGMENT_1_STRAIGHT -> trailblazer.setActiveSegment(segment1Straight);
+      case SEGMENT_2_TURN -> trailblazer.setActiveSegment(segment2Turn);
+      case SEGMENT_3_CONSTRAINED -> trailblazer.setActiveSegment(segment3Constrained);
+      case SEGMENT_4_MULTI_WAYPOINT -> trailblazer.setActiveSegment(segment4MultiWaypoint);
+      case SEGMENT_5_CIRCLE -> trailblazer.setActiveSegment(segment5Circle);
       case DONE -> {}
     }
   }

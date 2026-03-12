@@ -270,11 +270,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           }
         }
       }
-      case HUB_AIM_AUTO -> {
-        drivetrain.setControl(
-            trailblazerRequest.withSpeeds(
-                trailblazer.getFieldRelativeSetpoint(robotPose, fieldRelativeSpeeds)));
-      }
+      case HUB_AIM_AUTO ->
+          drivetrain.setControl(
+              trailblazerRequest.withSpeeds(
+                  trailblazer.getFieldRelativeSetpoint(robotPose, fieldRelativeSpeeds)));
 
       case INTAKING -> {
         if (FeatureFlags.TRENCH_ASSIST.getAsBoolean() && ableToTrenchAssist) {

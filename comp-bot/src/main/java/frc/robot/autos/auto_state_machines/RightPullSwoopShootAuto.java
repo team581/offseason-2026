@@ -205,9 +205,7 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
       }
-      case SHOOT_1 -> {
-        robotManager.prepareScoreRequest();
-      }
+      case SHOOT_1 -> robotManager.prepareScoreRequest();
       case INTAKE_ACROSS_MIDLINE_2 -> {
         trailblazer.setActiveSegment(intakeAcrossMidlineTwo);
         robotManager.intakeAutoRequest();
@@ -216,9 +214,7 @@ public class RightPullSwoopShootAuto extends BaseImperativeAuto<RightPullSwoopSh
         trailblazer.setActiveSegment(driveBackAndShootTwo);
         robotManager.cancelIntakeRequest();
       }
-      case SHOOT_2 -> {
-        robotManager.prepareScoreRequest();
-      }
+      case SHOOT_2 -> robotManager.prepareScoreRequest();
       case DRIVE_TO_CLIMB -> {
         // robotManager.startAutoClimbSequence();
       }

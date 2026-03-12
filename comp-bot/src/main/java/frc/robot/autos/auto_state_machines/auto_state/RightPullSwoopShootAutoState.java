@@ -9,5 +9,5 @@ public enum RightPullSwoopShootAutoState {
   SHOOT_2,
   DRIVE_TO_CLIMB,
   CLIMB,
-  DONE;
+  DONE
 }

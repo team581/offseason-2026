@@ -92,12 +92,8 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   @Override
   protected void afterTransition(VisionState newState) {
     switch (newState) {
-      case TAGS -> {
-        mainLimelight.setState(LimelightState.TAGS);
-      }
-      case HUB_TAGS -> {
-        mainLimelight.setState(LimelightState.HUB_TAGS);
-      }
+      case TAGS -> mainLimelight.setState(LimelightState.TAGS);
+      case HUB_TAGS -> mainLimelight.setState(LimelightState.HUB_TAGS);
     }
   }
 

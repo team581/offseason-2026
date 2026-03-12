@@ -8,5 +8,5 @@ public enum TurretState {
   STUCK,
   IDLE_FEED,
   CLIMB,
-  CLIMB_SCORE;
+  CLIMB_SCORE
 }

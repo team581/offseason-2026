@@ -189,12 +189,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
         leftMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
         rightMotor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
       }
-      default -> {
-        differentialMechanism.setControl(
-            differentialPositionVoltageRequest
-                .withAveragePosition(clamp(newState.getLength()))
-                .withDifferentialPosition(0));
-      }
+      default ->
+          differentialMechanism.setControl(
+              differentialPositionVoltageRequest
+                  .withAveragePosition(clamp(newState.getLength()))
+                  .withDifferentialPosition(0));
     }
   }
 

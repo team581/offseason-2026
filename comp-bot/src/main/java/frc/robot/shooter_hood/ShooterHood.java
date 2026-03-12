@@ -139,10 +139,9 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
 
       case UNHOMED -> motor.disable();
 
-      default -> {
-        motor.setControl(
-            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(getGoalAngle()))));
-      }
+      default ->
+          motor.setControl(
+              positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(getGoalAngle()))));
     }
   }
 
@@ -151,10 +150,9 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     var goalAngle = getGoalAngle();
 
     switch (state) {
-      case SCORING, FEEDING -> {
-        motor.setControl(
-            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
-      }
+      case SCORING, FEEDING ->
+          motor.setControl(
+              positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
       case CLIMB_SCORING -> {
         motor.setControl(
             positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(climbScoreAngle))));

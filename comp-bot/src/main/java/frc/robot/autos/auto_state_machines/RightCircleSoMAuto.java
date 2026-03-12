@@ -209,9 +209,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
       }
-      case SHOOT_1 -> {
-        robotManager.prepareScoreRequest();
-      }
+      case SHOOT_1 -> robotManager.prepareScoreRequest();
       case INTAKE_BEHIND_HUB -> {
         trailblazer.setActiveSegment(intakeBehindHub);
         robotManager.intakeAutoRequest();
@@ -220,12 +218,8 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
         trailblazer.setActiveSegment(driveBackAndShootTwo);
         robotManager.cancelIntakeRequest();
       }
-      case SHOOT_2 -> {
-        robotManager.prepareScoreRequest();
-      }
-      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
-        trailblazer.setActiveSegment(driveBackToNeutralZone);
-      }
+      case SHOOT_2 -> robotManager.prepareScoreRequest();
+      case DRIVE_BACK_TO_NEUTRAL_ZONE -> trailblazer.setActiveSegment(driveBackToNeutralZone);
       case DONE -> {}
     }
   }

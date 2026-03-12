@@ -5,5 +5,5 @@ public enum RobotState {
   HUB_AIM,
   HUB_AIM_ADJUSTING_SWERVE,
   TAG_AIM,
-  LOCK_FORWARD;
+  LOCK_FORWARD
 }

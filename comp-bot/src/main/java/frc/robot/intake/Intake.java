@@ -51,18 +51,10 @@ public class Intake extends GenericIntake {
   @Override
   protected void afterTransition(IntakeState newState) {
     switch (newState) {
-      case IDLE -> {
-        motor.disable();
-      }
-      case INTAKE -> {
-        motor.setVoltage(newState.getVoltage());
-      }
-      case INTAKE_AUTO -> {
-        motor.setVoltage(newState.getVoltage());
-      }
-      case SHOOT, SHOOT_THEN_INTAKE -> {
-        motor.setVoltage(newState.getVoltage());
-      }
+      case IDLE -> motor.disable();
+      case INTAKE -> motor.setVoltage(newState.getVoltage());
+      case INTAKE_AUTO -> motor.setVoltage(newState.getVoltage());
+      case SHOOT, SHOOT_THEN_INTAKE -> motor.setVoltage(newState.getVoltage());
     }
   }
 

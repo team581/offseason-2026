@@ -106,7 +106,7 @@ public abstract class Base581Robot extends TimedRobot {
 
     switch (gitDirty) {
       case 0 -> DogLog.log("Metadata/GitDirty", "All changes committed");
-      case 1 -> DogLog.log("Metadata/GitDirty", "Uncomitted changes");
+      case 1 -> DogLog.log("Metadata/GitDirty", "Uncommitted changes");
       default -> DogLog.log("Metadata/GitDirty", "Unknown");
     }
   }

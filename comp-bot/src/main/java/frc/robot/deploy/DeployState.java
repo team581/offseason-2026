@@ -15,7 +15,7 @@ public enum DeployState {
 
   private final DoubleSubscriber tunableLength;
 
-  private DeployState(double length) {
+  DeployState(double length) {
 
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }

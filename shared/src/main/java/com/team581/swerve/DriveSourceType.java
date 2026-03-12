@@ -11,5 +11,5 @@ public enum DriveSourceType {
    * This drive source outputs velocities that should be followed closed loop. They are totally
    * field-relative, regardless of alliance.
    */
-  FIELD_CENTRIC_CLOSED_LOOP;
+  FIELD_CENTRIC_CLOSED_LOOP
 }

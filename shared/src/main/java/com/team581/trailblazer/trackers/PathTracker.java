@@ -18,14 +18,14 @@ public interface PathTracker {
    *
    * @return The index point being tracked.
    */
-  public int getCurrentPointIndex();
+  int getCurrentPointIndex();
 
   /**
    * Calculate the pose the robot should drive to next, based on its progress following the path.
    *
    * @return The pose the robot should drive to next.
    */
-  public Pose2d getTargetPose(@Nullable Rotation2d trackerRotationOverride);
+  Pose2d getTargetPose(@Nullable Rotation2d trackerRotationOverride);
 
   /**
    * Reset the state of the path tracker, as well as set the new list of points to consider in
@@ -33,7 +33,7 @@ public interface PathTracker {
    *
    * @param points The new list of points to store.
    */
-  public void resetAndSetPoints(List<? extends AutoPoint<?>> points);
+  void resetAndSetPoints(List<? extends AutoPoint<?>> points);
 
   /**
    * Runs once per loop cycle to update the tracker with the current robot state.
@@ -41,5 +41,5 @@ public interface PathTracker {
    * @param currentPose The current pose of the robot.
    * @param currentFieldRelativeRobotSpeeds The current field relative speeds of the robot.
    */
-  public void updateRobotState(Pose2d currentPose, ChassisSpeeds currentFieldRelativeRobotSpeeds);
+  void updateRobotState(Pose2d currentPose, ChassisSpeeds currentFieldRelativeRobotSpeeds);
 }

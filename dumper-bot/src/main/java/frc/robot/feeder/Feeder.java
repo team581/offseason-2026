@@ -44,9 +44,7 @@ public class Feeder extends StateMachineSubsystem<FeederState> {
   @Override
   protected void afterTransition(FeederState newState) {
     switch (newState) {
-      case UNTUNED -> {
-        feederMotor.disable();
-      }
+      case UNTUNED -> feederMotor.disable();
       default -> {
         feederMotor.setVoltage(getState().volts);
         feederMotor.setVoltage(getState().volts);

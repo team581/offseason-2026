@@ -132,9 +132,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/SwerveCompAngle", swerveTurretCompensationAngle);
 
     switch (getState()) {
-      case HUB_AIM -> {
-        turret.setHubAimAngle(turretHubGoalAngle);
-      }
+      case HUB_AIM -> turret.setHubAimAngle(turretHubGoalAngle);
       case HUB_AIM_ADJUSTING_SWERVE -> {
         swerve.hubAimRequest(swerveTurretCompensationAngle);
         var goalPose = FieldUtil.HUB_POSE.getTranslation();
@@ -161,9 +159,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           setStateFromRequest(RobotState.IDLE);
         }
       }
-      default -> {
-        swerve.intakeDriveRequest();
-      }
+      default -> swerve.intakeDriveRequest();
     }
 
     MechanismVisualizer.log(localization.getPose(), turret.getAngle());
