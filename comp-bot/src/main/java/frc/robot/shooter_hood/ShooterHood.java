@@ -92,8 +92,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> {
     return switch (getState()) {
       case UNHOMED, HOMING -> false;
       case FEEDING ->
-          MathUtil.isNear(getGoalAngle(), currentAngle, ShooterHoodConfig.FEEDING_TOLERANCE);
-      default -> MathUtil.isNear(getGoalAngle(), currentAngle, ShooterHoodConfig.TOLERANCE);
+          MathUtil.isNear(clamp(getGoalAngle()), currentAngle, ShooterHoodConfig.FEEDING_TOLERANCE);
+      default -> MathUtil.isNear(clamp(getGoalAngle()), currentAngle, ShooterHoodConfig.TOLERANCE);
     };
   }
 
