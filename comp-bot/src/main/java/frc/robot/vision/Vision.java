@@ -46,7 +46,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   private boolean hasSeenTag = false;
   private boolean seeingTag = false;
-  private boolean seeingTagDebounced = false;
 
   private boolean seeingHubTags = false;
 
@@ -157,10 +156,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   public OptionalTagResult getBackLimelightTagResult() {
     return backResult;
-  }
-
-  public boolean seeingTagDebounced() {
-    return seeingTagDebounced || RobotBase.isSimulation();
   }
 
   public boolean seeingTag() {
