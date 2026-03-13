@@ -116,9 +116,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> {
   }
 
   public void homeInAutoRequest() {
-      setStateFromRequest(DeployState.HOME_INWARD);
+    setStateFromRequest(DeployState.HOME_INWARD);
   }
-  
+
   @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
