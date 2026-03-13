@@ -46,7 +46,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   public static final double MAX_LINEAR_RATE = 4.75;
   private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxLinearRateShooting", 1.5);
+      DogLog.tunable("Swerve/MaxLinearRateShooting", 0.75);
 
   private static final DoubleSubscriber SNAKE_MODE_AGRESSIVENESS =
       DogLog.tunable("Swerve/SnakeModeAgressiveness", 0.25);
