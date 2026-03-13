@@ -192,7 +192,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public boolean atGoalDebounced() {
-    return atGoalDebounced;
+    return getState() != ShooterState.IDLE && atGoalDebounced;
   }
 
   private boolean calculateAtGoal() {
