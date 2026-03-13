@@ -10,10 +10,10 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_state.RightCircleSoMAutoState;
+import frc.robot.autos.auto_state_machines.auto_state.CircleSoMAutoState;
 import frc.robot.robot_manager.RobotManager;
 
-public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoState> {
+public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
 
   public enum Markers {
     START_SHOOT_RQ,
@@ -150,7 +150,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
   public RightCircleSoMAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(RightCircleSoMAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
+    super(CircleSoMAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
   }
 
   @Override
@@ -160,60 +160,60 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
   }
 
   @Override
-  protected RightCircleSoMAutoState getNextState(RightCircleSoMAutoState currentState) {
+  protected CircleSoMAutoState getNextState(CircleSoMAutoState currentState) {
     return switch (currentState) {
       case INTAKE_ACROSS_MIDLINE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield RightCircleSoMAutoState.DRIVE_BACK_1;
+          yield CircleSoMAutoState.DRIVE_BACK_1;
         } else {
           yield currentState;
         }
       }
       case DRIVE_BACK_1 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
-          yield RightCircleSoMAutoState.SHOOT_1;
+          yield CircleSoMAutoState.SHOOT_1;
         } else {
           yield currentState;
         }
       }
       case SHOOT_1 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(3.5)) {
-          yield RightCircleSoMAutoState.INTAKE_BEHIND_HUB;
+          yield CircleSoMAutoState.INTAKE_BEHIND_HUB;
         } else {
           yield currentState;
         }
       }
       case INTAKE_BEHIND_HUB -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield RightCircleSoMAutoState.DRIVE_BACK_2;
+          yield CircleSoMAutoState.DRIVE_BACK_2;
         } else {
           yield currentState;
         }
       }
       case DRIVE_BACK_2 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
-          yield RightCircleSoMAutoState.SHOOT_2;
+          yield CircleSoMAutoState.SHOOT_2;
         } else {
           yield currentState;
         }
       }
       case SHOOT_2 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(3.5)) {
-          yield RightCircleSoMAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
+          yield CircleSoMAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
         } else {
           yield currentState;
         }
       }
       case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
-          yield RightCircleSoMAutoState.DONE;
+          yield CircleSoMAutoState.DONE;
         } else {
           yield currentState;
         }
       }
       case DONE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
-          yield RightCircleSoMAutoState.DONE;
+          yield CircleSoMAutoState.DONE;
         } else {
           yield currentState;
         }
@@ -223,7 +223,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
   }
 
   @Override
-  protected void whileInState(RightCircleSoMAutoState newState) {
+  protected void whileInState(CircleSoMAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE -> {
         trailblazer.setActiveSegment(intakeAcrossMidline);
@@ -249,7 +249,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
   }
 
   @Override
-  protected void afterTransition(RightCircleSoMAutoState newState) {
+  protected void afterTransition(CircleSoMAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE -> {
         robotManager.homeDeployInAutoRequest();
