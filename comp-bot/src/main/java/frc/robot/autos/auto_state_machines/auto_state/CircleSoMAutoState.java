@@ -1,6 +1,6 @@
 package frc.robot.autos.auto_state_machines.auto_state;
 
-public enum RightCircleSoMAutoState {
+public enum CircleSoMAutoState {
   INTAKE_ACROSS_MIDLINE,
   INTAKE_BEHIND_HUB,
   DRIVE_BACK_1,
