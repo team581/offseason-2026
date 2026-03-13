@@ -192,12 +192,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   public boolean atGoalDebounced() {
-    return getState() != ShooterState.IDLE && atGoalDebounced;
+    return atGoalDebounced;
   }
 
   private boolean calculateAtGoal() {
     return switch (getState()) {
-      case IDLE -> true;
+      case IDLE -> false;
       case SCORE ->
           MathUtil.isNear(leftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(rightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
