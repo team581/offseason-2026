@@ -3,7 +3,6 @@ package com.team581.trailblazer.trackers;
 import com.google.common.collect.ImmutableList;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
-import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
