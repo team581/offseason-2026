@@ -47,10 +47,10 @@ public class TurretConfig {
           .withSlot0(
               new Slot0Configs()
                   .withKP(200)
-                  .withKV(RobotKind.IS_COMP_BOT ? 6.0 : 6.0)
+                  .withKV(RobotKind.IS_COMP_BOT ? 5.0 : 6.0)
                   .withKG(0.0)
                   .withKD(1.7)
-                  .withKS(0.2));
+                  .withKS(RobotKind.IS_COMP_BOT ? 0.35 : 0.2));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
           .withMagnetSensor(
