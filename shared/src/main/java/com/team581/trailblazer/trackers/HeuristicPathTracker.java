@@ -3,6 +3,7 @@ package com.team581.trailblazer.trackers;
 import com.google.common.collect.ImmutableList;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -26,22 +27,40 @@ public class HeuristicPathTracker implements PathTracker {
 
   @Override
   public Pose2d getTargetPose(@Nullable Rotation2d trackerRotationOverride) {
-    var currentPoint = points.get(getCurrentPointIndex());
-    var currentTargetPose = currentPoint.getPose();
+    if (currentPointIndex < points.size() - 1) {
+      var currentPoint = points.get(currentPointIndex);
+      var toleranceCheckPose = currentPoint.getPose();
 
-    if (trackerRotationOverride != null) {
-      currentTargetPose = new Pose2d(currentTargetPose.getTranslation(), trackerRotationOverride);
+      if (trackerRotationOverride != null) {
+        toleranceCheckPose =
+            new Pose2d(toleranceCheckPose.getTranslation(), trackerRotationOverride);
+      }
+
+      if (currentPoint
+          .transitionTolerance()
+          .orElse(defaultTransitionTolerance)
+          .atPose(toleranceCheckPose, currentPose)) {
+        currentPointIndex++;
+      }
     }
 
-    if (currentPointIndex < points.size() - 1
-        && currentPoint
-            .transitionTolerance()
-            .orElse(defaultTransitionTolerance)
-            .atPose(currentTargetPose, currentPose)) {
-      currentPointIndex++;
+    var targetPose = points.get(currentPointIndex).getPose();
+
+    if (currentPointIndex > 0) {
+      var previousPose = points.get(currentPointIndex - 1).getPose();
+      double totalDistance = previousPose.getTranslation().getDistance(targetPose.getTranslation());
+      double distanceToTarget =
+          currentPose.getTranslation().getDistance(targetPose.getTranslation());
+
+      if (totalDistance > 0) {
+        double t = distanceToTarget / totalDistance;
+        var interpolatedRotation =
+            targetPose.getRotation().interpolate(previousPose.getRotation(), t);
+        targetPose = new Pose2d(targetPose.getTranslation(), interpolatedRotation);
+      }
     }
 
-    return points.get(currentPointIndex).getPose();
+    return targetPose;
   }
 
   @Override
