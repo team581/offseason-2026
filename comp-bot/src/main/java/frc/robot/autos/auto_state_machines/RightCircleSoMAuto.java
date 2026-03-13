@@ -252,7 +252,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<RightCircleSoMAutoSta
   protected void afterTransition(RightCircleSoMAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE -> {
-        robotManager.homeDeployRequest();
+        robotManager.homeDeployInAutoRequest();
         robotManager.homeShooterHoodRequest();
       }
       case DRIVE_BACK_1 -> {}

@@ -1126,6 +1126,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
+  public void homeDeployInAutoRequest() {
+    if (!getState().isClimbing()) {
+      deploy.homeInAutoRequest();
+    }
+  }
+
   public void homeShooterHoodRequest() {
     if (!getState().isClimbing()) {
       shooterHood.homingRequest();
