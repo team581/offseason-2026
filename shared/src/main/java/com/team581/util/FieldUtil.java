@@ -51,7 +51,7 @@ public class FieldUtil {
       new Pose2d(BLUE_TRENCH_BUMP_HUB_X, AprilTags.TAG_7.getY(), Rotation2d.kZero);
   private static final Pose2d BLUE_DEPOT_TRENCH_CENTER =
       new Pose2d(BLUE_TRENCH_BUMP_HUB_X, AprilTags.TAG_12.getY(), Rotation2d.kZero);
-  private static final Pose2d RED_DEPOT_TRENCH_CENTER =
+  public static final Pose2d RED_DEPOT_TRENCH_CENTER =
       new Pose2d(RED_TRENCH_BUMP_HUB_X, AprilTags.TAG_17.getY(), Rotation2d.kZero);
   public static final Pose2d RED_OUTPOST_TRENCH_CENTER =
       new Pose2d(RED_TRENCH_BUMP_HUB_X, AprilTags.TAG_22.getY(), Rotation2d.kZero);
@@ -143,7 +143,7 @@ public class FieldUtil {
           RED_TRENCH_BUMP_HUB_X,
           FIELD_WIDTH_Y - BUMP_CENTER_Y_DISTANCE_FROM_WALL,
           Rotation2d.kZero);
-  private static final Pose2d RED_DEPOT_BUMP_CENTER =
+  public static final Pose2d RED_DEPOT_BUMP_CENTER =
       new Pose2d(RED_TRENCH_BUMP_HUB_X, BUMP_CENTER_Y_DISTANCE_FROM_WALL, Rotation2d.kZero);
 
   private static final Rectangle2d BLUE_OUTPOST_BUMP_ASSIST_ZONE =
