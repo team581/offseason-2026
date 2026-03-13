@@ -57,7 +57,11 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
                 || backLimelight.getCameraHealth() != CameraHealth.OFFLINE);
     fuelDetectionHealthy =
         RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    allCamerasHealthy = localizationHealthy && fuelDetectionHealthy;
+    allCamerasHealthy =
+        RobotBase.isSimulation()
+            || (turretLimelight.getCameraHealth() != CameraHealth.OFFLINE
+                && backLimelight.getCameraHealth() != CameraHealth.OFFLINE
+                && groundLimelight.getCameraHealth() != CameraHealth.OFFLINE);
   }
 
   @Override
