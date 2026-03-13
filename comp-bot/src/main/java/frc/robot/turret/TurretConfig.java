@@ -45,7 +45,12 @@ public class TurretConfig {
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withSlot0(
-              new Slot0Configs().withKP(200).withKV(6.0).withKG(0.0).withKD(1.7).withKS(0.2));
+              new Slot0Configs()
+                  .withKP(200)
+                  .withKV(RobotKind.IS_COMP_BOT ? 6.0 : 6.0)
+                  .withKG(0.0)
+                  .withKD(1.7)
+                  .withKS(0.2));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
           .withMagnetSensor(
