@@ -77,6 +77,10 @@ subprojects {
 		// Set the ERRORPRONE_AUTOFIX environment variable to fix files in place
 		if (System.getenv().containsKey("ERRORPRONE_AUTOFIX")) {
 			options.errorprone.errorproneArgs.add "-XepPatchLocation:IN_PLACE"
+
+			// Disable dead code checks during autofix to prevent automatic deletion
+			// These checks still run as errors during normal builds
+			options.errorprone.disable("UnusedVariable", "UnusedLabel", "UnusedMethod", "UnusedNestedClass", "UnusedTypeParameter")
 		}
 	}
 
