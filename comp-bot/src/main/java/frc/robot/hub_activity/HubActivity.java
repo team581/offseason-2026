@@ -103,6 +103,7 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
     tofBasedHubActive = calculateTOFBasedHubActive();
     forceScoreTransitionEndOfActiveHub =
         DSOptions.USE_HUB_STATE.get()
+            && DriverStation.isTeleop()
             && actualHubActive
             && timeUntilNextShift < FORCE_SCORE_TRANSITION_TIMEOUT;
   }
