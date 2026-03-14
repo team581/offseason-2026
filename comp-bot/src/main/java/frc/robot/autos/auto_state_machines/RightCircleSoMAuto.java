@@ -94,19 +94,20 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
               AutoPoint.ofRed(
-                      new Pose2d(13.0, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 10))
+                      new Pose2d(
+                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
                       new Pose2d(
-                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(4.5, 8),
+                          14.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5))
+                  .withLinearConstraints(4.5, 8)
+                  .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.709, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withMarker(Markers.START_SHOOT_RQ),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
@@ -118,19 +119,20 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
   private final AutoSegment driveBackAndShootTwo =
       Trailblazer.segment(
               AutoPoint.ofRed(
-                      new Pose2d(13.0, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
                       new Pose2d(
-                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(4.5, 8),
+                          14.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5))
+                  .withLinearConstraints(4.5, 8)
+                  .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.709, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withMarker(Markers.START_SHOOT_RQ))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
           .withLinearConstraints(1.0, 20)
           .withAngularConstraints(Units.rotationsToRadians(0.5), Units.rotationsToRadians(1))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
