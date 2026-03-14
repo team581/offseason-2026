@@ -26,9 +26,15 @@ public class FmsUtil {
     if (DriverStation.isDisabled() || !DriverStation.isTeleop()) {
       return "";
     }
-
+    var maybeWonAuto = isAutoWinner();
     if (timeSinceMatchStart <= TRANSITION_DURATION) {
-      return "TRANSITION";
+      if (maybeWonAuto.isEmpty()) {
+        return "TRANSITION";
+      }
+      if (maybeWonAuto.get()) {
+        return "WON";
+      }
+      return "LOST";
     }
     if (timeSinceMatchStart <= SHIFT1_TIME_DURATION) {
       return "SHIFT 1";
