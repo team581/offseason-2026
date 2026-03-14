@@ -245,17 +245,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     // Make sure right stick Y is either 50% up or down
     intakeAssistControllerInput = Math.abs(teleopDriveSource.getRightY()) > 0.5;
     ableToTrenchAssist =
-        DSOptions.USE_SWERVE_ASSIST.get()
+        DSOptions.USE_TRENCH_ASSIST.get()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToTrenchAssist(drivetrainState.Pose, fieldRelativeSpeeds);
     ableToBumpAssist =
-        DSOptions.USE_SWERVE_ASSIST.get()
+        DSOptions.USE_BUMP_ASSIST.get()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
     ableToWallSnap =
-        DSOptions.USE_SWERVE_ASSIST.get()
+        DSOptions.USE_WALL_SNAPS_ASSIST.get()
             && DriverStation.isTeleop()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
