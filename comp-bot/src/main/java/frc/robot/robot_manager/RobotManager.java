@@ -942,6 +942,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           scoringParameters.turretAngle(), scoringParameters.turretFeedForwardRadians());
 
       DogLog.log("RobotManager/SmartIdle/Status", "InAllianceZone");
+    } else if (DriverStation.isAutonomous()) {
+      shooterHood.idleRequest();
+      turret.idleScoreRequest(
+          scoringParameters.turretAngle(), scoringParameters.turretFeedForwardRadians());
+
+      DogLog.log("RobotManager/SmartIdle/Status", "UseHubForAuto");
     } else {
       shooterHood.idleRequest();
       turret.idleFeedRequest(
