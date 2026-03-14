@@ -31,7 +31,7 @@ public class FmsUtil {
       if (maybeWonAuto.isEmpty()) {
         return "TRANSITION";
       }
-      if (maybeWonAuto.get()) {
+      if (maybeWonAuto.orElseThrow()) {
         return "WON";
       }
       return "LOST";
