@@ -49,10 +49,10 @@ public class ShooterHoodConfig {
       RobotKind.IS_COMP_BOT
           ? TunableInterpolatingDoubleTreeMap.ofEntries(
               "ShooterHood/DistanceToScore",
-              Map.entry(5.5, 32.0),
-              Map.entry(3.54, 27.0),
-              Map.entry(2.42, 23.5),
-              Map.entry(1.36, 21.5))
+              Map.entry(5.5 + 0.25 + 0.15, 32.0),
+              Map.entry(3.54 + 0.25 + 0.15, 27.0),
+              Map.entry(2.42 + 0.25 + 0.15, 23.5),
+              Map.entry(1.36 + 0.25 + 0.15, 21.5))
           : TunableInterpolatingDoubleTreeMap.ofEntries(
               "ShooterHood/DistanceToScore",
               Map.entry(5.551, 37.0),
