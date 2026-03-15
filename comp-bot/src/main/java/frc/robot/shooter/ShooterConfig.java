@@ -43,10 +43,10 @@ public class ShooterConfig {
       RobotKind.IS_COMP_BOT
           ? TunableInterpolatingDoubleTreeMap.ofEntries(
               "Shooter/DistanceToScoreRPM",
-              Map.entry(5.5, 2350.0),
-              Map.entry(3.54, 1950.0),
-              Map.entry(2.42, 1800.0),
-              Map.entry(1.36, 1550.0))
+              Map.entry(5.5 + 0.25 + 0.15, 2350.0),
+              Map.entry(3.54 + 0.25 + 0.15, 1950.0),
+              Map.entry(2.42 + 0.25 + 0.15, 1800.0),
+              Map.entry(1.36 + 0.25 + 0.15, 1550.0))
           : TunableInterpolatingDoubleTreeMap.ofEntries(
               "Shooter/DistanceToScoreRPM",
               Map.entry(5.551, 2350.0),
@@ -57,8 +57,8 @@ public class ShooterConfig {
       RobotKind.IS_COMP_BOT
           ? TunableInterpolatingDoubleTreeMap.ofEntries(
               "Shooter/DistanceToFeedingRPM",
-              Map.entry(6.0, 1800.0),
-              Map.entry(8.71, 2300.0),
+              Map.entry(6.0, 2500.0),
+              Map.entry(8.71, 2700.0),
               Map.entry(13.6, 5500.0))
           : TunableInterpolatingDoubleTreeMap.ofEntries(
               "Shooter/DistanceToFeedingRPM",
@@ -74,8 +74,9 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF",
-          Map.entry(1.85, 0.8916666667),
-          Map.entry(3.47, 1.161904762),
+          Map.entry(1.36, 0.8916666667),
+          Map.entry(2.42, 1.063636364),
+          Map.entry(3.54, 1.161904762),
           Map.entry(5.5, 1.248484848));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
@@ -107,7 +108,9 @@ public class ShooterConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
-              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.55 : 0.7).withKV(0.127)
+              new Slot0Configs()
+                  .withKP(RobotKind.IS_COMP_BOT ? 0.4 : 0.7)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0.12 : 0.127)
               // .withKD(0.00015)
               )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
