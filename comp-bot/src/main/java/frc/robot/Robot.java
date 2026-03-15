@@ -207,6 +207,6 @@ public class Robot extends Base581Robot {
     operator
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
-        .onRelease((() -> robotManager.setTrenchOverrideRequest(false)));
+        .onRelease(() -> robotManager.setTrenchOverrideRequest(false));
   }
 }
