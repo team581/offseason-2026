@@ -85,8 +85,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                           11.878, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.READY_TO_SHOOT_FOR_2)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2), Units.rotationsToRadians(3))
+                  .withAngularConstraints(Units.rotationsToRadians(2), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))

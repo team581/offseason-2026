@@ -39,8 +39,7 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                       new Pose2d(9.975, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
-                      new Pose2d(
-                          11.174, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(11.174, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -68,8 +67,7 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.5), Units.rotationsToRadians(3)),
               AutoPoint.ofRed(
-                      new Pose2d(
-                          10.335, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(10.335, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
@@ -81,12 +79,10 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                       Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4),
               AutoPoint.ofRed(
-                      new Pose2d(
-                          11.878, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(11.878, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.READY_TO_SHOOT_FOR_2)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2), Units.rotationsToRadians(3))
+                  .withAngularConstraints(Units.rotationsToRadians(2), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))
@@ -95,13 +91,11 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
               AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
-                      new Pose2d(
-                          14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -120,13 +114,11 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
   private final AutoSegment driveBackAndShootTwo =
       Trailblazer.segment(
               AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
-                      new Pose2d(
-                          14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
