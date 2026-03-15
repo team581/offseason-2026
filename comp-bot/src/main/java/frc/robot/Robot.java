@@ -177,9 +177,10 @@ public class Robot extends Base581Robot {
 
     operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
 
-    if (!RobotKind.IS_COMP_BOT) {
-      operator.y().onPress(robotManager::manualClimbSequenceForward);
-    }
+    operator
+        .y()
+        .onPress(() -> robotManager.dyeRotor.setUseFullSpeed(true))
+        .onRelease(() -> robotManager.dyeRotor.setUseFullSpeed(false));
 
     operator.b().onPress(robotManager::prepareFeedRequest).onRelease(robotManager::idleRequest);
 
@@ -188,7 +189,8 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreRequest)
         .onRelease(robotManager::idleRequest);
 
-    // Use as idle button when not climbing, otherwise does sequence and eventually gets back to
+    // Use as idle button when not climbing, otherwise does sequence and eventually
+    // gets back to
     // idle
     operator.a().onPress(robotManager::manualClimbSequenceBackwardOrIdleRequest);
 

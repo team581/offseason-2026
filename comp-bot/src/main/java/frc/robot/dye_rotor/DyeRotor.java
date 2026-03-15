@@ -39,6 +39,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
   private boolean isShooting = false;
   private boolean isShootingDebounced = false;
 
+  private boolean useFullSpeed = false;
+
   private double scoreDistance = 0;
   private double feedDistance = 0;
 
@@ -100,6 +102,10 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     }
   }
 
+  public void setUseFullSpeed(boolean useFullSpeed) {
+    this.useFullSpeed = useFullSpeed;
+  }
+
   public boolean isReset() {
     if (getState() == DyeRotorState.IDLE && Math.abs(rotorMotorRpm) < 1e-2) {
       return true;
@@ -150,10 +156,11 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
 
     switch (currentState) {
       case SCORE, SCORE_SLOW -> {
-        rotorMotor.setControl(
-            rotorVelocityRequest.withVelocity(
-                currentState.getRotorRPM(DyeRotorConfig.DISTANCE_TO_SCORE_BPS.get(scoreDistance))
-                    / 60.0));
+        var wantedRPM =
+            useFullSpeed
+                ? DyeRotorState.bpsToRpm(DyeRotorConfig.FULL_SPEED_BPS)
+                : currentState.getRotorRPM(DyeRotorConfig.DISTANCE_TO_SCORE_BPS.get(scoreDistance));
+        rotorMotor.setControl(rotorVelocityRequest.withVelocity(wantedRPM / 60.0));
         horizontalMotor.setVoltage(currentState.getHorizontalVoltage());
         verticalMotor.setVoltage(currentState.getVerticalVoltage());
       }
@@ -186,6 +193,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> {
     DogLog.log("DyeRotor/Vertical/Velocity", verticalMotor.getVelocity().getValueAsDouble());
     DogLog.log("DyeRotor/Vertical/StatorCurrent", verticalRawCurrent);
     DogLog.log("DyeRotor/IsJammed", isJammed());
+    DogLog.log("DyeRotor/UseFullSpeed", useFullSpeed);
   }
 
   @Override

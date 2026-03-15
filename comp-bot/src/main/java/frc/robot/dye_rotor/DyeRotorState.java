@@ -15,7 +15,7 @@ public enum DyeRotorState {
 
   UNJAM(RobotKind.IS_COMP_BOT ? -8.0 : -1.0, 180.0, 0.0, 0.0);
 
-  private static double bpsToRpm(double bps) {
+  public static double bpsToRpm(double bps) {
     var circumference = 18.0 * Math.PI;
     var ballDiameter = 6.0;
     return (bps / (circumference / ballDiameter)) * 60;
