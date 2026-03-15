@@ -64,6 +64,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
   private boolean driverWantsToIntake = false;
+  private boolean trenchOverride = false;
 
   private boolean isInSafeScoringLocation = false;
   private boolean isInAllianceZone = false;
@@ -1070,6 +1071,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     feedLocation = FeedLocation.CLOSEST;
   }
 
+  public void setTrenchOverrideRequest(boolean trenchOverride) {
+    this.trenchOverride = trenchOverride;
+  }
+
   public void setDriverWantsIntake(boolean wantsIntake) {
     driverWantsToIntake = wantsIntake;
     if (driverWantsToIntake) {
@@ -1239,10 +1244,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     // If using clamped points FF we are using the HOME FIELD
     nearTrench =
-        (Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
-                ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
-                : FieldUtil.inTrench(robotPose.getTranslation()))
-            || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds());
+        !trenchOverride
+            && ((Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
+                    ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
+                    : FieldUtil.inTrench(robotPose.getTranslation()))
+                || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds()));
 
     scoringParameters =
         AimParameterUtil.getScoringParameters(

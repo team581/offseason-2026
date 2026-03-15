@@ -206,7 +206,7 @@ public class Robot extends Base581Robot {
 
     operator
         .rightBumper()
-        .onPress(robotManager::setFeedGoalRightRequest)
-        .onRelease(robotManager::setFeedGoalClosestRequest);
+        .onPress(() -> robotManager.setTrenchOverrideRequest(true))
+        .onRelease((() -> robotManager.setTrenchOverrideRequest(false)));
   }
 }
