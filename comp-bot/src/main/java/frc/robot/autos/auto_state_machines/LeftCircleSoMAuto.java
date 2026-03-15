@@ -17,7 +17,8 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
 
   public enum Markers {
     START_SHOOT_RQ,
-    CANCEL_INTAKE_RQ
+    CANCEL_INTAKE_RQ,
+    READY_TO_SHOOT_FOR_2
   }
 
   private final AutoSegment intakeAcrossMidline =
@@ -38,11 +39,12 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                       new Pose2d(9.975, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
-                      new Pose2d(11.174, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100))
+                      new Pose2d(
+                          11.174, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(1.0), Units.rotationsToRadians(2))
+          .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3.5))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
   private final AutoSegment intakeBehindHub =
@@ -64,74 +66,80 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
               AutoPoint.ofRed(new Pose2d(10.335, 3.579, Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(0.5), Units.rotationsToRadians(1.0)),
+                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(3)),
               AutoPoint.ofRed(
-                      new Pose2d(10.335, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          10.335, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(0.5), Units.rotationsToRadians(1.0))
+                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4.0),
               AutoPoint.ofRed(
                       new Pose2d(10.77, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(0.5), Units.rotationsToRadians(1))
+                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4),
               AutoPoint.ofRed(
-                      new Pose2d(11.878, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          11.878, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ)
+                  .withMarker(Markers.READY_TO_SHOOT_FOR_2)
                   .withAngularConstraints(
-                      Units.rotationsToRadians(0.5), Units.rotationsToRadians(1))
+                      Units.rotationsToRadians(2), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(1.0), Units.rotationsToRadians(2))
+          .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
               AutoPoint.ofRed(
-                      new Pose2d(13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
-                      new Pose2d(14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5))
-                  .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ),
+                  .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.709, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.0, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)))
-          .withLinearConstraints(1.0, 20)
-          .withAngularConstraints(Units.rotationsToRadians(0.5), Units.rotationsToRadians(1))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(1), Units.rotationsToRadians(1))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
   private final AutoSegment driveBackAndShootTwo =
       Trailblazer.segment(
               AutoPoint.ofRed(
-                      new Pose2d(13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          13.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
-                      new Pose2d(14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
+                      new Pose2d(
+                          14.709, FieldUtil.RED_DEPOT_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
-          .withLinearConstraints(1.0, 20)
-          .withAngularConstraints(Units.rotationsToRadians(0.5), Units.rotationsToRadians(1))
+                  .withMarker(Markers.START_SHOOT_RQ))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   private final AutoSegment driveBackToNeutralZone =
       Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.709, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.0, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
@@ -172,14 +180,14 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
         }
       }
       case SHOOT_1 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(3.5)) {
+        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(6.0)) {
           yield CircleSoMAutoState.INTAKE_BEHIND_HUB;
         } else {
           yield currentState;
         }
       }
       case INTAKE_BEHIND_HUB -> {
-        if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+        if (trailblazer.passedMarker(Markers.READY_TO_SHOOT_FOR_2)) {
           yield CircleSoMAutoState.DRIVE_BACK_2;
         } else {
           yield currentState;
@@ -193,7 +201,7 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
         }
       }
       case SHOOT_2 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(3.5)) {
+        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(6.0)) {
           yield CircleSoMAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
         } else {
           yield currentState;
@@ -235,7 +243,6 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
       }
       case DRIVE_BACK_2 -> {
         trailblazer.setActiveSegment(driveBackAndShootTwo);
-        robotManager.cancelIntakeRequest();
       }
       case SHOOT_2 -> robotManager.prepareScoreRequest();
       case DRIVE_BACK_TO_NEUTRAL_ZONE -> trailblazer.setActiveSegment(driveBackToNeutralZone);
@@ -256,7 +263,9 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
         robotManager.idleRequest();
       }
       case DRIVE_BACK_2 -> {}
-      case SHOOT_2 -> {}
+      case SHOOT_2 -> {
+        robotManager.cancelIntakeRequest();
+      }
       case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
         robotManager.idleRequest();
       }
