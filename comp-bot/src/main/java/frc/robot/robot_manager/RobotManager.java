@@ -183,7 +183,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && hubActivity.getTOFBasedHubActive()
                 && isInSafeScoringLocation
                 && !nearTrench)
-            || hubActivity.ableToForceScoreTransitionEndOfActiveHub()) {
+            || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
+                && shooter.atGoalDebounced())) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -209,7 +210,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && localization.imu.isFlatDebounced()
                     && localization.isTrustworthy()
                     && isInSafeScoringLocation)
-                || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+                || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
+                    && shooter.atGoalDebounced()))
             && !nearTrench) {
           yield currentState;
         }
