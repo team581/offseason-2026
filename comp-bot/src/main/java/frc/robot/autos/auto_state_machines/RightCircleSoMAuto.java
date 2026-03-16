@@ -26,7 +26,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(8.640, 6.653, Rotation2d.fromDegrees(-134.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-86.0)))
@@ -44,7 +44,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3.5))
+          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
   private final AutoSegment intakeBehindHub =
@@ -65,30 +65,27 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(10.335, 4.49, Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(3)),
+                  .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.335, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
+                  .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4.0),
               AutoPoint.ofRed(
                       new Pose2d(10.77, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
+                  .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.878, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.READY_TO_SHOOT_FOR_2)
-                  .withAngularConstraints(Units.rotationsToRadians(2), Units.rotationsToRadians(3))
+                  .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))
                   .withLinearConstraints(1.75, 4))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(3), Units.rotationsToRadians(3))
+          .withAngularConstraints(Units.rotationsToRadians(3.5), Units.rotationsToRadians(3.5))
           .untilFinished(new PoseErrorTolerance(0.1, 3));
 
   private final AutoSegment driveBackAndShootOne =

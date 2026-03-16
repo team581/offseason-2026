@@ -13,7 +13,7 @@ import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.CircleSoMAutoState;
 import frc.robot.robot_manager.RobotManager;
 
-public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
+public class LeftCircleAlternateAuto extends BaseImperativeAuto<CircleSoMAutoState> {
 
   public enum Markers {
     START_SHOOT_RQ,
@@ -25,12 +25,20 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.64, 1.416, Rotation2d.fromDegrees(134)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(7.983, 2.476, Rotation2d.fromDegrees(86)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                          11.0, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          11.0, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4)),
+              AutoPoint.ofRed(new Pose2d(9.449, 0.859, Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4)),
+              AutoPoint.ofRed(new Pose2d(7.983, 2.476, Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4)),
               AutoPoint.ofRed(new Pose2d(8.28, 3.594, Rotation2d.fromDegrees(50)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.759, Rotation2d.kZero))
@@ -43,7 +51,7 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(3.5), Units.rotationsToRadians(3.5))
+          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
   private final AutoSegment intakeBehindHub =
@@ -141,7 +149,7 @@ public class LeftCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
           .withAngularConstraints(Units.rotationsToRadians(1.0), Units.rotationsToRadians(2))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
-  public LeftCircleSoMAuto(RobotManager robotManager, Trailblazer trailblazer) {
+  public LeftCircleAlternateAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(CircleSoMAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
   }
 
