@@ -32,7 +32,7 @@ public class DeployConfig {
       DogLog.tunable("Deploy/HopperShuffleDuration", 1.5);
 
   public static final DoubleSubscriber HOPPER_SHUFFLING_FINISH_DURATION =
-      DogLog.tunable("Deploy/HopperShuffleFinishDuration", 2.0);
+      DogLog.tunable("Deploy/HopperShuffleFinishDuration", 0.75);
   public static final DoubleSubscriber HOPPER_SHUFFLING_IN_OUT_DURATION =
       DogLog.tunable("Deploy/HopperShuffleInOutDuration", 0.5);
 
