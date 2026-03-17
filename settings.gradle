@@ -52,4 +52,5 @@ include 'shared'
 include 'refaster-rules'
 include "turret-bot"
 include "dumper-bot"
+include "beta-bot"
 include "comp-bot"

@@ -11,7 +11,8 @@ This repository is organized as a Gradle monorepo with the following projects:
 - **`shared/`** - Shared utility library
 - **`turret-bot/`** - Turret testbed for software development
 - **`dumper-bot/`** - Triple barrel shooter alpha bot
-- **`comp-bot/`** - Competition bot code
+- **`beta-bot/`** - CA District Silicon Valley Event bot (dye rotor + turret)
+- **`comp-bot/`** - Competition dumper bot
 
 ## Building and running
 

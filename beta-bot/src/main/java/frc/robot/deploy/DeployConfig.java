@@ -1,0 +1,113 @@
+package frc.robot.deploy;
+
+import com.ctre.phoenix6.configs.CANrangeConfiguration;
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.configs.Slot2Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.GainSchedBehaviorValue;
+import com.ctre.phoenix6.signals.GainSchedKpBehaviorValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import dev.doglog.DogLog;
+import edu.wpi.first.networktables.DoubleSubscriber;
+
+public class DeployConfig {
+
+  public static final double MAX_LENGTH = 12.75;
+  public static final double MIN_LENGTH = 0;
+  public static final double HOMING_END_POSITION_INWARD = 0;
+  public static final double HOMING_END_POSITION_OUTWARD = 12.75;
+  public static final double HOMING_VOLTAGE_INWARD = -2;
+  public static final double HOMING_VOLTAGE_OUTWARD = 2;
+  public static final double HOMING_CURRENT = 30.0;
+  public static final double CAPACITY_DISTANCE_THRESHOLD = 0.0;
+  public static final double POSITION_TOLERANCE = 0.25;
+  public static DoubleSubscriber HOPPER_SHUFFLE_DURATION =
+      DogLog.tunable("Deploy/HopperShuffleDuration", 1.5);
+
+  public static final DoubleSubscriber HOPPER_SHUFFLING_FINISH_DURATION =
+      DogLog.tunable("Deploy/HopperShuffleFinishDuration", 0.75);
+  public static final DoubleSubscriber HOPPER_SHUFFLING_IN_OUT_DURATION =
+      DogLog.tunable("Deploy/HopperShuffleInOutDuration", 0.5);
+
+  public static final double NOT_UPDATING_TIMEOUT = 3.0;
+
+  private static final Slot0Configs AVERAGE_GAINS =
+      new Slot0Configs()
+          .withGainSchedBehavior(GainSchedBehaviorValue.UseSlot2)
+          .withKP(3)
+          .withKI(0)
+          .withKD(0.0)
+          .withKG(0.0)
+          .withKS(0.0)
+          .withKV(0.0)
+          .withKA(0);
+  private static final Slot2Configs GAINSCHED_GAINS =
+      new Slot2Configs()
+          .withGainSchedBehavior(GainSchedBehaviorValue.UseSlot2)
+          .withKP(1.0)
+          .withKI(0)
+          .withKD(0.0)
+          .withKG(0.0)
+          .withKS(0.0)
+          .withKV(0.0)
+          .withKA(0);
+  // Difference axis gains typically go in Slot 1
+  private static final Slot1Configs DIFFERENCE_GAINS =
+      new Slot1Configs().withKP(3).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+  public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(200.0)
+                  .withMotionMagicAcceleration(300.0))
+          .withClosedLoopGeneral(
+              new ClosedLoopGeneralConfigs()
+                  .withGainSchedErrorThreshold(1)
+                  .withGainSchedKpBehavior(GainSchedKpBehaviorValue.Discontinuous))
+          .withSlot0(AVERAGE_GAINS)
+          .withSlot1(DIFFERENCE_GAINS)
+          .withSlot2(GAINSCHED_GAINS);
+  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.CounterClockwise_Positive))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(200.0)
+                  .withMotionMagicAcceleration(300.0))
+          .withClosedLoopGeneral(
+              new ClosedLoopGeneralConfigs()
+                  .withGainSchedErrorThreshold(1)
+                  .withGainSchedKpBehavior(GainSchedKpBehaviorValue.Discontinuous))
+          .withSlot0(AVERAGE_GAINS)
+          .withSlot1(DIFFERENCE_GAINS)
+          .withSlot2(GAINSCHED_GAINS);
+  // TODO: Discuss/set CANrange config during bringup
+  public static final CANrangeConfiguration CAN_RANGE_CONFIG = new CANrangeConfiguration();
+
+  public static final double HIGH_CAPACITY_THRESHOLD = 10;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 5;
+}
