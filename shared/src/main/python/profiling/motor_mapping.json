@@ -1,0 +1,21 @@
+{
+  "3": "Front Left Drive",
+  "4": "Front Left Steer",
+  "5": "Front Right Drive",
+  "6": "Front Right Steer",
+  "7": "Back Left Drive",
+  "8": "Back Left Steer",
+  "9": "Back Right Drive",
+  "10": "Back Right Steer",
+  "15": "Shooter Left",
+  "16": "Shooter Right",
+  "17": "Turret",
+  "18": "DyeRotor",
+  "19": "Horizontal DyeRotor",
+  "20": "Vertical DyeRotor",
+  "21": "Intake Left",
+  "22": "Deploy Right",
+  "23": "Deploy Left",
+  "24": "Shooter Hood",
+  "27": "Intake Right (Comp Bot)"
+}
