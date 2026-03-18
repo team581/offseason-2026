@@ -54,6 +54,8 @@ public class Hardware {
   public final TalonFX kickerLeftMotor = new TalonFX(29, canivore);
   public final TalonFX kickerRightMotor = new TalonFX(30, canivore);
   public final TalonFX feederMotor = new TalonFX(31, canivore);
+  public final TalonFX conveyorLeftMotor = new TalonFX(32, canivore);
+  public final TalonFX conveyorRightMotor = new TalonFX(33, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =
       RobotKind.IS_COMP_BOT
