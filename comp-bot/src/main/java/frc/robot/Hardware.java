@@ -24,6 +24,7 @@ public class Hardware {
 
   public final TalonFX shooterLeftMotor = new TalonFX(15, rio);
   public final TalonFX shooterRightMotor = new TalonFX(16, rio);
+  public final TalonFX shooterMiddleMotor = new TalonFX(40, rio);
   public final TalonFX turretMotor = new TalonFX(17, canivore);
   public final TalonFX rotorMotor = new TalonFX(18, canivore);
   public final TalonFX horizontalMotor = new TalonFX(19, rio);
