@@ -21,6 +21,7 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.config.RobotKind;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
+import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
@@ -82,6 +83,7 @@ public class Robot extends Base581Robot {
   private final GenericClimber climber =
       RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
+  private final Feeder feeder = new Feeder(hardware.feederMotor);
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();

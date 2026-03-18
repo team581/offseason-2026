@@ -26,7 +26,8 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   TURRET(0),
   RUMBLE_CONTROLLER(0),
   CLIMBER(0),
-  KICKER(0);
+  KICKER(0),
+  FEEDER(0);
 
   public final int value;
 
