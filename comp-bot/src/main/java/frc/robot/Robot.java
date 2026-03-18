@@ -65,7 +65,8 @@ public class Robot extends Base581Robot {
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
 
   private final Shooter shooter =
-      new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
+      new Shooter(
+          hardware.shooterLeftMotor, hardware.shooterRightMotor, hardware.shooterMiddleMotor);
   private final GenericIntake intake =
       RobotKind.IS_COMP_BOT
           ? new IntakeTwoMotor(hardware.intakeLeftMotor, hardware.intakeRightMotor)
