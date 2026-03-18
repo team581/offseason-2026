@@ -7,16 +7,13 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.imu.Imu;
-import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
-import java.util.Optional;
 import java.util.OptionalDouble;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
@@ -37,7 +34,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private final Limelight groundLimelight;
 
   private OptionalTagResult turretResult = new OptionalTagResult();
-  private OptionalTagResult adjustedTurretResult = new OptionalTagResult();
   private OptionalTagResult backResult = new OptionalTagResult();
 
   private double robotHeading;
@@ -78,8 +74,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     turretResult = turretLimelight.getTagResult();
     backResult = backLimelight.getTagResult();
 
-    adjustedTurretResult = getAdjustedTurretLimelightTagResult(turretResult);
-
     if (turretResult.isPresent() || backResult.isPresent()) {
       hasSeenTag = true;
       seeingTag = true;
@@ -104,54 +98,12 @@ public class Vision extends StateMachineSubsystem<VisionState> {
         0.0);
   }
 
-  private Optional<Double> getAngleAtTimestamp(double timestamp) {
-    return turretBuffer.getSample(timestamp);
-  }
-
   public void setEstimatedPoseAngle(double robotHeading) {
     this.robotHeading = robotHeading;
   }
 
   public OptionalTagResult getAdjustedTurretLimelighTagResult() {
-    return adjustedTurretResult;
-  }
-
-  private OptionalTagResult getAdjustedTurretLimelightTagResult(OptionalTagResult turretResult) {
-    if (turretResult.isEmpty()) {
-      return adjustedTurretResult.empty();
-    }
-
-    var turretLimelightResult = turretResult.orElseThrow();
-
-    var mT1Pose = turretLimelightResult.pose();
-    var mT1Timestamp = turretLimelightResult.timestamp();
-    var cameraToTurretTransform = VisionConfig.TURRET_TO_CAMERA.inverse();
-
-    var fieldToTurretPose = mT1Pose.plus(cameraToTurretTransform);
-
-    // Look up the turret angle at the specific image timestamp
-    var robotToTurretObservation = getAngleAtTimestamp(mT1Timestamp);
-    if (robotToTurretObservation.isEmpty()) {
-      DogLog.logFault("Could not get turret angle at timestamp");
-      return adjustedTurretResult.empty();
-    }
-    DogLog.log("Vision/TurretObservation", robotToTurretObservation.orElseThrow());
-    DogLog.clearFault("Could not get turret angle at timestamp");
-
-    // Create transform representing the rotation from Turret back to Robot
-    // If the turret is at +90 degrees, we rotate -90 degrees to get back to the robot front.
-    var turretToRobot =
-        MathHelpers.transform2dFromRotation(
-            Rotation2d.fromDegrees(-robotToTurretObservation.orElseThrow()));
-
-    // Add this rotation to the Turret's Field Pose to finally get the Robot's Field Pose
-    var fieldToRobotEstimate = fieldToTurretPose.plus(turretToRobot);
-
-    fieldToRobotEstimate = fieldToRobotEstimate.plus(TurretConfig.TURRET_TO_ROBOT.inverse());
-
-    DogLog.log("Vision/AdjustedTurretPose", fieldToRobotEstimate);
-    return adjustedTurretResult.update(
-        fieldToRobotEstimate, mT1Timestamp, turretLimelightResult.standardDevs());
+    return new OptionalTagResult().empty();
   }
 
   public OptionalTagResult getBackLimelightTagResult() {

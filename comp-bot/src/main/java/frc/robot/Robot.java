@@ -36,7 +36,6 @@ import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
-import frc.robot.turret.Turret;
 import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
@@ -81,7 +80,6 @@ public class Robot extends Base581Robot {
   private final Vision vision = new Vision(imu, turretLimelight, backLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
   private final GenericClimber climber =
       RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
@@ -99,7 +97,6 @@ public class Robot extends Base581Robot {
           swerve,
           shooter,
           dyeRotor,
-          turret,
           intake,
           deploy,
           vision,

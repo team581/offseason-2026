@@ -9,7 +9,6 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.shooter_hood.ShooterHoodConfig;
-import frc.robot.turret.TurretConfig;
 import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.VisionConfig;
 
@@ -68,7 +67,7 @@ public final class MechanismVisualizer {
             // Robot center to turret pivot + turret rotation
             .plus(
                 new Transform3d(
-                    new Translation3d(TurretConfig.TURRET_TO_ROBOT.getX(), 0, 0),
+                    new Translation3d(0.0, 0, 0),
                     new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees))))
             // Turret pivot to camera
             .plus(

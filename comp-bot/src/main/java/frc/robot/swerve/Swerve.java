@@ -35,7 +35,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
-import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
@@ -77,8 +76,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.05)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withRotationalDeadband(0.05);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -92,8 +90,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -107,15 +104,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -128,8 +123,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -142,8 +138,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private final SwerveRequest.SwerveDriveBrake xRequest = new SwerveRequest.SwerveDriveBrake();
 
