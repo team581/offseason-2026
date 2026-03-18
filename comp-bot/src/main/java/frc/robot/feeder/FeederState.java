@@ -12,7 +12,7 @@ public enum FeederState {
 
   FeederState(double voltage) {
     this.voltage = voltage;
-    this.tunableVoltage = DogLog.tunable("Kicker/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Feeder/" + this, voltage);
   }
 
   public double getVoltage() {
