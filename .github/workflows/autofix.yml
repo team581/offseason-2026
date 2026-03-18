@@ -35,7 +35,7 @@ jobs:
       - name: Fix Python lint issues with Ruff
         uses: astral-sh/ruff-action@v3
         with:
-          args: "check --fix"
+          args: "check --fix --unsafe-fixes"
         continue-on-error: true
 
       - name: Format Python with Ruff
