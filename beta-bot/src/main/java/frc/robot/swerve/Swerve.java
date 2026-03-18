@@ -145,6 +145,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
 
+  private final SwerveRequest.SwerveDriveBrake xRequest = new SwerveRequest.SwerveDriveBrake();
+
   private final HealthManager health;
 
   private double lastSimTime;
@@ -168,6 +170,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private Rotation2d cornerSnapAngle = Rotation2d.kZero;
   private Rotation2d wallSnapAngle = Rotation2d.kZero;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
+  private boolean ableToXSwerve = false;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -241,6 +244,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     fieldRelativeSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
+
+    ableToXSwerve =
+        isAimed() &&(getState() == SwerveState.MANUAL_RATE_LIMITED
+                || getState() == SwerveState.TURRET_STUCK_SCORE)
+            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     // Make sure right stick Y is either 50% up or down
     intakeAssistControllerInput = Math.abs(teleopDriveSource.getRightY()) > 0.5;
@@ -368,6 +377,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     return request.withTargetDirection(targetDirection);
   }
 
+  public boolean isAimed() {
+return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 2.0, -180, 180);
+  }
+
   @Override
   public void whileInState(SwerveState currentState) {
     drivetrain.setOperatorPerspectiveForward(
@@ -376,7 +389,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     switch (currentState) {
       case MANUAL, MANUAL_RATE_LIMITED -> {
         var speeds = driveSource.getRequestedSpeeds();
-        if (ableToTrenchAssist) {
+        if (ableToXSwerve) {
+          drivetrain.setControl(xRequest);
+          DogLog.timestamp("Swerve/XSwerveActive");
+        } else if (ableToTrenchAssist) {
           DogLog.timestamp("Swerve/TrenchAssistActive");
           var trenchAssistSpeeds =
               SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
@@ -468,7 +484,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       case TURRET_STUCK_SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
-        if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+        if (ableToXSwerve) {
+          drivetrain.setControl(xRequest);
+          DogLog.timestamp("Swerve/XSwerveActive");
+        } else if (driveSource.getDriveSourceType()
+            == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                   drivePerspectiveIntakeSnapsOpenLoop
