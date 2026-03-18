@@ -19,8 +19,10 @@ import frc.robot.climber.StubClimber;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.config.RobotKind;
+import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
+import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
@@ -28,6 +30,7 @@ import frc.robot.imu.Imu;
 import frc.robot.intake.GenericIntake;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeTwoMotor;
+import frc.robot.kicker.Kicker;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
@@ -81,6 +84,10 @@ public class Robot extends Base581Robot {
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
   private final GenericClimber climber =
       RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
+  private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
+  private final Feeder feeder = new Feeder(hardware.feederMotor);
+  private final Conveyor conveyor =
+      new Conveyor(hardware.conveyorLeftMotor, hardware.conveyorRightMotor);
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
