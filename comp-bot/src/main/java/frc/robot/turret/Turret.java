@@ -73,20 +73,14 @@ public class Turret extends StateMachineSubsystem<TurretState> {
 
   @Override
   protected void collectInputs() {
-    currentAngle =
-        getState() == TurretState.STUCK
-            ? stuckAngle
-            : Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
+    currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
 
     velocity = Units.rotationsToDegrees(motor.getVelocity().getValueAsDouble());
     voltage = motor.getMotorVoltage().getValueAsDouble();
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
 
     // Predict the turret's current angle to account for sensor latency
-    double latencyCompensatedAngle =
-        getState() == TurretState.STUCK
-            ? stuckAngle
-            : Units.rotationsToDegrees(
+    double latencyCompensatedAngle = Units.rotationsToDegrees(
                 BaseStatusSignal.getLatencyCompensatedValueAsDouble(
                     motor.getPosition(), motor.getVelocity()));
 
@@ -112,7 +106,12 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   @Override
   protected void whileInState(TurretState currentState) {
     switch (currentState) {
-      case UNHOMED, STUCK -> motor.disable();
+      case UNHOMED -> motor.disable();
+      case STUCK -> {
+        motor.setControl(
+            positionRequest.withPosition(
+                Units.degreesToRotations(clamp(TurretConfig.FAUX_DUMPER_ANGLE))));
+      }
       case SCORE, FEED, CLIMB ->
           motor.setControl(
               positionRequest
@@ -265,15 +264,7 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     setStateFromRequest(TurretState.STUCK);
   }
 
-  public void setStuckAngle(double stuckAngle) {
-    this.stuckAngle = stuckAngle;
-    motor.setPosition(Units.degreesToRotations(stuckAngle));
-  }
-
   public double getAngle() {
-    if (getState() == TurretState.STUCK) {
-      return stuckAngle;
-    }
     return currentAngle;
   }
 
