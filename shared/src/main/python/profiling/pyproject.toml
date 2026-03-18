@@ -1,0 +1,15 @@
+[project]
+name = "profiling"
+version = "0.0.0"
+description = "Tools for profiling robot performance from log files"
+requires-python = ">=3.14"
+dependencies = ["matplotlib", "pandas", "robotpy-wpiutil"]
+
+[dependency-groups]
+dev = ["ty"]
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["**/*.py"]

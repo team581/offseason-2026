@@ -6,4 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 
 [tool.uv.workspace]
-members = ["shared/src/main/python/snap_scripts"]
+members = [
+  "shared/src/main/python/snap_scripts",
+  "shared/src/main/python/profiling",
+]
