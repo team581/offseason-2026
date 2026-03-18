@@ -43,12 +43,12 @@ public class Kicker extends StateMachineSubsystem<KickerState> {
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Intake/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Intake/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Intake/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Intake/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Intake/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Intake/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Intake/Voltage", getState().getVoltage());
+    DogLog.log("Kicker/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Kicker/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Kicker/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Kicker/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Kicker/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Kicker/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Kicker/Voltage", getState().getVoltage());
   }
 }

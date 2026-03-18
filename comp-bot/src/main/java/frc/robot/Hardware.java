@@ -24,6 +24,7 @@ public class Hardware {
 
   public final TalonFX shooterLeftMotor = new TalonFX(15, rio);
   public final TalonFX shooterRightMotor = new TalonFX(16, rio);
+  public final TalonFX shooterMiddleMotor = new TalonFX(40, rio);
   public final TalonFX turretMotor = new TalonFX(17, canivore);
   public final TalonFX rotorMotor = new TalonFX(18, canivore);
   public final TalonFX horizontalMotor = new TalonFX(19, rio);
@@ -53,6 +54,9 @@ public class Hardware {
 
   public final TalonFX kickerLeftMotor = new TalonFX(29, canivore);
   public final TalonFX kickerRightMotor = new TalonFX(30, canivore);
+  public final TalonFX feederMotor = new TalonFX(31, canivore);
+  public final TalonFX conveyorLeftMotor = new TalonFX(32, canivore);
+  public final TalonFX conveyorRightMotor = new TalonFX(33, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =
       RobotKind.IS_COMP_BOT

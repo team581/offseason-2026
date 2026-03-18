@@ -1231,9 +1231,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     vision.setEstimatedPoseAngle(robotRotation);
 
     if (!DSOptions.USE_TURRET.getAsBoolean()) {
-      vision.calibrateTurretRequest();
       turret.stuckRequest();
-      turret.setStuckAngle(vision.getCalibratedTurretAngle().orElse(0.0));
     }
 
     if (health.isLocalizationHealthy()) {

@@ -3,7 +3,6 @@ package frc.robot.shooter;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
-import com.team581.math.MathHelpers;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -30,6 +29,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
+  public final TalonFX middleMotor;
 
   private final VelocityVoltage voltageRequest =
       new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
@@ -42,9 +42,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double feedingRpm = 0;
   private double leftMotorRpm = 0;
   private double rightMotorRpm = 0;
+  private double middleMotorRpm = 0;
 
   private double leftStatorCurrent = 0.0;
   private double rightStatorCurrent = 0.0;
+  private double middleStatorCurrent = 0.0;
 
   private boolean atGoal = false;
   private boolean atGoalDebounced = false;
@@ -52,17 +54,20 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   // Debounce for delay between shots at 15 bps
   private final Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
 
-  public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
+  public Shooter(TalonFX leftMotor, TalonFX rightMotor, TalonFX middleMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
 
     leftMotor.getConfigurator().apply(ShooterConfig.LEFT_MOTOR_CONFIGS);
     rightMotor.getConfigurator().apply(ShooterConfig.RIGHT_MOTOR_CONFIG);
+    middleMotor.getConfigurator().apply(ShooterConfig.MIDDLE_MOTOR_CONFIG);
 
     TunablePid.register("Shooter/LeftShooter", leftMotor, ShooterConfig.LEFT_MOTOR_CONFIGS);
     TunablePid.register("Shooter/RightShooter", rightMotor, ShooterConfig.RIGHT_MOTOR_CONFIG);
+    TunablePid.register("Shooter/MiddleShooter", middleMotor, ShooterConfig.MIDDLE_MOTOR_CONFIG);
 
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
+    this.middleMotor = middleMotor;
   }
 
   public void scoreRequest(double distance) {
@@ -88,22 +93,27 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   protected void whileInState(ShooterState state) {
     DogLog.log("Shooter/Left/RPM", leftMotorRpm);
     DogLog.log("Shooter/Right/RPM", rightMotorRpm);
+    DogLog.log("Shooter/Middle/RPM", middleMotorRpm);
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
     DogLog.log("Shooter/Right/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/Left/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/Middle/Voltage", middleMotor.getMotorVoltage().getValueAsDouble());
 
     DogLog.log("Shooter/Left/StatorCurrent", leftStatorCurrent);
     DogLog.log("Shooter/Right/StatorCurrent", rightStatorCurrent);
+    DogLog.log("Shooter/Middle/StatorCurrent", middleStatorCurrent);
     DogLog.log("Shooter/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Shooter/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Shooter/Middle/SupplyCurrent", middleMotor.getSupplyCurrent().getValueAsDouble());
 
     switch (state) {
       case IDLE -> {
         var setpoint = ShooterConfig.IDLE_RPM / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
         rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+        middleMotor.setControl(voltageRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
@@ -111,6 +121,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         var setpoint = shootingRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
         rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+        middleMotor.setControl(voltageRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
@@ -118,6 +129,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         var setpoint = climbScoreRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
         rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+        middleMotor.setControl(voltageRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", climbScoreRpm);
       }
@@ -125,6 +137,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
         var setpoint = feedingRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
         rightMotor.setControl(voltageRequest.withVelocity(setpoint));
+        middleMotor.setControl(voltageRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
@@ -155,9 +168,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
     rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
+    middleStatorCurrent = middleMotor.getStatorCurrent().getValueAsDouble();
 
     leftMotorRpm = leftMotor.getVelocity().getValueAsDouble() * 60.0;
     rightMotorRpm = rightMotor.getVelocity().getValueAsDouble() * 60.0;
+    middleMotorRpm = middleMotor.getVelocity().getValueAsDouble() * 60.0;
 
     atGoal = calculateAtGoal();
     atGoalDebounced = atGoalDebouncer.calculate(atGoal);
@@ -206,14 +221,17 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
       case IDLE -> false;
       case SCORE ->
           MathUtil.isNear(leftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
+              && MathUtil.isNear(rightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
+              && MathUtil.isNear(middleMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
       case CLIMB_SCORE ->
           MathUtil.isNear(leftMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE);
+              && MathUtil.isNear(rightMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE)
+              && MathUtil.isNear(middleMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE);
 
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
-              && MathUtil.isNear(rightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
+              && MathUtil.isNear(rightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
+              && MathUtil.isNear(middleMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE);
 
       default -> true;
     };
@@ -227,14 +245,15 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
             (mechanism) ->
                 mechanism
                     .addMotor(leftMotor, ChassisReference.CounterClockwise_Positive)
-                    .addMotor(rightMotor, ChassisReference.Clockwise_Positive));
+                    .addMotor(rightMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(middleMotor, ChassisReference.Clockwise_Positive));
 
     shooterSimulation.update();
   }
 
   public boolean currentDetectsGp() {
     return ShooterConfig.GP_DETECT_CURRENT_THRESHOLD
-        <= MathHelpers.average(rightStatorCurrent, leftStatorCurrent);
+        <= (rightStatorCurrent + leftStatorCurrent + middleStatorCurrent) / 3;
   }
 
   public double getScoreTimeOfFlight(double distance) {

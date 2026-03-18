@@ -31,7 +31,7 @@ public class ShooterConfig {
 
   public static final double GP_DETECT_CURRENT_THRESHOLD = 70.0;
 
-  public static final double IDLE_RPM = 400;
+  public static final double IDLE_RPM = 0;
 
   public static final double PIT_FUNCTIONALITY_RPM = 800;
 
@@ -137,6 +137,35 @@ public class ShooterConfig {
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0.55 : 0.7).withKV(0.127)
+              // .withKD(0.00015)
+              )
+          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
+          .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+                  .withPeakForwardTorqueCurrent(200)
+                  .withPeakReverseTorqueCurrent(0));
+
+  public static final TalonFXConfiguration MIDDLE_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
+                  .withMotionMagicAcceleration(4000.0 / 60.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.CounterClockwise_Positive))
+          .withSlot0(
+              new Slot0Configs()
+                  .withKP(RobotKind.IS_COMP_BOT ? 0.4 : 0.7)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0.12 : 0.127)
               // .withKD(0.00015)
               )
           .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
