@@ -51,6 +51,9 @@ public class Hardware {
 
   public final CANrange hopperCANRange = new CANrange(28, canivore);
 
+  public final TalonFX kickerLeftMotor = new TalonFX(29, canivore);
+  public final TalonFX kickerRightMotor = new TalonFX(30, canivore);
+
   public final TunerSwerveDrivetrain drivetrain =
       RobotKind.IS_COMP_BOT
           ? new TunerSwerveDrivetrain(

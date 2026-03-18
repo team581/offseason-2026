@@ -28,6 +28,7 @@ import frc.robot.imu.Imu;
 import frc.robot.intake.GenericIntake;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeTwoMotor;
+import frc.robot.kicker.Kicker;
 import frc.robot.localization.Localization;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
@@ -80,6 +81,7 @@ public class Robot extends Base581Robot {
   private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
   private final GenericClimber climber =
       RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
+  private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
