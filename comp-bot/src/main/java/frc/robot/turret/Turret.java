@@ -80,9 +80,10 @@ public class Turret extends StateMachineSubsystem<TurretState> {
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
 
     // Predict the turret's current angle to account for sensor latency
-    double latencyCompensatedAngle = Units.rotationsToDegrees(
-                BaseStatusSignal.getLatencyCompensatedValueAsDouble(
-                    motor.getPosition(), motor.getVelocity()));
+    double latencyCompensatedAngle =
+        Units.rotationsToDegrees(
+            BaseStatusSignal.getLatencyCompensatedValueAsDouble(
+                motor.getPosition(), motor.getVelocity()));
 
     // Add the predicted angle to the vision buffer at the current timestamp
     vision.addTurretObservation(Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
