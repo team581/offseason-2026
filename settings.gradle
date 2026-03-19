@@ -35,7 +35,7 @@ gitHooks { extension ->
 	extension.with {
 		preCommit { context ->
 			context.with {
-				tasks('spotlessApply', [] as String[], true)
+				from(file('scripts/pre-commit.sh'))
 			}
 		}
 		createHooks(true)
