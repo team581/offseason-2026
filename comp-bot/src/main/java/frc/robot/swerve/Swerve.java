@@ -484,12 +484,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+              if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5){
+ drivetrain.setControl(
+              driverPerspectiveOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withRotationalRate(speeds.omegaRadiansPerSecond));
+              } else {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                   drivePerspectiveIntakeSnapsOpenLoop
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond),
-                  Rotation2d.fromDegrees(turretStuckAimingAngle)));
+                  Rotation2d.fromDegrees(turretStuckAimingAngle)));}
         }
       }
       case CLIMB_ASSIST -> {

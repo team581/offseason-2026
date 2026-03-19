@@ -162,7 +162,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToTrenchAssist = false;
   private boolean ableToWallSnap = false;
   private boolean intakeAssistControllerInput = false;
-  private boolean ableToSnakeMode = false;
   private boolean previouslyInSnakeMode = false;
   private boolean inWallSnapCorner = false;
   private boolean previouslyInWallSnapCorner = false;
@@ -248,7 +247,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     ableToXSwerve =
         isAimed() &&(getState() == SwerveState.MANUAL_RATE_LIMITED
                 || getState() == SwerveState.TURRET_STUCK_SCORE)
-            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
+            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5 && driveSource.getRequestedSpeeds().omegaRadiansPerSecond < 1e-5;
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     // Make sure right stick Y is either 50% up or down
@@ -271,10 +270,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             && intakeAssistControllerInput
             && SwerveAssist.ableToWallSnap(
                 drivetrainState.Pose, fieldRelativeSpeeds, enteredWallSnapCorner);
-    ableToSnakeMode =
-        driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-            && intakeAssistControllerInput
-            && SwerveAssist.ableToSnakeMode(fieldRelativeSpeeds);
+
 
     // Wall snap logic if we are in a corner
     inWallSnapCorner =
@@ -308,17 +304,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0));
 
     // Reset the filtered drive direction when first entering snake mode so it doesn't lag behind
-    if (ableToSnakeMode && !previouslyInSnakeMode) {
-      filteredLastDriveDirection = currentDriveDirection;
-    } else {
-      filteredLastDriveDirection =
-          filteredLastDriveDirection.interpolate(
-              currentDriveDirection,
-              (SNAKE_MODE_AGRESSIVENESS.get()
-                      * MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()))
-                  / teleopDriveSource.maxLinearVelocity);
-    }
-    previouslyInSnakeMode = ableToSnakeMode;
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     if (getState() == SwerveState.INTAKE_RATE_LIMITED
@@ -378,7 +363,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public boolean isAimed() {
-return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 2.0, -180, 180);
+return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 8.0, -180, 180);
   }
 
   @Override
@@ -452,22 +437,6 @@ return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation(
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond),
                   wallSnapAngle));
-        } else if (ableToSnakeMode) {
-          DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
-          var swerveSnapsRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? drivePerspectiveIntakeSnapsOpenLoop
-                  : fieldCentricIntakeSnapsClosedLoop;
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  swerveSnapsRequest
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond)
-                      .withMaxAbsRotationalRate(
-                          Units.rotationsToRadians(
-                              maxAngularVelocityRateLimiter.calculate(
-                                  MAX_ANGULAR_RATE_SHOOTING.get()))),
-                  filteredLastDriveDirection));
         } else {
           var swerveRequest =
               driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
@@ -481,7 +450,7 @@ return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation(
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case TURRET_STUCK_SCORE -> {
+        case TURRET_STUCK_SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
         if (ableToXSwerve) {
@@ -489,12 +458,19 @@ return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation(
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+              if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5){
+ drivetrain.setControl(
+              driverPerspectiveOpenLoop
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withRotationalRate(speeds.omegaRadiansPerSecond));
+              } else {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                   drivePerspectiveIntakeSnapsOpenLoop
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond),
-                  Rotation2d.fromDegrees(turretStuckAimingAngle)));
+                  Rotation2d.fromDegrees(turretStuckAimingAngle)));}
         }
       }
       case CLIMB_ASSIST -> {

@@ -41,7 +41,7 @@ public class XboxControllerDriveSource implements DriveSource {
 
     var translationMagnitude = ControllerHelpers.getJoystickMagnitude(leftX, leftY, 2);
     var rotationMagnitude =
-        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 5), rightX);
+        Math.copySign(ControllerHelpers.getJoystickMagnitude(rightX, 0, 1.5), rightX);
 
     return ControllerHelpers.joystickInputsToChassisSpeeds(
         translationMagnitude,
