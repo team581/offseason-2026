@@ -1,11 +1,12 @@
 package frc.robot.conveyor;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.mechanisms.PowerManaged;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Conveyor extends StateMachineSubsystem<ConveyorState> {
+public class Conveyor extends StateMachineSubsystem<ConveyorState> implements PowerManaged {
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
@@ -50,5 +51,19 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> {
     DogLog.log("Conveyor/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Conveyor/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Conveyor/Voltage", getState().getVoltage());
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    leftMotor
+        .getConfigurator()
+        .apply(
+            ConveyorConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            ConveyorConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 }

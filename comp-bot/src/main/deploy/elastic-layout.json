@@ -157,19 +157,6 @@
               "x": 0,
               "width": 128,
               "y": 0,
-              "title": "Turret",
-              "type": "Toggle Switch",
-              "properties": {
-                "period": 0.06,
-                "data_type": "boolean",
-                "topic": "/DSOptions/UseTurret"
-              },
-              "height": 128
-            },
-            {
-              "x": 0,
-              "width": 128,
-              "y": 0,
               "title": "DefaultWonAuto",
               "type": "Toggle Switch",
               "properties": {
@@ -806,23 +793,6 @@
                   "true_icon": "None"
                 },
                 "height": 128
-              },
-              {
-                "x": 0,
-                "width": 128,
-                "y": 0,
-                "title": "TurretAtGoal",
-                "type": "Boolean Box",
-                "properties": {
-                  "true_color": 4283215696,
-                  "period": 0.06,
-                  "false_color": 4294198070,
-                  "false_icon": "None",
-                  "data_type": "boolean",
-                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/TurretAtGoal",
-                  "true_icon": "None"
-                },
-                "height": 128
               }
             ],
             "x": 0,
@@ -899,23 +869,6 @@
                   "false_icon": "None",
                   "data_type": "boolean",
                   "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal",
-                  "true_icon": "None"
-                },
-                "height": 128
-              },
-              {
-                "x": 0,
-                "width": 128,
-                "y": 0,
-                "title": "TurretAtGoal",
-                "type": "Boolean Box",
-                "properties": {
-                  "true_color": 4283215696,
-                  "period": 0.06,
-                  "false_color": 4294198070,
-                  "false_icon": "None",
-                  "data_type": "boolean",
-                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/TurretAtGoal",
                   "true_icon": "None"
                 },
                 "height": 128

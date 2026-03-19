@@ -35,7 +35,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
-import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
@@ -77,8 +76,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.05)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withRotationalDeadband(0.05);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -92,8 +90,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -107,15 +104,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -128,8 +123,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -142,8 +138,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private final SwerveRequest.SwerveDriveBrake xRequest = new SwerveRequest.SwerveDriveBrake();
 
@@ -156,7 +153,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
 
-  private double turretStuckAimingAngle = 0.0;
+  private double scoringAngle = 0.0;
 
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
@@ -232,9 +229,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     setStateFromRequest(SwerveState.INTAKE_RATE_LIMITED);
   }
 
-  public void turretStuckAimRequest(double snapAngle) {
-    turretStuckAimingAngle = snapAngle;
-    setStateFromRequest(SwerveState.TURRET_STUCK_SCORE);
+  public void scoreRequest(double snapAngle) {
+    scoringAngle = snapAngle;
+    setStateFromRequest(SwerveState.SCORE);
   }
 
   @Override
@@ -245,8 +242,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
     ableToXSwerve =
-        (getState() == SwerveState.MANUAL_RATE_LIMITED
-                || getState() == SwerveState.TURRET_STUCK_SCORE)
+        (getState() == SwerveState.MANUAL_RATE_LIMITED || getState() == SwerveState.SCORE)
             && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
@@ -476,7 +472,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case TURRET_STUCK_SCORE -> {
+      case SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
         if (ableToXSwerve) {
@@ -484,20 +480,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
-            drivetrain.setControl(
-                driverPerspectiveOpenLoop
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withRotationalRate(speeds.omegaRadiansPerSecond));
-          } else {
-            drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                    drivePerspectiveIntakeSnapsOpenLoop
-                        .withVelocityX(speeds.vxMetersPerSecond)
-                        .withVelocityY(speeds.vyMetersPerSecond),
-                    Rotation2d.fromDegrees(turretStuckAimingAngle)));
-          }
+          drivetrain.setControl(
+              withFieldRelativeTargetDirection(
+                  drivePerspectiveIntakeSnapsOpenLoop
+                      .withVelocityX(speeds.vxMetersPerSecond)
+                      .withVelocityY(speeds.vyMetersPerSecond),
+                  Rotation2d.fromDegrees(scoringAngle)));
         }
       }
       case CLIMB_ASSIST -> {
@@ -558,7 +546,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   @Override
   protected void afterTransition(SwerveState newState) {
     switch (newState) {
-      case MANUAL, MANUAL_RATE_LIMITED, TURRET_STUCK_SCORE, CLIMB_ASSIST -> {}
+      case MANUAL, MANUAL_RATE_LIMITED, SCORE, CLIMB_ASSIST -> {}
       // When entering intake states we shouldnt be able to wall snap corner transition
       case INTAKE, INTAKE_RATE_LIMITED -> enteredWallSnapCorner = false;
     }

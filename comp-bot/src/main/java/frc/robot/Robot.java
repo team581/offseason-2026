@@ -32,11 +32,11 @@ import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeTwoMotor;
 import frc.robot.kicker.Kicker;
 import frc.robot.localization.Localization;
+import frc.robot.power_manager.PowerManager;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
-import frc.robot.turret.Turret;
 import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
@@ -53,14 +53,15 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(4.0, 0, 0)));
 
-  private final Limelight turretLimelight =
-      new Limelight("turret", LimelightState.TAGS, CameraConfigs.TURRET);
-  private final Limelight backLimelight =
-      new Limelight("backl", LimelightState.TAGS, CameraConfigs.BACK);
+  private final Limelight frontLimelight =
+      new Limelight("front", LimelightState.TAGS, CameraConfigs.FRONT);
+  private final Limelight leftLimelight =
+      new Limelight("left", LimelightState.TAGS, CameraConfigs.LEFT);
+  private final Limelight rightLimelight =
+      new Limelight("right", LimelightState.TAGS, CameraConfigs.RIGHT);
   private final Limelight groundLimelight =
       new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
-  private final HealthManager health =
-      new HealthManager(turretLimelight, backLimelight, groundLimelight);
+  private final HealthManager health = new HealthManager(frontLimelight, groundLimelight);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Imu imu = new Imu(swerve.drivetrain);
@@ -78,10 +79,10 @@ public class Robot extends Base581Robot {
       new Deploy(hardware.deployDifferentialMechanism, hardware.hopperCANRange);
   private final DyeRotor dyeRotor =
       new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
-  private final Vision vision = new Vision(imu, turretLimelight, backLimelight, groundLimelight);
+  private final Vision vision =
+      new Vision(imu, frontLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
   private final GenericClimber climber =
       RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
@@ -92,6 +93,9 @@ public class Robot extends Base581Robot {
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
 
+  private final PowerManager powerManager =
+      new PowerManager(shooter, intake, deploy, shooterHood, kicker, feeder, conveyor);
+
   private final RobotManager robotManager =
       new RobotManager(
           shooterHood,
@@ -99,7 +103,6 @@ public class Robot extends Base581Robot {
           swerve,
           shooter,
           dyeRotor,
-          turret,
           intake,
           deploy,
           vision,
@@ -109,7 +112,8 @@ public class Robot extends Base581Robot {
           trailblazer,
           climber,
           clusterMap,
-          hardware);
+          hardware,
+          powerManager);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);

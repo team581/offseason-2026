@@ -7,6 +7,7 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   AUTOS(30),
   ROBOT_MANAGER(29),
   HEALTH(28),
+  POWER_MANAGER(28),
 
   // 10-19 is for sensor subsystems
   LOCALIZATION(11),
@@ -23,7 +24,6 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   SHOOTER_HOOD(0),
   INTAKE(0),
   SHOOTER(0),
-  TURRET(0),
   RUMBLE_CONTROLLER(0),
   CLIMBER(0),
   KICKER(0),

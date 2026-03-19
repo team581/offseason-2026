@@ -47,7 +47,7 @@ def convert_hoot_to_wpilog(hoot_path, force_convert):
     try:
         ps_command = f'$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User"); owlet "{hoot_path}" "{wpilog_path}" -f wpilog'
 
-        result = subprocess.run(
+        subprocess.run(
             ["powershell", "-Command", ps_command],
             check=True,
             capture_output=True,

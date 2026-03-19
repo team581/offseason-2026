@@ -1,11 +1,12 @@
 package frc.robot.kicker;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.mechanisms.PowerManaged;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Kicker extends StateMachineSubsystem<KickerState> {
+public class Kicker extends StateMachineSubsystem<KickerState> implements PowerManaged {
 
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
@@ -50,5 +51,19 @@ public class Kicker extends StateMachineSubsystem<KickerState> {
     DogLog.log("Kicker/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Kicker/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Kicker/Voltage", getState().getVoltage());
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    leftMotor
+        .getConfigurator()
+        .apply(
+            KickerConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            KickerConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 }
