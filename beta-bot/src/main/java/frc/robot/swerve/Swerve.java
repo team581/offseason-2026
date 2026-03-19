@@ -245,9 +245,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
     ableToXSwerve =
-        isAimed() &&(getState() == SwerveState.MANUAL_RATE_LIMITED
+        isAimed()
+            && (getState() == SwerveState.MANUAL_RATE_LIMITED
                 || getState() == SwerveState.TURRET_STUCK_SCORE)
-            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5 && driveSource.getRequestedSpeeds().omegaRadiansPerSecond < 1e-5;
+            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5
+            && driveSource.getRequestedSpeeds().omegaRadiansPerSecond < 1e-5;
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     // Make sure right stick Y is either 50% up or down
@@ -270,7 +272,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             && intakeAssistControllerInput
             && SwerveAssist.ableToWallSnap(
                 drivetrainState.Pose, fieldRelativeSpeeds, enteredWallSnapCorner);
-
 
     // Wall snap logic if we are in a corner
     inWallSnapCorner =
@@ -363,7 +364,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   }
 
   public boolean isAimed() {
-return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 8.0, -180, 180);
+    return MathUtil.isNear(
+        turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 8.0, -180, 180);
   }
 
   @Override
@@ -450,7 +452,7 @@ return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation(
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-        case TURRET_STUCK_SCORE -> {
+      case TURRET_STUCK_SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
         if (ableToXSwerve) {
@@ -458,19 +460,20 @@ return MathUtil.isNear(turretStuckAimingAngle, drivetrainState.Pose.getRotation(
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-              if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5){
- drivetrain.setControl(
-              driverPerspectiveOpenLoop
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withRotationalRate(speeds.omegaRadiansPerSecond));
-              } else {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveIntakeSnapsOpenLoop
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  Rotation2d.fromDegrees(turretStuckAimingAngle)));}
+          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+            drivetrain.setControl(
+                driverPerspectiveOpenLoop
+                    .withVelocityX(speeds.vxMetersPerSecond)
+                    .withVelocityY(speeds.vyMetersPerSecond)
+                    .withRotationalRate(speeds.omegaRadiansPerSecond));
+          } else {
+            drivetrain.setControl(
+                withFieldRelativeTargetDirection(
+                    drivePerspectiveIntakeSnapsOpenLoop
+                        .withVelocityX(speeds.vxMetersPerSecond)
+                        .withVelocityY(speeds.vyMetersPerSecond),
+                    Rotation2d.fromDegrees(turretStuckAimingAngle)));
+          }
         }
       }
       case CLIMB_ASSIST -> {

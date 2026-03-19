@@ -100,7 +100,7 @@ spotless {
 	lineEndings = 'UNIX'
 
 	java {
-		target 'shared/**/*.java', 'comp-bot/**/*.java', 'dumper-bot/**/*.java', 'turret-bot/**/*.java'
+		target 'shared/**/*.java', 'beta-bot/**/*.java', 'comp-bot/**/*.java', 'dumper-bot/**/*.java', 'turret-bot/**/*.java'
 		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true).sortMembersVisibilityOrderEnabled(true)
 		googleJavaFormat()
 		licenseHeader ''
@@ -130,6 +130,7 @@ task deploy {
 ❌ Running the deploy task without specifying a robot is disabled to prevent dangerous parallel deployments!
 
 Instead, deploy to a specific robot:
+./gradlew beta-bot:deploy      - Deploy to beta robot
 ./gradlew turret-bot:deploy    - Deploy to turret robot
 ./gradlew dumper-bot:deploy    - Deploy to dumper robot
 ./gradlew comp-bot:deploy      - Deploy to competition robot

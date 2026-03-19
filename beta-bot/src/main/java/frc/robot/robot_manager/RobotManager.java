@@ -209,7 +209,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 || (localization.isTrustworthy()
                     && turret.atGoal(scoringParameters)
                     && shooterHood.atGoal()
-                     && swerve.isAimed()
+                    && swerve.isAimed()
                     && localization.imu.isFlatDebounced()
                     && localization.isTrustworthy()
                     && isInSafeScoringLocation)
@@ -1311,8 +1311,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/TurretAtGoal", turret.atGoal(scoringParameters));
 
-        DogLog.log(        "RobotManager/Scoring/ScoreTransition/SwerveAimed", swerve.isAimed());
-
+    DogLog.log("RobotManager/Scoring/ScoreTransition/SwerveAimed", swerve.isAimed());
 
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoalDebounced());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
@@ -1333,7 +1332,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/TurretAtGoal", turret.atGoal(feedingParameters));
-                DogLog.log(        "RobotManager/Feeding/FeedTransition/SwerveAimed", swerve.isAimed());
+    DogLog.log("RobotManager/Feeding/FeedTransition/SwerveAimed", swerve.isAimed());
 
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(
