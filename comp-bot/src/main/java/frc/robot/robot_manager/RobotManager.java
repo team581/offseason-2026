@@ -23,6 +23,7 @@ import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
 import frc.robot.intake.GenericIntake;
 import frc.robot.localization.Localization;
+import frc.robot.power_manager.PowerManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
@@ -48,6 +49,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Trailblazer trailblazer;
   public final ClusterMap clusterMap;
   private final GenericClimber climber;
+
+  private final PowerManager powerManager;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -84,7 +87,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Trailblazer trailblazer,
       GenericClimber climber,
       ClusterMap clusterMap,
-      Hardware hardware) {
+      Hardware hardware,
+      PowerManager powerManager) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.shooterHood = shooterHood;
     this.localization = localization;
@@ -102,6 +106,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.climber = climber;
 
     this.hardware = hardware;
+    this.powerManager = powerManager;
   }
 
   @Override

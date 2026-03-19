@@ -1,11 +1,12 @@
 package frc.robot.feeder;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.mechanisms.PowerManaged;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Feeder extends StateMachineSubsystem<FeederState> {
+public class Feeder extends StateMachineSubsystem<FeederState> implements PowerManaged {
 
   private final TalonFX motor;
 
@@ -42,5 +43,12 @@ public class Feeder extends StateMachineSubsystem<FeederState> {
     DogLog.log("Feeder/Left/VelocityRPM", motor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Feeder/Left/SupplyCurrent", motor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Feeder/Voltage", getState().getVoltage());
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    motor
+        .getConfigurator()
+        .apply(FeederConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
   }
 }

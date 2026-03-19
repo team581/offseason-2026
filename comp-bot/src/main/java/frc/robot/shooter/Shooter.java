@@ -3,6 +3,7 @@ package frc.robot.shooter;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -14,7 +15,7 @@ import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Shooter extends StateMachineSubsystem<ShooterState> {
+public class Shooter extends StateMachineSubsystem<ShooterState> implements PowerManaged {
   private static double distanceToScoringRpm(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
@@ -268,5 +269,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(feedDistance)
         : ShooterConfig.DISTANCE_TO_FEED_TOF.get(feedDistance);
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    leftMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.LEFT_MOTOR_CONFIGS.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    middleMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.MIDDLE_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 }
