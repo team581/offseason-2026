@@ -614,26 +614,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
         climber.l3HangingRequest();
       }
-      case CLIMB_7_PREPARE_SCORING_L3 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.climbScoreRequest(climbLocationIsLeft);
-        shooterHood.climbScoreRequest(climbLocationIsLeft);
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l3HangingRequest();
-      }
-      case CLIMB_8_SCORING_L3 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.climbScoreRequest(climbLocationIsLeft);
-        shooterHood.climbScoreRequest(climbLocationIsLeft);
-        dyeRotor.scoreRequest(scoringParameters.distance());
-        deploy.stowRequest();
-        intake.shootRequest();
-        swerve.normalDriveRequest();
-        climber.l3HangingRequest();
-      }
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
