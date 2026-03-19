@@ -54,8 +54,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private boolean climbLocationIsLeft = true;
 
-  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0, 0);
-  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0, 0);
+  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0);
+  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0);
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
@@ -67,7 +67,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInSafeFeedingLocation = true;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
-  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0, 0);
+  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0);
 
   public RobotManager(
       ShooterHood shooterHood,
@@ -308,7 +308,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         // Set hood behavior separately while idling
         dyeRotor.idleRequest();
-        // Set turret behavior separately while idling
         deploy.intakeRequest();
         swerve.normalDriveRequest();
         climber.stowRequest();
@@ -371,7 +370,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         dyeRotor.idleRequest();
-        // Turret and hood are controlled depending on what zone we're in
         // Deploy is controlled separately
         // Intake is controlled separately
         swerve.rateLimitedDriveRequest();
@@ -473,7 +471,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.unjamRequest();
-        // Set turret behavior separately
         // Deploy is controlled separately
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -484,7 +481,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior seperate while climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -495,7 +491,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -506,7 +501,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -517,7 +511,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -528,7 +521,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -539,7 +531,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -550,7 +541,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         trailblazer.setActiveSegment(
@@ -563,7 +553,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         trailblazer.setActiveSegment(
@@ -575,7 +564,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -586,7 +574,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -597,7 +584,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -608,7 +594,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -619,7 +604,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -650,7 +634,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -661,7 +644,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -672,7 +654,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -683,7 +664,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         dyeRotor.idleRequest();
-        // Set turret behavior separate climbing
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -828,7 +808,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     MechanismVisualizer.log(
         robotPose,
-        0,
         shooterHood.getAngle(),
         deploy.getPosition(),
         climber.getHeight(),
@@ -857,15 +836,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartHoodPrepareScoreRequest() {
-    // Turret behavior
-    if (FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation())) {
-      DogLog.log("RobotManager/Scoring/SmartPrepareScore/TurretStatus", "InAllianceZone");
-
-    } else {
-      DogLog.log("RobotManager/Scoring/SmartPrepareScore/TurretStatus", "NotInAllianceZone");
-    }
-
-    // Hood Behavior
     if (!health.isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NearTrench");
@@ -877,14 +847,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartHoodPrepareFeedRequest() {
-    // Turret behavior
-    if (FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation())) {
-      DogLog.log("RobotManager/Scoring/SmartPrepareScore/TurretStatus", "InAllianceZone");
-    } else {
-      DogLog.log("RobotManager/Scoring/SmartPrepareScore/TurretStatus", "NotInAllianceZone");
-    }
-
-    // Hood Behavior
     if (!health.isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NearTrench");

@@ -10,7 +10,6 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 
 public class HealthManager extends StateMachineSubsystem<HealthState> {
-  private final Limelight turretLimelight;
   private final Limelight backLimelight;
   private final Limelight groundLimelight;
 
@@ -25,11 +24,9 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   private final BlinkingBooleanBox allCamerasBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
-  public HealthManager(
-      Limelight turretLimelight, Limelight backLimelight, Limelight groundLimelight) {
+  public HealthManager(Limelight backLimelight, Limelight groundLimelight) {
     super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
 
-    this.turretLimelight = turretLimelight;
     this.backLimelight = backLimelight;
     this.groundLimelight = groundLimelight;
   }
@@ -55,14 +52,12 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   protected void collectInputs() {
     localizationHealthy =
         RobotBase.isSimulation()
-            || (turretLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                || backLimelight.getCameraHealth() != CameraHealth.OFFLINE);
+            || backLimelight.getCameraHealth() != CameraHealth.OFFLINE;
     fuelDetectionHealthy =
         RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
     allCamerasHealthy =
         RobotBase.isSimulation()
-            || (turretLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && backLimelight.getCameraHealth() != CameraHealth.OFFLINE
+            || (backLimelight.getCameraHealth() != CameraHealth.OFFLINE
                 && groundLimelight.getCameraHealth() != CameraHealth.OFFLINE);
   }
 

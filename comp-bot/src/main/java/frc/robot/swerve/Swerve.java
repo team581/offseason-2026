@@ -153,7 +153,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
 
-  private double turretStuckAimingAngle = 0.0;
+  private double scoringAngle = 0.0;
 
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
@@ -229,9 +229,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     setStateFromRequest(SwerveState.INTAKE_RATE_LIMITED);
   }
 
-  public void turretStuckAimRequest(double snapAngle) {
-    turretStuckAimingAngle = snapAngle;
-    setStateFromRequest(SwerveState.TURRET_STUCK_SCORE);
+  public void scoreRequest(double snapAngle) {
+    scoringAngle = snapAngle;
+    setStateFromRequest(SwerveState.SCORE);
   }
 
   @Override
@@ -243,7 +243,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
     ableToXSwerve =
         (getState() == SwerveState.MANUAL_RATE_LIMITED
-                || getState() == SwerveState.TURRET_STUCK_SCORE)
+                || getState() == SwerveState.SCORE)
             && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
@@ -473,7 +473,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case TURRET_STUCK_SCORE -> {
+      case SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
         if (ableToXSwerve) {
@@ -486,7 +486,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                   drivePerspectiveIntakeSnapsOpenLoop
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond),
-                  Rotation2d.fromDegrees(turretStuckAimingAngle)));
+                  Rotation2d.fromDegrees(scoringAngle)));
         }
       }
       case CLIMB_ASSIST -> {
@@ -547,7 +547,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   @Override
   protected void afterTransition(SwerveState newState) {
     switch (newState) {
-      case MANUAL, MANUAL_RATE_LIMITED, TURRET_STUCK_SCORE, CLIMB_ASSIST -> {}
+      case MANUAL, MANUAL_RATE_LIMITED, SCORE, CLIMB_ASSIST -> {}
       // When entering intake states we shouldnt be able to wall snap corner transition
       case INTAKE, INTAKE_RATE_LIMITED -> enteredWallSnapCorner = false;
     }

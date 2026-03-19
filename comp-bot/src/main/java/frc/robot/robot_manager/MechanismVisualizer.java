@@ -25,13 +25,10 @@ public final class MechanismVisualizer {
 
   public static void log(
       Pose2d robotPose,
-      double turretAngleDegrees,
       double shooterHoodAngleDegrees,
       double deployLengthInches,
       double climberHeightInches,
       double dyeRotorAngleDegrees) {
-    var turretPose =
-        new Pose3d(Translation3d.kZero, new Rotation3d(Rotation2d.fromDegrees(turretAngleDegrees)));
     var shooterHoodPose =
         Pose3d.kZero
             .rotateAround(
@@ -40,8 +37,7 @@ public final class MechanismVisualizer {
                     0,
                     Math.toRadians(
                         shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
-                    0))
-            .rotateBy(turretPose.getRotation());
+                    0));
     var deployPose =
         new Pose3d(
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0)
@@ -57,30 +53,7 @@ public final class MechanismVisualizer {
 
     DogLog.log(
         "SuperstructureVisualization/Components",
-        new Pose3d[] {turretPose, shooterHoodPose, deployPose, climberPose, dyeRotorPose});
-
-    // Field-relative turret camera pose for AdvantageScope Camera Override
-    var cameraTransform = CameraConfigs.TURRET.getTransform3d();
-    var cameraRotation = cameraTransform.getRotation();
-    var turretCameraPose =
-        new Pose3d(robotPose)
-            // Robot center to turret pivot + turret rotation
-            .plus(
-                new Transform3d(
-                    new Translation3d(0.0, 0, 0),
-                    new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees))))
-            // Turret pivot to camera
-            .plus(
-                new Transform3d(
-                    new Translation3d(VisionConfig.TURRET_TO_CAMERA.getX(), 0, 0),
-                    Rotation3d.kZero))
-            // Camera height + orientation (pitch negated for AdvantageScope convention)
-            .plus(
-                new Transform3d(
-                    cameraTransform.getTranslation(),
-                    new Rotation3d(
-                        cameraRotation.getX(), -cameraRotation.getY(), cameraRotation.getZ())));
-    DogLog.log("Vision/TurretCameraOverride", turretCameraPose);
+        new Pose3d[] {shooterHoodPose, deployPose, climberPose, dyeRotorPose});
   }
 
   private MechanismVisualizer() {}

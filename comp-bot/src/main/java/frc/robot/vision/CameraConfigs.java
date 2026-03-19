@@ -6,17 +6,6 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.config.RobotKind;
 
 public class CameraConfigs {
-  public static final CameraConfig TURRET =
-      new CameraConfig(
-          LimelightModel.FOUR,
-          true,
-          false,
-          Units.inchesToMeters(0.0),
-          Units.inchesToMeters(0.0),
-          Units.inchesToMeters(21.0309),
-          30.0,
-          0.0,
-          0.0);
 
   public static final CameraConfig BACK =
       new CameraConfig(

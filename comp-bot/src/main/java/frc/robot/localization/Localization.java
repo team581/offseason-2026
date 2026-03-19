@@ -103,8 +103,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   @Override
   protected void collectInputs() {
     List<TagResult> presentList = new ArrayList<>(1);
-    var maybeVisionResult =
-        vision.getAdjustedTurretLimelighTagResult().or(() -> vision.getBackLimelightTagResult());
+    var maybeVisionResult = vision.getBackLimelightTagResult();
     maybeVisionResult.ifPresent(presentList::add);
 
     ingestTagResult(presentList);

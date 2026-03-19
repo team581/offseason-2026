@@ -20,37 +20,24 @@ public class AimParameterUtil {
 
   public static AimingParameters getFallbackFeedingParameters(Rotation2d robotRotation) {
     var fieldRelativeGoal = FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg;
-    var turretAngle = fieldRelativeGoal.minus(robotRotation);
 
-    return new AimingParameters(
-        turretAngle.getDegrees(), FEEDING_FALLBACK_DISTANCE_TO_GOAL, 5, 0, 0);
+    return new AimingParameters(fieldRelativeGoal.getDegrees(), FEEDING_FALLBACK_DISTANCE_TO_GOAL, 5);
   }
 
   public static AimingParameters getFeedingParameters(
       FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
 
-    return new AimingParameters(0, 0, 0, 0, 0);
+    return new AimingParameters(0, 0, 0);
   }
 
   public static AimingParameters getScoringParameters(
       Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
 
-    return new AimingParameters(0, 0, 0, 0, 0);
-  }
-
-  public static AimingParameters getTurretStuckFeedingParameters(
-      FeedLocation feedLocation,
-      Pose2d robot,
-      double turretAngle,
-      ChassisSpeeds fieldRelativeSpeeds) {
-
-    return new AimingParameters(0, 0, 0, 0, 0);
+    return new AimingParameters(0, 0, 0);
   }
 
   public record AimingParameters(
-      double turretAngle,
+      double goalAngle,
       double distance,
-      double turretTolerance,
-      double turretFeedForwardRadians,
-      double upcomingTurretAngle) {}
+      double rotatinalTolerance) {}
 }
