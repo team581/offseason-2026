@@ -76,11 +76,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     setStateFromRequest(ShooterState.SCORE);
   }
 
-  public void climbScoreRequest(boolean isLeft) {
-    climbScoreRpm = 0.0;
-    setStateFromRequest(ShooterState.CLIMB_SCORE);
-  }
-
   public void feedRequest(double distance) {
     this.feedDistance = distance;
     setStateFromRequest(ShooterState.FEEDING);
