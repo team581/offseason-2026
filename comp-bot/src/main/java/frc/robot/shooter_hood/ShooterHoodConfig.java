@@ -19,19 +19,23 @@ public class ShooterHoodConfig {
    * This is the effective angle of the shooter hood relative to the floor when the shooter hood is
    * fully retracted.
    */
+  // TODO: Update angle from horizontal numbers
   public static final double ANGLE_FROM_HORIZONTAL = 21.4;
 
   public static final double MAX_ANGLE = 43.0;
   public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 1;
   public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 2;
 
+  // TODO: Update Homing numbers
   public static final double HOMING_VOLTAGE = -1;
   public static final double HOMING_CURRENT_THRESHOLD = 10;
   public static final double HOMING_END_POSITION = ANGLE_FROM_HORIZONTAL;
 
+  // TODO: Update tolerance numbers
   public static final double TOLERANCE = 1;
   public static final double FEEDING_TOLERANCE = 5;
 
+  // TODO: Update gear ratios
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(
@@ -45,6 +49,7 @@ public class ShooterHoodConfig {
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(350).withKV(0).withKS(0));
 
+  // TODO: Update interpolating map numbers later
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
       RobotKind.IS_COMP_BOT
           ? TunableInterpolatingDoubleTreeMap.ofEntries(
