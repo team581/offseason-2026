@@ -262,7 +262,9 @@ public class Turret extends StateMachineSubsystem<TurretState> {
   }
 
   public void stuckRequest() {
-    setStateFromRequest(TurretState.STUCK);
+    if (getState() != TurretState.UNHOMED) {
+      setStateFromRequest(TurretState.STUCK);
+    }
   }
 
   public double getAngle() {
