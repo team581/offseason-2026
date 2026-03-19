@@ -242,8 +242,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
     ableToXSwerve =
-        (getState() == SwerveState.MANUAL_RATE_LIMITED
-                || getState() == SwerveState.SCORE)
+        (getState() == SwerveState.MANUAL_RATE_LIMITED || getState() == SwerveState.SCORE)
             && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 

@@ -29,8 +29,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   private boolean seeingHubTags = false;
 
-  public Vision(
-      Imu imu, Limelight backLimelight, Limelight groundLimelight) {
+  public Vision(Imu imu, Limelight backLimelight, Limelight groundLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
     this.backLimelight = backLimelight;
@@ -63,8 +62,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
       seeingTag = false;
     }
 
-    seeingHubTags =
-        seeingHubTagDebouncer.calculate(backLimelight.seeingHubTag());
+    seeingHubTags = seeingHubTagDebouncer.calculate(backLimelight.seeingHubTag());
   }
 
   public void setEstimatedPoseAngle(double robotHeading) {

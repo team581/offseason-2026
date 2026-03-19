@@ -56,8 +56,7 @@ public class Robot extends Base581Robot {
       new Limelight("backl", LimelightState.TAGS, CameraConfigs.BACK);
   private final Limelight groundLimelight =
       new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
-  private final HealthManager health =
-      new HealthManager(backLimelight, groundLimelight);
+  private final HealthManager health = new HealthManager(backLimelight, groundLimelight);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Imu imu = new Imu(swerve.drivetrain);

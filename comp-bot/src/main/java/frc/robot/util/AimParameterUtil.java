@@ -21,7 +21,8 @@ public class AimParameterUtil {
   public static AimingParameters getFallbackFeedingParameters(Rotation2d robotRotation) {
     var fieldRelativeGoal = FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg;
 
-    return new AimingParameters(fieldRelativeGoal.getDegrees(), FEEDING_FALLBACK_DISTANCE_TO_GOAL, 5);
+    return new AimingParameters(
+        fieldRelativeGoal.getDegrees(), FEEDING_FALLBACK_DISTANCE_TO_GOAL, 5);
   }
 
   public static AimingParameters getFeedingParameters(
@@ -36,8 +37,5 @@ public class AimParameterUtil {
     return new AimingParameters(0, 0, 0);
   }
 
-  public record AimingParameters(
-      double goalAngle,
-      double distance,
-      double rotatinalTolerance) {}
+  public record AimingParameters(double goalAngle, double distance, double rotatinalTolerance) {}
 }

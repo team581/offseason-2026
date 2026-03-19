@@ -51,8 +51,7 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   @Override
   protected void collectInputs() {
     localizationHealthy =
-        RobotBase.isSimulation()
-            || backLimelight.getCameraHealth() != CameraHealth.OFFLINE;
+        RobotBase.isSimulation() || backLimelight.getCameraHealth() != CameraHealth.OFFLINE;
     fuelDetectionHealthy =
         RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
     allCamerasHealthy =

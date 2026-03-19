@@ -5,12 +5,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.shooter_hood.ShooterHoodConfig;
-import frc.robot.vision.CameraConfigs;
-import frc.robot.vision.VisionConfig;
 
 public final class MechanismVisualizer {
   /**
@@ -30,14 +27,12 @@ public final class MechanismVisualizer {
       double climberHeightInches,
       double dyeRotorAngleDegrees) {
     var shooterHoodPose =
-        Pose3d.kZero
-            .rotateAround(
-                SHOOTER_HOOD_PIVOT_POINT,
-                new Rotation3d(
-                    0,
-                    Math.toRadians(
-                        shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
-                    0));
+        Pose3d.kZero.rotateAround(
+            SHOOTER_HOOD_PIVOT_POINT,
+            new Rotation3d(
+                0,
+                Math.toRadians(shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
+                0));
     var deployPose =
         new Pose3d(
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0)
