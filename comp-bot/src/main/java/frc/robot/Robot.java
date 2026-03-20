@@ -191,11 +191,6 @@ public class Robot extends Base581Robot {
 
     operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
 
-    operator
-        .y()
-        .onPress(() -> robotManager.dyeRotor.setUseFullSpeed(true))
-        .onRelease(() -> robotManager.dyeRotor.setUseFullSpeed(false));
-
     operator.b().onPress(robotManager::prepareFeedRequest).onRelease(robotManager::idleRequest);
 
     operator
