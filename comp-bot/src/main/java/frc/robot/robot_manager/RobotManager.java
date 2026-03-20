@@ -545,7 +545,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (drivingToIntake) {
           deploy.intakeRequest();
         } else {
-          deploy.shuffleRequest();
+          deploy.hopperCompactionRequest();
         }
       }
       case PREPARE_FEED -> {
@@ -567,7 +567,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (drivingToIntake) {
           deploy.intakeRequest();
         } else {
-          deploy.shuffleRequest();
+          deploy.hopperCompactionRequest();
         }
       }
 
@@ -597,7 +597,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (drivingToIntake) {
           deploy.intakeRequest();
         } else {
-          deploy.shuffleRequest();
+          deploy.hopperCompactionRequest();
         }
       }
       case PREPARE_PRESET_FEED -> {
@@ -617,7 +617,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (drivingToIntake) {
           deploy.intakeRequest();
         } else {
-          deploy.shuffleRequest();
+          deploy.hopperCompactionRequest();
         }
       }
       case AUTOMATIC_CLIMB_1_APPROACH_L1, AUTOMATIC_CLIMB_2_LINEUP_L1 -> {
@@ -793,7 +793,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           PRESET_FEED,
           PREPARE_FEED,
           FEED ->
-          deploy.shuffleRequest();
+          deploy.hopperCompactionRequest();
       default -> {}
     }
   }
