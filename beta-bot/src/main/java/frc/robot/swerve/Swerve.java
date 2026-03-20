@@ -255,8 +255,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
                 || getState() == SwerveState.TURRET_STUCK_SCORE)
             && X_SWERVE_DEBOUNCER.calculate(
                 MathUtil.isNear(
-                    Units.radiansToDegrees(
-                        drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()),
+                    Math.toDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()),
                     drivetrainState.Pose.getRotation().getDegrees(),
                     5.0,
                     -180.0,
@@ -553,14 +552,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
       DogLog.log(
           "Swerve/X/ManualAtSetpoint",
           MathUtil.isNear(
-              Units.radiansToDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()),
+              Math.toDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()),
               drivetrainState.RawHeading.getDegrees(),
               1.0,
               -180.0,
               180.0));
       DogLog.log(
           "Swerve/X/ManualAtSetpoint/ControllerSetpoint",
-          Units.radiansToDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()));
+          Math.toDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()));
       DogLog.log(
           "Swerve/X/ManualAtSetpoint/RobotHeading",
           drivetrainState.Pose.getRotation().getDegrees());
