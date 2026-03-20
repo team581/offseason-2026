@@ -58,7 +58,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
   }
 
 
-  protected void afterTransition(IntakeState newState) {
+  @Override protected void afterTransition(IntakeState newState) {
     switch (newState) {
       case IDLE -> {
         leftMotor.disable();
@@ -91,7 +91,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
   }
 
 
-  public void applyCurrentLimits(double supplyCurrentLimit) {
+  @Override public void applyCurrentLimits(double supplyCurrentLimit) {
     leftMotor
         .getConfigurator()
         .apply(
