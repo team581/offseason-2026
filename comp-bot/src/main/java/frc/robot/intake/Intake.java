@@ -1,17 +1,26 @@
 package frc.robot.intake;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.mechanisms.PowerManaged;
+import com.team581.util.state_machines.StateMachineSubsystem;
+
 import dev.doglog.DogLog;
+import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Intake extends GenericIntake {
-  private final TalonFX motor;
+public class Intake extends StateMachineSubsystem<IntakeState> implements PowerManaged{
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
 
-  public Intake(TalonFX motor) {
-    motor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);
-    this.motor = motor;
+  public Intake(TalonFX leftMotor, TalonFX rightMotor) {
+        super(SubsystemPriority.INTAKE, IntakeState.IDLE);
+
+    leftMotor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);
+    rightMotor.getConfigurator().apply(IntakeConfig.RIGHT_MOTOR_CONFIG);
+    this.leftMotor = leftMotor;
+    this.rightMotor = rightMotor;
   }
 
-  @Override
+
   public void shootRequest() {
     if (getState() == IntakeState.INTAKE) {
       return;
@@ -19,12 +28,12 @@ public class Intake extends GenericIntake {
     setStateFromRequest(IntakeState.SHOOT);
   }
 
-  @Override
+
   public void shootThenIntakeRequest() {
     setStateFromRequest(IntakeState.SHOOT_THEN_INTAKE);
   }
 
-  @Override
+
   public void stopShootingRequest() {
     switch (getState()) {
       case SHOOT -> setStateFromRequest(IntakeState.IDLE);
@@ -33,44 +42,65 @@ public class Intake extends GenericIntake {
     }
   }
 
-  @Override
+
   public void intakeRequest() {
     setStateFromRequest(IntakeState.INTAKE);
   }
 
-  @Override
+
   public void intakeAutoRequest() {
     setStateFromRequest(IntakeState.INTAKE_AUTO);
   }
 
-  @Override
+
   public void idleRequest() {
     setStateFromRequest(IntakeState.IDLE);
   }
 
-  @Override
+
   protected void afterTransition(IntakeState newState) {
     switch (newState) {
-      case IDLE -> motor.disable();
-      case INTAKE -> motor.setVoltage(newState.getVoltage());
-      case INTAKE_AUTO -> motor.setVoltage(newState.getVoltage());
-      case SHOOT, SHOOT_THEN_INTAKE -> motor.setVoltage(newState.getVoltage());
+      case IDLE -> {
+        leftMotor.disable();
+        rightMotor.disable();
+      }
+      case INTAKE -> {
+        leftMotor.setVoltage(newState.getVoltage());
+        rightMotor.setVoltage(newState.getVoltage());
+      }
+      case INTAKE_AUTO -> {
+        leftMotor.setVoltage(newState.getVoltage());
+        rightMotor.setVoltage(newState.getVoltage());
+      }
+      case SHOOT, SHOOT_THEN_INTAKE -> {
+        leftMotor.setVoltage(newState.getVoltage());
+        rightMotor.setVoltage(newState.getVoltage());
+      }
     }
   }
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Intake/StatorCurrent", motor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Intake/VelocityRPM", motor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Intake/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Intake/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Intake/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Intake/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Intake/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Intake/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Intake/Voltage", getState().getVoltage());
   }
 
-  @Override
+
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    motor
+    leftMotor
         .getConfigurator()
         .apply(
             IntakeConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            IntakeConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 }

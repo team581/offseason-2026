@@ -27,9 +27,7 @@ import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
 import frc.robot.imu.Imu;
-import frc.robot.intake.GenericIntake;
 import frc.robot.intake.Intake;
-import frc.robot.intake.IntakeTwoMotor;
 import frc.robot.kicker.Kicker;
 import frc.robot.localization.Localization;
 import frc.robot.power_manager.PowerManager;
@@ -71,10 +69,8 @@ public class Robot extends Base581Robot {
   private final Shooter shooter =
       new Shooter(
           hardware.shooterLeftMotor, hardware.shooterRightMotor, hardware.shooterMiddleMotor);
-  private final GenericIntake intake =
-      RobotKind.IS_COMP_BOT
-          ? new IntakeTwoMotor(hardware.intakeLeftMotor, hardware.intakeRightMotor)
-          : new Intake(hardware.intakeLeftMotor);
+  private final Intake intake =
+           new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
   private final Deploy deploy =
       new Deploy(hardware.deployDifferentialMechanism, hardware.hopperCANRange);
   private final DyeRotor dyeRotor =

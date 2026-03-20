@@ -6,7 +6,7 @@ import dev.doglog.DogLog;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
-import frc.robot.intake.GenericIntake;
+import frc.robot.intake.Intake;
 import frc.robot.kicker.Kicker;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
@@ -26,7 +26,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
 
   public PowerManager(
       Shooter shooter,
-      GenericIntake intake,
+      Intake intake,
       Deploy deploy,
       ShooterHood shooterHood,
       Kicker kicker,
