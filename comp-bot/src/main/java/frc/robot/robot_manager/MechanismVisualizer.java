@@ -22,8 +22,7 @@ public final class MechanismVisualizer {
   public static void log(
       Pose2d robotPose,
       double shooterHoodAngleDegrees,
-      double deployLengthInches,
-      double climberHeightInches) {
+      double deployLengthInches) {
     var shooterHoodPose =
         Pose3d.kZero.rotateAround(
             SHOOTER_HOOD_PIVOT_POINT,
@@ -36,13 +35,10 @@ public final class MechanismVisualizer {
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0)
                 .rotateBy(new Rotation3d(0, Math.toRadians(DEPLOY_ANGLE_FROM_HORIZONTAL), 0)),
             Rotation3d.kZero);
-    var climberPose =
-        new Pose3d(
-            new Translation3d(0, 0, Units.inchesToMeters(climberHeightInches)), Rotation3d.kZero);
 
     DogLog.log(
         "SuperstructureVisualization/Components",
-        new Pose3d[] {shooterHoodPose, deployPose, climberPose});
+        new Pose3d[] {shooterHoodPose, deployPose});
   }
 
   private MechanismVisualizer() {}

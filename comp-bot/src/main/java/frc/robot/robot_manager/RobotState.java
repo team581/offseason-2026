@@ -22,36 +22,7 @@ public enum RobotState {
   FEED,
   STOP_SHOOTING_FEED,
 
-  UNJAM,
-
-  CLIMB_1_LINEUP_L1_AUTONOMOUS,
-  CLIMB_2_RAISING_L1_AUTONOMOUS,
-  CLIMB_3_HANGING_L1_AUTONOMOUS,
-  CLIMB_4_RELEASE_L1_AUTONOMOUS,
-
-  AUTOMATIC_CLIMB_1_APPROACH_L1,
-  AUTOMATIC_CLIMB_2_LINEUP_L1,
-  AUTOMATIC_CLIMB_3_HANGING_L1,
-
-  MANUAL_CLIMB_1_LINEUP_L1,
-  MANUAL_CLIMB_2_HANGING_L1;
-
-  public boolean isClimbing() {
-    return switch (this) {
-      case CLIMB_1_LINEUP_L1_AUTONOMOUS -> true;
-      case CLIMB_2_RAISING_L1_AUTONOMOUS -> true;
-      case CLIMB_3_HANGING_L1_AUTONOMOUS -> true;
-
-      case AUTOMATIC_CLIMB_1_APPROACH_L1 -> true;
-      case AUTOMATIC_CLIMB_2_LINEUP_L1 -> true;
-      case AUTOMATIC_CLIMB_3_HANGING_L1 -> true;
-
-      case MANUAL_CLIMB_1_LINEUP_L1 -> true;
-      case MANUAL_CLIMB_2_HANGING_L1 -> true;
-
-      default -> false;
-    };
-  }
+  UNJAM;
 
   public boolean isFeeding() {
     return switch (this) {
