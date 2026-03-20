@@ -22,6 +22,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
+      - name: Setup Ruff
+        uses: astral-sh/ruff-action@v3
+
       - name: Fix Error Prone issues
         run: ./gradlew build
         continue-on-error: true
@@ -33,15 +36,11 @@ jobs:
         continue-on-error: true
 
       - name: Fix Python lint issues with Ruff
-        uses: astral-sh/ruff-action@v3
-        with:
-          args: "check --fix --unsafe-fixes"
+        run: ruff check --fix --unsafe-fixes
         continue-on-error: true
 
       - name: Format Python with Ruff
-        uses: astral-sh/ruff-action@v3
-        with:
-          args: "format"
+        run: ruff format
         continue-on-error: true
 
       - name: Run autofix.ci
