@@ -40,11 +40,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private static final double IS_OFFLINE_TIMEOUT = 3;
 
   public Set<Integer> getActiveHubTags() {
-    var alliance = edu.wpi.first.wpilibj.DriverStation.getAlliance();
+    var alliance = DriverStation.getAlliance();
     if (alliance.isPresent()) {
-      return alliance.orElseThrow() == edu.wpi.first.wpilibj.DriverStation.Alliance.Red
-          ? RED_HUB_TAGS
-          : BLUE_HUB_TAGS;
+      return alliance.orElseThrow() == DriverStation.Alliance.Red ? RED_HUB_TAGS : BLUE_HUB_TAGS;
     }
     return ImmutableSet.of();
   }
