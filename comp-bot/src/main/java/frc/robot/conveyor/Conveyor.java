@@ -28,6 +28,10 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.IDLE);
   }
 
+  public void intakeRequest() {
+    setStateFromRequest(ConveyorState.INTAKE);
+  }
+
   @Override
   protected void afterTransition(ConveyorState newState) {
     switch (newState) {
@@ -35,7 +39,7 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
         leftMotor.disable();
         rightMotor.disable();
       }
-      case SHOOT -> {
+      default -> {
         leftMotor.setVoltage(newState.getVoltage());
         rightMotor.setVoltage(newState.getVoltage());
       }

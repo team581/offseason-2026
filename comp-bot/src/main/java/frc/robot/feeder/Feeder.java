@@ -25,13 +25,17 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     setStateFromRequest(FeederState.IDLE);
   }
 
+  public void intakeRequest() {
+    setStateFromRequest(FeederState.INTAKE);
+  }
+
   @Override
   protected void afterTransition(FeederState newState) {
     switch (newState) {
       case IDLE -> {
         motor.disable();
       }
-      case SHOOT -> {
+      default -> {
         motor.setVoltage(newState.getVoltage());
       }
     }
