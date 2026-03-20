@@ -18,7 +18,6 @@ import frc.robot.climber.GenericClimber;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.deploy.Deploy;
-import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
 import frc.robot.intake.GenericIntake;
@@ -39,7 +38,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Hardware hardware;
   private final ShooterHood shooterHood;
   private final Shooter shooter;
-  public final DyeRotor dyeRotor;
   public final Deploy deploy;
   private final GenericIntake intake;
   private final Vision vision;
@@ -77,7 +75,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Localization localization,
       Swerve swerve,
       Shooter shooter,
-      DyeRotor dyeRotor,
       GenericIntake intake,
       Deploy deploy,
       Vision vision,
@@ -94,7 +91,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.localization = localization;
     this.swerve = swerve;
     this.shooter = shooter;
-    this.dyeRotor = dyeRotor;
     this.intake = intake;
     this.deploy = deploy;
     this.vision = vision;
@@ -116,21 +112,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case UNJAM,
           MANUAL_CLIMB_1_LINEUP_L1,
           MANUAL_CLIMB_2_HANGING_L1,
-          MANUAL_CLIMB_3_RAISING_L2,
-          MANUAL_CLIMB_4_HANGING_L2,
-          MANUAL_CLIMB_5_RAISING_L3,
-          MANUAL_CLIMB_6_HANGING_L3,
-          FORCE_SCORE,
-          AUTOMATIC_CLIMB_7_HANGING_L3,
-          CLIMB_8_SCORING_L3 ->
+          AUTOMATIC_CLIMB_3_HANGING_L1,
+          FORCE_SCORE ->
           currentState;
       case STOP_SHOOTING_SCORE,
           STOP_SHOOTING_PRESET_SCORE,
           STOP_SHOOTING_PRESET_FEED,
           STOP_SHOOTING_FEED ->
-          dyeRotor.isReset() ? RobotState.IDLE : currentState;
+          RobotState.IDLE;
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoalDebounced() && !dyeRotor.isJammed() && shooterHood.atGoal()) {
+        if (shooter.atGoalDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
@@ -139,18 +130,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
       case PREPARE_PRESET_SCORE, PRESET_SCORE ->
           !isMoving
-                  && ((shooter.atGoalDebounced() && !dyeRotor.isJammed() && shooterHood.atGoal())
+                  && ((shooter.atGoalDebounced() && shooterHood.atGoal())
                       || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
               ? RobotState.PRESET_SCORE
               : RobotState.PREPARE_PRESET_SCORE;
-      case CLIMB_7_PREPARE_SCORING_L3 -> {
-        if (shooter.atGoalDebounced() && shooterHood.atGoal() && !dyeRotor.isJammed()) {
-          yield RobotState.CLIMB_8_SCORING_L3;
-        }
-        yield currentState;
-      }
       case PREPARE_PRESET_FEED, PRESET_FEED ->
-          shooter.atGoalDebounced() && !dyeRotor.isJammed() && shooterHood.atGoal()
+          shooter.atGoalDebounced() && shooterHood.atGoal()
               ? RobotState.PRESET_FEED
               : RobotState.PREPARE_PRESET_FEED;
       case PREPARE_SCORE -> {
@@ -254,30 +239,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
         yield currentState;
       }
-      case AUTOMATIC_CLIMB_3_HANGING_L1 -> {
-        if (climber.atGoal()) {
-          yield RobotState.AUTOMATIC_CLIMB_4_RAISING_L2;
-        }
-        yield currentState;
-      }
-      case AUTOMATIC_CLIMB_4_RAISING_L2 -> {
-        if (climber.atGoal()) {
-          yield RobotState.AUTOMATIC_CLIMB_5_HANGING_L2;
-        }
-        yield currentState;
-      }
-      case AUTOMATIC_CLIMB_5_HANGING_L2 -> {
-        if (climber.atGoal()) {
-          yield RobotState.AUTOMATIC_CLIMB_6_RAISING_L3;
-        }
-        yield currentState;
-      }
-      case AUTOMATIC_CLIMB_6_RAISING_L3 -> {
-        if (climber.atGoal()) {
-          yield RobotState.AUTOMATIC_CLIMB_7_HANGING_L3;
-        }
-        yield currentState;
-      }
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> {
         if (climber.atGoal()) {
           yield RobotState.CLIMB_2_RAISING_L1_AUTONOMOUS;
@@ -312,7 +273,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.idleRequest();
         // Set hood behavior separately while idling
-        dyeRotor.idleRequest();
         deploy.intakeRequest();
         swerve.normalDriveRequest();
         climber.stowRequest();
@@ -321,7 +281,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.idleRequest();
         swerve.normalDriveRequest();
         climber.stowRequest();
       }
@@ -329,7 +288,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.scoreRequest(scoringParameters.distance());
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
         } else {
@@ -342,7 +300,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        dyeRotor.idleRequest();
         // Deploy is controlled separately
         // Intake is controlled separately
         swerve.rateLimitedDriveRequest();
@@ -352,7 +309,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        dyeRotor.feedRequest(feedingParameters.distance());
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
         } else {
@@ -365,7 +321,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        dyeRotor.resetToIdleRequest();
         deploy.stopShootingRequest();
         intake.stopShootingRequest();
         swerve.normalDriveRequest();
@@ -374,7 +329,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
-        dyeRotor.idleRequest();
         // Deploy is controlled separately
         // Intake is controlled separately
         swerve.rateLimitedDriveRequest();
@@ -385,7 +339,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.scoreRequest(scoringParameters.distance());
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
         } else {
@@ -398,7 +351,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.resetToIdleRequest();
         deploy.stopShootingRequest();
         intake.stopShootingRequest();
         swerve.rateLimitedDriveRequest();
@@ -408,7 +360,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        dyeRotor.idleRequest();
         // Deploy is controlled separately
         // Intake is controlled separately
         swerve.normalDriveRequest();
@@ -418,8 +369,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-
-        dyeRotor.feedRequest(fallbackFeedingParameters.distance());
 
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
@@ -433,7 +382,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        dyeRotor.resetToIdleRequest();
 
         deploy.stopShootingRequest();
         intake.stopShootingRequest();
@@ -444,7 +392,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.idleRequest();
         swerve.normalDriveRequest();
         climber.stowRequest();
       }
@@ -452,7 +399,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.scoreRequest(scoringParameters.distance());
         if (intake.getState().isIntaking()) {
           intake.shootThenIntakeRequest();
         } else {
@@ -465,7 +411,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        dyeRotor.resetToIdleRequest();
         intake.stopShootingRequest();
         deploy.stopShootingRequest();
         swerve.normalDriveRequest();
@@ -475,7 +420,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.unjamRequest();
         // Deploy is controlled separately
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -485,7 +429,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -495,57 +438,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         climber.l1HangingRequest();
       }
-      case MANUAL_CLIMB_3_RAISING_L2 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l2LineupRequest();
-      }
-      case MANUAL_CLIMB_4_HANGING_L2 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l2HangingRequest();
-      }
-      case MANUAL_CLIMB_5_RAISING_L3 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l3LineupRequest();
-      }
-      case MANUAL_CLIMB_6_HANGING_L3 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l3HangingRequest();
-      }
       case AUTOMATIC_CLIMB_1_APPROACH_L1 -> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         trailblazer.setActiveSegment(
@@ -557,7 +458,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         trailblazer.setActiveSegment(
@@ -568,57 +468,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
         climber.l1HangingRequest();
       }
-      case AUTOMATIC_CLIMB_4_RAISING_L2 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l2LineupRequest();
-      }
-      case AUTOMATIC_CLIMB_5_HANGING_L2 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l2HangingRequest();
-      }
-      case AUTOMATIC_CLIMB_6_RAISING_L3 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l3LineupRequest();
-      }
-      case AUTOMATIC_CLIMB_7_HANGING_L3 -> {
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
-        dyeRotor.idleRequest();
-        deploy.stowRequest();
-        intake.idleRequest();
-        swerve.normalDriveRequest();
-        climber.l3HangingRequest();
-      }
       case CLIMB_1_LINEUP_L1_AUTONOMOUS -> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -628,7 +486,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -638,7 +495,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -648,7 +504,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        dyeRotor.idleRequest();
         deploy.stowRequest();
         intake.idleRequest();
         swerve.normalDriveRequest();
@@ -687,8 +542,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           swerve.rateLimitedDriveRequest();
         }
 
-        dyeRotor.scoreRequest(scoringParameters.distance());
-
         if (drivingToIntake) {
           deploy.intakeRequest();
         } else {
@@ -710,8 +563,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.rateLimitedDriveRequest();
         }
-
-        dyeRotor.feedRequest(feedingParameters.distance());
 
         if (drivingToIntake) {
           deploy.intakeRequest();
@@ -748,12 +599,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           deploy.shuffleRequest();
         }
-
-        if (shooter.atGoal()) {
-          dyeRotor.scoreRequest(scoringParameters.distance());
-        } else {
-          dyeRotor.scoreSlowRequest();
-        }
       }
       case PREPARE_PRESET_FEED -> {
         if (intake.getState().isIntaking()) {
@@ -787,16 +632,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     DogLog.log("RobotManager/DrivingToIntake", drivingToIntake);
 
-    DogLog.log("RobotManager/gpDetection/Dye", dyeRotor.velocityDetectsGp());
     DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
     DogLog.log("RobotManager/gpDetection/both", detectingGp());
 
     MechanismVisualizer.log(
-        robotPose,
-        shooterHood.getAngle(),
-        deploy.getPosition(),
-        climber.getHeight(),
-        dyeRotor.getAngle());
+        robotPose, shooterHood.getAngle(), deploy.getPosition(), climber.getHeight());
   }
 
   private void smartHoodIdleRequest() {
@@ -959,7 +799,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public boolean detectingGp() {
-    return dyeRotor.velocityDetectsGp() && shooter.currentDetectsGp();
+    return shooter.currentDetectsGp();
   }
 
   public void unjamRequest() {
@@ -1009,16 +849,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       default -> setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
       case MANUAL_CLIMB_1_LINEUP_L1, AUTOMATIC_CLIMB_1_APPROACH_L1, AUTOMATIC_CLIMB_2_LINEUP_L1 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_2_HANGING_L1);
-      case MANUAL_CLIMB_2_HANGING_L1, AUTOMATIC_CLIMB_3_HANGING_L1 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_3_RAISING_L2);
-      case MANUAL_CLIMB_3_RAISING_L2, AUTOMATIC_CLIMB_4_RAISING_L2 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_4_HANGING_L2);
-      case MANUAL_CLIMB_4_HANGING_L2, AUTOMATIC_CLIMB_5_HANGING_L2 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_5_RAISING_L3);
-      case MANUAL_CLIMB_5_RAISING_L3, AUTOMATIC_CLIMB_6_RAISING_L3 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
-      case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_7_HANGING_L3 ->
-          setStateFromRequest(RobotState.CLIMB_7_PREPARE_SCORING_L3);
     }
   }
 
@@ -1037,18 +867,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case AUTOMATIC_CLIMB_2_LINEUP_L1 -> setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
       case MANUAL_CLIMB_2_HANGING_L1, AUTOMATIC_CLIMB_3_HANGING_L1 ->
           setStateFromRequest(RobotState.MANUAL_CLIMB_1_LINEUP_L1);
-
-      case MANUAL_CLIMB_3_RAISING_L2, AUTOMATIC_CLIMB_4_RAISING_L2 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_2_HANGING_L1);
-      case MANUAL_CLIMB_4_HANGING_L2, AUTOMATIC_CLIMB_5_HANGING_L2 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_3_RAISING_L2);
-
-      case MANUAL_CLIMB_5_RAISING_L3, AUTOMATIC_CLIMB_6_RAISING_L3 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_4_HANGING_L2);
-      case MANUAL_CLIMB_6_HANGING_L3, AUTOMATIC_CLIMB_7_HANGING_L3 ->
-          setStateFromRequest(RobotState.MANUAL_CLIMB_5_RAISING_L3);
-      case CLIMB_7_PREPARE_SCORING_L3 -> setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
-      case CLIMB_8_SCORING_L3 -> setStateFromRequest(RobotState.MANUAL_CLIMB_6_HANGING_L3);
     }
   }
 

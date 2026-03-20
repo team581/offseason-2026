@@ -102,7 +102,6 @@ public class Robot extends Base581Robot {
           localization,
           swerve,
           shooter,
-          dyeRotor,
           intake,
           deploy,
           vision,

@@ -3,7 +3,6 @@ package frc.robot.robot_manager;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
@@ -24,8 +23,7 @@ public final class MechanismVisualizer {
       Pose2d robotPose,
       double shooterHoodAngleDegrees,
       double deployLengthInches,
-      double climberHeightInches,
-      double dyeRotorAngleDegrees) {
+      double climberHeightInches) {
     var shooterHoodPose =
         Pose3d.kZero.rotateAround(
             SHOOTER_HOOD_PIVOT_POINT,
@@ -41,14 +39,10 @@ public final class MechanismVisualizer {
     var climberPose =
         new Pose3d(
             new Translation3d(0, 0, Units.inchesToMeters(climberHeightInches)), Rotation3d.kZero);
-    var dyeRotorPose =
-        new Pose3d(
-            new Translation3d(0, 0, 0),
-            new Rotation3d(Rotation2d.fromDegrees(-dyeRotorAngleDegrees)));
 
     DogLog.log(
         "SuperstructureVisualization/Components",
-        new Pose3d[] {shooterHoodPose, deployPose, climberPose, dyeRotorPose});
+        new Pose3d[] {shooterHoodPose, deployPose, climberPose});
   }
 
   private MechanismVisualizer() {}
