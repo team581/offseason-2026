@@ -11,11 +11,6 @@ class MathUtilRules {
    * Math.abs(a - b) <= tolerance}.
    */
   static class MathAbsIsNear {
-    @AfterTemplate
-    boolean after(double expected, double actual, double tolerance) {
-      return MathUtil.isNear(expected, actual, tolerance);
-    }
-
     @BeforeTemplate
     boolean before(double expected, double actual, double tolerance) {
       return Math.abs(expected - actual) < tolerance;
@@ -25,6 +20,11 @@ class MathUtilRules {
     boolean beforeEqual(double expected, double actual, double tolerance) {
       return Math.abs(expected - actual) <= tolerance;
     }
+
+    @AfterTemplate
+    boolean replacement(double expected, double actual, double tolerance) {
+      return MathUtil.isNear(expected, actual, tolerance);
+    }
   }
 
   /**
@@ -32,11 +32,6 @@ class MathUtilRules {
    * >= Math.abs(a - b)}.
    */
   static class MathAbsIsNearReversed {
-    @AfterTemplate
-    boolean after(double expected, double actual, double tolerance) {
-      return MathUtil.isNear(expected, actual, tolerance);
-    }
-
     @BeforeTemplate
     boolean before(double expected, double actual, double tolerance) {
       return tolerance >= Math.abs(expected - actual);
@@ -45,6 +40,11 @@ class MathUtilRules {
     @BeforeTemplate
     boolean beforeEqual(double expected, double actual, double tolerance) {
       return tolerance >= Math.abs(expected - actual);
+    }
+
+    @AfterTemplate
+    boolean replacement(double expected, double actual, double tolerance) {
+      return MathUtil.isNear(expected, actual, tolerance);
     }
   }
 

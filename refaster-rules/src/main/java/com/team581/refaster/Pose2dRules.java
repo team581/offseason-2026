@@ -10,11 +10,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 class Pose2dRules {
   /** Prefer {@link Pose2d#kZero} over equivalent constructors. */
   static class Pose2dZero {
-    @AfterTemplate
-    Pose2d after() {
-      return Pose2d.kZero;
-    }
-
     @BeforeTemplate
     Pose2d constructorNoArg() {
       return new Pose2d();
@@ -28,6 +23,11 @@ class Pose2dRules {
     @BeforeTemplate
     Pose2d constructorWithTranslationAndRotation(Translation2d translation) {
       return new Pose2d(Translation2d.kZero, Rotation2d.kZero);
+    }
+
+    @AfterTemplate
+    Pose2d replacement() {
+      return Pose2d.kZero;
     }
   }
 

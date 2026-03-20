@@ -14,27 +14,27 @@ class MathHelpersRules {
    * 180)}.
    */
   static class AngleModulus {
-    @AfterTemplate
-    double after(double angleDegrees) {
-      return MathHelpers.angleModulus(angleDegrees);
-    }
-
     @BeforeTemplate
     double before(double angleDegrees) {
       return MathUtil.inputModulus(angleDegrees, -180, 180);
+    }
+
+    @AfterTemplate
+    double replacement(double angleDegrees) {
+      return MathHelpers.angleModulus(angleDegrees);
     }
   }
 
   /** Prefer {@link MathHelpers#average(double, double)} over {@code (a + b) / 2.0}. */
   static class Average {
-    @AfterTemplate
-    double after(double a, double b) {
-      return MathHelpers.average(a, b);
-    }
-
     @BeforeTemplate
     double before(double a, double b) {
       return (a + b) / 2.0;
+    }
+
+    @AfterTemplate
+    double replacement(double a, double b) {
+      return MathHelpers.average(a, b);
     }
   }
 
@@ -43,14 +43,14 @@ class MathHelpersRules {
    * Math.hypot(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond)}.
    */
   static class ChassisSpeedsLinearVelocity {
-    @AfterTemplate
-    double after(ChassisSpeeds speeds) {
-      return MathHelpers.getLinearVelocity(speeds);
-    }
-
     @BeforeTemplate
     double before(ChassisSpeeds speeds) {
       return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+    }
+
+    @AfterTemplate
+    double replacement(ChassisSpeeds speeds) {
+      return MathHelpers.getLinearVelocity(speeds);
     }
   }
 
@@ -59,14 +59,14 @@ class MathHelpersRules {
    * safely handle small magnitude vectors.
    */
   static class Rotation2dFromXY {
-    @AfterTemplate
-    Rotation2d after(double x, double y) {
-      return MathHelpers.rotation2d(x, y);
-    }
-
     @BeforeTemplate
     Rotation2d before(double x, double y) {
       return new Rotation2d(x, y);
+    }
+
+    @AfterTemplate
+    Rotation2d replacement(double x, double y) {
+      return MathHelpers.rotation2d(x, y);
     }
   }
 
