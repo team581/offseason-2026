@@ -22,6 +22,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -33,6 +34,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
+import frc.robot.config.FeatureFlags;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
 import frc.robot.turret.TurretConfig;
@@ -171,6 +173,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
   private boolean ableToXSwerve = false;
 
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
+
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
       HealthManager health,
@@ -244,13 +248,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
+    // TODO: Evaluate which states we should actually X swerve in
     ableToXSwerve =
-        isAimed()
+        FeatureFlags.X_SWERVE.getAsBoolean()
             && (getState() == SwerveState.MANUAL_RATE_LIMITED
                 || getState() == SwerveState.TURRET_STUCK_SCORE)
-            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5
-            && driveSource.getRequestedSpeeds().omegaRadiansPerSecond < 1e-5;
-    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
+            && X_SWERVE_DEBOUNCER.calculate(
+                MathUtil.isNear(
+                    Units.radiansToDegrees(
+                        drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()),
+                    drivetrainState.Pose.getRotation().getDegrees(),
+                    5.0,
+                    -180.0,
+                    180.0))
+            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
 
     // Make sure right stick Y is either 50% up or down
     intakeAssistControllerInput = Math.abs(teleopDriveSource.getRightY()) > 0.5;
@@ -469,7 +480,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           } else {
             drivetrain.setControl(
                 withFieldRelativeTargetDirection(
-                    drivePerspectiveIntakeSnapsOpenLoop
+                    drivePerspectiveSnapsOpenLoop
                         .withVelocityX(speeds.vxMetersPerSecond)
                         .withVelocityY(speeds.vyMetersPerSecond),
                     Rotation2d.fromDegrees(turretStuckAimingAngle)));
@@ -529,6 +540,31 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
             .getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/CornerSnapAngle", cornerSnapAngle.getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/ChosenAngle", wallSnapAngle.getDegrees());
+
+    // Temporary logging for X swerve feature flag
+    if (FeatureFlags.X_SWERVE.getAsBoolean()) {
+      DogLog.log(
+          "Swerve/X/SpeedsNear0",
+          MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+      DogLog.log(
+          "Swerve/X/HeadingController/Setpoint",
+          drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint());
+      DogLog.log("Swerve/X/AbleToXSwerve", ableToXSwerve);
+      DogLog.log(
+          "Swerve/X/ManualAtSetpoint",
+          MathUtil.isNear(
+              Units.radiansToDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()),
+              drivetrainState.RawHeading.getDegrees(),
+              1.0,
+              -180.0,
+              180.0));
+      DogLog.log(
+          "Swerve/X/ManualAtSetpoint/ControllerSetpoint",
+          Units.radiansToDegrees(drivePerspectiveSnapsOpenLoop.HeadingController.getSetpoint()));
+      DogLog.log(
+          "Swerve/X/ManualAtSetpoint/RobotHeading",
+          drivetrainState.Pose.getRotation().getDegrees());
+    }
   }
 
   @Override
