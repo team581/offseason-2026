@@ -100,7 +100,7 @@ spotless {
 	lineEndings = 'UNIX'
 
 	java {
-		target 'shared/**/*.java', 'beta-bot/**/*.java', 'comp-bot/**/*.java', 'dumper-bot/**/*.java', 'turret-bot/**/*.java'
+		target subprojects.collect { "${it.name}/**/*.java" }
 		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true).sortMembersVisibilityOrderEnabled(true)
 		googleJavaFormat()
 		licenseHeader ''
