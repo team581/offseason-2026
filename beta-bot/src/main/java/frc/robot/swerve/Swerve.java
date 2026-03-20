@@ -1,5 +1,7 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.Radians;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -9,6 +11,7 @@ import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.autos.Point;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
+import com.team581.mechanisms.PowerManaged;
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
 import com.team581.swerve.SwerveAssist;
@@ -35,6 +38,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
+import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
 import frc.robot.turret.TurretConfig;
@@ -42,7 +46,7 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
 @SuppressWarnings("unused")
-public class Swerve extends StateMachineSubsystem<SwerveState> {
+public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
@@ -91,7 +95,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.5)
+          .withRotationalDeadband(0.00)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
@@ -174,6 +178,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
   private boolean ableToXSwerve = false;
 
   private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
+  private double aimingFeedForward = 0.0;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -235,8 +240,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     setStateFromRequest(SwerveState.INTAKE_RATE_LIMITED);
   }
 
-  public void turretStuckAimRequest(double snapAngle) {
+  public void turretStuckAimRequest(double snapAngle, double feedForward) {
     turretStuckAimingAngle = snapAngle;
+    aimingFeedForward = feedForward;
     setStateFromRequest(SwerveState.TURRET_STUCK_SCORE);
   }
 
@@ -375,7 +381,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
 
   public boolean isAimed() {
     return MathUtil.isNear(
-        turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 8.0, -180, 180);
+        turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 5.0, -180, 180);
   }
 
   @Override
@@ -479,10 +485,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           } else {
             drivetrain.setControl(
                 withFieldRelativeTargetDirection(
-                    drivePerspectiveSnapsOpenLoop
-                        .withVelocityX(speeds.vxMetersPerSecond)
-                        .withVelocityY(speeds.vyMetersPerSecond),
-                    Rotation2d.fromDegrees(turretStuckAimingAngle)));
+                        drivePerspectiveSnapsOpenLoop
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        Rotation2d.fromDegrees(turretStuckAimingAngle))
+                    .withTargetRateFeedforward(aimingFeedForward));
           }
         }
       }
@@ -564,6 +571,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
           "Swerve/X/ManualAtSetpoint/RobotHeading",
           drivetrainState.Pose.getRotation().getDegrees());
     }
+    DogLog.log("Swerve/FeedForward", aimingFeedForward, Radians);
   }
 
   @Override
@@ -590,5 +598,38 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
               drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
             });
     simNotifier.startPeriodic(SIM_LOOP_PERIOD);
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    drivetrain
+        .getModule(0)
+        .getDriveMotor()
+        .getConfigurator()
+        .apply(
+            CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
+                .withSupplyCurrentLimit(supplyCurrentLimit));
+    drivetrain
+        .getModule(1)
+        .getDriveMotor()
+        .getConfigurator()
+        .apply(
+            CompTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
+                .withSupplyCurrentLimit(supplyCurrentLimit));
+    drivetrain
+        .getModule(2)
+        .getDriveMotor()
+        .getConfigurator()
+        .apply(
+            CompTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
+                .withSupplyCurrentLimit(supplyCurrentLimit));
+
+    drivetrain
+        .getModule(3)
+        .getDriveMotor()
+        .getConfigurator()
+        .apply(
+            CompTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
+                .withSupplyCurrentLimit(supplyCurrentLimit));
   }
 }

@@ -88,7 +88,7 @@ public class Robot extends Base581Robot {
   private final HubActivity hubActivity = new HubActivity();
 
   private final PowerManager powerManager =
-      new PowerManager(shooter, intake, deploy, shooterHood, kicker, feeder, conveyor);
+      new PowerManager(shooter, intake, deploy, shooterHood, kicker, feeder, conveyor, swerve);
 
   private final RobotManager robotManager =
       new RobotManager(
