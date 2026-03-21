@@ -71,11 +71,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     }
   }
 
-  public void climbScoreRequest(boolean isLeft) {
-    climbScoreAngle = 0.0;
-    setStateFromRequest(ShooterHoodState.CLIMB_SCORING);
-  }
-
   public void idleRequest() {
     switch (getState()) {
       case UNHOMED, HOMING -> {
@@ -111,7 +106,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
       case IDLE -> ShooterHoodConfig.IDLE_ANGLE;
       case SCORING -> distanceToScoringAngle(scoreDistance);
       case FEEDING -> distanceToFeedingAngle(feedDistance);
-      case CLIMB_SCORING -> climbScoreAngle;
     };
   }
 
@@ -154,11 +148,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
       case SCORING, FEEDING ->
           motor.setControl(
               positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
-      case CLIMB_SCORING -> {
-        motor.setControl(
-            positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(climbScoreAngle))));
-        DogLog.log("ShooterHood/CurrentSetpoint", climbScoreAngle);
-      }
       // Do nothing in the other states, they have static setpoints
       default -> {}
     }

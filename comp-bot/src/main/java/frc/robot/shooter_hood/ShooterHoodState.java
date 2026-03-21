@@ -5,6 +5,5 @@ public enum ShooterHoodState {
   HOMING,
   IDLE,
   SCORING,
-  FEEDING,
-  CLIMB_SCORING
+  FEEDING;
 }
