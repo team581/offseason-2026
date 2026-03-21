@@ -95,4 +95,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public void idleRequest() {
     setStateFromRequest(HopperState.IDLE);
   }
+  public void rehomeDeployRequest(){
+    setStateFromRequest(HopperState.REHOME_DEPLOY);
+  }
 }

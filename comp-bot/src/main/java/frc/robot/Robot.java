@@ -27,6 +27,7 @@ import frc.robot.kicker.Kicker;
 import frc.robot.localization.Localization;
 import frc.robot.power_manager.PowerManager;
 import frc.robot.robot_manager.RobotManager;
+import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
@@ -81,15 +82,15 @@ public class Robot extends Base581Robot {
 
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, kicker, feeder, conveyor, swerve);
+  private final HopperManager hopperManager = new HopperManager(deploy, intake, conveyor, feeder);
 
   private final RobotManager robotManager =
       new RobotManager(
+          hopperManager,
           shooterHood,
           localization,
           swerve,
           shooter,
-          intake,
-          deploy,
           vision,
           hardware.driverController,
           health,
