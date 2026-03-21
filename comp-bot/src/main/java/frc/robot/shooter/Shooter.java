@@ -121,14 +121,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
-      case CLIMB_SCORE -> {
-        var setpoint = climbScoreRpm / 60.0;
-        leftMotor.setControl(voltageRequest.withVelocity(setpoint));
-        rightMotor.setControl(voltageRequest.withVelocity(setpoint));
-        middleMotor.setControl(voltageRequest.withVelocity(setpoint));
-
-        DogLog.log("Shooter/RpmSetpoint", climbScoreRpm);
-      }
       case FEEDING -> {
         var setpoint = feedingRpm / 60.0;
         leftMotor.setControl(voltageRequest.withVelocity(setpoint));
@@ -219,11 +211,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
           MathUtil.isNear(leftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(rightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(middleMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-      case CLIMB_SCORE ->
-          MathUtil.isNear(leftMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(rightMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(middleMotorRpm, climbScoreRpm, ShooterConfig.RPM_TOLERANCE);
-
       case FEEDING ->
           MathUtil.isNear(leftMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
               && MathUtil.isNear(rightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)

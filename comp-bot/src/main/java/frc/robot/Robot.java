@@ -67,13 +67,13 @@ public class Robot extends Base581Robot {
       new Shooter(
           hardware.shooterLeftMotor, hardware.shooterRightMotor, hardware.shooterMiddleMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
+  private final Deploy deploy = new Deploy(hardware.deployMotor);
   private final Vision vision =
       new Vision(imu, frontLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
-  private final Feeder feeder = new Feeder(hardware.feederMotor);
+  private final Feeder feeder = new Feeder(hardware.leftFeederMotor, hardware.rightFeederMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorLeftMotor, hardware.conveyorRightMotor);
 

@@ -8,19 +8,15 @@ public enum RobotState {
 
   PREPARE_SCORE,
   SCORE,
-  STOP_SHOOTING_SCORE,
 
-  PREPARE_PRESET_SCORE,
-  PRESET_SCORE,
-  STOP_SHOOTING_PRESET_SCORE,
+  PREPARE_FALLBACK_SCORE,
+  FALLBACK_SCORE,
 
-  PREPARE_PRESET_FEED,
-  PRESET_FEED,
-  STOP_SHOOTING_PRESET_FEED,
+  PREPARE_FALLBACK_FEED,
+  FALLBACK_FEED,
 
   PREPARE_FEED,
   FEED,
-  STOP_SHOOTING_FEED,
 
   UNJAM;
 
@@ -32,8 +28,8 @@ public enum RobotState {
 
   public boolean isFeeding() {
     return switch (this) {
-      case PREPARE_PRESET_FEED -> true;
-      case PRESET_FEED -> true;
+      case PREPARE_FALLBACK_FEED -> true;
+      case FALLBACK_FEED -> true;
       case PREPARE_FEED -> true;
       case FEED -> true;
       default -> false;
@@ -42,8 +38,8 @@ public enum RobotState {
 
   public boolean isScoring() {
     return switch (this) {
-      case PREPARE_PRESET_SCORE -> true;
-      case PRESET_SCORE -> true;
+      case PREPARE_FALLBACK_SCORE -> true;
+      case FALLBACK_SCORE -> true;
       case PREPARE_SCORE -> true;
       case SCORE -> true;
       default -> false;

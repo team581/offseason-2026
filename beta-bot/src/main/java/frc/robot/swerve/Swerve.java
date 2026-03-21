@@ -40,7 +40,6 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
-import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
@@ -68,7 +67,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
 
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
-      new PhoenixPIDController(5.75, 0, 0);
+      new PhoenixPIDController(5.75, 0.0, 0);
 
   public final TunerSwerveDrivetrain drivetrain;
 
@@ -79,11 +78,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
   private final SwerveRequest.FieldCentric driverPerspectiveOpenLoop =
       new SwerveRequest.FieldCentric()
-          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.05)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withRotationalDeadband(0.05);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -91,14 +89,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
    */
   private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnapsOpenLoop =
       new SwerveRequest.FieldCentricFacingAngle()
-          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
-          .withDeadband(0.07)
-          .withRotationalDeadband(0.00)
+          .withDeadband(0.0)
+          .withRotationalDeadband(0.0)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -112,15 +109,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withRotationalDeadband(0.5)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -133,8 +128,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -147,8 +143,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withCenterOfRotation(TurretConfig.TURRET_TO_ROBOT.getTranslation());
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private final SwerveRequest.SwerveDriveBrake xRequest = new SwerveRequest.SwerveDriveBrake();
 
@@ -202,6 +199,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         new TrailblazerDriveSource(
             trailblazer, () -> drivetrainState.Pose, this::getFieldRelativeSpeeds);
     driveSource = teleopDriveSource;
+
+    drivePerspectiveSnapsOpenLoop.HeadingController.setTolerance(0.0, 0.0);
   }
 
   /**
@@ -387,7 +386,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public boolean isAimed() {
     return MathUtil.isNear(
-        turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 5.0, -180, 180);
+        turretStuckAimingAngle, drivetrainState.Pose.getRotation().getDegrees(), 1.0, -180, 180);
   }
 
   @Override
@@ -480,6 +479,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+          DogLog.timestamp("Swerve/DriverOverridingRotation");
           if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
             drivetrain.setControl(
                 driverPerspectiveOpenLoop
@@ -487,6 +487,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                     .withVelocityY(speeds.vyMetersPerSecond)
                     .withRotationalRate(speeds.omegaRadiansPerSecond));
           } else {
+            DogLog.timestamp("Swerve/TryingToAim");
             drivetrain.setControl(
                 withFieldRelativeTargetDirection(
                         drivePerspectiveSnapsOpenLoop
@@ -550,7 +551,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             .getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/CornerSnapAngle", cornerSnapAngle.getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/ChosenAngle", wallSnapAngle.getDegrees());
-
+    DogLog.log("Swerve/GoalAimingAngle", turretStuckAimingAngle);
     // Temporary logging for X swerve feature flag
     if (FeatureFlags.X_SWERVE.getAsBoolean()) {
       DogLog.log("Swerve/X/AbleToXSwerve", ableToXSwerve);
