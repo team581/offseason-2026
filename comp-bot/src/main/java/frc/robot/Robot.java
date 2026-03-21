@@ -13,12 +13,10 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
-import frc.robot.climber.Climber;
 import frc.robot.climber.GenericClimber;
 import frc.robot.climber.StubClimber;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
-import frc.robot.config.RobotKind;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.dye_rotor.DyeRotor;
@@ -77,8 +75,7 @@ public class Robot extends Base581Robot {
       new Vision(imu, frontLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final GenericClimber climber =
-      RobotKind.IS_COMP_BOT ? new StubClimber() : new Climber(hardware.climbMotor);
+  private final GenericClimber climber = new StubClimber();
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final Conveyor conveyor =
@@ -157,13 +154,6 @@ public class Robot extends Base581Robot {
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
     var operator =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.operatorController);
-
-    if (!RobotKind.IS_COMP_BOT) {
-      driver
-          .start()
-          .onPress(robotManager::startTeleopAutoClimbSequence)
-          .onRelease(robotManager::stopTeleopAutoClimbAlignment);
-    }
 
     driver.back().onPress(localization::zeroGyro);
 

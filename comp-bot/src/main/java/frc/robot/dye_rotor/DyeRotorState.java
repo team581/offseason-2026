@@ -2,7 +2,6 @@ package frc.robot.dye_rotor;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import frc.robot.config.RobotKind;
 
 public enum DyeRotorState {
   UNHOMED(0.0, 180.0, 0.0, 0.0),
@@ -13,7 +12,7 @@ public enum DyeRotorState {
   SCORE_SLOW(0, 180.0, 0.0, 0.0),
   FEED(20.0, 180.0, 10.0, 10.0),
 
-  UNJAM(RobotKind.IS_COMP_BOT ? -8.0 : -1.0, 180.0, 0.0, 0.0);
+  UNJAM(-8.0, 180.0, 0.0, 0.0);
 
   public static double bpsToRpm(double bps) {
     var circumference = 18.0 * Math.PI;
