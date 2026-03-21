@@ -212,76 +212,76 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
-        hopperManager.idleRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.idleRequest();
         // Set hood behavior separately while idling
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SCORE -> {
-        hopperManager.idleRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case FORCE_SCORE -> {
-        hopperManager.scoreRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case PREPARE_FEED -> {
-        hopperManager.idleRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
       case FEED -> {
-        hopperManager.scoreRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
       case PREPARE_SCORE -> {
-        hopperManager.idleRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
       case SCORE -> {
-        hopperManager.scoreRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
-        hopperManager.idleRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.normalDriveRequest();
       }
       case FALLBACK_FEED -> {
-        hopperManager.scoreRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.normalDriveRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
-        hopperManager.idleRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case FALLBACK_SCORE -> {
-        hopperManager.scoreRequest();
+        // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
