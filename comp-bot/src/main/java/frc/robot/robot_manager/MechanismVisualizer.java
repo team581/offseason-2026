@@ -28,7 +28,7 @@ public final class MechanismVisualizer {
             SHOOTER_HOOD_PIVOT_POINT,
             new Rotation3d(
                 0,
-                Math.toRadians(shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
+                -Math.toRadians(shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
                 0));
     var deployPose =
         new Pose3d(
