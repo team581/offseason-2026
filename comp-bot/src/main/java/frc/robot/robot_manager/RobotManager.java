@@ -212,81 +212,86 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void afterTransition(RobotState newState) {
     switch (newState) {
       case IDLE -> {
+        hopperManager.idleRequest();
         vision.setState(VisionState.HUB_TAGS);
         shooter.idleRequest();
         // Set hood behavior separately while idling
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SCORE -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case FORCE_SCORE -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case PREPARE_FEED -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        // Deploy is controlled separately
-        // Intake is controlled separately
         swerve.rateLimitedDriveRequest();
       }
       case FEED -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
       case PREPARE_SCORE -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
-        // Deploy is controlled separately
-        // Intake is controlled separately
         swerve.rateLimitedDriveRequest();
       }
       case SCORE -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        // Deploy is controlled separately
-        // Intake is controlled separately
         swerve.normalDriveRequest();
       }
       case FALLBACK_FEED -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.normalDriveRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case FALLBACK_SCORE -> {
+        hopperManager.scoreRequest();
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
       case UNJAM -> {
+        hopperManager.idleRequest();
         vision.setState(VisionState.TAGS);
         shooter.idleRequest();
         shooterHood.idleRequest();
-        // Deploy is controlled separately
         swerve.normalDriveRequest();
       }
     }
@@ -496,9 +501,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     driverWantsToIntake = wantsIntake;
     if (driverWantsToIntake) {
       switch (getState()) {
-        // TODO: finish figure out shoot and score logic
         case SCORE, FEED, FORCE_SCORE, FALLBACK_SCORE, FALLBACK_FEED ->
-            hopperManager.scoreRequest();
+            hopperManager.scoreAndIntakeRequest();
         default -> hopperManager.intakeRequest();
       }
     } else {
