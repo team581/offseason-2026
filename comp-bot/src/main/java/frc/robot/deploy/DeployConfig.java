@@ -48,7 +48,7 @@ public class DeployConfig {
   // Difference axis gains typically go in Slot 1
   private static final Slot1Configs DIFFERENCE_GAINS =
       new Slot1Configs().withKP(3).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
-  public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
+  public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(
               new FeedbackConfigs()

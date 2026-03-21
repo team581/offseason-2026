@@ -67,7 +67,7 @@ public class Robot extends Base581Robot {
       new Shooter(
           hardware.shooterLeftMotor, hardware.shooterRightMotor, hardware.shooterMiddleMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
+  private final Deploy deploy = new Deploy(hardware.deployMotor);
   private final Vision vision =
       new Vision(imu, frontLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
