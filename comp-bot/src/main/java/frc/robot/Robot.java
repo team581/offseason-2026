@@ -12,7 +12,6 @@ import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.cluster_map.ClusterMap;
@@ -81,12 +80,11 @@ public class Robot extends Base581Robot {
   private final HubActivity hubActivity = new HubActivity();
   private final CANrange hopperCANRange =
       new CANrange(hardware.hopperCANRange.getDeviceID(), hardware.hopperCANRange.getNetwork());
-  private final DigitalInput towerSensor = new DigitalInput(hardware.towerSensor.getChannel());
 
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
   private final HopperManager hopperManager =
-      new HopperManager(deploy, intake, conveyor, feeder, hopperCANRange, towerSensor);
+      new HopperManager(deploy, intake, conveyor, feeder, hopperCANRange, hardware.towerSensor);
 
   private final RobotManager robotManager =
       new RobotManager(
