@@ -5,7 +5,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum FeederState {
   SHOOT(12),
-  INTAKE(12),
+  BALL_FILLING(6),
   IDLE(0);
 
   public final double voltage;

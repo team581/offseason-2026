@@ -28,7 +28,7 @@ final class ConstraintsCalculatorTest {
     var targetAngleRadians = Math.PI;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
     // Max angular velocity of 10 rad/s, max angular acceleration of 1 rad/s^2
-    var constraints = new AutoConstraintOptions(0, 10.0, 0, 1.0);
+    var constraints = new AngularConstraintOptions(10.0, 1.0);
 
     // First call from rest - profiled controller should limit acceleration
     var result =
@@ -40,7 +40,7 @@ final class ConstraintsCalculatorTest {
             constraints);
 
     // Profiled controller should limit the angular velocity from the start
-    assertThat(Math.abs(result)).isLessThanOrEqualTo(constraints.maxAngularVelocity() + DELTA);
+    assertThat(Math.abs(result)).isLessThanOrEqualTo(constraints.maxVelocity() + DELTA);
   }
 
   @Test
@@ -50,7 +50,7 @@ final class ConstraintsCalculatorTest {
     var targetAngleRadians = Math.PI;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
     // Max angular velocity of 1 rad/s
-    var constraints = new AutoConstraintOptions(0, 1.0, 0, 1.0);
+    var constraints = new AngularConstraintOptions(1.0, 1.0);
 
     var result =
         calculator.constrainAngularVelocity(
@@ -61,7 +61,7 @@ final class ConstraintsCalculatorTest {
             constraints);
 
     // Profiled controller should limit the angular velocity
-    assertThat(Math.abs(result)).isLessThanOrEqualTo(constraints.maxAngularVelocity() + DELTA);
+    assertThat(Math.abs(result)).isLessThanOrEqualTo(constraints.maxVelocity() + DELTA);
   }
 
   @Test
@@ -71,7 +71,7 @@ final class ConstraintsCalculatorTest {
     var targetAngleRadians = Math.PI / 2;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
     // Constraints with 0 maxAngularVelocity means disabled
-    var constraints = new AutoConstraintOptions(0, 0, 0, 0);
+    var constraints = new AngularConstraintOptions(0, 0);
 
     var result =
         calculator.constrainAngularVelocity(
@@ -89,7 +89,7 @@ final class ConstraintsCalculatorTest {
     var desiredVelocity = 10.0;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
     // Max velocity of 2, max acceleration of 10
-    var constraints = new AutoConstraintOptions(2.0, 0, 10.0, 0);
+    var constraints = new LinearConstraintOptions(2.0, 10.0);
 
     // Over multiple calls with simulated time, the velocity should be clamped to max
     double result = 0;
@@ -100,7 +100,7 @@ final class ConstraintsCalculatorTest {
               desiredVelocity, currentSpeeds, Double.POSITIVE_INFINITY, constraints);
     }
 
-    assertEquals(constraints.maxLinearVelocity(), result, DELTA);
+    assertEquals(constraints.maxVelocity(), result, DELTA);
   }
 
   @Test
@@ -108,7 +108,7 @@ final class ConstraintsCalculatorTest {
     var desiredVelocity = 10.0;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
     // Max velocity of 10, max acceleration of 2
-    var constraints = new AutoConstraintOptions(10.0, 0, 2.0, 0);
+    var constraints = new LinearConstraintOptions(10.0, 2.0);
 
     // First call from rest should not immediately jump to desired velocity
     var result =
@@ -124,8 +124,8 @@ final class ConstraintsCalculatorTest {
   void constrainLinearVelocity_withNoConstraints_returnsDesiredVelocity() {
     var desiredVelocity = 5.0;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
-    // Constraints with 0 maxLinearVelocity means disabled
-    var constraints = new AutoConstraintOptions(0, 0, 0, 0);
+    // Constraints with 0 maxVelocity means disabled
+    var constraints = new LinearConstraintOptions(0, 0);
 
     var result =
         calculator.constrainLinearVelocity(
@@ -139,20 +139,20 @@ final class ConstraintsCalculatorTest {
     var desiredVelocity = 10.0;
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
     // Max velocity of 2, acceleration of 0 (disabled)
-    var constraints = new AutoConstraintOptions(2.0, 0, 0, 0);
+    var constraints = new LinearConstraintOptions(2.0, 0);
 
     var result =
         calculator.constrainLinearVelocity(
             desiredVelocity, currentSpeeds, Double.POSITIVE_INFINITY, constraints);
 
     // With acceleration disabled, velocity should immediately jump to max velocity (clamped)
-    assertEquals(constraints.maxLinearVelocity(), result, DELTA);
+    assertEquals(constraints.maxVelocity(), result, DELTA);
   }
 
   @Test
   void reset_resetsLinearVelocityState() {
     var currentSpeeds = new ChassisSpeeds(0, 0, 0);
-    var constraints = new AutoConstraintOptions(2.0, 0, 10.0, 0);
+    var constraints = new LinearConstraintOptions(2.0, 10.0);
 
     // Build up some velocity
     for (int i = 0; i < 50; i++) {
@@ -179,7 +179,7 @@ final class ConstraintsCalculatorTest {
     calculator.reset(currentSpeeds, currentAngle);
 
     // After reset with state, constraints should apply from current velocity
-    var constraints = new AutoConstraintOptions(10.0, 0, 2.0, 0);
+    var constraints = new LinearConstraintOptions(10.0, 2.0);
     var result =
         calculator.constrainLinearVelocity(
             10.0, currentSpeeds, Double.POSITIVE_INFINITY, constraints);

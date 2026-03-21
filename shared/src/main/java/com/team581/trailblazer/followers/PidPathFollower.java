@@ -2,9 +2,10 @@ package com.team581.trailblazer.followers;
 
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
-import com.team581.trailblazer.AutoConstraintOptions;
+import com.team581.trailblazer.AngularConstraintOptions;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.ConstraintsCalculator;
+import com.team581.trailblazer.LinearConstraintOptions;
 import com.team581.trailblazer.segments.AutoSegment;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
@@ -37,7 +38,10 @@ public class PidPathFollower implements PathFollower {
       AutoSegment segment,
       int currentPointIndex) {
     // Get constraints for the current point
-    var constraints = segment.getConstraints(currentPoint).orElseGet(AutoConstraintOptions::new);
+    var linearConstraints =
+        segment.getLinearConstraints(currentPoint).orElseGet(LinearConstraintOptions::new);
+    var angularConstraints =
+        segment.getAngularConstraints(currentPoint).orElseGet(AngularConstraintOptions::new);
 
     var distanceToEnd = currentPose.getTranslation().getDistance(targetPose.getTranslation());
 
@@ -65,17 +69,17 @@ public class PidPathFollower implements PathFollower {
     // Constrain velocities
     linearVelocity =
         velocityConstrainer.constrainLinearVelocity(
-            linearVelocity, currentSpeeds, distanceToEnd, constraints);
+            linearVelocity, currentSpeeds, distanceToEnd, linearConstraints);
     angularVelocity =
         velocityConstrainer.constrainAngularVelocity(
             angularVelocity,
             currentPose.getRotation().getRadians(),
             targetPose.getRotation().getRadians(),
             currentSpeeds,
-            constraints);
+            angularConstraints);
 
-    DogLog.log("Trailblazer/Follower/AngularLimit", constraints.maxAngularVelocity());
-    DogLog.log("Trailblazer/Follower/AngularACCLimit", constraints.maxAngularAcceleration());
+    DogLog.log("Trailblazer/Follower/AngularLimit", angularConstraints.maxVelocity());
+    DogLog.log("Trailblazer/Follower/AngularACCLimit", angularConstraints.maxAcceleration());
 
     DogLog.log("Trailblazer/Follower/AngularVelocityAfterConstraint", angularVelocity);
 

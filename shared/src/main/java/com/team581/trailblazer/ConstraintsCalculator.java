@@ -33,7 +33,7 @@ public class ConstraintsCalculator {
             angularPidConfig.getP(),
             angularPidConfig.getI(),
             angularPidConfig.getD(),
-            new AutoConstraintOptions().getAngularConstraints());
+            new AngularConstraintOptions().getConstraints());
 
     this.profiledAngularController.enableContinuousInput(-Math.PI, Math.PI);
   }
@@ -46,7 +46,7 @@ public class ConstraintsCalculator {
    * @param currentAngleRadians The current heading in radians
    * @param targetAngleRadians The target heading in radians
    * @param currentSpeeds The current chassis speeds (used to reset profiled controller state)
-   * @param constraints The constraint options to apply
+   * @param constraints The angular constraint options to apply
    * @return The constrained angular velocity in rad/s
    */
   public double constrainAngularVelocity(
@@ -54,13 +54,13 @@ public class ConstraintsCalculator {
       double currentAngleRadians,
       double targetAngleRadians,
       ChassisSpeeds currentSpeeds,
-      AutoConstraintOptions constraints) {
-    if (constraints.maxAngularVelocity() > 0) {
+      AngularConstraintOptions constraints) {
+    if (constraints.maxVelocity() > 0) {
       DogLog.timestamp("Constrainer/RunConstraint");
       return profiledAngularController.calculate(
           currentAngleRadians,
           new TrapezoidProfile.State(targetAngleRadians, 0),
-          constraints.getAngularConstraints());
+          constraints.getConstraints());
     }
 
     // Reset the profiled controller when constraints are not active
@@ -74,21 +74,21 @@ public class ConstraintsCalculator {
    * @param desiredVelocity The desired linear velocity in m/s
    * @param currentSpeeds The current chassis speeds (used to reset state when constraints are
    *     disabled)
-   * @param constraints The constraint options to apply
+   * @param constraints The linear constraint options to apply
    * @return The constrained linear velocity in m/s
    */
   public double constrainLinearVelocity(
       double desiredVelocity,
       ChassisSpeeds currentSpeeds,
       double distanceToEnd,
-      AutoConstraintOptions constraints) {
+      LinearConstraintOptions constraints) {
 
-    if (constraints.maxLinearVelocity() <= 0) {
+    if (constraints.maxVelocity() <= 0) {
       return desiredVelocity;
     }
 
-    if (constraints.maxLinearAcceleration() <= 0) {
-      return Math.min(constraints.maxLinearVelocity(), desiredVelocity);
+    if (constraints.maxAcceleration() <= 0) {
+      return Math.min(constraints.maxVelocity(), desiredVelocity);
     }
 
     var originalSign = Math.signum(desiredVelocity);
@@ -107,14 +107,13 @@ public class ConstraintsCalculator {
     lastTimestamp = currentTimestamp;
 
     var maxReachableVelocity =
-        Math.max((lastCommandedVelocity + (constraints.maxLinearAcceleration() * kDt)), 0.5);
+        Math.max((lastCommandedVelocity + (constraints.maxAcceleration() * kDt)), 0.5);
 
     // Calculate velocity needed to stop in time
-    var maxStoppingVelocity = Math.sqrt(2 * constraints.maxLinearAcceleration() * distanceToEnd);
+    var maxStoppingVelocity = Math.sqrt(2 * constraints.maxAcceleration() * distanceToEnd);
 
     // Apply constraints
-    var maxVelocityLimitedWantedVelocity =
-        Math.min(desiredVelocity, constraints.maxLinearVelocity());
+    var maxVelocityLimitedWantedVelocity = Math.min(desiredVelocity, constraints.maxVelocity());
 
     var linearVelocity = Math.min(maxVelocityLimitedWantedVelocity, maxReachableVelocity);
     linearVelocity = Math.min(linearVelocity, maxStoppingVelocity);
