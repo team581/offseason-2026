@@ -14,24 +14,29 @@ public class Hardware {
   private final CANBus canivore = new CANBus("581CANivore");
   private final CANBus rio = new CANBus();
 
-  public final TalonFX shooterLeftMotor = new TalonFX(15, rio);
-  public final TalonFX shooterRightMotor = new TalonFX(16, rio);
-  public final TalonFX shooterMiddleMotor = new TalonFX(40, rio);
-  public final TalonFX intakeLeftMotor = new TalonFX(21, rio);
-  public final TalonFX intakeRightMotor = new TalonFX(27, rio);
-  public final TalonFX deployMotor = new TalonFX(22);
+  public final TalonFX deployMotor = new TalonFX(15, canivore);
 
-  public final TalonFX shooterHoodMotor = new TalonFX(24, rio);
+  public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
+  public final TalonFX intakeRightMotor = new TalonFX(17, rio);
 
-  public final CANrange hopperCANRange = new CANrange(28, canivore);
+  public final TalonFX conveyorLeftMotor = new TalonFX(18, rio);
+  public final TalonFX conveyorRightMotor = new TalonFX(19, rio);
 
-  public final TalonFX kickerLeftMotor = new TalonFX(29, canivore);
-  public final TalonFX kickerRightMotor = new TalonFX(30, canivore);
-  public final TalonFX leftFeederMotor = new TalonFX(31, canivore);
-  public final TalonFX rightFeederMotor = new TalonFX(32, canivore);
+  public final TalonFX extender = new TalonFX(20);
 
-  public final TalonFX conveyorLeftMotor = new TalonFX(33, canivore);
-  public final TalonFX conveyorRightMotor = new TalonFX(34, canivore);
+  public final TalonFX leftFeederMotor = new TalonFX(21, rio);
+  public final TalonFX rightFeederMotor = new TalonFX(22, rio);
+
+  public final TalonFX kickerLeftMotor = new TalonFX(23, rio);
+  public final TalonFX kickerRightMotor = new TalonFX(24, rio);
+
+  public final TalonFX shooterHoodMotor = new TalonFX(25, rio);
+
+  public final TalonFX shooterLeftMotor = new TalonFX(26, rio);
+  public final TalonFX shooterRightMotor = new TalonFX(27, rio);
+  public final TalonFX shooterMiddleMotor = new TalonFX(28, rio);
+
+  public final CANrange hopperCANRange = new CANrange(29, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
