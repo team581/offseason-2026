@@ -117,7 +117,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   public void homeInAutoRequest() {
-    setStateFromRequest(DeployState.HOME_INWARD);
+    setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
   @Override
