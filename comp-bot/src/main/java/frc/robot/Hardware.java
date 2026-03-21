@@ -3,6 +3,7 @@ package frc.robot;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
@@ -37,6 +38,7 @@ public class Hardware {
   public final TalonFX shooterMiddleMotor = new TalonFX(28, rio);
 
   public final CANrange hopperCANRange = new CANrange(29, canivore);
+  public final DigitalInput towerSensor = new DigitalInput(30);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(

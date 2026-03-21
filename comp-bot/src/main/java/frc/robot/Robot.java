@@ -1,5 +1,6 @@
 package frc.robot;
 
+import com.ctre.phoenix6.hardware.CANrange;
 import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
@@ -11,6 +12,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.cluster_map.ClusterMap;
@@ -79,10 +81,14 @@ public class Robot extends Base581Robot {
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
+  private final CANrange hopperCANRange =
+      new CANrange(hardware.hopperCANRange.getDeviceID(), hardware.hopperCANRange.getNetwork());
+  private final DigitalInput towerSensor = new DigitalInput(hardware.towerSensor.getChannel());
 
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, kicker, feeder, conveyor, swerve);
-  private final HopperManager hopperManager = new HopperManager(deploy, intake, conveyor, feeder);
+  private final HopperManager hopperManager =
+      new HopperManager(deploy, intake, conveyor, feeder, hopperCANRange, towerSensor);
 
   private final RobotManager robotManager =
       new RobotManager(
