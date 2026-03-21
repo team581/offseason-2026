@@ -43,6 +43,10 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.deploy = deploy;
   }
 
+  public void firstAutoSegmentRequest() {
+    setStateFromRequest(PowerManagerState.AUTO_FIRST_SEGMENT);
+  }
+
   public void idleRequest() {
     setStateFromRequest(PowerManagerState.IDLE);
   }

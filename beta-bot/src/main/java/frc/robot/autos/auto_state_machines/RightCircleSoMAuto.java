@@ -227,6 +227,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
       case INTAKE_ACROSS_MIDLINE -> {
         trailblazer.setActiveSegment(intakeAcrossMidline);
         robotManager.intakeAutoRequest();
+        robotManager.powerManager.firstAutoSegmentRequest();
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
