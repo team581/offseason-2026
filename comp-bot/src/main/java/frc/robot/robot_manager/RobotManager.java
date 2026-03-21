@@ -67,7 +67,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0);
 
   public RobotManager(
-    HopperManager hopperManager,
+      HopperManager hopperManager,
       ShooterHood shooterHood,
       Localization localization,
       Swerve swerve,
@@ -101,9 +101,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // No auto transitions for these states
-      case UNJAM,
-          FORCE_SCORE ->
-          currentState;
+      case UNJAM, FORCE_SCORE -> currentState;
       case STOP_SHOOTING_SCORE,
           STOP_SHOOTING_PRESET_SCORE,
           STOP_SHOOTING_PRESET_FEED,
@@ -356,7 +354,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.rateLimitedDriveRequest();
         }
-        //TODO:Implement hoppermanager shuffle here
+        // TODO:Implement hoppermanager shuffle here
       }
       case PREPARE_FEED -> {
         smartHoodPrepareFeedRequest();
@@ -373,7 +371,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.rateLimitedDriveRequest();
         }
-//TODO: implement hoppermanager shuffle here
+        // TODO: implement hoppermanager shuffle here
       }
 
       // Fallback states
@@ -398,7 +396,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.normalDriveRequest();
         }
-//TODO: Shuffle
+        // TODO: Shuffle
 
       }
       case PREPARE_PRESET_FEED -> {
@@ -414,7 +412,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           swerve.normalDriveRequest();
         }
-//TODO: Shuffle
+        // TODO: Shuffle
 
       }
       default -> {}
@@ -428,8 +426,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
     DogLog.log("RobotManager/gpDetection/both", detectingGp());
 
-    MechanismVisualizer.log(
-        robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
+    MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
   }
 
   private void smartHoodIdleRequest() {
@@ -476,14 +473,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void idleRequest() {
-      switch (getState()) {
-        case SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_SCORE);
-        case PRESET_SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_SCORE);
-        case FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_FEED);
-        case PRESET_FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_FEED);
-        default -> setStateFromRequest(RobotState.IDLE);
-      }
-
+    switch (getState()) {
+      case SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_SCORE);
+      case PRESET_SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_SCORE);
+      case FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_FEED);
+      case PRESET_FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_FEED);
+      default -> setStateFromRequest(RobotState.IDLE);
+    }
   }
 
   public void forceShootRequest() {
@@ -493,8 +489,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareScoreRequest() {
-    if (getState() != RobotState.PRESET_SCORE
-        && getState() != RobotState.SCORE) {
+    if (getState() != RobotState.PRESET_SCORE && getState() != RobotState.SCORE) {
       if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
       } else {
@@ -504,8 +499,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareFeedRequest() {
-    if (getState() != RobotState.PRESET_FEED
-        && getState() != RobotState.FEED) {
+    if (getState() != RobotState.PRESET_FEED && getState() != RobotState.FEED) {
       if (!health.isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
       } else {
@@ -542,7 +536,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     driverWantsToIntake = wantsIntake;
     if (driverWantsToIntake) {
       switch (getState()) {
-        //TODO: finish figure out shoot and score logic
+        // TODO: finish figure out shoot and score logic
         case SCORE, FEED, FORCE_SCORE, PRESET_SCORE, PRESET_FEED -> hopperManager.scoreRequest();
         default -> hopperManager.intakeRequest();
       }
@@ -570,7 +564,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void cancelIntakeRequest() {
     hopperManager.idleRequest();
 
-    //TODO: Figure out shuffle logic
+    // TODO: Figure out shuffle logic
     // If we are shooting while cancelling a previous intake request, send a new
     // hopper shuffle request
     // switch (getState()) {
@@ -594,25 +588,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void unjamRequest() {
-      setStateFromRequest(RobotState.UNJAM);
+    setStateFromRequest(RobotState.UNJAM);
   }
 
   public void homeDeployRequest() {
-      hopperManager.rehomeDeployRequest();
+    hopperManager.rehomeDeployRequest();
   }
 
   public void homeDeployInAutoRequest() {
-      hopperManager.rehomeDeployRequest();
-
+    hopperManager.rehomeDeployRequest();
   }
 
   public void homeShooterHoodRequest() {
-      shooterHood.homingRequest();
+    shooterHood.homingRequest();
   }
-
-
-
-
 
   @Override
   protected void collectInputs() {
