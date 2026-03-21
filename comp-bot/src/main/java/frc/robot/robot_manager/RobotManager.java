@@ -219,7 +219,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SCORE -> {
-        hopperManager.scoreRequest();
+        hopperManager.idleRequest();
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
@@ -233,7 +233,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case PREPARE_FEED -> {
-        hopperManager.scoreRequest();
+        hopperManager.idleRequest();
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
@@ -247,7 +247,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.rateLimitedDriveRequest();
       }
       case PREPARE_SCORE -> {
-        hopperManager.scoreRequest();
+        hopperManager.idleRequest();
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         swerve.rateLimitedDriveRequest();
@@ -260,7 +260,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.rateLimitedDriveRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
-        hopperManager.scoreRequest();
+        hopperManager.idleRequest();
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
@@ -274,7 +274,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
-        hopperManager.scoreRequest();
+        hopperManager.idleRequest();
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());

@@ -39,7 +39,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       }
       case SCORE -> {
         deploy.intakeRequest();
-        intake.intakeRequest();
+        intake.shootRequest();
         conveyor.shootRequest();
         feeder.shootRequest();
       }
