@@ -11,7 +11,8 @@ import java.util.Optional;
 
 public class AutoSegmentBuilder {
   private final List<AutoPoint<?>> points;
-  private Optional<AutoConstraintOptions> constraints = Optional.empty();
+  private Optional<LinearConstraintOptions> linearConstraints = Optional.empty();
+  private Optional<AngularConstraintOptions> angularConstraints = Optional.empty();
 
   AutoSegmentBuilder(List<AutoPoint<?>> waypoints) {
     this.points = waypoints;
@@ -23,7 +24,7 @@ public class AutoSegmentBuilder {
    * @return The segment.
    */
   public AutoSegment forever() {
-    return new AutoSegmentForever(points, constraints);
+    return new AutoSegmentForever(points, linearConstraints, angularConstraints);
   }
 
   /**
@@ -44,7 +45,7 @@ public class AutoSegmentBuilder {
           "Last point is missing a transition tolerance, but segment is trying to be built with untilFinished()");
     }
 
-    return new AutoSegmentLastPointEnd(points, constraints);
+    return new AutoSegmentLastPointEnd(points, linearConstraints, angularConstraints);
   }
 
   /**
@@ -59,7 +60,8 @@ public class AutoSegmentBuilder {
       return forever();
     }
 
-    return new AutoSegmentCustomEnd(points, constraints, finishedTolerance);
+    return new AutoSegmentCustomEnd(
+        points, linearConstraints, angularConstraints, finishedTolerance);
   }
 
   /**
@@ -71,11 +73,8 @@ public class AutoSegmentBuilder {
    */
   public AutoSegmentBuilder withAngularConstraints(
       double maxAngularVelocity, double maxAngularAcceleration) {
-    this.constraints =
-        Optional.of(
-            constraints
-                .orElseGet(AutoConstraintOptions::new)
-                .withAngularConstraints(maxAngularVelocity, maxAngularAcceleration));
+    this.angularConstraints =
+        Optional.of(new AngularConstraintOptions(maxAngularVelocity, maxAngularAcceleration));
     return this;
   }
 
@@ -87,11 +86,7 @@ public class AutoSegmentBuilder {
    * @return This builder.
    */
   public AutoSegmentBuilder withLinearConstraints(double maxVelocity, double maxAcceleration) {
-    this.constraints =
-        Optional.of(
-            constraints
-                .orElseGet(AutoConstraintOptions::new)
-                .withLinearConstraints(maxVelocity, maxAcceleration));
+    this.linearConstraints = Optional.of(new LinearConstraintOptions(maxVelocity, maxAcceleration));
     return this;
   }
 }
