@@ -39,7 +39,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       }
       case SCORE -> {
         deploy.intakeRequest();
-        intake.intakeRequest();
+        intake.shootRequest();
         conveyor.shootRequest();
         feeder.shootRequest();
       }
@@ -55,7 +55,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.shootRequest();
         feeder.shootRequest();
       }
-      case CLIMB -> {
+      case CLIMB_EMPTY -> {
         // deploy does nothing
         intake.idleRequest();
         conveyor.idleRequest();
@@ -82,14 +82,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public void scoreRequest() {
-    if (intake.getState().isIntaking()) {
-      setStateFromRequest(HopperState.SCORE_AND_INTAKE);
-    }
     setStateFromRequest(HopperState.SCORE);
   }
 
+  public void scoreAndIntakeRequest() {
+    setStateFromRequest(HopperState.SCORE_AND_INTAKE);
+  }
+
   public void climbRequest() {
-    setStateFromRequest(HopperState.CLIMB);
+    setStateFromRequest(HopperState.CLIMB_EMPTY);
   }
 
   public void idleRequest() {

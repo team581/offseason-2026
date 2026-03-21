@@ -127,8 +127,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case UNHOMED, INTAKE, STOW -> currentState;
 
       case HOME_INWARD -> {
-        if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
-            && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
+        if (rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
           yield DeployState.INTAKE;
         } else {
@@ -136,8 +135,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         }
       }
       case HOME_OUTWARD -> {
-        if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
-            && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
+        if (rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
           yield DeployState.INTAKE;
         } else {
