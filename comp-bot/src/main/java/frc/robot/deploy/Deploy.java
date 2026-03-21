@@ -46,10 +46,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
-  public void stopShootingRequest() {
-    setStateFromRequest(DeployState.STOW);
-  }
-
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
   }
@@ -68,8 +64,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
-      // Do nothing
-      case UNHOMED, INTAKE, STOW -> currentState;
+      case UNHOMED, INTAKE, STOW, HOPPER_COMPACTION_IN, HOPPER_COMPACTION_FINISH -> currentState;
 
       case HOME_INWARD -> {
         if (motor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
@@ -79,6 +74,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           yield currentState;
         }
       }
+
       case HOME_OUTWARD -> {
         if (motor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
           motor.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
@@ -87,8 +83,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           yield currentState;
         }
       }
-      case HOPPER_COMPACTION_FINISH -> atGoal() ? DeployState.STOW : currentState;
-      case HOPPER_COMPACTION_IN -> atGoal() ? DeployState.HOPPER_COMPACTION_FINISH : currentState;
     };
   }
 
@@ -102,9 +96,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case UNHOMED -> {
         motor.disable();
       }
+
       case HOME_INWARD -> {
         motor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
       }
+
       case HOME_OUTWARD -> {
         motor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
       }
@@ -164,12 +160,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
     if (getState() == DeployState.HOME_INWARD) {
-      // Use seedPosition instead of differentialMechanism.setPosition to avoid creating a
-      // firmware-level sensor offset that compounds with setRawRotorPosition in
-      // applyMechanismState.
       deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
       setStateFromRequest(DeployState.INTAKE);
     }
+
     if (getState() == DeployState.HOME_OUTWARD) {
       deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
       setStateFromRequest(DeployState.INTAKE);
