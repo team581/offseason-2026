@@ -1,5 +1,6 @@
 package frc.robot.deploy;
 
+import com.google.errorprone.annotations.DoNotCall;
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -19,6 +20,7 @@ public enum DeployState {
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
 
+  @DoNotCall("Always throws java.lang.UnsupportedOperationException")
   public boolean atGoal() {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'atGoal'");
