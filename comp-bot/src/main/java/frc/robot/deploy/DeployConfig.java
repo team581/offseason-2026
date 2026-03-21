@@ -92,4 +92,7 @@ public class DeployConfig {
           .withSlot0(AVERAGE_GAINS)
           .withSlot1(DIFFERENCE_GAINS)
           .withSlot2(GAINSCHED_GAINS);
+
+  public static double HIGH_CAPACITY_THRESHOLD;
+  public static double MEDIUM_CAPACITY_THRESHOLD;
 }

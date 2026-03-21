@@ -64,7 +64,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
-      case UNHOMED, INTAKE, STOW, HOPPER_COMPACTION_IN, HOPPER_COMPACTION_FINISH -> currentState;
+      case UNHOMED, INTAKE, STOW -> currentState;
 
       case HOME_INWARD -> {
         if (motor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
@@ -83,6 +83,15 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           yield currentState;
         }
       }
+
+      case HOPPER_COMPACTION_IN -> {
+        if (atGoal()) {
+          yield DeployState.INTAKE;
+        } else {
+          yield currentState;
+        }
+      }
+      default -> currentState;
     };
   }
 
@@ -93,17 +102,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   @Override
   protected void afterTransition(DeployState newState) {
     switch (newState) {
-      case UNHOMED -> {
-        motor.disable();
-      }
-
-      case HOME_INWARD -> {
-        motor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
-      }
-
-      case HOME_OUTWARD -> {
-        motor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
-      }
+      case UNHOMED -> motor.disable();
+      case HOME_INWARD -> motor.setVoltage(DeployConfig.HOMING_VOLTAGE_INWARD);
+      case HOME_OUTWARD -> motor.setVoltage(DeployConfig.HOMING_VOLTAGE_OUTWARD);
       default -> motor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
     }
   }

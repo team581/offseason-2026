@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
+import frc.robot.deploy.DeployConfig;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -24,10 +25,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final DigitalInput towerSensor;
 
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
-  private HopperCapacity hopperCapacity = HopperCapacity.LOW;
-  private double hopperCANRangeDistance = 0.0;
+
+  private double hopperDistance = 0.0;
+  private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
-  private double filteredHopperCANRangeDistance;
+
+  private HopperCapacity hopperCapacity = HopperCapacity.LOW;
+  private boolean capacityNotHigh = true;
+
+  private final Timer shuffleTimer = new Timer();
   private final Timer canRangeUpdateTimer = new Timer();
 
   public HopperManager(
@@ -44,16 +50,28 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.feeder = feeder;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
+
+    shuffleTimer.start();
   }
 
   @Override
   protected HopperState getNextState(HopperState currentState) {
+    if (deploy.getState().atGoal()) {
+      return HopperState.SCORE;
+    }
+
     return switch (currentState) {
       case INTAKE ->
           hopperCapacity == HopperCapacity.MEDIUM ? HopperState.BALL_FILLING : currentState;
       case BALL_FILLING -> {
         if (towerSensor.get()) {
           yield HopperState.INTAKE;
+        }
+        yield currentState;
+      }
+      case COMPACT_IN -> {
+        if (deploy.atGoal()) {
+          yield HopperState.IDLE;
         }
         yield currentState;
       }
@@ -65,14 +83,14 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case IDLE -> {
-        // Deploy does nothing in idle
+        deploy.intakeRequest();
         intake.idleRequest();
         conveyor.idleRequest();
         feeder.idleRequest();
       }
       case SCORE -> {
         deploy.intakeRequest();
-        intake.shootRequest();
+        intake.intakeRequest();
         conveyor.shootRequest();
         feeder.shootRequest();
       }
@@ -94,16 +112,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.shootRequest();
         feeder.shootRequest();
       }
-      case CLIMB_EMPTY -> {
-        // deploy does nothing
-        intake.idleRequest();
-        conveyor.idleRequest();
-        feeder.idleRequest();
-      }
       case REHOME_DEPLOY -> {
         deploy.homingRequest();
         intake.idleRequest();
         conveyor.idleRequest();
+        feeder.idleRequest();
+      }
+
+      case COMPACT_IN -> {
+        deploy.hopperCompactionRequest();
+        conveyor.shootRequest();
         feeder.idleRequest();
       }
     }
@@ -121,11 +139,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public void scoreRequest() {
+    if (intake.getState().isIntaking()) {
+      setStateFromRequest(HopperState.SCORE_AND_INTAKE);
+    }
     setStateFromRequest(HopperState.SCORE);
-  }
-
-  public void scoreAndIntakeRequest() {
-    setStateFromRequest(HopperState.SCORE_AND_INTAKE);
   }
 
   public void climbRequest() {
@@ -142,29 +159,31 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
-
     if (DSOptions.USE_CANRANGE.get()) {
-      hopperCANRangeDistance =
-          Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+      hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
-    filteredHopperCANRangeDistance = hopperFilter.calculate(hopperCANRangeDistance);
 
-    if (filteredHopperCANRangeDistance >= 10) {
+    filteredDistance = hopperFilter.calculate(hopperDistance);
+
+    if (filteredDistance >= DeployConfig.HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
-    } else if (filteredHopperCANRangeDistance >= 5) {
+    } else if (filteredDistance >= DeployConfig.MEDIUM_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
     }
+
+    capacityNotHigh =
+        !DSOptions.USE_CANRANGE.getAsBoolean() || hopperCapacity != HopperCapacity.HIGH;
   }
 
   @Override
   public void robotPeriodic() {
     super.robotPeriodic();
-    if (previousCanRangeDistance != hopperCANRangeDistance) {
+    if (previousCanRangeDistance != hopperDistance) {
       canRangeUpdateTimer.reset();
     }
-    previousCanRangeDistance = hopperCANRangeDistance;
+    previousCanRangeDistance = hopperDistance;
 
     if (canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
       DogLog.logFault("CANrange distance not updating", AlertType.kError);

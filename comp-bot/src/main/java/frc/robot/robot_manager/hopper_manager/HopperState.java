@@ -11,7 +11,9 @@ public enum HopperState {
   CLIMB_EMPTY,
   CLIMB_APPROACH,
   CLIMB_LINEUP,
-  CLIMB_HANG;
+  CLIMB_HANG,
+
+  COMPACT_IN;
 
   public boolean isIntaking() {
     return this == INTAKE || this == SCORE_AND_INTAKE;

@@ -19,6 +19,11 @@ public enum DeployState {
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
 
+  public boolean atGoal() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'atGoal'");
+  }
+
   public double getLength() {
     return tunableLength.get();
   }
