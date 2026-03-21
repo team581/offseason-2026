@@ -101,11 +101,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     return switch (currentState) {
       // No auto transitions for these states
       case UNJAM, FORCE_SCORE -> currentState;
-      case STOP_SHOOTING_SCORE,
-          STOP_SHOOTING_PRESET_SCORE,
-          STOP_SHOOTING_PRESET_FEED,
-          STOP_SHOOTING_FEED ->
-          RobotState.IDLE;
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoalDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
@@ -114,16 +109,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case IDLE -> currentState;
 
-      case PREPARE_PRESET_SCORE, PRESET_SCORE ->
+      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE ->
           !isMoving
                   && ((shooter.atGoalDebounced() && shooterHood.atGoal())
                       || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
-              ? RobotState.PRESET_SCORE
-              : RobotState.PREPARE_PRESET_SCORE;
-      case PREPARE_PRESET_FEED, PRESET_FEED ->
+              ? RobotState.FALLBACK_SCORE
+              : RobotState.PREPARE_FALLBACK_SCORE;
+      case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
           shooter.atGoalDebounced() && shooterHood.atGoal()
-              ? RobotState.PRESET_FEED
-              : RobotState.PREPARE_PRESET_FEED;
+              ? RobotState.FALLBACK_FEED
+              : RobotState.PREPARE_FALLBACK_FEED;
       case PREPARE_SCORE -> {
         logScoringTransition();
 
@@ -155,10 +150,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             yield RobotState.PREPARE_FEED;
           }
           yield currentState;
-        }
-
-        if (!hubActivity.getTOFBasedHubActive()) {
-          yield RobotState.STOP_SHOOTING_SCORE;
         }
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
@@ -252,12 +243,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
-      case STOP_SHOOTING_FEED -> {
-        vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedingParameters.distance());
-        shooterHood.feedRequest(feedingParameters.distance());
-        swerve.normalDriveRequest();
-      }
       case PREPARE_SCORE -> {
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
@@ -271,13 +256,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.rateLimitedDriveRequest();
       }
-      case STOP_SHOOTING_SCORE -> {
-        vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(scoringParameters.distance());
-        shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.rateLimitedDriveRequest();
-      }
-      case PREPARE_PRESET_FEED -> {
+      case PREPARE_FALLBACK_FEED -> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
@@ -285,31 +264,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Intake is controlled separately
         swerve.normalDriveRequest();
       }
-      case PRESET_FEED -> {
+      case FALLBACK_FEED -> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.normalDriveRequest();
       }
-      case STOP_SHOOTING_PRESET_FEED -> {
-        vision.setState(VisionState.TAGS);
-        shooter.feedRequest(PRESET_FEED_DISTANCE);
-        shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        swerve.normalDriveRequest();
-      }
-      case PREPARE_PRESET_SCORE -> {
+      case PREPARE_FALLBACK_SCORE -> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
       }
-      case PRESET_SCORE -> {
-        vision.setState(VisionState.TAGS);
-        shooter.scoreRequest(scoringParameters.distance());
-        shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.normalDriveRequest();
-      }
-      case STOP_SHOOTING_PRESET_SCORE -> {
+      case FALLBACK_SCORE -> {
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
@@ -337,7 +304,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
       }
 
-      case PREPARE_SCORE, STOP_SHOOTING_SCORE -> {
+      case PREPARE_SCORE -> {
         smartHoodPrepareScoreRequest();
         if (hopperManager.getState().isIntaking()) {
           swerve.intakeRateLimitedDriveRequest();
@@ -374,7 +341,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
 
       // Fallback states
-      case PREPARE_PRESET_SCORE -> {
+      case PREPARE_FALLBACK_SCORE -> {
         // Automatically update scoring parameters with preset pose
         if (isMoving) {
           shooterHood.idleRequest();
@@ -387,7 +354,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           swerve.normalDriveRequest();
         }
       }
-      case PRESET_SCORE -> {
+      case FALLBACK_SCORE -> {
         // Automatically update scoring parameters with preset pose
         shooterHood.scoreRequest(scoringParameters.distance());
         if (hopperManager.getState().isIntaking()) {
@@ -398,14 +365,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // TODO: Shuffle
 
       }
-      case PREPARE_PRESET_FEED -> {
+      case PREPARE_FALLBACK_FEED -> {
         if (hopperManager.getState().isIntaking()) {
           swerve.intakeDriveRequest();
         } else {
           swerve.normalDriveRequest();
         }
       }
-      case PRESET_FEED -> {
+      case FALLBACK_FEED -> {
         if (hopperManager.getState().isIntaking()) {
           swerve.intakeDriveRequest();
         } else {
@@ -472,13 +439,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void idleRequest() {
-    switch (getState()) {
-      case SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_SCORE);
-      case PRESET_SCORE -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_SCORE);
-      case FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_FEED);
-      case PRESET_FEED -> setStateFromRequest(RobotState.STOP_SHOOTING_PRESET_FEED);
-      default -> setStateFromRequest(RobotState.IDLE);
-    }
+    setStateFromRequest(RobotState.IDLE);
   }
 
   public void forceShootRequest() {
@@ -488,9 +449,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareScoreRequest() {
-    if (getState() != RobotState.PRESET_SCORE && getState() != RobotState.SCORE) {
+    if (getState() != RobotState.FALLBACK_SCORE && getState() != RobotState.SCORE) {
       if (!health.isLocalizationHealthy()) {
-        setStateFromRequest(RobotState.PREPARE_PRESET_SCORE);
+        setStateFromRequest(RobotState.PREPARE_FALLBACK_SCORE);
       } else {
         setStateFromRequest(RobotState.PREPARE_SCORE);
       }
@@ -498,9 +459,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareFeedRequest() {
-    if (getState() != RobotState.PRESET_FEED && getState() != RobotState.FEED) {
+    if (getState() != RobotState.FALLBACK_FEED && getState() != RobotState.FEED) {
       if (!health.isLocalizationHealthy()) {
-        setStateFromRequest(RobotState.PREPARE_PRESET_FEED);
+        setStateFromRequest(RobotState.PREPARE_FALLBACK_FEED);
       } else {
         setStateFromRequest(RobotState.PREPARE_FEED);
       }
@@ -536,12 +497,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (driverWantsToIntake) {
       switch (getState()) {
         // TODO: finish figure out shoot and score logic
-        case SCORE, FEED, FORCE_SCORE, PRESET_SCORE, PRESET_FEED -> hopperManager.scoreRequest();
+        case SCORE, FEED, FORCE_SCORE, FALLBACK_SCORE, FALLBACK_FEED ->
+            hopperManager.scoreRequest();
         default -> hopperManager.intakeRequest();
       }
     } else {
       switch (getState()) {
-        case SCORE, FEED, FORCE_SCORE, PRESET_SCORE, PRESET_FEED -> hopperManager.scoreRequest();
+        case SCORE, FEED, FORCE_SCORE, FALLBACK_SCORE, FALLBACK_FEED ->
+            hopperManager.scoreRequest();
         default -> hopperManager.idleRequest();
       }
     }
