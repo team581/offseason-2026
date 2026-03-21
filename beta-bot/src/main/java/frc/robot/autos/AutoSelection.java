@@ -9,6 +9,7 @@ import frc.robot.autos.auto_state_machines.RightCircleAlternateAuto;
 import frc.robot.autos.auto_state_machines.RightCircleSoMAuto;
 // import frc.robot.autos.auto_state_machines.RightPullSwoopShootAuto;
 import frc.robot.autos.auto_state_machines.RightStraightShootClimbAuto;
+import frc.robot.autos.auto_state_machines.RightTestPathAuto;
 import frc.robot.robot_manager.RobotManager;
 import java.util.function.BiFunction;
 
@@ -16,6 +17,7 @@ public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING(DoNothingAuto::new),
   RIGHT_STRAIGHT_SHOOT(RightStraightShootClimbAuto::new),
   //  RIGHT_PULL_SWOOP_SHOOT(RightPullSwoopShootAuto::new),
+  TEST_AUTO_PATH(RightTestPathAuto::new),
   RIGHT_CIRCLE_SOM(RightCircleSoMAuto::new),
   RIGHT_ALTERNATE_CIRCLE_SOM(RightCircleAlternateAuto::new),
   LEFT_CIRCLE_SOM(LeftCircleSoMAuto::new),
