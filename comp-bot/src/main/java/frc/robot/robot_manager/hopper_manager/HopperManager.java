@@ -139,10 +139,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public void scoreRequest() {
-    if (intake.getState().isIntaking()) {
-      setStateFromRequest(HopperState.SCORE_AND_INTAKE);
-    }
     setStateFromRequest(HopperState.SCORE);
+  }
+
+  public void scoreAndIntakeRequest() {
+    setStateFromRequest(HopperState.SCORE_AND_INTAKE);
   }
 
   public void climbRequest() {
