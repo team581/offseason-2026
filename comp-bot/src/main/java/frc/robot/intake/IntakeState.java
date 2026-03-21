@@ -5,7 +5,6 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum IntakeState {
   INTAKE(12),
-  INTAKE_AUTO(12),
   IDLE(0),
   SHOOT(3),
   SHOOT_THEN_INTAKE(10);
@@ -23,6 +22,6 @@ public enum IntakeState {
   }
 
   public boolean isIntaking() {
-    return this == INTAKE || this == INTAKE_AUTO || this == SHOOT_THEN_INTAKE;
+    return this == INTAKE || this == SHOOT_THEN_INTAKE;
   }
 }

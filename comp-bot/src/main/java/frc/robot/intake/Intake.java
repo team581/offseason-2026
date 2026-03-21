@@ -42,10 +42,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.INTAKE);
   }
 
-  public void intakeAutoRequest() {
-    setStateFromRequest(IntakeState.INTAKE_AUTO);
-  }
-
   public void idleRequest() {
     setStateFromRequest(IntakeState.IDLE);
   }
@@ -58,10 +54,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
         rightMotor.disable();
       }
       case INTAKE -> {
-        leftMotor.setVoltage(newState.getVoltage());
-        rightMotor.setVoltage(newState.getVoltage());
-      }
-      case INTAKE_AUTO -> {
         leftMotor.setVoltage(newState.getVoltage());
         rightMotor.setVoltage(newState.getVoltage());
       }
