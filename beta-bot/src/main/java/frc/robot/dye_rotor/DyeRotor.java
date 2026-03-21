@@ -265,15 +265,15 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> implements Po
         .apply(
             DyeRotorConfig.ROTOR_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
-    horizontalMotor
-        .getConfigurator()
-        .apply(
-            DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    verticalMotor
-        .getConfigurator()
-        .apply(
-            DyeRotorConfig.VERTICAL_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+    // horizontalMotor
+    //     .getConfigurator()
+    //     .apply(
+    //         DyeRotorConfig.HORIZONTAL_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+    //             supplyCurrentLimit));
+    // verticalMotor
+    //     .getConfigurator()
+    //     .apply(
+    //         DyeRotorConfig.VERTICAL_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+    //             supplyCurrentLimit));
   }
 }
