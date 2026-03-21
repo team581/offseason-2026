@@ -13,13 +13,10 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
-import frc.robot.climber.GenericClimber;
-import frc.robot.climber.StubClimber;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
-import frc.robot.dye_rotor.DyeRotor;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
@@ -70,13 +67,10 @@ public class Robot extends Base581Robot {
           hardware.shooterLeftMotor, hardware.shooterRightMotor, hardware.shooterMiddleMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
   private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
-  private final DyeRotor dyeRotor =
-      new DyeRotor(hardware.rotorMotor, hardware.horizontalMotor, hardware.verticalMotor);
   private final Vision vision =
       new Vision(imu, frontLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final GenericClimber climber = new StubClimber();
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final Conveyor conveyor =
@@ -101,7 +95,6 @@ public class Robot extends Base581Robot {
           health,
           hubActivity,
           trailblazer,
-          climber,
           clusterMap,
           hardware,
           powerManager);
@@ -182,11 +175,6 @@ public class Robot extends Base581Robot {
         .rightTrigger()
         .onPress(robotManager::prepareScoreRequest)
         .onRelease(robotManager::idleRequest);
-
-    // Use as idle button when not climbing, otherwise does sequence and eventually
-    // gets back to
-    // idle
-    operator.a().onPress(robotManager::manualClimbSequenceBackwardOrIdleRequest);
 
     operator
         .leftTrigger()
