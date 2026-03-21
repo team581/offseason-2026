@@ -73,7 +73,7 @@ public class Robot extends Base581Robot {
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
-  private final Feeder feeder = new Feeder(hardware.feederMotor);
+  private final Feeder feeder = new Feeder(hardware.leftFeederMotor, hardware.rightFeederMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorLeftMotor, hardware.conveyorRightMotor);
 
