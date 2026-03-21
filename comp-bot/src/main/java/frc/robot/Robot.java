@@ -25,7 +25,6 @@ import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
 import frc.robot.imu.Imu;
 import frc.robot.intake.Intake;
-import frc.robot.kicker.Kicker;
 import frc.robot.localization.Localization;
 import frc.robot.power_manager.PowerManager;
 import frc.robot.robot_manager.RobotManager;
@@ -74,7 +73,6 @@ public class Robot extends Base581Robot {
       new Vision(imu, frontLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final Kicker kicker = new Kicker(hardware.kickerLeftMotor, hardware.kickerRightMotor);
   private final Feeder feeder = new Feeder(hardware.leftFeederMotor, hardware.rightFeederMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorLeftMotor, hardware.conveyorRightMotor);
@@ -86,7 +84,7 @@ public class Robot extends Base581Robot {
   private final DigitalInput towerSensor = new DigitalInput(hardware.towerSensor.getChannel());
 
   private final PowerManager powerManager =
-      new PowerManager(shooter, intake, deploy, shooterHood, kicker, feeder, conveyor, swerve);
+      new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
   private final HopperManager hopperManager =
       new HopperManager(deploy, intake, conveyor, feeder, hopperCANRange, towerSensor);
 

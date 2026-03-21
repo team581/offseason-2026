@@ -7,7 +7,6 @@ import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
-import frc.robot.kicker.Kicker;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
@@ -21,7 +20,6 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   private final PowerManaged intake;
   private final PowerManaged deploy;
   private final PowerManaged shooterHood;
-  private final PowerManaged kicker;
   private final PowerManaged feeder;
   private final PowerManaged conveyor;
   private final PowerManaged swerve;
@@ -31,7 +29,6 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
       Intake intake,
       Deploy deploy,
       ShooterHood shooterHood,
-      Kicker kicker,
       Feeder feeder,
       Conveyor conveyor,
       Swerve swerve) {
@@ -40,7 +37,6 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.intake = intake;
     this.deploy = deploy;
     this.shooterHood = shooterHood;
-    this.kicker = kicker;
     this.feeder = feeder;
     this.conveyor = conveyor;
     this.swerve = swerve;
@@ -63,7 +59,6 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
           intake.applyCurrentLimits(newState.intakeSupplyCurrent);
           deploy.applyCurrentLimits(newState.deploySupplyCurrent);
           shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
-          kicker.applyCurrentLimits(newState.kickerSupplyCurrent);
           feeder.applyCurrentLimits(newState.feederSupplyCurrent);
           conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
           swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
