@@ -25,6 +25,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -172,6 +173,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private Rotation2d wallSnapAngle = Rotation2d.kZero;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
   private double shootingSnapSetpoint = 0.0;
+  private DoubleSubscriber xSwerveDebounceTime = DogLog.tunable("Seweve/X/DebounceTime", 0.15);
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(xSwerveDebounceTime.get());
   private boolean ableToXSwerve = false;
 
   private double aimingFeedForward = 0.0;
@@ -261,14 +264,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     ableToXSwerve =
         switch (getState()) {
           case TURRET_STUCK_SCORE -> {
-            yield FeatureFlags.X_SWERVE.getAsBoolean()
-                && MathUtil.isNear(
-                    shootingSnapSetpoint,
-                    drivetrainState.Pose.getRotation().getDegrees(),
-                    5.0,
-                    -180.0,
-                    180.0)
-                && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
+            yield X_SWERVE_DEBOUNCER.calculate(
+                FeatureFlags.X_SWERVE.getAsBoolean()
+                    && MathUtil.isNear(
+                        shootingSnapSetpoint,
+                        drivetrainState.Pose.getRotation().getDegrees(),
+                        1.0,
+                        -180.0,
+                        180.0)
+                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
           }
           default -> false;
         };
@@ -563,7 +567,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           MathUtil.isNear(
               shootingSnapSetpoint,
               drivetrainState.Pose.getRotation().getDegrees(),
-              5.0,
+              1.0,
               -180.0,
               180.0));
       DogLog.log("Swerve/X/ManualAtSetpoint/ControllerSetpoint", shootingSnapSetpoint);
