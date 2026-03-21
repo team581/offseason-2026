@@ -54,7 +54,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final ClusterMap clusterMap;
   private final GenericClimber climber;
 
-  private final PowerManager powerManager;
+  public final PowerManager powerManager;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;

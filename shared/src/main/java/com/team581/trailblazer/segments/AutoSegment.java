@@ -1,7 +1,8 @@
 package com.team581.trailblazer.segments;
 
-import com.team581.trailblazer.AutoConstraintOptions;
+import com.team581.trailblazer.AngularConstraintOptions;
 import com.team581.trailblazer.AutoPoint;
+import com.team581.trailblazer.LinearConstraintOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.ArrayList;
@@ -11,12 +12,17 @@ import java.util.Optional;
 
 public abstract class AutoSegment {
   public final List<AutoPoint<?>> points;
-  protected final Optional<AutoConstraintOptions> constraints;
+  protected final Optional<LinearConstraintOptions> linearConstraints;
+  protected final Optional<AngularConstraintOptions> angularConstraints;
   private final List<HashSet<Enum<?>>> pointToPassedMarkers;
 
-  protected AutoSegment(List<AutoPoint<?>> points, Optional<AutoConstraintOptions> constraints) {
+  protected AutoSegment(
+      List<AutoPoint<?>> points,
+      Optional<LinearConstraintOptions> linearConstraints,
+      Optional<AngularConstraintOptions> angularConstraints) {
     this.points = points;
-    this.constraints = constraints;
+    this.linearConstraints = linearConstraints;
+    this.angularConstraints = angularConstraints;
     this.pointToPassedMarkers = new ArrayList<>(points.size());
 
     var tmp = new HashSet<Enum<?>>();
@@ -48,13 +54,23 @@ public abstract class AutoSegment {
   public abstract boolean atGoal(Translation2d robotTranslation, int currentIndex);
 
   /**
-   * Resolve the constraints for a point belonging to this segment.
+   * Resolve the angular constraints for a point belonging to this segment.
    *
    * @param point The point to resolve the constraints for.
-   * @return The constraints for the point.
+   * @return The angular constraints for the point.
    */
-  public Optional<AutoConstraintOptions> getConstraints(AutoPoint<?> point) {
-    return point.constraints().or(() -> this.constraints);
+  public Optional<AngularConstraintOptions> getAngularConstraints(AutoPoint<?> point) {
+    return point.angularConstraints().or(() -> this.angularConstraints);
+  }
+
+  /**
+   * Resolve the linear constraints for a point belonging to this segment.
+   *
+   * @param point The point to resolve the constraints for.
+   * @return The linear constraints for the point.
+   */
+  public Optional<LinearConstraintOptions> getLinearConstraints(AutoPoint<?> point) {
+    return point.linearConstraints().or(() -> this.linearConstraints);
   }
 
   public Optional<AutoPoint<?>> lastPoint() {

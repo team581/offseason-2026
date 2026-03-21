@@ -1,8 +1,9 @@
 package com.team581.trailblazer.segments;
 
 import com.team581.math.PoseErrorTolerance;
-import com.team581.trailblazer.AutoConstraintOptions;
+import com.team581.trailblazer.AngularConstraintOptions;
 import com.team581.trailblazer.AutoPoint;
+import com.team581.trailblazer.LinearConstraintOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.List;
@@ -13,9 +14,10 @@ public class AutoSegmentCustomEnd extends AutoSegment {
 
   public AutoSegmentCustomEnd(
       List<AutoPoint<?>> points,
-      Optional<AutoConstraintOptions> constraints,
+      Optional<LinearConstraintOptions> linearConstraints,
+      Optional<AngularConstraintOptions> angularConstraints,
       PoseErrorTolerance finishedTolerance) {
-    super(points, constraints);
+    super(points, linearConstraints, angularConstraints);
     this.finishedTolerance = finishedTolerance;
   }
 
