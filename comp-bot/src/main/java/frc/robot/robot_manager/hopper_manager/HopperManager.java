@@ -140,13 +140,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             intake.intakeRequest();
             deploy.stowRequest();
           }
+        } else if (operatorWantsStow) {
+          DogLog.log("HopperManager/HopperActivity", "STOW");
+          conveyor.idleRequest();
+          intake.idleRequest();
+          deploy.stowRequest();
         } else {
-          if (operatorWantsStow) {
-            DogLog.log("HopperManager/HopperActivity", "STOW");
-            conveyor.idleRequest();
-            intake.idleRequest();
-            deploy.stowRequest();
-          }
           DogLog.log("HopperManager/HopperActivity", "IDLE");
           conveyor.idleRequest();
           intake.idleRequest();
@@ -174,6 +173,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.log("HopperManager/State", getState());
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
+    DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
     DogLog.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
   }
