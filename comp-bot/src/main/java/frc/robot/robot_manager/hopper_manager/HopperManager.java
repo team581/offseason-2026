@@ -155,6 +155,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
       }
     }
+    DogLog.log("HopperManager/State", getState());
+    DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
+    DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
+    DogLog.log("HopperManager/FilteredHopperDistance", filteredDistance);
+    DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
   }
 
   private void setState(HopperState newState) {
