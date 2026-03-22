@@ -109,11 +109,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       default -> {}
       case BALL_FILLING -> {
         if (driverWantsEject) {
+          DogLog.log("HopperManager/HopperActivity", "EJECTING");
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
           feeder.idleRequest();
         } else {
+          DogLog.log("HopperManager/HopperActivity", "BALL FILLING");
           deploy.intakeRequest();
           intake.intakeRequest();
           conveyor.intakeRequest();
@@ -122,15 +124,18 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       }
       case IDLE -> {
         if (driverWantsEject) {
+          DogLog.log("HopperManager/HopperActivity", "EJECTING");
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
         } else {
           if (driverWantsIntake) {
+            DogLog.log("HopperManager/HopperActivity", "INTAKING");
             conveyor.intakeRequest();
             intake.intakeRequest();
             deploy.intakeRequest();
           } else {
+            DogLog.log("HopperManager/HopperActivity", "IDLE");
             conveyor.idleRequest();
             intake.idleRequest();
             deploy.stowRequest();
