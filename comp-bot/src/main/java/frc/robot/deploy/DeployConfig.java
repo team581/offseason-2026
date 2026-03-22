@@ -1,13 +1,11 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.signals.GainSchedKpBehaviorValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -37,10 +35,6 @@ public class DeployConfig {
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
                   .withMotionMagicAcceleration(300.0))
-          .withClosedLoopGeneral(
-              new ClosedLoopGeneralConfigs()
-                  .withGainSchedErrorThreshold(1)
-                  .withGainSchedKpBehavior(GainSchedKpBehaviorValue.Discontinuous))
           .withSlot0(
               new Slot0Configs()
                   .withKP(3)
