@@ -80,7 +80,7 @@ public class HeuristicPathTracker implements PathTracker {
         Rotation2d interpolatedRotation;
 
         if (isArc) {
-          var arcMid = currentPoint.arcMidpoint().get();
+          var arcMid = currentPoint.arcMidpoint().orElseThrow();
           var p0 = translationStart;
           var p1 = arcMid.getTranslation();
           var p2 = targetPose.getTranslation();
