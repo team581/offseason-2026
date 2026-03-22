@@ -36,7 +36,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
       new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
 
   private double scoreDistance = 0;
-  private double climbScoreRpm = 0;
   private double feedDistance = 0;
 
   private double shootingRpm = 0;

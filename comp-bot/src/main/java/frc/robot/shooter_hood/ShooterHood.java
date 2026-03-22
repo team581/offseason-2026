@@ -34,7 +34,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   private double feedDistance = 0;
   private double currentAngle = 0;
   private double statorCurrent = 0.0;
-  private double climbScoreAngle = 0;
   private double voltage = 0.0;
 
   public ShooterHood(TalonFX motor) {
