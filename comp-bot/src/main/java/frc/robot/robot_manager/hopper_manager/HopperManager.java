@@ -56,8 +56,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   @Override
   protected HopperState getNextState(HopperState currentState) {
     return switch (currentState) {
-      case REHOME_DEPLOY, CLIMB_APPROACH, CLIMB_EMPTY, CLIMB_HANG, CLIMB_LINEUP, SCORE ->
-          currentState;
+      case REHOME_DEPLOY, SCORE -> currentState;
       case IDLE -> {
         if (hopperCapacity == HopperCapacity.MEDIUM) {
           yield HopperState.BALL_FILLING;
@@ -96,12 +95,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       }
       case REHOME_DEPLOY -> {
         deploy.homingRequest();
-        intake.idleRequest();
-        conveyor.idleRequest();
-        feeder.idleRequest();
-      }
-      case CLIMB_APPROACH, CLIMB_EMPTY, CLIMB_HANG, CLIMB_LINEUP -> {
-        deploy.stowRequest();
         intake.idleRequest();
         conveyor.idleRequest();
         feeder.idleRequest();
@@ -172,10 +165,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   public void scoreRequest() {
     setState(HopperState.SCORE);
-  }
-
-  public void climbRequest() {
-    setState(HopperState.CLIMB_EMPTY);
   }
 
   public void idleRequest() {

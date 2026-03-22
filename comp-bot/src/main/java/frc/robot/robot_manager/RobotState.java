@@ -20,12 +20,6 @@ public enum RobotState {
 
   UNJAM;
 
-  public boolean isClimbing() {
-    return switch (this) {
-      default -> false;
-    };
-  }
-
   public boolean isFeeding() {
     return switch (this) {
       case PREPARE_FALLBACK_FEED -> true;
