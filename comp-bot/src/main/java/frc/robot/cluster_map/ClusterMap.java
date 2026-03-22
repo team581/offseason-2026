@@ -227,7 +227,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     if (match.isPresent()) {
       var existingElement = match.orElseThrow();
-      var health = existingElement.health() + 1;
+      var health = Math.min(existingElement.health() + 1, 20);
 
       // Blend the old position with the newly observed position
       var blendedPose =
@@ -256,10 +256,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   @Override
   protected void whileInState(ClusterMapState state) {
     try {
+      DogLog.log("ClusterMap/Clusters", clusterMap.stream().toArray(ClusterMapElement[]::new));
       DogLog.log(
-          "ClusterMap/Clusters",
+          "ClusterMap/Clusters/ClusterPoses",
           clusterMap.stream()
-              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
+              .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
               .toArray(Pose2d[]::new));
     } catch (RuntimeException error) {
       DogLog.logFault("ClusterMapLoggingError");
