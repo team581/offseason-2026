@@ -19,7 +19,7 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     this.rightMotor = rightMotor;
   }
 
-  public void shootRequest() {
+  public void scoreRequest() {
     setStateFromRequest(FeederState.SHOOT);
   }
 

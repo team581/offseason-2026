@@ -5,6 +5,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum IntakeState {
   INTAKE(12),
+  EJECT(-12),
   IDLE(0),
   SHOOT(3),
   SHOOT_THEN_INTAKE(10);

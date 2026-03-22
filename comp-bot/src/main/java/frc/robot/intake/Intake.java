@@ -19,6 +19,10 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     this.rightMotor = rightMotor;
   }
 
+  public void ejectRequest() {
+    setStateFromRequest(IntakeState.EJECT);
+  }
+
   public void shootRequest() {
     if (getState() == IntakeState.INTAKE) {
       return;
@@ -53,13 +57,9 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
         leftMotor.disable();
         rightMotor.disable();
       }
-      case INTAKE -> {
-        leftMotor.setVoltage(newState.getVoltage());
-        rightMotor.setVoltage(newState.getVoltage());
-      }
-      case SHOOT, SHOOT_THEN_INTAKE -> {
-        leftMotor.setVoltage(newState.getVoltage());
-        rightMotor.setVoltage(newState.getVoltage());
+      default -> {
+        leftMotor.setVoltage(newState.voltage);
+        rightMotor.setVoltage(newState.voltage);
       }
     }
   }

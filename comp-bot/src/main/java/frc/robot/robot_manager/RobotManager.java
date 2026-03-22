@@ -52,11 +52,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0);
   private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0);
 
-  private boolean climbLocationIsLeft = true;
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
-  private boolean driverWantsToIntake = false;
   private boolean trenchOverride = false;
 
   private boolean isInSafeScoringLocation = false;
@@ -461,38 +459,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.trenchOverride = trenchOverride;
   }
 
-  public void setDriverWantsIntake(boolean wantsIntake) {
-    driverWantsToIntake = wantsIntake;
-    if (driverWantsToIntake) {
-      switch (getState()) {
-        case SCORE, FEED, FORCE_SCORE, FALLBACK_SCORE, FALLBACK_FEED ->
-            hopperManager.scoreAndIntakeRequest();
-        default -> hopperManager.intakeRequest();
-      }
-    } else {
-      switch (getState()) {
-        case SCORE, FEED, FORCE_SCORE, FALLBACK_SCORE, FALLBACK_FEED ->
-            hopperManager.scoreRequest();
-        default -> hopperManager.idleRequest();
-      }
-    }
-  }
-
-  public void stowDeployRequest() {
-    hopperManager.deploy.stowRequest();
-    if (driverWantsToIntake) {
-      hopperManager.intakeRequest();
-    } else {
-      hopperManager.idleRequest();
-    }
-  }
-
   public void intakeAutoRequest() {
-    hopperManager.intakeRequest();
+    hopperManager.setDriverWantsIntake(true);
   }
 
   public void cancelIntakeRequest() {
-    hopperManager.idleRequest();
+    hopperManager.setDriverWantsIntake(false);
 
     // TODO: Figure out shuffle logic
     // If we are shooting while cancelling a previous intake request, send a new
@@ -571,7 +543,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var swerveVector = MathHelpers.getDriveDirection(speeds);
     double driveDirection = swerveVector.getDegrees();
     drivingToIntake =
-        hopperManager.getState().isIntaking()
+        hopperManager.isIntaking()
             && MathUtil.isNear(robotRotation, driveDirection, 120.0, -180, 180)
             && MathHelpers.getLinearVelocity(speeds) > 1e-5;
     isInAllianceZone =

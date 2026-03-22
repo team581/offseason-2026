@@ -36,7 +36,7 @@ public class Hardware {
 
   public final CANrange hopperCANRange = new CANrange(28, canivore);
   // TODO: get channel based on placement
-  public final DigitalInput towerSensor = new DigitalInput(8);
+  public final DigitalInput towerSensor = new DigitalInput(9);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(

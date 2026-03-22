@@ -24,6 +24,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final CANrange hopperCANRange;
   public final DigitalInput towerSensor;
 
+  private boolean driverWantsIntake = false;
+  private boolean driverWantsEject = false;
+
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
 
   private double hopperDistance = 0.0;
@@ -31,9 +34,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private double previousCanRangeDistance = 0.0;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
-  private boolean capacityNotHigh = true;
 
-  private final Timer shuffleTimer = new Timer();
   private final Timer canRangeUpdateTimer = new Timer();
 
   public HopperManager(
@@ -50,22 +51,25 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.feeder = feeder;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
-
-    shuffleTimer.start();
   }
 
   @Override
   protected HopperState getNextState(HopperState currentState) {
     return switch (currentState) {
-      case INTAKE ->
-          hopperCapacity == HopperCapacity.MEDIUM ? HopperState.BALL_FILLING : currentState;
-      case BALL_FILLING -> {
-        if (towerSensor.get()) {
-          yield HopperState.INTAKE;
+      case REHOME_DEPLOY, CLIMB_APPROACH, CLIMB_EMPTY, CLIMB_HANG, CLIMB_LINEUP, SCORE ->
+          currentState;
+      case IDLE -> {
+        if (hopperCapacity == HopperCapacity.MEDIUM) {
+          yield HopperState.BALL_FILLING;
         }
         yield currentState;
       }
-      default -> currentState;
+      case BALL_FILLING -> {
+        if (towerSensor.get()) {
+          yield HopperState.IDLE;
+        }
+        yield currentState;
+      }
     };
   }
 
@@ -73,7 +77,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case IDLE -> {
-        deploy.intakeRequest();
+        deploy.stowRequest();
         intake.idleRequest();
         conveyor.idleRequest();
         feeder.idleRequest();
@@ -82,13 +86,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.hopperCompactionRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
-        feeder.shootRequest();
-      }
-      case INTAKE -> {
-        deploy.intakeRequest();
-        intake.intakeRequest();
-        conveyor.intakeRequest();
-        feeder.idleRequest();
+        feeder.scoreRequest();
       }
       case BALL_FILLING -> {
         deploy.intakeRequest();
@@ -96,17 +94,71 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.intakeRequest();
         feeder.ballFillingRequest();
       }
-      case SCORE_AND_INTAKE -> {
-        deploy.intakeRequest();
-        intake.intakeRequest();
-        conveyor.shootRequest();
-        feeder.shootRequest();
-      }
       case REHOME_DEPLOY -> {
         deploy.homingRequest();
         intake.idleRequest();
         conveyor.idleRequest();
         feeder.idleRequest();
+      }
+      case CLIMB_APPROACH, CLIMB_EMPTY, CLIMB_HANG, CLIMB_LINEUP -> {
+        deploy.stowRequest();
+        intake.idleRequest();
+        conveyor.idleRequest();
+        feeder.idleRequest();
+      }
+    }
+  }
+
+  @Override
+  protected void whileInState(HopperState state) {
+    switch (state) {
+      default -> {}
+      case BALL_FILLING -> {
+        if (driverWantsEject) {
+          deploy.intakeRequest();
+          intake.ejectRequest();
+          conveyor.ejectRequest();
+          feeder.idleRequest();
+        } else {
+          deploy.intakeRequest();
+          intake.intakeRequest();
+          conveyor.intakeRequest();
+          feeder.ballFillingRequest();
+        }
+      }
+      case IDLE -> {
+        if (driverWantsEject) {
+          deploy.intakeRequest();
+          intake.ejectRequest();
+          conveyor.ejectRequest();
+        } else {
+          if (driverWantsIntake) {
+            conveyor.intakeRequest();
+            intake.intakeRequest();
+            deploy.intakeRequest();
+          } else {
+            conveyor.idleRequest();
+            intake.idleRequest();
+            deploy.stowRequest();
+          }
+        }
+      }
+      case SCORE -> {
+        if (driverWantsEject) {
+          deploy.intakeRequest();
+          intake.ejectRequest();
+          conveyor.ejectRequest();
+          feeder.idleRequest();
+        } else {
+          feeder.scoreRequest();
+          conveyor.intakeRequest();
+          intake.intakeRequest();
+          if (driverWantsIntake) {
+            deploy.intakeRequest();
+          } else {
+            deploy.hopperCompactionRequest();
+          }
+        }
       }
     }
   }
@@ -118,28 +170,32 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
   }
 
-  public void intakeRequest() {
-    setStateFromRequest(HopperState.INTAKE);
-  }
-
   public void scoreRequest() {
-    setStateFromRequest(HopperState.SCORE);
-  }
-
-  public void scoreAndIntakeRequest() {
-    setStateFromRequest(HopperState.SCORE_AND_INTAKE);
+    setState(HopperState.SCORE);
   }
 
   public void climbRequest() {
-    setStateFromRequest(HopperState.CLIMB_EMPTY);
+    setState(HopperState.CLIMB_EMPTY);
   }
 
   public void idleRequest() {
-    setStateFromRequest(HopperState.IDLE);
+    setState(HopperState.IDLE);
   }
 
   public void rehomeDeployRequest() {
     setStateFromRequest(HopperState.REHOME_DEPLOY);
+  }
+
+  public void setDriverWantsEject(boolean wantsEject) {
+    driverWantsEject = wantsEject;
+  }
+
+  public void setDriverWantsIntake(boolean wantsIntake) {
+    driverWantsIntake = wantsIntake;
+  }
+
+  public boolean isIntaking() {
+    return driverWantsIntake && !driverWantsEject;
   }
 
   @Override
@@ -157,9 +213,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     } else {
       hopperCapacity = HopperCapacity.LOW;
     }
-
-    capacityNotHigh =
-        !DSOptions.USE_CANRANGE.getAsBoolean() || hopperCapacity != HopperCapacity.HIGH;
   }
 
   @Override

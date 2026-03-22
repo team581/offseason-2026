@@ -32,6 +32,10 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.INTAKE);
   }
 
+  public void ejectRequest() {
+    setStateFromRequest(ConveyorState.EJECT);
+  }
+
   @Override
   protected void afterTransition(ConveyorState newState) {
     switch (newState) {
