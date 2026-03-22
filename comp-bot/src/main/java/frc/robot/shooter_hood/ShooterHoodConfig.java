@@ -31,7 +31,7 @@ public class ShooterHoodConfig {
   public static final double HOMING_END_POSITION = ANGLE_FROM_HORIZONTAL;
 
   // TODO: Update tolerance numbers
-  public static final double TOLERANCE = 1;
+  public static final double TOLERANCE = 3;
   public static final double FEEDING_TOLERANCE = 5;
 
   // TODO: Update gear ratios

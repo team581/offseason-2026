@@ -152,7 +152,7 @@ public class ShooterConfig {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.CounterClockwise_Positive))
+                  .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs().withKP(0.4).withKV(0.1)
               // .withKD(0.00015)

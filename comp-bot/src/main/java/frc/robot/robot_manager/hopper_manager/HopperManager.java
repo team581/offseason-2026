@@ -56,8 +56,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   @Override
   protected HopperState getNextState(HopperState currentState) {
     return switch (currentState) {
-      case REHOME_DEPLOY, CLIMB_APPROACH, CLIMB_EMPTY, CLIMB_HANG, CLIMB_LINEUP, SCORE ->
-          currentState;
+      case CLIMB_APPROACH, CLIMB_EMPTY, CLIMB_HANG, CLIMB_LINEUP, SCORE -> currentState;
       case IDLE -> {
         if (hopperCapacity == HopperCapacity.MEDIUM) {
           yield HopperState.BALL_FILLING;
@@ -70,6 +69,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
         yield currentState;
       }
+      case REHOME_DEPLOY -> deploy.getState().isHoming() ? currentState : HopperState.IDLE;
     };
   }
 
