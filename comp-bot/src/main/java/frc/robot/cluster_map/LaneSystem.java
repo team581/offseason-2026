@@ -32,20 +32,17 @@ public class LaneSystem {
       // Find which lane index the X coordinate falls into
       int laneIndex = Math.min((int) ((x - minX) / laneWidth), numLanes - 1);
 
-      switch (laneIndex) {
-        case 0:
-          return Lane.LANE_0; // Furthest
-        case 1:
-          return Lane.LANE_1; // Middle
-        case 2:
-          return Lane.LANE_2; // Closest
-        case 3:
-          return Lane.LANE_3;
-        case 4:
-          return Lane.LANE_4;
-        default:
-          return Lane.NONE;
-      }
+      return switch (laneIndex) {
+        case 0 -> Lane.LANE_0;
+        // Furthest
+        case 1 -> Lane.LANE_1;
+        // Middle
+        case 2 -> Lane.LANE_2;
+        // Closest
+        case 3 -> Lane.LANE_3;
+        case 4 -> Lane.LANE_4;
+        default -> Lane.NONE;
+      };
     }
     return Lane.NONE;
   }

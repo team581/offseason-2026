@@ -73,7 +73,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       return Lane.NONE;
     }
 
-    Pose2d targetPose = bestCluster.get();
+    Pose2d targetPose = bestCluster.orElseThrow();
 
     // If we are blue, flip the target pose over the center of the field
     if (!FmsUtil.isRedAlliance()) {
