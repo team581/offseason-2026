@@ -311,7 +311,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case SCORE -> {
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        // TODO:Implement hoppermanager shuffle here
+        hopperManager.scoreRequest();
       }
       case PREPARE_FEED -> {
         smartHoodPrepareFeedRequest();
@@ -320,7 +320,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        // TODO: implement hoppermanager shuffle here
+        hopperManager.scoreRequest();
       }
 
       // Fallback states
@@ -337,16 +337,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Automatically update scoring parameters with preset pose
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        // TODO: Shuffle
-
+        hopperManager.scoreRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
       }
       case FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
-        // TODO: Shuffle
-
+        hopperManager.scoreRequest();
       }
       default -> {}
     }
@@ -465,24 +463,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void cancelIntakeRequest() {
     hopperManager.setDriverWantsIntake(false);
-
-    // TODO: Figure out shuffle logic
-    // If we are shooting while cancelling a previous intake request, send a new
-    // hopper shuffle request
-    // switch (getState()) {
-    //   case PREPARE_FORCE_SCORE,
-    //       FORCE_SCORE,
-    //       PREPARE_PRESET_SCORE,
-    //       PRESET_SCORE,
-    //       PREPARE_SCORE,
-    //       SCORE,
-    //       PREPARE_PRESET_FEED,
-    //       PRESET_FEED,
-    //       PREPARE_FEED,
-    //       FEED ->
-    //       deploy.shuffleRequest();
-    //   default -> {}
-    // }
   }
 
   public boolean detectingGp() {
