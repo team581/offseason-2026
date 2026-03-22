@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -53,7 +54,13 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
   private final LaneSystem laneSystem =
-      new LaneSystem(7.0, 10, 1.5, FieldUtil.FIELD_WIDTH_Y - 1.5, 3, FieldUtil.FIELD_WIDTH_Y);
+      new LaneSystem(
+          FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.246 + Units.inchesToMeters(31) : 7.0,
+          11,
+          1.5,
+          FieldUtil.FIELD_WIDTH_Y - 1.5,
+          3,
+          FieldUtil.FIELD_WIDTH_Y);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
@@ -227,7 +234,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     if (match.isPresent()) {
       var existingElement = match.orElseThrow();
-      var health = existingElement.health() + 1;
+      var health = Math.min(existingElement.health() + 1, 20);
 
       // Blend the old position with the newly observed position
       var blendedPose =
@@ -256,10 +263,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   @Override
   protected void whileInState(ClusterMapState state) {
     try {
+      DogLog.log("ClusterMap/Clusters", clusterMap.stream().toArray(ClusterMapElement[]::new));
       DogLog.log(
-          "ClusterMap/Clusters",
+          "ClusterMap/Clusters/ClusterPoses",
           clusterMap.stream()
-              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
+              .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
               .toArray(Pose2d[]::new));
     } catch (RuntimeException error) {
       DogLog.logFault("ClusterMapLoggingError");
