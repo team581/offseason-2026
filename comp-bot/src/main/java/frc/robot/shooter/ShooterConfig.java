@@ -10,9 +10,15 @@ import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.math.MathHelpers;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.Map;
 
 public class ShooterConfig {
@@ -37,6 +43,8 @@ public class ShooterConfig {
   public static final double TEST_VOLTAGE = 6.0;
 
   public static final double MAX_SAFE_RPM = 6000;
+
+  public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(-0.2, 0.0, Rotation2d.k180deg);
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
@@ -154,6 +162,34 @@ public class ShooterConfig {
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(200)
                   .withPeakReverseTorqueCurrent(0));
+
+  public static Rotation2d calculateAimingAngle(
+      Translation2d shooterTranslation, Translation2d goalTranslation) {
+    return MathHelpers.getDriveDirection(shooterTranslation, goalTranslation)
+        .plus(SHOOTER_TO_ROBOT.getRotation());
+  }
+
+  public static double getGoalCentricTolerance(
+      Translation2d goalTranslation, Pose2d shooterPose, double goalCentricToleranceMeters) {
+
+    double distanceToGoal = shooterPose.getTranslation().getDistance(goalTranslation);
+    return Math.toDegrees(Math.atan2(goalCentricToleranceMeters, distanceToGoal));
+  }
+
+  public static Pose2d getShooterPose(Pose2d robot) {
+    return robot.plus(SHOOTER_TO_ROBOT);
+  }
+
+  public static ChassisSpeeds getShooterSpeeds(ChassisSpeeds robotSpeeds, double robotHeading) {
+    var angularVelocity = robotSpeeds.omegaRadiansPerSecond;
+    Translation2d fieldRelativeOffset =
+        SHOOTER_TO_ROBOT.getTranslation().rotateBy(Rotation2d.fromDegrees(robotHeading));
+    var shooterSwingX = -angularVelocity * fieldRelativeOffset.getY();
+    var shooterSwingY = angularVelocity * fieldRelativeOffset.getX();
+    var shooterTotalVelocityX = robotSpeeds.vxMetersPerSecond + shooterSwingX;
+    var shooterTotalVelocityY = robotSpeeds.vyMetersPerSecond + shooterSwingY;
+    return new ChassisSpeeds(shooterTotalVelocityX, shooterTotalVelocityY, angularVelocity);
+  }
 
   private ShooterConfig() {}
 }

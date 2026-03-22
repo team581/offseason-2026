@@ -48,10 +48,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
 
-  private boolean climbLocationIsLeft = true;
+  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0);
+  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0);
+  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0);
 
-  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0);
-  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0);
+  private boolean climbLocationIsLeft = true;
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
   private boolean drivingToIntake = false;
@@ -63,7 +64,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInSafeFeedingLocation = true;
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
-  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0);
 
   public RobotManager(
       HopperManager hopperManager,
@@ -237,27 +237,27 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        swerve.rateLimitedDriveRequest();
+        swerve.feedRequest(feedingParameters);
       }
       case FEED -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
-        swerve.rateLimitedDriveRequest();
+        swerve.feedRequest(feedingParameters);
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
-        swerve.rateLimitedDriveRequest();
+        swerve.scoreRequest(scoringParameters);
       }
       case SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.rateLimitedDriveRequest();
+        swerve.scoreRequest(scoringParameters);
       }
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
@@ -302,46 +302,26 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (state) {
       case IDLE, UNJAM -> {
         smartHoodIdleRequest();
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
-        } else {
-          swerve.normalDriveRequest();
-        }
+        swerve.normalDriveRequest();
       }
 
       case PREPARE_SCORE -> {
         smartHoodPrepareScoreRequest();
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeRateLimitedDriveRequest();
-        } else {
-          swerve.rateLimitedDriveRequest();
-        }
+        swerve.scoreRequest(scoringParameters);
         // isHubActive always logged
       }
       case SCORE -> {
         shooterHood.scoreRequest(scoringParameters.distance());
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeRateLimitedDriveRequest();
-        } else {
-          swerve.rateLimitedDriveRequest();
-        }
+        swerve.scoreRequest(scoringParameters);
         // TODO:Implement hoppermanager shuffle here
       }
       case PREPARE_FEED -> {
         smartHoodPrepareFeedRequest();
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeRateLimitedDriveRequest();
-        } else {
-          swerve.rateLimitedDriveRequest();
-        }
+        swerve.feedRequest(feedingParameters);
       }
       case FEED -> {
         shooterHood.feedRequest(feedingParameters.distance());
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeRateLimitedDriveRequest();
-        } else {
-          swerve.rateLimitedDriveRequest();
-        }
+        swerve.feedRequest(feedingParameters);
         // TODO: implement hoppermanager shuffle here
       }
 
@@ -353,36 +333,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           shooterHood.scoreRequest(scoringParameters.distance());
         }
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
-        } else {
-          swerve.normalDriveRequest();
-        }
+        swerve.feedRequest(scoringParameters);
       }
       case FALLBACK_SCORE -> {
         // Automatically update scoring parameters with preset pose
         shooterHood.scoreRequest(scoringParameters.distance());
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
-        } else {
-          swerve.normalDriveRequest();
-        }
+        swerve.scoreRequest(scoringParameters);
         // TODO: Shuffle
 
       }
       case PREPARE_FALLBACK_FEED -> {
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
-        } else {
-          swerve.normalDriveRequest();
-        }
+        swerve.feedRequest(fallbackFeedingParameters);
       }
       case FALLBACK_FEED -> {
-        if (hopperManager.getState().isIntaking()) {
-          swerve.intakeDriveRequest();
-        } else {
-          swerve.normalDriveRequest();
-        }
+        swerve.feedRequest(fallbackFeedingParameters);
         // TODO: Shuffle
 
       }

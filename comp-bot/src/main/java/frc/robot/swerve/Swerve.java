@@ -23,6 +23,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -37,6 +38,7 @@ import frc.robot.config.DSOptions;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
+import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
@@ -47,14 +49,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public static final double MAX_LINEAR_RATE = 4.75;
   private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxLinearRateShooting", 4.0);
+      DogLog.tunable("Swerve/MaxLinearRateShooting", 2.0);
 
   private static final DoubleSubscriber SNAKE_MODE_AGRESSIVENESS =
       DogLog.tunable("Swerve/SnakeModeAgressiveness", 0.25);
 
-  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4);
+  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxAngularRateShootingRot", 0.8);
+      DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
@@ -73,9 +75,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private DriveSource driveSource;
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
-  private final SwerveRequest.FieldCentric driverPerspectiveOpenLoop =
+  private final SwerveRequest.FieldCentric driverPerspective =
       new SwerveRequest.FieldCentric()
-          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
@@ -84,23 +86,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
    * overrides the angular velocity to instead snap to an angle.
    */
-  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnapsOpenLoop =
+  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnaps =
       new SwerveRequest.FieldCentricFacingAngle()
-          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
-          .withDeadband(0.07)
-          .withRotationalDeadband(0.5)
-          .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
-          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
-
-  /**
-   * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
-   * overrides the angular velocity to instead snap to an angle.
-   */
-  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveIntakeSnapsOpenLoop =
-      new SwerveRequest.FieldCentricFacingAngle()
-          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
           .withRotationalDeadband(0.5)
@@ -109,7 +97,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
-  private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
+  private final SwerveRequest.FieldCentric fieldCentric =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
@@ -118,22 +106,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
    * overrides the angular velocity to instead snap to an angle.
    */
-  private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnapsClosedLoop =
-      new SwerveRequest.FieldCentricFacingAngle()
-          .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
-          .withDeadband(0.07)
-          .withRotationalDeadband(0.5)
-          .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(),
-              ORIGINAL_HEADING_PID.getI(),
-              ORIGINAL_HEADING_PID.getD());
-
-  /**
-   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
-   * overrides the angular velocity to instead snap to an angle.
-   */
-  private final SwerveRequest.FieldCentricFacingAngle fieldCentricIntakeSnapsClosedLoop =
+  private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnaps =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
@@ -156,6 +129,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
 
   private double scoringAngle = 0.0;
+  private double scoringTolerance = 0.0;
+  private double scoringFeedForward = 0.0;
+
+  private double feedingAngle = 0.0;
+  private double feedingTolerance = 0.0;
+  private double feedingFeedForward = 0.0;
 
   private boolean ableToBumpAssist = false;
   private boolean ableToTrenchAssist = false;
@@ -170,6 +149,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private Rotation2d wallSnapAngle = Rotation2d.kZero;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
   private boolean ableToXSwerve = false;
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.25);
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -223,17 +203,18 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.CLIMB_ASSIST);
   }
 
-  public void rateLimitedDriveRequest() {
-    setStateFromRequest(SwerveState.MANUAL_RATE_LIMITED);
-  }
-
-  public void intakeRateLimitedDriveRequest() {
-    setStateFromRequest(SwerveState.INTAKE_RATE_LIMITED);
-  }
-
-  public void scoreRequest(double snapAngle) {
-    scoringAngle = snapAngle;
+  public void scoreRequest(AimingParameters scoringParameters) {
+    scoringAngle = scoringParameters.goalAngle();
+    scoringTolerance = scoringParameters.swerveTolerance();
+    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.SCORE);
+  }
+
+  public void feedRequest(AimingParameters feedingParameters) {
+    feedingAngle = feedingParameters.goalAngle();
+    feedingTolerance = feedingParameters.swerveTolerance();
+    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.FEED);
   }
 
   @Override
@@ -244,8 +225,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
     ableToXSwerve =
-        (getState() == SwerveState.MANUAL_RATE_LIMITED || getState() == SwerveState.SCORE)
-            && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5;
+        switch (getState()) {
+          case SCORE, FEED -> {
+            yield X_SWERVE_DEBOUNCER.calculate(
+                MathUtil.isNear(
+                        scoringAngle,
+                        drivetrainState.Pose.getRotation().getDegrees(),
+                        scoringTolerance,
+                        -180.0,
+                        180.0)
+                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+          }
+          default -> false;
+        };
+
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     // Make sure right stick Y is either 50% up or down
@@ -318,22 +311,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     previouslyInSnakeMode = ableToSnakeMode;
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
-    if (getState() == SwerveState.INTAKE_RATE_LIMITED
-        || getState() == SwerveState.MANUAL_RATE_LIMITED) {
+    if (getState() == SwerveState.SCORE || getState() == SwerveState.FEED) {
       double maxAngularRateRotations =
           maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
       teleopDriveSource.setMaxVelocity(
           maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SHOOTING.get()),
           Rotation2d.fromRotations(maxAngularRateRotations));
 
-      drivePerspectiveIntakeSnapsOpenLoop.withMaxAbsRotationalRate(
+      drivePerspectiveSnaps.withMaxAbsRotationalRate(
           Units.rotationsToRadians(maxAngularRateRotations));
-      drivePerspectiveSnapsOpenLoop.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
-      fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
-      fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
+      fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
 
     } else {
       double maxAngularRateRotations =
@@ -341,23 +328,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       teleopDriveSource.setMaxVelocity(
           maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE),
           Rotation2d.fromRotations(maxAngularRateRotations));
-      drivePerspectiveIntakeSnapsOpenLoop.withMaxAbsRotationalRate(
+
+      drivePerspectiveSnaps.withMaxAbsRotationalRate(
           Units.rotationsToRadians(maxAngularRateRotations));
-      drivePerspectiveSnapsOpenLoop.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
-      fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
-      fieldCentricIntakeSnapsClosedLoop.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
+      fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
     }
   }
 
   public void normalDriveRequest() {
     setStateFromRequest(SwerveState.MANUAL);
-  }
-
-  public void intakeDriveRequest() {
-    setStateFromRequest(SwerveState.INTAKE);
   }
 
   private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(
@@ -380,7 +359,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
 
     switch (currentState) {
-      case MANUAL, MANUAL_RATE_LIMITED -> {
+      case MANUAL -> {
         var speeds = driveSource.getRequestedSpeeds();
         if (ableToXSwerve) {
           drivetrain.setControl(xRequest);
@@ -391,7 +370,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
-                  drivePerspectiveSnapsOpenLoop
+                  drivePerspectiveSnaps
                       .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
                       .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond),
                   SwerveAssist.getRoundedSnapAngle(
@@ -399,7 +378,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         } else if (ableToBumpAssist) {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
-                  drivePerspectiveSnapsOpenLoop
+                  drivePerspectiveSnaps
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond),
                   SwerveAssist.getRoundedSnapAngle(
@@ -407,65 +386,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         } else {
           var swerveRequest =
               driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? driverPerspectiveOpenLoop
-                  : fieldCentricClosedLoop;
-
-          drivetrain.setControl(
-              swerveRequest
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withRotationalRate(speeds.omegaRadiansPerSecond));
-        }
-      }
-      case INTAKE, INTAKE_RATE_LIMITED -> {
-        var speeds = driveSource.getRequestedSpeeds();
-        if (ableToTrenchAssist) {
-          DogLog.timestamp("Swerve/TrenchAssistActive");
-          var trenchAssistSpeeds =
-              SwerveAssist.getTrenchAssistSpeeds(drivetrainState.Pose.getTranslation(), speeds);
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveSnapsOpenLoop
-                      .withVelocityX(trenchAssistSpeeds.vxMetersPerSecond)
-                      .withVelocityY(trenchAssistSpeeds.vyMetersPerSecond),
-                  SwerveAssist.getRoundedSnapAngle(
-                      drivetrainState.Pose.getRotation(), SwerveAssist.TRENCH_SNAP_ROUND_ANGLE)));
-        } else if (ableToBumpAssist) {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveSnapsOpenLoop
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  SwerveAssist.getRoundedSnapAngle(
-                      drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-        } else if (ableToWallSnap) {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveSnapsOpenLoop
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  wallSnapAngle));
-        } else if (ableToSnakeMode) {
-          DogLog.timestamp("Swerve/DirectionSnaps/Snapping");
-          var swerveSnapsRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? drivePerspectiveIntakeSnapsOpenLoop
-                  : fieldCentricIntakeSnapsClosedLoop;
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  swerveSnapsRequest
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond)
-                      .withMaxAbsRotationalRate(
-                          Units.rotationsToRadians(
-                              maxAngularVelocityRateLimiter.calculate(
-                                  MAX_ANGULAR_RATE_SHOOTING.get()))),
-                  filteredLastDriveDirection));
-        } else {
-          var swerveRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? driverPerspectiveOpenLoop
-                  : fieldCentricClosedLoop;
+                  ? driverPerspective
+                  : fieldCentric;
 
           drivetrain.setControl(
               swerveRequest
@@ -482,12 +404,50 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveIntakeSnapsOpenLoop
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  Rotation2d.fromDegrees(scoringAngle)));
+          DogLog.timestamp("Swerve/DriverOverridingRotation");
+          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+            drivetrain.setControl(
+                driverPerspective
+                    .withVelocityX(speeds.vxMetersPerSecond)
+                    .withVelocityY(speeds.vyMetersPerSecond)
+                    .withRotationalRate(speeds.omegaRadiansPerSecond));
+          } else {
+            DogLog.timestamp("Swerve/TryingToAim");
+            drivetrain.setControl(
+                withFieldRelativeTargetDirection(
+                        drivePerspectiveSnaps
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        Rotation2d.fromDegrees(scoringAngle))
+                    .withTargetRateFeedforward(scoringFeedForward));
+          }
+        }
+      }
+      case FEED -> {
+        var speeds = driveSource.getRequestedSpeeds();
+
+        if (ableToXSwerve) {
+          drivetrain.setControl(xRequest);
+          DogLog.timestamp("Swerve/XSwerveActive");
+        } else if (driveSource.getDriveSourceType()
+            == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+          DogLog.timestamp("Swerve/DriverOverridingRotation");
+          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+            drivetrain.setControl(
+                driverPerspective
+                    .withVelocityX(speeds.vxMetersPerSecond)
+                    .withVelocityY(speeds.vyMetersPerSecond)
+                    .withRotationalRate(speeds.omegaRadiansPerSecond));
+          } else {
+            DogLog.timestamp("Swerve/TryingToAim");
+            drivetrain.setControl(
+                withFieldRelativeTargetDirection(
+                        drivePerspectiveSnaps
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        Rotation2d.fromDegrees(feedingAngle))
+                    .withTargetRateFeedforward(feedingFeedForward));
+          }
         }
       }
       case CLIMB_ASSIST -> {
@@ -495,7 +455,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         var speeds = trailblazerDriveSource.getRequestedSpeeds();
 
         drivetrain.setControl(
-            fieldCentricClosedLoop
+            fieldCentric
                 .withVelocityX(speeds.vxMetersPerSecond)
                 .withVelocityY(speeds.vyMetersPerSecond)
                 .withRotationalRate(speeds.omegaRadiansPerSecond));
@@ -529,8 +489,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
-    DogLog.log(
-        "Swerve/SwerveTargetDirection", drivePerspectiveSnapsOpenLoop.TargetDirection.getDegrees());
+    DogLog.log("Swerve/SwerveTargetDirection", drivePerspectiveSnaps.TargetDirection.getDegrees());
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
@@ -543,15 +502,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             .getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/CornerSnapAngle", cornerSnapAngle.getDegrees());
     DogLog.log("SwerveAssist/WallSnaps/ChosenAngle", wallSnapAngle.getDegrees());
-  }
-
-  @Override
-  protected void afterTransition(SwerveState newState) {
-    switch (newState) {
-      case MANUAL, MANUAL_RATE_LIMITED, SCORE, CLIMB_ASSIST -> {}
-      // When entering intake states we shouldnt be able to wall snap corner transition
-      case INTAKE, INTAKE_RATE_LIMITED -> enteredWallSnapCorner = false;
-    }
   }
 
   private void startSimThread() {
