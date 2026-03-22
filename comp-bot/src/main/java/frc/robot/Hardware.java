@@ -35,7 +35,6 @@ public class Hardware {
   public final TalonFX shooterMiddleMotor = new TalonFX(26, rio);
 
   public final CANrange hopperCANRange = new CANrange(28, canivore);
-  // TODO: get channel based on placement
   public final DigitalInput towerSensor = new DigitalInput(9);
 
   public final TunerSwerveDrivetrain drivetrain =
