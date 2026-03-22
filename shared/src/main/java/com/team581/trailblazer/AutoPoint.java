@@ -11,15 +11,26 @@ public record AutoPoint<T extends Enum<T>>(
     Optional<LinearConstraintOptions> linearConstraints,
     Optional<AngularConstraintOptions> angularConstraints,
     Optional<PoseErrorTolerance> transitionTolerance,
-    Optional<T> marker) {
+    Optional<T> marker,
+    Optional<Pose2d> arcMidpoint) {
   public static AutoPoint<EmptyMarker> of(Point pose) {
     return new AutoPoint<EmptyMarker>(
-        () -> pose, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        () -> pose,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty());
   }
 
   public static AutoPoint<EmptyMarker> of(Supplier<Point> poseSupplier) {
     return new AutoPoint<EmptyMarker>(
-        poseSupplier, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        poseSupplier,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty());
   }
 
   public static AutoPoint<EmptyMarker> ofBlue(Pose2d pose) {
@@ -40,7 +51,8 @@ public record AutoPoint<T extends Enum<T>>(
         Optional.of(new LinearConstraintOptions(maxVelocity, maxAcceleration)),
         angularConstraints,
         transitionTolerance,
-        marker);
+        marker,
+        arcMidpoint);
   }
 
   public AutoPoint<T> withAngularConstraints(
@@ -50,7 +62,8 @@ public record AutoPoint<T extends Enum<T>>(
         linearConstraints,
         Optional.of(new AngularConstraintOptions(maxAngularVelocity, maxAngularAcceleration)),
         transitionTolerance,
-        marker);
+        marker,
+        arcMidpoint);
   }
 
   public AutoPoint<T> withTransitionTolerance(PoseErrorTolerance transitionTolerance) {
@@ -59,7 +72,8 @@ public record AutoPoint<T extends Enum<T>>(
         linearConstraints,
         angularConstraints,
         Optional.of(transitionTolerance),
-        marker);
+        marker,
+        arcMidpoint);
   }
 
   public <E extends Enum<E>> AutoPoint<E> withMarker(E marker) {
@@ -68,6 +82,17 @@ public record AutoPoint<T extends Enum<T>>(
         linearConstraints,
         angularConstraints,
         transitionTolerance,
-        Optional.of(marker));
+        Optional.of(marker),
+        arcMidpoint);
+  }
+
+  public AutoPoint<T> withArcMidpoint(Pose2d arcMidpoint) {
+    return new AutoPoint<T>(
+        poseSupplier,
+        linearConstraints,
+        angularConstraints,
+        transitionTolerance,
+        marker,
+        Optional.of(arcMidpoint));
   }
 }
