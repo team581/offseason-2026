@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -53,7 +54,13 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
   private final LaneSystem laneSystem =
-      new LaneSystem(7.0, 10, 1.5, FieldUtil.FIELD_WIDTH_Y - 1.5, 3, FieldUtil.FIELD_WIDTH_Y);
+      new LaneSystem(
+          FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.246 + Units.inchesToMeters(31) : 7.0,
+          11,
+          1.5,
+          FieldUtil.FIELD_WIDTH_Y - 1.5,
+          3,
+          FieldUtil.FIELD_WIDTH_Y);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
