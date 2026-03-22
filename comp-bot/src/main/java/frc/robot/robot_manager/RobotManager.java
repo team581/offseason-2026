@@ -301,6 +301,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE, UNJAM -> {
         smartHoodIdleRequest();
         swerve.normalDriveRequest();
+        hopperManager.idleRequest();
       }
 
       case PREPARE_SCORE -> {
@@ -483,6 +484,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void homeShooterHoodRequest() {
     shooterHood.homingRequest();
+  }
+
+  public void stowDeployRequest() {
+    hopperManager.setOperatorWantsStow(true);
+  }
+
+  public void cancelStowDeployRequest() {
+    hopperManager.setOperatorWantsStow(false);
   }
 
   @Override

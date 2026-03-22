@@ -26,6 +26,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private boolean driverWantsIntake = false;
   private boolean driverWantsEject = false;
+  private boolean operatorWantsStow = false;
 
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
 
@@ -77,7 +78,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case IDLE -> {
-        deploy.stowRequest();
+        deploy.intakeRequest();
         intake.idleRequest();
         conveyor.idleRequest();
         feeder.idleRequest();
@@ -128,18 +129,28 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
-        } else {
-          if (driverWantsIntake) {
-            DogLog.log("HopperManager/HopperActivity", "INTAKING");
+        } else if (driverWantsIntake) {
+          DogLog.log("HopperManager/HopperActivity", "INTAKING");
+          conveyor.intakeRequest();
+          intake.intakeRequest();
+          deploy.intakeRequest();
+          if (operatorWantsStow) {
+            DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
             conveyor.intakeRequest();
             intake.intakeRequest();
-            deploy.intakeRequest();
-          } else {
-            DogLog.log("HopperManager/HopperActivity", "IDLE");
+            deploy.stowRequest();
+          }
+        } else {
+          if (operatorWantsStow) {
+            DogLog.log("HopperManager/HopperActivity", "STOW");
             conveyor.idleRequest();
             intake.idleRequest();
             deploy.stowRequest();
           }
+          DogLog.log("HopperManager/HopperActivity", "IDLE");
+          conveyor.idleRequest();
+          intake.idleRequest();
+          deploy.intakeRequest();
         }
       }
       case SCORE -> {
@@ -192,6 +203,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   public void setDriverWantsIntake(boolean wantsIntake) {
     driverWantsIntake = wantsIntake;
+  }
+
+  public void setOperatorWantsStow(boolean wantsStow) {
+    operatorWantsStow = wantsStow;
   }
 
   public boolean isIntaking() {
