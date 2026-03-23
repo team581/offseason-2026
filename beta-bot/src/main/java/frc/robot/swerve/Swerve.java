@@ -504,6 +504,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                         Rotation2d.fromDegrees(turretStuckAimingAngle))
                     .withTargetRateFeedforward(aimingFeedForward));
           }
+        } else {
+          drivetrain.setControl(
+              withFieldRelativeTargetDirection(
+                      fieldCentricSnapsClosedLoop
+                          .withVelocityX(speeds.vxMetersPerSecond)
+                          .withVelocityY(speeds.vyMetersPerSecond),
+                      Rotation2d.fromDegrees(turretStuckAimingAngle))
+                  .withTargetRateFeedforward(aimingFeedForward));
         }
       }
       case CLIMB_ASSIST -> {
