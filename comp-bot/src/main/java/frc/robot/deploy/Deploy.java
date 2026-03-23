@@ -83,14 +83,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           yield currentState;
         }
       }
-
-      case HOPPER_COMPACTION_IN -> {
-        if (atGoal()) {
-          yield DeployState.INTAKE;
-        } else {
-          yield currentState;
-        }
-      }
       default -> currentState;
     };
   }
@@ -156,7 +148,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
             "Deploy",
             mechanism ->
                 mechanism
-                    .addMotor(motor, ChassisReference.Clockwise_Positive)
+                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
@@ -170,7 +162,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       setStateFromRequest(DeployState.INTAKE);
     }
 
-    deploySimulation.update(clamp(getState().getLength()));
+    deploySimulation.update();
   }
 
   @Override
