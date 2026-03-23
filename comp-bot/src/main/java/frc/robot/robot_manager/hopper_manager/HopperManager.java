@@ -14,6 +14,7 @@ import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployConfig;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
@@ -60,8 +61,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return switch (currentState) {
       case SHOOT -> currentState;
       case IDLE -> {
-        if ((hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensorRaw) {
+        if (((intake.getState() == IntakeState.INTAKE && timeout(3))
+                || hopperCapacity == HopperCapacity.MEDIUM
+                || hopperCapacity == HopperCapacity.HIGH)
+            && !towerSensorRaw
+            && DSOptions.USE_TOWER_SENSOR.get()) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
