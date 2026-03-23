@@ -54,20 +54,14 @@ public class LaneSystem {
 
         laneIndex = Math.max(0, Math.min(laneIndex, numLanes - 1));
 
-        switch (laneIndex) {
-          case 0:
-            return Lane.LANE_0;
-          case 1:
-            return Lane.LANE_1;
-          case 2:
-            return Lane.LANE_2;
-          case 3:
-            return Lane.LANE_3;
-          case 4:
-            return Lane.LANE_4;
-          default:
-            return Lane.NONE;
-        }
+        return switch (laneIndex) {
+          case 0 -> Lane.LANE_0;
+          case 1 -> Lane.LANE_1;
+          case 2 -> Lane.LANE_2;
+          case 3 -> Lane.LANE_3;
+          case 4 -> Lane.LANE_4;
+          default -> Lane.NONE;
+        };
       }
     }
     return Lane.NONE;
