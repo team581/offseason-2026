@@ -45,7 +45,7 @@ public class BumpCrossingTracker {
               return 0.0;
             }
 
-            var bumpRect = bump.get();
+            var bumpRect = bump.orElseThrow();
             double halfWidth = bumpRect.getXWidth() / 2.0;
             double distFromCenter = Math.abs(pose.getX() - bumpRect.getCenter().getX());
             double t = MathUtil.clamp(distFromCenter / halfWidth, 0.0, 1.0);
