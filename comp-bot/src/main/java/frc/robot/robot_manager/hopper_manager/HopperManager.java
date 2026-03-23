@@ -27,6 +27,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean driverWantsIntake = false;
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
+  private boolean towerSensorRaw = false;
 
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
 
@@ -60,13 +61,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case SHOOT -> currentState;
       case IDLE -> {
         if ((hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensor.get()) {
+            && !towerSensorRaw) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
       }
       case BALL_FILLING -> {
-        if (towerSensor.get()) {
+        if (towerSensorRaw) {
           yield HopperState.IDLE;
         }
         yield currentState;
@@ -216,6 +217,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
+    if (DSOptions.USE_TOWER_SENSOR.get()) {
+      towerSensorRaw = towerSensor.get();
+    }
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
