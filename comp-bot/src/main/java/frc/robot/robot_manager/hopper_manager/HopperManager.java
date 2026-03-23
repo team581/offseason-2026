@@ -132,12 +132,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           conveyor.ejectRequest();
         } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "INTAKING");
-          conveyor.idleRequest();
+          conveyor.intakeRequest();
           intake.intakeRequest();
           deploy.intakeRequest();
           if (operatorWantsStow) {
             DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
-            conveyor.idleRequest();
+            conveyor.intakeRequest();
             intake.intakeRequest();
             deploy.stowRequest();
           }
