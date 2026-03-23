@@ -59,7 +59,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return switch (currentState) {
       case SCORE -> currentState;
       case IDLE -> {
-        if (hopperCapacity == HopperCapacity.MEDIUM) {
+        if ((hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH)
+            && !towerSensor.get()) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
