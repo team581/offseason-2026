@@ -5,7 +5,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum ConveyorState {
   SHOOT(12),
-  INTAKE(12),
+  BALL_FILLING(12),
   EJECT(-12),
   IDLE(0);
 

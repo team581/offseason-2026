@@ -87,12 +87,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.hopperCompactionRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
-        feeder.scoreRequest();
+        feeder.shootRequest();
       }
       case BALL_FILLING -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        conveyor.intakeRequest();
+        conveyor.ballFillingRequest();
         feeder.ballFillingRequest();
       }
       case REHOME_DEPLOY -> {
@@ -119,7 +119,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           DogLog.log("HopperManager/HopperActivity", "BALL FILLING");
           deploy.intakeRequest();
           intake.intakeRequest();
-          conveyor.intakeRequest();
+          conveyor.ballFillingRequest();
           feeder.ballFillingRequest();
         }
       }
@@ -131,12 +131,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           conveyor.ejectRequest();
         } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "INTAKING");
-          conveyor.intakeRequest();
+          conveyor.idleRequest();
           intake.intakeRequest();
           deploy.intakeRequest();
           if (operatorWantsStow) {
             DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
-            conveyor.intakeRequest();
+            conveyor.idleRequest();
             intake.intakeRequest();
             deploy.stowRequest();
           }
@@ -159,8 +159,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           conveyor.ejectRequest();
           feeder.idleRequest();
         } else {
-          feeder.scoreRequest();
-          conveyor.intakeRequest();
+          feeder.shootRequest();
+          conveyor.shootRequest();
           intake.intakeRequest();
           if (driverWantsIntake) {
             deploy.intakeRequest();
