@@ -44,7 +44,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private CameraHealth cameraHealth = CameraHealth.NO_TARGETS;
   private double limelightHeartbeat = -1;
 
-  private OptionalTagResult lastGoodTagResult = new OptionalTagResult();
+  private double lastGoodTagTimestamp = Double.MIN_VALUE;
   private OptionalTagResult tagResult = new OptionalTagResult();
 
   private double angularVelocity = 0.0;
@@ -123,7 +123,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   protected void collectInputs() {
     tagResult = getTagResult();
     if (tagResult.isPresent()) {
-      lastGoodTagResult = tagResult;
+      lastGoodTagTimestamp = tagResult.orElseThrow().timestamp();
     }
   }
 
@@ -152,12 +152,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     }
     DogLog.log("Vision/" + name + "/State", getState());
 
-    var lastTagTimestamp =
-        lastGoodTagResult.isPresent()
-            ? lastGoodTagResult.orElseThrow().timestamp()
-            : Double.MIN_VALUE;
-
-    if (Timer.getTimestamp() - lastTagTimestamp > 30) {
+    if (Timer.getTimestamp() - lastGoodTagTimestamp > 30) {
       DogLog.logFault(
           limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
     } else {
