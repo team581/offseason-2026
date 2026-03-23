@@ -40,7 +40,7 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
-  private final AutoSegment lane0Segment =
+  private final AutoSegment lane2Segment =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.0, 7.24, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
@@ -60,19 +60,11 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
-  private final AutoSegment lane2Segment =
+  private final AutoSegment lane0Segment =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(10.2, 7.24, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
               AutoPoint.ofRed(new Pose2d(10.5, 3.0, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)))
-          .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
-          .untilFinished(new PoseErrorTolerance(0.2, 3));
-
-  private final AutoSegment lane3Segment =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(10.2, 5.0, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
@@ -142,11 +134,10 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
           case LANE_0 -> trailblazer.setActiveSegment(lane0Segment);
           case LANE_1 -> trailblazer.setActiveSegment(lane1Segment);
           case LANE_2 -> trailblazer.setActiveSegment(lane2Segment);
-          case LANE_3, LANE_4 -> trailblazer.setActiveSegment(lane3Segment);
           case TRENCH ->
               // TODO: make a trench path
-              trailblazer.setActiveSegment(lane3Segment);
-          case NONE -> {
+              trailblazer.setActiveSegment(didNotSee);
+          default -> {
             trailblazer.setActiveSegment(didNotSee);
           }
         }
