@@ -226,12 +226,22 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
     ableToXSwerve =
         switch (getState()) {
-          case SCORE, FEED -> {
+          case SCORE -> {
             yield X_SWERVE_DEBOUNCER.calculate(
                 MathUtil.isNear(
                         scoringAngle,
                         drivetrainState.Pose.getRotation().getDegrees(),
                         scoringTolerance,
+                        -180.0,
+                        180.0)
+                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+          }
+          case FEED -> {
+            yield X_SWERVE_DEBOUNCER.calculate(
+                MathUtil.isNear(
+                        feedingAngle,
+                        drivetrainState.Pose.getRotation().getDegrees(),
+                        feedingTolerance,
                         -180.0,
                         180.0)
                     && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
