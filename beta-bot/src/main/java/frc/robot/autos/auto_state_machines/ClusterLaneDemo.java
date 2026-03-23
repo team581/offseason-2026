@@ -34,7 +34,7 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
 
   private final AutoSegment didNotSee =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(10.0, 6.8, Rotation2d.fromDegrees(180)))
+              AutoPoint.ofRed(new Pose2d(10.0, 6.8, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)))
           .withLinearConstraints(2.0, 5)
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
