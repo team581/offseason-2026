@@ -109,7 +109,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     DogLog.log("Deploy/SupplyCurrent", supplyCurrent);
     DogLog.log("Deploy/Velocity", motor.getVelocity().getValueAsDouble());
     DogLog.log("Deploy/Voltage", motor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Deploy/Slot", motor.getClosedLoopSlot().getValueAsDouble());
   }
 
   public double getPosition() {
