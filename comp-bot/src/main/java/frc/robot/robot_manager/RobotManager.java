@@ -156,7 +156,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
-                    && localization.isTrustworthy()
                     && isInSafeScoringLocation)
                 || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
                     && shooter.atGoalDebounced()))
