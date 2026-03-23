@@ -2,6 +2,7 @@ package frc.robot.autos;
 
 import com.team581.autos.AutoSelectionBase;
 import com.team581.trailblazer.Trailblazer;
+import frc.robot.autos.auto_state_machines.ClusterLaneDemo;
 import frc.robot.autos.auto_state_machines.DoNothingAuto;
 import frc.robot.autos.auto_state_machines.LeftCircleAlternateAuto;
 import frc.robot.autos.auto_state_machines.LeftCircleSoMAuto;
@@ -15,6 +16,7 @@ import java.util.function.BiFunction;
 
 public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING(DoNothingAuto::new),
+  CLUSTER_LANE_DEMO(ClusterLaneDemo::new),
   RIGHT_STRAIGHT_SHOOT(RightStraightShootClimbAuto::new),
   //  RIGHT_PULL_SWOOP_SHOOT(RightPullSwoopShootAuto::new),
   TEST_AUTO_PATH(RightTestPathAuto::new),

@@ -3,7 +3,6 @@ package frc.robot.cluster_map;
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
-import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.GamePieceResult;
@@ -13,7 +12,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -30,16 +28,36 @@ import java.util.Optional;
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SAME_CLUSTER_DETECTION_THRESHOLD_METERS = 1.0;
   private static final double SWERVE_MAX_LINEAR_SPEED_TRACKING = 3.0;
-  private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 3.0;
+  private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 100.0;
   private static final double CLUSTER_LIFETIME_SECONDS = 2.0;
 
-  private static final double MIN_BALLS_PER_SECOND_THRESHOLD = 0.5;
+  private static final double MIN_BALLS_PER_SECOND_THRESHOLD = 10;
   private static final double ESTIMATED_DRIVE_SPEED_MPS = 4.0;
   private static final double PICKUP_OVERHEAD_TIME_SEC = 0.5;
+
+  private static final double REFERENCE_BALL_AREA_AT_1M = calculateTheoreticalArea();
 
   private static final DoubleSubscriber SIMULATED_CLUSTER_X = DogLog.tunable("ClusterMapX", 9.0);
 
   private static final DoubleSubscriber SIMULATED_CLUSTER_Y = DogLog.tunable("ClusterMapY", 5.0);
+
+  private static double calculateTheoreticalArea() {
+    double fovX = Math.toRadians(63.3);
+    double fovY = Math.toRadians(49.7);
+    double resX = 640.0;
+    double resY = 480.0;
+
+    double ballDiameterMeters = 0.1524;
+
+    double fx = resX / (2.0 * Math.tan(fovX / 2.0));
+    double fy = resY / (2.0 * Math.tan(fovY / 2.0));
+
+    double expectedWidthPx = fx * ballDiameterMeters;
+    double expectedHeightPx = fy * ballDiameterMeters;
+
+    return Math.PI * (expectedWidthPx / 2.0) * (expectedHeightPx / 2.0);
+  }
+
   private final Limelight limelight;
 
   private final ArrayList<ClusterMapElement> clusterMap = new ArrayList<>();
@@ -55,12 +73,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   private final LaneSystem laneSystem =
       new LaneSystem(
-          FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.246 + Units.inchesToMeters(31) : 7.0,
-          11,
+          FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.0 : 7.0,
+          10.2,
           1.5,
           FieldUtil.FIELD_WIDTH_Y - 1.5,
-          3,
-          FieldUtil.FIELD_WIDTH_Y);
+          3);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
@@ -69,10 +86,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     this.limelight = limelight;
   }
 
-  /**
-   * Evaluates the absolute best cluster on the field and returns its Lane. Returns Lane.NONE if no
-   * clusters meet the worthiness threshold, or if out of bounds.
-   */
   public Lane getBestClusterLane() {
     Optional<Pose2d> bestCluster = getBestClusterPose();
 
@@ -82,12 +95,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     Pose2d targetPose = bestCluster.orElseThrow();
 
-    // If we are blue, flip the target pose over the center of the field
-    if (!FmsUtil.isRedAlliance()) {
-      targetPose = FieldUtil.pathflip(targetPose);
-    }
-
-    return laneSystem.getLaneFromTranslation(targetPose.getTranslation());
+    return laneSystem.getLane(targetPose, localization.getPose());
   }
 
   public Optional<Pose2d> getBestClusterPose() {
@@ -127,7 +135,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
         MathHelpers.getDriveDirection(robotPose, new Pose2d(bestTranslation, Rotation2d.kZero));
 
     if (!MathUtil.isNear(
-        robotPose.getRotation().getDegrees(), rotation.getDegrees(), 45, -180, 180)) {
+        robotPose.getRotation().getDegrees(), rotation.getDegrees(), 160, -180, 180)) {
       return Optional.empty();
     }
 
@@ -170,8 +178,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       return Optional.empty();
     }
 
-    // Extract custom python data
-    int clusterSize = (int) result[3];
+    double rawArea = result[2];
     double clusterScore = result[4];
 
     double latency =
@@ -180,7 +187,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             / 1000.0;
 
     double timestamp = Timer.getFPGATimestamp() - latency;
-
     var robotPoseAtCapture = localization.getPose(timestamp);
 
     double angleX = LimelightHelpers.getTX(limelight.limelightTableName);
@@ -188,11 +194,19 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     gamePieceResult.update(angleX, angleY, timestamp);
 
+    // Calculate the absolute field position of the cluster
     var clusterPose =
         GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
             robotPoseAtCapture, gamePieceResult, limelight.config);
 
-    return Optional.of(new VisionClusterData(clusterPose, clusterSize, clusterScore));
+    double distanceMeters = robotPoseAtCapture.getTranslation().getDistance(clusterPose);
+
+    double estimatedBalls = (rawArea * Math.pow(distanceMeters, 2)) / REFERENCE_BALL_AREA_AT_1M;
+
+    int calculatedSize = (int) Math.round(estimatedBalls);
+    calculatedSize = Math.max(1, calculatedSize);
+
+    return Optional.of(new VisionClusterData(clusterPose, calculatedSize, clusterScore));
   }
 
   private boolean safeToTrack() {
@@ -242,7 +256,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
       clusterMap.add(
           new ClusterMapElement(
-              newClusterExpiry, blendedPose, health, visionData.size(), visionData.score()));
+              newClusterExpiry,
+              blendedPose,
+              health,
+              Math.max(existingElement.detectionSize(), visionData.size()),
+              visionData.score()));
       clusterMap.remove(existingElement);
     } else {
       clusterMap.add(

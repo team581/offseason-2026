@@ -13,7 +13,8 @@ public class Imu extends BaseImuSubsystem {
   private static final DoubleSubscriber COLLISION_G_FORCE_THRESHOLD =
       DogLog.tunable("Imu/CollisionGForceThreshold", 2.0);
 
-  public final BumpCrossingTracker bumpCrossingTracker = new BumpCrossingTracker(this::getTilt);
+  public final BumpCrossingTracker bumpCrossingTracker =
+      new BumpCrossingTracker(() -> Math.hypot(pitch, roll), () -> driveState.Pose);
   private final LinearFilter pigeonXAccelFilter = LinearFilter.movingAverage(10);
   private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
@@ -22,7 +23,6 @@ public class Imu extends BaseImuSubsystem {
   private double pigeonGForce = 0.0;
   private double maxGForceDetected = Double.NEGATIVE_INFINITY;
   private double lastUpdateTime = 0.0;
-  private double tilt = 0.0;
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
@@ -65,15 +65,10 @@ public class Imu extends BaseImuSubsystem {
     DogLog.log("Imu/Pigeon/HypotAccel", pigeonJerk);
     DogLog.log("Imu/Pigeon/GForce", pigeonGForce);
     DogLog.log("Imu/Pigeon/MaxGForce", maxGForceDetected);
-    tilt = Math.hypot(pitch, roll);
-    DogLog.log("Imu/TiltDegrees", tilt);
+    bumpCrossingTracker.log();
   }
 
   public boolean collisionDetected() {
     return pigeonGForce > COLLISION_G_FORCE_THRESHOLD.get();
-  }
-
-  public double getTilt() {
-    return tilt;
   }
 }

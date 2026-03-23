@@ -2,6 +2,7 @@ package frc.robot.autos.auto_state_machines;
 
 import com.team581.autos.Point;
 import com.team581.math.PoseErrorTolerance;
+import com.team581.mechanisms.imu.BumpCrossingTracker;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
@@ -20,6 +21,8 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2
   }
+
+  private BumpCrossingTracker bumpCrossingTracker;
 
   private final AutoSegment intakeAcrossMidline =
       Trailblazer.segment(
@@ -90,9 +93,14 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
 
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+              AutoPoint.of(
+                      () ->
+                          bumpCrossingTracker.getPoint(
+                              Point.ofRed(
+                                  new Pose2d(
+                                      13.709,
+                                      FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(),
+                                      Rotation2d.kZero))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -120,9 +128,14 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
                           13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          14.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kZero))
+              AutoPoint.of(
+                      () ->
+                          bumpCrossingTracker.getPoint(
+                              Point.ofRed(
+                                  new Pose2d(
+                                      14.709,
+                                      FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(),
+                                      Rotation2d.kZero))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
@@ -150,6 +163,7 @@ public class RightCircleSoMAuto extends BaseImperativeAuto<CircleSoMAutoState> {
 
   public RightCircleSoMAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(CircleSoMAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
+    this.bumpCrossingTracker = robotManager.localization.imu.bumpCrossingTracker;
   }
 
   @Override

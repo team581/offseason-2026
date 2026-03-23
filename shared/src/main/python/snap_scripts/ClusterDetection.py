@@ -23,8 +23,8 @@ def runPipeline(
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # 2. Thresholding (Adjust these for the 2026 yellow game piece)
-    lower_yellow = np.array([49, 100, 50])
-    upper_yellow = np.array([51, 73, 98])
+    lower_yellow = np.array([20, 100, 100])
+    upper_yellow = np.array([30, 255, 255])
     mask = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
 
     # 3. Find all potential targets

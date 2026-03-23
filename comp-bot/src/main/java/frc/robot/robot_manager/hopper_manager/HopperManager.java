@@ -57,9 +57,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   @Override
   protected HopperState getNextState(HopperState currentState) {
     return switch (currentState) {
-      case SCORE -> currentState;
+      case SHOOT -> currentState;
       case IDLE -> {
-        if (hopperCapacity == HopperCapacity.MEDIUM) {
+        if ((hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH)
+            && !towerSensor.get()) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
@@ -83,7 +84,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.idleRequest();
         feeder.idleRequest();
       }
-      case SCORE -> {
+      case SHOOT -> {
         deploy.hopperCompactionRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
@@ -152,7 +153,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
         }
       }
-      case SCORE -> {
+      case SHOOT -> {
         if (driverWantsEject) {
           deploy.intakeRequest();
           intake.ejectRequest();
@@ -186,7 +187,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public void scoreRequest() {
-    setState(HopperState.SCORE);
+    setState(HopperState.SHOOT);
   }
 
   public void idleRequest() {

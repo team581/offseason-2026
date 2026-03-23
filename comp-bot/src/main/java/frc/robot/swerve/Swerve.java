@@ -217,6 +217,26 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  public boolean atGoal() {
+    return switch (getState()) {
+      case SCORE ->
+          MathUtil.isNear(
+              drivetrainState.Pose.getRotation().getDegrees(),
+              scoringAngle,
+              scoringTolerance,
+              -180.0,
+              180.0);
+      case FEED ->
+          MathUtil.isNear(
+              drivetrainState.Pose.getRotation().getDegrees(),
+              feedingAngle,
+              feedingTolerance,
+              -180,
+              180);
+      default -> false;
+    };
+  }
+
   @Override
   protected void collectInputs() {
     drivetrainState = drivetrain.getState();
@@ -226,15 +246,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
     ableToXSwerve =
         switch (getState()) {
-          case SCORE, FEED -> {
+          case SCORE -> {
             yield X_SWERVE_DEBOUNCER.calculate(
-                MathUtil.isNear(
-                        scoringAngle,
-                        drivetrainState.Pose.getRotation().getDegrees(),
-                        scoringTolerance,
-                        -180.0,
-                        180.0)
-                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+                atGoal() && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+          }
+          case FEED -> {
+            yield X_SWERVE_DEBOUNCER.calculate(
+                atGoal() && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
           }
           default -> false;
         };

@@ -1,9 +1,8 @@
 package frc.robot.cluster_map;
 
-import static java.util.Comparator.comparingDouble;
-
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
+import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.GamePieceResult;
@@ -13,6 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
@@ -23,15 +23,40 @@ import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SAME_CLUSTER_DETECTION_THRESHOLD_METERS = 1.0;
   private static final double SWERVE_MAX_LINEAR_SPEED_TRACKING = 3.0;
-  private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 3.0;
+  private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 100.0;
+  private static final double CLUSTER_LIFETIME_SECONDS = 2.0;
 
-  private static final double CLUSTER_LIFETIME_SECONDS = 2;
+  private static final double MIN_BALLS_PER_SECOND_THRESHOLD = 10;
+  private static final double ESTIMATED_DRIVE_SPEED_MPS = 4.0;
+  private static final double PICKUP_OVERHEAD_TIME_SEC = 0.5;
+
+  private static final double REFERENCE_BALL_AREA_AT_1M = calculateTheoreticalArea();
+
+  private static final DoubleSubscriber SIMULATED_CLUSTER_X = DogLog.tunable("ClusterMapX", 9.0);
+
+  private static final DoubleSubscriber SIMULATED_CLUSTER_Y = DogLog.tunable("ClusterMapY", 5.0);
+
+  private static double calculateTheoreticalArea() {
+    double fovX = Math.toRadians(63.3);
+    double fovY = Math.toRadians(49.7);
+    double resX = 640.0;
+    double resY = 480.0;
+
+    double ballDiameterMeters = 0.1524;
+
+    double fx = resX / (2.0 * Math.tan(fovX / 2.0));
+    double fy = resY / (2.0 * Math.tan(fovY / 2.0));
+
+    double expectedWidthPx = fx * ballDiameterMeters;
+    double expectedHeightPx = fy * ballDiameterMeters;
+
+    return Math.PI * (expectedWidthPx / 2.0) * (expectedHeightPx / 2.0);
+  }
 
   private final Limelight limelight;
 
@@ -44,14 +69,15 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   private boolean deployFullyExtended = false;
 
-  private final Comparator<Pose2d> bestClusterComparator =
-      comparingDouble(
-          target -> {
-            return AlignmentCostUtil.getClusterAlignCost(
-                target, localization.getPose(), swerve.getFieldRelativeSpeeds());
-          });
-
   private final GamePieceResult gamePieceResult = new GamePieceResult();
+
+  private final LaneSystem laneSystem =
+      new LaneSystem(
+          FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.0 : 7.0,
+          10.2,
+          1.5,
+          FieldUtil.FIELD_WIDTH_Y - 1.5,
+          3);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
@@ -60,59 +86,80 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     this.limelight = limelight;
   }
 
-  public Optional<Pose2d> getBestClusterPose() {
-    if (RobotBase.isSimulation() && FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
-      var fakeBestCluster = new Pose2d(9, 5, localization.getPose().getRotation());
-      var rotation = MathHelpers.getDriveDirection(localization.getPose(), fakeBestCluster);
-      return timeout(5.0) ? Optional.of(new Pose2d(9, 5, rotation)) : Optional.empty();
+  public Lane getBestClusterLane() {
+    Optional<Pose2d> bestCluster = getBestClusterPose();
+
+    if (bestCluster.isEmpty()) {
+      return Lane.NONE;
     }
+
+    Pose2d targetPose = bestCluster.orElseThrow();
+
+    return laneSystem.getLane(targetPose, localization.getPose());
+  }
+
+  public Optional<Pose2d> getBestClusterPose() {
+
     if (clusterMap.isEmpty()) {
       return Optional.empty();
     }
 
-    var bestCluster =
-        clusterMap.stream()
-            .map(cluster -> new Pose2d(cluster.clusterTranslation(), Rotation2d.kZero))
-            .min(bestClusterComparator);
-    if (bestCluster.isPresent()) {
-      var rotation =
-          MathHelpers.getDriveDirection(localization.getPose(), bestCluster.orElseThrow());
-      if (!MathUtil.isNear(
-          localization.getPose().getRotation().getDegrees(),
-          rotation.getDegrees(),
-          45,
-          -180,
-          180)) {
-        return Optional.empty();
-      }
-      var clusterPoseWithIntakeRotation =
-          new Pose2d(bestCluster.orElseThrow().getTranslation(), rotation);
-      DogLog.log("ClusterMap/BestClusterPose", clusterPoseWithIntakeRotation);
-      return Optional.of(clusterPoseWithIntakeRotation);
-    }
-    return Optional.empty();
-  }
+    ClusterMapElement bestElement = null;
+    double highestBallsPerSecond = MIN_BALLS_PER_SECOND_THRESHOLD;
+    var robotPose = localization.getPose();
 
-  @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-    try {
-      DogLog.log(
-          "ClusterMap/Clusters",
-          clusterMap.stream()
-              .map(element -> new Pose2d(element.clusterTranslation(), Rotation2d.kZero))
-              .toArray(Pose2d[]::new));
-    } catch (RuntimeException error) {
-      DogLog.logFault("ClusterMapLoggingError");
-      System.err.println(error);
+    // Evaluate all active clusters
+    for (ClusterMapElement element : clusterMap) {
+      double distanceMeters = robotPose.getTranslation().getDistance(element.clusterTranslation());
+
+      // How long will it take to get there and grab it
+      double estimatedTravelTime = distanceMeters / ESTIMATED_DRIVE_SPEED_MPS;
+      double totalEstimatedTime = estimatedTravelTime + PICKUP_OVERHEAD_TIME_SEC;
+
+      // return on investment (Balls per second)
+      double ballsPerSecond = element.detectionSize() / totalEstimatedTime;
+
+      if (ballsPerSecond > highestBallsPerSecond) {
+        highestBallsPerSecond = ballsPerSecond;
+        bestElement = element;
+      }
     }
+
+    if (bestElement == null) {
+      DogLog.log("ClusterMap/BestClusterPose", "None met threshold");
+      return Optional.empty();
+    }
+
+    var bestTranslation = bestElement.clusterTranslation();
+    var rotation =
+        MathHelpers.getDriveDirection(robotPose, new Pose2d(bestTranslation, Rotation2d.kZero));
+
+    if (!MathUtil.isNear(
+        robotPose.getRotation().getDegrees(), rotation.getDegrees(), 160, -180, 180)) {
+      return Optional.empty();
+    }
+
+    var clusterPoseWithIntakeRotation = new Pose2d(bestTranslation, rotation);
+    DogLog.log("ClusterMap/BestClusterPose", clusterPoseWithIntakeRotation);
+    return Optional.of(clusterPoseWithIntakeRotation);
   }
 
   public void setDeployFullyExtended(boolean isFullyExtended) {
     deployFullyExtended = isFullyExtended;
   }
 
-  private Optional<Translation2d> getRawClusterPoses() {
+  // Helper record to pass the extracted data from the Limelight
+  private record VisionClusterData(Translation2d translation, int size, double score) {}
+
+  private Optional<VisionClusterData> getRawClusterPoses() {
+    if (RobotBase.isSimulation()) {
+      return Optional.of(
+          new VisionClusterData(
+              new Translation2d(
+                  SIMULATED_CLUSTER_X.getAsDouble(), SIMULATED_CLUSTER_Y.getAsDouble()),
+              19,
+              10));
+    }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
       return Optional.empty();
     }
@@ -123,14 +170,16 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       DogLog.timestamp("ClusterMap/NoData");
       return Optional.empty();
     }
-    // Check if the result array has changed
+
     staleData = Arrays.equals(previousResult, result);
     previousResult = result;
     if (staleData) {
       DogLog.timestamp("ClusterMap/SkipStaleData");
-
       return Optional.empty();
     }
+
+    double rawArea = result[2];
+    double clusterScore = result[4];
 
     double latency =
         (LimelightHelpers.getLatency_Capture(limelight.limelightTableName)
@@ -138,7 +187,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             / 1000.0;
 
     double timestamp = Timer.getFPGATimestamp() - latency;
-
     var robotPoseAtCapture = localization.getPose(timestamp);
 
     double angleX = LimelightHelpers.getTX(limelight.limelightTableName);
@@ -146,11 +194,19 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     gamePieceResult.update(angleX, angleY, timestamp);
 
+    // Calculate the absolute field position of the cluster
     var clusterPose =
         GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
             robotPoseAtCapture, gamePieceResult, limelight.config);
 
-    return Optional.of(clusterPose);
+    double distanceMeters = robotPoseAtCapture.getTranslation().getDistance(clusterPose);
+
+    double estimatedBalls = (rawArea * Math.pow(distanceMeters, 2)) / REFERENCE_BALL_AREA_AT_1M;
+
+    int calculatedSize = (int) Math.round(estimatedBalls);
+    calculatedSize = Math.max(1, calculatedSize);
+
+    return Optional.of(new VisionClusterData(clusterPose, calculatedSize, clusterScore));
   }
 
   private boolean safeToTrack() {
@@ -160,17 +216,15 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   }
 
   private void updateMap() {
-    var latestPose = getRawClusterPoses();
-    if (latestPose.isEmpty() || !safeToTrack()) {
+    var latestData = getRawClusterPoses();
+    if (latestData.isEmpty() || !safeToTrack()) {
       return;
     }
 
-    var visionCluster = latestPose.orElseThrow();
+    var visionData = latestData.orElseThrow();
+    var visionTranslation = visionData.translation();
 
-    clusterMap.removeIf(
-        element -> {
-          return (element.expiresAt() < Timer.getFPGATimestamp());
-        });
+    clusterMap.removeIf(element -> element.expiresAt() < Timer.getFPGATimestamp());
 
     if (staleData) {
       return;
@@ -183,23 +237,35 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             .filter(
                 rememberedCluster -> {
                   return rememberedCluster.expiresAt() != newClusterExpiry
-                      && (rememberedCluster.clusterTranslation().getDistance(visionCluster)
+                      && (rememberedCluster.clusterTranslation().getDistance(visionTranslation)
                           < SAME_CLUSTER_DETECTION_THRESHOLD_METERS);
                 })
             .min(
                 (a, b) ->
                     Double.compare(
-                        a.clusterTranslation().getDistance(visionCluster),
-                        b.clusterTranslation().getDistance(visionCluster)));
+                        a.clusterTranslation().getDistance(visionTranslation),
+                        b.clusterTranslation().getDistance(visionTranslation)));
 
     if (match.isPresent()) {
-      var existingCluster = match.orElseThrow().clusterTranslation();
-      var health = match.orElseThrow().health() + 1;
-      var blendedPose = existingCluster.interpolate(visionCluster, 1 / health);
-      clusterMap.add(new ClusterMapElement(newClusterExpiry, blendedPose, health));
-      clusterMap.remove(match.orElseThrow());
+      var existingElement = match.orElseThrow();
+      var health = Math.min(existingElement.health() + 1, 20);
+
+      // Blend the old position with the newly observed position
+      var blendedPose =
+          existingElement.clusterTranslation().interpolate(visionTranslation, 1 / health);
+
+      clusterMap.add(
+          new ClusterMapElement(
+              newClusterExpiry,
+              blendedPose,
+              health,
+              Math.max(existingElement.detectionSize(), visionData.size()),
+              visionData.score()));
+      clusterMap.remove(existingElement);
     } else {
-      clusterMap.add(new ClusterMapElement(newClusterExpiry, visionCluster, 1.0));
+      clusterMap.add(
+          new ClusterMapElement(
+              newClusterExpiry, visionTranslation, 1.0, visionData.size(), visionData.score()));
     }
   }
 
@@ -210,5 +276,22 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     }
     swerveSpeeds = swerve.getRobotRelativeSpeeds();
     updateMap();
+  }
+
+  @Override
+  protected void whileInState(ClusterMapState state) {
+    try {
+      DogLog.log("ClusterMap/Clusters", clusterMap.stream().toArray(ClusterMapElement[]::new));
+      DogLog.log(
+          "ClusterMap/Clusters/ClusterPoses",
+          clusterMap.stream()
+              .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
+              .toArray(Pose2d[]::new));
+    } catch (RuntimeException error) {
+      DogLog.logFault("ClusterMapLoggingError");
+      System.err.println(error);
+    }
+
+    DogLog.log("ClusterMap/BestLane", getBestClusterLane().toString());
   }
 }

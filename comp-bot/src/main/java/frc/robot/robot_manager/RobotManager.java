@@ -109,7 +109,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE ->
           !isMoving
-                  && ((shooter.atGoalDebounced() && shooterHood.atGoal())
+                  && ((swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal())
                       || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
@@ -127,7 +127,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
 
-        if ((shooter.atGoalDebounced()
+        if ((swerve.atGoal()
+                && shooter.atGoalDebounced()
                 && shooterHood.atGoal()
                 && localization.isTrustworthy()
                 && localization.imu.isFlatDebounced()
@@ -151,7 +152,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-                || (localization.isTrustworthy()
+                || (swerve.atGoal()
+                    && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
                     && localization.isTrustworthy()
@@ -171,7 +173,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.PREPARE_SCORE;
         }
 
-        if (shooter.atGoalDebounced()
+        if (swerve.atGoal()
+            && shooter.atGoalDebounced()
             && isInSafeFeedingLocation
             && localization.imu.isFlatDebounced()
             && shooterHood.atGoal()
@@ -191,6 +194,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || (isInSafeFeedingLocation
+                && swerve.atGoal()
                 && localization.imu.isFlatDebounced()
                 && shooterHood.atGoal()
                 && health.isLocalizationHealthy()
@@ -554,7 +558,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logScoringTransition() {
     DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
-
+    DogLog.log("RobotManager/Scoring/ScoreTransition/SwerveAtGoal", swerve.atGoal());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoalDebounced());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(
@@ -570,6 +574,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logFeedTransition() {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
+    DogLog.log("RobotManager/Feeding/FeedTransition/SwerveAtGoal", swerve.atGoal());
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoalDebounced());
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
