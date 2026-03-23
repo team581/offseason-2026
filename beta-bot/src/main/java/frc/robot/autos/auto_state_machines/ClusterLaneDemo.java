@@ -143,7 +143,7 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
           case LANE_1 -> trailblazer.setActiveSegment(lane1Segment);
           case LANE_2 -> trailblazer.setActiveSegment(lane2Segment);
           case LANE_3, LANE_4 -> trailblazer.setActiveSegment(lane3Segment);
-          case SIDE_LANE ->
+          case TRENCH ->
               // TODO: make a trench path
               trailblazer.setActiveSegment(lane3Segment);
           case NONE -> {

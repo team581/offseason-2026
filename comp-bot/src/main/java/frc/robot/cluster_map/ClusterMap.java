@@ -3,7 +3,6 @@ package frc.robot.cluster_map;
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
-import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.GamePieceResult;
@@ -75,11 +74,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private final LaneSystem laneSystem =
       new LaneSystem(
           FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.0 : 7.0,
-          11,
+          10.2,
           1.5,
           FieldUtil.FIELD_WIDTH_Y - 1.5,
-          3,
-          FieldUtil.FIELD_WIDTH_Y);
+          3);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
@@ -97,12 +95,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     Pose2d targetPose = bestCluster.orElseThrow();
 
-    // If we are blue, flip the target pose over the center of the field
-    if (!FmsUtil.isRedAlliance()) {
-      targetPose = FieldUtil.pathflip(targetPose);
-    }
-
-    return laneSystem.getLaneFromTranslation(targetPose.getTranslation());
+    return laneSystem.getLane(targetPose, localization.getPose());
   }
 
   public Optional<Pose2d> getBestClusterPose() {

@@ -6,6 +6,6 @@ public enum Lane {
   LANE_2,
   LANE_3,
   LANE_4,
-  SIDE_LANE,
+  TRENCH,
   NONE
 }
