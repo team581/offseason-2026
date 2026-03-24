@@ -62,7 +62,11 @@ public class CompTunerConstants {
                 // stator current limit to help avoid brownouts without impacting performance.
                 .withStatorCurrentLimit(Amps.of(60))
                 .withStatorCurrentLimitEnable(true)
-        );
+        )
+        // Cruise velocity is only used when MotionMagicExpo SteerRequestType is active (X
+        // swerve). Normal driving uses Position SteerRequestType and is unaffected.
+        .withMotionMagic(
+            new MotionMagicConfigs().withMotionMagicCruiseVelocity(0.75));
     private static final CANcoderConfiguration ENCODER_INITIAL_CONFIGS = new CANcoderConfiguration();
     // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
     private static final Pigeon2Configuration PIGEON_CONFIGS = null;
@@ -73,13 +77,13 @@ public class CompTunerConstants {
 
     // Theoretical free speed (m/s) at 12 V applied output;
     // This needs to be tuned to your individual robot
-    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.76);
+    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.83);
 
     // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
     // This may need to be tuned to your individual robot
-    private static final double K_COUPLE_RATIO = 5.4;
+    private static final double K_COUPLE_RATIO = 4.5;
 
-    private static final double K_DRIVE_GEAR_RATIO = 6.48;
+    private static final double K_DRIVE_GEAR_RATIO = (54.0/10.0)*(18.0/38.0)*(45.0/15.0);
     private static final double K_STEER_GEAR_RATIO = 12.1;
     private static final Distance K_WHEEL_RADIUS = Inches.of(2);
 

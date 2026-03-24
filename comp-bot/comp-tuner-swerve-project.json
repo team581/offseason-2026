@@ -17,8 +17,8 @@
     "SwerveModuleConfiguration": {
       "DriveRatio": 6.48,
       "ModuleBrand": 11,
-      "CustomName": "X3 10T",
-      "CouplingRatio": 5.4,
+      "CustomName": "X2 10T",
+      "CouplingRatio": 4.5,
       "SteerRatio": 12.1
     },
     "HasVerifiedSteer": true,

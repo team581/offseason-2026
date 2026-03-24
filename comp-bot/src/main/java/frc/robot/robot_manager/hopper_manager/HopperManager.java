@@ -13,7 +13,6 @@ import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
-import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
@@ -62,7 +61,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return switch (currentState) {
       case SHOOT -> currentState;
       case IDLE -> {
-        if (((intake.getState() == IntakeState.INTAKE && timeout(3.0))
+        if ((intake.hasBeenIntaking()
                 || hopperCapacity == HopperCapacity.MEDIUM
                 || hopperCapacity == HopperCapacity.HIGH)
             && !towerSensorRaw) {

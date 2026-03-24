@@ -34,6 +34,13 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.SHOOT_THEN_INTAKE);
   }
 
+  public boolean hasBeenIntaking() {
+    if (getState() == IntakeState.INTAKE && timeout(3)) {
+      return true;
+    }
+    return false;
+  }
+
   public void stopShootingRequest() {
     switch (getState()) {
       case SHOOT -> setStateFromRequest(IntakeState.IDLE);
@@ -73,6 +80,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     DogLog.log("Intake/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Intake/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Intake/RequestedVoltage", getState().getVoltage());
+    DogLog.log("Intake/HasBeenIntaking", hasBeenIntaking());
   }
 
   @Override
