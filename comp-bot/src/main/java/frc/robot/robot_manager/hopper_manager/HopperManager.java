@@ -141,27 +141,32 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
+          feeder.idleRequest();
         } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "INTAKING");
           conveyor.intakeRequest();
           intake.intakeRequest();
           deploy.intakeRequest();
+          feeder.idleRequest();
           if (operatorWantsStow) {
             DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
             conveyor.intakeRequest();
             intake.intakeRequest();
             deploy.stowRequest();
+            feeder.idleRequest();
           }
         } else if (operatorWantsStow) {
           DogLog.log("HopperManager/HopperActivity", "STOW");
           conveyor.idleRequest();
           intake.idleRequest();
           deploy.stowRequest();
+          feeder.idleRequest();
         } else {
           DogLog.log("HopperManager/HopperActivity", "IDLE");
           conveyor.idleRequest();
           intake.idleRequest();
           deploy.intakeRequest();
+          feeder.idleRequest();
         }
       }
       case SHOOT -> {
