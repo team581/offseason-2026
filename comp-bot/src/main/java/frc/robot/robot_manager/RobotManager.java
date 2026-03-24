@@ -114,7 +114,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
-          shooter.atGoalDebounced() && shooterHood.atGoal()
+          swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_FEED
               : RobotState.PREPARE_FALLBACK_FEED;
       case PREPARE_SCORE -> {
@@ -192,7 +192,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (isInSafeFeedingLocation
+            || (shooter.atGoalDebounced()
+                && isInSafeFeedingLocation
                 && swerve.atGoal()
                 && localization.imu.isFlatDebounced()
                 && shooterHood.atGoal()
@@ -216,7 +217,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.idleRequest();
-        // Set hood behavior separately while idling
+        smartHoodIdleRequest();
         swerve.normalDriveRequest();
       }
       case PREPARE_FORCE_SCORE -> {
@@ -265,28 +266,28 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        swerve.normalDriveRequest();
+        swerve.feedRequest(fallbackFeedingParameters);
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        swerve.normalDriveRequest();
+        swerve.feedRequest(fallbackFeedingParameters);
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.normalDriveRequest();
+        swerve.scoreRequest(scoringParameters);
       }
       case FALLBACK_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.normalDriveRequest();
+        swerve.scoreRequest(scoringParameters);
       }
       case UNJAM -> {
         hopperManager.idleRequest();
