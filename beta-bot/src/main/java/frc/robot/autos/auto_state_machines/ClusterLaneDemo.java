@@ -40,6 +40,16 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
           .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
+  private final AutoSegment trenchLaneSegment =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          8.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)))
+          .withLinearConstraints(2.0, 5)
+          .withAngularConstraints(Units.rotationsToRadians(4), Units.rotationsToRadians(4))
+          .untilFinished(new PoseErrorTolerance(0.2, 3));
+
   private final AutoSegment lane2Segment =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(9.0, 7.24, Rotation2d.kCW_90deg))
@@ -134,9 +144,7 @@ public class ClusterLaneDemo extends BaseImperativeAuto<ClusterLaneDemoState> {
           case LANE_0 -> trailblazer.setActiveSegment(lane0Segment);
           case LANE_1 -> trailblazer.setActiveSegment(lane1Segment);
           case LANE_2 -> trailblazer.setActiveSegment(lane2Segment);
-          case TRENCH ->
-              // TODO: make a trench path
-              trailblazer.setActiveSegment(didNotSee);
+          case TRENCH -> trailblazer.setActiveSegment(trenchLaneSegment);
           default -> {
             trailblazer.setActiveSegment(didNotSee);
           }
