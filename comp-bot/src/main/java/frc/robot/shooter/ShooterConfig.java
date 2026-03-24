@@ -22,15 +22,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final double SELF_TEST_LEFT_MOTOR_EXPECTED_RPM = 2500;
-  public static final double SELF_TEST_LEFT_MOTOR_RPM_TOLERANCE = 250;
-  public static final double SELF_TEST_LEFT_MOTOR_EXPECTED_CURRENT = 10.0;
-  public static final double SELF_TEST_LEFT_MOTOR_CURRENT_TOLERANCE = 5;
-
-  public static final double SELF_TEST_RIGHT_MOTOR_EXPECTED_RPM = 2500;
-  public static final double SELF_TEST_RIGHT_MOTOR_RPM_TOLERANCE = 250;
-  public static final double SELF_TEST_RIGHT_MOTOR_EXPECTED_CURRENT = 10.0;
-  public static final double SELF_TEST_RIGHT_MOTOR_CURRENT_TOLERANCE = 5;
   public static final int RPM_TOLERANCE = 150;
   public static final int RPM_TOLERANCE_FEEDING = 1000;
 
@@ -83,7 +74,7 @@ public class ShooterConfig {
       PolynomialRegression.quadratic("Shooter/ScoringToFRegression", DISTANCE_TO_SCORE_TOF);
   public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
-  public static final TalonFXConfiguration LEFT_MOTOR_CONFIGS =
+  public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotionMagic(
@@ -109,7 +100,7 @@ public class ShooterConfig {
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(200)
                   .withPeakReverseTorqueCurrent(0));
-  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
+  public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotionMagic(
@@ -135,8 +126,33 @@ public class ShooterConfig {
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(200)
                   .withPeakReverseTorqueCurrent(0));
-
-  public static final TalonFXConfiguration MIDDLE_MOTOR_CONFIG =
+  public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
+                  .withMotionMagicAcceleration(4000.0 / 60.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(100)
+                  .withSupplyCurrentLimit(100))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.CounterClockwise_Positive))
+          .withSlot0(
+              new Slot0Configs().withKP(0.4).withKV(0.12)
+              // .withKD(0.00015)
+              )
+          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
+          .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+                  .withPeakForwardTorqueCurrent(200)
+                  .withPeakReverseTorqueCurrent(0));
+  public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotionMagic(
