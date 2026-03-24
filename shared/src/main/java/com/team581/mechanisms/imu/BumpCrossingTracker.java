@@ -34,6 +34,9 @@ public class BumpCrossingTracker {
   private final DoubleSupplier tiltSupplier;
   private final Supplier<Pose2d> robotPoseSupplier;
 
+  /** Latched crossing direction: +1 or -1. 0 means not currently crossing. */
+  private double latchedXSign = 0;
+
   public BumpCrossingTracker(DoubleSupplier tiltSupplier, Supplier<Pose2d> robotPoseSupplier) {
     if (RobotBase.isSimulation()) {
       this.tiltSupplier =
@@ -75,12 +78,18 @@ public class BumpCrossingTracker {
     Pose2d targetPose = point.getPose();
 
     if (isFlat) {
+      latchedXSign = 0;
       return point;
     }
 
     Pose2d robotPose = robotPoseSupplier.get();
-    double xSign = Math.signum(targetPose.getX() - robotPose.getX());
-    double xOffset = xSign * PROJECTION_DISTANCE_METERS.get();
+
+    // Latch the crossing direction on the first tilted cycle so overshooting doesn't flip it.
+    if (latchedXSign == 0) {
+      latchedXSign = Math.signum(targetPose.getX() - robotPose.getX());
+    }
+
+    double xOffset = latchedXSign * PROJECTION_DISTANCE_METERS.get();
 
     Pose2d projected =
         new Pose2d(targetPose.getX() + xOffset, targetPose.getY(), targetPose.getRotation());
