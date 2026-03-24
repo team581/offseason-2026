@@ -8,7 +8,6 @@ import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
@@ -54,7 +53,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
-  private boolean drivingToIntake = false;
   private boolean trenchOverride = false;
 
   private boolean isInSafeScoringLocation = false;
@@ -357,8 +355,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
 
-    DogLog.log("RobotManager/DrivingToIntake", drivingToIntake);
-
     DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
     DogLog.log("RobotManager/gpDetection/both", detectingGp());
 
@@ -528,13 +524,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
-
-    var swerveVector = MathHelpers.getDriveDirection(speeds);
-    double driveDirection = swerveVector.getDegrees();
-    drivingToIntake =
-        hopperManager.isIntaking()
-            && MathUtil.isNear(robotRotation, driveDirection, 120.0, -180, 180)
-            && MathHelpers.getLinearVelocity(speeds) > 1e-5;
     isInAllianceZone =
         !health.isLocalizationHealthy()
             ? hubActivity.getTOFBasedHubActive()
