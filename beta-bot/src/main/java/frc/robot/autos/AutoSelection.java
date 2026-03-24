@@ -8,6 +8,7 @@ import frc.robot.autos.auto_state_machines.LeftCircleAlternateAuto;
 import frc.robot.autos.auto_state_machines.LeftCircleSoMAuto;
 import frc.robot.autos.auto_state_machines.RightCircleAlternateAuto;
 import frc.robot.autos.auto_state_machines.RightCircleSoMAuto;
+import frc.robot.autos.auto_state_machines.RightIntegratedAuto;
 // import frc.robot.autos.auto_state_machines.RightPullSwoopShootAuto;
 import frc.robot.autos.auto_state_machines.RightStraightShootClimbAuto;
 import frc.robot.autos.auto_state_machines.RightTestPathAuto;
@@ -20,6 +21,7 @@ public enum AutoSelection implements AutoSelectionBase {
   RIGHT_STRAIGHT_SHOOT(RightStraightShootClimbAuto::new),
   //  RIGHT_PULL_SWOOP_SHOOT(RightPullSwoopShootAuto::new),
   TEST_AUTO_PATH(RightTestPathAuto::new),
+  RIGHT_INTEGRATED_AUTO(RightIntegratedAuto::new),
   RIGHT_CIRCLE_SOM(RightCircleSoMAuto::new),
   RIGHT_ALTERNATE_CIRCLE_SOM(RightCircleAlternateAuto::new),
   LEFT_CIRCLE_SOM(LeftCircleSoMAuto::new),
