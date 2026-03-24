@@ -7,10 +7,10 @@ import java.util.function.BooleanSupplier;
 public class FeatureFlags {
   public static final BooleanSupplier INTEGRATION_TEST = FeatureFlag.of("IntegrationTest", false);
 
-  public static final BooleanSupplier REGRESSION_MODEL = FeatureFlag.of("RegressionModel", true);
+  public static final BooleanSupplier REGRESSION_MODEL = FeatureFlag.of("RegressionModel", false);
 
   public static final BooleanSupplier TOF_REGRESSION_MODEL =
-      FeatureFlag.of("TofRegressionModel", true);
+      FeatureFlag.of("TofRegressionModel", false);
 
   public static final BooleanSupplier CANCEL_IN_PROGRESS_SHOT =
       FeatureFlag.of("CancelInProgressShot", true);
