@@ -148,7 +148,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               ORIGINAL_HEADING_PID.getI(),
               ORIGINAL_HEADING_PID.getD());
 
-  private final SwerveRequest.SwerveDriveBrake xRequest = new SwerveRequest.SwerveDriveBrake();
+  private final SwerveRequest xRequest = new SmoothX();
 
   private final HealthManager health;
 
@@ -173,7 +173,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private Rotation2d wallSnapAngle = Rotation2d.kZero;
   private Rotation2d filteredLastDriveDirection = Rotation2d.kZero;
   private double shootingSnapSetpoint = 0.0;
-  private DoubleSubscriber aimedTolerance = DogLog.tunable("Seweve/AimedTolerance", 6.0);
+  private final double AIMED_TOLERANCE = 1.5;
   private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.25);
   private boolean ableToXSwerve = false;
 
@@ -269,7 +269,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                     && MathUtil.isNear(
                         shootingSnapSetpoint,
                         drivetrainState.Pose.getRotation().getDegrees(),
-                        aimedTolerance.get(),
+                        AIMED_TOLERANCE,
                         -180.0,
                         180.0)
                     && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
@@ -392,7 +392,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return MathUtil.isNear(
         turretStuckAimingAngle,
         drivetrainState.Pose.getRotation().getDegrees(),
-        aimedTolerance.get(),
+        AIMED_TOLERANCE,
         -180,
         180);
   }
@@ -504,14 +504,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                         Rotation2d.fromDegrees(turretStuckAimingAngle))
                     .withTargetRateFeedforward(aimingFeedForward));
           }
-        } else {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                      fieldCentricSnapsClosedLoop
-                          .withVelocityX(speeds.vxMetersPerSecond)
-                          .withVelocityY(speeds.vyMetersPerSecond),
-                      Rotation2d.fromDegrees(turretStuckAimingAngle))
-                  .withTargetRateFeedforward(aimingFeedForward));
         }
       }
       case CLIMB_ASSIST -> {
@@ -579,7 +571,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           MathUtil.isNear(
               shootingSnapSetpoint,
               drivetrainState.Pose.getRotation().getDegrees(),
-              aimedTolerance.get(),
+              AIMED_TOLERANCE,
               -180.0,
               180.0));
       DogLog.log("Swerve/X/ManualAtSetpoint/ControllerSetpoint", shootingSnapSetpoint);
