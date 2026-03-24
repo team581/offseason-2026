@@ -8,7 +8,6 @@ import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
@@ -54,7 +53,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private static final double PRESET_FEED_DISTANCE = 0.0;
   private boolean isMoving = false;
-  private boolean drivingToIntake = false;
   private boolean trenchOverride = false;
 
   private boolean isInSafeScoringLocation = false;
@@ -114,7 +112,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
-          shooter.atGoalDebounced() && shooterHood.atGoal()
+          swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_FEED
               : RobotState.PREPARE_FALLBACK_FEED;
       case PREPARE_SCORE -> {
@@ -156,8 +154,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
-                    && localization.isTrustworthy()
-                    && isInSafeScoringLocation)
+                    && isInSafeScoringLocation
+                    && hubActivity.getTOFBasedHubActive())
                 || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
                     && shooter.atGoalDebounced()))
             && !nearTrench) {
@@ -193,7 +191,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (isInSafeFeedingLocation
+            || (shooter.atGoalDebounced()
+                && isInSafeFeedingLocation
                 && swerve.atGoal()
                 && localization.imu.isFlatDebounced()
                 && shooterHood.atGoal()
@@ -217,8 +216,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.idleRequest();
-        // Set hood behavior separately while idling
+        smartHoodIdleRequest();
         swerve.normalDriveRequest();
+        powerManager.idleRequest();
       }
       case PREPARE_FORCE_SCORE -> {
         // hoppermanager controlled separately
@@ -226,6 +226,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
+        powerManager.shootingRequest();
       }
       case FORCE_SCORE -> {
         // hoppermanager controlled separately
@@ -233,6 +234,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
+        powerManager.shootingRequest();
       }
       case PREPARE_FEED -> {
         // hoppermanager controlled separately
@@ -240,6 +242,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
+        powerManager.shootingRequest();
       }
       case FEED -> {
         // hoppermanager controlled separately
@@ -247,12 +250,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
+        powerManager.shootingRequest();
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case SCORE -> {
         // hoppermanager controlled separately
@@ -260,34 +265,39 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        swerve.normalDriveRequest();
+        swerve.feedRequest(fallbackFeedingParameters);
+        powerManager.shootingRequest();
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
-        swerve.normalDriveRequest();
+        swerve.feedRequest(fallbackFeedingParameters);
+        powerManager.shootingRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.normalDriveRequest();
+        swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case FALLBACK_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        swerve.normalDriveRequest();
+        swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case UNJAM -> {
         hopperManager.idleRequest();
@@ -295,6 +305,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         swerve.normalDriveRequest();
+        powerManager.idleRequest();
       }
     }
   }
@@ -356,8 +367,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
-
-    DogLog.log("RobotManager/DrivingToIntake", drivingToIntake);
 
     DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
     DogLog.log("RobotManager/gpDetection/both", detectingGp());
@@ -482,10 +491,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hopperManager.rehomeDeployRequest();
   }
 
-  public void homeDeployInAutoRequest() {
-    hopperManager.rehomeDeployRequest();
-  }
-
   public void homeShooterHoodRequest() {
     shooterHood.homingRequest();
   }
@@ -532,13 +537,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
-
-    var swerveVector = MathHelpers.getDriveDirection(speeds);
-    double driveDirection = swerveVector.getDegrees();
-    drivingToIntake =
-        hopperManager.isIntaking()
-            && MathUtil.isNear(robotRotation, driveDirection, 120.0, -180, 180)
-            && MathHelpers.getLinearVelocity(speeds) > 1e-5;
     isInAllianceZone =
         !health.isLocalizationHealthy()
             ? hubActivity.getTOFBasedHubActive()

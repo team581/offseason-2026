@@ -429,7 +429,7 @@ public class FieldUtil {
 
   public static final ObstructionCalculator HUB_SCORING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
-          Units.inchesToMeters(12.0), BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
+          Units.inchesToMeters(0.0), BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
 
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {

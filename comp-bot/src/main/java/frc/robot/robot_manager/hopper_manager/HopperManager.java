@@ -14,6 +14,7 @@ import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployConfig;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
@@ -27,6 +28,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean driverWantsIntake = false;
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
+  private boolean towerSensorRaw = false;
 
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
 
@@ -59,14 +61,17 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return switch (currentState) {
       case SHOOT -> currentState;
       case IDLE -> {
-        if ((hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensor.get()) {
+        if (((intake.getState() == IntakeState.INTAKE && timeout(3))
+                || hopperCapacity == HopperCapacity.MEDIUM
+                || hopperCapacity == HopperCapacity.HIGH)
+            && !towerSensorRaw
+            && DSOptions.USE_TOWER_SENSOR.get()) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
       }
       case BALL_FILLING -> {
-        if (towerSensor.get()) {
+        if (towerSensorRaw) {
           yield HopperState.IDLE;
         }
         yield currentState;
@@ -114,12 +119,18 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           DogLog.log("HopperManager/HopperActivity", "EJECTING");
           deploy.intakeRequest();
           intake.ejectRequest();
-          conveyor.ejectRequest();
+          conveyor.ballFillingRequest();
           feeder.idleRequest();
-        } else {
+        } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "BALL FILLING");
           deploy.intakeRequest();
           intake.intakeRequest();
+          conveyor.ballFillingRequest();
+          feeder.ballFillingRequest();
+        } else {
+          DogLog.log("HopperManager/HopperActivity", "IDLE_FILLING");
+          deploy.intakeRequest();
+          intake.idleRequest();
           conveyor.ballFillingRequest();
           feeder.ballFillingRequest();
         }
@@ -130,27 +141,32 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
+          feeder.idleRequest();
         } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "INTAKING");
           conveyor.intakeRequest();
           intake.intakeRequest();
           deploy.intakeRequest();
+          feeder.idleRequest();
           if (operatorWantsStow) {
             DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
             conveyor.intakeRequest();
             intake.intakeRequest();
             deploy.stowRequest();
+            feeder.idleRequest();
           }
         } else if (operatorWantsStow) {
           DogLog.log("HopperManager/HopperActivity", "STOW");
           conveyor.idleRequest();
           intake.idleRequest();
           deploy.stowRequest();
+          feeder.idleRequest();
         } else {
           DogLog.log("HopperManager/HopperActivity", "IDLE");
           conveyor.idleRequest();
           intake.idleRequest();
           deploy.intakeRequest();
+          feeder.idleRequest();
         }
       }
       case SHOOT -> {
@@ -170,6 +186,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           }
         }
       }
+    }
+    if (previousCanRangeDistance != hopperDistance) {
+      canRangeUpdateTimer.reset();
+    }
+    previousCanRangeDistance = hopperDistance;
+
+    if (canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
+      DogLog.logFault("CANrange distance not updating", AlertType.kError);
+    } else {
+      DogLog.clearFault("CANrange distance not updating");
     }
     DogLog.log("HopperManager/State", getState());
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
@@ -216,6 +242,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
+    if (DSOptions.USE_TOWER_SENSOR.get()) {
+      towerSensorRaw = towerSensor.get();
+    }
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
@@ -228,21 +257,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
-    }
-  }
-
-  @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-    if (previousCanRangeDistance != hopperDistance) {
-      canRangeUpdateTimer.reset();
-    }
-    previousCanRangeDistance = hopperDistance;
-
-    if (canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
-      DogLog.logFault("CANrange distance not updating", AlertType.kError);
-    } else {
-      DogLog.clearFault("CANrange distance not updating");
     }
   }
 }

@@ -251,7 +251,7 @@ public class LeftCircleAlternateAuto extends BaseImperativeAuto<CircleSoMAutoSta
   protected void afterTransition(CircleSoMAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE -> {
-        robotManager.homeDeployInAutoRequest();
+        robotManager.homeDeployRequest();
         robotManager.homeShooterHoodRequest();
       }
       case DRIVE_BACK_1 -> {}
