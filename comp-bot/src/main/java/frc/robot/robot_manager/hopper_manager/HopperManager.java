@@ -256,9 +256,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+      filteredDistance = hopperFilter.calculate(hopperDistance);
     }
-
-    filteredDistance = hopperFilter.calculate(hopperDistance);
 
     if (filteredDistance >= HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
