@@ -187,6 +187,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
       }
     }
+    if (previousCanRangeDistance != hopperDistance) {
+      canRangeUpdateTimer.reset();
+    }
+    previousCanRangeDistance = hopperDistance;
+
+    if (canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
+      DogLog.logFault("CANrange distance not updating", AlertType.kError);
+    } else {
+      DogLog.clearFault("CANrange distance not updating");
+    }
     DogLog.log("HopperManager/State", getState());
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
@@ -247,21 +257,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
-    }
-  }
-
-  @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-    if (previousCanRangeDistance != hopperDistance) {
-      canRangeUpdateTimer.reset();
-    }
-    previousCanRangeDistance = hopperDistance;
-
-    if (canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
-      DogLog.logFault("CANrange distance not updating", AlertType.kError);
-    } else {
-      DogLog.clearFault("CANrange distance not updating");
     }
   }
 }
