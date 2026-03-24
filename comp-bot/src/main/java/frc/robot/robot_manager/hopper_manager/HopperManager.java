@@ -59,6 +59,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.feeder = feeder;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
+
+    canRangeUpdateTimer.start();
   }
 
   @Override
