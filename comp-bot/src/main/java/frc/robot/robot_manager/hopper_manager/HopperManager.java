@@ -71,13 +71,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if ((intake.hasBeenIntaking()
                 || hopperCapacity == HopperCapacity.MEDIUM
                 || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensorRaw) {
+            && !towerSensorDebounced) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
       }
       case BALL_FILLING -> {
-        if (towerSensorRaw) {
+        if (towerSensorDebounced) {
           yield HopperState.IDLE;
         }
         yield currentState;
