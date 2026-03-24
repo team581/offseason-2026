@@ -21,8 +21,6 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
 
   private final BlinkingBooleanBox localizationBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/LocalizationHealthyBox", false, true);
-  private final BlinkingBooleanBox fuelDetectionBlinkingBooleanBox =
-      new BlinkingBooleanBox("Health/FuelDetectionHealthyBox", false, true);
   private final BlinkingBooleanBox allCamerasBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
@@ -80,7 +78,6 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
     DogLog.log("Health/AllCamerasHealthy", allCamerasHealthy);
 
     localizationBlinkingBooleanBox.update(localizationHealthy);
-    fuelDetectionBlinkingBooleanBox.update(fuelDetectionHealthy);
     allCamerasBlinkingBooleanBox.update(allCamerasHealthy);
   }
 }
