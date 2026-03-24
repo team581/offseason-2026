@@ -414,7 +414,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Turret and hood are controlled depending on what zone we're in
         // Deploy is controlled separately
         // Intake is controlled separately
-        swerve.rateLimitedDriveRequest();
+        if (!DSOptions.USE_TURRET.getAsBoolean()) {
+          swerve.turretStuckAimRequest(
+              scoringParameters.turretAngle(), scoringParameters.turretFeedForwardRadians());
+        } else if (intake.getState().isIntaking()) {
+          swerve.intakeRateLimitedDriveRequest();
+        } else {
+          swerve.rateLimitedDriveRequest();
+        }
         deploy.intakeRequest();
         climber.stowRequest();
       }
@@ -432,7 +439,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         } else {
           intake.shootRequest();
         }
-        swerve.rateLimitedDriveRequest();
+        if (!DSOptions.USE_TURRET.getAsBoolean()) {
+          swerve.turretStuckAimRequest(
+              scoringParameters.turretAngle(), scoringParameters.turretFeedForwardRadians());
+        } else if (intake.getState().isIntaking()) {
+          swerve.intakeRateLimitedDriveRequest();
+        } else {
+          swerve.rateLimitedDriveRequest();
+        }
         climber.stowRequest();
       }
       case STOP_SHOOTING_SCORE -> {

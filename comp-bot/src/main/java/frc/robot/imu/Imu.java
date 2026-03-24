@@ -10,7 +10,7 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Imu extends BaseImuSubsystem {
   private static final DoubleSubscriber COLLISION_G_FORCE_THRESHOLD =
-      DogLog.tunable("Imu/CollisionGForceThreshold", 2.0);
+      DogLog.tunable("Imu/CollisionGForceThreshold", 0.8);
   private final LinearFilter pigeonXAccelFilter = LinearFilter.movingAverage(10);
 
   private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
