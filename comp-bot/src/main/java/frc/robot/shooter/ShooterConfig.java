@@ -9,7 +9,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
@@ -75,109 +74,23 @@ public class ShooterConfig {
   public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
-      new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
-          .withMotionMagic(
-              new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
-                  .withMotionMagicAcceleration(4000.0 / 60.0))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
-                  .withSupplyCurrentLimitEnable(true)
-                  .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(100)
-                  .withSupplyCurrentLimit(100))
+      createMotorConfig()
           .withMotorOutput(
-              new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(
-              new Slot0Configs().withKP(0.4).withKV(0.12)
-              // .withKD(0.00015)
-              )
-          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
-          .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-                  .withPeakForwardTorqueCurrent(200)
-                  .withPeakReverseTorqueCurrent(0));
+              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.4).withKV(0.127));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
-      new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
-          .withMotionMagic(
-              new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
-                  .withMotionMagicAcceleration(4000.0 / 60.0))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
-                  .withSupplyCurrentLimitEnable(true)
-                  .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(100)
-                  .withSupplyCurrentLimit(100))
-          .withMotorOutput(
-              new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              new Slot0Configs().withKP(0.55).withKV(0.127)
-              // .withKD(0.00015)
-              )
-          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
-          .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-                  .withPeakForwardTorqueCurrent(200)
-                  .withPeakReverseTorqueCurrent(0));
+      createMotorConfig()
+          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.4).withKV(0.127));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
-      new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
-          .withMotionMagic(
-              new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
-                  .withMotionMagicAcceleration(4000.0 / 60.0))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
-                  .withSupplyCurrentLimitEnable(true)
-                  .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(100)
-                  .withSupplyCurrentLimit(100))
+      createMotorConfig()
           .withMotorOutput(
-              new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(
-              new Slot0Configs().withKP(0.4).withKV(0.12)
-              // .withKD(0.00015)
-              )
-          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
-          .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-                  .withPeakForwardTorqueCurrent(200)
-                  .withPeakReverseTorqueCurrent(0));
+              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.4).withKV(0.127));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
-      new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
-          .withMotionMagic(
-              new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
-                  .withMotionMagicAcceleration(4000.0 / 60.0))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
-                  .withSupplyCurrentLimitEnable(true)
-                  .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(100)
-                  .withSupplyCurrentLimit(100))
-          .withMotorOutput(
-              new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              new Slot0Configs().withKP(0.4).withKV(0.1)
-              // .withKD(0.00015)
-              )
-          .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
-          .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-                  .withPeakForwardTorqueCurrent(200)
-                  .withPeakReverseTorqueCurrent(0));
+      createMotorConfig()
+          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
+          .withSlot0(new Slot0Configs().withKP(0.4).withKV(0.127));
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
@@ -205,6 +118,26 @@ public class ShooterConfig {
     var shooterTotalVelocityX = robotSpeeds.vxMetersPerSecond + shooterSwingX;
     var shooterTotalVelocityY = robotSpeeds.vyMetersPerSecond + shooterSwingY;
     return new ChassisSpeeds(shooterTotalVelocityX, shooterTotalVelocityY, angularVelocity);
+  }
+
+  private static TalonFXConfiguration createMotorConfig() {
+    return new TalonFXConfiguration()
+        .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
+        .withMotionMagic(
+            new MotionMagicConfigs()
+                .withMotionMagicCruiseVelocity(MAX_SAFE_RPM / 60.0)
+                .withMotionMagicAcceleration(4000.0 / 60.0))
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
+                .withSupplyCurrentLimitEnable(true)
+                .withStatorCurrentLimitEnable(true)
+                .withStatorCurrentLimit(100)
+                .withSupplyCurrentLimit(100))
+        .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
+        .withTorqueCurrent(
+            new TorqueCurrentConfigs()
+                .withPeakForwardTorqueCurrent(200)
+                .withPeakReverseTorqueCurrent(0));
   }
 
   private ShooterConfig() {}
