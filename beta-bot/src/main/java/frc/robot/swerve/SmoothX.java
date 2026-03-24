@@ -10,8 +10,10 @@ import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 public class SmoothX implements SwerveRequest {
+  // Individual module velocity limit; used to make robot jolt less while Xing
   private double VelocityLimit = 0.75;
-  private double lastAppliedLimit = -1.0; // Track the current hardware state
+  // Track the current hardware state
+  private double lastAppliedLimit = -1.0;
 
   private final MotionMagicConfigs m_configs = new MotionMagicConfigs();
 

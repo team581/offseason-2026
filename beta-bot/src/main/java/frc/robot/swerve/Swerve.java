@@ -459,14 +459,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
     DogLog.log("Swerve/GoalAimingAngle", turretStuckAimingAngle);
+    DogLog.log("Swerve/Aimed", isAimed());
     // Temporary logging for X swerve feature flag
     if (FeatureFlags.X_SWERVE.getAsBoolean()) {
-      DogLog.log("Swerve/X/AbleToXSwerve", ableToXSwerve);
+      DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
       DogLog.log(
           "Swerve/AbleToXSwerve/SpeedsNear0",
           MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
       DogLog.log(
-          "Swerve/AbleToXSwerve/ManualAtSetpoint",
+          "Swerve/AbleToXSwerve/Aimed",
           MathUtil.isNear(
               Math.toDegrees(MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle))),
               drivetrainState.Pose.getRotation().getDegrees(),
