@@ -1,6 +1,5 @@
 package frc.robot;
 
-import com.ctre.phoenix6.hardware.CANrange;
 import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
@@ -78,13 +77,12 @@ public class Robot extends Base581Robot {
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
-  private final CANrange hopperCANRange =
-      new CANrange(hardware.hopperCANRange.getDeviceID(), hardware.hopperCANRange.getNetwork());
 
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
   private final HopperManager hopperManager =
-      new HopperManager(deploy, intake, conveyor, feeder, hopperCANRange, hardware.towerSensor);
+      new HopperManager(
+          deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
 
   private final RobotManager robotManager =
       new RobotManager(
