@@ -64,8 +64,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (((intake.getState() == IntakeState.INTAKE && timeout(3))
                 || hopperCapacity == HopperCapacity.MEDIUM
                 || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensorRaw
-            && DSOptions.USE_TOWER_SENSOR.get()) {
+            && !towerSensorRaw) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
@@ -242,9 +241,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
-    if (DSOptions.USE_TOWER_SENSOR.get()) {
-      towerSensorRaw = towerSensor.get();
-    }
+    towerSensorRaw = towerSensor.get();
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
