@@ -19,8 +19,6 @@ public class DeployConfig {
   public static final double HOMING_VOLTAGE_OUTWARD = 2;
   public static final double HOMING_CURRENT = 30.0;
   public static final double POSITION_TOLERANCE = 0.25;
-  public static double HIGH_CAPACITY_THRESHOLD = 10;
-  public static double MEDIUM_CAPACITY_THRESHOLD = 5;
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
