@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
-import frc.robot.deploy.DeployConfig;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
@@ -35,6 +34,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
+  public static double HIGH_CAPACITY_THRESHOLD = 10;
+  public static double MEDIUM_CAPACITY_THRESHOLD = 5;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 
@@ -61,11 +62,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return switch (currentState) {
       case SHOOT -> currentState;
       case IDLE -> {
-        if (((intake.getState() == IntakeState.INTAKE && timeout(3))
+        if (((intake.getState() == IntakeState.INTAKE && timeout(3.0))
                 || hopperCapacity == HopperCapacity.MEDIUM
                 || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensorRaw
-            && DSOptions.USE_TOWER_SENSOR.get()) {
+            && !towerSensorRaw) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
@@ -242,18 +242,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
-    if (DSOptions.USE_TOWER_SENSOR.get()) {
-      towerSensorRaw = towerSensor.get();
-    }
+    towerSensorRaw = towerSensor.get();
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
 
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
-    if (filteredDistance >= DeployConfig.HIGH_CAPACITY_THRESHOLD) {
+    if (filteredDistance >= HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
-    } else if (filteredDistance >= DeployConfig.MEDIUM_CAPACITY_THRESHOLD) {
+    } else if (filteredDistance >= MEDIUM_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
