@@ -21,34 +21,27 @@ public class RightTestPathAuto extends BaseImperativeAuto<TestPathAutoState> {
     READY_TO_SHOOT_FOR_2
   }
 
-  private final AutoSegment testIntakingToMidline =
+  private final AutoSegment testIntakingWithGlobalConstraints =
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
                           11.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(2.0, 3.0)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(0.75), Units.rotationsToRadians(0.5)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.5, 6.814, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(2.0, 3.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(9.5, 4.4, Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(0.75), Units.rotationsToRadians(0.5)),
-              AutoPoint.ofRed(new Pose2d(9.5, 4.784, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(1.0, 2.0)
+                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+              AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
+                  .withArcMidpoint(new Pose2d(9.985, 3.89, Rotation2d.kZero))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.5)),
-              AutoPoint.ofRed(new Pose2d(10.0, 4.577, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(1.5, 2.5)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(1.5), Units.rotationsToRadians(2.5)),
-              AutoPoint.ofRed(new Pose2d(10.0, 6.128, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(1.5, 2.5))
-          .withLinearConstraints(1.0, 2.0)
+                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+              AutoPoint.ofRed(new Pose2d(10.575, 5.6, Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)))
+          .withLinearConstraints(3.5, 4.0)
+          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
   private final AutoSegment driveBackAndShootOne =
@@ -125,7 +118,7 @@ public class RightTestPathAuto extends BaseImperativeAuto<TestPathAutoState> {
   protected void whileInState(TestPathAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE -> {
-        trailblazer.setActiveSegment(testIntakingToMidline);
+        trailblazer.setActiveSegment(testIntakingWithGlobalConstraints);
         robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_1 -> {
