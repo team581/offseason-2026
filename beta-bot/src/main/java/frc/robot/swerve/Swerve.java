@@ -157,9 +157,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private double turretStuckAimingAngle = 0.0;
 
   private boolean ableToBumpAssist = false;
-  private double shootingSnapSetpoint = 0.0;
-  private final double AIMED_TOLERANCE = 1.5;
-  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.25);
+  private final double AIMED_TOLERANCE = 2.0;
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
   private boolean ableToXSwerve = false;
 
   private double aimingFeedForward = 0.0;
@@ -240,19 +239,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
-    shootingSnapSetpoint =
-        switch (getState()) {
-          case TURRET_STUCK_SCORE ->
-              Math.toDegrees(MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle)));
-          default -> 0.0;
-        };
+    // May want to X in more than one shooting state when we finalize swerve states
     ableToXSwerve =
         switch (getState()) {
           case TURRET_STUCK_SCORE -> {
             yield X_SWERVE_DEBOUNCER.calculate(
                 FeatureFlags.X_SWERVE.getAsBoolean()
                     && MathUtil.isNear(
-                        shootingSnapSetpoint,
+                        Math.toDegrees(
+                            MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle))),
                         drivetrainState.Pose.getRotation().getDegrees(),
                         AIMED_TOLERANCE,
                         -180.0,
@@ -468,20 +463,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     if (FeatureFlags.X_SWERVE.getAsBoolean()) {
       DogLog.log("Swerve/X/AbleToXSwerve", ableToXSwerve);
       DogLog.log(
-          "Swerve/X/SpeedsNear0",
+          "Swerve/AbleToXSwerve/SpeedsNear0",
           MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
       DogLog.log(
-          "Swerve/X/ManualAtSetpoint",
+          "Swerve/AbleToXSwerve/ManualAtSetpoint",
           MathUtil.isNear(
-              shootingSnapSetpoint,
+              Math.toDegrees(MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle))),
               drivetrainState.Pose.getRotation().getDegrees(),
               AIMED_TOLERANCE,
               -180.0,
               180.0));
-      DogLog.log("Swerve/X/ManualAtSetpoint/ControllerSetpoint", shootingSnapSetpoint);
-      DogLog.log(
-          "Swerve/X/ManualAtSetpoint/RobotHeading",
-          drivetrainState.Pose.getRotation().getDegrees());
     }
     DogLog.log("Swerve/FeedForward", aimingFeedForward, Radians);
   }
