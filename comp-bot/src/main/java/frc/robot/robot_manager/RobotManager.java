@@ -217,6 +217,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         smartHoodIdleRequest();
         swerve.normalDriveRequest();
+        powerManager.idleRequest();
       }
       case PREPARE_FORCE_SCORE -> {
         // hoppermanager controlled separately
@@ -224,6 +225,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
+        powerManager.shootingRequest();
       }
       case FORCE_SCORE -> {
         // hoppermanager controlled separately
@@ -231,6 +233,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
+        powerManager.shootingRequest();
       }
       case PREPARE_FEED -> {
         // hoppermanager controlled separately
@@ -238,6 +241,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
+        powerManager.shootingRequest();
       }
       case FEED -> {
         // hoppermanager controlled separately
@@ -245,12 +249,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
+        powerManager.shootingRequest();
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
         vision.setState(VisionState.HUB_TAGS);
         shooter.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case SCORE -> {
         // hoppermanager controlled separately
@@ -258,6 +264,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
@@ -265,6 +272,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
+        powerManager.shootingRequest();
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
@@ -272,6 +280,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
+        powerManager.shootingRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
@@ -279,6 +288,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case FALLBACK_SCORE -> {
         // hoppermanager controlled separately
@@ -286,6 +296,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        powerManager.shootingRequest();
       }
       case UNJAM -> {
         hopperManager.idleRequest();
@@ -293,6 +304,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.idleRequest();
         shooterHood.idleRequest();
         swerve.normalDriveRequest();
+        powerManager.idleRequest();
       }
     }
   }
