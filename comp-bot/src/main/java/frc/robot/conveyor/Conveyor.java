@@ -28,10 +28,6 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.IDLE);
   }
 
-  public void intakeRequest() {
-    setStateFromRequest(ConveyorState.INTAKE);
-  }
-
   public void ballFillingRequest() {
     setStateFromRequest(ConveyorState.BALL_FILLING);
   }
