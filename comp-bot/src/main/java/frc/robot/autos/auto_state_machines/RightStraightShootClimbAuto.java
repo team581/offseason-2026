@@ -275,7 +275,7 @@ public class RightStraightShootClimbAuto
   protected void afterTransition(RightStraightShootClimbAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE_1 -> {
-        robotManager.homeDeployInAutoRequest();
+        robotManager.homeDeployRequest();
         robotManager.homeShooterHoodRequest();
       }
       case DRIVE_BACK_1 -> {}

@@ -482,10 +482,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hopperManager.rehomeDeployRequest();
   }
 
-  public void homeDeployInAutoRequest() {
-    hopperManager.rehomeDeployRequest();
-  }
-
   public void homeShooterHoodRequest() {
     shooterHood.homingRequest();
   }
