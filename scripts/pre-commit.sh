@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=d)
+DIRTY_BEFORE=$(git diff --name-only)
 set -e
 ./gradlew spotlessApply
 set +e
-if [ -n "$STAGED_FILES" ]; then
-  echo "$STAGED_FILES" | xargs git add
+DIRTY_AFTER=$(git diff --name-only)
+# Only stage files that became dirty after spotless ran (i.e. spotless modified them)
+CHANGED=$(comm -13 <(echo "$DIRTY_BEFORE" | sort) <(echo "$DIRTY_AFTER" | sort))
+if [ -n "$CHANGED" ]; then
+  echo "$CHANGED" | xargs git add
 fi
