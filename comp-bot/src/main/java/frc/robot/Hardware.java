@@ -23,8 +23,8 @@ public class Hardware {
   public final TalonFX conveyorTopMotor = new TalonFX(18, canivore);
   public final TalonFX conveyorBottomMotor = new TalonFX(19, canivore);
 
-  public final TalonFX FeederTopMotor = new TalonFX(20, canivore);
-  public final TalonFX FeederBottomMotor = new TalonFX(21, canivore);
+  public final TalonFX feederTopMotor = new TalonFX(20, canivore);
+  public final TalonFX feederBottomMotor = new TalonFX(21, canivore);
 
   public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
 
