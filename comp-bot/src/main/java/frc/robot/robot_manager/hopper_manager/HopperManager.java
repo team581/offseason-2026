@@ -59,6 +59,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.feeder = feeder;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
+
+    canRangeUpdateTimer.start();
   }
 
   @Override
@@ -69,13 +71,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if ((intake.hasBeenIntaking()
                 || hopperCapacity == HopperCapacity.MEDIUM
                 || hopperCapacity == HopperCapacity.HIGH)
-            && !towerSensorRaw) {
+            && !towerSensorDebounced) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
       }
       case BALL_FILLING -> {
-        if (towerSensorRaw) {
+        if (towerSensorDebounced) {
           yield HopperState.IDLE;
         }
         yield currentState;
@@ -148,13 +150,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           feeder.idleRequest();
         } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "INTAKING");
-          conveyor.intakeRequest();
+          conveyor.idleRequest();
           intake.intakeRequest();
           deploy.intakeRequest();
           feeder.idleRequest();
           if (operatorWantsStow) {
             DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
-            conveyor.intakeRequest();
+            conveyor.idleRequest();
             intake.intakeRequest();
             deploy.stowRequest();
             feeder.idleRequest();
@@ -254,9 +256,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+      filteredDistance = hopperFilter.calculate(hopperDistance);
     }
-
-    filteredDistance = hopperFilter.calculate(hopperDistance);
 
     if (filteredDistance >= HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
