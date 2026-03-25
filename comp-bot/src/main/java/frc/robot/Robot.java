@@ -172,7 +172,7 @@ public class Robot extends Base581Robot {
         .onPress(() -> hopperManager.setDriverWantsEject(true))
         .onRelease(() -> hopperManager.setDriverWantsEject(false));
 
-    operator.start().onPress(robotManager::homeDeployRequest);
+    operator.start().onPress(() -> hopperManager.deploy.homeInAutoRequest());
 
     operator.back().onPress(robotManager::homeShooterHoodRequest);
 
@@ -189,11 +189,6 @@ public class Robot extends Base581Robot {
         .leftTrigger()
         .onPress(robotManager::stowDeployRequest)
         .onRelease(robotManager::cancelStowDeployRequest);
-
-    operator
-        .leftBumper()
-        .onPress(robotManager::setFeedGoalLeftRequest)
-        .onRelease(robotManager::setFeedGoalClosestRequest);
 
     operator
         .rightBumper()
