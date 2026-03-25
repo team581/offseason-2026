@@ -12,19 +12,24 @@ public class FeederConfig {
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
+                  // TODO: VALIDATE INVERT
                   .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
+          // TODO: VALIDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
+              // TODO: TUNE LIMITS
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  // TODO: VALIDATE INVERTS
+                  // TODO: VALIDATE INVERT
                   .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
+          // TODO: VALIDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
+              // TODO: TUNE LIMITS
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
 }

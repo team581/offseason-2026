@@ -1,5 +1,6 @@
 package frc.robot.shooter;
 
+import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
@@ -28,10 +29,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
   }
 
+  // Top left motor is the leader
   private final TalonFX topLeftMotor;
   private final TalonFX topRightMotor;
   public final TalonFX bottomLeftMotor;
   public final TalonFX bottomRightMotor;
+  private final StrictFollower followRequest;
 
   private final VelocityVoltage velocityRequest =
       new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
@@ -80,6 +83,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.topRightMotor = topRightMotor;
     this.bottomLeftMotor = bottomLeftMotor;
     this.bottomRightMotor = bottomRightMotor;
+    this.followRequest = new StrictFollower(topLeftMotor.getDeviceID());
   }
 
   public void scoreRequest(double distance) {
@@ -128,31 +132,26 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
       case IDLE -> {
         var setpoint = ShooterConfig.IDLE_RPM / 60.0;
         topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case SCORE -> {
         var setpoint = shootingRpm / 60.0;
         topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
         var setpoint = feedingRpm / 60.0;
         topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
     }
+
+    topRightMotor.setControl(followRequest);
+    bottomLeftMotor.setControl(followRequest);
+    bottomRightMotor.setControl(followRequest);
   }
 
   @Override

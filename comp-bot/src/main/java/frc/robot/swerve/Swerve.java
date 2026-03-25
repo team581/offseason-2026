@@ -94,6 +94,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentric =
       new SwerveRequest.FieldCentric()
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.05)
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
@@ -106,7 +108,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.5)
+          .withRotationalDeadband(0.0)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(),
               ORIGINAL_HEADING_PID.getI(),
@@ -315,7 +317,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
         if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           DogLog.timestamp("Swerve/DriverOverridingRotation");
-          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+          if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
             drivetrain.setControl(
                 driverPerspective
                     .withVelocityX(speeds.vxMetersPerSecond)
@@ -338,7 +340,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
         if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           DogLog.timestamp("Swerve/DriverOverridingRotation");
-          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+          if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
             drivetrain.setControl(
                 driverPerspective
                     .withVelocityX(speeds.vxMetersPerSecond)
