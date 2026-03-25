@@ -29,9 +29,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private final CANrange hopperCANRange;
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
   private final DifferentialMotionMagicVoltage differentialPositionVoltageRequest =
-      new DifferentialMotionMagicVoltage(0, 0).withEnableFOC(false);
+      new DifferentialMotionMagicVoltage(0, 0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
   private double differentialMechanismPosition = 0.0;

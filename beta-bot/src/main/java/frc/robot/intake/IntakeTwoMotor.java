@@ -9,7 +9,7 @@ public class IntakeTwoMotor extends GenericIntake {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   public IntakeTwoMotor(TalonFX leftMotor, TalonFX rightMotor) {
     leftMotor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);

@@ -17,9 +17,9 @@ import frc.robot.util.scheduling.SubsystemPriority;
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
   private final TalonFX motor;
   private final MotionMagicVoltage positionVoltageRequest =
-      new MotionMagicVoltage(0).withEnableFOC(false);
+      new MotionMagicVoltage(0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
   private double motorPosition = 0.0;
   private double statorCurrent = 0.0;

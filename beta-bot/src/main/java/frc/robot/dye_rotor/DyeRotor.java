@@ -24,8 +24,8 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> implements Po
   private final TalonFX verticalMotor;
 
   private final VelocityVoltage rotorVelocityRequest = new VelocityVoltage(0).withEnableFOC(false);
-  private final VoltageOut horizontalVoltageRequest = new VoltageOut(0);
-  private final VoltageOut verticalVoltageRequest = new VoltageOut(0);
+  private final VoltageOut horizontalVoltageRequest = new VoltageOut(0).withEnableFOC(false);
+  private final VoltageOut verticalVoltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   private final LinearFilter velocityAverage = LinearFilter.movingAverage(8);
   private double averageRotorRpm = 0.0;

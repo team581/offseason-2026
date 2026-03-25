@@ -32,7 +32,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   private final PositionVoltage positionVoltageRequest =
       new PositionVoltage(0).withEnableFOC(false);
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;

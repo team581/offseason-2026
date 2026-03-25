@@ -8,7 +8,7 @@ import dev.doglog.DogLog;
 public class Intake extends GenericIntake {
   private final TalonFX motor;
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   public Intake(TalonFX motor) {
     motor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);

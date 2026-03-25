@@ -37,7 +37,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private final VelocityVoltage velocityRequest =
       new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   private double scoreDistance = 0;
   private double climbScoreRpm = 0;
