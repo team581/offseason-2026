@@ -42,7 +42,7 @@ public class ShooterHoodConfig {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.CounterClockwise_Positive))
+                  .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0).withKS(0));
 
   // TODO: Update interpolating map numbers later

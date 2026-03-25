@@ -15,7 +15,7 @@ public class Hardware {
   private final CANBus canivore = new CANBus("581CANivore");
   private final CANBus rio = new CANBus();
 
-  public final TalonFX deployMotor = new TalonFX(15, canivore);
+  public final TalonFX deployMotor = new TalonFX(15, rio);
 
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
   public final TalonFX intakeRightMotor = new TalonFX(17, rio);
@@ -34,7 +34,7 @@ public class Hardware {
   public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
   public final CANrange hopperCANRange = new CANrange(27, canivore);
-  public final DigitalInput towerSensor = new DigitalInput(6);
+  public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
 
   public final TunerSwerveDrivetrain drivetrain =
