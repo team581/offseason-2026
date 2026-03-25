@@ -190,7 +190,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           if (driverWantsIntake) {
             deploy.intakeRequest();
           } else {
-            deploy.hopperCompactionRequest();
+
+            if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+
+              deploy.hopperCompactionRequest();
+            } else {
+              deploy.intakeRequest();
+            }
           }
         }
       }
