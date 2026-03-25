@@ -24,17 +24,22 @@ public class DeployConfig {
       new TalonFXConfiguration()
           .withFeedback(
               new FeedbackConfigs()
+                  // TODO: UPDATE RATIO
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
+                  // TODO: VALIDATE INVERTS
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
+              // TODO: TUNE CURRENT LIMITS
               new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(18))
+          // TODO: TUNE MOTION MAGIC
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
                   .withMotionMagicAcceleration(300.0))
+          // TODO: TUNE PID
           .withSlot0(
               new Slot0Configs()
                   .withKP(3)

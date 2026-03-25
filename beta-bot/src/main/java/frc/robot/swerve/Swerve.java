@@ -88,7 +88,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
-          .withDeadband(0.0)
+          .withDeadband(0.07)
           .withRotationalDeadband(0.0)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
@@ -103,7 +103,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.5)
+          .withRotationalDeadband(0.05)
           .withHeadingPID(
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
@@ -111,6 +111,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
       new SwerveRequest.FieldCentric()
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.0)
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
