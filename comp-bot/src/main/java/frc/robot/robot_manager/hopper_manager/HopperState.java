@@ -1,12 +1,16 @@
 package frc.robot.robot_manager.hopper_manager;
 
 public enum HopperState {
-  IDLE_DEPLOYED,
-  IDLE_STOWED,
-  INTAKING,
-  EJECTING,
-  BALL_FILLING,
-  BALL_FILLING_INTAKING,
-  SHOOT,
-  SHOOT_AND_INTAKE;
+  IDLE_DEPLOYED(true),
+  IDLE_STOWED(true),
+  INTAKING(true),
+  EJECTING(false),
+  SHOOT(false),
+  SHOOT_AND_INTAKE(false);
+
+  public final boolean canBallFill;
+
+  HopperState(boolean canBallFill) {
+    this.canBallFill = canBallFill;
+  }
 }
