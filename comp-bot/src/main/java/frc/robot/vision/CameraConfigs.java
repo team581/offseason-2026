@@ -38,7 +38,7 @@ public class CameraConfigs {
           // Pitch
           0.0,
           // Yaw
-          0.0,
+          90.0,
           // Roll
           0.0);
 
@@ -56,7 +56,7 @@ public class CameraConfigs {
           // Pitch
           0.0,
           // Yaw
-          0.0,
+          -90.0,
           // Roll
           0.0);
 
