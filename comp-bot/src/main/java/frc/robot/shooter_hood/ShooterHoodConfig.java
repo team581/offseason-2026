@@ -49,16 +49,16 @@ public class ShooterHoodConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToScore",
-          Map.entry(5.5 + 0.25 + 0.15, 32.0),
-          Map.entry(3.54 + 0.25 + 0.15, 27.0),
-          Map.entry(2.42 + 0.25 + 0.15, 23.5),
-          Map.entry(1.36 + 0.25 + 0.15, 21.5));
+          Map.entry(5.5 + 0.25 + 0.15, 22.0),
+          Map.entry(3.54 + 0.25 + 0.15, 17.0),
+          Map.entry(2.42 + 0.25 + 0.15, 13.5),
+          Map.entry(1.36 + 0.25 + 0.15, 11.5));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed",
-          Map.entry(6.0, 30.0),
-          Map.entry(8.71, 35.0),
-          Map.entry(13.6, 43.0));
+          Map.entry(6.0, 20.0),
+          Map.entry(8.71, 25.0),
+          Map.entry(13.6, 33.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("ShooterHood/ScoringRegression", DISTANCE_TO_SCORE);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
