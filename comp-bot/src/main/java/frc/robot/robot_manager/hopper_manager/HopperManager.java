@@ -105,7 +105,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
         yield currentState;
       }
-      case REHOME_DEPLOY -> deploy.getState().isHoming() ? currentState : HopperState.IDLE_DEPLOYED;
     };
   }
 
@@ -160,12 +159,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.shootRequest();
         feeder.shootRequest();
       }
-      case REHOME_DEPLOY -> {
-        deploy.homingRequest();
-        intake.idleRequest();
-        conveyor.idleRequest();
-        feeder.idleRequest();
-      }
     }
   }
 
@@ -200,10 +193,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   private void setState(HopperState newState) {
-    switch (deploy.getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(newState);
-    }
+    setStateFromRequest(newState);
   }
 
   private boolean isBallFilling() {
@@ -248,10 +238,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       return;
     }
     setState(resolveIdleState());
-  }
-
-  public void homeDeployRequest() {
-    setStateFromRequest(HopperState.REHOME_DEPLOY);
   }
 
   public void setDriverWantsEject(boolean wantsEject) {
