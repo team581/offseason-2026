@@ -41,7 +41,7 @@ public class DeployConfig {
           // TODO: TUNE PID
           .withSlot0(
               new Slot0Configs()
-                  .withKP(3)
+                  .withKP(0.0)
                   .withKI(0)
                   .withKD(0.0)
                   .withKG(0.0)
