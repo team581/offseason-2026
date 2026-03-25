@@ -20,7 +20,7 @@ public class FeederConfig {
           .withCurrentLimits(
               // TODO: TUNE LIMITS
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
-  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
+  public static final TalonFXConfiguration BOTTOM_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()

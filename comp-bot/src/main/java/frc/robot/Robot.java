@@ -74,7 +74,7 @@ public class Robot extends Base581Robot {
       new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final Feeder feeder = new Feeder(hardware.FeederTopMotor, hardware.FeederBottomMotor);
+  private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
 
