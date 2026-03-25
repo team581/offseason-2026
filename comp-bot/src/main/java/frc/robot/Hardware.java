@@ -20,18 +20,18 @@ public class Hardware {
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
   public final TalonFX intakeRightMotor = new TalonFX(17, rio);
 
-  public final TalonFX conveyorLeftMotor = new TalonFX(18, rio);
-  public final TalonFX conveyorRightMotor = new TalonFX(19, rio);
+  public final TalonFX conveyorTopMotor = new TalonFX(18, canivore);
+  public final TalonFX conveyorBottomMotor = new TalonFX(19, canivore);
 
-  public final TalonFX leftFeederMotor = new TalonFX(20, rio);
-  public final TalonFX rightFeederMotor = new TalonFX(21, rio);
+  public final TalonFX FeederTopMotor = new TalonFX(20, canivore);
+  public final TalonFX FeederBottomMotor = new TalonFX(21, canivore);
 
-  public final TalonFX shooterHoodMotor = new TalonFX(22, rio);
+  public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
 
-  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, rio);
-  public final TalonFX shooterBottomRightMotor = new TalonFX(24, rio);
-  public final TalonFX shooterTopLeftMotor = new TalonFX(25, rio);
-  public final TalonFX shooterTopRightMotor = new TalonFX(26, rio);
+  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, canivore);
+  public final TalonFX shooterBottomRightMotor = new TalonFX(24, canivore);
+  public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
+  public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
   public final CANrange hopperCANRange = new CANrange(27, canivore);
   public final DigitalInput towerSensor = new DigitalInput(6);

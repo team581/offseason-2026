@@ -8,16 +8,16 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public class ConveyorConfig {
-  public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
+  public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
-  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
+  public static final TalonFXConfiguration BOTTOM_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()

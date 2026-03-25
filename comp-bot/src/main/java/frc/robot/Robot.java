@@ -74,9 +74,9 @@ public class Robot extends Base581Robot {
       new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final Feeder feeder = new Feeder(hardware.leftFeederMotor, hardware.rightFeederMotor);
+  private final Feeder feeder = new Feeder(hardware.FeederTopMotor, hardware.FeederBottomMotor);
   private final Conveyor conveyor =
-      new Conveyor(hardware.conveyorLeftMotor, hardware.conveyorRightMotor);
+      new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();

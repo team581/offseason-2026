@@ -17,7 +17,7 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   public Feeder(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.FEEDER, FeederState.IDLE);
-    leftMotor.getConfigurator().apply(FeederConfig.LEFT_MOTOR_CONFIG);
+    leftMotor.getConfigurator().apply(FeederConfig.TOP_MOTOR_CONFIG);
     rightMotor.getConfigurator().apply(FeederConfig.RIGHT_MOTOR_CONFIG);
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
@@ -69,8 +69,7 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     leftMotor
         .getConfigurator()
         .apply(
-            FeederConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+            FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
     rightMotor
         .getConfigurator()
         .apply(

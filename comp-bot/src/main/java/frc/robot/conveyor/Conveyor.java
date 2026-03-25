@@ -17,8 +17,8 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   public Conveyor(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);
-    leftMotor.getConfigurator().apply(ConveyorConfig.LEFT_MOTOR_CONFIG);
-    rightMotor.getConfigurator().apply(ConveyorConfig.RIGHT_MOTOR_CONFIG);
+    leftMotor.getConfigurator().apply(ConveyorConfig.TOP_MOTOR_CONFIG);
+    rightMotor.getConfigurator().apply(ConveyorConfig.BOTTOM_MOTOR_CONFIG);
 
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
@@ -70,12 +70,12 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     leftMotor
         .getConfigurator()
         .apply(
-            ConveyorConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
     rightMotor
         .getConfigurator()
         .apply(
-            ConveyorConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 }
