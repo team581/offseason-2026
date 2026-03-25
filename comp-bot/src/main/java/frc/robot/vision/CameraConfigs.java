@@ -6,7 +6,7 @@ import edu.wpi.first.math.util.Units;
 
 public class CameraConfigs {
 
-  public static final CameraConfig FRONT =
+  public static final CameraConfig SHOOTER =
       new CameraConfig(
           LimelightModel.FOUR,
           true,
