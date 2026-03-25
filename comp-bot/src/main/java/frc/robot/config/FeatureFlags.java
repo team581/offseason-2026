@@ -7,6 +7,8 @@ import java.util.function.BooleanSupplier;
 public class FeatureFlags {
   public static final BooleanSupplier INTEGRATION_TEST = FeatureFlag.of("IntegrationTest", false);
 
+  public static final BooleanSupplier BRING_UP = FeatureFlag.of("BringUp", false);
+
   public static final BooleanSupplier REGRESSION_MODEL = FeatureFlag.of("RegressionModel", false);
 
   public static final BooleanSupplier TOF_REGRESSION_MODEL =

@@ -453,6 +453,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareScoreOrFeedRequest() {
+    if (FeatureFlags.BRING_UP.getAsBoolean()) {
+      forceShootRequest();
+      return;
+    }
     if (isInAllianceZone) {
       prepareScoreRequest();
     } else {
