@@ -9,6 +9,7 @@ import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
@@ -38,8 +39,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
-  public static double HIGH_CAPACITY_THRESHOLD = 10;
-  public static double MEDIUM_CAPACITY_THRESHOLD = 5;
+  public static double HIGH_CAPACITY_THRESHOLD = 5;
+  public static double MEDIUM_CAPACITY_THRESHOLD = 10;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 
@@ -59,6 +60,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.feeder = feeder;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
+
+    hopperCANRange.getConfigurator().apply(HopperManagerConfig.CAN_RANGE_CONFIG);
+    canRangeUpdateTimer.start();
   }
 
   @Override
@@ -66,16 +70,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return switch (currentState) {
       case SHOOT -> currentState;
       case IDLE -> {
-        if ((intake.hasBeenIntaking()
-                || hopperCapacity == HopperCapacity.MEDIUM
-                || hopperCapacity == HopperCapacity.HIGH)
+        if (((intake.hasBeenIntaking() && !DSOptions.USE_CANRANGE.get())
+                || (hopperCapacity == HopperCapacity.MEDIUM
+                    || hopperCapacity == HopperCapacity.HIGH))
             && !towerSensorRaw) {
           yield HopperState.BALL_FILLING;
         }
         yield currentState;
       }
       case BALL_FILLING -> {
-        if (towerSensorRaw) {
+        if (towerSensorDebounced) {
           yield HopperState.IDLE;
         }
         yield currentState;
@@ -145,16 +149,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
-          feeder.idleRequest();
+          feeder.ejectRequest();
         } else if (driverWantsIntake) {
           DogLog.log("HopperManager/HopperActivity", "INTAKING");
-          conveyor.intakeRequest();
+          conveyor.idleRequest();
           intake.intakeRequest();
           deploy.intakeRequest();
           feeder.idleRequest();
           if (operatorWantsStow) {
             DogLog.log("HopperManager/HopperActivity", "INTAKING_AND_STOW");
-            conveyor.intakeRequest();
+            conveyor.idleRequest();
             intake.intakeRequest();
             deploy.stowRequest();
             feeder.idleRequest();
@@ -178,7 +182,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
           intake.ejectRequest();
           conveyor.ejectRequest();
-          feeder.idleRequest();
+          feeder.ejectRequest();
         } else {
           feeder.shootRequest();
           conveyor.shootRequest();
@@ -207,6 +211,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
     DogLog.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
+    DogLog.log("HopperManager/TowerSensor", towerSensorRaw);
   }
 
   private void setState(HopperState newState) {
@@ -225,6 +230,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public void idleRequest() {
+    if (getState() == HopperState.BALL_FILLING) {
+      return;
+    }
     setState(HopperState.IDLE);
   }
 
@@ -254,14 +262,23 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+      filteredDistance = hopperFilter.calculate(hopperDistance);
     }
-
+    if (RobotBase.isSimulation()) {
+      hopperDistance = 20;
+      towerSensorRaw =
+          switch (getState()) {
+            case BALL_FILLING -> timeout(1.5);
+            case IDLE -> !timeout(5);
+            default -> false;
+          };
+    }
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
-    if (filteredDistance >= HIGH_CAPACITY_THRESHOLD) {
-      hopperCapacity = HopperCapacity.HIGH;
-    } else if (filteredDistance >= MEDIUM_CAPACITY_THRESHOLD) {
+    if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.MEDIUM;
+    } else if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.HIGH;
     } else {
       hopperCapacity = HopperCapacity.LOW;
     }

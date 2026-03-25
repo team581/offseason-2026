@@ -31,7 +31,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private static final double SWERVE_MAX_ANGULAR_SPEED_TRACKING = 100.0;
   private static final double CLUSTER_LIFETIME_SECONDS = 2.0;
 
-  private static final double MIN_BALLS_PER_SECOND_THRESHOLD = 10;
+  private static final double MIN_BALLS_PER_SECOND_THRESHOLD = 5;
   private static final double ESTIMATED_DRIVE_SPEED_MPS = 4.0;
   private static final double PICKUP_OVERHEAD_TIME_SEC = 0.5;
 

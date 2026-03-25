@@ -329,6 +329,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.scoreRequest(scoringParameters);
         hopperManager.scoreRequest();
       }
+      case FORCE_SCORE -> {
+        shooter.scoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        hopperManager.scoreRequest();
+      }
       case PREPARE_FEED -> {
         smartHoodPrepareFeedRequest();
         swerve.feedRequest(feedingParameters);

@@ -8,7 +8,7 @@ public enum IntakeState {
   EJECT(-12),
   IDLE(0),
   SHOOT(3),
-  SHOOT_THEN_INTAKE(10);
+  SHOOT_THEN_INTAKE(3);
 
   public final double voltage;
   public final DoubleSubscriber tunableVoltage;
