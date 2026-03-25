@@ -1,7 +1,6 @@
 package frc.robot.robot_manager;
 
 import com.team581.autos.Point;
-import com.team581.config.CameraConfig;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
