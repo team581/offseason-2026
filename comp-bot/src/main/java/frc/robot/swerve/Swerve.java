@@ -317,7 +317,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
         if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           DogLog.timestamp("Swerve/DriverOverridingRotation");
-          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+          if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
             drivetrain.setControl(
                 driverPerspective
                     .withVelocityX(speeds.vxMetersPerSecond)
@@ -340,7 +340,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
         if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           DogLog.timestamp("Swerve/DriverOverridingRotation");
-          if (driveSource.getRequestedSpeeds().omegaRadiansPerSecond > 1e-5) {
+          if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
             drivetrain.setControl(
                 driverPerspective
                     .withVelocityX(speeds.vxMetersPerSecond)
