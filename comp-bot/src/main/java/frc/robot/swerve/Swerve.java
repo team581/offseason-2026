@@ -3,7 +3,6 @@ package frc.robot.swerve;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
@@ -70,9 +69,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private DriveSource driveSource;
 
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
-  private final SwerveRequest.FieldCentric driverPerspective =
+  private final SwerveRequest.FieldCentric driverPerspectiveOpenLoop =
       new SwerveRequest.FieldCentric()
-          .withDriveRequestType(DriveRequestType.Velocity)
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
@@ -81,9 +80,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
    * overrides the angular velocity to instead snap to an angle.
    */
-  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnaps =
+  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnapsOpenLoop =
       new SwerveRequest.FieldCentricFacingAngle()
-          .withDriveRequestType(DriveRequestType.Velocity)
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
           .withRotationalDeadband(0.0)
@@ -91,11 +90,23 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
-  /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
-  private final SwerveRequest.FieldCentric fieldCentric =
-      new SwerveRequest.FieldCentric()
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
+  private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveIntakeSnapsOpenLoop =
+      new SwerveRequest.FieldCentricFacingAngle()
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
-          .withRotationalDeadband(0.05)
+          .withRotationalDeadband(0.5)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
+
+  /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
+  private final SwerveRequest.FieldCentric fieldCentricClosedLoop =
+      new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
@@ -103,7 +114,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
    * overrides the angular velocity to instead snap to an angle.
    */
-  private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnaps =
+  private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnapsClosedLoop =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
@@ -114,8 +125,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               ORIGINAL_HEADING_PID.getI(),
               ORIGINAL_HEADING_PID.getD());
 
-  private final SwerveRequest.SwerveDriveBrake xRequest =
-      new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
+  private final SwerveRequest.FieldCentricFacingAngle fieldCentricIntakeSnapsClosedLoop =
+      new SwerveRequest.FieldCentricFacingAngle()
+          .withDriveRequestType(DriveRequestType.Velocity)
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.5)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(),
+              ORIGINAL_HEADING_PID.getI(),
+              ORIGINAL_HEADING_PID.getD());
 
   private final HealthManager health;
 
@@ -267,6 +290,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void normalDriveRequest() {
     setStateFromRequest(SwerveState.MANUAL);
+  }
+
+  public void intakeDriveRequest() {
+    setStateFromRequest(SwerveState.INTAKE);
   }
 
   private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(
