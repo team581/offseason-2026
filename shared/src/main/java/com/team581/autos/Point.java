@@ -20,8 +20,8 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
 
   private static final Rectangle2d CLAMPED_AREA =
       new Rectangle2d(
-          new Translation2d(16.54 + 5, 8.069),
-          new Translation2d(8.246 + Units.inchesToMeters(31), 1.645));
+          new Translation2d(16.54, 8.069),
+          new Translation2d(8.246 + Units.inchesToMeters(31 + 20), 1.645));
 
   private static Pose2d clamp(Pose2d input) {
     return new Pose2d(CLAMPED_AREA.nearest(input.getTranslation()), input.getRotation());

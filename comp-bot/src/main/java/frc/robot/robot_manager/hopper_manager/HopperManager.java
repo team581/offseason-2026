@@ -3,6 +3,8 @@ package frc.robot.robot_manager.hopper_manager;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
@@ -22,6 +24,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final Feeder feeder;
   public final CANrange hopperCANRange;
   public final DigitalInput towerSensor;
+
+  private final Debouncer towerSensorDebouncer = new Debouncer(0.5, DebounceType.kFalling);
+  private boolean towerSensorDebounced = false;
 
   private boolean driverWantsIntake = false;
   private boolean driverWantsEject = false;
@@ -211,6 +216,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
   }
 
+  public boolean stillShooting() {
+    return towerSensorDebounced && getState() == HopperState.SHOOT;
+  }
+
   public void scoreRequest() {
     setState(HopperState.SHOOT);
   }
@@ -242,6 +251,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   @Override
   protected void collectInputs() {
     towerSensorRaw = towerSensor.get();
+    towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }

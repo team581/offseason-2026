@@ -375,9 +375,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartHoodIdleRequest() {
-    // -First, if cameras are offline or we are near a trench, always be idle
-    // -Otherwise if we are in our alliance zone, point towards hub
-    // -And if we are not in alliance zone, point towards feed pose
+    // Prioritize idiling if localization is unrealiable or in trench zone
     if (!health.isLocalizationHealthy() || !localization.isTrustworthy() || nearTrench) {
       shooterHood.idleRequest();
 
@@ -396,6 +394,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartHoodPrepareScoreRequest() {
+    // If cameras are offline or we are near a trench, always be idle
     if (!health.isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NearTrench");
@@ -407,6 +406,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartHoodPrepareFeedRequest() {
+    // If cameras are offline or we are near a trench, always be idle
     if (!health.isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NearTrench");
