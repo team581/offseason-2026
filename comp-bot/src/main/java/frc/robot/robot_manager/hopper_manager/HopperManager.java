@@ -66,9 +66,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   private boolean shouldFillBalls() {
-    return ((intake.hasBeenIntaking() && !DSOptions.USE_CANRANGE.get())
-            || (hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH))
-        && !towerSensorDebounced;
+    if (towerSensorDebounced) {
+      // The sensor in the tower shows we are holding fuel, so we can't fill anymore
+      return false;
+    }
+
+    if (DSOptions.USE_CANRANGE.get()) {
+      // If we are using the hopper CANrange, we can start filling the tower once the hopper is
+      // starting ot fill up
+      return hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH;
+    }
+
+    // Otherwise, we fallback to running once we've been intaking for a few seconds
+    return intake.hasBeenIntaking();
   }
 
   /** Sets conveyor and feeder to ball filling if conditions are met, otherwise idles them. */
