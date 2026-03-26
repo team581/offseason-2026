@@ -19,7 +19,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private final MotionMagicVoltage positionVoltageRequest =
       new MotionMagicVoltage(0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   private double motorPosition = 0.0;
   private double statorCurrent = 0.0;
@@ -27,6 +27,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public Deploy(TalonFX motor) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
+
+    motor.getConfigurator().apply(DeployConfig.MOTOR_CONFIG);
     this.motor = motor;
 
     TunablePid.register("Deploy", motor, DeployConfig.MOTOR_CONFIG);
