@@ -350,6 +350,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                     .withTargetRateFeedforward(scoringFeedForward));
           }
         } else {
+          DogLog.timestamp("Swerve/TryingToAim");
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                       fieldCentricSnaps
@@ -384,6 +385,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                         Rotation2d.fromDegrees(feedingAngle))
                     .withTargetRateFeedforward(feedingFeedForward));
           }
+        } else {
+          DogLog.timestamp("Swerve/TryingToAim");
+          drivetrain.setControl(
+              withFieldRelativeTargetDirection(
+                      fieldCentricSnaps
+                          .withVelocityX(speeds.vxMetersPerSecond)
+                          .withVelocityY(speeds.vyMetersPerSecond),
+                      Rotation2d.fromDegrees(feedingAngle))
+                  .withTargetRateFeedforward(feedingFeedForward));
         }
       }
       case CLIMB_ASSIST -> {
