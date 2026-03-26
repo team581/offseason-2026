@@ -349,6 +349,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                         Rotation2d.fromDegrees(scoringAngle))
                     .withTargetRateFeedforward(scoringFeedForward));
           }
+        } else {
+          drivetrain.setControl(
+              withFieldRelativeTargetDirection(
+                      fieldCentricSnaps
+                          .withVelocityX(speeds.vxMetersPerSecond)
+                          .withVelocityY(speeds.vyMetersPerSecond),
+                      Rotation2d.fromDegrees(scoringAngle))
+                  .withTargetRateFeedforward(scoringFeedForward));
         }
       }
       case FEED -> {
