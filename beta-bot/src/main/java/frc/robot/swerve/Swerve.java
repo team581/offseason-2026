@@ -470,6 +470,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
     DogLog.log("Swerve/GoalAimingAngle", turretStuckAimingAngle);
     DogLog.log("Swerve/Aimed", isAimed());
+    DogLog.log(
+        "Swerve/MotorVoltage/Module0",
+        drivetrain.getModule(0).getDriveMotor().getMotorVoltage().getValueAsDouble());
+    DogLog.log(
+        "Swerve/MotorVoltage/Module1",
+        drivetrain.getModule(1).getDriveMotor().getMotorVoltage().getValueAsDouble());
+    DogLog.log(
+        "Swerve/MotorVoltage/Module2",
+        drivetrain.getModule(2).getDriveMotor().getMotorVoltage().getValueAsDouble());
+    DogLog.log(
+        "Swerve/MotorVoltage/Module3",
+        drivetrain.getModule(3).getDriveMotor().getMotorVoltage().getValueAsDouble());
+
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
     DogLog.log(
         "Swerve/AbleToXSwerve/SpeedsNear0",
