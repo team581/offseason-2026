@@ -42,7 +42,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Trailblazer trailblazer;
   public final ClusterMap clusterMap;
 
-  private final PowerManager powerManager;
+  public final PowerManager powerManager;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -498,6 +498,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void homeDeployRequest() {
     hopperManager.deploy.homingRequest();
+  }
+
+  public void homeDeployInAutoRequest() {
+    // TODO: When climber gets added to robot, check that we are not climbed
+    hopperManager.deploy.homeInAutoRequest();
   }
 
   public void homeShooterHoodRequest() {

@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
 public class BumpCrossingTracker {
   private static final double FLAT_DEBOUNCE_SECONDS = 0.25;
   private static final DoubleSubscriber FLAT_THRESHOLD =
-      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 3.0);
+      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
   private static final DoubleSubscriber PROJECTION_DISTANCE_METERS =
       DogLog.tunable("BumpCrossing/ProjectionDistanceMeters", 5.0);
 
@@ -99,7 +99,7 @@ public class BumpCrossingTracker {
 
     Pose2d targetPose = point.getPose();
 
-    if (previousIsFlat != isFlat && landingPoint != null) {
+    if (isFlat && previousIsFlat != isFlat && landingPoint != null) {
       // We just crossed, reset pose
       poseResetConsumer.accept(landingPoint.getPose());
     }
