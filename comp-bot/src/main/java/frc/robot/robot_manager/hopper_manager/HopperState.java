@@ -2,7 +2,7 @@ package frc.robot.robot_manager.hopper_manager;
 
 public enum HopperState {
   IDLE_DEPLOYED(true),
-  IDLE_STOWED(true),
+  IDLE_STOWED(false),
   INTAKING(true),
   EJECTING(false),
   SHOOT(false),
