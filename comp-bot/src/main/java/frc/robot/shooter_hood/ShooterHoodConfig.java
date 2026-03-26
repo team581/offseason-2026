@@ -20,7 +20,8 @@ public class ShooterHoodConfig {
    */
   public static final double ANGLE_FROM_HORIZONTAL = 11;
 
-  public static final double MAX_ANGLE = ANGLE_FROM_HORIZONTAL + 22.5;
+  // 33 is max without top rollers touching
+  public static final double MAX_ANGLE = ANGLE_FROM_HORIZONTAL + 34.0;
   public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 1.5;
   public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 1.5;
 
@@ -37,7 +38,7 @@ public class ShooterHoodConfig {
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio(1 / ((8.0 / 62.0) * (10.0 / 154.0))))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(10).withSupplyCurrentLimit(10))
+              new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(40))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withMotorOutput(
               new MotorOutputConfigs()
@@ -49,10 +50,9 @@ public class ShooterHoodConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToScore",
-          Map.entry(5.5 + 0.25 + 0.15, 22.0),
-          Map.entry(3.54 + 0.25 + 0.15, 17.0),
-          Map.entry(2.42 + 0.25 + 0.15, 13.5),
-          Map.entry(1.36 + 0.25 + 0.15, 11.5));
+          Map.entry(4.94, 40.0),
+          Map.entry(3.27, 29.0),
+          Map.entry(2.38, 20.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "ShooterHood/DistanceToFeed",

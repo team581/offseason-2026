@@ -39,10 +39,9 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(5.5 + 0.25 + 0.15, 2350.0),
-          Map.entry(3.54 + 0.25 + 0.15, 1950.0),
-          Map.entry(2.42 + 0.25 + 0.15, 1800.0),
-          Map.entry(1.36 + 0.25 + 0.15, 1550.0));
+          Map.entry(4.94, 2000.0),
+          Map.entry(3.27, 1600.0),
+          Map.entry(2.38, 1600.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
@@ -76,21 +75,21 @@ public class ShooterConfig {
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.1).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.1).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.1).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.1).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
