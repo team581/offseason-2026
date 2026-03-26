@@ -90,7 +90,7 @@ public class BumpCrossingTracker {
    *     Used to help recover pose estimation.
    * @return The point as-is if flat, or a projected point if on the bump.
    */
-  public Point getPoint(Point point, @Nullable Pose2d landingPoint) {
+  public Point getPoint(Point point, @Nullable Point landingPoint) {
     double tilt = tiltSupplier.getAsDouble();
     boolean isFlat = flatDebouncer.calculate(tilt <= FLAT_THRESHOLD.get());
 
@@ -101,7 +101,7 @@ public class BumpCrossingTracker {
 
     if (previousIsFlat != isFlat && landingPoint != null) {
       // We just crossed, reset pose
-      poseResetConsumer.accept(landingPoint);
+      poseResetConsumer.accept(landingPoint.getPose());
     }
 
     previousIsFlat = isFlat;
