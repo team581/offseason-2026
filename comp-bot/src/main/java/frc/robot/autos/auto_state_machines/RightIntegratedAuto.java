@@ -76,7 +76,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment intakeBehindHub =
+  private final AutoSegment defaultSecondSegment =
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
@@ -249,7 +249,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case INTAKE_BEHIND_HUB -> {
-        trailblazer.setActiveSegment(intakeBehindHub);
+        trailblazer.setActiveSegment(defaultSecondSegment);
         robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_2 -> {
