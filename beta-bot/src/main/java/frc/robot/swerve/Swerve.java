@@ -36,7 +36,6 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
-import frc.robot.config.FeatureFlags;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
@@ -248,8 +247,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         switch (getState()) {
           case TURRET_STUCK_SCORE -> {
             yield X_SWERVE_DEBOUNCER.calculate(
-                FeatureFlags.X_SWERVE.getAsBoolean()
-                    && MathUtil.isNear(
+                MathUtil.isNear(
                         Math.toDegrees(
                             MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle))),
                         drivetrainState.Pose.getRotation().getDegrees(),
@@ -472,21 +470,18 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
     DogLog.log("Swerve/GoalAimingAngle", turretStuckAimingAngle);
     DogLog.log("Swerve/Aimed", isAimed());
-    // Temporary logging for X swerve feature flag
-    if (FeatureFlags.X_SWERVE.getAsBoolean()) {
-      DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
-      DogLog.log(
-          "Swerve/AbleToXSwerve/SpeedsNear0",
-          MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
-      DogLog.log(
-          "Swerve/AbleToXSwerve/Aimed",
-          MathUtil.isNear(
-              Math.toDegrees(MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle))),
-              drivetrainState.Pose.getRotation().getDegrees(),
-              AIMED_TOLERANCE,
-              -180.0,
-              180.0));
-    }
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
+    DogLog.log(
+        "Swerve/AbleToXSwerve/SpeedsNear0",
+        MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+    DogLog.log(
+        "Swerve/AbleToXSwerve/Aimed",
+        MathUtil.isNear(
+            Math.toDegrees(MathUtil.angleModulus(Math.toRadians(turretStuckAimingAngle))),
+            drivetrainState.Pose.getRotation().getDegrees(),
+            AIMED_TOLERANCE,
+            -180.0,
+            180.0));
     DogLog.log("Swerve/FeedForward", aimingFeedForward, Radians);
   }
 
