@@ -34,13 +34,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean operatorWantsStow = false;
   private boolean towerSensorRaw = false;
 
-  private final LinearFilter hopperFilter = LinearFilter.movingAverage(15);
+  private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
 
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
   public static final double HIGH_CAPACITY_THRESHOLD = 5;
-  public static final double MEDIUM_CAPACITY_THRESHOLD = 10;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 12;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 
