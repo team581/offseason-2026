@@ -360,19 +360,21 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           } else {
             DogLog.timestamp("Swerve/TryingToAim");
             drivetrain.setControl(
-                drivePerspectiveSnaps
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withTargetDirection(Rotation2d.fromDegrees(scoringAngle))
+                withFieldRelativeTargetDirection(
+                        drivePerspectiveSnaps
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        Rotation2d.fromDegrees(scoringAngle))
                     .withTargetRateFeedforward(scoringFeedForward));
           }
         } else {
           DogLog.timestamp("Swerve/TryingToAim");
           drivetrain.setControl(
-              fieldCentricSnaps
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withTargetDirection(Rotation2d.fromDegrees(scoringAngle))
+              withFieldRelativeTargetDirection(
+                      fieldCentricSnaps
+                          .withVelocityX(speeds.vxMetersPerSecond)
+                          .withVelocityY(speeds.vyMetersPerSecond),
+                      Rotation2d.fromDegrees(scoringAngle))
                   .withTargetRateFeedforward(scoringFeedForward));
         }
       }
@@ -394,10 +396,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           } else {
             DogLog.timestamp("Swerve/TryingToAim");
             drivetrain.setControl(
-                drivePerspectiveSnaps
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withTargetDirection(Rotation2d.fromDegrees(feedingAngle))
+                withFieldRelativeTargetDirection(
+                        drivePerspectiveSnaps
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        Rotation2d.fromDegrees(feedingAngle))
                     .withTargetRateFeedforward(feedingFeedForward));
           }
         } else {
