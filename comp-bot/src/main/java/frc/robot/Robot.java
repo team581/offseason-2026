@@ -172,7 +172,7 @@ public class Robot extends Base581Robot {
         .onPress(() -> hopperManager.setDriverWantsEject(true))
         .onRelease(() -> hopperManager.setDriverWantsEject(false));
 
-    operator.start().onPress(() -> hopperManager.deploy.homeInAutoRequest());
+    operator.start().onPress(() -> hopperManager.deploy.homingRequest());
 
     operator.back().onPress(robotManager::homeShooterHoodRequest);
 

@@ -18,7 +18,7 @@ public class FeederConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               // TODO: TUNE LIMITS
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(40));
   public static final TalonFXConfiguration BOTTOM_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
@@ -29,5 +29,5 @@ public class FeederConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               // TODO: TUNE LIMITS
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(40));
 }

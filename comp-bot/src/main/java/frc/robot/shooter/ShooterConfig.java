@@ -34,7 +34,7 @@ public class ShooterConfig {
 
   public static final double MAX_SAFE_RPM = 6000;
 
-  public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(-0.2, 0.0, Rotation2d.k180deg);
+  public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(0.0, 0.0, Rotation2d.k180deg);
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
