@@ -9,8 +9,10 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a pose for path following that accounts for bump crossings. When the robot is tilted (on
@@ -33,11 +35,18 @@ public class BumpCrossingTracker {
       new Debouncer(FLAT_DEBOUNCE_SECONDS, DebounceType.kRising);
   private final DoubleSupplier tiltSupplier;
   private final Supplier<Pose2d> robotPoseSupplier;
+  private final Consumer<Pose2d> poseResetConsumer;
+  private boolean previousIsFlat = true;
 
   /** Latched crossing direction: +1 or -1. 0 means not currently crossing. */
   private double latchedXSign = 0;
 
-  public BumpCrossingTracker(DoubleSupplier tiltSupplier, Supplier<Pose2d> robotPoseSupplier) {
+  public BumpCrossingTracker(
+      DoubleSupplier tiltSupplier,
+      Supplier<Pose2d> robotPoseSupplier,
+      Consumer<Pose2d> poseResetConsumer) {
+    this.poseResetConsumer = poseResetConsumer;
+
     if (RobotBase.isSimulation()) {
       this.tiltSupplier =
           () -> {
@@ -69,6 +78,19 @@ public class BumpCrossingTracker {
    * @return The point as-is if flat, or a projected point if on the bump.
    */
   public Point getPoint(Point point) {
+    return getPoint(point, null);
+  }
+
+  /**
+   * Get a {@link Point} adjusted for bump crossing. Use this as a pose supplier in {@code
+   * AutoPoint.of(() -> tracker.getPoint(Point.ofRed(...)))}.
+   *
+   * @param point The base target point.
+   * @param landingPoint The point on the field where the robot is expected to land after crossing.
+   *     Used to help recover pose estimation.
+   * @return The point as-is if flat, or a projected point if on the bump.
+   */
+  public Point getPoint(Point point, @Nullable Point landingPoint) {
     double tilt = tiltSupplier.getAsDouble();
     boolean isFlat = flatDebouncer.calculate(tilt <= FLAT_THRESHOLD.get());
 
@@ -76,6 +98,13 @@ public class BumpCrossingTracker {
     DogLog.log("Imu/BumpCrossing/OriginalPoint", point.getPose());
 
     Pose2d targetPose = point.getPose();
+
+    if (previousIsFlat != isFlat && landingPoint != null) {
+      // We just crossed, reset pose
+      poseResetConsumer.accept(landingPoint.getPose());
+    }
+
+    previousIsFlat = isFlat;
 
     if (isFlat) {
       latchedXSign = 0;
