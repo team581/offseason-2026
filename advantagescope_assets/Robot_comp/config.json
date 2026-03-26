@@ -56,6 +56,23 @@
         1280,
         800
       ]
+    },
+    {
+      "name": "Ground (LL3)",
+      "position": [
+        0.652,
+        0,
+        0.329
+      ],
+      "fov": 62.5,
+      "rotations": [{
+        "axis": "y",
+        "degrees": 20
+      }],
+      "resolution": [
+        640,
+        480
+      ]
     }
   ],
   "components": [
