@@ -26,7 +26,6 @@ import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
-import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final HopperManager hopperManager;
@@ -215,7 +214,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case IDLE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.HUB_TAGS);
+        vision.hubTagsRequest();
         shooter.idleRequest();
         smartHoodIdleRequest();
         swerve.normalDriveRequest();
@@ -223,7 +222,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FORCE_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
@@ -231,7 +230,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FORCE_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
@@ -239,7 +238,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
@@ -247,7 +246,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
@@ -255,14 +254,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.HUB_TAGS);
+        vision.hubTagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         powerManager.shootingRequest();
       }
       case SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.HUB_TAGS);
+        vision.hubTagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
@@ -270,7 +269,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
@@ -278,7 +277,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
@@ -286,7 +285,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
@@ -294,7 +293,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FALLBACK_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
@@ -302,7 +301,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case UNJAM -> {
         hopperManager.idleRequest();
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.idleRequest();
         shooterHood.idleRequest();
         swerve.normalDriveRequest();

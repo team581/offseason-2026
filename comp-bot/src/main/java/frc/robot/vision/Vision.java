@@ -107,15 +107,16 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     return hasSeenTag;
   }
 
-  public void setState(VisionState state) {
-    if (state == VisionState.HUB_TAGS && getState() == VisionState.WAITING_FOR_HUB_TAGS) {
+  public void tagsRequest() {
+    setStateFromRequest(VisionState.TAGS);
+  }
+
+  public void hubTagsRequest() {
+    if (getState() == VisionState.WAITING_FOR_HUB_TAGS || getState() == VisionState.HUB_TAGS) {
       return;
     }
-    if (state == VisionState.HUB_TAGS) {
-      state = VisionState.WAITING_FOR_HUB_TAGS;
-    }
 
-    setStateFromRequest(state);
+    setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
   }
 
   @Override
