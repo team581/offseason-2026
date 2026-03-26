@@ -70,7 +70,7 @@ public class Trailblazer {
     // Technically you could call reset over and over, but that creates a lot of objects and may
     // cause jerky motion since we are effectively replanning a trajectory over and over.
     if (needsFollowerReset) {
-      pathFollower.reset(currentFieldRelativeSpeeds, currentPose.getRotation().getRadians());
+      pathFollower.reset(currentPose, currentFieldRelativeSpeeds);
       needsFollowerReset = false;
     }
 

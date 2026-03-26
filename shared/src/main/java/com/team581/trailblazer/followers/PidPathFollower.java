@@ -94,7 +94,7 @@ public class PidPathFollower implements PathFollower {
   }
 
   @Override
-  public void reset(ChassisSpeeds currentSpeeds, double currentAngleRadians) {
-    velocityConstrainer.reset(currentSpeeds, currentAngleRadians);
+  public void reset(Pose2d currentPose, ChassisSpeeds currentSpeeds) {
+    velocityConstrainer.reset(currentSpeeds, currentPose.getRotation().getRadians());
   }
 }
