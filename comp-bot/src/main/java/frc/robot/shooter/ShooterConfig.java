@@ -75,26 +75,22 @@ public class ShooterConfig {
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(new Slot0Configs().withKP(0.001).withKV(0.054));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(new Slot0Configs().withKP(0.001).withKV(0.054));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(new Slot0Configs().withKP(0.001).withKV(0.054));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(new Slot0Configs().withKP(0.001).withKV(0.054));
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
@@ -135,8 +131,8 @@ public class ShooterConfig {
             new CurrentLimitsConfigs()
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimitEnable(true)
-                .withStatorCurrentLimit(100)
-                .withSupplyCurrentLimit(100))
+                .withStatorCurrentLimit(150)
+                .withSupplyCurrentLimit(40))
         .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
         .withTorqueCurrent(
             new TorqueCurrentConfigs()
