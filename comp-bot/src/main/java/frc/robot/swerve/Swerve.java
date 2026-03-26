@@ -50,6 +50,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxLinearRateShooting", 2.0);
 
+  private final double X_AIMED_TOLERANCE = 2.0;
+
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
@@ -235,9 +237,25 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     ableToXSwerve =
         switch (getState()) {
-          case SCORE, FEED -> {
+          case SCORE -> {
             yield X_SWERVE_DEBOUNCER.calculate(
-                atGoal() && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+                MathUtil.isNear(
+                        Math.toDegrees(MathUtil.angleModulus(Math.toRadians(scoringAngle))),
+                        drivetrainState.Pose.getRotation().getDegrees(),
+                        X_AIMED_TOLERANCE,
+                        -180.0,
+                        180.0)
+                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+          }
+          case FEED -> {
+            yield X_SWERVE_DEBOUNCER.calculate(
+                MathUtil.isNear(
+                        Math.toDegrees(MathUtil.angleModulus(Math.toRadians(feedingAngle))),
+                        drivetrainState.Pose.getRotation().getDegrees(),
+                        X_AIMED_TOLERANCE,
+                        -180.0,
+                        180.0)
+                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
           }
           default -> false;
         };
@@ -332,8 +350,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           drivetrain.setControl(xRequest);
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-          DogLog.timestamp("Swerve/DriverOverridingRotation");
           if (!MathUtil.isNear(0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
+            DogLog.timestamp("Swerve/DriverOverridingRotation");
             drivetrain.setControl(
                 driverPerspective
                     .withVelocityX(speeds.vxMetersPerSecond)
@@ -342,21 +360,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           } else {
             DogLog.timestamp("Swerve/TryingToAim");
             drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                        drivePerspectiveSnaps
-                            .withVelocityX(speeds.vxMetersPerSecond)
-                            .withVelocityY(speeds.vyMetersPerSecond),
-                        Rotation2d.fromDegrees(scoringAngle))
+                drivePerspectiveSnaps
+                    .withVelocityX(speeds.vxMetersPerSecond)
+                    .withVelocityY(speeds.vyMetersPerSecond)
+                    .withTargetDirection(Rotation2d.fromDegrees(scoringAngle))
                     .withTargetRateFeedforward(scoringFeedForward));
           }
         } else {
           DogLog.timestamp("Swerve/TryingToAim");
           drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                      fieldCentricSnaps
-                          .withVelocityX(speeds.vxMetersPerSecond)
-                          .withVelocityY(speeds.vyMetersPerSecond),
-                      Rotation2d.fromDegrees(scoringAngle))
+              fieldCentricSnaps
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(Rotation2d.fromDegrees(scoringAngle))
                   .withTargetRateFeedforward(scoringFeedForward));
         }
       }
@@ -378,11 +394,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           } else {
             DogLog.timestamp("Swerve/TryingToAim");
             drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                        drivePerspectiveSnaps
-                            .withVelocityX(speeds.vxMetersPerSecond)
-                            .withVelocityY(speeds.vyMetersPerSecond),
-                        Rotation2d.fromDegrees(feedingAngle))
+                drivePerspectiveSnaps
+                    .withVelocityX(speeds.vxMetersPerSecond)
+                    .withVelocityY(speeds.vyMetersPerSecond)
+                    .withTargetDirection(Rotation2d.fromDegrees(feedingAngle))
                     .withTargetRateFeedforward(feedingFeedForward));
           }
         } else {
@@ -405,36 +420,37 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 .withVelocityX(speeds.vxMetersPerSecond)
                 .withVelocityY(speeds.vyMetersPerSecond)
                 .withRotationalRate(speeds.omegaRadiansPerSecond));
+      }
+    }
 
-        if (DriverStation.isAutonomous() && DriverStation.isDisabled()) {
-          var current = drivetrainState.ModuleStates;
-          var targets = drivetrainState.ModuleTargets;
-          boolean isMisaligned = false;
+    if (DriverStation.isAutonomous() && DriverStation.isDisabled()) {
+      var current = drivetrainState.ModuleStates;
+      var targets = drivetrainState.ModuleTargets;
+      boolean isMisaligned = false;
 
-          for (int i = 0; i < current.length; i++) {
-            var actual = current[i];
-            var target = targets[i];
+      for (int i = 0; i < current.length; i++) {
+        var actual = current[i];
+        var target = targets[i];
 
-            if (MathUtil.isNear(
-                actual.angle.getDegrees(), target.angle.getDegrees(), 5, -180, 180)) {
-              // it's within tolerance
-            } else {
-              isMisaligned = true;
-              break;
-            }
-          }
-
-          if (isMisaligned) {
-            DogLog.logFault("Swerve modules not pointed straight", AlertType.kError);
-          } else {
-            DogLog.clearFault("Swerve modules not pointed straight");
-          }
+        if (MathUtil.isNear(actual.angle.getDegrees(), target.angle.getDegrees(), 5, -180, 180)) {
+          // it's within tolerance
+        } else {
+          isMisaligned = true;
+          break;
         }
+      }
+
+      if (isMisaligned) {
+        DogLog.logFault("Swerve modules not pointed straight", AlertType.kError);
+      } else {
+        DogLog.clearFault("Swerve modules not pointed straight");
       }
     }
 
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
+    DogLog.log("Swerve/ScoringAngle", scoringAngle);
+    DogLog.log("Swerve/FeedingAngle", feedingAngle);
     DogLog.log("Swerve/SwerveTargetDirection", drivePerspectiveSnaps.TargetDirection.getDegrees());
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
