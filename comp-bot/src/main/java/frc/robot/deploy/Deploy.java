@@ -160,7 +160,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
             "Deploy",
             mechanism ->
                 mechanism
-                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
+                    .addMotor(motor, ChassisReference.Clockwise_Positive)
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 
