@@ -83,7 +83,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.topRightMotor = topRightMotor;
     this.bottomLeftMotor = bottomLeftMotor;
     this.bottomRightMotor = bottomRightMotor;
-    this.followRequest = new StrictFollower(topLeftMotor.getDeviceID());
+    this.followRequest = new StrictFollower(topRightMotor.getDeviceID());
   }
 
   public void scoreRequest(double distance) {
@@ -131,19 +131,19 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     switch (state) {
       case IDLE -> {
         var setpoint = ShooterConfig.IDLE_RPM / 60.0;
-        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case SCORE -> {
         var setpoint = shootingRpm / 60.0;
-        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case FEEDING -> {
         var setpoint = feedingRpm / 60.0;
-        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
 
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
