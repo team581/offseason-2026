@@ -212,10 +212,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
             "shooter",
             (mechanism) ->
                 mechanism
-                    .addMotor(topLeftMotor, ChassisReference.CounterClockwise_Positive)
-                    .addMotor(topRightMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(bottomLeftMotor, ChassisReference.CounterClockwise_Positive)
-                    .addMotor(bottomRightMotor, ChassisReference.Clockwise_Positive));
+                    .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)
+                    .addMotor(bottomLeftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(bottomRightMotor, ChassisReference.CounterClockwise_Positive));
 
     shooterSimulation.update();
   }
