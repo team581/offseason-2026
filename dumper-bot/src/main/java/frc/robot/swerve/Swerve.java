@@ -416,10 +416,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> {
     DogLog.log("Swerve/WallSnaps/DriveAngleDifference", driveAngleDifference);
 
     var signMisMatch =
-        Math.abs(
-                    MathHelpers.angleModulus(
-                        filteredVelocityAngle.getDegrees() - angleToWall.getDegrees()))
-                > 1e-5
+        !MathUtil.isNear(
+                0,
+                MathHelpers.angleModulus(
+                    filteredVelocityAngle.getDegrees() - angleToWall.getDegrees()),
+                1e-5)
             && Math.signum(intakeAngleDifference) != Math.signum(driveAngleDifference);
     DogLog.log("Swerve/WallSnaps/SignMisMatch", signMisMatch);
     if (signMisMatch) {

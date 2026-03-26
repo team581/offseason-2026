@@ -397,7 +397,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           DogLog.timestamp("Swerve/XSwerveActive");
         } else if (driveSource.getDriveSourceType()
             == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-          if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
+          if (!MathUtil.isNear(0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
             DogLog.timestamp("Swerve/DriverOverridingRotation");
             drivetrain.setControl(
                 driverPerspectiveOpenLoop

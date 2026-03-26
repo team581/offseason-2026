@@ -4,6 +4,7 @@ import com.team581.autos.BaseAuto;
 import com.team581.controller.ControllerHelpers;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.util.state_machines.StateMachine;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.robot_manager.RobotManager;
 
@@ -56,7 +57,7 @@ public abstract class BaseImperativeAuto<S extends Enum<S>> extends StateMachine
                       robotManager.driverController.getLeftY(),
                       1.0)
                   > INPUT_THRESHOLD
-              || Math.abs(robotManager.driverController.getRightX()) > INPUT_THRESHOLD;
+              || !MathUtil.isNear(0, robotManager.driverController.getRightX(), INPUT_THRESHOLD);
     }
   }
 }
