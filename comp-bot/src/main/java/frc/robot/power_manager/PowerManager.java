@@ -42,6 +42,10 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.swerve = swerve;
   }
 
+  public void firstAutoSegmentRequest() {
+    setStateFromRequest(PowerManagerState.AUTO_FIRST_SEGMENT);
+  }
+
   public void idleRequest() {
     setStateFromRequest(PowerManagerState.IDLE);
   }
