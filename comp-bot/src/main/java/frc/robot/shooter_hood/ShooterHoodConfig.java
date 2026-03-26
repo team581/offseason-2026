@@ -21,8 +21,8 @@ public class ShooterHoodConfig {
   public static final double ANGLE_FROM_HORIZONTAL = 11;
 
   public static final double MAX_ANGLE = ANGLE_FROM_HORIZONTAL + 22.5;
-  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 0.5;
-  public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 0.5;
+  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 1.5;
+  public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 1.5;
 
   // TODO: Update Homing numbers
   public static final double HOMING_VOLTAGE = -1;
