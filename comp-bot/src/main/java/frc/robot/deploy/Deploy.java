@@ -2,6 +2,7 @@ package frc.robot.deploy;
 
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
@@ -16,6 +17,8 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
   private final TalonFX motor;
+  private final PositionTorqueCurrentFOC positionTorqueCurrentFOCRequest =
+      new PositionTorqueCurrentFOC(0);
   private final MotionMagicVoltage positionVoltageRequest =
       new MotionMagicVoltage(0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
@@ -105,7 +108,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           motor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
       case HOME_OUTWARD ->
           motor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
-      default -> motor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
+      default ->
+          motor.setControl(
+              positionTorqueCurrentFOCRequest.withPosition(clamp(newState.getLength())));
     }
   }
 
