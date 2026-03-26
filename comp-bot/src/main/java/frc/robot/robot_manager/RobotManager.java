@@ -151,6 +151,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
                 || (swerve.atGoal()
+                    && shooter.atGoalDebounced()
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
