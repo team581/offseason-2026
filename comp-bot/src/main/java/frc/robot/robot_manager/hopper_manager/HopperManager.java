@@ -34,7 +34,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean operatorWantsStow = false;
   private boolean towerSensorRaw = false;
 
-  private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
+  private final LinearFilter hopperFilter = LinearFilter.movingAverage(15);
 
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
@@ -70,7 +70,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       // The sensor in the tower shows we are holding fuel, so we can't fill anymore
       return false;
     }
-
+    if (!deploy.isFullyExtended()) {
+      return false;
+    }
     if (DSOptions.USE_CANRANGE.get()) {
       // If we are using the hopper CANrange, we can start filling the tower once the hopper is
       // starting ot fill up
@@ -230,10 +232,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
-    if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
-      hopperCapacity = HopperCapacity.MEDIUM;
-    } else if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
+    if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
+    } else if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
     }
