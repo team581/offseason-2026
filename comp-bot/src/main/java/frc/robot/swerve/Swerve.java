@@ -22,6 +22,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -135,6 +136,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private double feedingFeedForward = 0.0;
 
   private boolean ableToBumpAssist = false;
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
+  private boolean ableToXSwerve = false;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -230,6 +233,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
+    ableToXSwerve =
+        switch (getState()) {
+          case SCORE, FEED -> {
+            yield X_SWERVE_DEBOUNCER.calculate(
+                atGoal() && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+          }
+          default -> false;
+        };
+
     ableToBumpAssist =
         DSOptions.USE_BUMP_ASSIST.get()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
@@ -315,7 +327,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       case SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
-        if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+        if (ableToXSwerve) {
+          DogLog.timestamp("Swerve/XSwerveActive");
+          drivetrain.setControl(xRequest);
+        } else if (driveSource.getDriveSourceType()
+            == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           DogLog.timestamp("Swerve/DriverOverridingRotation");
           if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
             drivetrain.setControl(
@@ -338,7 +354,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       case FEED -> {
         var speeds = driveSource.getRequestedSpeeds();
 
-        if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+        if (ableToXSwerve) {
+          DogLog.timestamp("Swerve/XSwerveActive");
+          drivetrain.setControl(xRequest);
+        } else if (driveSource.getDriveSourceType()
+            == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
           DogLog.timestamp("Swerve/DriverOverridingRotation");
           if (Math.abs(driveSource.getRequestedSpeeds().omegaRadiansPerSecond) > 1e-5) {
             drivetrain.setControl(
@@ -401,6 +421,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
+    DogLog.log(
+        "Swerve/AbleToXSwerve/SpeedsNear0",
+        MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
   }
 
   private void startSimThread() {
