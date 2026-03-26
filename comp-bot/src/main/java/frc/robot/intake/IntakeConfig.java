@@ -12,7 +12,6 @@ public class IntakeConfig {
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  // TODO: VALIDATE INVERT
                   .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           // TODO: UPDATE RATIO
@@ -24,7 +23,6 @@ public class IntakeConfig {
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  // TODO: VALIDATE INVERT
                   .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           // TODO: UPDATE RATIO

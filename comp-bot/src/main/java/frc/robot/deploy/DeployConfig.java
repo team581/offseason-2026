@@ -30,17 +30,14 @@ public class DeployConfig {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-                  // TODO: VALIDATE INVERTS
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
-              // TODO: TUNE CURRENT LIMITS
               new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(15))
           // TODO: TUNE MOTION MAGIC
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
                   .withMotionMagicAcceleration(300.0))
-          // TODO: TUNE PID
           .withSlot0(
               new Slot0Configs()
                   .withKP(5.0)
