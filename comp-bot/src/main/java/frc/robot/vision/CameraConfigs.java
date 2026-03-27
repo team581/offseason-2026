@@ -65,17 +65,11 @@ public class CameraConfigs {
           LimelightModel.THREE,
           false,
           false,
-          // Forward
+          Units.inchesToMeters(25.671),
           Units.inchesToMeters(0.0),
-          // Right
-          Units.inchesToMeters(0.0),
-          // Up
-          Units.inchesToMeters(0.0),
-          // Pitch
+          Units.inchesToMeters(12.9525),
+          -20.0,
           0.0,
-          // Yaw
-          0.0,
-          // Roll
           0.0);
 
   private CameraConfigs() {}
