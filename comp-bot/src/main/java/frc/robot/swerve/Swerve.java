@@ -50,8 +50,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxLinearRateShooting", 2.0);
 
-  private final double X_AIMED_TOLERANCE = 2.0;
-
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
@@ -137,6 +135,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private double feedingTolerance = 0.0;
   private double feedingFeedForward = 0.0;
 
+  private static final double MIN_AIMED_TOLERANCE = 2.0;
+
   private boolean ableToBumpAssist = false;
   private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
   private boolean ableToXSwerve = false;
@@ -195,14 +195,18 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void scoreRequest(AimingParameters scoringParameters) {
     scoringAngle = scoringParameters.goalAngle();
-    scoringTolerance = scoringParameters.swerveTolerance();
+    scoringTolerance =
+        MathUtil.clamp(
+            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
     scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.SCORE);
   }
 
   public void feedRequest(AimingParameters feedingParameters) {
     feedingAngle = feedingParameters.goalAngle();
-    feedingTolerance = feedingParameters.swerveTolerance();
+    feedingTolerance =
+        MathUtil.clamp(
+            feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
     feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.FEED);
   }
@@ -242,7 +246,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 MathUtil.isNear(
                         Math.toDegrees(MathUtil.angleModulus(Math.toRadians(scoringAngle))),
                         drivetrainState.Pose.getRotation().getDegrees(),
-                        X_AIMED_TOLERANCE,
+                        scoringTolerance,
                         -180.0,
                         180.0)
                     && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
@@ -252,7 +256,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 MathUtil.isNear(
                         Math.toDegrees(MathUtil.angleModulus(Math.toRadians(feedingAngle))),
                         drivetrainState.Pose.getRotation().getDegrees(),
-                        X_AIMED_TOLERANCE,
+                        feedingTolerance,
                         -180.0,
                         180.0)
                     && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
@@ -454,6 +458,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/ScoringAngle", scoringAngle);
     DogLog.log("Swerve/FeedingAngle", feedingAngle);
+    DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
+    DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
     DogLog.log("Swerve/SwerveTargetDirection", drivePerspectiveSnaps.TargetDirection.getDegrees());
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
