@@ -335,9 +335,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                       drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
         } else {
           var swerveRequest =
-              driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
-                  ? driverPerspective
-                  : fieldCentric;
+              switch (driveSource.getDriveSourceType()) {
+                case DRIVER_PERSPECTIVE_OPEN_LOOP -> driverPerspective;
+                case FIELD_CENTRIC_CLOSED_LOOP -> fieldCentric;
+              };
 
           drivetrain.setControl(
               swerveRequest
@@ -352,34 +353,38 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         if (ableToXSwerve) {
           DogLog.timestamp("Swerve/XSwerveActive");
           drivetrain.setControl(xRequest);
-        } else if (driveSource.getDriveSourceType()
-            == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-          if (!MathUtil.isNear(0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
-            DogLog.timestamp("Swerve/DriverOverridingRotation");
-            drivetrain.setControl(
-                driverPerspective
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withRotationalRate(speeds.omegaRadiansPerSecond));
-          } else {
-            DogLog.timestamp("Swerve/TryingToAim");
-            drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                        drivePerspectiveSnaps
-                            .withVelocityX(speeds.vxMetersPerSecond)
-                            .withVelocityY(speeds.vyMetersPerSecond),
-                        Rotation2d.fromDegrees(scoringAngle))
-                    .withTargetRateFeedforward(scoringFeedForward));
-          }
         } else {
-          DogLog.timestamp("Swerve/TryingToAim");
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                      fieldCentricSnaps
-                          .withVelocityX(speeds.vxMetersPerSecond)
-                          .withVelocityY(speeds.vyMetersPerSecond),
-                      Rotation2d.fromDegrees(scoringAngle))
-                  .withTargetRateFeedforward(scoringFeedForward));
+          switch (driveSource.getDriveSourceType()) {
+            case DRIVER_PERSPECTIVE_OPEN_LOOP -> {
+              if (!MathUtil.isNear(
+                  0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
+                DogLog.timestamp("Swerve/DriverOverridingRotation");
+                drivetrain.setControl(
+                    driverPerspective
+                        .withVelocityX(speeds.vxMetersPerSecond)
+                        .withVelocityY(speeds.vyMetersPerSecond)
+                        .withRotationalRate(speeds.omegaRadiansPerSecond));
+              } else {
+                DogLog.timestamp("Swerve/TryingToAim");
+                drivetrain.setControl(
+                    withFieldRelativeTargetDirection(
+                            drivePerspectiveSnaps
+                                .withVelocityX(speeds.vxMetersPerSecond)
+                                .withVelocityY(speeds.vyMetersPerSecond),
+                            Rotation2d.fromDegrees(scoringAngle))
+                        .withTargetRateFeedforward(scoringFeedForward));
+              }
+            }
+            case FIELD_CENTRIC_CLOSED_LOOP -> {
+              DogLog.timestamp("Swerve/TryingToAim");
+              drivetrain.setControl(
+                  fieldCentricSnaps
+                      .withVelocityX(speeds.vxMetersPerSecond)
+                      .withVelocityY(speeds.vyMetersPerSecond)
+                      .withTargetDirection(Rotation2d.fromDegrees(scoringAngle))
+                      .withTargetRateFeedforward(scoringFeedForward));
+            }
+          }
         }
       }
       case FEED -> {
@@ -388,34 +393,38 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         if (ableToXSwerve) {
           DogLog.timestamp("Swerve/XSwerveActive");
           drivetrain.setControl(xRequest);
-        } else if (driveSource.getDriveSourceType()
-            == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-          DogLog.timestamp("Swerve/DriverOverridingRotation");
-          if (!MathUtil.isNear(0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
-            drivetrain.setControl(
-                driverPerspective
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withRotationalRate(speeds.omegaRadiansPerSecond));
-          } else {
-            DogLog.timestamp("Swerve/TryingToAim");
-            drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                        drivePerspectiveSnaps
-                            .withVelocityX(speeds.vxMetersPerSecond)
-                            .withVelocityY(speeds.vyMetersPerSecond),
-                        Rotation2d.fromDegrees(feedingAngle))
-                    .withTargetRateFeedforward(feedingFeedForward));
-          }
         } else {
-          DogLog.timestamp("Swerve/TryingToAim");
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                      fieldCentricSnaps
-                          .withVelocityX(speeds.vxMetersPerSecond)
-                          .withVelocityY(speeds.vyMetersPerSecond),
-                      Rotation2d.fromDegrees(feedingAngle))
-                  .withTargetRateFeedforward(feedingFeedForward));
+          switch (driveSource.getDriveSourceType()) {
+            case DRIVER_PERSPECTIVE_OPEN_LOOP -> {
+              if (!MathUtil.isNear(
+                  0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
+                DogLog.timestamp("Swerve/DriverOverridingRotation");
+                drivetrain.setControl(
+                    driverPerspective
+                        .withVelocityX(speeds.vxMetersPerSecond)
+                        .withVelocityY(speeds.vyMetersPerSecond)
+                        .withRotationalRate(speeds.omegaRadiansPerSecond));
+              } else {
+                DogLog.timestamp("Swerve/TryingToAim");
+                drivetrain.setControl(
+                    withFieldRelativeTargetDirection(
+                            drivePerspectiveSnaps
+                                .withVelocityX(speeds.vxMetersPerSecond)
+                                .withVelocityY(speeds.vyMetersPerSecond),
+                            Rotation2d.fromDegrees(feedingAngle))
+                        .withTargetRateFeedforward(feedingFeedForward));
+              }
+            }
+            case FIELD_CENTRIC_CLOSED_LOOP -> {
+              DogLog.timestamp("Swerve/TryingToAim");
+              drivetrain.setControl(
+                  fieldCentricSnaps
+                      .withVelocityX(speeds.vxMetersPerSecond)
+                      .withVelocityY(speeds.vyMetersPerSecond)
+                      .withTargetDirection(Rotation2d.fromDegrees(feedingAngle))
+                      .withTargetRateFeedforward(feedingFeedForward));
+            }
+          }
         }
       }
       case CLIMB_ASSIST -> {
