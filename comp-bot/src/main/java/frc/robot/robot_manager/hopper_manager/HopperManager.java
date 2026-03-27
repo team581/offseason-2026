@@ -198,6 +198,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setState(resolveScoreState());
   }
 
+  public boolean isShooting() {
+    return towerSensorDebounced;
+  }
+
   public void idleRequest() {
     setState(resolveIdleState());
   }
