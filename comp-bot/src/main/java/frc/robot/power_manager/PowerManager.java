@@ -54,10 +54,6 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     setStateFromRequest(PowerManagerState.SHOOTING);
   }
 
-  public void turboRequest() {
-    setStateFromRequest(PowerManagerState.TURBO_MODE);
-  }
-
   @Override
   protected void afterTransition(PowerManagerState newState) {
     executor.execute(
