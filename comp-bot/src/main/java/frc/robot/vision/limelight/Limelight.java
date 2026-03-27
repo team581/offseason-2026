@@ -34,8 +34,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         26, 27, 28, 29, 30, 31, 32
       };
 
-  private static final Set<Integer> RED_HUB_TAGS_SET = ImmutableSet.of(2, 3, 4, 5);
-  private static final Set<Integer> BLUE_HUB_TAGS_SET = ImmutableSet.of(8, 9, 10, 11);
+  private static final Set<Integer> RED_HUB_TAGS_SET = ImmutableSet.of(2, 3, 4, 5, 8, 9, 10, 11);
+  private static final Set<Integer> BLUE_HUB_TAGS_SET =
+      ImmutableSet.of(18, 19, 20, 21, 24, 25, 26, 27);
   private static final int[] RED_HUB_TAGS =
       RED_HUB_TAGS_SET.stream().mapToInt(Integer::intValue).toArray();
   private static final int[] BLUE_HUB_TAGS =
