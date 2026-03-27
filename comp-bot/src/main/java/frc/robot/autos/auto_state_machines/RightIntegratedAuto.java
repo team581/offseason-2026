@@ -49,7 +49,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           11.174, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(2.5, 8)
+          .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
@@ -71,10 +71,10 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           14.0,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(),
                           Rotation2d.fromDegrees(40.0)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.5))
+                  .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
-          .withLinearConstraints(2.5, 8)
+          .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
@@ -87,14 +87,14 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(2.0, 2.0)
+                  .withLinearConstraints(4.5, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.5,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(180 + 20)))
-                  .withLinearConstraints(2.0, 2.0)
+                  .withLinearConstraints(4.5, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -120,7 +120,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           10.575, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(2.5, 4.0)
+          .withLinearConstraints(4.5, 8.0)
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
@@ -192,11 +192,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           14.0,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(),
                           Rotation2d.fromDegrees(40)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.5))
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
-          .withLinearConstraints(2.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(2.5), Units.rotationsToRadians(3))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(1.75), Units.rotationsToRadians(3))
           .untilFinished(new PoseErrorTolerance(0.5, 100));
 
   private final AutoSegment driveBackToNeutralZone =
@@ -213,7 +213,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.8, 5.708, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
-          .withLinearConstraints(2.5, 8)
+          .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(1.0), Units.rotationsToRadians(2))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
@@ -247,7 +247,9 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_1 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(1.0)) {
+        if (trailblazer.atGoal(robotManager.localization.getPose())
+            && timeout(3.0)
+            && robotManager.hopperManager.isShooting()) {
           yield IntegratedAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
         } else {
           yield currentState;
@@ -288,7 +290,9 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_2 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose()) && timeout(1.0)) {
+        if (trailblazer.atGoal(robotManager.localization.getPose())
+            && timeout(3.0)
+            && robotManager.hopperManager.isShooting()) {
           yield IntegratedAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
         } else {
           yield currentState;
