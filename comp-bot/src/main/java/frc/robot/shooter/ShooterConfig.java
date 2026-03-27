@@ -41,15 +41,16 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(4.94, 2000.0),
-          Map.entry(3.27, 1600.0),
-          Map.entry(2.38, 1600.0));
+          Map.entry(4.92, 1800.0),
+          Map.entry(3.46, 1550.0),
+          Map.entry(2.79, 1500.0),
+          Map.entry(1.42, 1350.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
-          Map.entry(6.0, 2500.0),
-          Map.entry(8.71, 2700.0),
-          Map.entry(13.6, 5500.0));
+          Map.entry(6.0, 1500.0),
+          Map.entry(8.71, 2000.0),
+          Map.entry(13.6, 4000.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =

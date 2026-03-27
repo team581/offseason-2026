@@ -26,7 +26,7 @@ public class DeployConfig {
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(70)
-                  .withPeakReverseTorqueCurrent(-70))
+                  .withPeakReverseTorqueCurrent(-40))
           .withFeedback(
               new FeedbackConfigs()
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
@@ -35,7 +35,7 @@ public class DeployConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(80).withSupplyCurrentLimit(15))
+              new CurrentLimitsConfigs().withStatorCurrentLimit(80).withSupplyCurrentLimit(18))
           // TODO: TUNE MOTION MAGIC
           .withMotionMagic(
               new MotionMagicConfigs()
@@ -43,7 +43,7 @@ public class DeployConfig {
                   .withMotionMagicAcceleration(300.0))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(5.0)
+                  .withKP(25.0)
                   .withKI(0)
                   .withKD(0.0)
                   .withKG(0.0)

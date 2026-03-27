@@ -62,7 +62,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
 
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
-      new PhoenixPIDController(5.75, 0, 0);
+      new PhoenixPIDController(15, 0, 0);
 
   public final TunerSwerveDrivetrain drivetrain;
 
