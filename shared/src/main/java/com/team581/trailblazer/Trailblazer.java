@@ -52,6 +52,10 @@ public class Trailblazer {
         .isPresent();
   }
 
+  public void clearActiveSegment() {
+    currentSegment = Optional.empty();
+  }
+
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose, ChassisSpeeds currentFieldRelativeSpeeds) {
     return getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
