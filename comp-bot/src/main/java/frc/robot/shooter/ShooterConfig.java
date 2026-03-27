@@ -94,7 +94,7 @@ public class ShooterConfig {
           .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
 
   public static DoubleSubscriber PREPARE_SHOT_FF_VOLTAGE =
-      DogLog.tunable("Shooter/PrepareShotFFVoltage", 1.0);
+      DogLog.tunable("Shooter/PrepareShotFFVoltage", 0.5);
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
