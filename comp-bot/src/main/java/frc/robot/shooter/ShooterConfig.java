@@ -75,21 +75,21 @@ public class ShooterConfig {
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.55).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
