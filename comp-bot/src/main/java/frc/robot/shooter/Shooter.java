@@ -83,14 +83,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.bottomRightMotor = bottomRightMotor;
   }
 
+  public void prepareScoreRequest(double distance) {
+    this.scoreDistance = distance;
+    setStateFromRequest(ShooterState.PREPARE_SCORE);
+  }
+
   public void scoreRequest(double distance) {
     this.scoreDistance = distance;
     setStateFromRequest(ShooterState.SCORE);
   }
 
+  public void prepareFeedRequest(double distance) {
+    this.feedDistance = distance;
+    setStateFromRequest(ShooterState.PREPARE_FEED);
+  }
+
   public void feedRequest(double distance) {
     this.feedDistance = distance;
-    setStateFromRequest(ShooterState.FEEDING);
+    setStateFromRequest(ShooterState.FEED);
   }
 
   public void idleRequest() {
@@ -135,20 +145,60 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
-      case SCORE -> {
+      case PREPARE_SCORE -> {
         var setpoint = shootingRpm / 60.0;
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint));
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
-      case FEEDING -> {
+      case SCORE -> {
+        var setpoint = shootingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        topLeftMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        bottomLeftMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        bottomRightMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
+      }
+      case PREPARE_FEED -> {
         var setpoint = feedingRpm / 60.0;
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint));
-        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint));
-        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint));
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
+      }
+      case FEED -> {
+        var setpoint = feedingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        topLeftMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        bottomLeftMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
+        bottomRightMotor.setControl(
+            velocityRequest
+                .withVelocity(setpoint)
+                .withFeedForward(ShooterConfig.PREPARE_SHOT_FF_VOLTAGE.get()));
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
     }
@@ -189,12 +239,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private boolean calculateAtGoal() {
     return switch (getState()) {
       case IDLE -> false;
-      case SCORE ->
+      case PREPARE_SCORE, SCORE ->
           MathUtil.isNear(topLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(bottomLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(bottomRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-      case FEEDING ->
+      case PREPARE_FEED, FEED ->
           MathUtil.isNear(topLeftMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
               && MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
               && MathUtil.isNear(

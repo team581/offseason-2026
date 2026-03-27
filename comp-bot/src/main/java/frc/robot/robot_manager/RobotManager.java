@@ -223,7 +223,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FORCE_SCORE -> {
         // hoppermanager controlled separately
         vision.tagsRequest();
-        shooter.scoreRequest(scoringParameters.distance());
+        shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
         powerManager.shootingRequest();
@@ -239,7 +239,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FEED -> {
         // hoppermanager controlled separately
         vision.tagsRequest();
-        shooter.feedRequest(feedingParameters.distance());
+        shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         powerManager.shootingRequest();
@@ -255,7 +255,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
         vision.hubTagsRequest();
-        shooter.scoreRequest(scoringParameters.distance());
+        shooter.prepareScoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         powerManager.shootingRequest();
       }
@@ -270,7 +270,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
         vision.tagsRequest();
-        shooter.feedRequest(PRESET_FEED_DISTANCE);
+        shooter.prepareFeedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
         powerManager.shootingRequest();
@@ -286,7 +286,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
         vision.tagsRequest();
-        shooter.scoreRequest(scoringParameters.distance());
+        shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         powerManager.shootingRequest();

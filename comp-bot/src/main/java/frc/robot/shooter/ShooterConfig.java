@@ -12,12 +12,14 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.Map;
 
 public class ShooterConfig {
@@ -90,6 +92,9 @@ public class ShooterConfig {
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
+
+  public static DoubleSubscriber PREPARE_SHOT_FF_VOLTAGE =
+      DogLog.tunable("Shooter/PrepareShotFFVoltage", 1.0);
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
