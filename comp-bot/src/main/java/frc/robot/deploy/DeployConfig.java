@@ -23,7 +23,7 @@ public class DeployConfig {
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withTorqueCurrent(new TorqueCurrentConfigs().withPeakReverseTorqueCurrent(10))
+          .withTorqueCurrent(new TorqueCurrentConfigs().withPeakReverseTorqueCurrent(15))
           .withFeedback(
               new FeedbackConfigs()
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
