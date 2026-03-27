@@ -1,9 +1,9 @@
 package frc.robot.power_manager;
 
 public enum PowerManagerState {
-  AUTO_FIRST_SEGMENT(40, 50, 15, 40, 40, 30, 40),
-  IDLE(40, 50, 15, 40, 40, 30, 20),
-  SHOOTING(40, 20, 15, 40, 40, 30, 10);
+  AUTO_FIRST_SEGMENT(30, 50, 15, 40, 40, 10, 40),
+  IDLE(30, 50, 15, 40, 40, 10, 20),
+  SHOOTING(30, 20, 15, 40, 40, 10, 10);
 
   final double shooterSupplyCurrent;
   final double intakeSupplyCurrent;

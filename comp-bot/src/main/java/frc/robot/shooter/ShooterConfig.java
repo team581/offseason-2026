@@ -136,7 +136,7 @@ public class ShooterConfig {
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimitEnable(true)
                 .withStatorCurrentLimit(150)
-                .withSupplyCurrentLimit(40))
+                .withSupplyCurrentLimit(30))
         .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
         .withTorqueCurrent(
             new TorqueCurrentConfigs()
