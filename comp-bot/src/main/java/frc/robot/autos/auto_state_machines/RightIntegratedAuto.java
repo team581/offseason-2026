@@ -285,9 +285,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_1 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())
-            && timeout(3.0)
-            && robotManager.hopperManager.isShooting()) {
+        if (timeout(3.0) && robotManager.hopperManager.isShooting()) {
           yield IntegratedAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
         } else {
           yield currentState;
@@ -330,9 +328,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_2 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())
-            && timeout(3.0)
-            && robotManager.hopperManager.isShooting()) {
+        if (timeout(3.0) && robotManager.hopperManager.isShooting()) {
           yield IntegratedAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
         } else {
           yield currentState;
@@ -390,7 +386,10 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         trailblazer.setActiveSegment(driveBackAndShootTwo);
       }
       case SHOOT_2 -> robotManager.prepareScoreRequest();
-      case DRIVE_BACK_TO_NEUTRAL_ZONE -> trailblazer.setActiveSegment(driveBackToNeutralZone);
+      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+        trailblazer.setActiveSegment(driveBackToNeutralZone);
+        robotManager.intakeAutoRequest();
+      }
       case DONE -> {}
     }
   }
