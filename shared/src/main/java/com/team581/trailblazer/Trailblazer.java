@@ -87,6 +87,10 @@ public class Trailblazer {
     currentIndex = pathTracker.getCurrentPointIndex();
     DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
 
+    if (segment.atGoal(currentPose, currentIndex)) {
+      return new ChassisSpeeds();
+    }
+
     var targetPose = pathTracker.getTargetPose(trackerRotationOverride);
     DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
 
