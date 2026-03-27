@@ -23,7 +23,10 @@ public class DeployConfig {
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withTorqueCurrent(new TorqueCurrentConfigs().withPeakReverseTorqueCurrent(15))
+          .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+                  .withPeakForwardTorqueCurrent(70)
+                  .withPeakReverseTorqueCurrent(-70))
           .withFeedback(
               new FeedbackConfigs()
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
@@ -32,7 +35,7 @@ public class DeployConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(30).withSupplyCurrentLimit(15))
+              new CurrentLimitsConfigs().withStatorCurrentLimit(80).withSupplyCurrentLimit(15))
           // TODO: TUNE MOTION MAGIC
           .withMotionMagic(
               new MotionMagicConfigs()
@@ -46,5 +49,5 @@ public class DeployConfig {
                   .withKG(0.0)
                   .withKS(0.0)
                   .withKV(0.0)
-                  .withKA(0));
+                  .withKA(0.0));
 }
