@@ -21,6 +21,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
     START_SHOOT_RQ,
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
+    CHECK_CLUSTER_MAP_TRENCH,
     MAKE_CLUSTER_MAP_DECISION
   }
 
@@ -101,6 +102,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           10.5,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(180 + 90)))
+                  .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
                   .withLinearConstraints(1.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(9.5, 6.814, Rotation2d.kCW_90deg))
@@ -113,6 +115,42 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcMidpoint(new Pose2d(9.985, 3.89, Rotation2d.kZero))
+                  .withAngularConstraints(
+                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.575, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withMarker(Markers.CANCEL_INTAKE_RQ))
+          .withLinearConstraints(4.5, 8.0)
+          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
+          .untilFinished(new PoseErrorTolerance(0.3, 100));
+
+  private final AutoSegment trenchSegment =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.5,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY() + Units.inchesToMeters(3),
+                          Rotation2d.fromDegrees(170)))
+                  .withLinearConstraints(4.0, 2.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          8.5,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY() + Units.inchesToMeters(3),
+                          Rotation2d.fromDegrees(170)))
+                  .withLinearConstraints(4.0, 2.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(new Pose2d(7.983, 6.814, Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(9.0, 4.4, Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
+                  .withAngularConstraints(
+                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+              AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
+                  .withArcMidpoint(new Pose2d(9.7875, 3.89, Rotation2d.kZero))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(
@@ -142,7 +180,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           10.575, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(2.5, 4.0)
+          .withLinearConstraints(4.5, 4.0)
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
@@ -164,7 +202,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           10.575, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(2.5, 4.0)
+          .withLinearConstraints(4.5, 4.0)
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
@@ -259,21 +297,23 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           yield IntegratedAutoState.DRIVE_BACK_2;
-        } else {
-          if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)) {
-            Lane bestLane = robotManager.clusterMap.getBestClusterLane();
-            yield switch (bestLane) {
-              case LANE_0 -> currentState;
-              case LANE_1 -> IntegratedAutoState.INTAKE_LANE_1;
-              case LANE_2 -> IntegratedAutoState.INTAKE_LANE_2;
-              case TRENCH -> IntegratedAutoState.INTAKE_TRENCH_LANE;
-              default -> currentState;
-            };
-          }
-          yield currentState;
-        }
-      }
+        } else if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)) {
 
+          Lane bestLane = robotManager.clusterMap.getBestClusterLane();
+          yield switch (bestLane) {
+            case LANE_0 -> currentState;
+            case LANE_1 -> IntegratedAutoState.INTAKE_LANE_1;
+            case LANE_2 -> IntegratedAutoState.INTAKE_LANE_2;
+            case TRENCH -> IntegratedAutoState.INTAKE_TRENCH_LANE;
+            default -> currentState;
+          };
+        } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)) {
+          if (robotManager.clusterMap.hasHighValueTrenchCluster()) {
+            yield IntegratedAutoState.INTAKE_TRENCH_LANE;
+          }
+        }
+        yield currentState;
+      }
       case INTAKE_LANE_1, INTAKE_LANE_2, INTAKE_TRENCH_LANE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
@@ -343,8 +383,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         robotManager.intakeAutoRequest();
       }
       case INTAKE_TRENCH_LANE -> {
-        // TODO: Make trench segment
-        trailblazer.setActiveSegment(lane1Segment);
+        trailblazer.setActiveSegment(trenchSegment);
         robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_2 -> {

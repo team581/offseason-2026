@@ -101,6 +101,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   public Optional<Pose2d> getBestClusterPose() {
 
     if (clusterMap.isEmpty()) {
+      DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
+
       return Optional.empty();
     }
 
@@ -110,6 +112,14 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     // Evaluate all active clusters
     for (ClusterMapElement element : clusterMap) {
+      // Create a dummy pose to check the lane
+      Pose2d elementPose = new Pose2d(element.clusterTranslation(), Rotation2d.kZero);
+
+      // Skip this cluster if it's in the trench
+      if (laneSystem.getLane(elementPose, robotPose) == Lane.TRENCH) {
+        continue;
+      }
+
       double distanceMeters = robotPose.getTranslation().getDistance(element.clusterTranslation());
 
       // How long will it take to get there and grab it
@@ -127,6 +137,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     if (bestElement == null) {
       DogLog.log("ClusterMap/BestClusterPose", "None met threshold");
+      DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
+
       return Optional.empty();
     }
 
@@ -136,12 +148,44 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     if (!MathUtil.isNear(
         robotPose.getRotation().getDegrees(), rotation.getDegrees(), 160, -180, 180)) {
+      DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
+
       return Optional.empty();
     }
 
     var clusterPoseWithIntakeRotation = new Pose2d(bestTranslation, rotation);
     DogLog.log("ClusterMap/BestClusterPose", clusterPoseWithIntakeRotation);
     return Optional.of(clusterPoseWithIntakeRotation);
+  }
+
+  public boolean hasHighValueTrenchCluster() {
+    if (clusterMap.isEmpty()) {
+      return false;
+    }
+
+    var robotPose = localization.getPose();
+
+    for (ClusterMapElement element : clusterMap) {
+      Pose2d elementPose = new Pose2d(element.clusterTranslation(), Rotation2d.kZero);
+
+      // Only evaluate clusters in the trench
+      if (laneSystem.getLane(elementPose, robotPose) == Lane.TRENCH) {
+
+        double distanceMeters =
+            robotPose.getTranslation().getDistance(element.clusterTranslation());
+        double estimatedTravelTime = distanceMeters / ESTIMATED_DRIVE_SPEED_MPS;
+        double totalEstimatedTime = estimatedTravelTime + PICKUP_OVERHEAD_TIME_SEC;
+
+        double ballsPerSecond = element.detectionSize() / totalEstimatedTime;
+
+        // Make sure we're confident in choosing this cluster
+        if (ballsPerSecond > 20.0) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   public void setDeployFullyExtended(boolean isFullyExtended) {
@@ -157,7 +201,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
           new VisionClusterData(
               new Translation2d(
                   SIMULATED_CLUSTER_X.getAsDouble(), SIMULATED_CLUSTER_Y.getAsDouble()),
-              19,
+              20,
               10));
     }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
