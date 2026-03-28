@@ -37,7 +37,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-86.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(8.280, 4.475, Rotation2d.fromDegrees(-50.0)))
+              AutoPoint.ofRed(new Pose2d(8.280, 3.875, Rotation2d.fromDegrees(-50.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.31, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -285,7 +285,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_1 -> {
-        if (timeout(3.0) && robotManager.hopperManager.isShooting()) {
+        if (timeout(3.0) && !robotManager.hopperManager.isShooting()) {
           yield IntegratedAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
         } else {
           yield currentState;
@@ -328,7 +328,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_2 -> {
-        if (timeout(3.0) && robotManager.hopperManager.isShooting()) {
+        if (timeout(3.0) && !robotManager.hopperManager.isShooting()) {
           yield IntegratedAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
         } else {
           yield currentState;
