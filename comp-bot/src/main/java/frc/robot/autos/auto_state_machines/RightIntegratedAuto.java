@@ -111,19 +111,19 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.ofRed(new Pose2d(9.5, 4.4, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcMidpoint(Point.ofRed(new Pose2d(9.985, 3.89, Rotation2d.kZero)))
                   .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.575, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8.0)
-          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
+          .withAngularConstraints(Units.rotationsToRadians(3.5), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
   private final AutoSegment trenchSegment =
@@ -142,7 +142,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           Rotation2d.fromDegrees(170)))
                   .withLinearConstraints(4.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(7.983, 6.814, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(8.1, 6.814, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.0, 4.4, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
@@ -234,7 +234,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(1.75), Units.rotationsToRadians(3))
+          .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(3))
           .untilFinished(new PoseErrorTolerance(0.5, 100));
 
   private final AutoSegment driveBackToNeutralZone =
