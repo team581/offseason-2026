@@ -198,7 +198,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public boolean isShooting() {
-    return towerSensorDebounced || (RobotBase.isSimulation() && !timeout(3));
+    if (RobotBase.isSimulation()) {
+      return !timeout(3);
+    }
+    return towerSensorDebounced;
   }
 
   public void idleRequest() {
