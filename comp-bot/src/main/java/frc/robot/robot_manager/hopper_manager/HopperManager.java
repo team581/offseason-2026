@@ -152,7 +152,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     } else {
       DogLog.clearFault("CANrange distance not updating");
     }
-    DogLog.log("HopperManager/State", getState());
     DogLog.log("HopperManager/BallFilling", shouldFillBalls() && state.canBallFill);
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
