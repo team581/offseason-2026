@@ -7,6 +7,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.util.function.Consumer;
@@ -35,7 +36,7 @@ public class BumpCrossingTracker {
       new Debouncer(FLAT_DEBOUNCE_SECONDS, DebounceType.kRising);
   private final DoubleSupplier tiltSupplier;
   private final Supplier<Pose2d> robotPoseSupplier;
-  private final Consumer<Pose2d> poseResetConsumer;
+  private final Consumer<Translation2d> poseResetConsumer;
   private boolean previousIsFlat = true;
 
   /** Latched crossing direction: +1 or -1. 0 means not currently crossing. */
@@ -44,7 +45,7 @@ public class BumpCrossingTracker {
   public BumpCrossingTracker(
       DoubleSupplier tiltSupplier,
       Supplier<Pose2d> robotPoseSupplier,
-      Consumer<Pose2d> poseResetConsumer) {
+      Consumer<Translation2d> poseResetConsumer) {
     this.poseResetConsumer = poseResetConsumer;
 
     if (RobotBase.isSimulation()) {
@@ -101,7 +102,7 @@ public class BumpCrossingTracker {
 
     if (isFlat && previousIsFlat != isFlat && landingPoint != null) {
       // We just crossed, reset pose
-      poseResetConsumer.accept(landingPoint.getPose());
+      poseResetConsumer.accept(landingPoint.getTranslation());
     }
 
     previousIsFlat = isFlat;
