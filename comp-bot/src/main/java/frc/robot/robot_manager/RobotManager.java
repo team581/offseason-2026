@@ -379,6 +379,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
   }
 
+  @Override
+  public void teleopInit() {
+    super.teleopInit();
+    idleRequest();
+  }
+
   private void smartHoodIdleRequest() {
     // Prioritize idiling if localization is unrealiable or in trench zone
     if (!health.isLocalizationHealthy() || !localization.isTrustworthy() || nearTrench) {
