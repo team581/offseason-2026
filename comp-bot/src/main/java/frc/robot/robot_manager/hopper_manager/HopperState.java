@@ -5,6 +5,7 @@ public enum HopperState {
   IDLE_STOWED(false),
   INTAKING(true),
   EJECTING(false),
+  UNJAMMING(false),
   SHOOT(false),
   SHOOT_AND_INTAKE(false);
 

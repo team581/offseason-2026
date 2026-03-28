@@ -118,6 +118,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.ejectRequest();
         feeder.idleRequest();
       }
+      case UNJAMMING -> {
+        deploy.intakeRequest();
+        intake.ejectRequest();
+        conveyor.shootRequest();
+        feeder.shootRequest();
+      }
       case SHOOT, SHOOT_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
@@ -206,6 +212,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   public void idleRequest() {
     setState(resolveIdleState());
+  }
+
+  public void unjamRequest() {
+    setState(HopperState.UNJAMMING);
   }
 
   public void setDriverWantsEject(boolean wantsEject) {

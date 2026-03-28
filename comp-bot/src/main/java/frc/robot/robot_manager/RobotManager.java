@@ -309,10 +309,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         powerManager.shootingRequest();
       }
       case UNJAM -> {
-        hopperManager.idleRequest();
+        hopperManager.unjamRequest();
         vision.tagsRequest();
-        shooter.idleRequest();
-        shooterHood.idleRequest();
+        shooter.scoreRequest(3);
+        shooterHood.scoreRequest(3);
         swerve.normalDriveRequest();
         powerManager.idleRequest();
       }
@@ -322,7 +322,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE, UNJAM -> {
+      case IDLE -> {
         smartHoodIdleRequest();
         swerve.normalDriveRequest();
         hopperManager.idleRequest();
