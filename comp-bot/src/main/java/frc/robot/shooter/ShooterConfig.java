@@ -101,6 +101,9 @@ public class ShooterConfig {
   public static DoubleSubscriber PREPARE_SHOT_FF_VOLTAGE =
       DogLog.tunable("Shooter/PrepareShotFFVoltage", 0.5);
 
+  public static DoubleSubscriber TURBO_MODE_FF_VOLTAGE =
+      DogLog.tunable("Shooter/PrepareShotFFVoltage", 1.0);
+
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
     return MathHelpers.getDriveDirection(shooterTranslation, goalTranslation)
