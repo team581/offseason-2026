@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
 import frc.robot.cluster_map.ClusterMap;
+import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
@@ -104,12 +105,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case IDLE -> currentState;
 
-      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE ->
-          !isMoving
-                  && ((swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal())
-                      || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
+        // In pit functionality, we don't care about anything other than raw mechanism states
+        if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
+          yield shooter.atGoalDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
+        }
+
+        yield !isMoving
+                && ((swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal())
+                    || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+            ? RobotState.FALLBACK_SCORE
+            : RobotState.PREPARE_FALLBACK_SCORE;
+      }
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
           swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_FEED
