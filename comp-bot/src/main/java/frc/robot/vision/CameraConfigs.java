@@ -10,7 +10,7 @@ public class CameraConfigs {
       new CameraConfig(
           LimelightModel.FOUR,
           true,
-          true,
+          false,
           // Forward
           Units.inchesToMeters(-12.6378),
           // Right
@@ -28,7 +28,7 @@ public class CameraConfigs {
       new CameraConfig(
           LimelightModel.FOUR,
           true,
-          true,
+          false,
           // Forward
           Units.inchesToMeters(-7.5115),
           // Right
@@ -46,7 +46,7 @@ public class CameraConfigs {
       new CameraConfig(
           LimelightModel.FOUR,
           true,
-          true,
+          false,
           // Forward
           Units.inchesToMeters(-7.5111),
           // Right
