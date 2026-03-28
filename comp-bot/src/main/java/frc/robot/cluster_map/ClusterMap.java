@@ -179,7 +179,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
         double ballsPerSecond = element.detectionSize() / totalEstimatedTime;
 
         // Make sure we're confident in choosing this cluster
-        if (ballsPerSecond > 20.0) {
+        if (ballsPerSecond > 27.0) {
           return true;
         }
       }
