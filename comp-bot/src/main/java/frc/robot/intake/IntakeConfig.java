@@ -17,8 +17,7 @@ public class IntakeConfig {
           // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
-              // TODO: TUNE CURRENT LIMITS
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(30));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(25));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
@@ -28,6 +27,5 @@ public class IntakeConfig {
           // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
-              // TODO: TUNE CURRENT LIMITS
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(30));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(25));
 }
