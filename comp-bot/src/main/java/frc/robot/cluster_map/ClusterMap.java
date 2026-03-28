@@ -136,7 +136,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     }
 
     if (bestElement == null) {
-      DogLog.log("ClusterMap/BestClusterPose", "None met threshold");
+      DogLog.log("ClusterMap/BestClusterStatus", "None met threshold");
       DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
 
       return Optional.empty();
