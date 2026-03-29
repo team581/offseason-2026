@@ -1,26 +1,20 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
-import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
-import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
+public class Deploy extends GenericDeploy {
   private final TalonFX motor;
   private final PositionTorqueCurrentFOC positionTorqueCurrentFOCRequest =
       new PositionTorqueCurrentFOC(0);
-  private final MotionMagicVoltage positionVoltageRequest =
-      new MotionMagicVoltage(0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
@@ -29,8 +23,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private double supplyCurrent = 0.0;
 
   public Deploy(TalonFX motor) {
-    super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
-
     motor.getConfigurator().apply(DeployConfig.MOTOR_CONFIG);
     this.motor = motor;
 
