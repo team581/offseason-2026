@@ -35,7 +35,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                       new Pose2d(
                           10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.64, 1.416, Rotation2d.kCCW_90deg))
+              AutoPoint.ofRed(new Pose2d(8.64, 1.416, Rotation2d.fromDegrees(134)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(7.983, 2.476, Rotation2d.fromDegrees(86)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
