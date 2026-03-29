@@ -27,7 +27,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
 
   private BumpCrossingTracker bumpCrossingTracker;
 
-  private static final double BUMP_OFFSET = -0.15;
+  private static final double BUMP_OFFSET = 0.15;
 
   private final AutoSegment intakeAcrossMidline =
       Trailblazer.segment(
@@ -35,7 +35,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                       new Pose2d(
                           10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.64, 1.416, Rotation2d.fromDegrees(134)))
+              AutoPoint.ofRed(new Pose2d(8.64, 1.416, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(7.983, 2.476, Rotation2d.fromDegrees(86)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -202,11 +202,11 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(7.983, 3.669, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
+                  .withArcMidpoint(Point.ofRed(new Pose2d(9.261, 4.687, Rotation2d.kZero)))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(new Pose2d(10.575, 3.669, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
-                  .withArcMidpoint(Point.ofRed(new Pose2d(9.279, 4.179, Rotation2d.kZero)))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(
