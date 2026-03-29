@@ -29,6 +29,7 @@ public class Deploy extends GenericDeploy {
     TunablePid.register("Deploy", motor, DeployConfig.MOTOR_CONFIG);
   }
 
+  @Override
   public void intakeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -38,6 +39,7 @@ public class Deploy extends GenericDeploy {
     }
   }
 
+  @Override
   public void stowRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -47,10 +49,12 @@ public class Deploy extends GenericDeploy {
     }
   }
 
+  @Override
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
   }
 
+  @Override
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
@@ -58,6 +62,7 @@ public class Deploy extends GenericDeploy {
     setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
+  @Override
   public void homeInAutoRequest() {
     setStateFromRequest(DeployState.HOME_INWARD);
   }
@@ -116,14 +121,17 @@ public class Deploy extends GenericDeploy {
     DogLog.log("Deploy/Voltage", motor.getMotorVoltage().getValueAsDouble());
   }
 
+  @Override
   public double getPosition() {
     return motorPosition;
   }
 
+  @Override
   public boolean atGoal() {
     return atGoal(getState());
   }
 
+  @Override
   public void hopperCompactionRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}

@@ -38,6 +38,7 @@ public class DifferentialDeploy extends GenericDeploy {
     TunablePid.register("Deploy/Right", rightMotor, DifferentialDeployConfig.RIGHT_MOTOR_CONFIG);
   }
 
+  @Override
   public void intakeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -47,6 +48,7 @@ public class DifferentialDeploy extends GenericDeploy {
     }
   }
 
+  @Override
   public void stowRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -56,10 +58,12 @@ public class DifferentialDeploy extends GenericDeploy {
     }
   }
 
+  @Override
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
   }
 
+  @Override
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
@@ -67,6 +71,7 @@ public class DifferentialDeploy extends GenericDeploy {
     setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
+  @Override
   public void homeInAutoRequest() {
     setStateFromRequest(DeployState.HOME_INWARD);
   }
@@ -153,14 +158,17 @@ public class DifferentialDeploy extends GenericDeploy {
     DogLog.log("Deploy/RightMotor/Slot", rightMotor.getClosedLoopSlot().getValueAsDouble());
   }
 
+  @Override
   public double getPosition() {
     return differentialMechanismPosition;
   }
 
+  @Override
   public boolean atGoal() {
     return atGoal(getState());
   }
 
+  @Override
   public void hopperCompactionRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
