@@ -1,6 +1,6 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.controls.DifferentialMotionMagicVoltage;
+import com.ctre.phoenix6.controls.DifferentialPositionVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -17,8 +17,8 @@ public class DifferentialDeploy extends GenericDeploy {
   private final TalonFX rightMotor;
   private final SimpleDifferentialMechanism<TalonFX> differentialMechanism;
 
-  private final DifferentialMotionMagicVoltage differentialPositionVoltageRequest =
-      new DifferentialMotionMagicVoltage(0, 0).withEnableFOC(true);
+  private final DifferentialPositionVoltage differentialPositionVoltageRequest =
+      new DifferentialPositionVoltage(0, 0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
