@@ -35,7 +35,7 @@ public class RightTestPathAuto extends BaseImperativeAuto<TestPathAutoState> {
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
-                  .withArcMidpoint(new Pose2d(9.985, 3.89, Rotation2d.kZero))
+                  .withArcMidpoint(Point.ofRed(new Pose2d(9.985, 3.89, Rotation2d.kZero)))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(new Pose2d(10.575, 5.6, Rotation2d.kCCW_90deg))

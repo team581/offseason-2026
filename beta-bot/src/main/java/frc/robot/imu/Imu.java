@@ -6,6 +6,7 @@ import com.team581.mechanisms.imu.BumpCrossingTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -30,7 +31,10 @@ public class Imu extends BaseImuSubsystem {
     // import which I don't want to deal with right now
     this.bumpCrossingTracker =
         new BumpCrossingTracker(
-            () -> Math.hypot(pitch, roll), () -> driveState.Pose, drivetrain::resetPose);
+            () -> Math.hypot(pitch, roll),
+            () -> driveState.Pose,
+            translation ->
+                drivetrain.resetPose(new Pose2d(translation, driveState.Pose.getRotation())));
   }
 
   @Override
