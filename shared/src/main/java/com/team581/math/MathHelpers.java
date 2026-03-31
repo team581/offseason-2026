@@ -2,6 +2,7 @@ package com.team581.math;
 
 import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Ellipse2d;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -20,6 +21,29 @@ public class MathHelpers {
 
   public static double average(double a, double b) {
     return (a + b) / 2.0;
+  }
+
+  /**
+   * Discretizes an ellipse into evenly spaced points along its perimeter, suitable for logging as
+   * Translation2d[].
+   *
+   * @param ellipse The ellipse to discretize.
+   * @param numPoints The number of points to sample.
+   * @return An array of points on the ellipse perimeter.
+   */
+  public static Translation2d[] discretizeEllipse(Ellipse2d ellipse, int numPoints) {
+    var center = ellipse.getCenter();
+    double xSemiAxis = ellipse.getXSemiAxis();
+    double ySemiAxis = ellipse.getYSemiAxis();
+    var rotation = center.getRotation();
+
+    var points = new Translation2d[numPoints];
+    for (int i = 0; i < numPoints; i++) {
+      double angle = 2.0 * Math.PI * i / numPoints;
+      var localPoint = new Translation2d(xSemiAxis * Math.cos(angle), ySemiAxis * Math.sin(angle));
+      points[i] = localPoint.rotateBy(rotation).plus(center.getTranslation());
+    }
+    return points;
   }
 
   /**

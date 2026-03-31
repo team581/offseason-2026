@@ -1,5 +1,6 @@
 package frc.robot.cluster_map;
 
+import com.team581.GlobalConfig;
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
@@ -8,6 +9,7 @@ import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.GamePieceResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Ellipse2d;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -334,6 +336,14 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     } catch (RuntimeException error) {
       DogLog.logFault("ClusterMapLoggingError");
       System.err.println(error);
+    }
+
+    if (GlobalConfig.IS_DEVELOPMENT) {
+      for (int i = 0; i < clusterMap.size(); i++) {
+        var element = clusterMap.get(i);
+        var circle = new Ellipse2d(element.clusterTranslation(), element.detectionSize() * 0.05);
+        DogLog.log("ClusterMap/Clusters/Circles/" + i, MathHelpers.discretizeEllipse(circle, 10));
+      }
     }
 
     DogLog.log("ClusterMap/BestLane", getBestClusterLane().toString());
