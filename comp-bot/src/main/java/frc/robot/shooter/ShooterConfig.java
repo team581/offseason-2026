@@ -103,7 +103,7 @@ public class ShooterConfig {
 
   public static DoubleSubscriber TURBO_MODE_FF_VOLTAGE =
       DogLog.tunable("Shooter/PrepareShotFFVoltage", 1.0);
-
+  // Calculated from average of CAPIN logs
   public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
       DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.25);
 
