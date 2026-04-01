@@ -21,6 +21,7 @@ import frc.robot.localization.Localization;
 import frc.robot.power_manager.PowerManager;
 import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
+import frc.robot.shooter.ShooterConfig;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.AimParameterUtil;
@@ -98,7 +99,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       // No auto transitions for these states
       case UNJAM, FORCE_SCORE -> currentState;
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoalDebounced() && shooterHood.atGoal()) {
+        if (shooter.atGoalLookaheadDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
@@ -108,19 +109,23 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
         // In pit functionality, we don't care about anything other than raw mechanism states
         if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
-          yield shooter.atGoalDebounced() && shooterHood.atGoal()
+          yield shooter.atGoalLookaheadDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
         }
 
         yield !isMoving
-                && ((swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal())
+                && ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                        && shooter.atGoalLookaheadDebounced()
+                        && shooterHood.atGoal())
                     || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
-          swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal()
+          swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                  && shooter.atGoalLookaheadDebounced()
+                  && shooterHood.atGoal()
               ? RobotState.FALLBACK_FEED
               : RobotState.PREPARE_FALLBACK_FEED;
       case PREPARE_SCORE -> {
@@ -133,8 +138,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
 
-        if ((swerve.atGoal()
-                && shooter.atGoalDebounced()
+        if ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                && shooter.atGoalLookaheadDebounced()
                 && shooterHood.atGoal()
                 && localization.isTrustworthy()
                 && localization.imu.isFlatDebounced()
@@ -142,7 +147,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && isInSafeScoringLocation
                 && !nearTrench)
             || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
-                && shooter.atGoalDebounced())) {
+                && shooter.atGoalLookaheadDebounced())) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -158,15 +163,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-                || (swerve.atGoal()
-                    && shooter.atGoalDebounced()
+                || (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                    && shooter.atGoalLookaheadDebounced()
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
                     && isInSafeScoringLocation
                     && hubActivity.getTOFBasedHubActive())
                 || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
-                    && shooter.atGoalDebounced()))
+                    && shooter.atGoalLookaheadDebounced()))
             && !nearTrench) {
           yield currentState;
         }
@@ -180,8 +185,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.PREPARE_SCORE;
         }
 
-        if (swerve.atGoal()
-            && shooter.atGoalDebounced()
+        if (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+            && shooter.atGoalLookaheadDebounced()
             && isInSafeFeedingLocation
             && localization.imu.isFlatDebounced()
             && shooterHood.atGoal()
@@ -200,9 +205,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.atGoalDebounced()
+            || (shooter.atGoalLookaheadDebounced()
                 && isInSafeFeedingLocation
-                && swerve.atGoal()
+                && swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                 && localization.imu.isFlatDebounced()
                 && shooterHood.atGoal()
                 && health.isLocalizationHealthy()
@@ -585,8 +590,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logScoringTransition() {
     DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
-    DogLog.log("RobotManager/Scoring/ScoreTransition/SwerveAtGoal", swerve.atGoal());
-    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoalDebounced());
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/SwerveLookaheadAtGoal",
+        swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/ShooterLookaheadAtGoal",
+        shooter.atGoalLookaheadDebounced());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
@@ -601,8 +610,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logFeedTransition() {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
-    DogLog.log("RobotManager/Feeding/FeedTransition/SwerveAtGoal", swerve.atGoal());
-    DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoalDebounced());
+    DogLog.log(
+        "RobotManager/Feeding/FeedTransition/SwerveLookaheadAtGoal",
+        swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
+    DogLog.log(
+        "RobotManager/Feeding/FeedTransition/ShooterLookaheadAtGoal",
+        shooter.atGoalLookaheadDebounced());
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(

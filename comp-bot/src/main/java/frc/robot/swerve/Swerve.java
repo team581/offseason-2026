@@ -211,6 +211,55 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  public boolean atGoal(double lookaheadTime) {
+    Rotation2d currentRotation = drivetrainState.Pose.getRotation();
+    double angularVelocity = drivetrainState.Speeds.omegaRadiansPerSecond; // Radians per second
+
+    double targetAngleDegrees;
+    double toleranceDegrees;
+
+    switch (getState()) {
+      case SCORE -> {
+        targetAngleDegrees = scoringAngle;
+        toleranceDegrees = scoringTolerance;
+      }
+      case FEED -> {
+        targetAngleDegrees = feedingAngle;
+        toleranceDegrees = feedingTolerance;
+      }
+      default -> {
+        return false;
+      }
+    }
+
+    Rotation2d targetRotation = Rotation2d.fromDegrees(targetAngleDegrees);
+
+    // Calculate the shortest signed angular distance from current to target
+    double deltaAngleToGoal = targetRotation.minus(currentRotation).getRadians(); // Radians
+
+    // If already within tolerance, we are at the goal
+    if (Math.abs(deltaAngleToGoal) <= Math.toRadians(toleranceDegrees)) {
+      return true;
+    }
+
+    // Check if we are moving towards the goal and will reach or pass it
+    // Moving towards if the signs of angularVelocity and deltaAngleToGoal are the same
+    // (or if one is zero, but deltaAngleToGoal is not zero here)
+    if (Math.signum(angularVelocity) == Math.signum(deltaAngleToGoal)) {
+      // Calculate the magnitude of rotation in lookahead time
+      double rotationMagnitudeInLookahead = Math.abs(angularVelocity * lookaheadTime);
+
+      // We reach or pass if the rotation magnitude is greater than or equal to the remaining
+      // distance
+      // (minus tolerance, since we just need to get within tolerance of the goal)
+      return rotationMagnitudeInLookahead
+          >= (Math.abs(deltaAngleToGoal) - Math.toRadians(toleranceDegrees));
+    }
+
+    // If not at goal, not moving towards it, or not reaching it, then not at or past
+    return false;
+  }
+
   public boolean atGoal() {
     return switch (getState()) {
       case SCORE ->
