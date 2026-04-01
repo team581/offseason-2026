@@ -238,7 +238,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     double deltaAngleToGoal = targetRotation.minus(currentRotation).getRadians(); // Radians
 
     // If already within tolerance, we are at the goal
-    if (Math.abs(deltaAngleToGoal) <= Math.toRadians(toleranceDegrees)) {
+    if (MathUtil.isNear(0, deltaAngleToGoal, Math.toRadians(toleranceDegrees))) {
       return true;
     }
 
