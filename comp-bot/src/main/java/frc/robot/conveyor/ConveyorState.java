@@ -4,7 +4,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum ConveyorState {
-  SHOOT(12),
+  SHOOT(10),
   BALL_FILLING(1),
   EJECT(-12),
   IDLE(0);
