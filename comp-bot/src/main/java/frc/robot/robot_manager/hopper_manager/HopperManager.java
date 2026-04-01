@@ -94,6 +94,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
   }
 
+  private void smartIntakeBallFillRequest() {
+    if (shouldFillBalls()) {
+      conveyor.ballFillingRequest();
+      feeder.ballFillingRequest();
+    } else {
+      conveyor.slowintakemodestateRequest();
+      feeder.idleRequest();
+    }
+  }
+
   @Override
   protected void afterTransition(HopperState newState) {
     switch (newState) {
@@ -110,7 +120,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case INTAKING -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        smartBallFillRequest();
+        smartIntakeBallFillRequest();
       }
       case EJECTING -> {
         deploy.intakeRequest();

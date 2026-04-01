@@ -40,6 +40,10 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.EJECT);
   }
 
+  public void slowintakemodestateRequest() {
+    setStateFromRequest(ConveyorState.SLOW_INTAKING_MODE);
+  }
+
   @Override
   protected void afterTransition(ConveyorState newState) {
     switch (newState) {
@@ -63,6 +67,7 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Conveyor/Bottom/VelocityRPM", bottomMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Conveyor/Voltage", getState().getVoltage());
+    DogLog.log("Conveyor/State", getState().name());
   }
 
   @Override
