@@ -288,23 +288,32 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return atGoalLookaheadDebounced;
   }
 
-  public boolean calculateAtGoalLookahead(double lookaheadTimeSeconds) {
-    var targetRpm = 0.0;
-    var tolerance = 0.0;
+  private double getTargetRpm() {
+    return switch (getState()) {
+      case PREPARE_SCORE, SCORE -> shootingRpm;
+      case PREPARE_FEED, FEED -> feedingRpm;
+      case IDLE -> ShooterConfig.IDLE_RPM;
+    };
+  }
 
+  private double getTolerance() {
+    return switch (getState()) {
+      case PREPARE_SCORE, SCORE -> ShooterConfig.RPM_TOLERANCE;
+      case PREPARE_FEED, FEED -> ShooterConfig.RPM_TOLERANCE_FEEDING;
+      case IDLE -> 500.0;
+    };
+  }
+
+  public boolean calculateAtGoalLookahead(double lookaheadTimeSeconds) {
     switch (getState()) {
-      case PREPARE_SCORE, SCORE -> {
-        targetRpm = shootingRpm;
-        tolerance = ShooterConfig.RPM_TOLERANCE;
-      }
-      case PREPARE_FEED, FEED -> {
-        targetRpm = feedingRpm;
-        tolerance = ShooterConfig.RPM_TOLERANCE_FEEDING;
-      }
+      case PREPARE_SCORE, SCORE, PREPARE_FEED, FEED -> {}
       default -> {
-        return false;
+        return atGoal();
       }
     }
+
+    var targetRpm = getTargetRpm();
+    var tolerance = getTolerance();
 
     // Calculate predicted RPM for each motor
     double predictedTopLeftRpm =
@@ -317,18 +326,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         bottomRightMotorRpm + (bottomRightMotorAcceleration * lookaheadTimeSeconds);
 
     // Check if all predicted RPMs are within tolerance of the target RPM
-    boolean topLeftAtGoal =
-        MathUtil.isNear(predictedTopLeftRpm, targetRpm, tolerance)
-            || predictedTopLeftRpm >= targetRpm;
-    boolean topRightAtGoal =
-        MathUtil.isNear(predictedTopRightRpm, targetRpm, tolerance)
-            || predictedTopRightRpm >= targetRpm;
-    boolean bottomLeftAtGoal =
-        MathUtil.isNear(predictedBottomLeftRpm, targetRpm, tolerance)
-            || predictedBottomLeftRpm >= targetRpm;
-    boolean bottomRightAtGoal =
-        MathUtil.isNear(predictedBottomRightRpm, targetRpm, tolerance)
-            || predictedBottomRightRpm >= targetRpm;
+    var topLeftAtGoal = predictedTopLeftRpm >= targetRpm - tolerance;
+    var topRightAtGoal = predictedTopRightRpm >= targetRpm - tolerance;
+    var bottomLeftAtGoal = predictedBottomLeftRpm >= targetRpm - tolerance;
+    var bottomRightAtGoal = predictedBottomRightRpm >= targetRpm - tolerance;
 
     return topLeftAtGoal && topRightAtGoal && bottomLeftAtGoal && bottomRightAtGoal;
   }

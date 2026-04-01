@@ -211,26 +211,35 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  private double getTargetAngleDegrees() {
+    return switch (getState()) {
+      case SCORE -> scoringAngle;
+      case FEED -> feedingAngle;
+      default -> 0.0;
+    };
+  }
+
+  private double getToleranceDegrees() {
+    return switch (getState()) {
+      case SCORE -> scoringTolerance;
+      case FEED -> feedingTolerance;
+      default -> 0.0;
+    };
+  }
+
   public boolean atGoal(double lookaheadTime) {
+    switch (getState()) {
+      case SCORE, FEED -> {}
+      default -> {
+        return atGoal();
+      }
+    }
+
     Rotation2d currentRotation = drivetrainState.Pose.getRotation();
     double angularVelocity = drivetrainState.Speeds.omegaRadiansPerSecond; // Radians per second
 
-    double targetAngleDegrees;
-    double toleranceDegrees;
-
-    switch (getState()) {
-      case SCORE -> {
-        targetAngleDegrees = scoringAngle;
-        toleranceDegrees = scoringTolerance;
-      }
-      case FEED -> {
-        targetAngleDegrees = feedingAngle;
-        toleranceDegrees = feedingTolerance;
-      }
-      default -> {
-        return false;
-      }
-    }
+    var targetAngleDegrees = getTargetAngleDegrees();
+    var toleranceDegrees = getToleranceDegrees();
 
     Rotation2d targetRotation = Rotation2d.fromDegrees(targetAngleDegrees);
 
