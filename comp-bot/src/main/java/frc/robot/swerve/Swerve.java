@@ -252,8 +252,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public boolean isMovingBeyondSafeSpeed() {
     var currentSpeeds = getFieldRelativeSpeeds();
 
-    return Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond)
-        > currentMaxLinearRate;
+    return MathHelpers.getLinearVelocity(currentSpeeds) > currentMaxLinearRate;
   }
 
   public boolean atGoal(double lookaheadTime) {
