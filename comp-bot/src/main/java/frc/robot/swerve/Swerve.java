@@ -47,12 +47,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public static final double TRANSLATION_STD_DEV = 0.01;
 
   public static final double MAX_LINEAR_RATE = 4.75;
-  private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxLinearRateShooting", 2.0);
 
-  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
+  private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
+      DogLog.tunable("Swerve/MaxLinearRateMovingShot", 0.75);
+
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
+  private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
 
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
@@ -62,7 +63,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
 
   private static final PhoenixPIDController ORIGINAL_HEADING_PID =
-      new PhoenixPIDController(15, 0, 0);
+      new PhoenixPIDController(5, 0, 0);
 
   public final TunerSwerveDrivetrain drivetrain;
 
@@ -135,6 +136,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private double feedingTolerance = 0.0;
   private double feedingFeedForward = 0.0;
 
+  private double currentMaxLinearRate = MAX_LINEAR_RATE;
+  private double currentMaxAngularRate = MAX_ANGULAR_RATE;
+
   private static final double MIN_AIMED_TOLERANCE = 2.0;
 
   private boolean ableToBumpAssist = false;
@@ -202,6 +206,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.SCORE);
   }
 
+  public void warmupScoreRequest(AimingParameters scoringParameters) {
+    scoringAngle = scoringParameters.goalAngle();
+    scoringTolerance =
+        MathUtil.clamp(
+            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.WARMUP_SCORE);
+  }
+
   public void feedRequest(AimingParameters feedingParameters) {
     feedingAngle = feedingParameters.goalAngle();
     feedingTolerance =
@@ -211,25 +224,41 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  public void warmupFeedRequest(AimingParameters feedingParameters) {
+    feedingAngle = feedingParameters.goalAngle();
+    feedingTolerance =
+        MathUtil.clamp(
+            feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.WARMUP_FEED);
+  }
+
   private double getTargetAngleDegrees() {
     return switch (getState()) {
-      case SCORE -> scoringAngle;
-      case FEED -> feedingAngle;
+      case WARMUP_SCORE, SCORE -> scoringAngle;
+      case WARMUP_FEED, FEED -> feedingAngle;
       default -> 0.0;
     };
   }
 
   private double getToleranceDegrees() {
     return switch (getState()) {
-      case SCORE -> scoringTolerance;
-      case FEED -> feedingTolerance;
+      case WARMUP_SCORE, SCORE -> scoringTolerance;
+      case WARMUP_FEED, FEED -> feedingTolerance;
       default -> 0.0;
     };
   }
 
+  public boolean isMovingBeyondSafeSpeed() {
+    var currentSpeeds = getFieldRelativeSpeeds();
+
+    return Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond)
+        > currentMaxLinearRate;
+  }
+
   public boolean atGoal(double lookaheadTime) {
     switch (getState()) {
-      case SCORE, FEED -> {}
+      case WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {}
       default -> {
         return atGoal();
       }
@@ -271,14 +300,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public boolean atGoal() {
     return switch (getState()) {
-      case SCORE ->
+      case WARMUP_SCORE, SCORE ->
           MathUtil.isNear(
               drivetrainState.Pose.getRotation().getDegrees(),
               scoringAngle,
               scoringTolerance,
               -180.0,
               180.0);
-      case FEED ->
+      case WARMUP_FEED, FEED ->
           MathUtil.isNear(
               drivetrainState.Pose.getRotation().getDegrees(),
               feedingAngle,
@@ -333,28 +362,25 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0));
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
-    if (getState() == SwerveState.SCORE || getState() == SwerveState.FEED) {
-      double maxAngularRateRotations =
-          maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
-      teleopDriveSource.setMaxVelocity(
-          maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SHOOTING.get()),
-          Rotation2d.fromRotations(maxAngularRateRotations));
-
-      drivePerspectiveSnaps.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
-      fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
-
-    } else {
-      double maxAngularRateRotations =
-          maxAngularVelocityRateLimiter.calculate(TELEOP_MAX_ANGULAR_RATE.getRotations());
-      teleopDriveSource.setMaxVelocity(
-          maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE),
-          Rotation2d.fromRotations(maxAngularRateRotations));
-
-      drivePerspectiveSnaps.withMaxAbsRotationalRate(
-          Units.rotationsToRadians(maxAngularRateRotations));
-      fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(maxAngularRateRotations));
+    switch (getState()) {
+      case SCORE, FEED -> {
+        currentMaxAngularRate =
+            maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
+        currentMaxLinearRate =
+            maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SHOOTING.get());
+      }
+      default -> {
+        currentMaxAngularRate =
+            maxAngularVelocityRateLimiter.calculate(Units.radiansToRotations(MAX_ANGULAR_RATE));
+        currentMaxLinearRate = maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE);
+      }
     }
+
+    teleopDriveSource.setMaxVelocity(
+        currentMaxLinearRate, Rotation2d.fromRotations(currentMaxAngularRate));
+
+    drivePerspectiveSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
+    fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
   }
 
   public void normalDriveRequest() {
@@ -405,7 +431,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
       }
-      case SCORE -> {
+      case WARMUP_SCORE, SCORE -> {
         var speeds = driveSource.getRequestedSpeeds();
 
         if (ableToXSwerve) {
@@ -445,7 +471,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           }
         }
       }
-      case FEED -> {
+      case WARMUP_FEED, FEED -> {
         var speeds = driveSource.getRequestedSpeeds();
 
         if (ableToXSwerve) {

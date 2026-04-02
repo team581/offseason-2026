@@ -97,7 +97,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // No auto transitions for these states
-      case UNJAM, FORCE_SCORE -> currentState;
+      case UNJAM, FORCE_SCORE, WARMUP_SCORE, WARMUP_FEED -> currentState;
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoalLookaheadDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
@@ -139,6 +139,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                && !swerve.isMovingBeyondSafeSpeed()
                 && shooter.atGoalLookaheadDebounced()
                 && shooterHood.atGoal()
                 && localization.isTrustworthy()
@@ -321,6 +322,20 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.normalDriveRequest();
         powerManager.idleRequest();
       }
+      case WARMUP_SCORE -> {
+        vision.hubTagsRequest();
+        shooter.prepareScoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        swerve.warmupScoreRequest(scoringParameters);
+        powerManager.shootingRequest();
+      }
+      case WARMUP_FEED -> {
+        vision.tagsRequest();
+        shooter.prepareFeedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
+        swerve.warmupFeedRequest(feedingParameters);
+        powerManager.shootingRequest();
+      }
     }
   }
 
@@ -380,6 +395,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
         hopperManager.scoreRequest();
+      }
+      case WARMUP_SCORE -> {
+        shooter.prepareScoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        swerve.warmupScoreRequest(scoringParameters);
+      }
+      case WARMUP_FEED -> {
+        shooter.prepareFeedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
+        swerve.warmupFeedRequest(feedingParameters);
       }
       default -> {}
     }
@@ -484,6 +509,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
+  public void warmupScoreOrFeedRequest() {
+    if (isInAllianceZone) {
+      warmupScoreRequest();
+    } else {
+      warmupFeedRequest();
+    }
+  }
+
   public void setFeedGoalLeftRequest() {
     feedLocation = FeedLocation.LEFT;
   }
@@ -514,6 +547,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void unjamRequest() {
     setStateFromRequest(RobotState.UNJAM);
+  }
+
+  public void warmupScoreRequest() {
+    setStateFromRequest(RobotState.WARMUP_SCORE);
+  }
+
+  public void warmupFeedRequest() {
+    setStateFromRequest(RobotState.WARMUP_FEED);
   }
 
   public void homeDeployRequest() {
@@ -555,19 +596,29 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && ((Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
                     ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
                     : FieldUtil.inTrench(robotPose.getTranslation()))
-                || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds()));
+                || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
     scoringParameters =
-        AimParameterUtil.getScoringParameters(
-            health.isLocalizationHealthy()
-                ? robotPose
-                : new Pose2d(
-                    FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
-            speeds);
+        getState() == RobotState.WARMUP_SCORE
+            ? AimParameterUtil.getStaticScoringParameters(
+                health.isLocalizationHealthy()
+                    ? robotPose
+                    : new Pose2d(
+                        FieldUtil.getFallbackScorePoint().getTranslation(),
+                        robotPose.getRotation()),
+                speeds)
+            : AimParameterUtil.getScoringParameters(
+                health.isLocalizationHealthy()
+                    ? robotPose
+                    : new Pose2d(
+                        FieldUtil.getFallbackScorePoint().getTranslation(),
+                        robotPose.getRotation()),
+                speeds);
 
     feedingParameters =
-        AimParameterUtil.getFeedingParameters(
-            feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
+        getState() == RobotState.WARMUP_FEED
+            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
+            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
