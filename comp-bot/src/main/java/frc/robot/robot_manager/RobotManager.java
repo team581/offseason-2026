@@ -589,7 +589,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     var speeds = swerve.getFieldRelativeSpeeds();
     isMoving = MathHelpers.getLinearVelocity(speeds) > 0.2;
-    var requestedSpeeds = swerve.getRequestedSpeeds();
 
     // If using clamped points FF we are using the HOME FIELD
     nearTrench =
@@ -606,13 +605,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
     scoringParameters =
         getState() == RobotState.WARMUP_SCORE
-            ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, requestedSpeeds)
-            : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, requestedSpeeds);
+            ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, speeds)
+            : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, speeds);
 
     feedingParameters =
         getState() == RobotState.WARMUP_FEED
-            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, requestedSpeeds)
-            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, requestedSpeeds);
+            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
+            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
