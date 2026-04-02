@@ -2,9 +2,11 @@ package frc.robot.imu;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.team581.mechanisms.imu.BaseImuSubsystem;
+import com.team581.mechanisms.imu.BumpCrossingTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -15,6 +17,8 @@ public class Imu extends BaseImuSubsystem {
 
   private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
+  public final BumpCrossingTracker bumpCrossingTracker;
+
   private double pigeonXPrevAccel = 0.0;
   private double pigeonYPrevAccel = 0.0;
   private double pigeonGForce = 0.0;
@@ -23,6 +27,13 @@ public class Imu extends BaseImuSubsystem {
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
+
+    this.bumpCrossingTracker =
+        new BumpCrossingTracker(
+            () -> Math.hypot(pitch, roll),
+            () -> driveState.Pose,
+            translation ->
+                drivetrain.resetPose(new Pose2d(translation, driveState.Pose.getRotation())));
   }
 
   @Override
@@ -62,6 +73,7 @@ public class Imu extends BaseImuSubsystem {
     DogLog.log("Imu/Pigeon/HypotAccel", pigeonJerk);
     DogLog.log("Imu/Pigeon/GForce", pigeonGForce);
     DogLog.log("Imu/Pigeon/MaxGForce", maxGForceDetected);
+    bumpCrossingTracker.log();
   }
 
   public boolean collisionDetected() {

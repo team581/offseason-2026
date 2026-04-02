@@ -10,18 +10,18 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Conveyor extends StateMachineSubsystem<ConveyorState> implements PowerManaged {
 
-  private final TalonFX leftMotor;
-  private final TalonFX rightMotor;
+  private final TalonFX topMotor;
+  private final TalonFX bottomMotor;
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
-  public Conveyor(TalonFX leftMotor, TalonFX rightMotor) {
+  public Conveyor(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);
-    leftMotor.getConfigurator().apply(ConveyorConfig.LEFT_MOTOR_CONFIG);
-    rightMotor.getConfigurator().apply(ConveyorConfig.RIGHT_MOTOR_CONFIG);
+    topMotor.getConfigurator().apply(ConveyorConfig.TOP_MOTOR_CONFIG);
+    bottomMotor.getConfigurator().apply(ConveyorConfig.BOTTOM_MOTOR_CONFIG);
 
-    this.leftMotor = leftMotor;
-    this.rightMotor = rightMotor;
+    this.topMotor = topMotor;
+    this.bottomMotor = bottomMotor;
   }
 
   public void shootRequest() {
@@ -40,42 +40,47 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.EJECT);
   }
 
+  public void slowintakemodestateRequest() {
+    setStateFromRequest(ConveyorState.SLOW_INTAKING_MODE);
+  }
+
   @Override
   protected void afterTransition(ConveyorState newState) {
     switch (newState) {
       case IDLE -> {
-        leftMotor.setControl(neutralRequest);
-        rightMotor.setControl(neutralRequest);
+        topMotor.setControl(neutralRequest);
+        bottomMotor.setControl(neutralRequest);
       }
       default -> {
-        leftMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
-        rightMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        topMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
   }
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Conveyor/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Conveyor/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Conveyor/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Conveyor/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Conveyor/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Conveyor/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Conveyor/Top/StatorCurrent", topMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Conveyor/Top/VelocityRPM", topMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Conveyor/Bottom/StatorCurrent", bottomMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Conveyor/Top/SupplyCurrent", topMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Conveyor/Bottom/VelocityRPM", bottomMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Conveyor/Voltage", getState().getVoltage());
+    DogLog.log("Conveyor/State", getState().name());
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    leftMotor
+    topMotor
         .getConfigurator()
         .apply(
-            ConveyorConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
-    rightMotor
+    bottomMotor
         .getConfigurator()
         .apply(
-            ConveyorConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 }

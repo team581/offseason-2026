@@ -36,86 +36,100 @@ public class AimParameterUtil {
 
   public static AimingParameters getFeedingParameters(
       FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
-    // Calculate translation of turret on the field
     var shooterPose = ShooterConfig.getShooterPose(robotPose);
-
-    var shooterTranslation = shooterPose.getTranslation();
-
-    // Calculate speeds of turret (x, y, omega)
-    var shooterFieldRelativeSpeeds =
-        ShooterConfig.getShooterSpeeds(fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
-
-    Translation2d feedTranslation = feedLocation.getTranslation(shooterPose);
-
-    // Get velocity compensated goals
-    var separatedVelocityCompensatedGoal =
-        FEEDING_SOTM.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            shooterTranslation, feedTranslation, shooterFieldRelativeSpeeds);
-
-    // Calculate fully compensated distance to goal for shooter, hood, and turret
-    var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
-    var fullyCompensatedDistanceToGoal = shooterTranslation.getDistance(compensatedGoal);
-
-    var swerveAngle =
-        ShooterConfig.calculateAimingAngle(shooterTranslation, compensatedGoal).getDegrees();
-    // Use same goal for goal centric turret tolerance
-    var swerveTolerance =
-        ShooterConfig.getGoalCentricTolerance(
-            compensatedGoal, shooterPose, FEEDING_GOAL_CENTRIC_TOLERANCE);
-
-    // Calculate translational FF for turret to account for linear turret velocity
-    var realDistanceToGoal = shooterTranslation.getDistance(feedTranslation);
-    double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
-    double translationalFF = tangentialVelocity / realDistanceToGoal;
-
-    // Sum translational FF and rotational FF
-    double swerveFeedForwardRadians =
-        -translationalFF - shooterFieldRelativeSpeeds.omegaRadiansPerSecond;
-
-    return new AimingParameters(
-        swerveAngle, fullyCompensatedDistanceToGoal, swerveTolerance, swerveFeedForwardRadians);
+    return getAimingParameters(
+        FEEDING_SOTM,
+        feedLocation.getTranslation(shooterPose),
+        FEEDING_GOAL_CENTRIC_TOLERANCE,
+        robotPose,
+        fieldRelativeSpeeds);
   }
 
   public static AimingParameters getScoringParameters(
       Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
-    // Calculate translation of turret on the field
+    return getAimingParameters(
+        SCORING_SOTM,
+        FieldUtil.HUB_POSE.getTranslation(),
+        SCORING_GOAL_CENTRIC_TOLERANCE,
+        robotPose,
+        fieldRelativeSpeeds);
+  }
+
+  public static AimingParameters getStaticFeedingParameters(
+      FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     var shooterPose = ShooterConfig.getShooterPose(robotPose);
+    return getStaticAimingParameters(
+        FEEDING_SOTM,
+        feedLocation.getTranslation(shooterPose),
+        FEEDING_GOAL_CENTRIC_TOLERANCE,
+        robotPose,
+        fieldRelativeSpeeds);
+  }
 
+  public static AimingParameters getStaticScoringParameters(
+      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+    return getStaticAimingParameters(
+        SCORING_SOTM,
+        FieldUtil.HUB_POSE.getTranslation(),
+        SCORING_GOAL_CENTRIC_TOLERANCE,
+        robotPose,
+        fieldRelativeSpeeds);
+  }
+
+  private static AimingParameters getAimingParameters(
+      ShootOnTheMove sotm,
+      Translation2d goalTranslation,
+      double tolerance,
+      Pose2d robotPose,
+      ChassisSpeeds fieldRelativeSpeeds) {
+    var shooterPose = ShooterConfig.getShooterPose(robotPose);
     var shooterTranslation = shooterPose.getTranslation();
-
-    // Calculate speeds of turret (x, y, omega)
     var shooterFieldRelativeSpeeds =
         ShooterConfig.getShooterSpeeds(fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
 
-    Translation2d hubTranslation = FieldUtil.HUB_POSE.getTranslation();
-
-    // Get velocity compensated goals
     var separatedVelocityCompensatedGoal =
-        SCORING_SOTM.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            shooterTranslation, hubTranslation, shooterFieldRelativeSpeeds);
+        sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
+            shooterTranslation, goalTranslation, shooterFieldRelativeSpeeds);
 
-    // Calculate fully compensated distance to goal for shooter, hood, and turret
     var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
-    var fullyCompensatedDistanceToGoal = shooterTranslation.getDistance(compensatedGoal);
-
-    var swerveAngle =
+    double distance = shooterTranslation.getDistance(compensatedGoal);
+    double swerveAngle =
         ShooterConfig.calculateAimingAngle(shooterTranslation, compensatedGoal).getDegrees();
-    // Use same goal for goal centric turret tolerance
-    var swerveTolerance =
-        ShooterConfig.getGoalCentricTolerance(
-            compensatedGoal, shooterPose, SCORING_GOAL_CENTRIC_TOLERANCE);
+    double swerveTolerance =
+        ShooterConfig.getGoalCentricTolerance(compensatedGoal, shooterPose, tolerance);
 
-    // Calculate translational FF for turret to account for linear turret velocity
-    var realDistanceToGoal = shooterTranslation.getDistance(hubTranslation);
     double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
-    double translationalFF = tangentialVelocity / realDistanceToGoal;
+    double realDistanceToGoal = shooterTranslation.getDistance(goalTranslation);
+    double swerveFeedForwardRadians = -(tangentialVelocity / realDistanceToGoal);
 
-    // Sum translational FF and rotational FF
-    double swerveFeedForwardRadians =
-        -translationalFF - shooterFieldRelativeSpeeds.omegaRadiansPerSecond;
+    return new AimingParameters(swerveAngle, distance, swerveTolerance, swerveFeedForwardRadians);
+  }
 
-    return new AimingParameters(
-        swerveAngle, fullyCompensatedDistanceToGoal, swerveTolerance, swerveFeedForwardRadians);
+  private static AimingParameters getStaticAimingParameters(
+      ShootOnTheMove sotm,
+      Translation2d goalTranslation,
+      double tolerance,
+      Pose2d robotPose,
+      ChassisSpeeds fieldRelativeSpeeds) {
+    var shooterPose = ShooterConfig.getShooterPose(robotPose);
+    var shooterTranslation = shooterPose.getTranslation();
+    var shooterFieldRelativeSpeeds =
+        ShooterConfig.getShooterSpeeds(fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
+
+    var separatedVelocityCompensatedGoal =
+        sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
+            shooterTranslation, goalTranslation, shooterFieldRelativeSpeeds);
+
+    double distance = shooterTranslation.getDistance(goalTranslation);
+    double swerveAngle =
+        ShooterConfig.calculateAimingAngle(shooterTranslation, goalTranslation).getDegrees();
+    double swerveTolerance =
+        ShooterConfig.getGoalCentricTolerance(goalTranslation, shooterPose, tolerance);
+
+    double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
+    double swerveFeedForwardRadians = -(tangentialVelocity / distance);
+
+    return new AimingParameters(swerveAngle, distance, swerveTolerance, swerveFeedForwardRadians);
   }
 
   public record AimingParameters(

@@ -13,13 +13,13 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
-import frc.robot.deploy.Deploy;
+import frc.robot.deploy.GenericDeploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
-  public final Deploy deploy;
+  public final GenericDeploy deploy;
   public final Intake intake;
   public final Conveyor conveyor;
   public final Feeder feeder;
@@ -34,20 +34,20 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean operatorWantsStow = false;
   private boolean towerSensorRaw = false;
 
-  private final LinearFilter hopperFilter = LinearFilter.movingAverage(5);
+  private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
 
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
   public static final double HIGH_CAPACITY_THRESHOLD = 5;
-  public static final double MEDIUM_CAPACITY_THRESHOLD = 10;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 12;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 
   private final Timer canRangeUpdateTimer = new Timer();
 
   public HopperManager(
-      Deploy deploy,
+      GenericDeploy deploy,
       Intake intake,
       Conveyor conveyor,
       Feeder feeder,
@@ -70,7 +70,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       // The sensor in the tower shows we are holding fuel, so we can't fill anymore
       return false;
     }
-
+    if (!deploy.isFullyExtended()) {
+      return false;
+    }
     if (DSOptions.USE_CANRANGE.get()) {
       // If we are using the hopper CANrange, we can start filling the tower once the hopper is
       // starting ot fill up
@@ -92,6 +94,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
   }
 
+  private void smartIntakeBallFillRequest() {
+    if (shouldFillBalls()) {
+      conveyor.ballFillingRequest();
+      feeder.ballFillingRequest();
+    } else {
+      conveyor.slowintakemodestateRequest();
+      feeder.idleRequest();
+    }
+  }
+
   @Override
   protected void afterTransition(HopperState newState) {
     switch (newState) {
@@ -108,13 +120,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case INTAKING -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        smartBallFillRequest();
+        smartIntakeBallFillRequest();
       }
       case EJECTING -> {
         deploy.intakeRequest();
         intake.ejectRequest();
         conveyor.ejectRequest();
         feeder.idleRequest();
+      }
+      case UNJAMMING -> {
+        deploy.intakeRequest();
+        intake.ejectRequest();
+        conveyor.shootRequest();
+        feeder.shootRequest();
       }
       case SHOOT, SHOOT_AND_INTAKE -> {
         deploy.intakeRequest();
@@ -150,7 +168,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     } else {
       DogLog.clearFault("CANrange distance not updating");
     }
-    DogLog.log("HopperManager/State", getState());
     DogLog.log("HopperManager/BallFilling", shouldFillBalls() && state.canBallFill);
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
@@ -196,8 +213,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setState(resolveScoreState());
   }
 
+  public boolean isShooting() {
+    if (RobotBase.isSimulation()) {
+      return !timeout(1.5);
+    }
+    return towerSensorDebounced;
+  }
+
   public void idleRequest() {
     setState(resolveIdleState());
+  }
+
+  public void unjamRequest() {
+    setState(HopperState.UNJAMMING);
   }
 
   public void setDriverWantsEject(boolean wantsEject) {
@@ -230,10 +258,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
-    if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
-      hopperCapacity = HopperCapacity.MEDIUM;
-    } else if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
+    if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
+    } else if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
     }

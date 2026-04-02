@@ -52,6 +52,10 @@ public class Trailblazer {
         .isPresent();
   }
 
+  public void clearActiveSegment() {
+    currentSegment = Optional.empty();
+  }
+
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose, ChassisSpeeds currentFieldRelativeSpeeds) {
     return getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
@@ -70,7 +74,7 @@ public class Trailblazer {
     // Technically you could call reset over and over, but that creates a lot of objects and may
     // cause jerky motion since we are effectively replanning a trajectory over and over.
     if (needsFollowerReset) {
-      pathFollower.reset(currentFieldRelativeSpeeds, currentPose.getRotation().getRadians());
+      pathFollower.reset(currentPose, currentFieldRelativeSpeeds);
       needsFollowerReset = false;
     }
 
@@ -82,6 +86,10 @@ public class Trailblazer {
     // Update current index from tracker
     currentIndex = pathTracker.getCurrentPointIndex();
     DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
+
+    if (segment.atGoal(currentPose, currentIndex)) {
+      return new ChassisSpeeds();
+    }
 
     var targetPose = pathTracker.getTargetPose(trackerRotationOverride);
     DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);

@@ -10,7 +10,7 @@ public class CameraConfigs {
       new CameraConfig(
           LimelightModel.FOUR,
           true,
-          true,
+          false,
           // Forward
           Units.inchesToMeters(-12.6378),
           // Right
@@ -28,7 +28,7 @@ public class CameraConfigs {
       new CameraConfig(
           LimelightModel.FOUR,
           true,
-          true,
+          false,
           // Forward
           Units.inchesToMeters(-7.5115),
           // Right
@@ -38,7 +38,7 @@ public class CameraConfigs {
           // Pitch
           0.0,
           // Yaw
-          0.0,
+          90.0,
           // Roll
           0.0);
 
@@ -46,7 +46,7 @@ public class CameraConfigs {
       new CameraConfig(
           LimelightModel.FOUR,
           true,
-          true,
+          false,
           // Forward
           Units.inchesToMeters(-7.5111),
           // Right
@@ -56,7 +56,7 @@ public class CameraConfigs {
           // Pitch
           0.0,
           // Yaw
-          0.0,
+          -90.0,
           // Roll
           0.0);
 
@@ -65,17 +65,11 @@ public class CameraConfigs {
           LimelightModel.THREE,
           false,
           false,
-          // Forward
+          Units.inchesToMeters(25.671),
           Units.inchesToMeters(0.0),
-          // Right
-          Units.inchesToMeters(0.0),
-          // Up
-          Units.inchesToMeters(0.0),
-          // Pitch
+          Units.inchesToMeters(12.9525),
+          -20.0,
           0.0,
-          // Yaw
-          0.0,
-          // Roll
           0.0);
 
   private CameraConfigs() {}

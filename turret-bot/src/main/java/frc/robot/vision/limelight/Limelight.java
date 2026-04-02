@@ -8,6 +8,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
@@ -82,7 +83,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     var mTEstimateTimestamp = mTEstimate.timestampSeconds;
 
-    if (Math.abs(angularVelocity) > 360) {
+    if (!MathUtil.isNear(0, angularVelocity, 360)) {
       return tagResult.empty();
     }
     if (mTEstimate.tagCount == 0) {

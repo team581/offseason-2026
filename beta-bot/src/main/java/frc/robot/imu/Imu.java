@@ -6,6 +6,7 @@ import com.team581.mechanisms.imu.BumpCrossingTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -13,8 +14,7 @@ public class Imu extends BaseImuSubsystem {
   private static final DoubleSubscriber COLLISION_G_FORCE_THRESHOLD =
       DogLog.tunable("Imu/CollisionGForceThreshold", 0.8);
 
-  public final BumpCrossingTracker bumpCrossingTracker =
-      new BumpCrossingTracker(() -> Math.hypot(pitch, roll), () -> driveState.Pose);
+  public final BumpCrossingTracker bumpCrossingTracker;
   private final LinearFilter pigeonXAccelFilter = LinearFilter.movingAverage(10);
   private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
@@ -26,6 +26,15 @@ public class Imu extends BaseImuSubsystem {
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
+
+    // TODO(@jonahsnider): This should use localization#getPose() but I think that makes a circular
+    // import which I don't want to deal with right now
+    this.bumpCrossingTracker =
+        new BumpCrossingTracker(
+            () -> Math.hypot(pitch, roll),
+            () -> driveState.Pose,
+            translation ->
+                drivetrain.resetPose(new Pose2d(translation, driveState.Pose.getRotation())));
   }
 
   @Override

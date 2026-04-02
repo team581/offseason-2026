@@ -2,8 +2,8 @@
   "SwerveOptions": {
     "HorizontalTrackSizeInches": 23.5,
     "HasVerifiedDrive": true,
-    "IsLeftSideInverted": true,
-    "IsRightSideInverted": false,
+    "IsLeftSideInverted": false,
+    "IsRightSideInverted": true,
     "IsValidConfiguration": true,
     "WheelRadiusInches": 2,
     "Gyro": {
@@ -15,10 +15,10 @@
       "CANbusFriendly": "581CANivore"
     },
     "SwerveModuleConfiguration": {
-      "DriveRatio": 6.48,
+      "DriveRatio": 6.821052631578947,
       "ModuleBrand": 11,
       "CustomName": "X2 10T",
-      "CouplingRatio": 4.5,
+      "CouplingRatio": 5.4,
       "SteerRatio": 12.1
     },
     "HasVerifiedSteer": true,
@@ -51,7 +51,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.21826171875,
+      "EncoderOffset": -0.219482421875,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 4,
@@ -100,7 +100,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.35498046875,
+      "EncoderOffset": -0.3564453125,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 6,
@@ -149,7 +149,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.371826171875,
+      "EncoderOffset": -0.37255859375,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 8,
@@ -198,7 +198,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.4697265625,
+      "EncoderOffset": -0.4677734375,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 10,

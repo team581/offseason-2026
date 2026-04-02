@@ -10,17 +10,17 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Feeder extends StateMachineSubsystem<FeederState> implements PowerManaged {
 
-  private final TalonFX leftMotor;
-  private final TalonFX rightMotor;
+  private final TalonFX topMotor;
+  private final TalonFX bottomMotor;
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
-  public Feeder(TalonFX leftMotor, TalonFX rightMotor) {
+  public Feeder(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.FEEDER, FeederState.IDLE);
-    leftMotor.getConfigurator().apply(FeederConfig.LEFT_MOTOR_CONFIG);
-    rightMotor.getConfigurator().apply(FeederConfig.RIGHT_MOTOR_CONFIG);
-    this.leftMotor = leftMotor;
-    this.rightMotor = rightMotor;
+    topMotor.getConfigurator().apply(FeederConfig.TOP_MOTOR_CONFIG);
+    bottomMotor.getConfigurator().apply(FeederConfig.BOTTOM_MOTOR_CONFIG);
+    this.topMotor = topMotor;
+    this.bottomMotor = bottomMotor;
   }
 
   public void shootRequest() {
@@ -43,38 +43,37 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   protected void afterTransition(FeederState newState) {
     switch (newState) {
       case IDLE -> {
-        leftMotor.setControl(neutralRequest);
-        rightMotor.setControl(neutralRequest);
+        topMotor.setControl(neutralRequest);
+        bottomMotor.setControl(neutralRequest);
       }
       default -> {
-        leftMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
-        rightMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        topMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
   }
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Feeder/Left/StatorCurrent", leftMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Feeder/Left/VelocityRPM", leftMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Feeder/Left/SupplyCurrent", leftMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Feeder/Right/StatorCurrent", rightMotor.getStatorCurrent().getValueAsDouble());
-    DogLog.log("Feeder/Right/VelocityRPM", rightMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Feeder/Right/SupplyCurrent", rightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Feeder/Top/StatorCurrent", topMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Feeder/Top/VelocityRPM", topMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Feeder/Top/SupplyCurrent", topMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Feeder/Bottom/StatorCurrent", bottomMotor.getStatorCurrent().getValueAsDouble());
+    DogLog.log("Feeder/Bottom/VelocityRPM", bottomMotor.getVelocity().getValueAsDouble() * 60.0);
+    DogLog.log("Feeder/Bottom/SupplyCurrent", bottomMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Feeder/Voltage", getState().getVoltage());
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    leftMotor
+    topMotor
         .getConfigurator()
         .apply(
-            FeederConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    rightMotor
+            FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
+    bottomMotor
         .getConfigurator()
         .apply(
-            FeederConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 }

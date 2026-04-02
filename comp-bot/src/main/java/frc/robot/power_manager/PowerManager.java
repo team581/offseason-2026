@@ -4,7 +4,7 @@ import com.team581.mechanisms.PowerManaged;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import frc.robot.conveyor.Conveyor;
-import frc.robot.deploy.Deploy;
+import frc.robot.deploy.GenericDeploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.shooter.Shooter;
@@ -27,7 +27,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   public PowerManager(
       Shooter shooter,
       Intake intake,
-      Deploy deploy,
+      GenericDeploy deploy,
       ShooterHood shooterHood,
       Feeder feeder,
       Conveyor conveyor,
@@ -42,12 +42,20 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.swerve = swerve;
   }
 
+  public void firstAutoSegmentRequest() {
+    setStateFromRequest(PowerManagerState.AUTO_FIRST_SEGMENT);
+  }
+
   public void idleRequest() {
     setStateFromRequest(PowerManagerState.IDLE);
   }
 
   public void shootingRequest() {
     setStateFromRequest(PowerManagerState.SHOOTING);
+  }
+
+  public void turboRequest() {
+    setStateFromRequest(PowerManagerState.TURBO_MODE);
   }
 
   @Override

@@ -12,24 +12,20 @@ public class IntakeConfig {
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  // TODO: VALIDATE INVERT
                   .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
-              // TODO: TUNE CURRENT LIMITS
-              new CurrentLimitsConfigs().withStatorCurrentLimit(75).withSupplyCurrentLimit(50));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(75).withSupplyCurrentLimit(25));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  // TODO: VALIDATE INVERT
                   .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
-              // TODO: TUNE CURRENT LIMITS
-              new CurrentLimitsConfigs().withStatorCurrentLimit(75).withSupplyCurrentLimit(50));
+              new CurrentLimitsConfigs().withStatorCurrentLimit(75).withSupplyCurrentLimit(25));
 }

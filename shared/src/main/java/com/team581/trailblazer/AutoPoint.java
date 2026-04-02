@@ -12,7 +12,7 @@ public record AutoPoint<T extends Enum<T>>(
     Optional<AngularConstraintOptions> angularConstraints,
     Optional<PoseErrorTolerance> transitionTolerance,
     Optional<T> marker,
-    Optional<Pose2d> arcMidpoint) {
+    Optional<Point> arcMidpoint) {
   public static AutoPoint<EmptyMarker> of(Point pose) {
     return new AutoPoint<EmptyMarker>(
         () -> pose,
@@ -86,7 +86,7 @@ public record AutoPoint<T extends Enum<T>>(
         arcMidpoint);
   }
 
-  public AutoPoint<T> withArcMidpoint(Pose2d arcMidpoint) {
+  public AutoPoint<T> withArcMidpoint(Point arcMidpoint) {
     return new AutoPoint<T>(
         poseSupplier,
         linearConstraints,

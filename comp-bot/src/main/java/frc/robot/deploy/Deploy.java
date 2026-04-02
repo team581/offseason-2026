@@ -1,37 +1,35 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
-import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
-import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
+public class Deploy extends GenericDeploy {
   private final TalonFX motor;
-  private final MotionMagicVoltage positionVoltageRequest =
-      new MotionMagicVoltage(0).withEnableFOC(true);
+  private final PositionTorqueCurrentFOC positionTorqueCurrentFOCRequest =
+      new PositionTorqueCurrentFOC(0);
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
   private double motorPosition = 0.0;
   private double statorCurrent = 0.0;
   private double supplyCurrent = 0.0;
 
   public Deploy(TalonFX motor) {
-    super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
+    motor.getConfigurator().apply(DeployConfig.MOTOR_CONFIG);
     this.motor = motor;
 
     TunablePid.register("Deploy", motor, DeployConfig.MOTOR_CONFIG);
   }
 
+  @Override
   public void intakeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -41,6 +39,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  @Override
   public void stowRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -50,10 +49,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  @Override
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
   }
 
+  @Override
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
@@ -61,6 +62,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
+  @Override
   public void homeInAutoRequest() {
     setStateFromRequest(DeployState.HOME_INWARD);
   }
@@ -103,7 +105,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           motor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
       case HOME_OUTWARD ->
           motor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
-      default -> motor.setControl(positionVoltageRequest.withPosition(clamp(newState.getLength())));
+      default ->
+          motor.setControl(
+              positionTorqueCurrentFOCRequest.withPosition(clamp(newState.getLength())));
     }
   }
 
@@ -117,14 +121,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     DogLog.log("Deploy/Voltage", motor.getMotorVoltage().getValueAsDouble());
   }
 
+  @Override
   public double getPosition() {
     return motorPosition;
   }
 
+  @Override
   public boolean atGoal() {
     return atGoal(getState());
   }
 
+  @Override
   public void hopperCompactionRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
@@ -153,7 +160,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
             "Deploy",
             mechanism ->
                 mechanism
-                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
+                    .addMotor(motor, ChassisReference.Clockwise_Positive)
                     .withMinPosition(DeployConfig.MIN_LENGTH)
                     .withMaxPosition(DeployConfig.MAX_LENGTH));
 

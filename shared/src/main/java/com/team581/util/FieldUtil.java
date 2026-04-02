@@ -791,6 +791,14 @@ public class FieldUtil {
     return FmsUtil.isRedAlliance() ? RED_STARTING_LINE_X : BLUE_STARTING_LINE_X;
   }
 
+  public static double getBumpYOffset(boolean isLeftAuto) {
+    if (FmsUtil.isRedAlliance()) {
+      return isLeftAuto ? 0.15 : -0.15;
+    }
+
+    return isLeftAuto ? -0.15 : 0.15;
+  }
+
   public static Translation2d getClosestAllianceZoneTrenchMidpoint(Translation2d robotTranslation) {
     return robotTranslation.nearest(ALLIANCE_ZONE_TRENCH_MIDPOINTS);
   }

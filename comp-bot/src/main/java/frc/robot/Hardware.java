@@ -1,10 +1,15 @@
 package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
+import com.ctre.phoenix6.mechanisms.SimpleDifferentialMechanism;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.deploy.DifferentialDeployConfig;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 
@@ -15,26 +20,36 @@ public class Hardware {
   private final CANBus canivore = new CANBus("581CANivore");
   private final CANBus rio = new CANBus();
 
-  public final TalonFX deployMotor = new TalonFX(15, canivore);
+  public final SimpleDifferentialMechanism<TalonFX> deployDifferentialMechanism =
+      new SimpleDifferentialMechanism<>(
+          TalonFX::new,
+          new DifferentialMotorConstants<TalonFXConfiguration>()
+              .withCANBusName(canivore.getName())
+              .withLeaderId(15)
+              .withFollowerId(30)
+              .withAlignment(MotorAlignmentValue.Opposed)
+              .withLeaderInitialConfigs(DifferentialDeployConfig.LEFT_MOTOR_CONFIG)
+              .withFollowerInitialConfigs(DifferentialDeployConfig.RIGHT_MOTOR_CONFIG)
+              .withFollowerUsesCommonLeaderConfigs(true));
 
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
   public final TalonFX intakeRightMotor = new TalonFX(17, rio);
 
-  public final TalonFX conveyorLeftMotor = new TalonFX(18, rio);
-  public final TalonFX conveyorRightMotor = new TalonFX(19, rio);
+  public final TalonFX conveyorTopMotor = new TalonFX(18, canivore);
+  public final TalonFX conveyorBottomMotor = new TalonFX(19, canivore);
 
-  public final TalonFX leftFeederMotor = new TalonFX(20, rio);
-  public final TalonFX rightFeederMotor = new TalonFX(21, rio);
+  public final TalonFX feederTopMotor = new TalonFX(20, canivore);
+  public final TalonFX feederBottomMotor = new TalonFX(21, canivore);
 
-  public final TalonFX shooterHoodMotor = new TalonFX(22, rio);
+  public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
 
-  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, rio);
-  public final TalonFX shooterBottomRightMotor = new TalonFX(24, rio);
-  public final TalonFX shooterTopLeftMotor = new TalonFX(25, rio);
-  public final TalonFX shooterTopRightMotor = new TalonFX(26, rio);
+  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, canivore);
+  public final TalonFX shooterBottomRightMotor = new TalonFX(24, canivore);
+  public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
+  public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
   public final CANrange hopperCANRange = new CANrange(27, canivore);
-  public final DigitalInput towerSensor = new DigitalInput(6);
+  public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
 
   public final TunerSwerveDrivetrain drivetrain =

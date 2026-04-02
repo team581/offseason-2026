@@ -1,5 +1,80 @@
 {
-  "cameras": [],
+  "cameras": [
+    {
+      "name": "Shooter (LL4)",
+      "position": [
+        -0.321,
+        0,
+        0.4078
+      ],
+      "fov": 82,
+      "rotations": [
+        {
+          "axis": "z",
+          "degrees": 180
+        },
+        {
+          "axis": "y",
+          "degrees": 20
+        }
+      ],
+      "resolution": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "Left (LL4)",
+      "position": [
+        -0.1908,
+        0.3533,
+        0.4216
+      ],
+      "fov": 82,
+      "rotations": [{
+        "axis": "z",
+        "degrees": 90
+      }],
+      "resolution": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "Right (LL4)",
+      "position": [
+        -0.1908,
+        -0.3533,
+        0.4216
+      ],
+      "fov": 82,
+      "rotations": [{
+        "axis": "z",
+        "degrees": -90
+      }],
+      "resolution": [
+        1280,
+        800
+      ]
+    },
+    {
+      "name": "Ground (LL3)",
+      "position": [
+        0.652,
+        0,
+        0.329
+      ],
+      "fov": 62.5,
+      "rotations": [{
+        "axis": "y",
+        "degrees": 20
+      }],
+      "resolution": [
+        640,
+        480
+      ]
+    }
+  ],
   "components": [
     {
       "zeroedRotations": [

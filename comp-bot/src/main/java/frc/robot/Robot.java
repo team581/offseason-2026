@@ -16,7 +16,8 @@ import frc.robot.autos.Autos;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
-import frc.robot.deploy.Deploy;
+import frc.robot.deploy.DifferentialDeploy;
+import frc.robot.deploy.GenericDeploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
@@ -69,14 +70,14 @@ public class Robot extends Base581Robot {
           hardware.shooterBottomLeftMotor,
           hardware.shooterBottomRightMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-  private final Deploy deploy = new Deploy(hardware.deployMotor);
+  private final GenericDeploy deploy = new DifferentialDeploy(hardware.deployDifferentialMechanism);
   private final Vision vision =
       new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
-  private final Feeder feeder = new Feeder(hardware.leftFeederMotor, hardware.rightFeederMotor);
+  private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
   private final Conveyor conveyor =
-      new Conveyor(hardware.conveyorLeftMotor, hardware.conveyorRightMotor);
+      new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
 
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
@@ -147,6 +148,19 @@ public class Robot extends Base581Robot {
   }
 
   @Override
+  public void teleopPeriodic() {
+    super.teleopPeriodic();
+
+    double triggerValue = hardware.driverController.getRightTriggerAxis();
+
+    if (triggerValue > 0.8) {
+      robotManager.prepareScoreOrFeedRequest();
+    } else if (triggerValue > 0.1) {
+      robotManager.warmupScoreOrFeedRequest();
+    }
+  }
+
+  @Override
   protected void configureBindings() {
     var driver =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
@@ -160,10 +174,7 @@ public class Robot extends Base581Robot {
         .onPress(() -> hopperManager.setDriverWantsIntake(true))
         .onRelease(() -> hopperManager.setDriverWantsIntake(false));
 
-    driver
-        .rightTrigger()
-        .onPress(robotManager::prepareScoreOrFeedRequest)
-        .onRelease(robotManager::idleRequest);
+    driver.rightTrigger().onRelease(robotManager::idleRequest);
 
     driver.rightBumper().onPress(robotManager::idleRequest);
 
@@ -172,11 +183,24 @@ public class Robot extends Base581Robot {
         .onPress(() -> hopperManager.setDriverWantsEject(true))
         .onRelease(() -> hopperManager.setDriverWantsEject(false));
 
-    operator.start().onPress(() -> hopperManager.deploy.homeInAutoRequest());
+    operator.start().onPress(() -> hopperManager.deploy.homingRequest());
 
     operator.back().onPress(robotManager::homeShooterHoodRequest);
 
     operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
+
+    operator
+        .y()
+        .onPress(
+            () -> {
+              powerManager.turboRequest();
+              shooter.setTurboMode(true);
+            })
+        .onRelease(
+            () -> {
+              powerManager.idleRequest();
+              shooter.setTurboMode(false);
+            });
 
     operator.b().onPress(robotManager::prepareFeedRequest).onRelease(robotManager::idleRequest);
 

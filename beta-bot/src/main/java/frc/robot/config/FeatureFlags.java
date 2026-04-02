@@ -19,7 +19,5 @@ public class FeatureFlags {
 
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
-  public static final BooleanSupplier X_SWERVE = FeatureFlag.of("XSwerve", true);
-
   private FeatureFlags() {}
 }

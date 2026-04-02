@@ -111,7 +111,7 @@ public class DyeRotor extends StateMachineSubsystem<DyeRotorState> implements Po
   }
 
   public boolean isReset() {
-    if (getState() == DyeRotorState.IDLE && Math.abs(rotorMotorRpm) < 1e-2) {
+    if (getState() == DyeRotorState.IDLE && MathUtil.isNear(0, rotorMotorRpm, 1e-2)) {
       return true;
     }
     return false;

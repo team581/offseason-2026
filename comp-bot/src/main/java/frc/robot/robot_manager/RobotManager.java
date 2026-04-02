@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
 import frc.robot.cluster_map.ClusterMap;
+import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
@@ -20,13 +21,13 @@ import frc.robot.localization.Localization;
 import frc.robot.power_manager.PowerManager;
 import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
+import frc.robot.shooter.ShooterConfig;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
-import frc.robot.vision.VisionState;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final HopperManager hopperManager;
@@ -42,7 +43,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Trailblazer trailblazer;
   public final ClusterMap clusterMap;
 
-  private final PowerManager powerManager;
+  public final PowerManager powerManager;
 
   private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
@@ -96,23 +97,35 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // No auto transitions for these states
-      case UNJAM, FORCE_SCORE -> currentState;
+      case UNJAM, FORCE_SCORE, WARMUP_SCORE, WARMUP_FEED -> currentState;
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.atGoalDebounced() && shooterHood.atGoal()) {
+        if (shooter.atGoalLookaheadDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
       }
       case IDLE -> currentState;
 
-      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE ->
-          !isMoving
-                  && ((swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal())
-                      || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
+        // In pit functionality, we don't care about anything other than raw mechanism states
+        if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
+          yield shooter.atGoalLookaheadDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
+        }
+
+        yield !isMoving
+                && ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                        && shooter.atGoalLookaheadDebounced()
+                        && shooterHood.atGoal())
+                    || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+            ? RobotState.FALLBACK_SCORE
+            : RobotState.PREPARE_FALLBACK_SCORE;
+      }
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
-          swerve.atGoal() && shooter.atGoalDebounced() && shooterHood.atGoal()
+          swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                  && shooter.atGoalLookaheadDebounced()
+                  && shooterHood.atGoal()
               ? RobotState.FALLBACK_FEED
               : RobotState.PREPARE_FALLBACK_FEED;
       case PREPARE_SCORE -> {
@@ -125,8 +138,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
 
-        if ((swerve.atGoal()
-                && shooter.atGoalDebounced()
+        if ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                && !swerve.isMovingBeyondSafeSpeed()
+                && shooter.atGoalLookaheadDebounced()
                 && shooterHood.atGoal()
                 && localization.isTrustworthy()
                 && localization.imu.isFlatDebounced()
@@ -134,7 +148,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && isInSafeScoringLocation
                 && !nearTrench)
             || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
-                && shooter.atGoalDebounced())) {
+                && shooter.atGoalLookaheadDebounced())) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -150,14 +164,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-                || (swerve.atGoal()
+                || (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                    && shooter.atGoalLookaheadDebounced()
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
                     && isInSafeScoringLocation
                     && hubActivity.getTOFBasedHubActive())
                 || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
-                    && shooter.atGoalDebounced()))
+                    && shooter.atGoalLookaheadDebounced()))
             && !nearTrench) {
           yield currentState;
         }
@@ -171,8 +186,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.PREPARE_SCORE;
         }
 
-        if (swerve.atGoal()
-            && shooter.atGoalDebounced()
+        if (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+            && shooter.atGoalLookaheadDebounced()
             && isInSafeFeedingLocation
             && localization.imu.isFlatDebounced()
             && shooterHood.atGoal()
@@ -191,9 +206,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.atGoalDebounced()
+            || (shooter.atGoalLookaheadDebounced()
                 && isInSafeFeedingLocation
-                && swerve.atGoal()
+                && swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                 && localization.imu.isFlatDebounced()
                 && shooterHood.atGoal()
                 && health.isLocalizationHealthy()
@@ -214,7 +229,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case IDLE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.HUB_TAGS);
+        vision.hubTagsRequest();
         shooter.idleRequest();
         smartHoodIdleRequest();
         swerve.normalDriveRequest();
@@ -222,15 +237,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FORCE_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
-        shooter.scoreRequest(scoringParameters.distance());
+        vision.tagsRequest();
+        shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
         powerManager.shootingRequest();
       }
       case FORCE_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
@@ -238,15 +253,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
-        shooter.feedRequest(feedingParameters.distance());
+        vision.tagsRequest();
+        shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         powerManager.shootingRequest();
       }
       case FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
@@ -254,14 +269,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.HUB_TAGS);
-        shooter.scoreRequest(scoringParameters.distance());
+        vision.hubTagsRequest();
+        shooter.prepareScoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         powerManager.shootingRequest();
       }
       case SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.HUB_TAGS);
+        vision.hubTagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
@@ -269,15 +284,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
-        shooter.feedRequest(PRESET_FEED_DISTANCE);
+        vision.tagsRequest();
+        shooter.prepareFeedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
         powerManager.shootingRequest();
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
@@ -285,27 +300,41 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
-        shooter.scoreRequest(scoringParameters.distance());
+        vision.tagsRequest();
+        shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         powerManager.shootingRequest();
       }
       case FALLBACK_SCORE -> {
         // hoppermanager controlled separately
-        vision.setState(VisionState.TAGS);
+        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         powerManager.shootingRequest();
       }
       case UNJAM -> {
-        hopperManager.idleRequest();
-        vision.setState(VisionState.TAGS);
-        shooter.idleRequest();
-        shooterHood.idleRequest();
+        hopperManager.unjamRequest();
+        vision.tagsRequest();
+        shooter.scoreRequest(3);
+        shooterHood.scoreRequest(3);
         swerve.normalDriveRequest();
         powerManager.idleRequest();
+      }
+      case WARMUP_SCORE -> {
+        vision.hubTagsRequest();
+        shooter.prepareScoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        swerve.warmupScoreRequest(scoringParameters);
+        powerManager.shootingRequest();
+      }
+      case WARMUP_FEED -> {
+        vision.tagsRequest();
+        shooter.prepareFeedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
+        swerve.warmupFeedRequest(feedingParameters);
+        powerManager.shootingRequest();
       }
     }
   }
@@ -313,7 +342,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   @Override
   protected void whileInState(RobotState state) {
     switch (state) {
-      case IDLE, UNJAM -> {
+      case IDLE -> {
         smartHoodIdleRequest();
         swerve.normalDriveRequest();
         hopperManager.idleRequest();
@@ -367,6 +396,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         swerve.feedRequest(fallbackFeedingParameters);
         hopperManager.scoreRequest();
       }
+      case WARMUP_SCORE -> {
+        shooter.prepareScoreRequest(scoringParameters.distance());
+        shooterHood.scoreRequest(scoringParameters.distance());
+        swerve.warmupScoreRequest(scoringParameters);
+      }
+      case WARMUP_FEED -> {
+        shooter.prepareFeedRequest(feedingParameters.distance());
+        shooterHood.feedRequest(feedingParameters.distance());
+        swerve.warmupFeedRequest(feedingParameters);
+      }
       default -> {}
     }
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
@@ -377,6 +416,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/gpDetection/both", detectingGp());
 
     MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
+  }
+
+  @Override
+  public void teleopInit() {
+    super.teleopInit();
+    idleRequest();
   }
 
   private void smartHoodIdleRequest() {
@@ -453,10 +498,22 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void prepareScoreOrFeedRequest() {
+    if (FeatureFlags.BRING_UP.getAsBoolean()) {
+      forceShootRequest();
+      return;
+    }
     if (isInAllianceZone) {
       prepareScoreRequest();
     } else {
       prepareFeedRequest();
+    }
+  }
+
+  public void warmupScoreOrFeedRequest() {
+    if (isInAllianceZone) {
+      warmupScoreRequest();
+    } else {
+      warmupFeedRequest();
     }
   }
 
@@ -492,8 +549,21 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFromRequest(RobotState.UNJAM);
   }
 
+  public void warmupScoreRequest() {
+    setStateFromRequest(RobotState.WARMUP_SCORE);
+  }
+
+  public void warmupFeedRequest() {
+    setStateFromRequest(RobotState.WARMUP_FEED);
+  }
+
   public void homeDeployRequest() {
     hopperManager.deploy.homingRequest();
+  }
+
+  public void homeDeployInAutoRequest() {
+    // TODO: When climber gets added to robot, check that we are not climbed
+    hopperManager.deploy.homeInAutoRequest();
   }
 
   public void homeShooterHoodRequest() {
@@ -526,19 +596,22 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && ((Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
                     ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
                     : FieldUtil.inTrench(robotPose.getTranslation()))
-                || SwerveAssist.ableToTrenchAssist(robotPose, swerve.getFieldRelativeSpeeds()));
+                || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
+    Pose2d robotPoseUsedForScoring =
+        health.isLocalizationHealthy()
+            ? robotPose
+            : new Pose2d(
+                FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
     scoringParameters =
-        AimParameterUtil.getScoringParameters(
-            health.isLocalizationHealthy()
-                ? robotPose
-                : new Pose2d(
-                    FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation()),
-            speeds);
+        getState() == RobotState.WARMUP_SCORE
+            ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, speeds)
+            : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, speeds);
 
     feedingParameters =
-        AimParameterUtil.getFeedingParameters(
-            feedLocation, robotPose, swerve.getFieldRelativeSpeeds());
+        getState() == RobotState.WARMUP_FEED
+            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
+            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
@@ -561,8 +634,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logScoringTransition() {
     DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
-    DogLog.log("RobotManager/Scoring/ScoreTransition/SwerveAtGoal", swerve.atGoal());
-    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterAtGoal", shooter.atGoalDebounced());
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/SwerveLookaheadAtGoal",
+        swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/ShooterLookaheadAtGoal",
+        shooter.atGoalLookaheadDebounced());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
@@ -577,8 +654,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logFeedTransition() {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
-    DogLog.log("RobotManager/Feeding/FeedTransition/SwerveAtGoal", swerve.atGoal());
-    DogLog.log("RobotManager/Feeding/FeedTransition/ShooterAtGoal", shooter.atGoalDebounced());
+    DogLog.log(
+        "RobotManager/Feeding/FeedTransition/SwerveLookaheadAtGoal",
+        swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
+    DogLog.log(
+        "RobotManager/Feeding/FeedTransition/ShooterLookaheadAtGoal",
+        shooter.atGoalLookaheadDebounced());
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
     DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
     DogLog.log(
