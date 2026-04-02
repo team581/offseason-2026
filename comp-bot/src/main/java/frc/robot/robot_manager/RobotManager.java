@@ -599,22 +599,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     : FieldUtil.inTrench(robotPose.getTranslation()))
                 || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
+    Pose2d robotPoseUsedForScoring =
+        health.isLocalizationHealthy()
+            ? robotPose
+            : new Pose2d(
+                FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
     scoringParameters =
         getState() == RobotState.WARMUP_SCORE
-            ? AimParameterUtil.getStaticScoringParameters(
-                health.isLocalizationHealthy()
-                    ? robotPose
-                    : new Pose2d(
-                        FieldUtil.getFallbackScorePoint().getTranslation(),
-                        robotPose.getRotation()),
-                requestedSpeeds)
-            : AimParameterUtil.getScoringParameters(
-                health.isLocalizationHealthy()
-                    ? robotPose
-                    : new Pose2d(
-                        FieldUtil.getFallbackScorePoint().getTranslation(),
-                        robotPose.getRotation()),
-                requestedSpeeds);
+            ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, requestedSpeeds)
+            : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, requestedSpeeds);
 
     feedingParameters =
         getState() == RobotState.WARMUP_FEED
