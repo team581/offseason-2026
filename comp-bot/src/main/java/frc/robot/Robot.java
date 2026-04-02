@@ -157,8 +157,6 @@ public class Robot extends Base581Robot {
       robotManager.prepareScoreOrFeedRequest();
     } else if (triggerValue > 0.1) {
       robotManager.warmupScoreOrFeedRequest();
-    } else {
-      robotManager.idleRequest();
     }
   }
 
@@ -175,6 +173,8 @@ public class Robot extends Base581Robot {
         .leftTrigger()
         .onPress(() -> hopperManager.setDriverWantsIntake(true))
         .onRelease(() -> hopperManager.setDriverWantsIntake(false));
+
+    driver.rightTrigger().onRelease(robotManager::idleRequest);
 
     driver.rightBumper().onPress(robotManager::idleRequest);
 
