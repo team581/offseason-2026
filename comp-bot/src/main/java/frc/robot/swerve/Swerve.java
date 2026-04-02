@@ -193,6 +193,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return fieldRelativeSpeeds;
   }
 
+  public ChassisSpeeds getRequestedSpeeds() {
+    return driveSource.getRequestedSpeeds();
+  }
+
   public void climbAssistDriveRequest() {
     setStateFromRequest(SwerveState.CLIMB_ASSIST);
   }
