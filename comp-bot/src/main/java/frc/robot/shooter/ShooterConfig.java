@@ -22,8 +22,10 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final int RPM_TOLERANCE = 150;
-  public static final int RPM_TOLERANCE_FEEDING = 1000;
+  public static final double RPM_TOLERANCE = 150.0;
+  public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;
+
+  public static final double RPM_TOLERANCE_FEEDING = 1000.0;
 
   public static final double GP_DETECT_CURRENT_THRESHOLD = 70.0;
 

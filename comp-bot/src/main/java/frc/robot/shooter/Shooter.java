@@ -296,7 +296,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   private double getTolerance() {
     return switch (getState()) {
-      case PREPARE_SCORE, SCORE -> ShooterConfig.RPM_TOLERANCE;
+      case PREPARE_SCORE -> ShooterConfig.RPM_TOLERANCE;
+      case SCORE -> ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING;
       case PREPARE_FEED, FEED -> ShooterConfig.RPM_TOLERANCE_FEEDING;
       case IDLE -> 500.0;
     };
@@ -335,11 +336,20 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private boolean calculateAtGoal() {
     return switch (getState()) {
       case IDLE -> false;
-      case PREPARE_SCORE, SCORE ->
+      case PREPARE_SCORE ->
           MathUtil.isNear(topLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(bottomLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
               && MathUtil.isNear(bottomRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
+      case SCORE ->
+          MathUtil.isNear(
+                  topLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING)
+              && MathUtil.isNear(
+                  topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING)
+              && MathUtil.isNear(
+                  bottomLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING)
+              && MathUtil.isNear(
+                  bottomRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
       case PREPARE_FEED, FEED ->
           MathUtil.isNear(topLeftMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
               && MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING)
