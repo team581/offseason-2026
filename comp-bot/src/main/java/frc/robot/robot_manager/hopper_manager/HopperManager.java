@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
+import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -134,7 +135,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         feeder.shootRequest();
       }
       case SHOOT, SHOOT_AND_INTAKE -> {
-        deploy.intakeRequest();
+        // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
+        if (deploy.getState() != DeployState.HOPPER_COMPACTION_IN) {
+          deploy.intakeRequest();
+        }
         intake.intakeRequest();
         conveyor.shootRequest();
         feeder.shootRequest();
