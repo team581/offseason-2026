@@ -108,7 +108,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case IDLE_DEPLOYED -> {
-        deploy.intakeRequest();
         intake.idleRequest();
         smartBallFillRequest();
       }
@@ -154,6 +153,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case SHOOT -> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.hopperCompactionRequest();
+        }
+      }
+      case IDLE_DEPLOYED -> {
+        if (timeout(0.5)) {
+          deploy.intakeRequest();
         }
       }
     }
