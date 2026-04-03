@@ -16,8 +16,7 @@ import frc.robot.autos.Autos;
 import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
-import frc.robot.deploy.DifferentialDeploy;
-import frc.robot.deploy.GenericDeploy;
+import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
@@ -70,7 +69,7 @@ public class Robot extends Base581Robot {
           hardware.shooterBottomLeftMotor,
           hardware.shooterBottomRightMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-  private final GenericDeploy deploy = new DifferentialDeploy(hardware.deployDifferentialMechanism);
+  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
   private final Vision vision =
       new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =

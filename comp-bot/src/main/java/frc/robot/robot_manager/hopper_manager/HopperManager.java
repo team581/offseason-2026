@@ -13,13 +13,13 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
-import frc.robot.deploy.GenericDeploy;
+import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
-  public final GenericDeploy deploy;
+  public final Deploy deploy;
   public final Intake intake;
   public final Conveyor conveyor;
   public final Feeder feeder;
@@ -47,7 +47,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private final Timer canRangeUpdateTimer = new Timer();
 
   public HopperManager(
-      GenericDeploy deploy,
+      Deploy deploy,
       Intake intake,
       Conveyor conveyor,
       Feeder feeder,

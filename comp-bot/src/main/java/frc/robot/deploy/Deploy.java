@@ -1,35 +1,47 @@
 package frc.robot.deploy;
 
+import com.ctre.phoenix6.controls.DifferentialPositionVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.SimpleDifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
+import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Deploy extends GenericDeploy {
-  private final TalonFX motor;
-  private final PositionTorqueCurrentFOC positionTorqueCurrentFOCRequest =
-      new PositionTorqueCurrentFOC(0);
+public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
+  private final SimpleDifferentialMechanism<TalonFX> differentialMechanism;
+
+  private final DifferentialPositionVoltage differentialPositionVoltageRequest =
+      new DifferentialPositionVoltage(0, 0).withEnableFOC(true);
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
-  private double motorPosition = 0.0;
-  private double statorCurrent = 0.0;
-  private double supplyCurrent = 0.0;
+  private double differentialMechanismPosition = 0.0;
+  private double leftMotorPosition = 0.0;
+  private double rightMotorPosition = 0.0;
+  private double leftStatorCurrent = 0.0;
+  private double rightStatorCurrent = 0.0;
+  private double leftSupplyCurrent = 0.0;
+  private double rightSupplyCurrent = 0.0;
 
-  public Deploy(TalonFX motor) {
-    motor.getConfigurator().apply(DeployConfig.MOTOR_CONFIG);
-    this.motor = motor;
-
-    TunablePid.register("Deploy", motor, DeployConfig.MOTOR_CONFIG);
+  public Deploy(SimpleDifferentialMechanism<TalonFX> differentialMechanism) {
+    super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
+    this.differentialMechanism = differentialMechanism;
+    this.leftMotor = differentialMechanism.getLeader();
+    this.rightMotor = differentialMechanism.getFollower();
+    TunablePid.register("Deploy/Left", leftMotor, DifferentialDeployConfig.LEFT_MOTOR_CONFIG);
+    TunablePid.register("Deploy/Right", rightMotor, DifferentialDeployConfig.RIGHT_MOTOR_CONFIG);
   }
 
-  @Override
   public void intakeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -39,7 +51,6 @@ public class Deploy extends GenericDeploy {
     }
   }
 
-  @Override
   public void stowRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -49,12 +60,10 @@ public class Deploy extends GenericDeploy {
     }
   }
 
-  @Override
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
   }
 
-  @Override
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
@@ -62,19 +71,20 @@ public class Deploy extends GenericDeploy {
     setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
-  @Override
   public void homeInAutoRequest() {
     setStateFromRequest(DeployState.HOME_INWARD);
   }
 
-  @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
       case UNHOMED, INTAKE, STOW -> currentState;
 
       case HOME_INWARD -> {
-        if (motor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
-          motor.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+        if (leftMotor.getStatorCurrent().getValueAsDouble()
+                > DifferentialDeployConfig.HOMING_CURRENT
+            && rightMotor.getStatorCurrent().getValueAsDouble()
+                > DifferentialDeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DifferentialDeployConfig.HOMING_END_POSITION_INWARD);
           yield DeployState.INTAKE;
         } else {
           yield currentState;
@@ -82,8 +92,11 @@ public class Deploy extends GenericDeploy {
       }
 
       case HOME_OUTWARD -> {
-        if (motor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
-          motor.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+        if (leftMotor.getStatorCurrent().getValueAsDouble()
+                > DifferentialDeployConfig.HOMING_CURRENT
+            && rightMotor.getStatorCurrent().getValueAsDouble()
+                > DifferentialDeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DifferentialDeployConfig.HOMING_END_POSITION_OUTWARD);
           yield DeployState.INTAKE;
         } else {
           yield currentState;
@@ -94,44 +107,63 @@ public class Deploy extends GenericDeploy {
   }
 
   private static double clamp(double deployLength) {
-    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
+    return MathUtil.clamp(
+        deployLength, DifferentialDeployConfig.MIN_LENGTH, DifferentialDeployConfig.MAX_LENGTH);
   }
 
   @Override
   protected void afterTransition(DeployState newState) {
     switch (newState) {
-      case UNHOMED -> motor.setControl(neutralRequest);
-      case HOME_INWARD ->
-          motor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
-      case HOME_OUTWARD ->
-          motor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
+      case UNHOMED -> {
+        leftMotor.setControl(neutralRequest);
+        rightMotor.setControl(neutralRequest);
+      }
+      case HOME_INWARD -> {
+        leftMotor.setControl(
+            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_INWARD));
+        rightMotor.setControl(
+            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_INWARD));
+      }
+      case HOME_OUTWARD -> {
+        leftMotor.setControl(
+            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_OUTWARD));
+        rightMotor.setControl(
+            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_OUTWARD));
+      }
       default ->
-          motor.setControl(
-              positionTorqueCurrentFOCRequest.withPosition(clamp(newState.getLength())));
+          differentialMechanism.setControl(
+              differentialPositionVoltageRequest
+                  .withAveragePosition(clamp(newState.getLength()))
+                  .withDifferentialPosition(0));
     }
   }
 
   @Override
   protected void whileInState(DeployState state) {
-    DogLog.log("Deploy/Position", motorPosition);
+    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
     DogLog.log("Deploy/GoalPosition", getState().getLength());
-    DogLog.log("Deploy/StatorCurrent", statorCurrent);
-    DogLog.log("Deploy/SupplyCurrent", supplyCurrent);
-    DogLog.log("Deploy/Velocity", motor.getVelocity().getValueAsDouble());
-    DogLog.log("Deploy/Voltage", motor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
+    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftStatorCurrent);
+    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftSupplyCurrent);
+    DogLog.log("Deploy/RightMotor/StatorCurrent", rightStatorCurrent);
+    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightSupplyCurrent);
+    DogLog.log("Deploy/LeftMotor/Velocity", leftMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/Velocity", rightMotor.getVelocity().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/Voltage", rightMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Deploy/LeftMotor/Voltage", leftMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Deploy/LeftMotor/Slot", leftMotor.getClosedLoopSlot().getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/Slot", rightMotor.getClosedLoopSlot().getValueAsDouble());
   }
 
-  @Override
   public double getPosition() {
-    return motorPosition;
+    return differentialMechanismPosition;
   }
 
-  @Override
   public boolean atGoal() {
     return atGoal(getState());
   }
 
-  @Override
   public void hopperCompactionRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
@@ -142,15 +174,25 @@ public class Deploy extends GenericDeploy {
   public boolean atGoal(DeployState state) {
     return switch (state) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
-      default -> MathUtil.isNear(state.getLength(), motorPosition, DeployConfig.POSITION_TOLERANCE);
+      default ->
+          MathUtil.isNear(
+                  state.getLength(), leftMotorPosition, DifferentialDeployConfig.POSITION_TOLERANCE)
+              && MathUtil.isNear(
+                  state.getLength(),
+                  rightMotorPosition,
+                  DifferentialDeployConfig.POSITION_TOLERANCE);
     };
   }
 
   @Override
   protected void collectInputs() {
-    motorPosition = motor.getPosition().getValueAsDouble();
-    statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    supplyCurrent = motor.getSupplyCurrent().getValueAsDouble();
+    differentialMechanismPosition = differentialMechanism.getAveragePosition().getValueAsDouble();
+    leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
+    rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
+    leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
+    rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
+    leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
+    rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
   }
 
   @Override
@@ -160,27 +202,34 @@ public class Deploy extends GenericDeploy {
             "Deploy",
             mechanism ->
                 mechanism
-                    .addMotor(motor, ChassisReference.Clockwise_Positive)
-                    .withMinPosition(DeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DeployConfig.MAX_LENGTH));
+                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
+                    .withMinPosition(DifferentialDeployConfig.MIN_LENGTH)
+                    .withMaxPosition(DifferentialDeployConfig.MAX_LENGTH));
 
     if (getState() == DeployState.HOME_INWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+      deploySimulation.seedPosition(DifferentialDeployConfig.HOMING_END_POSITION_INWARD);
       setStateFromRequest(DeployState.INTAKE);
     }
 
     if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+      deploySimulation.seedPosition(DifferentialDeployConfig.HOMING_END_POSITION_OUTWARD);
       setStateFromRequest(DeployState.INTAKE);
     }
 
     deploySimulation.update();
   }
 
-  @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    motor
+    leftMotor
         .getConfigurator()
-        .apply(DeployConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
+        .apply(
+            DifferentialDeployConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            DifferentialDeployConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 }
