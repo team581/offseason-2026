@@ -9,7 +9,7 @@ import com.ctre.phoenix6.mechanisms.SimpleDifferentialMechanism;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.deploy.DifferentialDeployConfig;
+import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 
@@ -28,8 +28,8 @@ public class Hardware {
               .withLeaderId(15)
               .withFollowerId(30)
               .withAlignment(MotorAlignmentValue.Opposed)
-              .withLeaderInitialConfigs(DifferentialDeployConfig.LEFT_MOTOR_CONFIG)
-              .withFollowerInitialConfigs(DifferentialDeployConfig.RIGHT_MOTOR_CONFIG)
+              .withLeaderInitialConfigs(DeployConfig.LEFT_MOTOR_CONFIG)
+              .withFollowerInitialConfigs(DeployConfig.RIGHT_MOTOR_CONFIG)
               .withFollowerUsesCommonLeaderConfigs(true));
 
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);

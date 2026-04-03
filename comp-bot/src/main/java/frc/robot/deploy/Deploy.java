@@ -13,6 +13,7 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
@@ -38,8 +39,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     this.differentialMechanism = differentialMechanism;
     this.leftMotor = differentialMechanism.getLeader();
     this.rightMotor = differentialMechanism.getFollower();
-    TunablePid.register("Deploy/Left", leftMotor, DifferentialDeployConfig.LEFT_MOTOR_CONFIG);
-    TunablePid.register("Deploy/Right", rightMotor, DifferentialDeployConfig.RIGHT_MOTOR_CONFIG);
+    TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
+    TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
   }
 
   public void intakeRequest() {
@@ -81,11 +82,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case UNHOMED, INTAKE, STOW -> currentState;
 
       case HOME_INWARD -> {
-        if (leftMotor.getStatorCurrent().getValueAsDouble()
-                > DifferentialDeployConfig.HOMING_CURRENT
-            && rightMotor.getStatorCurrent().getValueAsDouble()
-                > DifferentialDeployConfig.HOMING_CURRENT) {
-          differentialMechanism.setPosition(DifferentialDeployConfig.HOMING_END_POSITION_INWARD);
+        if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
+            && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
           yield DeployState.INTAKE;
         } else {
           yield currentState;
@@ -93,11 +92,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       }
 
       case HOME_OUTWARD -> {
-        if (leftMotor.getStatorCurrent().getValueAsDouble()
-                > DifferentialDeployConfig.HOMING_CURRENT
-            && rightMotor.getStatorCurrent().getValueAsDouble()
-                > DifferentialDeployConfig.HOMING_CURRENT) {
-          differentialMechanism.setPosition(DifferentialDeployConfig.HOMING_END_POSITION_OUTWARD);
+        if (leftMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT
+            && rightMotor.getStatorCurrent().getValueAsDouble() > DeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
           yield DeployState.INTAKE;
         } else {
           yield currentState;
@@ -108,8 +105,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   private static double clamp(double deployLength) {
-    return MathUtil.clamp(
-        deployLength, DifferentialDeployConfig.MIN_LENGTH, DifferentialDeployConfig.MAX_LENGTH);
+    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
   }
 
   @Override
@@ -120,16 +116,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         rightMotor.setControl(neutralRequest);
       }
       case HOME_INWARD -> {
-        leftMotor.setControl(
-            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_INWARD));
-        rightMotor.setControl(
-            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_INWARD));
+        leftMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
+        rightMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
       }
       case HOME_OUTWARD -> {
-        leftMotor.setControl(
-            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_OUTWARD));
-        rightMotor.setControl(
-            voltageRequest.withOutput(DifferentialDeployConfig.HOMING_VOLTAGE_OUTWARD));
+        leftMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
+        rightMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
       }
       default ->
           differentialMechanism.setControl(
@@ -176,20 +168,23 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     return switch (state) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
       default ->
-          MathUtil.isNear(
-                  state.getLength(), leftMotorPosition, DifferentialDeployConfig.POSITION_TOLERANCE)
+          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
               && MathUtil.isNear(
-                  state.getLength(),
-                  rightMotorPosition,
-                  DifferentialDeployConfig.POSITION_TOLERANCE);
+                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
     };
   }
 
   @Override
   protected void collectInputs() {
-    differentialMechanismPosition = differentialMechanism.getAveragePosition().getValueAsDouble();
     leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
     rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
+    if (RobotBase.isSimulation()) {
+      // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
+      // so derive it from individual motor positions instead.
+      differentialMechanismPosition = (leftMotorPosition + rightMotorPosition) / 2.0;
+    } else {
+      differentialMechanismPosition = differentialMechanism.getAveragePosition().getValueAsDouble();
+    }
     leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
     rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
     leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
@@ -205,20 +200,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
                     .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(DifferentialDeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DifferentialDeployConfig.MAX_LENGTH));
+                    .withMinPosition(DeployConfig.MIN_LENGTH)
+                    .withMaxPosition(DeployConfig.MAX_LENGTH));
 
     if (getState() == DeployState.HOME_INWARD) {
-      deploySimulation.seedPosition(DifferentialDeployConfig.HOMING_END_POSITION_INWARD);
+      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
       setStateFromRequest(DeployState.INTAKE);
     }
 
     if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(DifferentialDeployConfig.HOMING_END_POSITION_OUTWARD);
+      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
       setStateFromRequest(DeployState.INTAKE);
     }
 
-    deploySimulation.update();
+    deploySimulation.update(clamp(getState().getLength()));
   }
 
   @Override
@@ -226,12 +221,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     leftMotor
         .getConfigurator()
         .apply(
-            DifferentialDeployConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            DeployConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
     rightMotor
         .getConfigurator()
         .apply(
-            DifferentialDeployConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            DeployConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 }
