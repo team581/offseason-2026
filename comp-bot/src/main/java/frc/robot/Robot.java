@@ -147,19 +147,6 @@ public class Robot extends Base581Robot {
   }
 
   @Override
-  public void teleopPeriodic() {
-    super.teleopPeriodic();
-
-    double triggerValue = hardware.driverController.getRightTriggerAxis();
-
-    if (triggerValue > 0.95) {
-      robotManager.prepareScoreOrFeedRequest();
-    } else if (triggerValue > 0.13) {
-      robotManager.warmupScoreOrFeedRequest();
-    }
-  }
-
-  @Override
   protected void configureBindings() {
     var driver =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
@@ -172,6 +159,11 @@ public class Robot extends Base581Robot {
         .leftTrigger()
         .onPress(() -> hopperManager.setDriverWantsIntake(true))
         .onRelease(() -> hopperManager.setDriverWantsIntake(false));
+
+    driver
+        .rightTrigger()
+        .onPress(robotManager::prepareScoreOrFeedRequest)
+        .onRelease(robotManager::idleRequest);
 
     driver.rightTrigger().onRelease(robotManager::idleRequest);
 
