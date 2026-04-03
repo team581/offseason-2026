@@ -75,6 +75,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     setStateFromRequest(DeployState.HOME_INWARD);
   }
 
+  @Override
   protected DeployState getNextState(DeployState currentState) {
     return switch (currentState) {
       case UNHOMED, INTAKE, STOW -> currentState;
@@ -220,6 +221,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     deploySimulation.update();
   }
 
+  @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
     leftMotor
         .getConfigurator()
