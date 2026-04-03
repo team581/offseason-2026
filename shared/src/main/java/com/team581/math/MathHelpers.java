@@ -121,7 +121,7 @@ public class MathHelpers {
       return Rotation2d.kZero;
     }
 
-    return new Translation2d(vector.vxMetersPerSecond, vector.vyMetersPerSecond).getAngle();
+    return rotation2d(vector.vxMetersPerSecond, vector.vyMetersPerSecond);
   }
 
   public static Rotation2d getDriveDirection(Pose2d start, Pose2d end) {
