@@ -153,9 +153,9 @@ public class Robot extends Base581Robot {
 
     double triggerValue = hardware.driverController.getRightTriggerAxis();
 
-    if (triggerValue > 0.8) {
+    if (triggerValue > 0.95) {
       robotManager.prepareScoreOrFeedRequest();
-    } else if (triggerValue > 0.1) {
+    } else if (triggerValue > 0.13) {
       robotManager.warmupScoreOrFeedRequest();
     }
   }
