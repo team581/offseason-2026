@@ -7,7 +7,6 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
-import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolynomialRegression;
@@ -82,27 +81,27 @@ public class ShooterConfig {
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.6).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
 
   public static DoubleSubscriber PREPARE_SHOT_FF_VOLTAGE =
       DogLog.tunable("Shooter/PrepareShotFFVoltage", 0.5);
 
   public static DoubleSubscriber TURBO_MODE_FF_VOLTAGE =
-      DogLog.tunable("Shooter/PrepareShotFFVoltage", 1.0);
+      DogLog.tunable("Shooter/TurboPrepareShotFFVoltage", 1.0);
   // Calculated from average of CAPIN logs
   public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
       DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.25);
@@ -148,11 +147,10 @@ public class ShooterConfig {
                 .withStatorCurrentLimitEnable(true)
                 .withStatorCurrentLimit(150)
                 .withSupplyCurrentLimit(25))
-        .withVoltage(new VoltageConfigs().withPeakReverseVoltage(0))
         .withTorqueCurrent(
             new TorqueCurrentConfigs()
                 .withPeakForwardTorqueCurrent(200)
-                .withPeakReverseTorqueCurrent(0));
+                .withPeakReverseTorqueCurrent(-200));
   }
 
   private ShooterConfig() {}

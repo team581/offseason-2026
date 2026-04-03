@@ -34,8 +34,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   public final TalonFX bottomLeftMotor;
   public final TalonFX bottomRightMotor;
 
-  private final VelocityVoltage velocityRequest =
-      new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
+  private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withEnableFOC(false);
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -151,13 +150,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
     switch (state) {
       case IDLE -> {
-        var setpoint = ShooterConfig.IDLE_RPM / 60.0;
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
-        topLeftMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
-        bottomLeftMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
-        bottomRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        topRightMotor.disable();
+        topLeftMotor.disable();
+        bottomLeftMotor.disable();
+        bottomRightMotor.disable();
 
-        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
+        DogLog.log("Shooter/RpmSetpoint", 0.0);
       }
       case PREPARE_SCORE -> {
         var setpoint = shootingRpm / 60.0;
