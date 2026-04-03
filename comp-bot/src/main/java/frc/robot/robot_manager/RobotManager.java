@@ -357,7 +357,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         smartHoodPrepareScoreRequest();
         swerve.scoreRequest(scoringParameters);
         smartScoringPowerManagerRequest();
-
+        hopperManager.idleRequest();
         // isHubActive always logged
       }
       case SCORE -> {
@@ -374,6 +374,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FEED -> {
         smartHoodPrepareFeedRequest();
         swerve.feedRequest(feedingParameters);
+        hopperManager.idleRequest();
       }
       case FEED -> {
         shooterHood.feedRequest(feedingParameters.distance());
