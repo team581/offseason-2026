@@ -147,6 +147,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && !swerve.isMovingBeyondSafeSpeed()
                 && shooter.atGoalLookaheadDebounced()
                 && shooterHood.atGoal()
+                && localization.imu.accelerationLowEnoughToShoot()
                 && localization.isTrustworthy()
                 && localization.imu.isFlatDebounced()
                 && hubActivity.getTOFBasedHubActive()
@@ -172,6 +173,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 || (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                     && shooter.atGoalLookaheadDebounced()
                     && localization.isTrustworthy()
+                    && localization.imu.accelerationLowEnoughToShoot()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
                     && isInSafeScoringLocation

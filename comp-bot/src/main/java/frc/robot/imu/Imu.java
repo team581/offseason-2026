@@ -17,6 +17,9 @@ public class Imu extends BaseImuSubsystem {
 
   private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
+  private final DoubleSubscriber MAX_ACCELRATION_THRESHOLD_SHOOTING =
+      DogLog.tunable("Imu/MaxAccelerationThresholdShooting", 0.35);
+
   public final BumpCrossingTracker bumpCrossingTracker;
 
   private double pigeonXPrevAccel = 0.0;
@@ -24,6 +27,10 @@ public class Imu extends BaseImuSubsystem {
   private double pigeonGForce = 0.0;
   private double maxGForceDetected = Double.NEGATIVE_INFINITY;
   private double lastUpdateTime = 0.0;
+
+  private double pigeonFilteredXAccel = 0.0;
+  private double pigeonFilteredYAccel = 0.0;
+  private double accel;
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
@@ -36,14 +43,19 @@ public class Imu extends BaseImuSubsystem {
                 drivetrain.resetPose(new Pose2d(translation, driveState.Pose.getRotation())));
   }
 
+  public boolean accelerationLowEnoughToShoot() {
+    return accel < MAX_ACCELRATION_THRESHOLD_SHOOTING.get();
+  }
+
   @Override
   public void collectInputs() {
     super.collectInputs();
 
-    double pigeonFilteredXAccel =
+    pigeonFilteredXAccel =
         pigeonXAccelFilter.calculate(drivetrain.getPigeon2().getAccelerationX().getValueAsDouble());
-    double pigeonFilteredYAccel =
+    pigeonFilteredYAccel =
         pigeonYAccelFilter.calculate(drivetrain.getPigeon2().getAccelerationY().getValueAsDouble());
+    accel = Math.hypot(pigeonFilteredXAccel, pigeonFilteredYAccel);
 
     // Calculates the jerk in the X and Y directions
     double currentTime = MathSharedStore.getTimestamp();
@@ -73,6 +85,7 @@ public class Imu extends BaseImuSubsystem {
     DogLog.log("Imu/Pigeon/HypotAccel", pigeonJerk);
     DogLog.log("Imu/Pigeon/GForce", pigeonGForce);
     DogLog.log("Imu/Pigeon/MaxGForce", maxGForceDetected);
+    DogLog.log("Imu/Pigeon/FilteredAccel", accel);
     bumpCrossingTracker.log();
   }
 
