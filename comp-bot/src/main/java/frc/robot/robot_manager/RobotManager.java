@@ -9,6 +9,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
@@ -59,6 +60,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInSafeScoringLocation = false;
   private boolean isInAllianceZone = false;
   private boolean isInSafeFeedingLocation = true;
+
+  // Number gotten from trench scoring point
+  private DoubleSubscriber SLOW_SCORING_DISTANCE_THRESHOLD =
+      DogLog.tunable("RobotManager/FarShootingThreshold", 3.5);
 
   private FeedLocation feedLocation = FeedLocation.CLOSEST;
 
@@ -272,7 +277,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         vision.hubTagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        powerManager.shootingRequest();
+        smartScoringPowerManagerRequest();
       }
       case SCORE -> {
         // hoppermanager controlled separately
@@ -280,7 +285,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        powerManager.shootingRequest();
+        smartScoringPowerManagerRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
         // hoppermanager controlled separately
@@ -327,7 +332,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.warmupScoreRequest(scoringParameters);
-        powerManager.shootingRequest();
+        smartScoringPowerManagerRequest();
       }
       case WARMUP_FEED -> {
         vision.tagsRequest();
@@ -351,12 +356,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_SCORE -> {
         smartHoodPrepareScoreRequest();
         swerve.scoreRequest(scoringParameters);
+        smartScoringPowerManagerRequest();
+
         // isHubActive always logged
       }
       case SCORE -> {
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         hopperManager.scoreRequest();
+        smartScoringPowerManagerRequest();
       }
       case FORCE_SCORE -> {
         shooter.scoreRequest(scoringParameters.distance());
@@ -400,6 +408,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.warmupScoreRequest(scoringParameters);
+        smartScoringPowerManagerRequest();
       }
       case WARMUP_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());
@@ -464,6 +473,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NotNearTrench");
 
       shooterHood.feedRequest(feedingParameters.distance());
+    }
+  }
+
+  private void smartScoringPowerManagerRequest() {
+    if (robotPose.getTranslation().getDistance(FieldUtil.HUB_POSE.getTranslation())
+        > SLOW_SCORING_DISTANCE_THRESHOLD.get()) {
+      powerManager.shootingFarRequest();
+    } else {
+      powerManager.shootingRequest();
     }
   }
 
