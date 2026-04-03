@@ -12,6 +12,11 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HubActivity extends StateMachineSubsystem<HubActivityState> {
   private static final double FORCE_SCORE_TRANSITION_TIMEOUT = 3.0;
+
+  private static final String LIME_GREEN_HEX = Color.kLimeGreen.toHexString();
+  private static final String BLACK_HEX = Color.kBlack.toHexString();
+  private static final String RED_HEX = Color.kRed.toHexString();
+
   private final DoubleSubscriber tunableHubStateOffset =
       DogLog.tunable("HubActivity/FieldHubDelay", 2.0);
 
@@ -39,16 +44,16 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
     return actualHubActive;
   }
 
-  public Color getHubStateColor() {
+  public String getHubStateColorHex() {
     if (getTOFBasedHubActive()) {
       if (getActualHubActive()) {
-        return Color.kLimeGreen;
+        return LIME_GREEN_HEX;
       } else {
         boolean isGreen = Math.floor(teleopTimer.get() / 0.1) % 2 == 0;
-        return isGreen ? Color.kLimeGreen : Color.kBlack;
+        return isGreen ? LIME_GREEN_HEX : BLACK_HEX;
       }
     } else {
-      return Color.kRed;
+      return RED_HEX;
     }
   }
 
@@ -112,7 +117,7 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
   protected void whileInState(HubActivityState state) {
     // Driver station logging
     DogLog.forceNt.log("HubActivity/CurrentShift", FmsUtil.currentShift(timeSinceMatchStart));
-    DogLog.forceNt.log("HubActivity/Active", getHubStateColor().toHexString());
+    DogLog.forceNt.log("HubActivity/Active", getHubStateColorHex());
     DogLog.forceNt.log("HubActivity/TimeUntilNextShift", timeUntilNextShift);
 
     DogLog.log("HubActivity/TimeSinceMatchStart", timeSinceMatchStart);
