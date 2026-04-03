@@ -6,6 +6,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.SimpleDifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -181,7 +182,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     if (RobotBase.isSimulation()) {
       // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
       // so derive it from individual motor positions instead.
-      differentialMechanismPosition = (leftMotorPosition + rightMotorPosition) / 2.0;
+      differentialMechanismPosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
     } else {
       differentialMechanismPosition = differentialMechanism.getAveragePosition().getValueAsDouble();
     }
