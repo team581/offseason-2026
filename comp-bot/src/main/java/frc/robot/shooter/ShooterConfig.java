@@ -25,7 +25,7 @@ public class ShooterConfig {
   public static final double RPM_TOLERANCE = 150.0;
   public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;
 
-  public static final double RPM_TOLERANCE_FEEDING = 1000.0;
+  public static final double RPM_TOLERANCE_FEEDING = 500.0;
 
   public static final double GP_DETECT_CURRENT_THRESHOLD = 70.0;
 
