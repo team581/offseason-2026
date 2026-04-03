@@ -4,7 +4,6 @@ import com.team581.vision.results.TagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
@@ -69,10 +68,8 @@ public class TrustFactor {
       weightedStdY += weightY * stdY;
     }
 
-    var avgVisionPose = new Pose2d(avgX, avgY, Rotation2d.kZero);
-
     // same as (global_pose - avg_vision)
-    double poseDifference = globalPose.getTranslation().getDistance(avgVisionPose.getTranslation());
+    double poseDifference = Math.hypot(globalPose.getX() - avgX, globalPose.getY() - avgY);
 
     trustFactor = poseDifference + weightedStdX + weightedStdY;
   }
