@@ -81,7 +81,8 @@ public class FmsUtil {
     return alliance == Alliance.Red;
   }
 
-  public static double timeUntilNextShift(double timeSinceMatchStart) {
+  public static double timeUntilNextShift(
+      double timeSinceMatchStart, boolean defaultAutoWinnerValue) {
     if (DriverStation.isDisabled() || !DriverStation.isTeleop()) {
       return 0.0;
     }
@@ -99,6 +100,9 @@ public class FmsUtil {
       return SHIFT3_TIME_DURATION - timeSinceMatchStart;
     }
     if (timeSinceMatchStart <= SHIFT4_TIME_DURATION) {
+      if (isAutoWinner().orElse(defaultAutoWinnerValue)) {
+        return ENDGAME_DURATION - timeSinceMatchStart;
+      }
       return SHIFT4_TIME_DURATION - timeSinceMatchStart;
     }
     if (timeSinceMatchStart <= ENDGAME_DURATION) {
