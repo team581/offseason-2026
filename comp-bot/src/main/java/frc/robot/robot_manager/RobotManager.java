@@ -145,9 +145,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         if ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                 && !swerve.isMovingBeyondSafeSpeed()
+                && localization.imu.accelerationLowEnoughToShoot()
                 && shooter.atGoalLookaheadDebounced()
                 && shooterHood.atGoal()
-                && localization.imu.accelerationLowEnoughToShoot()
                 && localization.isTrustworthy()
                 && localization.imu.isFlatDebounced()
                 && hubActivity.getTOFBasedHubActive()
@@ -171,9 +171,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
                 || (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                    && !swerve.isMovingBeyondSafeSpeed()
+                    && localization.imu.accelerationLowEnoughToShoot()
                     && shooter.atGoalLookaheadDebounced()
                     && localization.isTrustworthy()
-                    && localization.imu.accelerationLowEnoughToShoot()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
                     && isInSafeScoringLocation
@@ -194,6 +195,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+            && !swerve.isMovingBeyondSafeSpeed()
+            && localization.imu.accelerationLowEnoughToShoot()
             && shooter.atGoalLookaheadDebounced()
             && isInSafeFeedingLocation
             && localization.imu.isFlatDebounced()
@@ -214,6 +217,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || (shooter.atGoalLookaheadDebounced()
+                && !swerve.isMovingBeyondSafeSpeed()
+                && localization.imu.accelerationLowEnoughToShoot()
                 && isInSafeFeedingLocation
                 && swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                 && localization.imu.isFlatDebounced()
