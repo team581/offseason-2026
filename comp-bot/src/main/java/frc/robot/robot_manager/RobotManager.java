@@ -609,7 +609,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void homeDeployInAutoRequest() {
-    // TODO: When climber gets added to robot, check that we are not climbed
     hopperManager.deploy.homeInAutoRequest();
   }
 
