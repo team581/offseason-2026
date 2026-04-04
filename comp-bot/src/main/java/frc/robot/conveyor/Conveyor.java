@@ -13,7 +13,7 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
   private final TalonFX topMotor;
   private final TalonFX bottomMotor;
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
   public Conveyor(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);

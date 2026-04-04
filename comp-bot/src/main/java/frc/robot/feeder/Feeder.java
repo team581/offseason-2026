@@ -13,7 +13,7 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   private final TalonFX topMotor;
   private final TalonFX bottomMotor;
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
   public Feeder(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.FEEDER, FeederState.IDLE);
