@@ -264,7 +264,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        powerManager.scoringRequest();
+        powerManager.feedingRequest();
       }
       case FEED -> {
         // hoppermanager controlled separately
@@ -272,7 +272,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        powerManager.scoringRequest();
+        powerManager.feedingRequest();
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
@@ -295,7 +295,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
-        powerManager.scoringRequest();
+        powerManager.feedingRequest();
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
@@ -303,7 +303,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
-        powerManager.scoringRequest();
+        powerManager.feedingRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
@@ -341,7 +341,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.warmupFeedRequest(feedingParameters);
-        powerManager.scoringRequest();
+        powerManager.feedingRequest();
       }
     }
   }
