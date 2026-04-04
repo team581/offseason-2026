@@ -50,12 +50,12 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     setStateFromRequest(PowerManagerState.IDLE);
   }
 
-  public void shootingFarRequest() {
-    setStateFromRequest(PowerManagerState.SHOOTING_FAR);
+  public void scoringFarRequest() {
+    setStateFromRequest(PowerManagerState.SCORING_FAR);
   }
 
-  public void shootingRequest() {
-    setStateFromRequest(PowerManagerState.SHOOTING);
+  public void scoringRequest() {
+    setStateFromRequest(PowerManagerState.SCORING);
   }
 
   public void turboRequest() {

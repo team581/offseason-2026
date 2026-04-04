@@ -248,7 +248,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case FORCE_SCORE -> {
         // hoppermanager controlled separately
@@ -256,7 +256,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.normalDriveRequest();
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case PREPARE_FEED -> {
         // hoppermanager controlled separately
@@ -264,7 +264,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case FEED -> {
         // hoppermanager controlled separately
@@ -272,7 +272,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
@@ -295,7 +295,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case FALLBACK_FEED -> {
         // hoppermanager controlled separately
@@ -303,7 +303,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
@@ -311,7 +311,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case FALLBACK_SCORE -> {
         // hoppermanager controlled separately
@@ -319,7 +319,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
       case UNJAM -> {
         hopperManager.unjamRequest();
@@ -341,7 +341,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.warmupFeedRequest(feedingParameters);
-        powerManager.shootingRequest();
+        powerManager.scoringRequest();
       }
     }
   }
@@ -482,9 +482,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private void smartScoringPowerManagerRequest() {
     if (robotPose.getTranslation().getDistance(FieldUtil.HUB_POSE.getTranslation())
         > SLOW_SCORING_DISTANCE_THRESHOLD.get()) {
-      powerManager.shootingFarRequest();
+      powerManager.scoringFarRequest();
     } else {
-      powerManager.shootingRequest();
+      powerManager.scoringRequest();
     }
   }
 
