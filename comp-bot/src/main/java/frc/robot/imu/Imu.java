@@ -30,7 +30,7 @@ public class Imu extends BaseImuSubsystem {
 
   private double pigeonFilteredXAccel = 0.0;
   private double pigeonFilteredYAccel = 0.0;
-  private double accel;
+  private double accel = 0.0;
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(SubsystemPriority.IMU, drivetrain);
