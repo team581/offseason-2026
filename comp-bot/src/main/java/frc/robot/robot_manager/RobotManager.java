@@ -571,11 +571,37 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void warmupScoreRequest() {
-    setStateFromRequest(RobotState.WARMUP_SCORE);
+    switch (getState()) {
+      case SCORE, PREPARE_SCORE, PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {}
+      default -> {
+        setStateFromRequest(RobotState.WARMUP_SCORE);
+      }
+    }
   }
 
   public void warmupFeedRequest() {
-    setStateFromRequest(RobotState.WARMUP_FEED);
+    switch (getState()) {
+      case FEED, PREPARE_FEED, PREPARE_FALLBACK_FEED, FALLBACK_FEED -> {}
+      default -> {
+        setStateFromRequest(RobotState.WARMUP_FEED);
+      }
+    }
+  }
+
+  public void cancelWarmupRequest() {
+    switch (getState()) {
+      case SCORE,
+          PREPARE_SCORE,
+          PREPARE_FALLBACK_SCORE,
+          FALLBACK_SCORE,
+          FEED,
+          PREPARE_FEED,
+          PREPARE_FALLBACK_FEED,
+          FALLBACK_FEED -> {}
+      default -> {
+        idleRequest();
+      }
+    }
   }
 
   public void homeDeployRequest() {

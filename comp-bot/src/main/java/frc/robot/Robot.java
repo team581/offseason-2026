@@ -206,6 +206,10 @@ public class Robot extends Base581Robot {
         .onRelease(robotManager::cancelStowDeployRequest);
 
     operator
+        .leftBumper()
+        .onPress(robotManager::warmupScoreOrFeedRequest)
+        .onRelease(robotManager::cancelWarmupRequest);
+    operator
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
         .onRelease(() -> robotManager.setTrenchOverrideRequest(false));
