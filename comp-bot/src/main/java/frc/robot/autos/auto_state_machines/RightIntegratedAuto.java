@@ -109,7 +109,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(180 + 90)))
                   .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
-                  .withLinearConstraints(1.5, 2.0)
+                  .withLinearConstraints(2.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(9.5, 6.814, Rotation2d.kCW_90deg))
                   .withMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
