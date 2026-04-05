@@ -110,11 +110,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       conveyor.ballFillingRequest();
       feeder.ballFillingRequest();
     } else {
-      if (!towerSensorDebounced) {
-        conveyor.intakeRequest();
-      } else {
-        conveyor.idleRequest();
-      }
+      conveyor.intakeRequest();
+
       feeder.idleRequest();
     }
   }
@@ -163,7 +160,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   @Override
   protected void whileInState(HopperState state) {
     if (state.canBallFill) {
-      smartBallFillRequest();
+      if (state == HopperState.INTAKING) {
+        smartIntakeBallFillRequest();
+      } else {
+
+        smartBallFillRequest();
+      }
     }
 
     switch (state) {
