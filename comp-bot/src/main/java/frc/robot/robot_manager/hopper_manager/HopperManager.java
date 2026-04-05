@@ -66,6 +66,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     canRangeUpdateTimer.start();
   }
 
+  @Override
+  protected HopperState getNextState(HopperState currentState) {
+    return switch (getState()) {
+      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING, EJECTING -> {
+        yield resolveIdleState();
+      }
+      default -> currentState;
+    };
+  }
+
   private boolean shouldFillBalls() {
     if (towerSensorDebounced) {
       // The sensor in the tower shows we are holding fuel, so we can't fill anymore
@@ -100,7 +110,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       conveyor.ballFillingRequest();
       feeder.ballFillingRequest();
     } else {
-      conveyor.slowintakemodestateRequest();
+      if (!towerSensorDebounced) {
+        conveyor.intakeRequest();
+      } else {
+        conveyor.idleRequest();
+      }
       feeder.idleRequest();
     }
   }

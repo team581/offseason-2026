@@ -42,10 +42,10 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(4.92, 1900.0),
-          Map.entry(3.46, 1550.0),
-          Map.entry(2.79, 1500.0),
-          Map.entry(1.42, 1350.0));
+          Map.entry(4.92, 1850.0),
+          Map.entry(3.46, 1500.0),
+          Map.entry(2.79, 1450.0),
+          Map.entry(1.42, 1300.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
@@ -83,24 +83,24 @@ public class ShooterConfig {
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.5).withKV(0.13));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.5).withKV(0.13));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.5).withKV(0.13));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.65).withKV(0.13).withKD(0.00005));
+          .withSlot0(new Slot0Configs().withKP(0.5).withKV(0.13));
 
   public static DoubleSubscriber PREPARE_SHOT_FF_VOLTAGE =
-      DogLog.tunable("Shooter/PrepareShotFFVoltage", 0.5);
+      DogLog.tunable("Shooter/PrepareShotFFVoltage", 0.6);
 
   public static DoubleSubscriber TURBO_MODE_FF_VOLTAGE =
       DogLog.tunable("Shooter/TurboPrepareShotFFVoltage", 1.0);

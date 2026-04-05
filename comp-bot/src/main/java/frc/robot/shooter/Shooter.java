@@ -94,7 +94,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void prepareScoreRequest(double distance) {
     this.scoreDistance = distance;
-    setStateFromRequest(ShooterState.PREPARE_SCORE);
+    if (getState() != ShooterState.SCORE) {
+      setStateFromRequest(ShooterState.PREPARE_SCORE);
+    }
   }
 
   public void scoreRequest(double distance) {
@@ -130,6 +132,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/AtGoal", atGoal());
     DogLog.log("Shooter/TopRight/Voltage", topRightMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log(
+        "Shooter/TopRight/SupplyVoltage", topRightMotor.getSupplyVoltage().getValueAsDouble());
+
     DogLog.log("Shooter/TopLeft/Voltage", topLeftMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log(
         "Shooter/BottomRight/Voltage", bottomRightMotor.getMotorVoltage().getValueAsDouble());
