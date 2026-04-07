@@ -110,9 +110,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       conveyor.ballFillingRequest();
       feeder.ballFillingRequest();
     } else {
-      conveyor.intakeRequest();
-
-      feeder.idleRequest();
+      if (towerSensorDebounced) {
+        conveyor.idleRequest();
+        feeder.idleRequest();
+      } else {
+        conveyor.intakeRequest();
+        feeder.intakeRequest();
+      }
     }
   }
 
