@@ -161,6 +161,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         "Shooter/BottomRight/SupplyCurrent",
         bottomRightMotor.getSupplyCurrent().getValueAsDouble());
 
+    DogLog.log(
+        "Shooter/TopRight/TorqueCurrent", topRightMotor.getTorqueCurrent().getValueAsDouble());
+
     switch (state) {
       case IDLE -> {
         var setpoint = ShooterConfig.IDLE_RPM / 60.0;
