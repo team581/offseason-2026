@@ -100,7 +100,7 @@ public class ShooterConfig {
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber ACTIVE_SHOT_FF_CURRENT =
-      DogLog.tunable("Shooter/ActiveShotFFCurrent", 5.0);
+      DogLog.tunable("Shooter/ActiveShotFFCurrent", 30.0);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
       DogLog.tunable("Shooter/TurboShotFFCurrent", 0.0);
