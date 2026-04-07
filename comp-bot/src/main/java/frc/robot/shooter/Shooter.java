@@ -163,9 +163,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
     switch (state) {
       case IDLE -> {
-        topRightMotor.disable();
-
-        DogLog.log("Shooter/RpmSetpoint", 0.0);
+        var setpoint = ShooterConfig.IDLE_RPM / 60.0;
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
       }
       case PREPARE_SCORE -> {
         var setpoint = shootingRpm / 60.0;

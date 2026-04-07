@@ -29,7 +29,7 @@ public class ShooterConfig {
 
   public static final double GP_DETECT_CURRENT_THRESHOLD = 70.0;
 
-  public static final double IDLE_RPM = 0;
+  public static final double IDLE_RPM = 750;
 
   public static final double PIT_FUNCTIONALITY_RPM = 800;
 
