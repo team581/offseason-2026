@@ -469,7 +469,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           new Pose2d(
               point.redPose().getX() + COLLISION_X_OFFSET,
               point.redPose().getY(),
-              point.getRotation()));
+              point.redPose().getRotation()));
     } else {
       return point;
     }
