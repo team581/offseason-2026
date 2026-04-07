@@ -52,11 +52,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double bottomLeftMotorRpm = 0;
   private double bottomRightMotorRpm = 0;
 
-  private double topLeftMotorAcceleration = 0;
-  private double topRightMotorAcceleration = 0;
-  private double bottomLeftMotorAcceleration = 0;
-  private double bottomRightMotorAcceleration = 0;
-
   private double topLeftStatorCurrent = 0.0;
   private double topRightStatorCurrent = 0.0;
   private double bottomLeftStatorCurrent = 0.0;
@@ -64,14 +59,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   private boolean atGoal = false;
   private boolean atGoalDebounced = false;
-  private boolean atGoalLookaheadDebounced = false;
 
   private boolean turboMode = false;
 
   // Debounce for delay between shots at 15 bps
   private final Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
-  private final Debouncer atGoalLookaheadDebouncer =
-      new Debouncer(1.0 / 15.0, DebounceType.kFalling);
 
   public Shooter(
       TalonFX topLeftMotor,
@@ -226,22 +218,15 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     bottomRightStatorCurrent = bottomRightMotor.getStatorCurrent().getValueAsDouble();
 
     topLeftMotorRpm = topLeftMotor.getVelocity().getValueAsDouble() * 60.0;
-    topLeftMotorAcceleration = topLeftMotor.getAcceleration().getValueAsDouble() * 60.0;
 
     topRightMotorRpm = topRightMotor.getVelocity().getValueAsDouble() * 60.0;
-    topRightMotorAcceleration = topRightMotor.getAcceleration().getValueAsDouble() * 60.0;
 
     bottomLeftMotorRpm = bottomLeftMotor.getVelocity().getValueAsDouble() * 60.0;
-    bottomLeftMotorAcceleration = bottomLeftMotor.getAcceleration().getValueAsDouble() * 60.0;
 
     bottomRightMotorRpm = bottomRightMotor.getVelocity().getValueAsDouble() * 60.0;
-    bottomRightMotorAcceleration = bottomRightMotor.getAcceleration().getValueAsDouble() * 60.0;
 
     atGoal = calculateAtGoal();
     atGoalDebounced = atGoalDebouncer.calculate(atGoal);
-    atGoalLookaheadDebounced =
-        atGoalLookaheadDebouncer.calculate(
-            calculateAtGoalLookahead(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
   }
 
   public boolean atGoal() {
@@ -250,57 +235,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public boolean atGoalDebounced() {
     return atGoalDebounced;
-  }
-
-  public boolean atGoalLookaheadDebounced() {
-    return atGoalLookaheadDebounced;
-  }
-
-  private double getTargetRpm() {
-    return switch (getState()) {
-      case PREPARE_SCORE, SCORE -> shootingRpm;
-      case PREPARE_FEED, FEED -> feedingRpm;
-      case IDLE -> ShooterConfig.IDLE_RPM;
-    };
-  }
-
-  private double getTolerance() {
-    return switch (getState()) {
-      case PREPARE_SCORE -> ShooterConfig.RPM_TOLERANCE;
-      case SCORE -> ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING;
-      case PREPARE_FEED, FEED -> ShooterConfig.RPM_TOLERANCE_FEEDING;
-      case IDLE -> 500.0;
-    };
-  }
-
-  public boolean calculateAtGoalLookahead(double lookaheadTimeSeconds) {
-    switch (getState()) {
-      case PREPARE_SCORE, SCORE, PREPARE_FEED, FEED -> {}
-      default -> {
-        return atGoal();
-      }
-    }
-
-    var targetRpm = getTargetRpm();
-    var tolerance = getTolerance();
-
-    // Calculate predicted RPM for each motor
-    double predictedTopLeftRpm =
-        topLeftMotorRpm + (topLeftMotorAcceleration * lookaheadTimeSeconds);
-    double predictedTopRightRpm =
-        topRightMotorRpm + (topRightMotorAcceleration * lookaheadTimeSeconds);
-    double predictedBottomLeftRpm =
-        bottomLeftMotorRpm + (bottomLeftMotorAcceleration * lookaheadTimeSeconds);
-    double predictedBottomRightRpm =
-        bottomRightMotorRpm + (bottomRightMotorAcceleration * lookaheadTimeSeconds);
-
-    // Check if all predicted RPMs are within tolerance of the target RPM
-    var topLeftAtGoal = predictedTopLeftRpm >= targetRpm - tolerance;
-    var topRightAtGoal = predictedTopRightRpm >= targetRpm - tolerance;
-    var bottomLeftAtGoal = predictedBottomLeftRpm >= targetRpm - tolerance;
-    var bottomRightAtGoal = predictedBottomRightRpm >= targetRpm - tolerance;
-
-    return topLeftAtGoal && topRightAtGoal && bottomLeftAtGoal && bottomRightAtGoal;
   }
 
   private boolean calculateAtGoal() {
