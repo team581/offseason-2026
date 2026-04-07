@@ -29,7 +29,7 @@ public interface PathTracker {
 
   /**
    * Reset the state of the path tracker, as well as set the new list of points to consider in
-   * {@link #getTargetPose()}.
+   * {@link #getTargetPose(Rotation2d)}.
    *
    * @param points The new list of points to store.
    */
