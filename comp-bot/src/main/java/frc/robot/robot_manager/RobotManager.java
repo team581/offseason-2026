@@ -196,7 +196,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         if (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
             && !swerve.isMovingBeyondSafeSpeed()
-            && localization.imu.accelerationLowEnoughToShoot()
             && shooter.atGoalDebounced()
             && isInSafeFeedingLocation
             && localization.imu.isFlatDebounced()
@@ -218,7 +217,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || (shooter.atGoalDebounced()
                 && !swerve.isMovingBeyondSafeSpeed()
-                && localization.imu.accelerationLowEnoughToShoot()
                 && isInSafeFeedingLocation
                 && swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                 && localization.imu.isFlatDebounced()
