@@ -7,9 +7,11 @@ import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.IntegratedAutoState;
 import frc.robot.cluster_map.Lane;
@@ -29,6 +31,9 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   private BumpCrossingTracker bumpCrossingTracker;
 
   private static final double BUMP_OFFSET = -0.15;
+  private static final double COLLISION_X_OFFSET = 0.5;
+
+  private boolean collisionEverDetected = false;
 
   private final AutoSegment intakeAcrossMidline =
       Trailblazer.segment(
@@ -36,11 +41,14 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.640, 6.653, Rotation2d.kCW_90deg))
+              AutoPoint.of(() -> getCollisionPoint(new Pose2d(8.640, 6.653, Rotation2d.kCW_90deg)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg))
+              AutoPoint.of(() -> getCollisionPoint(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(8.280, 3.875, Rotation2d.fromDegrees(-50.0)))
+              AutoPoint.of(
+                      () ->
+                          getCollisionPoint(
+                              new Pose2d(8.280, 3.875, Rotation2d.fromDegrees(-50.0))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.31, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -285,6 +293,18 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   }
 
   @Override
+  protected void collectInputs() {
+    super.collectInputs();
+    if (getState() == IntegratedAutoState.INTAKE_ACROSS_MIDLINE
+        && DriverStation.isEnabled()
+        && robotManager.localization.imu.collisionDetected()) {
+      collisionEverDetected = true;
+    }
+
+    DogLog.log("RightIntegratedAuto/CollisionDetected", collisionEverDetected);
+  }
+
+  @Override
   protected IntegratedAutoState getNextState(IntegratedAutoState currentState) {
     return switch (currentState) {
       case INTAKE_ACROSS_MIDLINE -> {
@@ -434,6 +454,15 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       case DONE -> {
         robotManager.idleRequest();
       }
+    }
+  }
+
+  private Point getCollisionPoint(Pose2d pose) {
+    if (collisionEverDetected) {
+      return Point.ofRed(
+          new Pose2d(pose.getX() + COLLISION_X_OFFSET, pose.getY(), pose.getRotation()));
+    } else {
+      return Point.ofRed(pose);
     }
   }
 }
