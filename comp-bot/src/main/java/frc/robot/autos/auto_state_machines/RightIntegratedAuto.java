@@ -41,14 +41,20 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.of(() -> getCollisionPoint(new Pose2d(8.640, 6.653, Rotation2d.kCW_90deg)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.of(() -> getCollisionPoint(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg)))
+              AutoPoint.of(
+                      () ->
+                          getCollisionPoint(
+                              Point.ofRed(new Pose2d(8.640, 6.653, Rotation2d.kCW_90deg))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              new Pose2d(8.280, 3.875, Rotation2d.fromDegrees(-50.0))))
+                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg))))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.of(
+                      () ->
+                          getCollisionPoint(
+                              Point.ofRed(new Pose2d(8.280, 3.875, Rotation2d.fromDegrees(-50.0)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.31, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -457,12 +463,15 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
     }
   }
 
-  private Point getCollisionPoint(Pose2d pose) {
+  private Point getCollisionPoint(Point point) {
     if (collisionEverDetected) {
       return Point.ofRed(
-          new Pose2d(pose.getX() + COLLISION_X_OFFSET, pose.getY(), pose.getRotation()));
+          new Pose2d(
+              point.redPose().getX() + COLLISION_X_OFFSET,
+              point.redPose().getY(),
+              point.getRotation()));
     } else {
-      return Point.ofRed(pose);
+      return point;
     }
   }
 }
