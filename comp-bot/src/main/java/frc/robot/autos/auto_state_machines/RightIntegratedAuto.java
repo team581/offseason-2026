@@ -498,7 +498,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       return point;
     }
 
-    Pose2d clusterPose = targetCluster.get();
+    Pose2d clusterPose = targetCluster.orElseThrow();
     Pose2d basePose = point.getPose();
 
     double clampedX =

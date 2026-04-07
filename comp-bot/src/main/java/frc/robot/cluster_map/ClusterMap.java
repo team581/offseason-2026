@@ -108,7 +108,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       Lane lane = laneSystem.getLane(elementPose, robotPose);
 
       if (lane != Lane.NONE && lane != Lane.TRENCH) {
-        ballsPerLane[lane.ordinal()] += element.detectionSize();
+        ballsPerLane[lane.ordinal()] =
+            (int) (ballsPerLane[lane.ordinal()] + element.detectionSize());
       }
     }
 
