@@ -85,7 +85,8 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
 
     if (RobotBase.isReal()) {
       pitch = drivetrain.getPigeon2().getPitch().getValueAsDouble();
-      roll = drivetrain.getPigeon2().getRoll().getValueAsDouble();
+      // Roll is inverted
+      roll = -drivetrain.getPigeon2().getRoll().getValueAsDouble();
     }
 
     isFlatDebounced =
