@@ -84,7 +84,8 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
 
-    if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()) {
+    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
+        || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       DogLog.log(
           "Localization/StuckOnBall/RobotTiltPose",
           new Pose3d(

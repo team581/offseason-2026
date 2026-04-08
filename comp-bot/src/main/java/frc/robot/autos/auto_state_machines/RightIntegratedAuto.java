@@ -346,7 +346,8 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   @Override
   protected IntegratedAutoState getNextState(IntegratedAutoState currentState) {
-    if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()) {
+    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
+        || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
         case INTAKE_ACROSS_MIDLINE,
             DEFAULT_SECOND_INTAKE_SEGMENT,
@@ -466,7 +467,9 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       case STUCK_ON_BALL_RECOVERY -> {
         trailblazer.setActiveSegment(stuckOnBall);
 
-        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean() && timeout(1.0) && RobotBase.isSimulation()) {
+        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
+            && timeout(1.0)
+            && RobotBase.isSimulation()) {
           robotManager.localization.imu.setPitch(0.0);
           robotManager.localization.imu.setRoll(0.0);
         }
@@ -476,7 +479,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         robotManager.intakeAutoRequest();
         robotManager.powerManager.firstAutoSegmentRequest();
 
-        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()
+        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
             && timeout(1.5)
             && RobotBase.isSimulation()
             && !firstStuckOnBall) {
@@ -498,7 +501,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         trailblazer.setActiveSegment(lane1Segment);
         robotManager.intakeAutoRequest();
 
-        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()
+        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
             && timeout(1.5)
             && RobotBase.isSimulation()
             && !secondStuckOnBall) {
@@ -510,7 +513,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         trailblazer.setActiveSegment(lane2Segment);
         robotManager.intakeAutoRequest();
 
-        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()
+        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
             && timeout(1.5)
             && RobotBase.isSimulation()
             && !secondStuckOnBall) {
