@@ -56,6 +56,10 @@ public class Trailblazer {
     currentSegment = Optional.empty();
   }
 
+  public int getCurrentPointIndex() {
+    return pathTracker.getCurrentPointIndex();
+  }
+
   public ChassisSpeeds getFieldRelativeSetpoint(
       Pose2d currentPose, ChassisSpeeds currentFieldRelativeSpeeds) {
     return getFieldRelativeSetpoint(currentPose, currentFieldRelativeSpeeds, null);
@@ -85,7 +89,6 @@ public class Trailblazer {
 
     // Update current index from tracker
     currentIndex = pathTracker.getCurrentPointIndex();
-    DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
 
     if (segment.atGoal(currentPose, currentIndex)) {
       return new ChassisSpeeds();
@@ -133,5 +136,16 @@ public class Trailblazer {
     DogLog.log(
         "Trailblazer/Tracker/InitialSegmentPoints",
         segment.points.stream().map(point -> point.getPose()).toArray(Pose2d[]::new));
+  }
+
+  public void setActiveSegment(AutoSegment segment, int index) {
+    if (currentSegment.isPresent() && currentSegment.orElseThrow().equals(segment)) {
+      return;
+    }
+
+    currentSegment = Optional.of(segment);
+    pathTracker.resetAndSetPoints(segment.points, index);
+    currentIndex = index;
+    needsFollowerReset = true;
   }
 }

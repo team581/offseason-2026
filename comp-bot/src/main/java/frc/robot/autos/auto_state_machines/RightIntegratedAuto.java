@@ -1,6 +1,7 @@
 package frc.robot.autos.auto_state_machines;
 
 import com.team581.autos.Point;
+import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.mechanisms.imu.BumpCrossingTracker;
 import com.team581.trailblazer.AutoPoint;
@@ -14,9 +15,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.IntegratedAutoState;
 import frc.robot.cluster_map.Lane;
+import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
 public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> {
@@ -302,6 +305,20 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(1.0), Units.rotationsToRadians(2))
           .untilFinished(new PoseErrorTolerance(0.3, 3));
 
+  private AutoSegment stuckOnBall =
+      StuckOnBallRecovery.getRecoverySegment(
+          () -> robotManager.localization.getPose(),
+          () -> Rotation2d.fromDegrees(robotManager.localization.imu.getPitch()),
+          () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
+
+  private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_ACROSS_MIDLINE;
+  private AutoSegment storedStuckOnBallAutoSegment = intakeAcrossMidline;
+  private int storedStuckOnBallIndex = 0;
+
+  // FOR SIM ONLY!!!
+  private boolean firstStuckOnBall = false;
+  private boolean secondStuckOnBall = false;
+
   public RightIntegratedAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(IntegratedAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
 
@@ -327,7 +344,31 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   @Override
   protected IntegratedAutoState getNextState(IntegratedAutoState currentState) {
+    if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()) {
+      switch (currentState) {
+        case INTAKE_ACROSS_MIDLINE,
+            DEFAULT_SECOND_INTAKE_SEGMENT,
+            INTAKE_LANE_1,
+            INTAKE_LANE_2,
+            INTAKE_TRENCH_LANE -> {
+          if (StuckOnBallRecovery.stuckOnBall(
+              robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
+            return IntegratedAutoState.STUCK_ON_BALL_RECOVERY;
+          }
+        }
+        default -> {}
+      }
+    }
+
     return switch (currentState) {
+      case STUCK_ON_BALL_RECOVERY -> {
+        if (!StuckOnBallRecovery.stuckOnBall(
+            robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
+          yield storedStuckOnBallState;
+        } else {
+          yield currentState;
+        }
+      }
       case INTAKE_ACROSS_MIDLINE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           yield IntegratedAutoState.DRIVE_BACK_1;
@@ -413,11 +454,33 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   @Override
   protected void whileInState(IntegratedAutoState newState) {
+    if (getState() != IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+      storedStuckOnBallIndex = trailblazer.getCurrentPointIndex();
+    }
+    DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
+    DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
+
     switch (newState) {
+      case STUCK_ON_BALL_RECOVERY -> {
+        trailblazer.setActiveSegment(stuckOnBall);
+
+        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean() && timeout(1.0) && RobotBase.isSimulation()) {
+          robotManager.localization.imu.setPitch(0.0);
+          robotManager.localization.imu.setRoll(0.0);
+        }
+      }
       case INTAKE_ACROSS_MIDLINE -> {
         trailblazer.setActiveSegment(intakeAcrossMidline);
         robotManager.intakeAutoRequest();
         robotManager.powerManager.firstAutoSegmentRequest();
+
+        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()
+            && timeout(1.5)
+            && RobotBase.isSimulation()
+            && !firstStuckOnBall) {
+          firstStuckOnBall = true;
+          robotManager.localization.imu.setPitch(-30.0);
+        }
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
@@ -432,10 +495,26 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       case INTAKE_LANE_1 -> {
         trailblazer.setActiveSegment(lane1Segment);
         robotManager.intakeAutoRequest();
+
+        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()
+            && timeout(1.5)
+            && RobotBase.isSimulation()
+            && !secondStuckOnBall) {
+          secondStuckOnBall = true;
+          robotManager.localization.imu.setPitch(-30.0);
+        }
       }
       case INTAKE_LANE_2 -> {
         trailblazer.setActiveSegment(lane2Segment);
         robotManager.intakeAutoRequest();
+
+        if (FeatureFlags.UNBEACH_AUTO.getAsBoolean()
+            && timeout(1.5)
+            && RobotBase.isSimulation()
+            && !secondStuckOnBall) {
+          secondStuckOnBall = true;
+          robotManager.localization.imu.setPitch(-30.0);
+        }
       }
       case INTAKE_TRENCH_LANE -> {
         trailblazer.setActiveSegment(trenchSegment);
@@ -454,27 +533,58 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   }
 
   @Override
+  protected void beforeTransition(IntegratedAutoState oldState, IntegratedAutoState newState) {
+    if (newState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+      storedStuckOnBallState = oldState;
+    }
+
+    if (oldState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+      trailblazer.setActiveSegment(storedStuckOnBallAutoSegment, storedStuckOnBallIndex);
+    }
+  }
+
+  @Override
   protected void afterTransition(IntegratedAutoState newState) {
     switch (newState) {
       case INTAKE_ACROSS_MIDLINE -> {
+        storedStuckOnBallAutoSegment = intakeAcrossMidline;
         robotManager.homeDeployInAutoRequest();
         robotManager.homeShooterHoodRequest();
       }
-      case DRIVE_BACK_1 -> {}
-      case SHOOT_1 -> {}
-      case DEFAULT_SECOND_INTAKE_SEGMENT, INTAKE_LANE_1, INTAKE_LANE_2, INTAKE_TRENCH_LANE -> {
+      case DRIVE_BACK_1, SHOOT_1 -> {
+        storedStuckOnBallAutoSegment = driveBackAndShootOne;
+      }
+      case DEFAULT_SECOND_INTAKE_SEGMENT -> {
+        storedStuckOnBallAutoSegment = defaultSecondSegment;
         robotManager.idleRequest();
       }
-      case DRIVE_BACK_2 -> {}
+      case INTAKE_LANE_1 -> {
+        storedStuckOnBallAutoSegment = lane1Segment;
+        robotManager.idleRequest();
+      }
+      case INTAKE_LANE_2 -> {
+        storedStuckOnBallAutoSegment = lane2Segment;
+        robotManager.idleRequest();
+      }
+      case INTAKE_TRENCH_LANE -> {
+        storedStuckOnBallAutoSegment = trenchSegment;
+        robotManager.idleRequest();
+      }
+      case DRIVE_BACK_2 -> {
+        storedStuckOnBallAutoSegment = driveBackAndShootTwo;
+      }
       case SHOOT_2 -> {
+        storedStuckOnBallAutoSegment = driveBackAndShootTwo;
         robotManager.cancelIntakeRequest();
       }
       case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+        storedStuckOnBallAutoSegment = driveBackToNeutralZone;
         robotManager.idleRequest();
       }
       case DONE -> {
         robotManager.idleRequest();
       }
+      case STUCK_ON_BALL_RECOVERY -> {}
     }
   }
 

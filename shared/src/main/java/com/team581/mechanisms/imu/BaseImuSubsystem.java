@@ -12,6 +12,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.wpilibj.RobotBase;
 
 public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   private static final double IS_FLAT_THRESHOLD = 5.0;
@@ -33,6 +34,10 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     this.drivetrain = drivetrain;
   }
 
+  public double getPitch() {
+    return pitch;
+  }
+
   public double getRobotAngularVelocity() {
     return robotAngularVelocity;
   }
@@ -41,8 +46,26 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     return robotHeading;
   }
 
+  public double getRoll() {
+    return roll;
+  }
+
   public boolean isFlatDebounced() {
     return isFlatDebounced;
+  }
+
+  // USE FOR SIM ONLY!!!
+  public void setPitch(double newPitch) {
+    if (RobotBase.isSimulation()) {
+      pitch = newPitch;
+    }
+  }
+
+  // USE FOR SIM ONLY!!!
+  public void setRoll(double newRoll) {
+    if (RobotBase.isSimulation()) {
+      roll = newRoll;
+    }
   }
 
   @Override
@@ -60,8 +83,10 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     robotHeading = MathHelpers.angleModulus(driveState.Pose.getRotation().getDegrees());
     robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
 
-    pitch = drivetrain.getPigeon2().getPitch().getValueAsDouble();
-    roll = drivetrain.getPigeon2().getRoll().getValueAsDouble();
+    if (RobotBase.isReal()) {
+      pitch = drivetrain.getPigeon2().getPitch().getValueAsDouble();
+      roll = drivetrain.getPigeon2().getRoll().getValueAsDouble();
+    }
 
     isFlatDebounced =
         isFlatDebouncer.calculate(
