@@ -156,7 +156,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.intakeRequest();
         }
         intake.shootRequest();
-        conveyor.shootRequest();
+        conveyor.initialShotRequest();
         feeder.shootRequest();
       }
       case SHOOT_AND_INTAKE -> {
@@ -185,6 +185,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.hopperCompactionRequest();
           intake.idleRequest();
+          conveyor.shootRequest();
         } else {
           deploy.waitHopperCompactionRequest();
         }

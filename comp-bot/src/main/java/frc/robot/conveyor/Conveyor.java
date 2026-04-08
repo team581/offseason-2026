@@ -24,6 +24,10 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     this.bottomMotor = bottomMotor;
   }
 
+  public void initialShotRequest() {
+    setStateFromRequest(ConveyorState.INITIAL_SHOT);
+  }
+
   public void shootRequest() {
     setStateFromRequest(ConveyorState.SHOOT);
   }
