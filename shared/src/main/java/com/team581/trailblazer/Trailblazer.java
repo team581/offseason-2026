@@ -89,6 +89,7 @@ public class Trailblazer {
 
     // Update current index from tracker
     currentIndex = pathTracker.getCurrentPointIndex();
+    DogLog.log("Trailblazer/Tracker/CurrentIndex", currentIndex);
 
     if (segment.atGoal(currentPose, currentIndex)) {
       return new ChassisSpeeds();
