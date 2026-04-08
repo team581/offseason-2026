@@ -549,7 +549,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void intakeAutoRequest() {
-    hopperManager.setDriverWantsIntake(true);
+    // If we are testing unbeach, don't run intake - otherwise run as normal
+    if (!FeatureFlags.UNBEACH_AUTO.getAsBoolean()) {
+      hopperManager.setDriverWantsIntake(true);
+    }
   }
 
   public void cancelIntakeRequest() {
