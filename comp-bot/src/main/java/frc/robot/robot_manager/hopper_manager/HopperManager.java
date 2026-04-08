@@ -177,6 +177,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case SHOOT -> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.hopperCompactionRequest();
+        } else {
+          deploy.waitHopperCompactionRequest();
         }
       }
       case IDLE_DEPLOYED -> {
@@ -230,7 +232,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       return HopperState.EJECTING;
     }
 
-    if (driverWantsIntake) {
+    if (driverWantsIntake && deploy.getState() != DeployState.HOPPER_COMPACTION_IN) {
       return HopperState.SHOOT_AND_INTAKE;
     }
 
