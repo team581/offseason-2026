@@ -40,8 +40,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
-  public static final double HIGH_CAPACITY_THRESHOLD = 5;
-  public static final double MEDIUM_CAPACITY_THRESHOLD = 10;
+  public static final double HIGH_CAPACITY_THRESHOLD = 4.0;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 7.0;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 

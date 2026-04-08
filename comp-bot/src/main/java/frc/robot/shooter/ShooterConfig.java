@@ -22,7 +22,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final double RPM_TOLERANCE = 150.0;
+  public static final double RPM_TOLERANCE = 50.0;
   public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;
 
   public static final double RPM_TOLERANCE_FEEDING = 500.0;
@@ -100,7 +100,7 @@ public class ShooterConfig {
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber ACTIVE_SHOT_FF_CURRENT =
-      DogLog.tunable("Shooter/ActiveShotFFCurrent", 30.0);
+      DogLog.tunable("Shooter/ActiveShotFFCurrent", 40.0);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
       DogLog.tunable("Shooter/TurboShotFFCurrent", 0.0);
