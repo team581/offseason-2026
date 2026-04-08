@@ -1,5 +1,6 @@
 package frc.robot.deploy;
 
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -24,6 +25,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   private final PositionTorqueCurrentFOC torqueCurrentFOCAverageRequest =
       new PositionTorqueCurrentFOC(0).withSlot(0);
+
+  private final MotionMagicTorqueCurrentFOC motionMagicTorqueCurrentFOCAverageRequest =
+      new MotionMagicTorqueCurrentFOC(0).withSlot(0);
 
   private final PositionTorqueCurrentFOC positionDifferentialRequest =
       new PositionTorqueCurrentFOC(0).withSlot(1);
@@ -127,6 +131,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case HOME_OUTWARD -> {
         leftMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
         rightMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
+      }
+      case HOPPER_COMPACTION_IN, HOPPER_COMPACTION_WAITING -> {
+        differentialMechanism.setControl(
+            motionMagicTorqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())),
+            positionDifferentialRequest.withPosition(0.0));
       }
       default ->
           differentialMechanism.setControl(

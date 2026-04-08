@@ -149,11 +149,18 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.shootRequest();
         feeder.shootRequest();
       }
-      case SHOOT, SHOOT_AND_INTAKE -> {
+      case SHOOT -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (deploy.getState() != DeployState.HOPPER_COMPACTION_IN) {
+        if (deploy.getState() != DeployState.HOPPER_COMPACTION_IN
+            && deploy.getState() != DeployState.HOPPER_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
+        intake.shootRequest();
+        conveyor.shootRequest();
+        feeder.shootRequest();
+      }
+      case SHOOT_AND_INTAKE -> {
+        deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
         feeder.shootRequest();
@@ -177,6 +184,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case SHOOT -> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.hopperCompactionRequest();
+          intake.idleRequest();
         } else {
           deploy.waitHopperCompactionRequest();
         }
@@ -232,7 +240,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       return HopperState.EJECTING;
     }
 
-    if (driverWantsIntake && deploy.getState() != DeployState.HOPPER_COMPACTION_IN) {
+    if (driverWantsIntake) {
       return HopperState.SHOOT_AND_INTAKE;
     }
 

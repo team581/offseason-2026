@@ -53,7 +53,7 @@ public class DeployConfig {
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
-                  .withMotionMagicAcceleration(300.0))
+                  .withMotionMagicAcceleration(50.0))
           .withSlot0(AVERAGE_GAINS)
           .withSlot1(DIFFERENCE_GAINS);
 
@@ -75,7 +75,7 @@ public class DeployConfig {
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(200.0)
-                  .withMotionMagicAcceleration(300.0))
+                  .withMotionMagicAcceleration(50.0))
           .withSlot0(AVERAGE_GAINS)
           .withSlot1(DIFFERENCE_GAINS);
 

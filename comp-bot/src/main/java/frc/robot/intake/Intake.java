@@ -28,9 +28,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
   }
 
   public void shootRequest() {
-    if (getState() == IntakeState.INTAKE) {
-      return;
-    }
     setStateFromRequest(IntakeState.SHOOT);
   }
 
