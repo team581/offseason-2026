@@ -7,8 +7,7 @@ public enum IntakeState {
   INTAKE(12),
   EJECT(-12),
   IDLE(0),
-  SHOOT(5),
-  SHOOT_THEN_INTAKE(3);
+  SHOOT(5);
 
   public final double voltage;
   public final DoubleSubscriber tunableVoltage;
@@ -20,9 +19,5 @@ public enum IntakeState {
 
   public double getVoltage() {
     return tunableVoltage.get();
-  }
-
-  public boolean isIntaking() {
-    return this == INTAKE || this == SHOOT_THEN_INTAKE;
   }
 }

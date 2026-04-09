@@ -31,10 +31,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.SHOOT);
   }
 
-  public void shootThenIntakeRequest() {
-    setStateFromRequest(IntakeState.SHOOT_THEN_INTAKE);
-  }
-
   public boolean hasBeenIntaking() {
     if (getState() == IntakeState.INTAKE && timeout(3)) {
       return true;
@@ -45,7 +41,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
   public void stopShootingRequest() {
     switch (getState()) {
       case SHOOT -> setStateFromRequest(IntakeState.IDLE);
-      case SHOOT_THEN_INTAKE -> setStateFromRequest(IntakeState.INTAKE);
       default -> {}
     }
   }
