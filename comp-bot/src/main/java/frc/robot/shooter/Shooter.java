@@ -283,15 +283,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     shooterSimulation.update();
   }
 
-  public boolean currentDetectsGp() {
-    return ShooterConfig.GP_DETECT_CURRENT_THRESHOLD
-        <= (topRightStatorCurrent
-                + topLeftStatorCurrent
-                + bottomRightStatorCurrent
-                + bottomLeftStatorCurrent)
-            / 4.0;
-  }
-
   public double getScoreTimeOfFlight(double distance) {
     this.scoreDistance = distance;
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()

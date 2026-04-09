@@ -430,9 +430,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
 
-    DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
-    DogLog.log("RobotManager/gpDetection/both", detectingGp());
-
     MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
   }
 
@@ -535,10 +532,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void cancelIntakeRequest() {
     hopperManager.setDriverWantsIntake(false);
-  }
-
-  public boolean detectingGp() {
-    return shooter.currentDetectsGp();
   }
 
   public void unjamRequest() {

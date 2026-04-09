@@ -36,7 +36,7 @@ public class CameraConfigs {
           // Up
           Units.inchesToMeters(16.5995),
           // Pitch
-          0.0,
+          15.0,
           // Yaw
           90.0,
           // Roll
@@ -54,7 +54,7 @@ public class CameraConfigs {
           // Up
           Units.inchesToMeters(16.5995),
           // Pitch
-          0.0,
+          15.0,
           // Yaw
           -90.0,
           // Roll
