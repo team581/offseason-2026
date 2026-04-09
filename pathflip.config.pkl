@@ -1,0 +1,18 @@
+fieldHeight = 8.069
+
+replacements {
+  ["OUTPOST"] = "DEPOT"
+  ["Outpost"] = "Depot"
+  ["outpost"] = "depot"
+  ["DEPOT"] = "OUTPOST"
+  ["Depot"] = "Outpost"
+  ["depot"] = "outpost"
+  ["Right"] = "Left"
+  ["right"] = "left"
+  ["RIGHT"] = "LEFT"
+  ["Left"] = "Right"
+  ["left"] = "right"
+  ["LEFT"] = "RIGHT"
+}
+
+negateConstants = new Listing<String> {}
