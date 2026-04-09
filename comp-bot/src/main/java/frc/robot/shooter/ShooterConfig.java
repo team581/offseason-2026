@@ -43,9 +43,9 @@ public class ShooterConfig {
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
           Map.entry(4.92, 1900.0),
-          Map.entry(3.46, 1550.0),
-          Map.entry(2.79, 1500.0),
-          Map.entry(1.42, 1350.0));
+          Map.entry(3.46, 1610.0),
+          Map.entry(2.79, 1560.0),
+          Map.entry(1.42, 1400.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
