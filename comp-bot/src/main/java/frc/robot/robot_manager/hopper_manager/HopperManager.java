@@ -281,19 +281,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
-    towerSensorRaw = towerSensor.get();
-    towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
-    if (DSOptions.USE_CANRANGE.get()) {
-      hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
-      filteredDistance = hopperFilter.calculate(hopperDistance);
-    }
     if (RobotBase.isSimulation()) {
       hopperDistance = 20;
       towerSensorRaw =
           switch (getState()) {
-            case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> !timeout(5);
+            case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> timeout(5);
             default -> false;
           };
+    } else {
+      towerSensorRaw = towerSensor.get();
+    }
+    towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
+    if (DSOptions.USE_CANRANGE.get()) {
+      hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
     }
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
