@@ -63,7 +63,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   // Number gotten from trench scoring point
   private DoubleSubscriber SLOW_SCORING_DISTANCE_THRESHOLD =
-      DogLog.tunable("RobotManager/FarShootingThreshold", 3.5);
+      DogLog.tunable("RobotManager/FarShootingThreshold", 4.0);
 
   private FeedLocation feedLocation = FeedLocation.RIGHT;
 
