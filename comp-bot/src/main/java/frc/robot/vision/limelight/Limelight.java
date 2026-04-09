@@ -204,7 +204,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, getActiveHubTags());
         updateHealth(tagResult);
       }
-      default -> {}
+      case CLUSTER_MAP -> {
+        updateHealth(LimelightHelpers.getTV(limelightTableName));
+      }
+      case OFF -> {}
     }
 
     LimelightHelpers.SetIMUMode(limelightTableName, 0);
@@ -216,7 +219,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     seedImuTimer.start();
   }
 
-  private void updateHealth(ReusableOptional<?> result) {
+  private void updateHealth(boolean hasTargets) {
     var newHeartbeat = LimelightHelpers.getHeartbeat(limelightTableName);
     DogLog.log("Vision/" + name + "/Heartbeat", newHeartbeat);
     if (limelightHeartbeat != newHeartbeat) {
@@ -232,11 +235,15 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       DogLog.clearFault(name.toUpperCase(Locale.US) + " LIMELIGHT IS OFFLINE");
     }
 
-    if (result.isPresent()) {
+    if (hasTargets) {
       cameraHealth = CameraHealth.GOOD;
       return;
     }
     cameraHealth = CameraHealth.NO_TARGETS;
+  }
+
+  private void updateHealth(ReusableOptional<?> result) {
+    updateHealth(result.isPresent());
   }
 
   public void setBlinkEnabled(boolean enabled) {
