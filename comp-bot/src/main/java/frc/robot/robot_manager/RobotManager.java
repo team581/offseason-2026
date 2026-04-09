@@ -65,7 +65,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private DoubleSubscriber SLOW_SCORING_DISTANCE_THRESHOLD =
       DogLog.tunable("RobotManager/FarShootingThreshold", 3.5);
 
-  private FeedLocation feedLocation = FeedLocation.CLOSEST;
+  private FeedLocation feedLocation = FeedLocation.RIGHT;
 
   public RobotManager(
       HopperManager hopperManager,
@@ -597,6 +597,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
 
     robotPose = localization.getPose();
+    feedLocation = FeedLocation.closest(robotPose);
     double robotRotation = robotPose.getRotation().getDegrees();
     clusterMap.setDeployFullyExtended(hopperManager.deploy.isFullyExtended());
     vision.setEstimatedPoseAngle(robotRotation);
@@ -640,7 +641,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     isInSafeFeedingLocation =
         !health.isLocalizationHealthy()
             || !FieldUtil.isFeedPathObstructed(
-                robotPose.getTranslation(), feedLocation.getTranslation(robotPose));
+                robotPose.getTranslation(), feedLocation.getTranslation());
 
     DogLog.log("RobotManager/Scoring/IsInSafeScoringLocation", isInSafeScoringLocation);
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);

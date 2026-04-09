@@ -36,10 +36,9 @@ public class AimParameterUtil {
 
   public static AimingParameters getFeedingParameters(
       FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
-    var shooterPose = ShooterConfig.getShooterPose(robotPose);
     return getAimingParameters(
         FEEDING_SOTM,
-        feedLocation.getTranslation(shooterPose),
+        feedLocation.getTranslation(),
         FEEDING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
         fieldRelativeSpeeds);
@@ -57,10 +56,9 @@ public class AimParameterUtil {
 
   public static AimingParameters getStaticFeedingParameters(
       FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
-    var shooterPose = ShooterConfig.getShooterPose(robotPose);
     return getStaticAimingParameters(
         FEEDING_SOTM,
-        feedLocation.getTranslation(shooterPose),
+        feedLocation.getTranslation(),
         FEEDING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
         fieldRelativeSpeeds);

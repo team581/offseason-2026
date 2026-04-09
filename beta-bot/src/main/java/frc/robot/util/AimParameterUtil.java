@@ -49,7 +49,7 @@ public class AimParameterUtil {
         TurretCalculator.getTurretChassisSpeeds(
             fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
 
-    Translation2d feedTranslation = feedLocation.getTranslation(robotPose);
+    Translation2d feedTranslation = feedLocation.getTranslation();
 
     // Get velocity compensated goals
     var separatedVelocityCompensatedGoal =
@@ -158,7 +158,7 @@ public class AimParameterUtil {
         FEEDING_SOTM
             .getSeparatedVelocityCompensatedGoal(
                 turretPose.getTranslation(),
-                feedLocation.getTranslation(turretPose),
+                feedLocation.getTranslation(),
                 turretFieldRelativeSpeeds)
             .fullyCompensatedGoal();
 
@@ -170,8 +170,7 @@ public class AimParameterUtil {
                 turretFieldRelativeSpeeds)
             .tangentialVelocity();
 
-    var realDistanceToGoal =
-        turretPose.getTranslation().getDistance(feedLocation.getTranslation(robot));
+    var realDistanceToGoal = turretPose.getTranslation().getDistance(feedLocation.getTranslation());
 
     double translationalFF = tangentialVelocity / realDistanceToGoal;
 

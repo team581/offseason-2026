@@ -35,6 +35,7 @@ import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionState;
+import java.util.Optional;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Localization localization;
@@ -73,7 +74,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInAllianceZone = false;
   private boolean isInSafeFeedingLocation = true;
 
-  private FeedLocation feedLocation = FeedLocation.CLOSEST;
+  private Optional<FeedLocation> feedLocationOverride = Optional.empty();
+  private FeedLocation feedLocation = FeedLocation.LEFT;
   private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0, 0);
 
   public RobotManager(
@@ -941,6 +943,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       default -> {}
     }
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
+    DogLog.log(
+        "RobotManager/Feeding/FeedLocationOverride",
+        feedLocationOverride.map(Enum::toString).orElse("CLOSEST"));
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
 
@@ -1090,15 +1095,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void setFeedGoalLeftRequest() {
-    feedLocation = FeedLocation.LEFT;
+    feedLocationOverride = Optional.of(FeedLocation.LEFT);
   }
 
   public void setFeedGoalRightRequest() {
-    feedLocation = FeedLocation.RIGHT;
+    feedLocationOverride = Optional.of(FeedLocation.RIGHT);
   }
 
   public void setFeedGoalClosestRequest() {
-    feedLocation = FeedLocation.CLOSEST;
+    feedLocationOverride = Optional.empty();
   }
 
   public void setTrenchOverrideRequest(boolean trenchOverride) {
@@ -1254,6 +1259,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
 
     robotPose = localization.getPose();
+    feedLocation = feedLocationOverride.orElseGet(() -> FeedLocation.closest(robotPose));
     double robotRotation = robotPose.getRotation().getDegrees();
     clusterMap.setDeployFullyExtended(deploy.isFullyExtended());
     vision.setEstimatedPoseAngle(robotRotation);
@@ -1328,7 +1334,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     isInSafeFeedingLocation =
         !health.isLocalizationHealthy()
             || !FieldUtil.isFeedPathObstructed(
-                robotPose.getTranslation(), feedLocation.getTranslation(robotPose));
+                robotPose.getTranslation(), feedLocation.getTranslation());
 
     DogLog.log("RobotManager/Scoring/IsInSafeScoringLocation", isInSafeScoringLocation);
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
