@@ -171,7 +171,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
       }
       case PREPARE_SCORE -> {
-        var setpoint = (shootingRpm) / 60.0;
+        var setpoint = shootingRpm / 60.0;
         topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
