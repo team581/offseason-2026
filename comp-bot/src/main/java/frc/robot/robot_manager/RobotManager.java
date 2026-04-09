@@ -241,7 +241,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // hoppermanager controlled separately
         vision.hubTagsRequest();
         shooter.idleRequest();
-        smartHoodIdleRequest();
+        shooterHood.idleRequest();
         swerve.normalDriveRequest();
         powerManager.idleRequest();
       }
@@ -353,7 +353,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void whileInState(RobotState state) {
     switch (state) {
       case IDLE -> {
-        smartHoodIdleRequest();
+        shooterHood.idleRequest();
         swerve.normalDriveRequest();
         hopperManager.idleRequest();
       }
@@ -430,9 +430,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
 
-    DogLog.log("RobotManager/gpDetection/Shooter", shooter.currentDetectsGp());
-    DogLog.log("RobotManager/gpDetection/both", detectingGp());
-
     MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
   }
 
@@ -440,25 +437,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void teleopInit() {
     super.teleopInit();
     idleRequest();
-  }
-
-  private void smartHoodIdleRequest() {
-    // Prioritize idiling if localization is unrealiable or in trench zone
-    if (!health.isLocalizationHealthy() || !localization.isTrustworthy() || nearTrench) {
-      shooterHood.idleRequest();
-
-      DogLog.log("RobotManager/SmartIdle/Status", "NearTrench");
-    } else if (FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation())) {
-      shooterHood.idleRequest();
-
-      DogLog.log("RobotManager/SmartIdle/Status", "InAllianceZone");
-    } else if (DriverStation.isAutonomous()) {
-      shooterHood.idleRequest();
-      DogLog.log("RobotManager/SmartIdle/Status", "UseHubForAuto");
-    } else {
-      shooterHood.idleRequest();
-      DogLog.log("RobotManager/SmartIdle/Status", "NotInAlliance");
-    }
   }
 
   private void smartHoodPrepareScoreRequest() {
@@ -554,10 +532,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void cancelIntakeRequest() {
     hopperManager.setDriverWantsIntake(false);
-  }
-
-  public boolean detectingGp() {
-    return shooter.currentDetectsGp();
   }
 
   public void unjamRequest() {

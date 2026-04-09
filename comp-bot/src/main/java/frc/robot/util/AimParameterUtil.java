@@ -28,7 +28,7 @@ public class AimParameterUtil {
 
   public static AimingParameters getFallbackFeedingParameters(Rotation2d robotRotation) {
     var swerveAngle =
-        FmsUtil.isRedAlliance() ? Rotation2d.kZero.getDegrees() : Rotation2d.k180deg.getDegrees();
+        FmsUtil.isRedAlliance() ? Rotation2d.k180deg.getDegrees() : Rotation2d.kZero.getDegrees();
 
     return new AimingParameters(
         swerveAngle, FEEDING_FALLBACK_DISTANCE_TO_GOAL, FEEDING_FALLBACK_TOLERANCE, 0.0);
