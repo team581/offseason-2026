@@ -31,10 +31,16 @@
         0.4216
       ],
       "fov": 82,
-      "rotations": [{
-        "axis": "z",
-        "degrees": 90
-      }],
+      "rotations": [
+        {
+          "axis": "z",
+          "degrees": 90
+        },
+        {
+          "axis": "x",
+          "degrees": 15
+        }
+      ],
       "resolution": [
         1280,
         800
@@ -48,10 +54,16 @@
         0.4216
       ],
       "fov": 82,
-      "rotations": [{
-        "axis": "z",
-        "degrees": -90
-      }],
+      "rotations": [
+        {
+          "axis": "z",
+          "degrees": -90
+        },
+        {
+          "axis": "x",
+          "degrees": -15
+        }
+      ],
       "resolution": [
         1280,
         800
