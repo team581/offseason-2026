@@ -468,7 +468,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
             && RobotBase.isSimulation()
             && !firstStuckOnBall) {
           firstStuckOnBall = true;
-          robotManager.localization.imu.setRoll(-30.0);
+          robotManager.localization.imu.setPitch(-30.0);
         }
       }
       case DRIVE_BACK_1 -> {
@@ -490,7 +490,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
             && RobotBase.isSimulation()
             && !secondStuckOnBall) {
           secondStuckOnBall = true;
-          robotManager.localization.imu.setRoll(-30.0);
+          robotManager.localization.imu.setPitch(-30.0);
         }
       }
       case INTAKE_LANE_2 -> {
@@ -502,7 +502,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
             && RobotBase.isSimulation()
             && !secondStuckOnBall) {
           secondStuckOnBall = true;
-          robotManager.localization.imu.setRoll(-30.0);
+          robotManager.localization.imu.setPitch(-30.0);
         }
       }
       case INTAKE_TRENCH_LANE -> {
