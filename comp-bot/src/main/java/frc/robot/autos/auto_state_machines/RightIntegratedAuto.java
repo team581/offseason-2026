@@ -54,12 +54,12 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg))))
+                              Point.ofRed(new Pose2d(8.583, 5.593, Rotation2d.kCW_90deg))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.280, 4.31, Rotation2d.fromDegrees(-50.0)))))
+                              Point.ofRed(new Pose2d(8.680, 4.31, Rotation2d.fromDegrees(-50.0)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.31, Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -283,19 +283,22 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.ofRed(
                       new Pose2d(
                           13.709, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withAngularConstraints(
+                      Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withLinearConstraints(3.0, 8.0),
               AutoPoint.ofRed(
                       new Pose2d(
-                          13.0, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                          12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withLinearConstraints(3.0, 8.0),
               AutoPoint.ofRed(new Pose2d(10.174, 7.28, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.8, 5.708, Rotation2d.k180deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3))
-          .untilFinished(new PoseErrorTolerance(0.3, 3));
+          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
+          .untilFinished(new PoseErrorTolerance(0.5, 3));
 
   private AutoSegment stuckOnBall =
       StuckOnBallRecovery.getRecoverySegment(
