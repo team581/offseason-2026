@@ -171,7 +171,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
       }
       case PREPARE_SCORE -> {
-        var setpoint = shootingRpm / 60.0;
+        var setpoint = (shootingRpm + 75) / 60.0;
         topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
@@ -244,10 +244,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return switch (getState()) {
       case IDLE -> false;
       case PREPARE_SCORE ->
-          MathUtil.isNear(topLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(bottomLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE)
-              && MathUtil.isNear(bottomRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
+          MathUtil.isNear(topLeftMotorRpm, shootingRpm + 75, ShooterConfig.RPM_TOLERANCE)
+              && MathUtil.isNear(topRightMotorRpm, shootingRpm + 75, ShooterConfig.RPM_TOLERANCE)
+              && MathUtil.isNear(bottomLeftMotorRpm, shootingRpm + 75, ShooterConfig.RPM_TOLERANCE)
+              && MathUtil.isNear(
+                  bottomRightMotorRpm, shootingRpm + 75, ShooterConfig.RPM_TOLERANCE);
       case SCORE ->
           MathUtil.isNear(
                   topLeftMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING)
