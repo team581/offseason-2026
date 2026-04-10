@@ -59,12 +59,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Feeder/Top/StatorCurrent", topMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Feeder/Top/VelocityRPM", topMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Feeder/Top/SupplyCurrent", topMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Feeder/Bottom/StatorCurrent", bottomMotor.getStatorCurrent().getValueAsDouble());
     DogLog.log("Feeder/Bottom/VelocityRPM", bottomMotor.getVelocity().getValueAsDouble() * 60.0);
-    DogLog.log("Feeder/Bottom/SupplyCurrent", bottomMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log("Feeder/Voltage", getState().getVoltage());
   }
 

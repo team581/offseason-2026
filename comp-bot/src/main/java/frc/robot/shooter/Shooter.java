@@ -52,11 +52,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double bottomLeftMotorRpm = 0;
   private double bottomRightMotorRpm = 0;
 
-  private double topLeftStatorCurrent = 0.0;
-  private double topRightStatorCurrent = 0.0;
-  private double bottomLeftStatorCurrent = 0.0;
-  private double bottomRightStatorCurrent = 0.0;
-
   private boolean atGoal = false;
   private boolean atGoalDebounced = false;
 
@@ -148,10 +143,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         "Shooter/BottomRight/Voltage", bottomRightMotor.getMotorVoltage().getValueAsDouble());
     DogLog.log("Shooter/BottomLeft/Voltage", bottomLeftMotor.getMotorVoltage().getValueAsDouble());
 
-    DogLog.log("Shooter/TopLeft/StatorCurrent", topLeftStatorCurrent);
-    DogLog.log("Shooter/TopRight/StatorCurrent", topRightStatorCurrent);
-    DogLog.log("Shooter/BottomLeft/StatorCurrent", bottomLeftStatorCurrent);
-    DogLog.log("Shooter/BottomRight/StatorCurrent", bottomRightStatorCurrent);
     DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftMotor.getSupplyCurrent().getValueAsDouble());
     DogLog.log(
         "Shooter/TopRight/SupplyCurrent", topRightMotor.getSupplyCurrent().getValueAsDouble());
@@ -214,11 +205,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
       shootingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
       feedingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
     }
-
-    topLeftStatorCurrent = topLeftMotor.getStatorCurrent().getValueAsDouble();
-    topRightStatorCurrent = topRightMotor.getStatorCurrent().getValueAsDouble();
-    bottomLeftStatorCurrent = bottomLeftMotor.getStatorCurrent().getValueAsDouble();
-    bottomRightStatorCurrent = bottomRightMotor.getStatorCurrent().getValueAsDouble();
 
     topLeftMotorRpm = topLeftMotor.getVelocity().getValueAsDouble() * 60.0;
 

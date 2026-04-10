@@ -99,8 +99,16 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   @Override
   protected void collectInputs() {
     currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
-    statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-    voltage = motor.getMotorVoltage().getValueAsDouble();
+    switch (getState()) {
+      case UNHOMED, HOMING -> {
+        statorCurrent = motor.getStatorCurrent().getValueAsDouble();
+        voltage = motor.getMotorVoltage().getValueAsDouble();
+      }
+      default -> {
+        statorCurrent = 0;
+        voltage = 0;
+      }
+    }
   }
 
   private double getGoalAngle() {
@@ -152,14 +160,15 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
           motor.setControl(
               positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
       // Do nothing in the other states, they have static setpoints
-      default -> {}
+      case UNHOMED, HOMING -> {
+        DogLog.log("ShooterHood/Motor/StatorCurrent", statorCurrent);
+        DogLog.log("ShooterHood/Motor/Voltage", voltage);
+      }
     }
 
     DogLog.log("ShooterHood/AtGoal", atGoal());
     DogLog.log("ShooterHood/Angle", currentAngle);
     DogLog.log("ShooterHood/GoalAngle", goalAngle);
-    DogLog.log("ShooterHood/Motor/StatorCurrent", statorCurrent);
-    DogLog.log("ShooterHood/Motor/Voltage", voltage);
   }
 
   @Override
