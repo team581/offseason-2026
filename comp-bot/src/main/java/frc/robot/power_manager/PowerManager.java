@@ -68,9 +68,9 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
 
   @Override
   protected void afterTransition(PowerManagerState newState) {
+    DogLog.timestamp("PowerManager/UpdatedCurrentsAt");
     executor.execute(
         () -> {
-          DogLog.timestamp("PowerManager/UpdatedCurrentsAt");
           shooter.applyCurrentLimits(newState.shooterSupplyCurrent);
           intake.applyCurrentLimits(newState.intakeSupplyCurrent);
           deploy.applyCurrentLimits(newState.deploySupplyCurrent);
