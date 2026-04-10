@@ -54,12 +54,12 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.583, 5.593, Rotation2d.kCW_90deg))))
+                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.680, 4.31, Rotation2d.fromDegrees(-50.0)))))
+                              Point.ofRed(new Pose2d(8.280, 4.31, Rotation2d.fromDegrees(-50.0)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.31, Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
