@@ -273,6 +273,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
         GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
             robotPoseAtCapture, gamePieceResult, limelight.config);
 
+    if (Double.isNaN(clusterPose.getX()) || Double.isNaN(clusterPose.getY())) {
+      return Optional.empty();
+    }
+
     double distanceMeters = robotPoseAtCapture.getTranslation().getDistance(clusterPose);
 
     // Dynamic Size Estimation
