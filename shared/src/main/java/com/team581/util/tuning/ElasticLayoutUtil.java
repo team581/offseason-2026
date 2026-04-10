@@ -1,5 +1,6 @@
 package com.team581.util.tuning;
 
+import com.team581.GlobalConfig;
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
 
@@ -26,6 +27,10 @@ public final class ElasticLayoutUtil {
   }
 
   public static void startServer() {
+    if (!GlobalConfig.IS_DEVELOPMENT) {
+      return;
+    }
+
     if (!isServerRunning) {
       isServerRunning = true;
       WebServer.start(PORT, Filesystem.getDeployDirectory().getPath());
@@ -33,6 +38,10 @@ public final class ElasticLayoutUtil {
   }
 
   private static void stopServer() {
+    if (!GlobalConfig.IS_DEVELOPMENT) {
+      return;
+    }
+
     WebServer.stop(PORT);
     isServerRunning = false;
   }
