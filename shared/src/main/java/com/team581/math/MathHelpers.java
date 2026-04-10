@@ -255,7 +255,9 @@ public class MathHelpers {
    * @param y The y component or sine of the rotation.
    */
   public static Rotation2d rotation2d(double x, double y) {
-    if (Math.hypot(x, y) < 1e-3) {
+    var magnitude = Math.hypot(x, y);
+
+    if (!Double.isFinite(magnitude) || magnitude < 1e-6) {
       return Rotation2d.kZero;
     }
 
