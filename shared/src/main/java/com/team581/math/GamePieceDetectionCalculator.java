@@ -23,7 +23,7 @@ public final class GamePieceDetectionCalculator {
     double thetaX = Units.degreesToRadians(visionResult.tx());
     double thetaY = Units.degreesToRadians(visionResult.ty());
     double hypot = Math.copySign(Math.hypot(thetaX, thetaY), thetaX);
-    double thetaRelativeToCenter = Math.atan(thetaY / thetaX);
+    double thetaRelativeToCenter = Math.atan2(thetaY, thetaX);
     double adjustedRelativeToCenter =
         thetaRelativeToCenter + Units.degreesToRadians(cameraConfig.roll());
     double newThetaX = -1 * (hypot * Math.cos(adjustedRelativeToCenter));
