@@ -117,10 +117,6 @@ public class MathHelpers {
   }
 
   public static Rotation2d getDriveDirection(ChassisSpeeds vector) {
-    if (getLinearVelocity(vector) < 1e-6) {
-      return Rotation2d.kZero;
-    }
-
     return rotation2d(vector.vxMetersPerSecond, vector.vyMetersPerSecond);
   }
 
@@ -259,7 +255,7 @@ public class MathHelpers {
    * @param y The y component or sine of the rotation.
    */
   public static Rotation2d rotation2d(double x, double y) {
-    if (Math.hypot(x, y) < 1e-6) {
+    if (Math.hypot(x, y) < 1e-3) {
       return Rotation2d.kZero;
     }
 
