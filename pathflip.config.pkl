@@ -17,4 +17,4 @@ replacements {
   ["LEFT"] = "RIGHT"
 }
 
-negateConstants = new Listing<String> {"BUMP_OFFSET"}
+negateConstants = new Listing<String> {}
