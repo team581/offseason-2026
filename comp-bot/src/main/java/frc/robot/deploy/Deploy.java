@@ -49,6 +49,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     this.rightMotor = differentialMechanism.getFollower();
     TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
+
+    differentialMechanism.setControl(
+        torqueCurrentFOCAverageRequest.withPosition(0),
+        positionDifferentialRequest.withPosition(0.0));
+    differentialMechanism.setControl(
+        motionMagicTorqueCurrentFOCAverageRequest.withPosition(0),
+        positionDifferentialRequest.withPosition(0.0));
+    differentialMechanism.setNeutralOut();
   }
 
   public void intakeRequest() {
