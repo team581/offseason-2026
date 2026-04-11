@@ -103,7 +103,7 @@ public class ShooterConfig {
       DogLog.tunable("Shooter/ActiveShotFFCurrent", 20.0);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
-      DogLog.tunable("Shooter/TurboShotFFCurrent", 40.0);
+      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
   // Calculated from average of CAPIN logs
   public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
       DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.25);
