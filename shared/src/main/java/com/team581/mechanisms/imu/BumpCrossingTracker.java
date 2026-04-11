@@ -26,7 +26,7 @@ import org.jspecify.annotations.Nullable;
  * points bypass this entirely.
  */
 public class BumpCrossingTracker {
-  private static final double FLAT_DEBOUNCE_SECONDS = 0.25;
+  private static final double FLAT_DEBOUNCE_SECONDS = 0.15;
   private static final DoubleSubscriber FLAT_THRESHOLD =
       DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
   private static final DoubleSubscriber PROJECTION_DISTANCE_METERS =
