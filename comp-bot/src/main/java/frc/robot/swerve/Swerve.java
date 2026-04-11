@@ -76,7 +76,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
   private final SwerveRequest.FieldCentric driverPerspective =
       new SwerveRequest.FieldCentric()
-          .withDriveRequestType(DriveRequestType.Velocity)
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
