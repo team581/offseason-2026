@@ -419,7 +419,8 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
             case TRENCH -> IntegratedAutoState.INTAKE_TRENCH_LANE;
             default -> currentState;
           };
-        } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)) {
+        } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
+            && !trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)) {
           if (robotManager.clusterMap.hasHighValueTrenchCluster()) {
             yield IntegratedAutoState.INTAKE_TRENCH_LANE;
           }
