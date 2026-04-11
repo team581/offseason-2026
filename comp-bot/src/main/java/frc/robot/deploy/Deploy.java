@@ -1,7 +1,6 @@
 package frc.robot.deploy;
 
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -32,8 +31,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private final PositionTorqueCurrentFOC positionDifferentialRequest =
       new PositionTorqueCurrentFOC(0).withSlot(1);
 
-  private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
+  private final VoltageOut voltageDifferentialRequest = new VoltageOut(0).withEnableFOC(false);
 
   private double differentialMechanismPosition = 0.0;
   private double leftMotorPosition = 0.0;
@@ -120,18 +119,15 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   @Override
   protected void afterTransition(DeployState newState) {
     switch (newState) {
-      case UNHOMED -> {
-        leftMotor.setControl(neutralRequest);
-        rightMotor.setControl(neutralRequest);
-      }
-      case HOME_INWARD -> {
-        leftMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
-        rightMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
-      }
-      case HOME_OUTWARD -> {
-        leftMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
-        rightMotor.setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
-      }
+      case UNHOMED -> differentialMechanism.setNeutralOut();
+      case HOME_INWARD ->
+          differentialMechanism.setControl(
+              voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD),
+              voltageDifferentialRequest.withOutput(0));
+      case HOME_OUTWARD ->
+          differentialMechanism.setControl(
+              voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD),
+              voltageDifferentialRequest.withOutput(0));
       case HOPPER_COMPACTION_IN, HOPPER_COMPACTION_WAITING -> {
         differentialMechanism.setControl(
             motionMagicTorqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())),
