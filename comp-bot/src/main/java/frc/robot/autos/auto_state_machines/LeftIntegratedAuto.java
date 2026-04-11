@@ -130,7 +130,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                       new Pose2d(
                           10.5,
                           FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(180 - 90)))
+                          Rotation2d.fromDegrees(180 - 70)))
                   .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
                   .withLinearConstraints(2.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
