@@ -51,7 +51,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.640, 6.653, Rotation2d.kCW_90deg))))
+                              Point.ofRed(new Pose2d(9.140, 6.653, Rotation2d.kCW_90deg))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
@@ -141,6 +141,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       () ->
                           getClusterShiftedPoint(
                               Point.ofRed(new Pose2d(9.5, 4.4, Rotation2d.kCW_90deg))))
+                  .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.5), Units.rotationsToRadians(2.0)),
@@ -148,7 +149,6 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       () ->
                           getClusterShiftedPoint(
                               Point.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))))
-                  .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcExtension(
                       Point.ofRed(new Pose2d(9.5, 4.4, Rotation2d.kCW_90deg)),
