@@ -21,6 +21,7 @@
     ]
   }],
   "semanticCommits": "disabled",
+  "gitIgnoredAuthors": ["114827586+autofix-ci[bot]@users.noreply.github.com"],
   "labels": ["dependencies"],
   "customDatasources": {"wpilib-vendordep": {
     "defaultRegistryUrlTemplate": "{{registryUrl}}",
