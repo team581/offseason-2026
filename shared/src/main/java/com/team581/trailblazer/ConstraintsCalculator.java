@@ -7,6 +7,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.DriverStation;
 
 /**
  * Helper class for applying velocity constraints to path following outputs.
@@ -119,7 +120,7 @@ public class ConstraintsCalculator {
     linearVelocity = Math.min(linearVelocity, maxStoppingVelocity);
 
     lastVelocity = currentVelocity;
-    lastCommandedVelocity = linearVelocity;
+    lastCommandedVelocity = DriverStation.isDisabled() ? 0 : linearVelocity;
     return Math.copySign(linearVelocity, originalSign);
   }
 
