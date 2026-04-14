@@ -38,6 +38,8 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   private static final double COLLISION_X_OFFSET = 0.5;
   private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
 
+  private static final double MIDLINE_OFFSET = 0.38;
+
   private static final double BUMP_OFFSET = Units.inchesToMeters(5);
 
   private boolean collisionEverDetected = false;
@@ -92,7 +94,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                                       13.709,
                                       FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                                       Rotation2d.kZero)),
-                              Point.ofRed(new Pose2d(13.9, 5.443, Rotation2d.kZero))))
+                              Point.ofRed(new Pose2d(13.9, 5.443 + BUMP_OFFSET, Rotation2d.kZero))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -140,7 +142,8 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getClusterShiftedPoint(
-                              Point.ofRed(new Pose2d(9.5, 4.4, Rotation2d.kCW_90deg))))
+                              Point.ofRed(
+                                  new Pose2d(9.5, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
@@ -148,10 +151,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getClusterShiftedPoint(
-                              Point.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))))
+                              Point.ofRed(
+                                  new Pose2d(10.575, 4.4 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcExtension(
-                      Point.ofRed(new Pose2d(9.5, 4.4, Rotation2d.kCW_90deg)),
+                      Point.ofRed(new Pose2d(9.5, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg)),
                       -0.0525,
                       -0.51,
                       Rotation2d.fromDegrees(12.0))
@@ -186,14 +190,14 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(8.1, 6.814, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(9.0, 4.7, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(9.0, 4.78, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(new Pose2d(10.575, 4.7, Rotation2d.kCCW_90deg))
+              AutoPoint.ofRed(new Pose2d(10.575, 4.78, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcExtension(
-                      Point.ofRed(new Pose2d(9.0, 4.7, Rotation2d.kCW_90deg)), 0, -0.51)
+                      Point.ofRed(new Pose2d(9.0, 4.78, Rotation2d.kCW_90deg)), 0, -0.51)
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(
@@ -217,14 +221,17 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getClusterShiftedPoint(
-                              Point.ofRed(new Pose2d(8.75, 4.4, Rotation2d.kCW_90deg))))
+                              Point.ofRed(
+                                  new Pose2d(8.75, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
+              AutoPoint.ofRed(new Pose2d(10.575, 4.4 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcExtension(
-                      Point.ofRed(new Pose2d(8.75, 4.4, Rotation2d.kCW_90deg)), 0, -0.51)
+                      Point.ofRed(new Pose2d(8.75, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg)),
+                      0,
+                      -0.51)
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(
@@ -242,14 +249,16 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(7.983, 6.814, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(7.983, 4.4, Rotation2d.kCW_90deg))
+              AutoPoint.ofRed(new Pose2d(7.983, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(new Pose2d(10.575, 4.4, Rotation2d.kCCW_90deg))
+              AutoPoint.ofRed(new Pose2d(10.575, 4.4 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
                   .withArcExtension(
-                      Point.ofRed(new Pose2d(7.983, 4.4, Rotation2d.kCW_90deg)), 0.071, -1.0)
+                      Point.ofRed(new Pose2d(7.983, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg)),
+                      0.071,
+                      -1.0)
                   .withAngularConstraints(
                       Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
               AutoPoint.ofRed(
@@ -281,7 +290,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                                       13.709,
                                       FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                                       Rotation2d.kZero)),
-                              Point.ofRed(new Pose2d(13.9, 5.443, Rotation2d.kZero))))
+                              Point.ofRed(new Pose2d(13.9, 5.443 + BUMP_OFFSET, Rotation2d.kZero))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
