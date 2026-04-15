@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -190,6 +191,9 @@ final class ConstraintsCalculatorTest {
 
   @BeforeEach
   void setUp() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+
     calculator = new ConstraintsCalculator(new PIDController(1, 0, 0));
     calculator.reset();
   }
