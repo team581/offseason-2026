@@ -25,8 +25,10 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   protected SwerveDriveState driveState = new SwerveDriveState();
   protected double robotHeading = 0;
   protected double robotAngularVelocity = 0;
-  protected double pitch = 0;
-  protected double roll = 0;
+  private double rawPitch = 0;
+  private double rawRoll = 0;
+  private double pitchOffset = 0;
+  private double rollOffset = 0;
 
   public BaseImuSubsystem(SubsystemPriorityBase priority, SwerveDrivetrain<?, ?, ?> drivetrain) {
     super(priority, ImuState.DEFAULT_STATE);
@@ -35,7 +37,7 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   }
 
   public double getPitch() {
-    return pitch;
+    return rawPitch - pitchOffset;
   }
 
   public double getRobotAngularVelocity() {
@@ -47,24 +49,29 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   }
 
   public double getRoll() {
-    return roll;
+    return rawRoll - rollOffset;
   }
 
   public boolean isFlatDebounced() {
     return isFlatDebounced;
   }
 
+  public void resetPitchAndRoll() {
+    pitchOffset = rawPitch;
+    rollOffset = rawRoll;
+  }
+
   // USE FOR SIM ONLY!!!
   public void setPitch(double newPitch) {
     if (RobotBase.isSimulation()) {
-      pitch = newPitch;
+      rawPitch = newPitch;
     }
   }
 
   // USE FOR SIM ONLY!!!
   public void setRoll(double newRoll) {
     if (RobotBase.isSimulation()) {
-      roll = newRoll;
+      rawRoll = newRoll;
     }
   }
 
@@ -72,8 +79,8 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   public void whileInState(ImuState currentState) {
     DogLog.log("Imu/RobotHeading", robotHeading, Degrees);
     DogLog.log("Imu/AngularVelocity", robotAngularVelocity, DegreesPerSecond);
-    DogLog.log("Imu/Pitch", pitch, Degrees);
-    DogLog.log("Imu/Roll", roll, Degrees);
+    DogLog.log("Imu/Pitch", getPitch(), Degrees);
+    DogLog.log("Imu/Roll", getRoll(), Degrees);
     DogLog.log("Imu/IsFlatDebounced", isFlatDebounced);
   }
 
@@ -84,13 +91,13 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
 
     if (RobotBase.isReal()) {
-      pitch = drivetrain.getPigeon2().getPitch().getValueAsDouble();
-      roll = drivetrain.getPigeon2().getRoll().getValueAsDouble();
+      rawPitch = drivetrain.getPigeon2().getPitch().getValueAsDouble();
+      rawRoll = drivetrain.getPigeon2().getRoll().getValueAsDouble();
     }
 
     isFlatDebounced =
         isFlatDebouncer.calculate(
-            MathUtil.isNear(pitch, 0, IS_FLAT_THRESHOLD, -90, 90)
-                && MathUtil.isNear(roll, 0, IS_FLAT_THRESHOLD, -180, 180));
+            MathUtil.isNear(getPitch(), 0, IS_FLAT_THRESHOLD, -90, 90)
+                && MathUtil.isNear(getRoll(), 0, IS_FLAT_THRESHOLD, -180, 180));
   }
 }
