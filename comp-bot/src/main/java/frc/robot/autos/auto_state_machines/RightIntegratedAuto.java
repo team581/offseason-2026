@@ -38,7 +38,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   private static final double COLLISION_X_OFFSET = 0.5;
   private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
 
-  private static final double MIDLINE_OFFSET = 0.38;
+  private static final double MIDLINE_OFFSET = 0.0;
 
   private static final double BUMP_OFFSET = Units.inchesToMeters(5);
 
