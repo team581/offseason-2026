@@ -11,8 +11,6 @@ import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HubActivity extends StateMachineSubsystem<HubActivityState> {
-  private static final double FORCE_SCORE_TRANSITION_TIMEOUT = 3.0;
-
   private static final String LIME_GREEN_HEX = Color.kLimeGreen.toHexString();
   private static final String BLACK_HEX = Color.kBlack.toHexString();
   private static final String RED_HEX = Color.kRed.toHexString();
@@ -28,16 +26,10 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
   private double scoringShooterTOF = 0.0;
   private boolean tofBasedHubActive = true;
 
-  private boolean forceScoreTransitionEndOfActiveHub = false;
-
   public HubActivity() {
     super(SubsystemPriority.HUB_ACTIVITY, HubActivityState.DEFAULT_STATE);
 
     teleopTimer.start();
-  }
-
-  public boolean ableToForceScoreTransitionEndOfActiveHub() {
-    return forceScoreTransitionEndOfActiveHub;
   }
 
   public boolean getActualHubActive() {
@@ -107,11 +99,6 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
 
     actualHubActive = calculateActualHubActive();
     tofBasedHubActive = calculateTOFBasedHubActive();
-    forceScoreTransitionEndOfActiveHub =
-        DSOptions.USE_HUB_STATE.get()
-            && DriverStation.isTeleop()
-            && actualHubActive
-            && timeUntilNextShift < FORCE_SCORE_TRANSITION_TIMEOUT;
   }
 
   @Override
@@ -123,9 +110,6 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
 
     DogLog.log("HubActivity/TimeSinceMatchStart", timeSinceMatchStart);
     DogLog.log("HubActivity/TimeSinceTeleopEnable", teleopTimer.get());
-    DogLog.log(
-        "HubActivity/Scoring/ScoreTransition/ForceScoreTransitionEndOfActiveHub",
-        ableToForceScoreTransitionEndOfActiveHub());
     DogLog.log("HubActivity/ActualHubActive", actualHubActive);
     DogLog.log("HubActivity/TOFBasedHubActive", tofBasedHubActive);
   }

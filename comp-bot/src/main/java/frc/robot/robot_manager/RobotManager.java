@@ -120,10 +120,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         yield !isMoving
-                && ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                        && shooter.atGoalDebounced()
-                        && shooterHood.atGoal())
-                    || hubActivity.ableToForceScoreTransitionEndOfActiveHub())
+                && (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                    && shooter.atGoalDebounced()
+                    && shooterHood.atGoal())
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
@@ -143,18 +142,16 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
 
-        if ((swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                && !swerve.isMovingBeyondSafeSpeed()
-                && localization.imu.accelerationLowEnoughToShoot()
-                && shooter.atGoalDebounced()
-                && shooterHood.atGoal()
-                && localization.isTrustworthy()
-                && localization.imu.isFlatDebounced()
-                && hubActivity.getTOFBasedHubActive()
-                && isInSafeScoringLocation
-                && !nearTrench)
-            || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
-                && shooter.atGoalDebounced())) {
+        if (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+            && !swerve.isMovingBeyondSafeSpeed()
+            && localization.imu.accelerationLowEnoughToShoot()
+            && shooter.atGoalDebounced()
+            && shooterHood.atGoal()
+            && localization.isTrustworthy()
+            && localization.imu.isFlatDebounced()
+            && hubActivity.getTOFBasedHubActive()
+            && isInSafeScoringLocation
+            && !nearTrench) {
           yield RobotState.SCORE;
         }
         yield currentState;
@@ -178,9 +175,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
                     && isInSafeScoringLocation
-                    && hubActivity.getTOFBasedHubActive())
-                || (hubActivity.ableToForceScoreTransitionEndOfActiveHub()
-                    && shooter.atGoalDebounced()))
+                    && hubActivity.getTOFBasedHubActive()))
             && !nearTrench) {
           yield currentState;
         }
