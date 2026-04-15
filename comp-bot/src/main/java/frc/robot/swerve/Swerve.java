@@ -554,6 +554,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       } else {
         DogLog.clearFault("Swerve modules not pointed straight");
       }
+    } else {
+      DogLog.clearFault("Swerve modules not pointed straight");
     }
 
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
