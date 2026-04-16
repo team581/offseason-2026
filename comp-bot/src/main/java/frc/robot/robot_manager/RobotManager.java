@@ -419,7 +419,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       default -> {}
     }
 
-    swerve.setUseLooseTolerance(getState().isFeeding() && timeout(1.5));
+    swerve.setUseLooseTolerance(getState().isFeeding() && timeout(1.0));
 
     DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
