@@ -102,17 +102,34 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // No auto transitions for these states
-      case UNJAM, FORCE_SCORE, WARMUP_SCORE, WARMUP_FEED -> currentState;
+      case UNJAM, FORCE_SCORE, WARMUP_FEED -> currentState;
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoalDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
       }
-      case IDLE -> currentState;
-
+      case IDLE -> {
+        if (hopperManager.isFull()
+            && isInAllianceZone
+            && isInSafeScoringLocation
+            && !hopperManager.isIntaking()) {
+          yield RobotState.WARMUP_SCORE;
+        }
+        yield currentState;
+      }
+      case WARMUP_SCORE -> {
+        if (hopperManager.isFull()
+            && isInAllianceZone
+            && isInSafeScoringLocation
+            && !hopperManager.isIntaking()) {
+          yield currentState;
+        }
+        yield RobotState.IDLE;
+      }
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
-        // In pit functionality, we don't care about anything other than raw mechanism states
+        // In pit functionality, we don't care about anything other than raw mechanism
+        // states
         if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
           yield shooter.atGoalDebounced() && shooterHood.atGoal()
               ? RobotState.FALLBACK_SCORE
@@ -330,14 +347,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case WARMUP_SCORE -> {
         vision.hubTagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
-        shooterHood.scoreRequest(scoringParameters.distance());
+        shooterHood.idleRequest();
         swerve.warmupScoreRequest(scoringParameters);
-        smartScoringPowerManagerRequest();
+        powerManager.scoringRequest();
       }
       case WARMUP_FEED -> {
         vision.tagsRequest();
         shooter.prepareFeedRequest(feedingParameters.distance());
-        shooterHood.feedRequest(feedingParameters.distance());
+        shooterHood.idleRequest();
         swerve.warmupFeedRequest(feedingParameters);
         powerManager.feedingRequest();
       }
@@ -409,7 +426,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.warmupScoreRequest(scoringParameters);
-        smartScoringPowerManagerRequest();
       }
       case WARMUP_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());

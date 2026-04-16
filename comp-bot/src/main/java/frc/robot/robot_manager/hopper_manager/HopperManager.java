@@ -17,6 +17,7 @@ import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
@@ -94,6 +95,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     // Otherwise, we fallback to running once we've been intaking for a few seconds
     return intake.hasBeenIntaking();
+  }
+
+  public boolean isFull() {
+    if (RobotBase.isSimulation()) {
+      return timeout(10.0);
+    }
+    return hopperCapacity == HopperCapacity.HIGH && DSOptions.USE_CANRANGE.getAsBoolean();
   }
 
   /** Sets conveyor and feeder to ball filling if conditions are met, otherwise idles them. */
@@ -261,6 +269,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   public void shootRequest() {
     shootRequest(false);
+  }
+
+  public boolean isIntaking() {
+    return intake.getState() == IntakeState.INTAKE;
   }
 
   public boolean isShooting() {
