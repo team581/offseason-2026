@@ -379,7 +379,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        hopperManager.scoreRequest();
+        hopperManager.shootRequest();
       }
 
       // Fallback states
@@ -403,7 +403,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
-        hopperManager.scoreRequest();
+        hopperManager.shootRequest();
       }
       case WARMUP_SCORE -> {
         shooter.prepareScoreRequest(scoringParameters.distance());
