@@ -369,7 +369,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FORCE_SCORE -> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        hopperManager.scoreRequest();
+        hopperManager.shootRequest(hubActivity.shouldSuperScore());
       }
       case PREPARE_FEED -> {
         smartHoodPrepareFeedRequest();
