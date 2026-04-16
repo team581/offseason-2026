@@ -421,11 +421,7 @@ public class FieldUtil {
 
   public static final ObstructionCalculator FEEDING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
-          Units.inchesToMeters(12.0),
-          BLUE_HUB_CORNERS,
-          RED_HUB_CORNERS,
-          BLUE_CLIMB_TOWER_CORNERS,
-          RED_CLIMB_TOWER_CORNERS);
+          Units.inchesToMeters(12.0), BLUE_HUB_CORNERS, RED_HUB_CORNERS);
 
   public static final ObstructionCalculator HUB_SCORING_OBSTRUCTIONS =
       ObstructionCalculator.fromTranslations(
