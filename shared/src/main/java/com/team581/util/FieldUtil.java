@@ -440,6 +440,10 @@ public class FieldUtil {
 
   // Logs all trench/bump zone corners & points; only needs to run once
   public static void debugLogFieldZones() {
+    // Feeding
+    DogLog.log("FieldUtil/Feeding/LeftPose", FEED_LEFT_POSE.getPose());
+    DogLog.log("FieldUtil/Feeding/RightPose", FEED_RIGHT_POSE.getPose());
+
     // Trenches
     DogLog.log(
         "FieldUtil/BlueOutpost/Trenches/Corner1",
