@@ -334,6 +334,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     };
   }
 
+  public boolean isNear(double angle, double tolerance) {
+    return MathUtil.isNear(
+        drivetrainState.Pose.getRotation().getDegrees(), angle, tolerance, -180.0, 180.0);
+  }
+
   @Override
   protected void collectInputs() {
     drivetrainState = drivetrain.getState();
