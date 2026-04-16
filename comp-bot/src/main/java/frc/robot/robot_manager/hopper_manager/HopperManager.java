@@ -211,7 +211,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
     DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
-    DogLog.log("HopperManager/FilteredHopperDistance", filteredDistance);
+    DogLog.forceNt.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
     DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
   }
