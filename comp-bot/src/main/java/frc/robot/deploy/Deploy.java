@@ -178,6 +178,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  public void superCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.SUPER_COMPACTION_IN);
+    }
+  }
+
   public boolean atGoal(DeployState state) {
     return switch (state) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;

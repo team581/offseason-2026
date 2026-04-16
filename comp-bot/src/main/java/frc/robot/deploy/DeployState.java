@@ -9,6 +9,8 @@ public enum DeployState {
   // placeholder values
   HOPPER_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 3.5),
   HOPPER_COMPACTION_IN(1.0),
+  SUPER_COMPACTION_IN(1.0),
+
   HOME_INWARD(DeployConfig.MIN_LENGTH),
   HOME_OUTWARD(DeployConfig.MAX_LENGTH),
   UNHOMED(0);
