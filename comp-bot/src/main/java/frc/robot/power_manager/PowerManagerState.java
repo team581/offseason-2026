@@ -5,6 +5,7 @@ public enum PowerManagerState {
   IDLE(10, 25, 15, 40, 10, 10, 45),
   SCORING(50, 20, 15, 40, 20, 20, 20),
   SCORING_FAR(50, 20, 15, 40, 10, 10, 20),
+  SUPER_SCORING(50, 10, 15, 40, 30, 30, 20),
   FEEDING(35, 20, 15, 40, 15, 15, 45),
   TURBO_MODE(30, 5, 18, 10, 10, 10, 70);
 

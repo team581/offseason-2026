@@ -62,6 +62,10 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     setStateFromRequest(PowerManagerState.SCORING);
   }
 
+  public void superScoringRequest() {
+    setStateFromRequest(PowerManagerState.SUPER_SCORING);
+  }
+
   public void turboRequest() {
     setStateFromRequest(PowerManagerState.TURBO_MODE);
   }
