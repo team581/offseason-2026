@@ -213,7 +213,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
     DogLog.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
-    DogLog.log("HopperManager/TowerSensor", towerSensorRaw);
+    DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
   }
 
   private void setState(HopperState newState) {
