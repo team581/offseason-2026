@@ -616,12 +616,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             : new Pose2d(
                 FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
     scoringParameters =
-        getState() == RobotState.WARMUP_SCORE
+        getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
             ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, speeds)
             : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, speeds);
 
     feedingParameters =
-        getState() == RobotState.WARMUP_FEED
+        getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()
             ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
             : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
 

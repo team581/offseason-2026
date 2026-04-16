@@ -44,6 +44,10 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
+  private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
+      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
+  ;
+
   public static final double TRANSLATION_STD_DEV = 0.01;
 
   public static final double MAX_LINEAR_RATE = 4.75;
@@ -145,7 +149,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private boolean ableToBumpAssist = false;
   private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
+
   private boolean ableToXSwerve = false;
+
+  private boolean driverWantsSotm = false;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -371,6 +378,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0));
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
+    driverWantsSotm =
+        (timeout(DRIVER_WANTS_SOTM_DELAY.get())
+                && (MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
+                    && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED)))
+            || driveSource.getDriveSourceType() != DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
+
     switch (getState()) {
       case SCORE, FEED -> {
         currentMaxAngularRate =
@@ -394,6 +407,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void normalDriveRequest() {
     setStateFromRequest(SwerveState.MANUAL);
+  }
+
+  public boolean driverWantsSotm() {
+    return driverWantsSotm;
   }
 
   private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(
@@ -572,6 +589,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log(
         "Swerve/AbleToXSwerve/SpeedsNear0",
         MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+
+    DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
   }
 
   private void startSimThread() {
