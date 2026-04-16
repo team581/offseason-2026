@@ -106,7 +106,9 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
     actualHubActive = calculateActualHubActive();
     tofBasedHubActive = calculateTOFBasedHubActive();
 
-    shouldSuperScore = timeSinceMatchStart > (FmsUtil.ENDGAME_DURATION - 5.0);
+    shouldSuperScore =
+        DSOptions.USE_HUB_STATE.getAsBoolean()
+            && (timeSinceMatchStart > (FmsUtil.ENDGAME_DURATION - 5.0));
   }
 
   @Override
