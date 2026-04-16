@@ -35,6 +35,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean operatorWantsStow = false;
   private boolean towerSensorRaw = false;
 
+  private boolean shouldSuperScore = false;
+
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
 
   private double hopperDistance = 0.0;
@@ -182,7 +184,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     switch (state) {
       default -> {}
       case SHOOT -> {
-        if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+        if (shouldSuperScore) {
+          deploy.superCompactionRequest();
+          intake.shootRequest();
+          conveyor.shootRequest();
+        } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.hopperCompactionRequest();
           intake.idleRequest();
           conveyor.shootRequest();
@@ -248,8 +254,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return HopperState.SHOOT;
   }
 
-  public void scoreRequest() {
+  public void shootRequest(boolean shouldSuperScore) {
+    this.shouldSuperScore = shouldSuperScore;
     setState(resolveScoreState());
+  }
+
+  public void shootRequest() {
+    shootRequest(false);
   }
 
   public boolean isShooting() {
