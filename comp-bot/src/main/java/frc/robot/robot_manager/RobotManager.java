@@ -459,7 +459,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartScoringPowerManagerRequest() {
-    if (robotPose.getTranslation().getDistance(FieldUtil.HUB_POSE.getTranslation())
+    if (hubActivity.shouldSuperScore()) {
+      powerManager.superScoringRequest();
+    } else if (robotPose.getTranslation().getDistance(FieldUtil.HUB_POSE.getTranslation())
         > SLOW_SCORING_DISTANCE_THRESHOLD.get()) {
       powerManager.scoringFarRequest();
     } else {
