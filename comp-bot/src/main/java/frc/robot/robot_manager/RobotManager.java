@@ -428,12 +428,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case WARMUP_SCORE -> {
         shooter.prepareScoreRequest(scoringParameters.distance());
-        shooterHood.scoreRequest(scoringParameters.distance());
+        shooterHood.idleRequest();
         swerve.warmupScoreRequest(scoringParameters);
       }
       case WARMUP_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());
-        shooterHood.feedRequest(feedingParameters.distance());
+        shooterHood.idleRequest();
         swerve.warmupFeedRequest(feedingParameters);
       }
       default -> {}
