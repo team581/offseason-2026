@@ -135,6 +135,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     switch (newState) {
       case IDLE_DEPLOYED -> {
         intake.idleRequest();
+        deploy.intakeRequest();
         smartBallFillRequest();
       }
       case IDLE_STOWED -> {
@@ -202,11 +203,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           conveyor.shootRequest();
         } else {
           deploy.waitHopperCompactionRequest();
-        }
-      }
-      case IDLE_DEPLOYED -> {
-        if (timeout(0.5)) {
-          deploy.intakeRequest();
         }
       }
     }
