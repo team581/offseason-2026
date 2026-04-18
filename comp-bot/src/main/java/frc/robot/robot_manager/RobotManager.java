@@ -110,7 +110,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case IDLE -> {
-        if (hopperManager.isFull()
+        if (DriverStation.isEnabled()
+            && hopperManager.isFull()
             && isInAllianceZone
             && isInSafeScoringLocation
             && !hopperManager.isIntaking()
@@ -121,7 +122,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case WARMUP_SCORE -> {
-        if (hopperManager.isFull()
+        if (DriverStation.isEnabled()
+            && hopperManager.isFull()
             && isInAllianceZone
             && isInSafeScoringLocation
             && !hopperManager.isIntaking()
