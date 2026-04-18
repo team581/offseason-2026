@@ -1,135 +1,115 @@
 package com.team581.mechanisms.imu;
 
 import com.team581.autos.Point;
-import com.team581.util.FieldUtil;
+import com.team581.math.MathHelpers;
+import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.wpilibj.RobotBase;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
-import org.jspecify.annotations.Nullable;
 
-/**
- * Provides a pose for path following that accounts for bump crossings. When the robot is tilted (on
- * the bump), returns a pose projected far ahead in the crossing direction so the path follower
- * commands full output. When the robot is on flat ground (debounced), returns the real target pose
- * so normal path following resumes.
- *
- * <p>The crossing direction is inferred from the robot's position relative to the target point.
- * Only points that use {@link #getPoint(Point)} are affected — regular {@code AutoPoint.ofRed()}
- * points bypass this entirely.
- */
-public class BumpCrossingTracker {
-  private static final double FLAT_DEBOUNCE_SECONDS = 0.25;
+public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
+  private static final double FLAT_DEBOUNCE_SECONDS = 0.1;
+  private static final double FLAT_FALLBACK_DEBOUNCE_SECONDS = 1.0;
   private static final DoubleSubscriber FLAT_THRESHOLD =
-      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
-  private static final DoubleSubscriber PROJECTION_DISTANCE_METERS =
-      DogLog.tunable("BumpCrossing/ProjectionDistanceMeters", 5.0);
+      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 3.0);
+  private static final DoubleSubscriber CROSSING_THRESHOLD =
+      DogLog.tunable("BumpCrossing/CrossingThresholdDegrees", 7.0);
 
   private final Debouncer flatDebouncer =
       new Debouncer(FLAT_DEBOUNCE_SECONDS, DebounceType.kRising);
-  private final DoubleSupplier tiltSupplier;
-  private final Supplier<Pose2d> robotPoseSupplier;
+  private final Debouncer flatFallbackDebouncer =
+      new Debouncer(FLAT_FALLBACK_DEBOUNCE_SECONDS, DebounceType.kRising);
+  private final DoubleSupplier pitchSupplier;
+  private final DoubleSupplier rollSupplier;
   private final Consumer<Translation2d> poseResetConsumer;
-  private boolean previousIsFlat = true;
-
-  /** Latched crossing direction: +1 or -1. 0 means not currently crossing. */
-  private double latchedXSign = 0;
+  private ChassisSpeeds currentSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
+  private Rotation2d driveDirection = Rotation2d.kZero;
+  private double directionalTilt = 0.0;
+  private boolean isFlat = true;
+  private boolean isFlatFallbackDebounced = false;
+  private Point landingPoint;
 
   public BumpCrossingTracker(
-      DoubleSupplier tiltSupplier,
-      Supplier<Pose2d> robotPoseSupplier,
+      DoubleSupplier pitchSupplier,
+      DoubleSupplier rollSupplier,
       Consumer<Translation2d> poseResetConsumer) {
+    super(BumpCrossingState.NOT_ON_BUMP);
     this.poseResetConsumer = poseResetConsumer;
+    this.pitchSupplier = pitchSupplier;
+    this.rollSupplier = rollSupplier;
+  }
 
-    if (RobotBase.isSimulation()) {
-      this.tiltSupplier =
-          () -> {
-            var pose = robotPoseSupplier.get();
-            var bump = FieldUtil.getCurrentBump(pose.getTranslation());
+  @Override
+  protected void collectInputs() {
+    // Get the tilt relative to the direction driving toward the bump
+    driveDirection = MathHelpers.getDriveDirection(currentSpeeds);
+    directionalTilt =
+        -((pitchSupplier.getAsDouble() * Math.cos(driveDirection.getRadians()))
+            + (rollSupplier.getAsDouble() * Math.sin(driveDirection.getRadians())));
+    isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
+    isFlatFallbackDebounced =
+        flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
+  }
 
-            if (bump.isEmpty()) {
-              return 0.0;
-            }
-
-            var bumpRect = bump.orElseThrow();
-            double halfWidth = bumpRect.getXWidth() / 2.0;
-            double distFromCenter = Math.abs(pose.getX() - bumpRect.getCenter().getX());
-            double t = MathUtil.clamp(distFromCenter / halfWidth, 0.0, 1.0);
-
-            return MathUtil.interpolate(15.0, 3.0, t);
-          };
-    } else {
-      this.tiltSupplier = tiltSupplier;
+  @Override
+  public BumpCrossingState getNextState(BumpCrossingState currentState) {
+    // Fallback
+    if (currentState == BumpCrossingState.CROSSING_UPHILL && isFlatFallbackDebounced) {
+      poseResetConsumer.accept(landingPoint.getTranslation());
+      DogLog.timestamp("Imu/BumpCrossing/FallbackFinishedCrossing");
+      return BumpCrossingState.NOT_ON_BUMP;
     }
-    this.robotPoseSupplier = robotPoseSupplier;
+
+    return switch (currentState) {
+      case NOT_ON_BUMP -> {
+        if (directionalTilt > CROSSING_THRESHOLD.get()) {
+          yield BumpCrossingState.CROSSING_UPHILL;
+        }
+        yield currentState;
+      }
+      case CROSSING_UPHILL -> {
+        if (directionalTilt < -CROSSING_THRESHOLD.get()) {
+          yield BumpCrossingState.CROSSING_DOWNHILL;
+        }
+        yield currentState;
+      }
+      case CROSSING_DOWNHILL -> {
+        if (isFlat) {
+          yield BumpCrossingState.NOT_ON_BUMP;
+        }
+        yield currentState;
+      }
+    };
   }
 
-  /**
-   * Get a {@link Point} adjusted for bump crossing. Use this as a pose supplier in {@code
-   * AutoPoint.of(() -> tracker.getPoint(Point.ofRed(...)))}.
-   *
-   * @param point The base target point.
-   * @return The point as-is if flat, or a projected point if on the bump.
-   */
-  public Point getPoint(Point point) {
-    return getPoint(point, null);
+  public void bumpCrossRequest(Point landingPoint) {
+    this.landingPoint = landingPoint;
+    DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
   }
 
-  /**
-   * Get a {@link Point} adjusted for bump crossing. Use this as a pose supplier in {@code
-   * AutoPoint.of(() -> tracker.getPoint(Point.ofRed(...)))}.
-   *
-   * @param point The base target point.
-   * @param landingPoint The point on the field where the robot is expected to land after crossing.
-   *     Used to help recover pose estimation.
-   * @return The point as-is if flat, or a projected point if on the bump.
-   */
-  public Point getPoint(Point point, @Nullable Point landingPoint) {
-    double tilt = tiltSupplier.getAsDouble();
-    boolean isFlat = flatDebouncer.calculate(tilt <= FLAT_THRESHOLD.get());
+  public void setCurrentSpeeds(ChassisSpeeds speeds) {
+    currentSpeeds = speeds;
+  }
 
-    DogLog.log("Imu/BumpCrossing/IsFlatDebounced", isFlat);
-    DogLog.log("Imu/BumpCrossing/OriginalPoint", point.getPose());
-
-    Pose2d targetPose = point.getPose();
-
-    if (isFlat && previousIsFlat != isFlat && landingPoint != null) {
+  @Override
+  protected void beforeTransition(BumpCrossingState oldState, BumpCrossingState newState) {
+    if (oldState == BumpCrossingState.CROSSING_DOWNHILL
+        && newState == BumpCrossingState.NOT_ON_BUMP) {
       // We just crossed, reset pose
       poseResetConsumer.accept(landingPoint.getTranslation());
+      DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing");
     }
-
-    previousIsFlat = isFlat;
-
-    if (isFlat) {
-      latchedXSign = 0;
-      return point;
-    }
-
-    Pose2d robotPose = robotPoseSupplier.get();
-
-    // Latch the crossing direction on the first tilted cycle so overshooting doesn't flip it.
-    if (latchedXSign == 0) {
-      latchedXSign = Math.signum(targetPose.getX() - robotPose.getX());
-    }
-
-    double xOffset = latchedXSign * PROJECTION_DISTANCE_METERS.get();
-
-    Pose2d projected =
-        new Pose2d(targetPose.getX() + xOffset, targetPose.getY(), targetPose.getRotation());
-
-    DogLog.log("Imu/BumpCrossing/ProjectedPoint", projected);
-
-    return new Point(projected, projected);
   }
 
   public void log() {
-    DogLog.log("Imu/BumpCrossing/Tilt", tiltSupplier.getAsDouble());
+    DogLog.log("Imu/BumpCrossing/State", getState());
+    DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
+    DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
   }
 }

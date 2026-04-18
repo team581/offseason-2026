@@ -88,14 +88,15 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
               AutoPoint.of(
-                      () ->
-                          bumpCrossingTracker.getPoint(
-                              Point.ofRed(
-                                  new Pose2d(
-                                      13.709,
-                                      FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                                      Rotation2d.kZero)),
-                              Point.ofRed(new Pose2d(13.9, 2.627 + BUMP_OFFSET, Rotation2d.kZero))))
+                      () -> {
+                        bumpCrossingTracker.bumpCrossRequest(
+                            Point.ofRed(
+                                new Pose2d(
+                                    13.709,
+                                    FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                                    Rotation2d.kZero)));
+                        return Point.ofRed(new Pose2d(13.9, 2.627 + BUMP_OFFSET, Rotation2d.kZero));
+                      })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -284,14 +285,15 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                       Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.of(
-                      () ->
-                          bumpCrossingTracker.getPoint(
-                              Point.ofRed(
-                                  new Pose2d(
-                                      13.709,
-                                      FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                                      Rotation2d.kZero)),
-                              Point.ofRed(new Pose2d(13.9, 2.627 + BUMP_OFFSET, Rotation2d.kZero))))
+                      () -> {
+                        bumpCrossingTracker.bumpCrossRequest(
+                            Point.ofRed(
+                                new Pose2d(
+                                    13.709,
+                                    FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                                    Rotation2d.kZero)));
+                        return Point.ofRed(new Pose2d(13.9, 2.627 + BUMP_OFFSET, Rotation2d.kZero));
+                      })
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -510,8 +512,23 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         }
       }
       case DRIVE_BACK_1 -> {
+        bumpCrossingTracker.setCurrentSpeeds(robotManager.swerve.getFieldRelativeSpeeds());
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
+        if (RobotBase.isSimulation()) {
+          if (timeout(0.5)) {
+            robotManager.localization.imu.setPitch(-7.5);
+            robotManager.localization.imu.setRoll(-7.5);
+          }
+          if (timeout(0.7)) {
+            robotManager.localization.imu.setPitch(7.5);
+            robotManager.localization.imu.setRoll(7.5);
+          }
+          if (timeout(1.0)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+        }
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_SECOND_INTAKE_SEGMENT -> {
@@ -548,7 +565,22 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_2 -> {
+        bumpCrossingTracker.setCurrentSpeeds(robotManager.swerve.getFieldRelativeSpeeds());
         trailblazer.setActiveSegment(driveBackAndShootTwo);
+        if (RobotBase.isSimulation()) {
+          if (timeout(0.5)) {
+            robotManager.localization.imu.setPitch(-7.5);
+            robotManager.localization.imu.setRoll(-7.5);
+          }
+          if (timeout(0.7)) {
+            robotManager.localization.imu.setPitch(7.5);
+            robotManager.localization.imu.setRoll(7.5);
+          }
+          if (timeout(1.0)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+        }
       }
       case SHOOT_2 -> robotManager.prepareScoreRequest();
       case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
