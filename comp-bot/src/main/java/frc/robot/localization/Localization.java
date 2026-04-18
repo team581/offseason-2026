@@ -13,7 +13,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.config.FeatureFlags;
-import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
