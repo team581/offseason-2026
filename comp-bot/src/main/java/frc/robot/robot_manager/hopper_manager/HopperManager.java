@@ -78,10 +78,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private HopperBallPosition getShotPosition() {
     if (towerSensorDebounced) {
-      if (ballFilling) {
-        return HopperBallPosition.AT_SENSOR;
-      }
+      return HopperBallPosition.AT_SENSOR;
+    }
 
+    if (shouldFillBalls()) {
       return HopperBallPosition.CLOSE_TO_SHOOTER;
     }
 
