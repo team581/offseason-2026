@@ -60,7 +60,7 @@ public class ShooterConfig {
           "Shooter/DistanceToFeedingRPM",
           Map.entry(6.0, 1500.0),
           Map.entry(8.71, 2000.0),
-          Map.entry(13.6, 3200.0));
+          Map.entry(13.6, 2000.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
