@@ -112,5 +112,6 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     DogLog.log("Imu/BumpCrossing/State", getState());
     DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
     DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
+    DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);
   }
 }
