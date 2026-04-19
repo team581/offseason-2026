@@ -58,7 +58,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private static final double LOOSE_TOLERANCE = 45.0;
 
   private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxLinearRateMovingShot", 2.0);
+      DogLog.tunable("Swerve/MaxLinearRateMovingShot", 4.0);
 
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
