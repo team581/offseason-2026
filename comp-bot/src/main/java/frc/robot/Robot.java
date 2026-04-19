@@ -175,8 +175,6 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreOrFeedRequest)
         .onRelease(robotManager::idleRequest);
 
-    driver.rightTrigger().onRelease(robotManager::idleRequest);
-
     driver.rightBumper().onPress(robotManager::idleRequest);
 
     driver
