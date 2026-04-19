@@ -356,6 +356,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.idleRequest();
         swerve.warmupScoreRequest(scoringParameters);
         powerManager.scoringRequest();
+        hopperManager.idleRequest();
       }
       case WARMUP_FEED -> {
         vision.tagsRequest();
@@ -363,6 +364,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.idleRequest();
         swerve.warmupFeedRequest(feedingParameters);
         powerManager.feedingRequest();
+        hopperManager.idleRequest();
       }
     }
   }
@@ -432,11 +434,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.idleRequest();
         swerve.warmupScoreRequest(scoringParameters);
+        hopperManager.idleRequest();
       }
       case WARMUP_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.idleRequest();
         swerve.warmupFeedRequest(feedingParameters);
+        hopperManager.idleRequest();
       }
       default -> {}
     }
