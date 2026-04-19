@@ -3,6 +3,7 @@ package frc.robot.feeder;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -14,6 +15,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   private final TalonFX bottomMotor;
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
+
+  private double averageCurrent = 0.0;
 
   public Feeder(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.FEEDER, FeederState.IDLE);
@@ -62,6 +65,15 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     DogLog.log("Feeder/Top/VelocityRPM", topMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Feeder/Bottom/VelocityRPM", bottomMotor.getVelocity().getValueAsDouble() * 60.0);
     DogLog.log("Feeder/Voltage", getState().getVoltage());
+
+    averageCurrent =
+        MathHelpers.average(
+            topMotor.getStatorCurrent().getValueAsDouble(),
+            bottomMotor.getStatorCurrent().getValueAsDouble());
+  }
+
+  public double getAverageCurrent() {
+    return averageCurrent;
   }
 
   @Override

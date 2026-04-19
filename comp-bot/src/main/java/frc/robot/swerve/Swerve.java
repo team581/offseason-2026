@@ -34,8 +34,10 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
+import frc.robot.config.RobotKind;
 import frc.robot.generated.CompTunerConstants;
-import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.PracticeTunerConstants;
+import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -55,8 +57,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private boolean useLooseTolerance = false;
   private static final double LOOSE_TOLERANCE = 45.0;
 
-  private static final DoubleSubscriber MAX_LINEAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxLinearRateMovingShot", 2.0);
+  // TODO(simonstoryparker): make separate ones for scoring
+  private static final DoubleSubscriber MAX_LINEAR_RATE_SCORING =
+      DogLog.tunable("Swerve/MaxLinearRateScoring", 1.5);
+
+  // TODO(simonstoryparker): make separate ones for scoring
+  private static final DoubleSubscriber MAX_LINEAR_RATE_FEEDING =
+      DogLog.tunable("Swerve/MaxLinearRateFeeding", 4.0);
 
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
@@ -66,7 +73,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(1);
-  private final SlewRateLimiter maxLinearVelocityRateLimiter = new SlewRateLimiter(5.0);
+  private final SlewRateLimiter maxLinearVelocityRateLimiter =
+      new SlewRateLimiter(100.0, -10.0, MAX_LINEAR_RATE);
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
 
   public static final PhoenixPIDController ORIGINAL_HEADING_PID =
@@ -144,7 +152,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private double feedingFeedForward = 0.0;
 
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
-  private double currentMaxAngularRate = MAX_ANGULAR_RATE;
+  private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
 
   private static final double MIN_AIMED_TOLERANCE = 2.0;
 
@@ -391,11 +399,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             || driveSource.getDriveSourceType() != DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
 
     switch (getState()) {
-      case SCORE, FEED -> {
+      case SCORE -> {
         currentMaxAngularRate =
             maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
         currentMaxLinearRate =
-            maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SHOOTING.get());
+            maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_SCORING.get());
+      }
+      case FEED -> {
+        currentMaxAngularRate =
+            maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
+        currentMaxLinearRate =
+            maxLinearVelocityRateLimiter.calculate(MAX_LINEAR_RATE_FEEDING.get());
       }
       default -> {
         currentMaxAngularRate =
@@ -632,29 +646,37 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
-                .withSupplyCurrentLimit(supplyCurrentLimit));
+            RobotKind.IS_COMP_BOT
+                ? CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
+                : PracticeTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
+                    .withSupplyCurrentLimit(supplyCurrentLimit));
     drivetrain
         .getModule(1)
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
-                .withSupplyCurrentLimit(supplyCurrentLimit));
+            RobotKind.IS_COMP_BOT
+                ? CompTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
+                : PracticeTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
+                    .withSupplyCurrentLimit(supplyCurrentLimit));
     drivetrain
         .getModule(2)
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
-                .withSupplyCurrentLimit(supplyCurrentLimit));
+            RobotKind.IS_COMP_BOT
+                ? CompTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
+                : PracticeTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
+                    .withSupplyCurrentLimit(supplyCurrentLimit));
 
     drivetrain
         .getModule(3)
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
-                .withSupplyCurrentLimit(supplyCurrentLimit));
+            RobotKind.IS_COMP_BOT
+                ? CompTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
+                : PracticeTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
+                    .withSupplyCurrentLimit(supplyCurrentLimit));
   }
 }

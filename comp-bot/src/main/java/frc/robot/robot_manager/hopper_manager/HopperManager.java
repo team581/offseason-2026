@@ -35,6 +35,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
   private boolean towerSensorRaw = false;
+  private boolean ballFilling = false;
 
   private boolean shouldSuperScore = false;
 
@@ -47,6 +48,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public static final double MEDIUM_CAPACITY_THRESHOLD = 8.0;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
+
+  public enum HopperBallPosition {
+    CLOSE_TO_SHOOTER,
+    AT_SENSOR,
+    BELOW_SENSOR,
+  }
 
   private final Timer canRangeUpdateTimer = new Timer();
 
@@ -67,6 +74,27 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     hopperCANRange.getConfigurator().apply(HopperManagerConfig.CAN_RANGE_CONFIG);
     canRangeUpdateTimer.start();
+  }
+
+  private HopperBallPosition getShotPosition() {
+    if (towerSensorDebounced) {
+      return HopperBallPosition.AT_SENSOR;
+    }
+
+    if (shouldFillBalls()) {
+      return HopperBallPosition.CLOSE_TO_SHOOTER;
+    }
+
+    return HopperBallPosition.BELOW_SENSOR;
+  }
+
+  public double getFeederToShooterTime() {
+    return switch (getShotPosition()) {
+      // TODO: Validate this
+      case CLOSE_TO_SHOOTER -> 0.25;
+      case AT_SENSOR -> 0.2;
+      case BELOW_SENSOR -> 0.3;
+    };
   }
 
   @Override
@@ -160,17 +188,33 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.shootRequest();
         feeder.shootRequest();
       }
-      case SHOOT -> {
+      case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (deploy.getState() != DeployState.HOPPER_COMPACTION_IN
-            && deploy.getState() != DeployState.HOPPER_COMPACTION_WAITING) {
+        if (deploy.getState() != DeployState.SCORE_COMPACTION
+            && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
         intake.shootRequest();
         conveyor.initialShotRequest();
         feeder.shootRequest();
       }
-      case SHOOT_AND_INTAKE -> {
+      case SCORE_AND_INTAKE -> {
+        deploy.intakeRequest();
+        intake.intakeRequest();
+        conveyor.shootRequest();
+        feeder.shootRequest();
+      }
+
+      case FEED -> {
+        // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
+        if (deploy.getState() != DeployState.FEED_COMPACTION) {
+          deploy.intakeRequest();
+        }
+        intake.shootRequest();
+        conveyor.initialShotRequest();
+        feeder.shootRequest();
+      }
+      case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
@@ -192,7 +236,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     switch (state) {
       default -> {}
-      case SHOOT -> {
+      case SCORE -> {
         if (shouldSuperScore) {
           deploy.superCompactionRequest();
           intake.shootRequest();
@@ -203,6 +247,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           conveyor.shootRequest();
         } else {
           deploy.waitHopperCompactionRequest();
+        }
+      }
+      case FEED -> {
+        if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+          deploy.feedCompactionRequest();
+          intake.idleRequest();
+          conveyor.shootRequest();
         }
       }
     }
@@ -252,19 +303,35 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
 
     if (driverWantsIntake) {
-      return HopperState.SHOOT_AND_INTAKE;
+      return HopperState.SCORE_AND_INTAKE;
     }
 
-    return HopperState.SHOOT;
+    return HopperState.SCORE;
   }
 
-  public void shootRequest(boolean shouldSuperScore) {
+  private HopperState resolveFeedState() {
+    if (driverWantsEject) {
+      return HopperState.EJECTING;
+    }
+
+    if (driverWantsIntake) {
+      return HopperState.FEED_AND_INTAKE;
+    }
+
+    return HopperState.FEED;
+  }
+
+  public void scoreRequest(boolean shouldSuperScore) {
     this.shouldSuperScore = shouldSuperScore;
     setState(resolveScoreState());
   }
 
-  public void shootRequest() {
-    shootRequest(false);
+  public void scoreRequest() {
+    scoreRequest(false);
+  }
+
+  public void feedRequest() {
+    setState(resolveFeedState());
   }
 
   public boolean isIntaking() {
@@ -273,7 +340,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   public boolean isShooting() {
     // You need to actually be in a shooting state
-    if (getState() != HopperState.SHOOT && getState() != HopperState.SHOOT_AND_INTAKE) {
+    if (getState() != HopperState.SCORE
+        && getState() != HopperState.SCORE_AND_INTAKE
+        && getState() != HopperState.FEED
+        && getState() != HopperState.FEED_AND_INTAKE) {
       return true;
     }
 
