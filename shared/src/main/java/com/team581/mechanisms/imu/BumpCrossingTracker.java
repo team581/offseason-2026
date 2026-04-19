@@ -46,9 +46,10 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   @Override
   protected void collectInputs() {
     // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
+    // Positive tilt should be tilted up toward the crossing direction
     directionalTilt =
-        -((pitchSupplier.getAsDouble() * Math.cos(crossingDirection.getRadians()))
-            + (rollSupplier.getAsDouble() * Math.sin(crossingDirection.getRadians())));
+        (pitchSupplier.getAsDouble() * Math.cos(crossingDirection.getRadians()))
+            + (rollSupplier.getAsDouble() * Math.sin(crossingDirection.getRadians()));
     isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
     isFlatFallbackDebounced =
         flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
@@ -65,13 +66,13 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
 
     return switch (currentState) {
       case NOT_ON_BUMP -> {
-        if (directionalTilt < -CROSSING_THRESHOLD.get()) {
+        if (directionalTilt > CROSSING_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_UPHILL;
         }
         yield currentState;
       }
       case CROSSING_UPHILL -> {
-        if (directionalTilt > CROSSING_THRESHOLD.get()) {
+        if (directionalTilt < -CROSSING_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_DOWNHILL;
         }
         yield currentState;
