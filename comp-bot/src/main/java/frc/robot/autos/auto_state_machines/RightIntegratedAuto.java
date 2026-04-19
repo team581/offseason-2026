@@ -91,7 +91,8 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                         bumpCrossingTracker.bumpCrossRequest(
                             Point.ofRed(
                                 new Pose2d(
-                                    13.9, 5.443 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0))));
+                                    13.9, 5.443 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0))),
+                            FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(
                                 13.709,
@@ -292,7 +293,8 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                                 new Pose2d(
                                     13.709,
                                     FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                    Rotation2d.fromDegrees(56))));
+                                    Rotation2d.fromDegrees(56))),
+                            FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(13.9, 5.443 + BUMP_OFFSET, Rotation2d.fromDegrees(56)));
                       })
@@ -514,7 +516,6 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case DRIVE_BACK_1 -> {
-        bumpCrossingTracker.setCurrentSpeeds(robotManager.swerve.getFieldRelativeSpeeds());
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
         if (RobotBase.isSimulation()) {
@@ -567,7 +568,6 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         robotManager.intakeAutoRequest();
       }
       case DRIVE_BACK_2 -> {
-        bumpCrossingTracker.setCurrentSpeeds(robotManager.swerve.getFieldRelativeSpeeds());
         trailblazer.setActiveSegment(driveBackAndShootTwo);
         if (RobotBase.isSimulation()) {
           if (timeout(0.5)) {

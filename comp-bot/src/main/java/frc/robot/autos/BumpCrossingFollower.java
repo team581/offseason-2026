@@ -34,8 +34,6 @@ public class BumpCrossingFollower implements PathFollower {
       AutoPoint<?> currentPoint,
       AutoSegment segment,
       int currentPointIndex) {
-    bumpCrossingTracker.setCurrentSpeeds(currentSpeeds);
-
     var originalSpeeds =
         follower.calculateSpeeds(
             currentSpeeds, currentPose, targetPose, currentPoint, segment, currentPointIndex);

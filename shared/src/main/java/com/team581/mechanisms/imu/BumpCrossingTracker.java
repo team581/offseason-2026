@@ -1,7 +1,6 @@
 package com.team581.mechanisms.imu;
 
 import com.team581.autos.Point;
-import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
@@ -9,7 +8,6 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
@@ -29,8 +27,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private final DoubleSupplier pitchSupplier;
   private final DoubleSupplier rollSupplier;
   private final Consumer<Translation2d> poseResetConsumer;
-  private ChassisSpeeds currentSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
-  private Rotation2d driveDirection = Rotation2d.kZero;
+  private Rotation2d crossingDirection = Rotation2d.kZero;
   private double directionalTilt = 0.0;
   private boolean isFlat = true;
   private boolean isFlatFallbackDebounced = false;
@@ -48,11 +45,10 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
 
   @Override
   protected void collectInputs() {
-    // Get the tilt relative to the direction driving toward the bump
-    driveDirection = MathHelpers.getDriveDirection(currentSpeeds);
+    // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
     directionalTilt =
-        -((pitchSupplier.getAsDouble() * Math.cos(driveDirection.getRadians()))
-            + (rollSupplier.getAsDouble() * Math.sin(driveDirection.getRadians())));
+        -((pitchSupplier.getAsDouble() * Math.cos(crossingDirection.getRadians()))
+            + (rollSupplier.getAsDouble() * Math.sin(crossingDirection.getRadians())));
     isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
     isFlatFallbackDebounced =
         flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
@@ -89,13 +85,10 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     };
   }
 
-  public void bumpCrossRequest(Point landingPoint) {
+  public void bumpCrossRequest(Point landingPoint, Rotation2d crossingDirection) {
     this.landingPoint = landingPoint;
+    this.crossingDirection = crossingDirection;
     DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
-  }
-
-  public void setCurrentSpeeds(ChassisSpeeds speeds) {
-    currentSpeeds = speeds;
   }
 
   @Override
