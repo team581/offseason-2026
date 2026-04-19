@@ -3,10 +3,12 @@ package com.team581.vision.limelight;
 import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import org.jspecify.annotations.Nullable;
 
 public class PoseEstimateValidator {
 
   private final String name;
+  private @Nullable Pose2d previousPose = null;
 
   public PoseEstimateValidator(String name) {
     this.name = name;
@@ -39,6 +41,13 @@ public class PoseEstimateValidator {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
       return false;
     }
+
+    // Limelights sometimes get stuck returning the same pose repeatedly, ignore duplicates
+    if (mtPose.equals(previousPose)) {
+      DogLog.timestamp("Vision/" + name + "/Tags/DuplicatePoseFilter");
+      return false;
+    }
+    previousPose = mtPose;
 
     return true;
   }
