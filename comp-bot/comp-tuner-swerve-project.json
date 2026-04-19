@@ -1,9 +1,9 @@
 {
   "SwerveOptions": {
     "HorizontalTrackSizeInches": 11.75,
-    "HasVerifiedDrive": false,
-    "IsLeftSideInverted": false,
-    "IsRightSideInverted": true,
+    "HasVerifiedDrive": true,
+    "IsLeftSideInverted": true,
+    "IsRightSideInverted": false,
     "IsValidConfiguration": true,
     "WheelRadiusInches": 2,
     "Gyro": {
@@ -21,19 +21,19 @@
       "CouplingRatio": 5.4,
       "SteerRatio": 12.1
     },
-    "HasVerifiedSteer": false,
+    "HasVerifiedSteer": true,
     "SwerveModuleType": 11,
     "VerticalTrackSizeInches": 11,
     "SelectedModuleManufacturer": "WestCoast Products (WCP)",
     "IsValidGyroCANbus": true
   },
   "schema_version": "1",
-  "LastState": 10,
+  "LastState": 11,
   "Version": "1.0.0.0",
   "Modules": [
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": false,
+      "IsSteerInverted": true,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Front Left",
       "ValidatedEncoderId": 11,
@@ -82,7 +82,7 @@
     },
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": false,
+      "IsSteerInverted": true,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Front Right",
       "ValidatedEncoderId": 12,
@@ -131,7 +131,7 @@
     },
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": false,
+      "IsSteerInverted": true,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Back Left",
       "ValidatedEncoderId": 13,
@@ -180,7 +180,7 @@
     },
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": false,
+      "IsSteerInverted": true,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Back Right",
       "ValidatedEncoderId": 14,
