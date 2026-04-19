@@ -40,7 +40,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = Units.inchesToMeters(0);
+  private static final double BUMP_OFFSET = Units.inchesToMeters(-5);
 
   private boolean collisionEverDetected = false;
 

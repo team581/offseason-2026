@@ -40,7 +40,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = Units.inchesToMeters(0);
+  private static final double BUMP_OFFSET = Units.inchesToMeters(-5);
 
   private boolean collisionEverDetected = false;
 
@@ -91,7 +91,9 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                         bumpCrossingTracker.bumpCrossRequest(
                             Point.ofRed(
                                 new Pose2d(
-                                    13.9,   FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET, Rotation2d.fromDegrees(-32))));
+                                    13.9,
+                                    FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                                    Rotation2d.fromDegrees(-32))));
                         return Point.ofRed(
                             new Pose2d(
                                 13.709,
