@@ -99,9 +99,9 @@ public class ShooterConfig {
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(RobotKind.IS_COMP_BOT ? 0 : 14.0)
-                  .withKS(RobotKind.IS_COMP_BOT ? 0 : 6.4)
-                  .withKV(RobotKind.IS_COMP_BOT ? 0 : 0.13));
+                  .withKP(RobotKind.IS_COMP_BOT ? 14.0 : 14.0)
+                  .withKS(RobotKind.IS_COMP_BOT ? 6.4 : 6.4)
+                  .withKV(RobotKind.IS_COMP_BOT ? 0.13 : 0.13));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))

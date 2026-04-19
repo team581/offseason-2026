@@ -24,7 +24,7 @@ public class DeployConfig {
 
   private static final Slot0Configs AVERAGE_GAINS =
       new Slot0Configs()
-          .withKP(RobotKind.IS_COMP_BOT ? 0 : 8.0)
+          .withKP(RobotKind.IS_COMP_BOT ? 8.0 : 8.0)
           .withKI(0)
           .withKD(0.0)
           .withKG(0.0)

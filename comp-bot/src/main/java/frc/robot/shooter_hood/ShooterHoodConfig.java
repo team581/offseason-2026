@@ -46,7 +46,7 @@ public class ShooterHoodConfig {
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
-              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 0 : 300.0).withKV(0).withKS(0));
+              new Slot0Configs().withKP(RobotKind.IS_COMP_BOT ? 300.0 : 300.0).withKV(0).withKS(0));
 
   // TODO: Update interpolating map numbers later
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
