@@ -1,7 +1,7 @@
 {
   "SwerveOptions": {
-    "HorizontalTrackSizeInches": 23.5,
-    "HasVerifiedDrive": true,
+    "HorizontalTrackSizeInches": 11.75,
+    "HasVerifiedDrive": false,
     "IsLeftSideInverted": false,
     "IsRightSideInverted": true,
     "IsValidConfiguration": true,
@@ -9,38 +9,38 @@
     "Gyro": {
       "Model": "Pigeon 2",
       "Id": 2,
-      "CANbus": "FE21E64A394C4853202020500F0D18FF",
+      "CANbus": "193835E0463847532020204B192B0DFF",
       "SelectedMotorType": null,
-      "Name": "Pigeon 2",
+      "Name": "Pigeon",
       "CANbusFriendly": "581CANivore"
     },
     "SwerveModuleConfiguration": {
-      "DriveRatio": 6.821052631578947,
+      "DriveRatio": 7.673684210526316,
       "ModuleBrand": 11,
-      "CustomName": "X2 10T",
+      "CustomName": "X1 10T",
       "CouplingRatio": 5.4,
       "SteerRatio": 12.1
     },
-    "HasVerifiedSteer": true,
+    "HasVerifiedSteer": false,
     "SwerveModuleType": 11,
-    "VerticalTrackSizeInches": 22,
+    "VerticalTrackSizeInches": 11,
     "SelectedModuleManufacturer": "WestCoast Products (WCP)",
     "IsValidGyroCANbus": true
   },
   "schema_version": "1",
-  "LastState": 11,
+  "LastState": 10,
   "Version": "1.0.0.0",
   "Modules": [
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": true,
+      "IsSteerInverted": false,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Front Left",
       "ValidatedEncoderId": 11,
       "DriveMotor": {
         "Model": "Talon FX vers. C",
         "Id": 3,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -51,7 +51,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.219482421875,
+      "EncoderOffset": -0.259521484375,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 4,
@@ -59,7 +59,7 @@
       "SteerMotor": {
         "Model": "Talon FX vers. F",
         "Id": 4,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -72,9 +72,9 @@
       "Encoder": {
         "Model": "CANCoder vers. H",
         "Id": 11,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": null,
-        "Name": "FrontLeft CANcoder",
+        "Name": "FrontLeftCancoder",
         "CANbusFriendly": "581CANivore"
       },
       "SteerMotorSelectionState": 1,
@@ -82,14 +82,14 @@
     },
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": true,
+      "IsSteerInverted": false,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Front Right",
       "ValidatedEncoderId": 12,
       "DriveMotor": {
         "Model": "Talon FX vers. C",
         "Id": 5,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -100,7 +100,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.3564453125,
+      "EncoderOffset": -0.08642578125,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 6,
@@ -108,7 +108,7 @@
       "SteerMotor": {
         "Model": "Talon FX vers. F",
         "Id": 6,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -121,7 +121,7 @@
       "Encoder": {
         "Model": "CANCoder vers. H",
         "Id": 12,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": null,
         "Name": "FrontRightCancoder",
         "CANbusFriendly": "581CANivore"
@@ -131,14 +131,14 @@
     },
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": true,
+      "IsSteerInverted": false,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Back Left",
       "ValidatedEncoderId": 13,
       "DriveMotor": {
         "Model": "Talon FX vers. C",
         "Id": 7,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -149,7 +149,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.37255859375,
+      "EncoderOffset": -0.38232421875,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 8,
@@ -157,7 +157,7 @@
       "SteerMotor": {
         "Model": "Talon FX vers. F",
         "Id": 8,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -170,7 +170,7 @@
       "Encoder": {
         "Model": "CANCoder vers. H",
         "Id": 13,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": null,
         "Name": "BackLeftCancoder",
         "CANbusFriendly": "581CANivore"
@@ -180,14 +180,14 @@
     },
     {
       "IsEncoderInverted": false,
-      "IsSteerInverted": true,
+      "IsSteerInverted": false,
       "SteerEncoderSelectionState": 1,
       "ModuleName": "Back Right",
       "ValidatedEncoderId": 14,
       "DriveMotor": {
         "Model": "Talon FX vers. C",
         "Id": 9,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -198,7 +198,7 @@
         "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
-      "EncoderOffset": -0.4677734375,
+      "EncoderOffset": -0.36572265625,
       "DriveMotorSelectionState": 1,
       "SelectedEncoderType": "CANcoder",
       "ValidatedSteerId": 10,
@@ -206,7 +206,7 @@
       "SteerMotor": {
         "Model": "Talon FX vers. F",
         "Id": 10,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": {
           "StatorCurrentLimit": 60,
           "SlipCurrentLimit": 120,
@@ -219,7 +219,7 @@
       "Encoder": {
         "Model": "CANCoder vers. H",
         "Id": 14,
-        "CANbus": "FE21E64A394C4853202020500F0D18FF",
+        "CANbus": "193835E0463847532020204B192B0DFF",
         "SelectedMotorType": null,
         "Name": "BackRightCancoder",
         "CANbusFriendly": "581CANivore"
