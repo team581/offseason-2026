@@ -65,13 +65,13 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
 
     return switch (currentState) {
       case NOT_ON_BUMP -> {
-        if (directionalTilt > CROSSING_THRESHOLD.get()) {
+        if (directionalTilt < -CROSSING_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_UPHILL;
         }
         yield currentState;
       }
       case CROSSING_UPHILL -> {
-        if (directionalTilt < -CROSSING_THRESHOLD.get()) {
+        if (directionalTilt > CROSSING_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_DOWNHILL;
         }
         yield currentState;
@@ -103,6 +103,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
 
   public void log() {
     DogLog.log("Imu/BumpCrossing/State", getState());
+    DogLog.log("Imu/BumpCrossing/CrossingDirection", crossingDirection);
     DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
     DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
     DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);
