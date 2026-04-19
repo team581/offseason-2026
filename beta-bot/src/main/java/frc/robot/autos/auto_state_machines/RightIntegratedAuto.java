@@ -1,9 +1,7 @@
 package frc.robot.autos.auto_state_machines;
 
 import com.team581.autos.Point;
-import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
-import com.team581.mechanisms.imu.BumpCrossingTracker;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
@@ -22,8 +20,6 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2
   }
-
-  private BumpCrossingTracker bumpCrossingTracker;
 
   private final AutoSegment intakeAcrossMidline =
       Trailblazer.segment(
@@ -54,17 +50,10 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
-              AutoPoint.of(
-                      () ->
-                          bumpCrossingTracker.getPoint(
-                              Point.ofRed(
-                                  new Pose2d(
-                                      13.709,
-                                      FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(),
-                                      Rotation2d.kCCW_90deg)),
-                              Point.ofRed(new Pose2d(13.9, 5.593, Rotation2d.kCCW_90deg)),
-                              MathHelpers.getDriveDirection(
-                                  robotManager.swerve.getFieldRelativeSpeeds())))
+              // TODO: bumpCrossingTracker.getPoint() was removed, using static point as fallback
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -122,17 +111,10 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withAngularConstraints(
                       Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 10)),
-              AutoPoint.of(
-                      () ->
-                          bumpCrossingTracker.getPoint(
-                              Point.ofRed(
-                                  new Pose2d(
-                                      13.709,
-                                      FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(),
-                                      Rotation2d.kCCW_90deg)),
-                              Point.ofRed(new Pose2d(13.9, 5.593, Rotation2d.kCCW_90deg)),
-                              MathHelpers.getDriveDirection(
-                                  robotManager.swerve.getFieldRelativeSpeeds())))
+              // TODO: bumpCrossingTracker.getPoint() was removed, using static point as fallback
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.709, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -167,8 +149,6 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   public RightIntegratedAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(IntegratedAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
-
-    this.bumpCrossingTracker = robotManager.localization.imu.bumpCrossingTracker;
   }
 
   @Override
