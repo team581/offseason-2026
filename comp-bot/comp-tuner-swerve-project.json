@@ -2,7 +2,7 @@
   "SwerveOptions": {
     "HorizontalTrackSizeInches": 11.75,
     "HasVerifiedDrive": true,
-    "IsLeftSideInverted": true,
+    "IsLeftSideInverted": false,
     "IsRightSideInverted": false,
     "IsValidConfiguration": true,
     "WheelRadiusInches": 2,
