@@ -6,6 +6,7 @@ import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -33,7 +34,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private double directionalTilt = 0.0;
   private boolean isFlat = true;
   private boolean isFlatFallbackDebounced = false;
-  private Point landingPoint;
+  private Point landingPoint = new Point(Pose2d.kZero, Pose2d.kZero);
 
   public BumpCrossingTracker(
       DoubleSupplier pitchSupplier,
