@@ -50,7 +50,7 @@ public class Hardware {
   public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
   public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
-  public final CANrange hopperCANRange = new CANrange(27, canivore);
+  public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
   public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
 
