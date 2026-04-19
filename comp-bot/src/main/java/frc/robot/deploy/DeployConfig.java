@@ -10,7 +10,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import frc.robot.config.RobotKind;
 
 public class DeployConfig {
   public static final double MAX_LENGTH = 11.8;
@@ -24,7 +23,7 @@ public class DeployConfig {
 
   private static final Slot0Configs AVERAGE_GAINS =
       new Slot0Configs()
-          .withKP(RobotKind.IS_COMP_BOT ? 8.0 : 8.0)
+          .withKP(8.0)
           .withKI(0)
           .withKD(0.0)
           .withKG(0.0)
