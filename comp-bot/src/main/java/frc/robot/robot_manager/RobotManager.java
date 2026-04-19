@@ -220,8 +220,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && isInSafeFeedingLocation
             && localization.imu.isFlatDebounced()
             && shooterHood.atGoal()
-            && health.isLocalizationHealthy()
-            && !nearTrench) {
+            && health.isLocalizationHealthy()) {
 
           yield RobotState.FEED;
         } else {
@@ -241,8 +240,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
                 && localization.imu.isFlatDebounced()
                 && shooterHood.atGoal()
-                && health.isLocalizationHealthy()
-                && !nearTrench)) {
+                && health.isLocalizationHealthy())) {
 
           yield currentState;
         } else {
@@ -397,7 +395,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopperManager.scoreRequest(hubActivity.shouldSuperScore());
       }
       case PREPARE_FEED -> {
-        smartHoodPrepareFeedRequest();
+        shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         hopperManager.idleRequest();
       }
@@ -467,18 +465,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NotNearTrench");
 
       shooterHood.scoreRequest(scoringParameters.distance());
-    }
-  }
-
-  private void smartHoodPrepareFeedRequest() {
-    // If cameras are offline or we are near a trench, always be idle
-    if (!health.isLocalizationHealthy() || nearTrench) {
-      shooterHood.idleRequest();
-      DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NearTrench");
-    } else {
-      DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NotNearTrench");
-
-      shooterHood.feedRequest(feedingParameters.distance());
     }
   }
 
