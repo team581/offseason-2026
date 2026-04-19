@@ -115,7 +115,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     if (!deploy.isFullyExtended()) {
       return false;
     }
-    if (DSOptions.USE_CANRANGE.get()) {
+    if (!canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
       // If we are using the hopper CANrange, we can start filling the tower once the hopper is
       // starting ot fill up
       return hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH;
