@@ -91,7 +91,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                         bumpCrossingTracker.bumpCrossRequest(
                             Point.ofRed(
                                 new Pose2d(
-                                    13.9, 5.443 + BUMP_OFFSET, Rotation2d.fromDegrees(-32))));
+                                    13.9,   FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET, Rotation2d.fromDegrees(-32))));
                         return Point.ofRed(
                             new Pose2d(
                                 13.709,
