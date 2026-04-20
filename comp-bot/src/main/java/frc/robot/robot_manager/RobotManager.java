@@ -123,6 +123,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case WARMUP_SCORE -> {
         if (DriverStation.isEnabled()
+            && DriverStation.isTeleop()
             && hopperManager.isFull()
             && isInAllianceZone
             && isInSafeScoringLocation
