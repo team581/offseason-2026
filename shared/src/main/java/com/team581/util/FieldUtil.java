@@ -384,7 +384,7 @@ public class FieldUtil {
 
   private static final Translation2d BLUE_HUB_CENTER =
       new Translation2d(BLUE_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
-  private static final Translation2d RED_HUB_CENTER =
+  public static final Translation2d RED_HUB_CENTER =
       new Translation2d(RED_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
   private static final double HUB_WIDTH = Units.inchesToMeters(47.0);
   private static final double HUB_BACK_EDGE_TO_HUB_NET_GAP_X_WIDTH = Units.inchesToMeters(10.26);
