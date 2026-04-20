@@ -114,16 +114,11 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          11.5,
-                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(180)))
+                          11.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(4.5, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
-                  new Pose2d(
-                      10.5,
-                      FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
-                      Rotation2d.fromDegrees(180))),
+                  new Pose2d(10.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg)),
               AutoPoint.ofRed(new Pose2d(9.5 - 1.0, 6.814, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.5 - 1.0, 4.4 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))
