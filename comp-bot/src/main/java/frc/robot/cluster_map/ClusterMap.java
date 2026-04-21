@@ -80,6 +80,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private Swerve swerve;
 
   private boolean deployFullyExtended = false;
+  private boolean hasDoneWarmup = false;
 
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
@@ -218,6 +219,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
                   SIMULATED_CLUSTER_X.getAsDouble(), SIMULATED_CLUSTER_Y.getAsDouble()),
               20,
               10));
+    }
+    if (!hasDoneWarmup) {
+      hasDoneWarmup = true;
+      return Optional.of(new VisionClusterData(new Translation2d(1.0, 1.0), 20, 20));
     }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
       return Optional.empty();
