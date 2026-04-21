@@ -37,7 +37,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean towerSensorRaw = false;
   private boolean ballFilling = false;
 
-  private boolean shouldSuperScore = false;
+  private boolean shouldBeastMode = false;
 
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
 
@@ -237,8 +237,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     switch (state) {
       default -> {}
       case SCORE -> {
-        if (shouldSuperScore) {
-          deploy.superCompactionRequest();
+        if (shouldBeastMode) {
+          deploy.beastModeRequest();
           intake.shootRequest();
           conveyor.shootRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
@@ -321,8 +321,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return HopperState.FEED;
   }
 
-  public void scoreRequest(boolean shouldSuperScore) {
-    this.shouldSuperScore = shouldSuperScore;
+  public void scoreRequest(boolean shouldBeastMode) {
+    this.shouldBeastMode = shouldBeastMode;
     setState(resolveScoreState());
   }
 

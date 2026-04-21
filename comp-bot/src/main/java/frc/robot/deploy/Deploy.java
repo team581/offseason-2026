@@ -185,10 +185,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
-  public void superCompactionRequest() {
+  public void beastModeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.SUPER_COMPACTION_IN);
+      default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
     }
   }
 

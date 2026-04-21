@@ -389,13 +389,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case SCORE -> {
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        hopperManager.scoreRequest(hubActivity.shouldSuperScore());
+        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
         smartScoringPowerManagerRequest();
       }
       case FORCE_SCORE -> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        hopperManager.scoreRequest(hubActivity.shouldSuperScore());
+        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
       }
       case PREPARE_FEED -> {
         shooterHood.feedRequest(feedingParameters.distance());
@@ -422,7 +422,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // Automatically update scoring parameters with preset pose
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
-        hopperManager.scoreRequest(hubActivity.shouldSuperScore());
+        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
       }
       case PREPARE_FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
@@ -474,8 +474,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartScoringPowerManagerRequest() {
-    if (hubActivity.shouldSuperScore()) {
-      powerManager.superScoringRequest();
+    if (hubActivity.shouldBeastMode()) {
+      powerManager.beastModeRequest();
     } else if (robotPose.getTranslation().getDistance(FieldUtil.HUB_POSE.getTranslation())
         > SLOW_SCORING_DISTANCE_THRESHOLD.get()) {
       powerManager.scoringFarRequest();

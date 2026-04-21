@@ -42,6 +42,10 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.swerve = swerve;
   }
 
+  public void beastModeRequest() {
+    setStateFromRequest(PowerManagerState.BEAST_MODE);
+  }
+
   public void feedingRequest() {
     setStateFromRequest(PowerManagerState.FEEDING);
   }
@@ -60,10 +64,6 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
 
   public void scoringRequest() {
     setStateFromRequest(PowerManagerState.SCORING);
-  }
-
-  public void superScoringRequest() {
-    setStateFromRequest(PowerManagerState.SUPER_SCORING);
   }
 
   public void turboRequest() {
