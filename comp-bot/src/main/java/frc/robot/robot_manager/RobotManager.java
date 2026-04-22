@@ -63,7 +63,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   // Number gotten from trench scoring point
   private DoubleSubscriber SLOW_SCORING_DISTANCE_THRESHOLD =
-      DogLog.tunable("RobotManager/FarShootingThreshold", 4.0);
+      DogLog.tunable("RobotManager/FarScoreThreshold", 4.0);
+
+  private DoubleSubscriber SLOW_FEEDING_DISTANCE_THRESHOLD =
+      DogLog.tunable("RobotManager/FarFeedThreshold", 7.0);
 
   private FeedLocation feedLocation = FeedLocation.RIGHT;
 
@@ -286,7 +289,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        powerManager.feedingRequest();
+        smartFeedingPowerManagerRequest();
       }
       case FEED -> {
         // hoppermanager controlled separately
@@ -294,7 +297,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
-        powerManager.feedingRequest();
+        smartFeedingPowerManagerRequest();
       }
       case PREPARE_SCORE -> {
         // hoppermanager controlled separately
@@ -325,7 +328,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.feedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
         swerve.feedRequest(fallbackFeedingParameters);
-        powerManager.feedingRequest();
+        smartFeedingPowerManagerRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
         // hoppermanager controlled separately
@@ -364,7 +367,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.idleRequest();
         swerve.warmupFeedRequest(feedingParameters);
-        powerManager.feedingRequest();
+        smartFeedingPowerManagerRequest();
         hopperManager.idleRequest();
       }
     }
@@ -401,11 +404,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         hopperManager.idleRequest();
+        smartFeedingPowerManagerRequest();
       }
       case FEED -> {
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         hopperManager.feedRequest();
+        smartFeedingPowerManagerRequest();
       }
 
       // Fallback states
@@ -426,10 +431,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
+        smartFeedingPowerManagerRequest();
       }
       case FALLBACK_FEED -> {
         swerve.feedRequest(fallbackFeedingParameters);
         hopperManager.feedRequest();
+        smartFeedingPowerManagerRequest();
       }
       case WARMUP_SCORE -> {
         shooter.prepareScoreRequest(scoringParameters.distance());
@@ -442,6 +449,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.idleRequest();
         swerve.warmupFeedRequest(feedingParameters);
         hopperManager.idleRequest();
+        smartFeedingPowerManagerRequest();
       }
       default -> {}
     }
@@ -481,6 +489,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       powerManager.scoringFarRequest();
     } else {
       powerManager.scoringRequest();
+    }
+  }
+
+  private void smartFeedingPowerManagerRequest() {
+    if (robotPose.getTranslation().getDistance(feedLocation.getTranslation())
+        > SLOW_FEEDING_DISTANCE_THRESHOLD.get()) {
+      powerManager.feedingFarRequest();
+    } else {
+      powerManager.feedingRequest();
     }
   }
 

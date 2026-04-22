@@ -8,6 +8,8 @@ public enum PowerManagerState {
   SCORING_FAR(50, 20, 15, 40, 10, 10, 20),
   BEAST_MODE(50, 10, 15, 40, 30, 30, 20),
   FEEDING(35, 20, 15, 40, 15, 15, 45),
+  FEEDING_FAR(35, 20, 15, 40, 15, 15, 45),
+
   TURBO_MODE(30, 5, 18, 10, 10, 10, 70);
 
   final double shooterSupplyCurrent;

@@ -46,6 +46,10 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     setStateFromRequest(PowerManagerState.BEAST_MODE);
   }
 
+  public void feedingFarRequest() {
+    setStateFromRequest(PowerManagerState.FEEDING_FAR);
+  }
+
   public void feedingRequest() {
     setStateFromRequest(PowerManagerState.FEEDING);
   }

@@ -215,8 +215,8 @@ public class Robot extends Base581Robot {
 
     operator
         .leftBumper()
-        .onPress(robotManager::warmupScoreOrFeedRequest)
-        .onRelease(robotManager::cancelWarmupRequest);
+        .onPress(() -> robotManager.powerManager.prioritizeIntakeRequest())
+        .onRelease(() -> robotManager.powerManager.idleRequest());
     operator
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
