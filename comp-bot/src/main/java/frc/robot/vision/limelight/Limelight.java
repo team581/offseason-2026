@@ -16,6 +16,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -65,9 +66,13 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private OptionalTagResult tagResult = new OptionalTagResult();
 
   private double angularVelocity = 0.0;
+  private double linearVelocity = 0.0;
   private boolean updatedLimelightPos = false;
 
   private PoseEstimate latestEstimate = new PoseEstimate();
+
+  private static final DoubleSubscriber ROBOT_VELOCITY_STD_DEV_MULTIPLIER =
+      DogLog.tunable("Vision/RobotVelocityStdDevMultiplier", 0.0);
 
   public Limelight(String name, LimelightState initialState, CameraConfig config) {
     super(SubsystemPriority.VISION, initialState);
@@ -76,6 +81,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     limelightTimer.start();
     this.config = config;
     this.poseEstimateValidator = new PoseEstimateValidator(name);
+  }
+
+  public void setRobotVelocity(double velocity) {
+    this.linearVelocity = velocity;
   }
 
   public void sendImuData(
@@ -111,7 +120,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var mTPose = mT1Estimate.pose;
     var distance = mT1Estimate.avgTagDist;
 
-    var xyDev = 0.01 * Math.pow(distance, 0.8);
+    var xyDev =
+        0.01 * Math.pow(distance, 0.8)
+            + (linearVelocity * ROBOT_VELOCITY_STD_DEV_MULTIPLIER.getAsDouble());
     var thetaDev = 999.0;
 
     if (config.useMt2()) {

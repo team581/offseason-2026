@@ -66,6 +66,12 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     };
   }
 
+  public void setRobotVelocity(double velocity) {
+    shooterLimelight.setRobotVelocity(velocity);
+    leftLimelight.setRobotVelocity(velocity);
+    rightLimelight.setRobotVelocity(velocity);
+  }
+
   @Override
   protected void collectInputs() {
     robotAngularVelocity = imu.getRobotAngularVelocity();
@@ -159,7 +165,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     shooterLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
     leftLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
     rightLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
-
     DogLog.log("Vision/SeeingTag", seeingTag);
   }
 }

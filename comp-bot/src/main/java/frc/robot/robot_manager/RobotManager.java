@@ -630,9 +630,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     double robotRotation = robotPose.getRotation().getDegrees();
     clusterMap.setDeployFullyExtended(hopperManager.deploy.isFullyExtended());
     vision.setEstimatedPoseAngle(robotRotation);
-
     var speeds = swerve.getFieldRelativeSpeeds();
-    isMoving = MathHelpers.getLinearVelocity(speeds) > 0.2;
+    var velocity = MathHelpers.getLinearVelocity(speeds);
+    vision.setRobotVelocity(velocity);
+
+    isMoving = velocity > 0.2;
 
     // If using clamped points FF we are using the HOME FIELD
     nearTrench =
