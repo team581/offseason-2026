@@ -8,6 +8,7 @@ import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Imu extends BaseImuSubsystem {
@@ -50,7 +51,11 @@ public class Imu extends BaseImuSubsystem {
   @Override
   public void beforePeriodic() {
     super.beforePeriodic();
-    bumpCrossingTracker.beforePeriodic();
+
+    // We only use bump crossing in auto
+    if (DriverStation.isAutonomous()) {
+      bumpCrossingTracker.beforePeriodic();
+    }
   }
 
   @Override
@@ -102,6 +107,10 @@ public class Imu extends BaseImuSubsystem {
   @Override
   public void periodic() {
     super.periodic();
-    bumpCrossingTracker.periodic();
+
+    // We only use bump crossing in auto
+    if (DriverStation.isAutonomous()) {
+      bumpCrossingTracker.periodic();
+    }
   }
 }
