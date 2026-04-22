@@ -25,6 +25,7 @@ import frc.robot.robot_manager.RobotManager;
 public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> {
 
   public enum Markers {
+    PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
@@ -64,12 +65,19 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       () ->
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(8.280, 4.510, Rotation2d.fromDegrees(-50.0)))))
+                  .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.510, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           9.575,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.fromDegrees(32.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.68,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
@@ -401,6 +409,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       }
       case INTAKE_ACROSS_MIDLINE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+          robotManager.powerManager.idleRequest();
           yield IntegratedAutoState.DRIVE_BACK_1;
         } else {
           yield currentState;
@@ -513,6 +522,9 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
             && !firstStuckOnBall) {
           firstStuckOnBall = true;
           robotManager.localization.imu.setPitch(-30.0);
+        }
+        if (trailblazer.passedMarker(Markers.PRIORITIZE_INTAKE)) {
+          robotManager.powerManager.prioritizeIntakeRequest();
         }
       }
       case DRIVE_BACK_1 -> {

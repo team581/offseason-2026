@@ -58,6 +58,10 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     setStateFromRequest(PowerManagerState.IDLE);
   }
 
+  public void prioritizeIntakeRequest() {
+    setStateFromRequest(PowerManagerState.PRIORITIZE_INTAKE);
+  }
+
   public void scoringFarRequest() {
     setStateFromRequest(PowerManagerState.SCORING_FAR);
   }
