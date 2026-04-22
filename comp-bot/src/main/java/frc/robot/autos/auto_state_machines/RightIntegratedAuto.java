@@ -59,22 +59,16 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg))))
+                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-75)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.280, 4.510, Rotation2d.fromDegrees(-50.0)))))
+                              Point.ofRed(new Pose2d(8.280, 4.310, Rotation2d.fromDegrees(-30.0)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 4.510, Rotation2d.fromDegrees(32.0)))
+              AutoPoint.ofRed(new Pose2d(9.31, 4.310, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          9.575,
-                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.68,
@@ -98,36 +92,29 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       () -> {
                         bumpCrossingTracker.bumpCrossRequest(
                             Point.ofRed(
-                                new Pose2d(
-                                    13.9, 5.443 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0))),
+                                new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8))),
                             Rotation2d.k180deg);
                         return Point.ofRed(
-                            new Pose2d(
-                                13.709,
-                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.fromDegrees(32.0)));
+                            new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          14.0,
-                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(40.0)))
+              AutoPoint.ofRed(new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ))
+                  .withMarker(Markers.START_SHOOT_RQ),
+              AutoPoint.ofRed(new Pose2d(13.25, 7.225, Rotation2d.fromDegrees(42.0)))
+                  .withLinearConstraints(0.5, 100)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
   private final AutoSegment defaultSecondSegment =
       Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+              AutoPoint.ofRed(new Pose2d(13.2, 7.225, Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
