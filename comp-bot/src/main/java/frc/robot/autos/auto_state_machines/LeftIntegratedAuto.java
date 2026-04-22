@@ -94,7 +94,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                                     13.9,
                                     FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
                                     Rotation2d.fromDegrees(-32))),
-                            FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg);
+                            Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(
                                 13.709,
@@ -296,7 +296,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                                     13.709,
                                     FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
                                     Rotation2d.fromDegrees(-56))),
-                            FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg);
+                            Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(13.9, 2.627 + BUMP_OFFSET, Rotation2d.fromDegrees(-56)));
                       })
