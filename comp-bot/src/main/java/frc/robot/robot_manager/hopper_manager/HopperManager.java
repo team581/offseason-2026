@@ -17,6 +17,7 @@ import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
@@ -34,16 +35,25 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
   private boolean towerSensorRaw = false;
+  private boolean ballFilling = false;
+
+  private boolean shouldBeastMode = false;
 
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
 
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
   private double previousCanRangeDistance = 0.0;
-  public static final double HIGH_CAPACITY_THRESHOLD = 4.0;
-  public static final double MEDIUM_CAPACITY_THRESHOLD = 7.0;
+  public static final double HIGH_CAPACITY_THRESHOLD = 6.0;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 8.0;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
+
+  public enum HopperBallPosition {
+    CLOSE_TO_SHOOTER,
+    AT_SENSOR,
+    BELOW_SENSOR,
+  }
 
   private final Timer canRangeUpdateTimer = new Timer();
 
@@ -66,6 +76,27 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     canRangeUpdateTimer.start();
   }
 
+  private HopperBallPosition getShotPosition() {
+    if (towerSensorDebounced) {
+      return HopperBallPosition.AT_SENSOR;
+    }
+
+    if (shouldFillBalls()) {
+      return HopperBallPosition.CLOSE_TO_SHOOTER;
+    }
+
+    return HopperBallPosition.BELOW_SENSOR;
+  }
+
+  public double getFeederToShooterTime() {
+    return switch (getShotPosition()) {
+      // TODO: Validate this
+      case CLOSE_TO_SHOOTER -> 0.25;
+      case AT_SENSOR -> 0.2;
+      case BELOW_SENSOR -> 0.3;
+    };
+  }
+
   @Override
   protected HopperState getNextState(HopperState currentState) {
     return switch (getState()) {
@@ -84,7 +115,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     if (!deploy.isFullyExtended()) {
       return false;
     }
-    if (DSOptions.USE_CANRANGE.get()) {
+    if (!canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
       // If we are using the hopper CANrange, we can start filling the tower once the hopper is
       // starting ot fill up
       return hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH;
@@ -92,6 +123,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     // Otherwise, we fallback to running once we've been intaking for a few seconds
     return intake.hasBeenIntaking();
+  }
+
+  public boolean isFull() {
+    if (RobotBase.isSimulation()) {
+      return timeout(10.0);
+    }
+    return hopperCapacity == HopperCapacity.HIGH && DSOptions.USE_CANRANGE.getAsBoolean();
   }
 
   /** Sets conveyor and feeder to ball filling if conditions are met, otherwise idles them. */
@@ -125,6 +163,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     switch (newState) {
       case IDLE_DEPLOYED -> {
         intake.idleRequest();
+        deploy.intakeRequest();
         smartBallFillRequest();
       }
       case IDLE_STOWED -> {
@@ -149,17 +188,33 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.shootRequest();
         feeder.shootRequest();
       }
-      case SHOOT -> {
+      case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (deploy.getState() != DeployState.HOPPER_COMPACTION_IN
-            && deploy.getState() != DeployState.HOPPER_COMPACTION_WAITING) {
+        if (deploy.getState() != DeployState.SCORE_COMPACTION
+            && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
         intake.shootRequest();
         conveyor.initialShotRequest();
         feeder.shootRequest();
       }
-      case SHOOT_AND_INTAKE -> {
+      case SCORE_AND_INTAKE -> {
+        deploy.intakeRequest();
+        intake.intakeRequest();
+        conveyor.shootRequest();
+        feeder.shootRequest();
+      }
+
+      case FEED -> {
+        // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
+        if (deploy.getState() != DeployState.FEED_COMPACTION) {
+          deploy.intakeRequest();
+        }
+        intake.shootRequest();
+        conveyor.initialShotRequest();
+        feeder.shootRequest();
+      }
+      case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
@@ -181,8 +236,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     switch (state) {
       default -> {}
-      case SHOOT -> {
-        if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+      case SCORE -> {
+        if (shouldBeastMode) {
+          deploy.beastModeRequest();
+          intake.shootRequest();
+          conveyor.shootRequest();
+        } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.hopperCompactionRequest();
           intake.idleRequest();
           conveyor.shootRequest();
@@ -190,9 +249,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.waitHopperCompactionRequest();
         }
       }
-      case IDLE_DEPLOYED -> {
-        if (timeout(0.5)) {
-          deploy.intakeRequest();
+      case FEED -> {
+        if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+          deploy.feedCompactionRequest();
+          intake.idleRequest();
+          conveyor.shootRequest();
         }
       }
     }
@@ -211,9 +272,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
     DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
-    DogLog.log("HopperManager/FilteredHopperDistance", filteredDistance);
+    DogLog.forceNt.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
-    DogLog.log("HopperManager/TowerSensor", towerSensorRaw);
+    DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
   }
 
   private void setState(HopperState newState) {
@@ -242,17 +303,54 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
 
     if (driverWantsIntake) {
-      return HopperState.SHOOT_AND_INTAKE;
+      return HopperState.SCORE_AND_INTAKE;
     }
 
-    return HopperState.SHOOT;
+    return HopperState.SCORE;
   }
 
-  public void scoreRequest() {
+  private HopperState resolveFeedState() {
+    if (driverWantsEject) {
+      return HopperState.EJECTING;
+    }
+
+    if (driverWantsIntake) {
+      return HopperState.FEED_AND_INTAKE;
+    }
+
+    return HopperState.FEED;
+  }
+
+  public void scoreRequest(boolean shouldBeastMode) {
+    this.shouldBeastMode = shouldBeastMode;
     setState(resolveScoreState());
   }
 
+  public void scoreRequest() {
+    scoreRequest(false);
+  }
+
+  public void feedRequest() {
+    setState(resolveFeedState());
+  }
+
+  public boolean isIntaking() {
+    return intake.getState() == IntakeState.INTAKE;
+  }
+
   public boolean isShooting() {
+    // You need to actually be in a shooting state
+    if (getState() != HopperState.SCORE
+        && getState() != HopperState.SCORE_AND_INTAKE
+        && getState() != HopperState.FEED
+        && getState() != HopperState.FEED_AND_INTAKE) {
+      return true;
+    }
+
+    return isShootingStrict();
+  }
+
+  private boolean isShootingStrict() {
     if (RobotBase.isSimulation()) {
       return !timeout(1.5);
     }

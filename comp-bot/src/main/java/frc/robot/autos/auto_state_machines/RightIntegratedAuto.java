@@ -25,6 +25,7 @@ import frc.robot.robot_manager.RobotManager;
 public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> {
 
   public enum Markers {
+    PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
@@ -40,7 +41,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = Units.inchesToMeters(5);
+  private static final double BUMP_OFFSET = Units.inchesToMeters(-5);
 
   private boolean collisionEverDetected = false;
 
@@ -48,36 +49,35 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
+                          10.489,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(-100)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.140, 6.653, Rotation2d.kCW_90deg))))
+                              Point.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-130)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.kCW_90deg))))
+                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-75)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.280, 4.510, Rotation2d.fromDegrees(-50.0)))))
+                              Point.ofRed(new Pose2d(8.200, 4.31, Rotation2d.fromDegrees(-30.0)))))
+                  .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 4.510, Rotation2d.kZero))
+              AutoPoint.ofRed(new Pose2d(9.31, 4.3, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          9.575,
-                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+              AutoPoint.ofRed(new Pose2d(10.2, 5.4 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          11.174,
+                          11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -87,35 +87,32 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   private final AutoSegment driveBackAndShootOne =
       Trailblazer.segment(
               AutoPoint.of(
-                      () ->
-                          bumpCrossingTracker.getPoint(
-                              Point.ofRed(
-                                  new Pose2d(
-                                      13.709,
-                                      FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                      Rotation2d.kZero)),
-                              Point.ofRed(new Pose2d(13.9, 5.443 + BUMP_OFFSET, Rotation2d.kZero))))
+                      () -> {
+                        bumpCrossingTracker.bumpCrossRequest(
+                            Point.ofRed(
+                                new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8))),
+                            Rotation2d.k180deg);
+                        return Point.ofRed(
+                            new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)));
+                      })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          14.0,
-                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(40.0)))
+              AutoPoint.ofRed(new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ))
+                  .withMarker(Markers.START_SHOOT_RQ),
+              AutoPoint.ofRed(new Pose2d(13.25, 7.225, Rotation2d.fromDegrees(42.0)))
+                  .withLinearConstraints(0.5, 100)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
   private final AutoSegment defaultSecondSegment =
       Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+              AutoPoint.ofRed(new Pose2d(13.2, 7.225, Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
@@ -165,7 +162,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.575,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(56)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8.0)
@@ -204,7 +201,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.575,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(56)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8.0)
@@ -238,7 +235,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.575,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(56)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 4.0)
@@ -265,7 +262,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.575,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(56)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 4.0)
@@ -278,19 +275,22 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.4,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(56)))
                   .withAngularConstraints(
                       Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.of(
-                      () ->
-                          bumpCrossingTracker.getPoint(
-                              Point.ofRed(
-                                  new Pose2d(
-                                      13.709,
-                                      FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                      Rotation2d.kZero)),
-                              Point.ofRed(new Pose2d(13.9, 5.443 + BUMP_OFFSET, Rotation2d.kZero))))
+                      () -> {
+                        bumpCrossingTracker.bumpCrossRequest(
+                            Point.ofRed(
+                                new Pose2d(
+                                    13.709,
+                                    FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                                    Rotation2d.fromDegrees(56))),
+                            Rotation2d.k180deg);
+                        return Point.ofRed(
+                            new Pose2d(13.9, 5.443 + BUMP_OFFSET, Rotation2d.fromDegrees(56)));
+                      })
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
@@ -394,6 +394,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       }
       case INTAKE_ACROSS_MIDLINE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+          robotManager.powerManager.idleRequest();
           yield IntegratedAutoState.DRIVE_BACK_1;
         } else {
           yield currentState;
@@ -407,7 +408,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(1.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
           yield IntegratedAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
         } else {
           yield currentState;
@@ -452,7 +453,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_2 -> {
-        if ((timeout(1.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
           yield IntegratedAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
         } else {
           yield currentState;
@@ -507,10 +508,31 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           firstStuckOnBall = true;
           robotManager.localization.imu.setPitch(-30.0);
         }
+        if (trailblazer.passedMarker(Markers.PRIORITIZE_INTAKE)) {
+          robotManager.powerManager.prioritizeIntakeRequest();
+        }
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
+        if (RobotBase.isSimulation()) {
+          if (timeout(0.2)) {
+            robotManager.localization.imu.setPitch(-7.5);
+            robotManager.localization.imu.setRoll(-7.5);
+          }
+          if (timeout(0.4)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+          if (timeout(0.6)) {
+            robotManager.localization.imu.setPitch(7.5);
+            robotManager.localization.imu.setRoll(7.5);
+          }
+          if (timeout(.7)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+        }
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_SECOND_INTAKE_SEGMENT -> {
@@ -548,6 +570,20 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       }
       case DRIVE_BACK_2 -> {
         trailblazer.setActiveSegment(driveBackAndShootTwo);
+        if (RobotBase.isSimulation()) {
+          if (timeout(0.5)) {
+            robotManager.localization.imu.setPitch(-7.5);
+            robotManager.localization.imu.setRoll(-7.5);
+          }
+          if (timeout(0.7)) {
+            robotManager.localization.imu.setPitch(7.5);
+            robotManager.localization.imu.setRoll(7.5);
+          }
+          if (timeout(1.0)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+        }
       }
       case SHOOT_2 -> robotManager.prepareScoreRequest();
       case DRIVE_BACK_TO_NEUTRAL_ZONE -> {

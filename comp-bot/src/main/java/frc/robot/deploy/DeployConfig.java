@@ -10,6 +10,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import frc.robot.config.RobotKind;
 
 public class DeployConfig {
   public static final double MAX_LENGTH = 11.8;
@@ -18,7 +19,7 @@ public class DeployConfig {
   public static final double HOMING_END_POSITION_OUTWARD = 11.9;
   public static final double HOMING_VOLTAGE_INWARD = -2;
   public static final double HOMING_VOLTAGE_OUTWARD = 2;
-  public static final double HOMING_CURRENT = 15.0;
+  public static final double HOMING_CURRENT = RobotKind.IS_COMP_BOT ? 30.0 : 15.0;
   public static final double POSITION_TOLERANCE = 0.25;
 
   private static final Slot0Configs AVERAGE_GAINS =

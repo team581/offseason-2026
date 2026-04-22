@@ -1,10 +1,12 @@
 package frc.robot.vision;
 
+import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -28,6 +30,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private double robotHeading;
 
   private double robotAngularVelocity;
+
+  private static final DoubleSubscriber ROBOT_HEADING_LOOKAHEAD =
+      DogLog.tunable("Vision/RobotHeadingLookahead", 0.0);
 
   private boolean hasSeenTag = false;
   private boolean seeingTag = false;
@@ -84,7 +89,10 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   public void setEstimatedPoseAngle(double robotHeading) {
-    this.robotHeading = robotHeading;
+    this.robotHeading =
+        MathHelpers.angleModulus(
+            robotHeading + (robotAngularVelocity * ROBOT_HEADING_LOOKAHEAD.get()));
+    DogLog.log("Vision/PredictedRobotHeading", this.robotHeading);
   }
 
   public OptionalTagResult getShooterLimelightTagResult() {
@@ -148,9 +156,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   @Override
   public void whileInState(VisionState currentState) {
     // Send IMU data to all limelights
-    shooterLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
-    leftLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
-    rightLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    shooterLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
+    leftLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
+    rightLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
 
     DogLog.log("Vision/SeeingTag", seeingTag);
   }

@@ -1,5 +1,8 @@
 package frc.robot.cluster_map;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.Map.Entry.comparingByValue;
+
 import com.team581.GlobalConfig;
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
@@ -25,6 +28,7 @@ import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
@@ -76,6 +80,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private Swerve swerve;
 
   private boolean deployFullyExtended = false;
+  private boolean hasDoneWarmup = false;
 
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
@@ -94,40 +99,27 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     this.limelight = limelight;
   }
 
+  /** Returns the lane with the most detected balls, ignoring the trench. */
   public Lane getBestClusterLane() {
-    if (clusterMap.isEmpty()) {
-      return Lane.NONE;
-    }
-
     var robotPose = localization.getPose();
 
-    int[] ballsPerLane = new int[Lane.values().length];
-
-    for (ClusterMapElement element : clusterMap) {
-      Pose2d elementPose = new Pose2d(element.clusterTranslation(), Rotation2d.kZero);
-      Lane lane = laneSystem.getLane(elementPose, robotPose);
-
-      if (lane != Lane.NONE && lane != Lane.TRENCH) {
-        ballsPerLane[lane.ordinal()] =
-            (int) (ballsPerLane[lane.ordinal()] + element.detectionSize());
-      }
-    }
-
-    Lane bestLane = Lane.NONE;
-    int maxBalls = 0;
-
-    // Find the lane with the highest count
-    for (Lane lane : Lane.values()) {
-      if (lane == Lane.NONE || lane == Lane.TRENCH) continue;
-
-      int count = ballsPerLane[lane.ordinal()];
-      if (count > maxBalls) {
-        maxBalls = count;
-        bestLane = lane;
-      }
-    }
-
-    return bestLane;
+    return clusterMap.stream()
+        // Sum up total detected balls per lane
+        .collect(
+            toImmutableMap(
+                element ->
+                    laneSystem.getLane(
+                        new Pose2d(element.clusterTranslation(), Rotation2d.kZero), robotPose),
+                element -> (int) element.detectionSize(),
+                Integer::sum))
+        .entrySet()
+        .stream()
+        // Only consider actual scoring lanes
+        .filter(entry -> entry.getKey() != Lane.NONE && entry.getKey() != Lane.TRENCH)
+        // Pick the lane with the highest ball count
+        .max(comparingByValue())
+        .map(Map.Entry::getKey)
+        .orElse(Lane.NONE);
   }
 
   public Optional<Pose2d> getBestClusterPose() {
@@ -228,6 +220,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
               20,
               10));
     }
+    if (!hasDoneWarmup) {
+      hasDoneWarmup = true;
+      return Optional.of(new VisionClusterData(new Translation2d(1.0, 1.0), 20, 20));
+    }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
       return Optional.empty();
     }
@@ -248,7 +244,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     double angleY = LimelightHelpers.getTY(limelight.limelightTableName);
 
-    // 🚨 FILTER: Reject data in the top 10% of the Limelight's vertical FOV 🚨
     if (angleY > MAX_VALID_TY) {
       DogLog.timestamp("ClusterMap/RejectedHighTY");
       return Optional.empty();
@@ -282,7 +277,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     // Dynamic Size Estimation
     double estimatedBalls = (rawArea * Math.pow(distanceMeters, 2)) / REFERENCE_BALL_AREA_AT_1M;
 
-    // 🚨 FILTER: Clamp the output so a distant glare doesn't predict 2,000 balls 🚨
     int calculatedSize = (int) Math.round(estimatedBalls);
     calculatedSize = MathUtil.clamp(calculatedSize, 1, MAX_CLUSTER_SIZE_CAP);
 

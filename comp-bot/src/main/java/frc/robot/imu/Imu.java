@@ -8,6 +8,7 @@ import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Imu extends BaseImuSubsystem {
@@ -37,14 +38,24 @@ public class Imu extends BaseImuSubsystem {
 
     this.bumpCrossingTracker =
         new BumpCrossingTracker(
-            () -> Math.hypot(getPitch(), getRoll()),
-            () -> driveState.Pose,
+            () -> getPitch(),
+            () -> getRoll(),
             translation ->
                 drivetrain.resetPose(new Pose2d(translation, driveState.Pose.getRotation())));
   }
 
   public boolean accelerationLowEnoughToShoot() {
     return accel < MAX_ACCELRATION_THRESHOLD_SHOOTING.get();
+  }
+
+  @Override
+  public void beforePeriodic() {
+    super.beforePeriodic();
+
+    // We only use bump crossing in auto
+    if (DriverStation.isAutonomous()) {
+      bumpCrossingTracker.beforePeriodic();
+    }
   }
 
   @Override
@@ -91,5 +102,15 @@ public class Imu extends BaseImuSubsystem {
 
   public boolean collisionDetected() {
     return pigeonGForce > COLLISION_G_FORCE_THRESHOLD.get();
+  }
+
+  @Override
+  public void periodic() {
+    super.periodic();
+
+    // We only use bump crossing in auto
+    if (DriverStation.isAutonomous()) {
+      bumpCrossingTracker.periodic();
+    }
   }
 }

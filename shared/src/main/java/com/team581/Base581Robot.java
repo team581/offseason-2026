@@ -71,7 +71,7 @@ public abstract class Base581Robot extends TimedRobot {
 
     SubsystemExecutionSequencer.periodic();
 
-    if (RobotController.getBatteryVoltage() < 12.5) {
+    if (DriverStation.isDisabled() && RobotController.getBatteryVoltage() < 12.5) {
       DogLog.logFault("Battery voltage low", AlertType.kWarning);
     } else {
       DogLog.clearFault("Battery voltage low");

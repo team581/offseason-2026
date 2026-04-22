@@ -26,6 +26,8 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
   private double scoringShooterTOF = 0.0;
   private boolean tofBasedHubActive = true;
 
+  private boolean shouldBeastMode = false;
+
   public HubActivity() {
     super(SubsystemPriority.HUB_ACTIVITY, HubActivityState.DEFAULT_STATE);
 
@@ -51,6 +53,10 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
 
   public boolean getTOFBasedHubActive() {
     return DSOptions.PIT_FUNCTIONALITY.getAsBoolean() || tofBasedHubActive;
+  }
+
+  public boolean shouldBeastMode() {
+    return shouldBeastMode;
   }
 
   @Override
@@ -99,6 +105,10 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
 
     actualHubActive = calculateActualHubActive();
     tofBasedHubActive = calculateTOFBasedHubActive();
+
+    shouldBeastMode =
+        DSOptions.USE_HUB_STATE.getAsBoolean()
+            && (timeSinceMatchStart > (FmsUtil.ENDGAME_DURATION - 5.0));
   }
 
   @Override
@@ -112,5 +122,6 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
     DogLog.log("HubActivity/TimeSinceTeleopEnable", teleopTimer.get());
     DogLog.log("HubActivity/ActualHubActive", actualHubActive);
     DogLog.log("HubActivity/TOFBasedHubActive", tofBasedHubActive);
+    DogLog.log("HubActivity/ShouldBeastMode", shouldBeastMode);
   }
 }
