@@ -531,15 +531,19 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
         if (RobotBase.isSimulation()) {
-          if (timeout(0.5)) {
+          if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
             robotManager.localization.imu.setRoll(-7.5);
           }
-          if (timeout(0.7)) {
+          if (timeout(0.4)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+          if (timeout(0.6)) {
             robotManager.localization.imu.setPitch(7.5);
             robotManager.localization.imu.setRoll(7.5);
           }
-          if (timeout(1.0)) {
+          if (timeout(.7)) {
             robotManager.localization.imu.setPitch(0.0);
             robotManager.localization.imu.setRoll(0.0);
           }
