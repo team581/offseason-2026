@@ -408,7 +408,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
           yield IntegratedAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
         } else {
           yield currentState;
