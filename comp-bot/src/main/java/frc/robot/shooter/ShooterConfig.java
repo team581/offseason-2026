@@ -108,7 +108,7 @@ public class ShooterConfig {
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 30.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 25.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
       DogLog.tunable("Shooter/LowHopperInitialFF", 20.0);
 
