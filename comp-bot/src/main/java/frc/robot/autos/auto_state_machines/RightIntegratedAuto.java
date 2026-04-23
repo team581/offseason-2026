@@ -269,6 +269,25 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
+  private final AutoSegment swoopHubFirstSegment =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.628, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(10.729, 4.0, Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              //   .withArcExtension(Point.ofRed(new Pose2d(8.875, 4.0, Rotation2d.kCCW_90deg)),
+              // 1.854, 0, Rotation2d.fromDegrees(12)),
+              AutoPoint.ofRed(new Pose2d(9.862, 3.129, Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3)),
+              AutoPoint.ofRed(new Pose2d(8.878, 4.0, Rotation2d.k180deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3)),
+              AutoPoint.ofRed(
+                  new Pose2d(
+                      8.878, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY(), Rotation2d.kCCW_90deg)))
+          .untilFinished(new PoseErrorTolerance(0.3, 100));
+
   private final AutoSegment crossBumpToShootTwo =
       Trailblazer.segment(
               AutoPoint.of(
@@ -453,9 +472,9 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           Lane bestLane = robotManager.clusterMap.getBestClusterLane();
           yield switch (bestLane) {
             case LANE_0 -> currentState;
-            case LANE_1 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_LANE_1;
-            case LANE_2 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_LANE_2;
-            case TRENCH -> IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
+            case LANE_1 -> currentState;
+            case LANE_2 -> currentState;
+            case TRENCH -> currentState;
             default -> currentState;
           };
         } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
