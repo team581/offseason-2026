@@ -16,7 +16,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private static final double FLAT_DEBOUNCE_SECONDS = 0.04;
   private static final double FLAT_FALLBACK_DEBOUNCE_SECONDS = 0.75;
   private static final DoubleSubscriber FLAT_THRESHOLD =
-      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 3.0);
+      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
   private static final DoubleSubscriber CROSSING_THRESHOLD =
       DogLog.tunable("BumpCrossing/CrossingThresholdDegrees", 5.0);
 
