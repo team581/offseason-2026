@@ -462,12 +462,12 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
       }
       case SHOOT_2 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
-          yield IntegratedAutoState.DRIVE_BACK_TO_NEUTRAL_ZONE;
+          yield IntegratedAutoState.DRIVE_BACK_3;
         } else {
           yield currentState;
         }
       }
-      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+      case DRIVE_BACK_3 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
           yield IntegratedAutoState.DONE;
         } else {
@@ -587,7 +587,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         }
       }
       case SHOOT_2 -> robotManager.prepareScoreRequest();
-      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+      case DRIVE_BACK_3 -> {
         trailblazer.setActiveSegment(driveBackToNeutralZone);
         robotManager.intakeAutoRequest();
       }
@@ -640,7 +640,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         storedStuckOnBallAutoSegment = driveBackAndShootTwo;
         robotManager.cancelIntakeRequest();
       }
-      case DRIVE_BACK_TO_NEUTRAL_ZONE -> {
+      case DRIVE_BACK_3 -> {
         storedStuckOnBallAutoSegment = driveBackToNeutralZone;
         robotManager.idleRequest();
       }

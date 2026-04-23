@@ -13,11 +13,14 @@ public enum IntegratedAutoState {
 
   // Trench lane for cluster map (trench and then alliance lane)
   INTAKE_TRENCH_LANE,
+
+  INTAKE_THIRD_CYCLE,
   DRIVE_BACK_1,
   DRIVE_BACK_2,
-  DRIVE_BACK_TO_NEUTRAL_ZONE,
+  DRIVE_BACK_3,
   SHOOT_1,
   SHOOT_2,
+  SHOOT_3,
   DONE,
 
   // For when we get beached on a ball
