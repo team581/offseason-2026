@@ -405,6 +405,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case PREPARE_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
+        shooter.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         hopperManager.idleRequest();
         smartFeedingPowerManagerRequest();
@@ -412,6 +413,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case FEED -> {
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
+        shooter.feedRequest(feedingParameters.distance());
+
         swerve.feedRequest(feedingParameters);
         hopperManager.feedRequest();
         smartFeedingPowerManagerRequest();
