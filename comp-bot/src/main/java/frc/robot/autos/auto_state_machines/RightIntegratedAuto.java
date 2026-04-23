@@ -102,7 +102,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(new Pose2d(13.25, 7.225, Rotation2d.fromDegrees(42.0)))
-                  .withLinearConstraints(0.5, 100)
+                  .withLinearConstraints(0.4, 0.2)
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
@@ -287,7 +287,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(new Pose2d(13.25, 7.225, Rotation2d.fromDegrees(42.0)))
-                  .withLinearConstraints(0.5, 100)
+                  .withLinearConstraints(0.4, 0.2)
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
@@ -331,7 +331,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
-  private final AutoSegment driveBackToShootThree =
+  private final AutoSegment crossBumpToShootThree =
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
@@ -349,7 +349,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
               AutoPoint.ofRed(new Pose2d(13.25, 7.225, Rotation2d.fromDegrees(42.0)))
-                  .withLinearConstraints(0.5, 100)
+                  .withLinearConstraints(0.4, 0.2)
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
@@ -703,11 +703,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         robotManager.cancelIntakeRequest();
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = driveBackToShootThree;
+        storedStuckOnBallAutoSegment = crossBumpToShootThree;
         robotManager.idleRequest();
       }
       case SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = driveBackToShootThree;
+        storedStuckOnBallAutoSegment = crossBumpToShootThree;
         robotManager.cancelIntakeRequest();
       }
       case DONE -> {
