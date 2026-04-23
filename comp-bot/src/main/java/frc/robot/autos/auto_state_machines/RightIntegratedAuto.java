@@ -361,7 +361,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getPitch()),
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
 
-  private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_ACROSS_MIDLINE;
+  private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_FIRST_CYCLE;
   private AutoSegment storedStuckOnBallAutoSegment = intakeAcrossMidline;
   private int storedStuckOnBallIndex = 0;
 
@@ -370,7 +370,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   private boolean secondStuckOnBall = false;
 
   public RightIntegratedAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(IntegratedAutoState.INTAKE_ACROSS_MIDLINE, robotManager, trailblazer);
+    super(IntegratedAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
 
     this.bumpCrossingTracker = robotManager.localization.imu.bumpCrossingTracker;
   }
@@ -383,7 +383,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   @Override
   protected void collectInputs() {
     super.collectInputs();
-    if (getState() == IntegratedAutoState.INTAKE_ACROSS_MIDLINE
+    if (getState() == IntegratedAutoState.INTAKE_FIRST_CYCLE
         && DriverStation.isEnabled()
         && robotManager.localization.imu.collisionDetected()) {
       collisionEverDetected = true;
@@ -397,11 +397,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
-        case INTAKE_ACROSS_MIDLINE,
-            DEFAULT_SECOND_INTAKE_SEGMENT,
-            INTAKE_LANE_1,
-            INTAKE_LANE_2,
-            INTAKE_TRENCH_LANE,
+        case INTAKE_FIRST_CYCLE,
+            DEFAULT_INTAKE_SECOND_CYCLE,
+            INTAKE_SECOND_CYCLE_LANE_1,
+            INTAKE_SECOND_CYCLE_LANE_2,
+            INTAKE_SECOND_CYCLE_TRENCH_LANE,
             INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
@@ -421,15 +421,15 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           yield currentState;
         }
       }
-      case INTAKE_ACROSS_MIDLINE -> {
+      case INTAKE_FIRST_CYCLE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           robotManager.powerManager.idleRequest();
-          yield IntegratedAutoState.DRIVE_BACK_1;
+          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_1;
         } else {
           yield currentState;
         }
       }
-      case DRIVE_BACK_1 -> {
+      case CROSS_BUMP_TO_SHOOT_1 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
           yield IntegratedAutoState.SHOOT_1;
         } else {
@@ -438,44 +438,46 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       }
       case SHOOT_1 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
-          yield IntegratedAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
+          yield IntegratedAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
         }
       }
-      case DEFAULT_SECOND_INTAKE_SEGMENT -> {
+      case DEFAULT_INTAKE_SECOND_CYCLE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.DRIVE_BACK_2;
+          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)) {
 
           Lane bestLane = robotManager.clusterMap.getBestClusterLane();
           yield switch (bestLane) {
             case LANE_0 -> currentState;
-            case LANE_1 -> IntegratedAutoState.INTAKE_LANE_1;
-            case LANE_2 -> IntegratedAutoState.INTAKE_LANE_2;
-            case TRENCH -> IntegratedAutoState.INTAKE_TRENCH_LANE;
+            case LANE_1 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_LANE_1;
+            case LANE_2 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_LANE_2;
+            case TRENCH -> IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
             default -> currentState;
           };
         } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
             && !trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)) {
           if (robotManager.clusterMap.hasHighValueTrenchCluster()) {
-            yield IntegratedAutoState.INTAKE_TRENCH_LANE;
+            yield IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
           }
         }
         yield currentState;
       }
-      case INTAKE_LANE_1, INTAKE_LANE_2, INTAKE_TRENCH_LANE -> {
+      case INTAKE_SECOND_CYCLE_LANE_1,
+          INTAKE_SECOND_CYCLE_LANE_2,
+          INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.DRIVE_BACK_2;
+          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else {
           yield currentState;
         }
       }
 
-      case DRIVE_BACK_2 -> {
+      case CROSS_BUMP_TO_SHOOT_2 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
           yield IntegratedAutoState.SHOOT_2;
         } else {
@@ -492,12 +494,12 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       case INTAKE_THIRD_CYCLE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.DRIVE_BACK_3;
+          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_3;
         } else {
           yield currentState;
         }
       }
-      case DRIVE_BACK_3 -> {
+      case CROSS_BUMP_TO_SHOOT_3 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
           yield IntegratedAutoState.SHOOT_3;
         } else {
@@ -534,7 +536,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           robotManager.localization.imu.setRoll(0.0);
         }
       }
-      case INTAKE_ACROSS_MIDLINE -> {
+      case INTAKE_FIRST_CYCLE -> {
         trailblazer.setActiveSegment(intakeAcrossMidline);
         robotManager.intakeAutoRequest();
         robotManager.powerManager.firstAutoSegmentRequest();
@@ -550,7 +552,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           robotManager.powerManager.prioritizeIntakeRequest();
         }
       }
-      case DRIVE_BACK_1 -> {
+      case CROSS_BUMP_TO_SHOOT_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
         if (RobotBase.isSimulation()) {
@@ -573,12 +575,12 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
-      case DEFAULT_SECOND_INTAKE_SEGMENT -> {
+      case DEFAULT_INTAKE_SECOND_CYCLE -> {
         trailblazer.setActiveSegment(defaultSecondSegment);
         robotManager.intakeAutoRequest();
       }
 
-      case INTAKE_LANE_1 -> {
+      case INTAKE_SECOND_CYCLE_LANE_1 -> {
         trailblazer.setActiveSegment(lane1Segment);
         robotManager.intakeAutoRequest();
 
@@ -590,7 +592,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           robotManager.localization.imu.setPitch(-30.0);
         }
       }
-      case INTAKE_LANE_2 -> {
+      case INTAKE_SECOND_CYCLE_LANE_2 -> {
         trailblazer.setActiveSegment(lane2Segment);
         robotManager.intakeAutoRequest();
 
@@ -602,11 +604,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           robotManager.localization.imu.setPitch(-30.0);
         }
       }
-      case INTAKE_TRENCH_LANE -> {
+      case INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
         trailblazer.setActiveSegment(trenchSegment);
         robotManager.intakeAutoRequest();
       }
-      case DRIVE_BACK_2 -> {
+      case CROSS_BUMP_TO_SHOOT_2 -> {
         trailblazer.setActiveSegment(driveBackAndShootTwo);
         if (RobotBase.isSimulation()) {
           if (timeout(0.5)) {
@@ -629,7 +631,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         trailblazer.setActiveSegment(driveBackForThirdIntake);
         robotManager.intakeAutoRequest();
       }
-      case DRIVE_BACK_3 -> {
+      case CROSS_BUMP_TO_SHOOT_3 -> {
         trailblazer.setActiveSegment(driveBackAndShootTwo);
         if (RobotBase.isSimulation()) {
           if (timeout(0.5)) {
@@ -665,27 +667,27 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   @Override
   protected void afterTransition(IntegratedAutoState newState) {
     switch (newState) {
-      case INTAKE_ACROSS_MIDLINE -> {
+      case INTAKE_FIRST_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeAcrossMidline;
         robotManager.homeDeployInAutoRequest();
         robotManager.homeShooterHoodRequest();
       }
-      case DRIVE_BACK_1, SHOOT_1 -> {
+      case CROSS_BUMP_TO_SHOOT_1, SHOOT_1 -> {
         storedStuckOnBallAutoSegment = driveBackAndShootOne;
       }
-      case DEFAULT_SECOND_INTAKE_SEGMENT -> {
+      case DEFAULT_INTAKE_SECOND_CYCLE -> {
         storedStuckOnBallAutoSegment = defaultSecondSegment;
         robotManager.idleRequest();
       }
-      case INTAKE_LANE_1 -> {
+      case INTAKE_SECOND_CYCLE_LANE_1 -> {
         storedStuckOnBallAutoSegment = lane1Segment;
         robotManager.idleRequest();
       }
-      case INTAKE_LANE_2 -> {
+      case INTAKE_SECOND_CYCLE_LANE_2 -> {
         storedStuckOnBallAutoSegment = lane2Segment;
         robotManager.idleRequest();
       }
-      case INTAKE_TRENCH_LANE -> {
+      case INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
         storedStuckOnBallAutoSegment = trenchSegment;
         robotManager.idleRequest();
       }
@@ -693,14 +695,14 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         storedStuckOnBallAutoSegment = driveBackForThirdIntake;
         robotManager.idleRequest();
       }
-      case DRIVE_BACK_2 -> {
+      case CROSS_BUMP_TO_SHOOT_2 -> {
         storedStuckOnBallAutoSegment = driveBackAndShootTwo;
       }
       case SHOOT_2 -> {
         storedStuckOnBallAutoSegment = driveBackAndShootTwo;
         robotManager.cancelIntakeRequest();
       }
-      case DRIVE_BACK_3 -> {
+      case CROSS_BUMP_TO_SHOOT_3 -> {
         storedStuckOnBallAutoSegment = driveBackAndShootThree;
         robotManager.idleRequest();
       }
