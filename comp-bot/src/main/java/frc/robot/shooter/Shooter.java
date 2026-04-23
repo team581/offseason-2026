@@ -281,17 +281,15 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   }
 
   public double getScoreTimeOfFlight(double distance) {
-    this.scoreDistance = distance;
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(scoreDistance)
-        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(scoreDistance);
+        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(distance);
   }
 
   public double getFeedTimeOfFlight(double distance) {
-    this.feedDistance = distance;
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(feedDistance)
-        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(feedDistance);
+        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
   }
 
   @Override
