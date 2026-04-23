@@ -12,9 +12,9 @@ public class HopperManagerConfig {
       new CANrangeConfiguration()
           .withFovParams(
               new FovParamsConfigs()
-                  .withFOVRangeX(10.0)
-                  .withFOVRangeY(10.0)
-                  .withFOVCenterY(-10.0)
+                  .withFOVRangeX(1.0)
+                  .withFOVRangeY(1.0)
+                  .withFOVCenterY(5.0)
                   .withFOVCenterX(-5.0))
           .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.ShortRange100Hz));
   public static final DoubleSubscriber HOPPER_COMPACTION_DELAY =
