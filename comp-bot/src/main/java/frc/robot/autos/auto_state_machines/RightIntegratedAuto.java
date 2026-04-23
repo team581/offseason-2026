@@ -51,26 +51,26 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
                       new Pose2d(
                           10.489,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(-100)))
+                          Rotation2d.fromDegrees(-110)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-130)))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-75)))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-85)))))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(8.200, 4.31, Rotation2d.fromDegrees(-30.0)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.3, Rotation2d.fromDegrees(32.0)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(10.2, 5.4 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
