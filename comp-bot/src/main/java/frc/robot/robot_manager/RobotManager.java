@@ -383,6 +383,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
 
       case PREPARE_SCORE -> {
+        shooter.prepareScoreRequest(scoringParameters.distance());
         smartHoodPrepareScoreRequest();
         swerve.scoreRequest(scoringParameters);
         smartScoringPowerManagerRequest();
@@ -390,6 +391,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // isHubActive always logged
       }
       case SCORE -> {
+        shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
@@ -401,12 +403,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
       }
       case PREPARE_FEED -> {
+        shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         hopperManager.idleRequest();
         smartFeedingPowerManagerRequest();
       }
       case FEED -> {
+        shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         swerve.feedRequest(feedingParameters);
         hopperManager.feedRequest();
@@ -416,6 +420,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       // Fallback states
       case PREPARE_FALLBACK_SCORE -> {
         // Automatically update scoring parameters with preset pose
+        shooter.prepareScoreRequest(scoringParameters.distance());
         if (isMoving) {
           shooterHood.idleRequest();
         } else {
@@ -425,6 +430,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FALLBACK_SCORE -> {
         // Automatically update scoring parameters with preset pose
+        shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
