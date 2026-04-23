@@ -45,7 +45,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
   private boolean collisionEverDetected = false;
 
-  private final AutoSegment intakeAcrossMidline =
+  private final AutoSegment intakeFirstCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
@@ -84,7 +84,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
-  private final AutoSegment driveBackAndShootOne =
+  private final AutoSegment crossBumpToShootOne =
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
@@ -108,7 +108,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment defaultSecondSegment =
+  private final AutoSegment defaultIntakeSecondCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(13.2, 7.225, Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
@@ -169,7 +169,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment trenchSegment =
+  private final AutoSegment intakeSecondCycleTrenchLane =
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
@@ -208,7 +208,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment lane1Segment =
+  private final AutoSegment intakeSecondCycleLaneOne =
       Trailblazer.segment(
               AutoPoint.of(
                       () ->
@@ -242,7 +242,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment lane2Segment =
+  private final AutoSegment intakeSecondCycleLaneTwo =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(7.983, 6.814, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -269,7 +269,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment driveBackAndShootTwo =
+  private final AutoSegment crossBumpToShootTwo =
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
@@ -293,7 +293,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment driveBackForThirdIntake =
+  private final AutoSegment intakeThirdCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(new Pose2d(13.2, 7.225, Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
@@ -331,7 +331,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
 
-  private final AutoSegment driveBackAndShootThree =
+  private final AutoSegment driveBackToShootThree =
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
@@ -362,7 +362,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
 
   private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_FIRST_CYCLE;
-  private AutoSegment storedStuckOnBallAutoSegment = intakeAcrossMidline;
+  private AutoSegment storedStuckOnBallAutoSegment = intakeFirstCycle;
   private int storedStuckOnBallIndex = 0;
 
   // FOR SIM ONLY!!!
@@ -537,7 +537,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case INTAKE_FIRST_CYCLE -> {
-        trailblazer.setActiveSegment(intakeAcrossMidline);
+        trailblazer.setActiveSegment(intakeFirstCycle);
         robotManager.intakeAutoRequest();
         robotManager.powerManager.firstAutoSegmentRequest();
 
@@ -553,7 +553,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case CROSS_BUMP_TO_SHOOT_1 -> {
-        trailblazer.setActiveSegment(driveBackAndShootOne);
+        trailblazer.setActiveSegment(crossBumpToShootOne);
         robotManager.cancelIntakeRequest();
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
@@ -576,12 +576,12 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
-        trailblazer.setActiveSegment(defaultSecondSegment);
+        trailblazer.setActiveSegment(defaultIntakeSecondCycle);
         robotManager.intakeAutoRequest();
       }
 
       case INTAKE_SECOND_CYCLE_LANE_1 -> {
-        trailblazer.setActiveSegment(lane1Segment);
+        trailblazer.setActiveSegment(intakeSecondCycleLaneOne);
         robotManager.intakeAutoRequest();
 
         if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
@@ -593,7 +593,7 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case INTAKE_SECOND_CYCLE_LANE_2 -> {
-        trailblazer.setActiveSegment(lane2Segment);
+        trailblazer.setActiveSegment(intakeSecondCycleLaneTwo);
         robotManager.intakeAutoRequest();
 
         if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
@@ -605,11 +605,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
         }
       }
       case INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
-        trailblazer.setActiveSegment(trenchSegment);
+        trailblazer.setActiveSegment(intakeSecondCycleTrenchLane);
         robotManager.intakeAutoRequest();
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
-        trailblazer.setActiveSegment(driveBackAndShootTwo);
+        trailblazer.setActiveSegment(crossBumpToShootTwo);
         if (RobotBase.isSimulation()) {
           if (timeout(0.5)) {
             robotManager.localization.imu.setPitch(-7.5);
@@ -628,11 +628,11 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
 
       case SHOOT_2 -> robotManager.prepareScoreRequest();
       case INTAKE_THIRD_CYCLE -> {
-        trailblazer.setActiveSegment(driveBackForThirdIntake);
+        trailblazer.setActiveSegment(intakeThirdCycle);
         robotManager.intakeAutoRequest();
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        trailblazer.setActiveSegment(driveBackAndShootTwo);
+        trailblazer.setActiveSegment(crossBumpToShootTwo);
         if (RobotBase.isSimulation()) {
           if (timeout(0.5)) {
             robotManager.localization.imu.setPitch(-7.5);
@@ -668,46 +668,46 @@ public class RightIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState>
   protected void afterTransition(IntegratedAutoState newState) {
     switch (newState) {
       case INTAKE_FIRST_CYCLE -> {
-        storedStuckOnBallAutoSegment = intakeAcrossMidline;
+        storedStuckOnBallAutoSegment = intakeFirstCycle;
         robotManager.homeDeployInAutoRequest();
         robotManager.homeShooterHoodRequest();
       }
       case CROSS_BUMP_TO_SHOOT_1, SHOOT_1 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootOne;
+        storedStuckOnBallAutoSegment = crossBumpToShootOne;
       }
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
-        storedStuckOnBallAutoSegment = defaultSecondSegment;
+        storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
         robotManager.idleRequest();
       }
       case INTAKE_SECOND_CYCLE_LANE_1 -> {
-        storedStuckOnBallAutoSegment = lane1Segment;
+        storedStuckOnBallAutoSegment = intakeSecondCycleLaneOne;
         robotManager.idleRequest();
       }
       case INTAKE_SECOND_CYCLE_LANE_2 -> {
-        storedStuckOnBallAutoSegment = lane2Segment;
+        storedStuckOnBallAutoSegment = intakeSecondCycleLaneTwo;
         robotManager.idleRequest();
       }
       case INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
-        storedStuckOnBallAutoSegment = trenchSegment;
+        storedStuckOnBallAutoSegment = intakeSecondCycleTrenchLane;
         robotManager.idleRequest();
       }
       case INTAKE_THIRD_CYCLE -> {
-        storedStuckOnBallAutoSegment = driveBackForThirdIntake;
+        storedStuckOnBallAutoSegment = intakeThirdCycle;
         robotManager.idleRequest();
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootTwo;
+        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
       }
       case SHOOT_2 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootTwo;
+        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
         robotManager.cancelIntakeRequest();
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootThree;
+        storedStuckOnBallAutoSegment = driveBackToShootThree;
         robotManager.idleRequest();
       }
       case SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootThree;
+        storedStuckOnBallAutoSegment = driveBackToShootThree;
         robotManager.cancelIntakeRequest();
       }
       case DONE -> {
