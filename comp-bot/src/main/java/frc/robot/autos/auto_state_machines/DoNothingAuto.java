@@ -16,4 +16,14 @@ public class DoNothingAuto extends BaseImperativeAuto<DoNothingAutoState> {
   public Point getStartingPoint() {
     return Point.ofBlue(Pose2d.kZero);
   }
+
+  @Override
+  protected void afterTransition(DoNothingAutoState newState) {
+    switch (newState) {
+      case DO_NOTHING -> {
+        robotManager.homeDeployInAutoRequest();
+        robotManager.homeShooterHoodRequest();
+      }
+    }
+  }
 }
