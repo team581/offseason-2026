@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.DSOptions;
+import frc.robot.config.RobotKind;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
@@ -387,7 +388,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             default -> false;
           };
     } else {
-      towerSensorRaw = towerSensor.get();
+      towerSensorRaw = RobotKind.IS_COMP_BOT ? !towerSensor.get() : towerSensor.get();
     }
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
     if (DSOptions.USE_CANRANGE.get()) {
