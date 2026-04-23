@@ -388,7 +388,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             default -> false;
           };
     } else {
-      towerSensorRaw = RobotKind.IS_COMP_BOT ? !towerSensor.get() : towerSensor.get();
+      towerSensorRaw = RobotKind.IS_COMP_BOT != towerSensor.get();
     }
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
     if (DSOptions.USE_CANRANGE.get()) {
