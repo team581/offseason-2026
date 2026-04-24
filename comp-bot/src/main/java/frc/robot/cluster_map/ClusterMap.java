@@ -87,6 +87,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private final LaneSystem laneSystem =
       new LaneSystem(7.0, 9.86, 1.5, FieldUtil.FIELD_WIDTH_Y - 1.5, 2);
 
+  private final OptionalVisionClusterData clusterDataResult = new OptionalVisionClusterData();
+
+  private final Translation2d warmupTranslation = new Translation2d(1.0, 1.0);
+
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
     this.localization = localization;
@@ -203,45 +207,40 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     deployFullyExtended = isFullyExtended;
   }
 
-  // Helper record to pass the extracted data from the Limelight
-  private record VisionClusterData(Translation2d translation, int size, double score) {}
-
-  private Optional<VisionClusterData> getRawClusterPoses() {
+  private OptionalVisionClusterData getRawClusterPoses() {
     if (RobotBase.isSimulation()) {
-      return Optional.of(
-          new VisionClusterData(
-              new Translation2d(
-                  SIMULATED_CLUSTER_X.getAsDouble(), SIMULATED_CLUSTER_Y.getAsDouble()),
-              40,
-              10));
+      return clusterDataResult.update(
+          new Translation2d(SIMULATED_CLUSTER_X.getAsDouble(), SIMULATED_CLUSTER_Y.getAsDouble()),
+          40,
+          10);
     }
     if (!hasDoneWarmup) {
       hasDoneWarmup = true;
-      return Optional.of(new VisionClusterData(new Translation2d(1.0, 1.0), 20, 20));
+      return clusterDataResult.update(warmupTranslation, 20, 20);
     }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
-      return Optional.empty();
+      return clusterDataResult.empty();
     }
 
     double[] result = LimelightHelpers.getPythonScriptData(limelight.limelightTableName);
 
     if (result == null || result.length < 5) {
       DogLog.timestamp("ClusterMap/NoData");
-      return Optional.empty();
+      return clusterDataResult.empty();
     }
 
     staleData = Arrays.equals(previousResult, result);
     previousResult = result;
     if (staleData) {
       DogLog.timestamp("ClusterMap/SkipStaleData");
-      return Optional.empty();
+      return clusterDataResult.empty();
     }
 
     double angleY = LimelightHelpers.getTY(limelight.limelightTableName);
 
     if (angleY > MAX_VALID_TY) {
       DogLog.timestamp("ClusterMap/RejectedHighTY");
-      return Optional.empty();
+      return clusterDataResult.empty();
     }
 
     double rawArea = result[2];
@@ -264,7 +263,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
             robotPoseAtCapture, gamePieceResult, limelight.config);
 
     if (Double.isNaN(clusterPose.getX()) || Double.isNaN(clusterPose.getY())) {
-      return Optional.empty();
+      return clusterDataResult.empty();
     }
 
     double distanceMeters = robotPoseAtCapture.getTranslation().getDistance(clusterPose);
@@ -275,7 +274,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     int calculatedSize = (int) Math.round(estimatedBalls);
     calculatedSize = MathUtil.clamp(calculatedSize, 1, MAX_CLUSTER_SIZE_CAP);
 
-    return Optional.of(new VisionClusterData(clusterPose, calculatedSize, clusterScore));
+    return clusterDataResult.update(clusterPose, calculatedSize, clusterScore);
   }
 
   private boolean safeToTrack() {
@@ -292,6 +291,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
     var visionData = latestData.orElseThrow();
     var visionTranslation = visionData.translation();
+    var visionSize = visionData.size();
+    var visionScore = visionData.score();
 
     clusterMap.removeIf(element -> element.expiresAt() < Timer.getFPGATimestamp());
 
@@ -328,13 +329,12 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
               newClusterExpiry,
               blendedPose,
               health,
-              Math.max(existingElement.detectionSize(), visionData.size()),
-              visionData.score()));
+              Math.max(existingElement.detectionSize(), visionSize),
+              visionScore));
       clusterMap.remove(existingElement);
     } else {
       clusterMap.add(
-          new ClusterMapElement(
-              newClusterExpiry, visionTranslation, 1.0, visionData.size(), visionData.score()));
+          new ClusterMapElement(newClusterExpiry, visionTranslation, 1.0, visionSize, visionScore));
     }
   }
 
