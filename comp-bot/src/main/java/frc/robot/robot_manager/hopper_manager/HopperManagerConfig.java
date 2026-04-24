@@ -14,9 +14,9 @@ public class HopperManagerConfig {
               new FovParamsConfigs()
                   .withFOVRangeX(6.75)
                   .withFOVRangeY(6.75)
-                  .withFOVCenterY(-11.8)
-                  .withFOVCenterX(-11.8))
-          .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.ShortRange100Hz));
+                  .withFOVCenterY(0.0)
+                  .withFOVCenterX(0.0))
+          .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.LongRangeUserFreq));
   public static final DoubleSubscriber HOPPER_COMPACTION_DELAY =
       DogLog.tunable("HopperManager/CompactionDelay", 0.7);
 }
