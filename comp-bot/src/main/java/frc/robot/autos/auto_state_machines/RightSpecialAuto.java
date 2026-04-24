@@ -208,7 +208,7 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
       case DRIVE_BACK_1 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.START_SHOOT_RQ)
-            && bumpCrossingTracker.getState() == BumpCrossingState.NOT_ON_BUMP) {
+            && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
           yield SpecialAutoState.SHOOT_1;
         } else {
           yield currentState;

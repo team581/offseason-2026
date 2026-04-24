@@ -37,7 +37,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
       DoubleSupplier pitchSupplier,
       DoubleSupplier rollSupplier,
       Consumer<Translation2d> poseResetConsumer) {
-    super(BumpCrossingState.NOT_ON_BUMP);
+    super(BumpCrossingState.FLAT_NOT_CROSSING);
     this.poseResetConsumer = poseResetConsumer;
     this.pitchSupplier = pitchSupplier;
     this.rollSupplier = rollSupplier;
@@ -64,11 +64,11 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     if (currentState == BumpCrossingState.CROSSING_UPHILL && isFlatFallbackDebounced) {
       poseResetConsumer.accept(landingPoint.getTranslation());
       DogLog.timestamp("Imu/BumpCrossing/FallbackFinishedCrossing");
-      return BumpCrossingState.NOT_ON_BUMP;
+      return BumpCrossingState.FLAT_NOT_CROSSING;
     }
 
     return switch (currentState) {
-      case NOT_ON_BUMP -> {
+      case FLAT_ABOUT_TO_CROSS -> {
         if (directionalTilt > CROSSING_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_UPHILL;
         }
@@ -82,10 +82,11 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
       }
       case CROSSING_DOWNHILL -> {
         if (isFlat) {
-          yield BumpCrossingState.NOT_ON_BUMP;
+          yield BumpCrossingState.FLAT_NOT_CROSSING;
         }
         yield currentState;
       }
+      case FLAT_NOT_CROSSING -> currentState;
     };
   }
 
@@ -93,12 +94,13 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     this.landingPoint = landingPoint;
     this.crossingDirection = crossingDirection;
     DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
+    setStateFromRequest(BumpCrossingState.FLAT_ABOUT_TO_CROSS);
   }
 
   @Override
   protected void beforeTransition(BumpCrossingState oldState, BumpCrossingState newState) {
     if (oldState == BumpCrossingState.CROSSING_DOWNHILL
-        && newState == BumpCrossingState.NOT_ON_BUMP) {
+        && newState == BumpCrossingState.FLAT_NOT_CROSSING) {
       // We just crossed, reset pose
       poseResetConsumer.accept(landingPoint.getTranslation());
       DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing");

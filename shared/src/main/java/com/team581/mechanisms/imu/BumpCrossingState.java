@@ -1,7 +1,8 @@
 package com.team581.mechanisms.imu;
 
 public enum BumpCrossingState {
-  NOT_ON_BUMP,
+  FLAT_ABOUT_TO_CROSS,
   CROSSING_UPHILL,
-  CROSSING_DOWNHILL;
+  CROSSING_DOWNHILL,
+  FLAT_NOT_CROSSING;
 }

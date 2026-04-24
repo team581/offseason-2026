@@ -3,6 +3,7 @@ package frc.robot.autos.auto_state_machines;
 import com.team581.autos.Point;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.PoseErrorTolerance;
+import com.team581.mechanisms.imu.BumpCrossingState;
 import com.team581.mechanisms.imu.BumpCrossingTracker;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
@@ -89,11 +90,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
-                        bumpCrossingTracker.bumpCrossRequest(
-                            Point.ofRed(
-                                new Pose2d(
-                                    13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
-                            Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)));
                       })
@@ -216,11 +212,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
-                        bumpCrossingTracker.bumpCrossRequest(
-                            Point.ofRed(
-                                new Pose2d(
-                                    13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
-                            Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)));
                       })
@@ -279,11 +270,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
-                        bumpCrossingTracker.bumpCrossRequest(
-                            Point.ofRed(
-                                new Pose2d(
-                                    13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
-                            Rotation2d.k180deg);
                         return Point.ofRed(
                             new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)));
                       })
@@ -374,7 +360,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
         }
       }
       case CROSS_BUMP_TO_SHOOT_1 -> {
-        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
+        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
+            && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
           yield IntegratedAutoState.SHOOT_1;
         } else {
           yield currentState;
@@ -416,7 +403,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       }
 
       case CROSS_BUMP_TO_SHOOT_2 -> {
-        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
+        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
+            && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
           yield IntegratedAutoState.SHOOT_2;
         } else {
           yield currentState;
@@ -438,7 +426,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
         }
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
+        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
+            && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
           yield IntegratedAutoState.SHOOT_3;
         } else {
           yield currentState;
@@ -600,6 +589,15 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
 
   @Override
   protected void afterTransition(IntegratedAutoState newState) {
+    switch (newState) {
+      case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 -> {
+        bumpCrossingTracker.bumpCrossRequest(
+            Point.ofRed(new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
+            Rotation2d.k180deg);
+      }
+      default -> {}
+    }
+
     switch (newState) {
       case INTAKE_FIRST_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeFirstCycle;

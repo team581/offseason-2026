@@ -40,7 +40,7 @@ public class BumpCrossingFollower implements PathFollower {
 
     var state = bumpCrossingTracker.getState();
 
-    if (state == BumpCrossingState.NOT_ON_BUMP) {
+    if (state == BumpCrossingState.FLAT_NOT_CROSSING) {
       return originalSpeeds;
     }
 
