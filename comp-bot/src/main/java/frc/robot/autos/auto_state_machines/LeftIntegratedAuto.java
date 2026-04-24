@@ -25,10 +25,12 @@ import frc.robot.robot_manager.RobotManager;
 public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> {
 
   public enum Markers {
+    PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
     CHECK_CLUSTER_MAP_TRENCH,
+    CANCEL_CLUSTER_MAP_TRENCH,
     MAKE_CLUSTER_MAP_DECISION,
     CANCEL_CLUSTER_MAP_CHECK
   }
@@ -44,34 +46,33 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
 
   private boolean collisionEverDetected = false;
 
-  private final AutoSegment intakeAcrossMidline =
+  private final AutoSegment intakeFirstCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.kCCW_90deg))
+                          10.489,
+                          FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(110)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.140, 1.417, Rotation2d.kCCW_90deg))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                              Point.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(7.983, 2.477, Rotation2d.kCCW_90deg))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                              Point.ofRed(new Pose2d(7.983, 2.477, Rotation2d.fromDegrees(85)))))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.280, 3.56, Rotation2d.fromDegrees(50)))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 3.56, Rotation2d.fromDegrees(-32)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          9.575,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-32)))
+                              Point.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))))
+                  .withMarker(Markers.PRIORITIZE_INTAKE)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -84,101 +85,32 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
 
-  private final AutoSegment driveBackAndShootOne =
+  private final AutoSegment crossBumpToShootOne =
       Trailblazer.segment(
               AutoPoint.of(
                       () -> {
                         bumpCrossingTracker.bumpCrossRequest(
                             Point.ofRed(
                                 new Pose2d(
-                                    13.9,
-                                    FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                                    Rotation2d.fromDegrees(-32))),
+                                    13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
                             Rotation2d.k180deg);
                         return Point.ofRed(
-                            new Pose2d(
-                                13.709,
-                                FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                                Rotation2d.fromDegrees(-32)));
+                            new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          14.0,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-40)))
+              AutoPoint.ofRed(new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ))
+                  .withMarker(Markers.START_SHOOT_RQ),
+              AutoPoint.ofRed(new Pose2d(13.25, 0.845, Rotation2d.fromDegrees(-42)))
+                  .withLinearConstraints(0.4, 0.2)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment defaultSecondSegment =
-      Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          11.5,
-                          FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(180 - 20)))
-                  .withLinearConstraints(4.5, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          10.5,
-                          FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(180 - 70)))
-                  .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
-                  .withLinearConstraints(2.0, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(9.5, 1.256, Rotation2d.kCCW_90deg))
-                  .withMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.of(
-                      () ->
-                          getClusterShiftedPoint(
-                              Point.ofRed(
-                                  new Pose2d(9.5, 3.67 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg))))
-                  .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(2.0)),
-              AutoPoint.of(
-                      () ->
-                          getClusterShiftedPoint(
-                              Point.ofRed(
-                                  new Pose2d(10.575, 3.67 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
-                  .withArcExtension(
-                      Point.ofRed(new Pose2d(9.5, 3.67 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg)),
-                      -0.0525,
-                      0.51,
-                      Rotation2d.fromDegrees(-12))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.5), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          10.575,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-56)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(4.5, 8.0)
-          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
-          .untilFinished(new PoseErrorTolerance(0.3, 100));
-
-  private final AutoSegment trenchSegment =
+  private final AutoSegment intakeSecondCycleTrenchLane =
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
@@ -193,148 +125,180 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
                           FieldUtil.RED_DEPOT_TRENCH_CENTER.getY() - Units.inchesToMeters(3),
                           Rotation2d.fromDegrees(-170)))
                   .withLinearConstraints(3.0, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(8.1, 1.256, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(9.0, 3.29, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(new Pose2d(10.575, 3.29, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
-                  .withArcExtension(
-                      Point.ofRed(new Pose2d(9.0, 3.29, Rotation2d.kCCW_90deg)), 0, 0.51)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
+              AutoPoint.ofRed(new Pose2d(7.983, 2.477, Rotation2d.fromDegrees(75)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.575,
+                          11.875,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-56)))
+                          Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withMarker(Markers.CANCEL_INTAKE_RQ))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
+          .untilFinished(new PoseErrorTolerance(0.5, 3));
+
+  private final AutoSegment defaultIntakeSecondCycle =
+      Trailblazer.segment(
+              AutoPoint.ofRed(new Pose2d(13.2, 0.845, Rotation2d.fromDegrees(-140)))
+                  .withLinearConstraints(3.0, 8.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withLinearConstraints(3.0, 8.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          11.5,
+                          FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(180 - 20)))
+                  .withLinearConstraints(4.5, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(4.5, 8.0)
-          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
-          .untilFinished(new PoseErrorTolerance(0.3, 100));
-
-  private final AutoSegment lane1Segment =
-      Trailblazer.segment(
-              AutoPoint.of(
-                      () ->
-                          getClusterShiftedPoint(
-                              Point.ofRed(new Pose2d(8.75, 1.256, Rotation2d.kCCW_90deg))))
+                  .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH),
+              AutoPoint.ofRed(new Pose2d(10.628, 0.87, Rotation2d.fromDegrees(140)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
+                  .withMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH),
+              AutoPoint.ofRed(new Pose2d(10.628, 2.157, Rotation2d.kCCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.of(
-                      () ->
-                          getClusterShiftedPoint(
-                              Point.ofRed(
-                                  new Pose2d(8.75, 3.67 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(new Pose2d(10.575, 3.67 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
-                  .withArcExtension(
-                      Point.ofRed(new Pose2d(8.75, 3.67 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg)),
-                      0,
-                      0.51)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          10.575,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-56)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(4.5, 4.0)
-          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
-          .untilFinished(new PoseErrorTolerance(0.3, 100));
-
-  private final AutoSegment lane2Segment =
-      Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(7.983, 1.256, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(7.983, 3.67 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.6, 100))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(new Pose2d(10.575, 3.67 + MIDLINE_OFFSET, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.7, 100))
-                  .withArcExtension(
-                      Point.ofRed(new Pose2d(7.983, 3.67 + MIDLINE_OFFSET, Rotation2d.kCCW_90deg)),
-                      0.071,
-                      1.0)
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          10.575,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-56)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .withLinearConstraints(4.5, 4.0)
-          .withAngularConstraints(Units.rotationsToRadians(3.0), Units.rotationsToRadians(3.0))
-          .untilFinished(new PoseErrorTolerance(0.3, 100));
-
-  private final AutoSegment driveBackAndShootTwo =
-      Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          10.4,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-56)))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
+              AutoPoint.ofRed(new Pose2d(10.729, 3.67, Rotation2d.fromDegrees(100)))
+                  .withMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(9.862, 4.541, Rotation2d.k180deg))
+                  .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
+              AutoPoint.ofRed(new Pose2d(8.8, 3.67, Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
+              AutoPoint.ofRed(new Pose2d(8.95, 2.77, Rotation2d.fromDegrees(-60)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          11.875,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withMarker(Markers.CANCEL_INTAKE_RQ))
+          .untilFinished(new PoseErrorTolerance(0.3, 100));
+
+  private final AutoSegment intakeSecondCycleFar =
+      Trailblazer.segment(
+              AutoPoint.ofRed(new Pose2d(10.729, 3.67, Rotation2d.fromDegrees(100)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(9.862, 4.541, Rotation2d.fromDegrees(160)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(8.9, 4.541, Rotation2d.fromDegrees(-160)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(8.2, 3.67, Rotation2d.kCW_90deg))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
+              AutoPoint.ofRed(new Pose2d(8.2, 2.77, Rotation2d.fromDegrees(-60)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          11.875,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withMarker(Markers.CANCEL_INTAKE_RQ))
+          .untilFinished(new PoseErrorTolerance(0.3, 100));
+
+  private final AutoSegment crossBumpToShootTwo =
+      Trailblazer.segment(
               AutoPoint.of(
                       () -> {
                         bumpCrossingTracker.bumpCrossRequest(
                             Point.ofRed(
                                 new Pose2d(
-                                    13.709,
-                                    FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                                    Rotation2d.fromDegrees(-56))),
+                                    13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
                             Rotation2d.k180deg);
                         return Point.ofRed(
-                            new Pose2d(13.9, 2.627 + BUMP_OFFSET, Rotation2d.fromDegrees(-56)));
+                            new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)));
                       })
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          14.0,
-                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-40)))
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 100))
+              AutoPoint.ofRed(new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)))
+                  .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ))
+                  .withMarker(Markers.START_SHOOT_RQ),
+              AutoPoint.ofRed(new Pose2d(13.25, 0.845, Rotation2d.fromDegrees(-42)))
+                  .withLinearConstraints(0.4, 0.2)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
-          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3))
+          .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
 
-  private final AutoSegment driveBackToNeutralZone =
+  private final AutoSegment intakeThirdCycle =
       Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          13.709, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withAngularConstraints(
-                      Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(3.0, 8.0),
+              AutoPoint.ofRed(new Pose2d(13.2, 0.845, Rotation2d.fromDegrees(-140)))
+                  .withLinearConstraints(3.0, 8.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(3.0, 8.0),
-              AutoPoint.ofRed(new Pose2d(10.174, 0.79, Rotation2d.k180deg))
+                  .withLinearConstraints(3.0, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(9.8, 2.362, Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          11.5,
+                          FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(180 - 20)))
+                  .withLinearConstraints(4.5, 8.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(7.983, 2.477, Rotation2d.fromDegrees(75)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          11.875,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
           .untilFinished(new PoseErrorTolerance(0.5, 3));
+
+  private final AutoSegment crossBumpToShootThree =
+      Trailblazer.segment(
+              AutoPoint.of(
+                      () -> {
+                        bumpCrossingTracker.bumpCrossRequest(
+                            Point.ofRed(
+                                new Pose2d(
+                                    13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8))),
+                            Rotation2d.k180deg);
+                        return Point.ofRed(
+                            new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)));
+                      })
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
+                  .withLinearConstraints(4.5, 8),
+              AutoPoint.ofRed(new Pose2d(13.25, 2.17 + BUMP_OFFSET, Rotation2d.fromDegrees(-42.8)))
+                  .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
+                  .withLinearConstraints(4.5, 8)
+                  .withMarker(Markers.START_SHOOT_RQ),
+              AutoPoint.ofRed(new Pose2d(13.25, 0.845, Rotation2d.fromDegrees(-42)))
+                  .withLinearConstraints(0.4, 0.2)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
+          .untilFinished(new PoseErrorTolerance(0.3, 100));
 
   private AutoSegment stuckOnBall =
       StuckOnBallRecovery.getRecoverySegment(
@@ -343,7 +307,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
 
   private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_FIRST_CYCLE;
-  private AutoSegment storedStuckOnBallAutoSegment = intakeAcrossMidline;
+  private AutoSegment storedStuckOnBallAutoSegment = intakeFirstCycle;
   private int storedStuckOnBallIndex = 0;
 
   // FOR SIM ONLY!!!
@@ -380,9 +344,9 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
       switch (currentState) {
         case INTAKE_FIRST_CYCLE,
             DEFAULT_INTAKE_SECOND_CYCLE,
-            INTAKE_SECOND_CYCLE_LANE_1,
-            INTAKE_SECOND_CYCLE_LANE_2,
-            INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
+            INTAKE_SECOND_CYCLE_FAR,
+            INTAKE_SECOND_CYCLE_TRENCH_LANE,
+            INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
             return IntegratedAutoState.STUCK_ON_BALL_RECOVERY;
@@ -403,6 +367,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
       }
       case INTAKE_FIRST_CYCLE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+          robotManager.powerManager.idleRequest();
           yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_1;
         } else {
           yield currentState;
@@ -416,38 +381,32 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
           yield IntegratedAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
         }
       }
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())
-            && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+        if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)) {
 
           Lane bestLane = robotManager.clusterMap.getBestClusterLane();
           yield switch (bestLane) {
-            case LANE_0 -> currentState;
-            case LANE_1 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_LANE_1;
-            case LANE_2 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_LANE_2;
-            case TRENCH -> IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
+            case LANE_1 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_FAR;
             default -> currentState;
           };
         } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
-            && !trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)) {
+            && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH)) {
           if (robotManager.clusterMap.hasHighValueTrenchCluster()) {
             yield IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
           }
         }
         yield currentState;
       }
-      case INTAKE_SECOND_CYCLE_LANE_1,
-          INTAKE_SECOND_CYCLE_LANE_2,
-          INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
+      case INTAKE_SECOND_CYCLE_FAR, INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
@@ -455,6 +414,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
           yield currentState;
         }
       }
+
       case CROSS_BUMP_TO_SHOOT_2 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
           yield IntegratedAutoState.SHOOT_2;
@@ -464,14 +424,22 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
       }
       case SHOOT_2 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
+          yield IntegratedAutoState.INTAKE_THIRD_CYCLE;
+        } else {
+          yield currentState;
+        }
+      }
+      case INTAKE_THIRD_CYCLE -> {
+        if (trailblazer.atGoal(robotManager.localization.getPose())
+            && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_3;
         } else {
           yield currentState;
         }
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())) {
-          yield IntegratedAutoState.DONE;
+        if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)) {
+          yield IntegratedAutoState.SHOOT_3;
         } else {
           yield currentState;
         }
@@ -507,7 +475,7 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         }
       }
       case INTAKE_FIRST_CYCLE -> {
-        trailblazer.setActiveSegment(intakeAcrossMidline);
+        trailblazer.setActiveSegment(intakeFirstCycle);
         robotManager.intakeAutoRequest();
         robotManager.powerManager.firstAutoSegmentRequest();
 
@@ -518,20 +486,27 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
           firstStuckOnBall = true;
           robotManager.localization.imu.setPitch(-30.0);
         }
+        if (trailblazer.passedMarker(Markers.PRIORITIZE_INTAKE)) {
+          robotManager.powerManager.prioritizeIntakeRequest();
+        }
       }
       case CROSS_BUMP_TO_SHOOT_1 -> {
-        trailblazer.setActiveSegment(driveBackAndShootOne);
+        trailblazer.setActiveSegment(crossBumpToShootOne);
         robotManager.cancelIntakeRequest();
         if (RobotBase.isSimulation()) {
-          if (timeout(0.5)) {
+          if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
             robotManager.localization.imu.setRoll(-7.5);
           }
-          if (timeout(0.7)) {
+          if (timeout(0.4)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+          if (timeout(0.6)) {
             robotManager.localization.imu.setPitch(7.5);
             robotManager.localization.imu.setRoll(7.5);
           }
-          if (timeout(1.0)) {
+          if (timeout(.7)) {
             robotManager.localization.imu.setPitch(0.0);
             robotManager.localization.imu.setRoll(0.0);
           }
@@ -539,24 +514,12 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
-        trailblazer.setActiveSegment(defaultSecondSegment);
+        trailblazer.setActiveSegment(defaultIntakeSecondCycle);
         robotManager.intakeAutoRequest();
       }
 
-      case INTAKE_SECOND_CYCLE_LANE_1 -> {
-        trailblazer.setActiveSegment(lane1Segment);
-        robotManager.intakeAutoRequest();
-
-        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
-            && timeout(1.5)
-            && RobotBase.isSimulation()
-            && !secondStuckOnBall) {
-          secondStuckOnBall = true;
-          robotManager.localization.imu.setPitch(-30.0);
-        }
-      }
-      case INTAKE_SECOND_CYCLE_LANE_2 -> {
-        trailblazer.setActiveSegment(lane2Segment);
+      case INTAKE_SECOND_CYCLE_FAR -> {
+        trailblazer.setActiveSegment(intakeSecondCycleFar);
         robotManager.intakeAutoRequest();
 
         if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
@@ -568,31 +531,58 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
         }
       }
       case INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
-        trailblazer.setActiveSegment(trenchSegment);
+        trailblazer.setActiveSegment(intakeSecondCycleTrenchLane);
         robotManager.intakeAutoRequest();
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
-        trailblazer.setActiveSegment(driveBackAndShootTwo);
+        trailblazer.setActiveSegment(crossBumpToShootTwo);
         if (RobotBase.isSimulation()) {
-          if (timeout(0.5)) {
+          if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
             robotManager.localization.imu.setRoll(-7.5);
           }
-          if (timeout(0.7)) {
+          if (timeout(0.4)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+          if (timeout(0.6)) {
             robotManager.localization.imu.setPitch(7.5);
             robotManager.localization.imu.setRoll(7.5);
           }
-          if (timeout(1.0)) {
+          if (timeout(.7)) {
             robotManager.localization.imu.setPitch(0.0);
             robotManager.localization.imu.setRoll(0.0);
           }
         }
       }
+
       case SHOOT_2 -> robotManager.prepareScoreRequest();
-      case CROSS_BUMP_TO_SHOOT_3 -> {
-        trailblazer.setActiveSegment(driveBackToNeutralZone);
+      case INTAKE_THIRD_CYCLE -> {
+        trailblazer.setActiveSegment(intakeThirdCycle);
         robotManager.intakeAutoRequest();
       }
+      case CROSS_BUMP_TO_SHOOT_3 -> {
+        trailblazer.setActiveSegment(crossBumpToShootTwo);
+        if (RobotBase.isSimulation()) {
+          if (timeout(0.2)) {
+            robotManager.localization.imu.setPitch(-7.5);
+            robotManager.localization.imu.setRoll(-7.5);
+          }
+          if (timeout(0.4)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+          if (timeout(0.6)) {
+            robotManager.localization.imu.setPitch(7.5);
+            robotManager.localization.imu.setRoll(7.5);
+          }
+          if (timeout(.7)) {
+            robotManager.localization.imu.setPitch(0.0);
+            robotManager.localization.imu.setRoll(0.0);
+          }
+        }
+      }
+      case SHOOT_3 -> robotManager.prepareScoreRequest();
       case DONE -> {}
     }
   }
@@ -612,39 +602,43 @@ public class LeftIntegratedAuto extends BaseImperativeAuto<IntegratedAutoState> 
   protected void afterTransition(IntegratedAutoState newState) {
     switch (newState) {
       case INTAKE_FIRST_CYCLE -> {
-        storedStuckOnBallAutoSegment = intakeAcrossMidline;
+        storedStuckOnBallAutoSegment = intakeFirstCycle;
         robotManager.homeDeployInAutoRequest();
         robotManager.homeShooterHoodRequest();
       }
       case CROSS_BUMP_TO_SHOOT_1, SHOOT_1 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootOne;
+        storedStuckOnBallAutoSegment = crossBumpToShootOne;
       }
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
-        storedStuckOnBallAutoSegment = defaultSecondSegment;
+        storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
         robotManager.idleRequest();
       }
-      case INTAKE_SECOND_CYCLE_LANE_1 -> {
-        storedStuckOnBallAutoSegment = lane1Segment;
-        robotManager.idleRequest();
-      }
-      case INTAKE_SECOND_CYCLE_LANE_2 -> {
-        storedStuckOnBallAutoSegment = lane2Segment;
+      case INTAKE_SECOND_CYCLE_FAR -> {
+        storedStuckOnBallAutoSegment = intakeSecondCycleFar;
         robotManager.idleRequest();
       }
       case INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
-        storedStuckOnBallAutoSegment = trenchSegment;
+        storedStuckOnBallAutoSegment = intakeSecondCycleTrenchLane;
+        robotManager.idleRequest();
+      }
+      case INTAKE_THIRD_CYCLE -> {
+        storedStuckOnBallAutoSegment = intakeThirdCycle;
         robotManager.idleRequest();
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootTwo;
+        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
       }
       case SHOOT_2 -> {
-        storedStuckOnBallAutoSegment = driveBackAndShootTwo;
+        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
         robotManager.cancelIntakeRequest();
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = driveBackToNeutralZone;
+        storedStuckOnBallAutoSegment = crossBumpToShootThree;
         robotManager.idleRequest();
+      }
+      case SHOOT_3 -> {
+        storedStuckOnBallAutoSegment = crossBumpToShootThree;
+        robotManager.cancelIntakeRequest();
       }
       case DONE -> {
         robotManager.idleRequest();
