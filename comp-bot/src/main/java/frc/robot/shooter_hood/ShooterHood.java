@@ -1,5 +1,7 @@
 package frc.robot.shooter_hood;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -12,8 +14,12 @@ import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.List;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> implements PowerManaged {
   private static double distanceToScoringAngle(double distance) {
@@ -40,6 +46,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   private double statorCurrent = 0.0;
   private double voltage = 0.0;
 
+  private final StatusSignal<Angle> positionSignal;
+  private final StatusSignal<Current> statorCurrentSignal;
+  private final StatusSignal<Voltage> motorVoltageSignal;
+  private final List<BaseStatusSignal> allSignals;
+
   public ShooterHood(TalonFX motor) {
     super(SubsystemPriority.SHOOTER_HOOD, ShooterHoodState.UNHOMED);
 
@@ -48,6 +59,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     this.motor = motor;
 
     TunablePid.register("ShooterHood", motor, ShooterHoodConfig.MOTOR_CONFIG);
+
+    positionSignal = motor.getPosition(false);
+    statorCurrentSignal = motor.getStatorCurrent(false);
+    motorVoltageSignal = motor.getMotorVoltage(false);
+    allSignals = List.of(positionSignal, statorCurrentSignal, motorVoltageSignal);
   }
 
   public void scoreRequest(double distance) {
@@ -98,11 +114,12 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
 
   @Override
   protected void collectInputs() {
-    currentAngle = Units.rotationsToDegrees(motor.getPosition().getValueAsDouble());
+    BaseStatusSignal.refreshAll(allSignals);
+    currentAngle = Units.rotationsToDegrees(positionSignal.getValueAsDouble());
     switch (getState()) {
       case UNHOMED, HOMING -> {
-        statorCurrent = motor.getStatorCurrent().getValueAsDouble();
-        voltage = motor.getMotorVoltage().getValueAsDouble();
+        statorCurrent = statorCurrentSignal.getValueAsDouble();
+        voltage = motorVoltageSignal.getValueAsDouble();
       }
       default -> {
         statorCurrent = 0;
