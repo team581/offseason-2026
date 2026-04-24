@@ -137,7 +137,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
     ingestTagResult(presentList);
 
-    robotPose = drivetrain.getState().Pose;
+    robotPose = swerve.getDriveState().Pose;
 
     trustFactor.update(robotPose, Swerve.TRANSLATION_STD_DEV, imu.collisionDetected());
   }
