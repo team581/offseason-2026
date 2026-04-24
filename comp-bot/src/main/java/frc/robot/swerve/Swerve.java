@@ -162,6 +162,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private boolean ableToXSwerve = false;
 
   private boolean driverWantsSotm = false;
+  private boolean driverStillDecidingSotm = false;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -388,11 +389,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
 
     var requestedSpeeds = driveSource.getRequestedSpeeds();
-    driverWantsSotm =
-        (timeout(DRIVER_WANTS_SOTM_DELAY.get())
-                && (MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
-                    && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED)))
-            || driveSource.getDriveSourceType() != DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
+    var movingInScoreOrFeed =
+        MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
+            && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
+    var usingTeleopDrive =
+        driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
+    var sotmDelayElapsed = timeout(DRIVER_WANTS_SOTM_DELAY.get());
+    driverWantsSotm = (sotmDelayElapsed && movingInScoreOrFeed) || !usingTeleopDrive;
+    driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
 
     switch (getState()) {
       case SCORE -> {
@@ -430,11 +434,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public boolean driverStillDecidingSotm() {
-    var requestedSpeeds = driveSource.getRequestedSpeeds();
-    return (!timeout(DRIVER_WANTS_SOTM_DELAY.get())
-            && (MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
-                && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED)))
-        && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
+    return driverStillDecidingSotm;
   }
 
   private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(
@@ -622,7 +622,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
-    DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm());
+    DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
   }
 
   private void startSimThread() {
