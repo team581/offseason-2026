@@ -1,5 +1,7 @@
 package frc.robot.robot_manager.hopper_manager;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -7,6 +9,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -20,6 +23,7 @@ import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.List;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final Deploy deploy;
@@ -58,6 +62,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private final Timer canRangeUpdateTimer = new Timer();
 
+  private final StatusSignal<Distance> hopperDistanceSignal;
+  private final List<BaseStatusSignal> allSignals;
+
   public HopperManager(
       Deploy deploy,
       Intake intake,
@@ -75,6 +82,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     hopperCANRange.getConfigurator().apply(HopperManagerConfig.CAN_RANGE_CONFIG);
     canRangeUpdateTimer.start();
+
+    hopperDistanceSignal = hopperCANRange.getDistance(false);
+    allSignals = List.of(hopperDistanceSignal);
   }
 
   private HopperBallPosition getShotPosition() {
@@ -391,8 +401,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       towerSensorRaw = RobotKind.IS_COMP_BOT != towerSensor.get();
     }
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
+
+    BaseStatusSignal.refreshAll(allSignals);
+
     if (DSOptions.USE_CANRANGE.get()) {
-      hopperDistance = Units.metersToInches(hopperCANRange.getDistance().getValueAsDouble());
+      hopperDistance = Units.metersToInches(hopperDistanceSignal.getValueAsDouble());
     }
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
