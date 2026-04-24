@@ -633,7 +633,11 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
     switch (newState) {
       case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 -> {
         bumpCrossingTracker.bumpCrossRequest(
-            Point.ofRed(new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8))),
+            Point.ofRed(
+                new Pose2d(
+                    13.25,
+                    FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                    Rotation2d.fromDegrees(42.8))),
             Rotation2d.k180deg);
       }
       default -> {}
