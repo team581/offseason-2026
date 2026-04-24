@@ -34,7 +34,7 @@ public class Imu extends BaseImuSubsystem {
   private double accel = 0.0;
 
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
-    super(SubsystemPriority.IMU, drivetrain);
+    super(SubsystemPriority.IMU, drivetrain.getPigeon2(), drivetrain::getState);
 
     this.bumpCrossingTracker =
         new BumpCrossingTracker(
@@ -63,10 +63,8 @@ public class Imu extends BaseImuSubsystem {
   public void collectInputs() {
     super.collectInputs();
 
-    pigeonFilteredXAccel =
-        pigeonXAccelFilter.calculate(drivetrain.getPigeon2().getAccelerationX().getValueAsDouble());
-    pigeonFilteredYAccel =
-        pigeonYAccelFilter.calculate(drivetrain.getPigeon2().getAccelerationY().getValueAsDouble());
+    pigeonFilteredXAccel = pigeonXAccelFilter.calculate(accelerationXSignal.getValueAsDouble());
+    pigeonFilteredYAccel = pigeonYAccelFilter.calculate(accelerationYSignal.getValueAsDouble());
     accel = Math.hypot(pigeonFilteredXAccel, pigeonFilteredYAccel);
 
     // Calculates the jerk in the X and Y directions

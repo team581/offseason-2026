@@ -24,8 +24,11 @@ public class Imu extends BaseImuSubsystem {
   private double maxGForceDetected = Double.NEGATIVE_INFINITY;
   private double lastUpdateTime = 0.0;
 
+  private final SwerveDrivetrain<?, ?, ?> drivetrain;
+
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
-    super(SubsystemPriority.IMU, drivetrain);
+    super(SubsystemPriority.IMU, drivetrain.getPigeon2(), drivetrain::getState);
+    this.drivetrain = drivetrain;
 
     // TODO(@jonahsnider): This should use localization#getPose() but I think that makes a circular
     // import which I don't want to deal with right now

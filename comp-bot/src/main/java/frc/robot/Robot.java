@@ -125,6 +125,9 @@ public class Robot extends Base581Robot {
         BuildConstants.GIT_BRANCH,
         BuildConstants.DIRTY);
 
+    // Reuse the SwerveDriveState from Swerve for IMU
+    imu.setDriveStateSupplier(swerve::getDriveState);
+
     finalizeInit();
 
     if (GlobalConfig.IS_DEVELOPMENT) {
