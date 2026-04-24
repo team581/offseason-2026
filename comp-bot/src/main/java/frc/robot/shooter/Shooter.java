@@ -1,6 +1,5 @@
 package frc.robot.shooter;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
@@ -8,6 +7,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.GlobalSignals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -21,7 +21,6 @@ import edu.wpi.first.units.measure.Voltage;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.List;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> implements PowerManaged {
   private static double distanceToScoringRpm(double distance) {
@@ -62,7 +61,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private final StatusSignal<Current> bottomLeftSupplyCurrentSignal;
   private final StatusSignal<Current> bottomRightSupplyCurrentSignal;
   private final StatusSignal<Current> topRightTorqueCurrentSignal;
-  private final List<BaseStatusSignal> allSignals;
 
   private double topLeftVoltage = 0;
   private double topRightVoltage = 0;
@@ -145,22 +143,21 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     bottomRightSupplyCurrentSignal = bottomRightMotor.getSupplyCurrent(false);
     topRightTorqueCurrentSignal = topRightMotor.getTorqueCurrent(false);
 
-    allSignals =
-        List.of(
-            topLeftVelocitySignal,
-            topRightVelocitySignal,
-            bottomLeftVelocitySignal,
-            bottomRightVelocitySignal,
-            topLeftVoltageSignal,
-            topRightVoltageSignal,
-            bottomLeftVoltageSignal,
-            bottomRightVoltageSignal,
-            topRightSupplyVoltageSignal,
-            topLeftSupplyCurrentSignal,
-            topRightSupplyCurrentSignal,
-            bottomLeftSupplyCurrentSignal,
-            bottomRightSupplyCurrentSignal,
-            topRightTorqueCurrentSignal);
+    GlobalSignals.register(
+        topLeftVelocitySignal,
+        topRightVelocitySignal,
+        bottomLeftVelocitySignal,
+        bottomRightVelocitySignal,
+        topLeftVoltageSignal,
+        topRightVoltageSignal,
+        bottomLeftVoltageSignal,
+        bottomRightVoltageSignal,
+        topRightSupplyVoltageSignal,
+        topLeftSupplyCurrentSignal,
+        topRightSupplyCurrentSignal,
+        bottomLeftSupplyCurrentSignal,
+        bottomRightSupplyCurrentSignal,
+        topRightTorqueCurrentSignal);
   }
 
   public void prepareScoreRequest(double distance) {
@@ -258,8 +255,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   @Override
   protected void collectInputs() {
-    BaseStatusSignal.refreshAll(allSignals);
-
     shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
     feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
 

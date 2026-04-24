@@ -3,11 +3,11 @@ package com.team581.mechanisms.imu;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.team581.math.MathHelpers;
+import com.team581.signals.GlobalSignals;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -17,7 +17,6 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.wpilibj.RobotBase;
-import java.util.List;
 import java.util.function.Supplier;
 
 public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
@@ -30,7 +29,6 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   private final StatusSignal<Angle> rollSignal;
   protected final StatusSignal<LinearAcceleration> accelerationXSignal;
   protected final StatusSignal<LinearAcceleration> accelerationYSignal;
-  private final List<BaseStatusSignal> pigeonSignals;
 
   private boolean isFlatDebounced = false;
 
@@ -54,7 +52,7 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     rollSignal = pigeon.getRoll(false);
     accelerationXSignal = pigeon.getAccelerationX(false);
     accelerationYSignal = pigeon.getAccelerationY(false);
-    pigeonSignals = List.of(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
+    GlobalSignals.register(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
   }
 
   public double getPitch() {
@@ -115,8 +113,6 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
 
   @Override
   protected void collectInputs() {
-    BaseStatusSignal.refreshAll(pigeonSignals);
-
     driveState = driveStateSupplier.get();
     robotHeading = MathHelpers.angleModulus(driveState.Pose.getRotation().getDegrees());
     robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);

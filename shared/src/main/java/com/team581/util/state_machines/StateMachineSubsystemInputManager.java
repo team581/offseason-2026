@@ -2,6 +2,7 @@ package com.team581.util.state_machines;
 
 import static java.util.Comparator.comparingInt;
 
+import com.team581.signals.GlobalSignals;
 import com.team581.util.scheduling.RegisteredSubsystem;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import java.util.PriorityQueue;
@@ -22,6 +23,7 @@ public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
 
   @Override
   public void periodic() {
+    GlobalSignals.refreshAll();
     for (var stateMachineSubsystem : stateMachineSubsystems) {
       stateMachineSubsystem.beforePeriodic();
     }

@@ -1,16 +1,15 @@
 package frc.robot.intake;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.GlobalSignals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.List;
 
 public class Intake extends StateMachineSubsystem<IntakeState> implements PowerManaged {
   private final TalonFX leftMotor;
@@ -20,7 +19,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
   private final StatusSignal<Current> leftSupplyCurrentSignal;
   private final StatusSignal<Current> rightSupplyCurrentSignal;
-  private final List<BaseStatusSignal> allSignals;
 
   public Intake(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);
@@ -32,7 +30,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    allSignals = List.of(leftSupplyCurrentSignal, rightSupplyCurrentSignal);
+    GlobalSignals.register(leftSupplyCurrentSignal, rightSupplyCurrentSignal);
   }
 
   public void ejectRequest() {
@@ -81,7 +79,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    BaseStatusSignal.refreshAll(allSignals);
     DogLog.log("Intake/Left/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/Right/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/RequestedVoltage", getState().getVoltage());

@@ -1,6 +1,5 @@
 package frc.robot.deploy;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
@@ -10,6 +9,7 @@ import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.GlobalSignals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -20,7 +20,6 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.List;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
   private final TalonFX leftMotor;
@@ -52,7 +51,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private final StatusSignal<Current> rightStatorCurrentSignal;
   private final StatusSignal<Current> leftSupplyCurrentSignal;
   private final StatusSignal<Current> rightSupplyCurrentSignal;
-  private final List<BaseStatusSignal> allSignals;
 
   public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -77,15 +75,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    allSignals =
-        List.of(
-            leftPositionSignal,
-            rightPositionSignal,
-            differentialAveragePositionSignal,
-            leftStatorCurrentSignal,
-            rightStatorCurrentSignal,
-            leftSupplyCurrentSignal,
-            rightSupplyCurrentSignal);
+    GlobalSignals.register(
+        leftPositionSignal,
+        rightPositionSignal,
+        differentialAveragePositionSignal,
+        leftStatorCurrentSignal,
+        rightStatorCurrentSignal,
+        leftSupplyCurrentSignal,
+        rightSupplyCurrentSignal);
   }
 
   public void intakeRequest() {
@@ -233,7 +230,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    BaseStatusSignal.refreshAll(allSignals);
     leftMotorPosition = leftPositionSignal.getValueAsDouble();
     rightMotorPosition = rightPositionSignal.getValueAsDouble();
     if (RobotBase.isSimulation()) {

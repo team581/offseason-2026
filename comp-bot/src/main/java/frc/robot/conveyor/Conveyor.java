@@ -1,16 +1,15 @@
 package frc.robot.conveyor;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.GlobalSignals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
-import java.util.List;
 
 public class Conveyor extends StateMachineSubsystem<ConveyorState> implements PowerManaged {
 
@@ -21,7 +20,6 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   private final StatusSignal<Current> topSupplyCurrentSignal;
   private final StatusSignal<Current> bottomSupplyCurrentSignal;
-  private final List<BaseStatusSignal> allSignals;
 
   public Conveyor(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);
@@ -33,7 +31,7 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
     topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
     bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
-    allSignals = List.of(topSupplyCurrentSignal, bottomSupplyCurrentSignal);
+    GlobalSignals.register(topSupplyCurrentSignal, bottomSupplyCurrentSignal);
   }
 
   public void initialShotRequest() {
@@ -76,7 +74,6 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   @Override
   protected void collectInputs() {
-    BaseStatusSignal.refreshAll(allSignals);
     DogLog.log("Conveyor/Top/SupplyCurrent", topSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Conveyor/Voltage", getState().getVoltage());
