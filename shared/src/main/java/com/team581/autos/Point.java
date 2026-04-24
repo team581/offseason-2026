@@ -21,7 +21,7 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
   private static final Rectangle2d CLAMPED_AREA =
       new Rectangle2d(
           new Translation2d(16.54 + 5, 8.069),
-          // Half of robot width + bumpers + 4" buffer
+          // Half of robot width + bumpers + 15" buffer
           new Translation2d(8.246 + Units.inchesToMeters(17.25 + 15.0), 1.645));
 
   private static Pose2d clamp(Pose2d input) {
