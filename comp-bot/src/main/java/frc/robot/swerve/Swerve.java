@@ -614,9 +614,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
     DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
-    DogLog.log(
-        "Swerve/AbleToXSwerve/SpeedsNear0",
-        MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
 
     DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
     DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm());
