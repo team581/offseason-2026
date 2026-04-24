@@ -5,11 +5,7 @@ public enum IntegratedAutoState {
   // Fallback segment for non-cluster map (robot fully on our side)
   DEFAULT_INTAKE_SECOND_CYCLE,
 
-  // Lane 1 for cluster map (robot mostly on our side)
-  INTAKE_SECOND_CYCLE_LANE_1,
-
-  // Lane 2 for cluster map (robot mostly on opponent side)
-  INTAKE_SECOND_CYCLE_LANE_2,
+  INTAKE_SECOND_CYCLE_FAR,
 
   // Trench lane for cluster map (trench and then alliance lane)
   INTAKE_SECOND_CYCLE_TRENCH_LANE,
