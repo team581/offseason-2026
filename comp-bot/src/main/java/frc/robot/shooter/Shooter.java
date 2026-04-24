@@ -1,5 +1,7 @@
 package frc.robot.shooter;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -13,9 +15,13 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.List;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> implements PowerManaged {
   private static double distanceToScoringRpm(double distance) {
@@ -41,6 +47,33 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private final Follower bottomRightFollower;
 
   private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
+
+  private final StatusSignal<AngularVelocity> topLeftVelocitySignal;
+  private final StatusSignal<AngularVelocity> topRightVelocitySignal;
+  private final StatusSignal<AngularVelocity> bottomLeftVelocitySignal;
+  private final StatusSignal<AngularVelocity> bottomRightVelocitySignal;
+  private final StatusSignal<Voltage> topLeftVoltageSignal;
+  private final StatusSignal<Voltage> topRightVoltageSignal;
+  private final StatusSignal<Voltage> bottomLeftVoltageSignal;
+  private final StatusSignal<Voltage> bottomRightVoltageSignal;
+  private final StatusSignal<Voltage> topRightSupplyVoltageSignal;
+  private final StatusSignal<Current> topLeftSupplyCurrentSignal;
+  private final StatusSignal<Current> topRightSupplyCurrentSignal;
+  private final StatusSignal<Current> bottomLeftSupplyCurrentSignal;
+  private final StatusSignal<Current> bottomRightSupplyCurrentSignal;
+  private final StatusSignal<Current> topRightTorqueCurrentSignal;
+  private final List<BaseStatusSignal> allSignals;
+
+  private double topLeftVoltage = 0;
+  private double topRightVoltage = 0;
+  private double bottomLeftVoltage = 0;
+  private double bottomRightVoltage = 0;
+  private double topRightSupplyVoltage = 0;
+  private double topLeftSupplyCurrent = 0;
+  private double topRightSupplyCurrent = 0;
+  private double bottomLeftSupplyCurrent = 0;
+  private double bottomRightSupplyCurrent = 0;
+  private double topRightTorqueCurrent = 0;
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
@@ -96,6 +129,38 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     topLeftMotor.setControl(topLeftFollower);
     bottomLeftMotor.setControl(bottomLeftFollower);
     bottomRightMotor.setControl(bottomRightFollower);
+
+    topLeftVelocitySignal = topLeftMotor.getVelocity(false);
+    topRightVelocitySignal = topRightMotor.getVelocity(false);
+    bottomLeftVelocitySignal = bottomLeftMotor.getVelocity(false);
+    bottomRightVelocitySignal = bottomRightMotor.getVelocity(false);
+    topLeftVoltageSignal = topLeftMotor.getMotorVoltage(false);
+    topRightVoltageSignal = topRightMotor.getMotorVoltage(false);
+    bottomLeftVoltageSignal = bottomLeftMotor.getMotorVoltage(false);
+    bottomRightVoltageSignal = bottomRightMotor.getMotorVoltage(false);
+    topRightSupplyVoltageSignal = topRightMotor.getSupplyVoltage(false);
+    topLeftSupplyCurrentSignal = topLeftMotor.getSupplyCurrent(false);
+    topRightSupplyCurrentSignal = topRightMotor.getSupplyCurrent(false);
+    bottomLeftSupplyCurrentSignal = bottomLeftMotor.getSupplyCurrent(false);
+    bottomRightSupplyCurrentSignal = bottomRightMotor.getSupplyCurrent(false);
+    topRightTorqueCurrentSignal = topRightMotor.getTorqueCurrent(false);
+
+    allSignals =
+        List.of(
+            topLeftVelocitySignal,
+            topRightVelocitySignal,
+            bottomLeftVelocitySignal,
+            bottomRightVelocitySignal,
+            topLeftVoltageSignal,
+            topRightVoltageSignal,
+            bottomLeftVoltageSignal,
+            bottomRightVoltageSignal,
+            topRightSupplyVoltageSignal,
+            topLeftSupplyCurrentSignal,
+            topRightSupplyCurrentSignal,
+            bottomLeftSupplyCurrentSignal,
+            bottomRightSupplyCurrentSignal,
+            topRightTorqueCurrentSignal);
   }
 
   public void prepareScoreRequest(double distance) {
@@ -144,26 +209,19 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/FeederCurrent", feederCurrent);
     DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
     DogLog.log("Shooter/AtGoal", atGoal());
-    DogLog.log("Shooter/TopRight/Voltage", topRightMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log(
-        "Shooter/TopRight/SupplyVoltage", topRightMotor.getSupplyVoltage().getValueAsDouble());
+    DogLog.log("Shooter/TopRight/Voltage", topRightVoltage);
+    DogLog.log("Shooter/TopRight/SupplyVoltage", topRightSupplyVoltage);
 
-    DogLog.log("Shooter/TopLeft/Voltage", topLeftMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log(
-        "Shooter/BottomRight/Voltage", bottomRightMotor.getMotorVoltage().getValueAsDouble());
-    DogLog.log("Shooter/BottomLeft/Voltage", bottomLeftMotor.getMotorVoltage().getValueAsDouble());
+    DogLog.log("Shooter/TopLeft/Voltage", topLeftVoltage);
+    DogLog.log("Shooter/BottomRight/Voltage", bottomRightVoltage);
+    DogLog.log("Shooter/BottomLeft/Voltage", bottomLeftVoltage);
 
-    DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log(
-        "Shooter/TopRight/SupplyCurrent", topRightMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log(
-        "Shooter/BottomLeft/SupplyCurrent", bottomLeftMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log(
-        "Shooter/BottomRight/SupplyCurrent",
-        bottomRightMotor.getSupplyCurrent().getValueAsDouble());
+    DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
+    DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);
+    DogLog.log("Shooter/BottomLeft/SupplyCurrent", bottomLeftSupplyCurrent);
+    DogLog.log("Shooter/BottomRight/SupplyCurrent", bottomRightSupplyCurrent);
 
-    DogLog.log(
-        "Shooter/TopRight/TorqueCurrent", topRightMotor.getTorqueCurrent().getValueAsDouble());
+    DogLog.log("Shooter/TopRight/TorqueCurrent", topRightTorqueCurrent);
 
     switch (state) {
       case IDLE -> {
@@ -200,6 +258,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   @Override
   protected void collectInputs() {
+    BaseStatusSignal.refreshAll(allSignals);
+
     shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
     feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
 
@@ -208,13 +268,21 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
       feedingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
     }
 
-    topLeftMotorRpm = topLeftMotor.getVelocity().getValueAsDouble() * 60.0;
+    topLeftMotorRpm = topLeftVelocitySignal.getValueAsDouble() * 60.0;
+    topRightMotorRpm = topRightVelocitySignal.getValueAsDouble() * 60.0;
+    bottomLeftMotorRpm = bottomLeftVelocitySignal.getValueAsDouble() * 60.0;
+    bottomRightMotorRpm = bottomRightVelocitySignal.getValueAsDouble() * 60.0;
 
-    topRightMotorRpm = topRightMotor.getVelocity().getValueAsDouble() * 60.0;
-
-    bottomLeftMotorRpm = bottomLeftMotor.getVelocity().getValueAsDouble() * 60.0;
-
-    bottomRightMotorRpm = bottomRightMotor.getVelocity().getValueAsDouble() * 60.0;
+    topLeftVoltage = topLeftVoltageSignal.getValueAsDouble();
+    topRightVoltage = topRightVoltageSignal.getValueAsDouble();
+    bottomLeftVoltage = bottomLeftVoltageSignal.getValueAsDouble();
+    bottomRightVoltage = bottomRightVoltageSignal.getValueAsDouble();
+    topRightSupplyVoltage = topRightSupplyVoltageSignal.getValueAsDouble();
+    topLeftSupplyCurrent = topLeftSupplyCurrentSignal.getValueAsDouble();
+    topRightSupplyCurrent = topRightSupplyCurrentSignal.getValueAsDouble();
+    bottomLeftSupplyCurrent = bottomLeftSupplyCurrentSignal.getValueAsDouble();
+    bottomRightSupplyCurrent = bottomRightSupplyCurrentSignal.getValueAsDouble();
+    topRightTorqueCurrent = topRightTorqueCurrentSignal.getValueAsDouble();
 
     atGoal = calculateAtGoal();
     atGoalDebounced = atGoalDebouncer.calculate(atGoal);
