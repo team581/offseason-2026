@@ -3,19 +3,15 @@ package frc.robot.autos;
 import com.team581.autos.AutoSelectionBase;
 import com.team581.trailblazer.Trailblazer;
 import frc.robot.autos.auto_state_machines.DoNothingAuto;
-import frc.robot.autos.auto_state_machines.LeftIntegratedAuto;
-import frc.robot.autos.auto_state_machines.LeftSpecialAuto;
-import frc.robot.autos.auto_state_machines.RightIntegratedAuto;
-import frc.robot.autos.auto_state_machines.RightSpecialAuto;
+import frc.robot.autos.auto_state_machines.LeftNormalAuto;
+import frc.robot.autos.auto_state_machines.RightNormalAuto;
 import frc.robot.robot_manager.RobotManager;
 import java.util.function.BiFunction;
 
 public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING(DoNothingAuto::new),
-  RIGHT_INTEGRATED_AUTO(RightIntegratedAuto::new),
-  RIGHT_SPECIAL_AUTO(RightSpecialAuto::new),
-  LEFT_INTEGRATED_AUTO(LeftIntegratedAuto::new),
-  LEFT_SPECIAL_AUTO(LeftSpecialAuto::new);
+  LEFT(LeftNormalAuto::new),
+  RIGHT(RightNormalAuto::new);
 
   public final BiFunction<RobotManager, Trailblazer, BaseImperativeAuto<?>> auto;
 
