@@ -144,15 +144,18 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
 
   private double scoringAngle = 0.0;
+  private Rotation2d scoringAngleRotation = Rotation2d.kZero;
   private double scoringTolerance = 0.0;
   private double scoringFeedForward = 0.0;
 
   private double feedingAngle = 0.0;
+  private Rotation2d feedingAngleRotation = Rotation2d.kZero;
   private double feedingTolerance = 0.0;
   private double feedingFeedForward = 0.0;
 
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
+  private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
 
   private static final double MIN_AIMED_TOLERANCE = 2.0;
 
@@ -220,8 +223,22 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.CLIMB_ASSIST);
   }
 
+  private void setScoringAngle(double angleDegrees) {
+    if (scoringAngle != angleDegrees) {
+      scoringAngle = angleDegrees;
+      scoringAngleRotation = Rotation2d.fromDegrees(angleDegrees);
+    }
+  }
+
+  private void setFeedingAngle(double angleDegrees) {
+    if (feedingAngle != angleDegrees) {
+      feedingAngle = angleDegrees;
+      feedingAngleRotation = Rotation2d.fromDegrees(angleDegrees);
+    }
+  }
+
   public void scoreRequest(AimingParameters scoringParameters) {
-    scoringAngle = scoringParameters.goalAngle();
+    setScoringAngle(scoringParameters.goalAngle());
     scoringTolerance =
         MathUtil.clamp(
             scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
@@ -230,7 +247,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void warmupScoreRequest(AimingParameters scoringParameters) {
-    scoringAngle = scoringParameters.goalAngle();
+    setScoringAngle(scoringParameters.goalAngle());
     scoringTolerance =
         MathUtil.clamp(
             scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
@@ -239,7 +256,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void feedRequest(AimingParameters feedingParameters) {
-    feedingAngle = feedingParameters.goalAngle();
+    setFeedingAngle(feedingParameters.goalAngle());
     feedingTolerance =
         MathUtil.clamp(
             feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
@@ -248,7 +265,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void warmupFeedRequest(AimingParameters feedingParameters) {
-    feedingAngle = feedingParameters.goalAngle();
+    setFeedingAngle(feedingParameters.goalAngle());
     feedingTolerance =
         MathUtil.clamp(
             feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
@@ -418,8 +435,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       }
     }
 
-    teleopDriveSource.setMaxVelocity(
-        currentMaxLinearRate, Rotation2d.fromRotations(currentMaxAngularRate));
+    currentMaxAngularRateRotation = Rotation2d.fromRotations(currentMaxAngularRate);
+    teleopDriveSource.setMaxVelocity(currentMaxLinearRate, currentMaxAngularRateRotation);
 
     drivePerspectiveSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
     fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
@@ -505,7 +522,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                             drivePerspectiveSnaps
                                 .withVelocityX(speeds.vxMetersPerSecond)
                                 .withVelocityY(speeds.vyMetersPerSecond),
-                            Rotation2d.fromDegrees(scoringAngle))
+                            scoringAngleRotation)
                         .withTargetRateFeedforward(scoringFeedForward));
               }
             }
@@ -515,7 +532,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   fieldCentricSnaps
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
-                      .withTargetDirection(Rotation2d.fromDegrees(scoringAngle))
+                      .withTargetDirection(scoringAngleRotation)
                       .withTargetRateFeedforward(scoringFeedForward));
             }
           }
@@ -545,7 +562,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                             drivePerspectiveSnaps
                                 .withVelocityX(speeds.vxMetersPerSecond)
                                 .withVelocityY(speeds.vyMetersPerSecond),
-                            Rotation2d.fromDegrees(feedingAngle))
+                            feedingAngleRotation)
                         .withTargetRateFeedforward(feedingFeedForward));
               }
             }
@@ -555,7 +572,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   fieldCentricSnaps
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
-                      .withTargetDirection(Rotation2d.fromDegrees(feedingAngle))
+                      .withTargetDirection(feedingAngleRotation)
                       .withTargetRateFeedforward(feedingFeedForward));
             }
           }
