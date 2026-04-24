@@ -12,11 +12,11 @@ public class HopperManagerConfig {
       new CANrangeConfiguration()
           .withFovParams(
               new FovParamsConfigs()
-                  .withFOVRangeX(1.0)
-                  .withFOVRangeY(1.0)
-                  .withFOVCenterY(5.0)
-                  .withFOVCenterX(-5.0))
-          .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.ShortRange100Hz));
+                  .withFOVRangeX(6.75)
+                  .withFOVRangeY(6.75)
+                  .withFOVCenterY(0.0)
+                  .withFOVCenterX(0.0))
+          .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.LongRangeUserFreq));
   public static final DoubleSubscriber HOPPER_COMPACTION_DELAY =
       DogLog.tunable("HopperManager/CompactionDelay", 0.7);
 }
