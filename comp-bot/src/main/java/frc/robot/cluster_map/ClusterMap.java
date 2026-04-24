@@ -85,12 +85,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
   private final LaneSystem laneSystem =
-      new LaneSystem(
-          FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() ? 8.0 : 7.0,
-          10.2,
-          1.5,
-          FieldUtil.FIELD_WIDTH_Y - 1.5,
-          3);
+      new LaneSystem(7.0, 9.86, 1.5, FieldUtil.FIELD_WIDTH_Y - 1.5, 2);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
@@ -217,7 +212,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
           new VisionClusterData(
               new Translation2d(
                   SIMULATED_CLUSTER_X.getAsDouble(), SIMULATED_CLUSTER_Y.getAsDouble()),
-              20,
+              40,
               10));
     }
     if (!hasDoneWarmup) {
