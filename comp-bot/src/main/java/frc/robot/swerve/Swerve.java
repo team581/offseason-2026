@@ -387,10 +387,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
 
-    var currentDriveDirection =
-        MathHelpers.getDriveDirection(driveSource.getRequestedSpeeds())
-            .plus(Rotation2d.fromDegrees(FmsUtil.isRedAlliance() ? 180 : 0));
-
     var requestedSpeeds = driveSource.getRequestedSpeeds();
     driverWantsSotm =
         (timeout(DRIVER_WANTS_SOTM_DELAY.get())
