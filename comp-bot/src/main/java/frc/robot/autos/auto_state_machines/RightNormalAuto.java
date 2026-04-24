@@ -89,11 +89,18 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
               AutoPoint.of(
                       () -> {
                         return Point.ofRed(
-                            new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)));
+                            new Pose2d(
+                                13.25,
+                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                                Rotation2d.fromDegrees(42.8)));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.25,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.fromDegrees(42.8)))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
@@ -141,9 +148,20 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
 
   private final AutoSegment defaultIntakeSecondCycle =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(13.2, 7.225, Rotation2d.fromDegrees(140)))
-                  .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.2,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(160)))
+                  .withLinearConstraints(0.5, 2.0)
+                  .withAngularConstraints(5.0, 10.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withLinearConstraints(2.5, 8.0)
+                  .withAngularConstraints(5.0, 10.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
@@ -211,11 +229,18 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
               AutoPoint.of(
                       () -> {
                         return Point.ofRed(
-                            new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)));
+                            new Pose2d(
+                                13.25,
+                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                                Rotation2d.fromDegrees(42.8)));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.25,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.fromDegrees(42.8)))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
@@ -228,9 +253,20 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
 
   private final AutoSegment intakeThirdCycle =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(13.2, 7.225, Rotation2d.fromDegrees(140)))
-                  .withLinearConstraints(3.0, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.2,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(160)))
+                  .withLinearConstraints(0.5, 2.0)
+                  .withAngularConstraints(5.0, 10.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withLinearConstraints(2.5, 8.0)
+                  .withAngularConstraints(5.0, 10.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
@@ -269,11 +305,18 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
               AutoPoint.of(
                       () -> {
                         return Point.ofRed(
-                            new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)));
+                            new Pose2d(
+                                13.25,
+                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                                Rotation2d.fromDegrees(42.8)));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
-              AutoPoint.ofRed(new Pose2d(13.25, 5.9 + BUMP_OFFSET, Rotation2d.fromDegrees(42.8)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          13.25,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.fromDegrees(42.8)))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
