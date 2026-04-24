@@ -39,8 +39,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private double rightMotorPosition = 0.0;
   private double leftStatorCurrent = 0.0;
   private double rightStatorCurrent = 0.0;
-  private double leftSupplyCurrent = 0.0;
-  private double rightSupplyCurrent = 0.0;
 
   public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -215,8 +213,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
     leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
     rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
-    leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
-    rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
   }
 
   @Override
