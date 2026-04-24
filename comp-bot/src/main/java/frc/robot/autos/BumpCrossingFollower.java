@@ -14,7 +14,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
  * behavior.
  */
 public class BumpCrossingFollower implements PathFollower {
-  private static final double CROSSING_UPHILL_LINEAR_VELOCITY = 3;
+  private static final double CROSSING_START_LINEAR_VELOCITY = 3;
   private static final double CROSSING_DOWNHILL_LINEAR_VELOCITY = 1;
 
   private final PathFollower follower;
@@ -45,9 +45,11 @@ public class BumpCrossingFollower implements PathFollower {
     }
 
     var unsignedXVelocity =
-        state == BumpCrossingState.CROSSING_UPHILL
-            ? CROSSING_UPHILL_LINEAR_VELOCITY
-            : CROSSING_DOWNHILL_LINEAR_VELOCITY;
+        switch (state) {
+          case FLAT_ABOUT_TO_CROSS, CROSSING_UPHILL -> CROSSING_START_LINEAR_VELOCITY;
+          case CROSSING_DOWNHILL -> CROSSING_DOWNHILL_LINEAR_VELOCITY;
+          case FLAT_NOT_CROSSING -> 0;
+        };
 
     var xVelocity = FmsUtil.isRedAlliance() ? unsignedXVelocity : -unsignedXVelocity;
 
