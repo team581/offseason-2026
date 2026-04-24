@@ -13,8 +13,9 @@ import com.team581.vision.limelight.LimelightHelpers.RawFiducial;
 import com.team581.vision.limelight.PoseEstimateValidator;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
@@ -70,6 +71,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private boolean updatedLimelightPos = false;
 
   private PoseEstimate latestEstimate = new PoseEstimate();
+
+  // Reused every loop to avoid allocating a new Matrix/Vector for stddevs.
+  private final Vector<N3> reusableStdDevs = new Vector<>(N3.instance);
 
   private static final DoubleSubscriber ROBOT_VELOCITY_STD_DEV_MULTIPLIER =
       DogLog.tunable("Vision/RobotVelocityStdDevMultiplier", 0.0);
@@ -142,12 +146,14 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       }
     }
 
-    var devs = VecBuilder.fill(xyDev, xyDev, thetaDev);
+    reusableStdDevs.set(0, 0, xyDev);
+    reusableStdDevs.set(1, 0, xyDev);
+    reusableStdDevs.set(2, 0, thetaDev);
 
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
     DogLog.log("Vision/" + name + "/Tags/MTTimestamp", mTEstimateTimestamp);
     DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
-    return tagResult.update(mTPose, mTEstimateTimestamp, devs);
+    return tagResult.update(mTPose, mTEstimateTimestamp, reusableStdDevs);
   }
 
   public OptionalDouble getLimelightRotation() {
