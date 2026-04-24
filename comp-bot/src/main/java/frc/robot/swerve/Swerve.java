@@ -609,7 +609,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/FeedingAngle", feedingAngle);
     DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
     DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
-    DogLog.log("Swerve/SwerveTargetDirection", drivePerspectiveSnaps.TargetDirection.getDegrees());
+    if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+      DogLog.log(
+          "Swerve/SwerveTargetDirection", drivePerspectiveSnaps.TargetDirection.getDegrees());
+    }
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
