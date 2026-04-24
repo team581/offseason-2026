@@ -26,6 +26,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
       new Debouncer(FLAT_FALLBACK_DEBOUNCE_SECONDS, DebounceType.kRising);
   private final DoubleSupplier pitchSupplier;
   private final DoubleSupplier rollSupplier;
+  private final DoubleSupplier headingSupplier;
   private final Consumer<Translation2d> poseResetConsumer;
   private Rotation2d crossingDirection = Rotation2d.kZero;
   private double directionalTilt = 0.0;
@@ -36,23 +37,49 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   public BumpCrossingTracker(
       DoubleSupplier pitchSupplier,
       DoubleSupplier rollSupplier,
+      DoubleSupplier headingSupplier,
       Consumer<Translation2d> poseResetConsumer) {
     super(BumpCrossingState.NOT_ON_BUMP);
     this.poseResetConsumer = poseResetConsumer;
     this.pitchSupplier = pitchSupplier;
     this.rollSupplier = rollSupplier;
+    this.headingSupplier = headingSupplier;
+  }
+
+  /**
+   * Calculates the signed tilt magnitude along the crossing direction.
+   *
+   * <p>Pitch and roll are robot-frame, while crossing direction is field-frame. The robot's heading
+   * is used to rotate the tilt gradient from robot frame into field frame. The magnitude is the
+   * full tilt (hypot of pitch and roll), signed positive when tilted up toward the crossing
+   * direction and negative when tilted away.
+   */
+  public static double calculateDirectionalTilt(
+      double pitchDegrees,
+      double rollDegrees,
+      double headingDegrees,
+      Rotation2d crossingDirection) {
+    var heading = Math.toRadians(headingDegrees);
+    // Rotate the robot-frame tilt gradient (pitch, roll) into field frame by the robot's heading
+    var tiltXField = pitchDegrees * Math.cos(heading) - rollDegrees * Math.sin(heading);
+    var tiltYField = pitchDegrees * Math.sin(heading) + rollDegrees * Math.cos(heading);
+    // Project the field-frame tilt onto the hardcoded crossing direction
+    var projection =
+        (tiltXField * Math.cos(crossingDirection.getRadians()))
+            + (tiltYField * Math.sin(crossingDirection.getRadians()));
+    return Math.signum(projection) * Math.hypot(pitchDegrees, rollDegrees);
   }
 
   @Override
   protected void collectInputs() {
     // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
     // Positive tilt should be tilted up toward the crossing direction
-    var pitch = pitchSupplier.getAsDouble();
-    var roll = rollSupplier.getAsDouble();
-    var projection =
-        (pitch * Math.cos(crossingDirection.getRadians()))
-            + (roll * Math.sin(crossingDirection.getRadians()));
-    directionalTilt = Math.signum(projection) * Math.hypot(pitch, roll);
+    directionalTilt =
+        calculateDirectionalTilt(
+            pitchSupplier.getAsDouble(),
+            rollSupplier.getAsDouble(),
+            headingSupplier.getAsDouble(),
+            crossingDirection);
     isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
     isFlatFallbackDebounced =
         flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
