@@ -358,13 +358,13 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   @Override
   protected void collectInputs() {
     super.collectInputs();
-    if (getState() == IntegratedAutoState.INTAKE_FIRST_CYCLE
+    if (!collisionEverDetected
+        && getState() == IntegratedAutoState.INTAKE_FIRST_CYCLE
         && DriverStation.isEnabled()
         && robotManager.localization.imu.collisionDetected()) {
       collisionEverDetected = true;
+      DogLog.log("RightIntegratedAuto/CollisionDetected", collisionEverDetected);
     }
-
-    DogLog.log("RightIntegratedAuto/CollisionDetected", collisionEverDetected);
   }
 
   @Override
@@ -493,8 +493,6 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
     if (getState() != IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallIndex = trailblazer.getCurrentPointIndex();
     }
-    DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
-    DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
 
     switch (newState) {
       case STUCK_ON_BALL_RECOVERY -> {
@@ -630,6 +628,8 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   protected void beforeTransition(IntegratedAutoState oldState, IntegratedAutoState newState) {
     if (newState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallState = oldState;
+      DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
+      DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
     }
 
     if (oldState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
