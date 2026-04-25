@@ -2,7 +2,7 @@ package frc.robot.robot_manager.hopper_manager;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.CANrange;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
@@ -82,7 +82,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     canRangeUpdateTimer.start();
 
     hopperDistanceSignal = hopperCANRange.getDistance(false);
-    GlobalSignals.register(hopperDistanceSignal);
+    Signals.ALL.addSignals(hopperDistanceSignal);
   }
 
   private HopperBallPosition getShotPosition() {

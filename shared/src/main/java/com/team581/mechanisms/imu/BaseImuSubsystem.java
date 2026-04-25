@@ -7,7 +7,7 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.team581.math.MathHelpers;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -52,7 +52,7 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     rollSignal = pigeon.getRoll(false);
     accelerationXSignal = pigeon.getAccelerationX(false);
     accelerationYSignal = pigeon.getAccelerationY(false);
-    GlobalSignals.register(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
+    Signals.ALL.addSignals(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
   }
 
   public double getPitch() {

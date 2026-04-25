@@ -7,7 +7,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.mechanisms.PowerManaged;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -61,7 +61,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     positionSignal = motor.getPosition(false);
     statorCurrentSignal = motor.getStatorCurrent(false);
     motorVoltageSignal = motor.getMotorVoltage(false);
-    GlobalSignals.register(positionSignal, statorCurrentSignal, motorVoltageSignal);
+    Signals.ALL.addSignals(positionSignal, statorCurrentSignal, motorVoltageSignal);
   }
 
   public void scoreRequest(double distance) {

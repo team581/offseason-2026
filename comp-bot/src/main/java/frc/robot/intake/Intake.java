@@ -5,7 +5,7 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Current;
@@ -30,7 +30,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    GlobalSignals.register(leftSupplyCurrentSignal, rightSupplyCurrentSignal);
+    Signals.ALL.addSignals(leftSupplyCurrentSignal, rightSupplyCurrentSignal);
   }
 
   public void ejectRequest() {

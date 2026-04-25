@@ -7,7 +7,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.mechanisms.PowerManaged;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -143,7 +143,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     bottomRightSupplyCurrentSignal = bottomRightMotor.getSupplyCurrent(false);
     topRightTorqueCurrentSignal = topRightMotor.getTorqueCurrent(false);
 
-    GlobalSignals.register(
+    Signals.ALL.addSignals(
         topLeftVelocitySignal,
         topRightVelocitySignal,
         bottomLeftVelocitySignal,

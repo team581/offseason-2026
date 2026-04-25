@@ -6,7 +6,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -38,7 +38,7 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     bottomVelocitySignal = bottomMotor.getVelocity(false);
     topStatorCurrentSignal = topMotor.getStatorCurrent(false);
     bottomStatorCurrentSignal = bottomMotor.getStatorCurrent(false);
-    GlobalSignals.register(
+    Signals.ALL.addSignals(
         topVelocitySignal, bottomVelocitySignal, topStatorCurrentSignal, bottomStatorCurrentSignal);
   }
 

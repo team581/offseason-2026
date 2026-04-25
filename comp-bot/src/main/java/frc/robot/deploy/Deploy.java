@@ -9,7 +9,7 @@ import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
-import com.team581.signals.GlobalSignals;
+import com.team581.signals.Signals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -75,7 +75,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    GlobalSignals.register(
+    Signals.ALL.addSignals(
         leftPositionSignal,
         rightPositionSignal,
         differentialAveragePositionSignal,
