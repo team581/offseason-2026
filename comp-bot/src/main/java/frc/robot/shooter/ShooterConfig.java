@@ -53,7 +53,7 @@ public class ShooterConfig {
           Map.entry(4.92, 1900.0),
           Map.entry(3.46, 1610.0),
           Map.entry(2.79, 1560.0),
-          Map.entry(1.42, 1400.0));
+          Map.entry(1.42, 1350.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
@@ -108,9 +108,9 @@ public class ShooterConfig {
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 25.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 20.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
-      DogLog.tunable("Shooter/LowHopperInitialFF", 20.0);
+      DogLog.tunable("Shooter/LowHopperInitialFF", 15.0);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
       DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
