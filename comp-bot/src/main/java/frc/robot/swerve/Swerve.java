@@ -603,7 +603,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         var actual = current[i];
         var target = targets[i];
 
-        if (MathUtil.isNear(actual.angle.getDegrees(), target.angle.getDegrees(), 5, -180, 180)) {
+        if (MathUtil.isNear(actual.angle.getDegrees(), target.angle.getDegrees(), 10, -180, 180)) {
           // it's within tolerance
         } else {
           isMisaligned = true;
