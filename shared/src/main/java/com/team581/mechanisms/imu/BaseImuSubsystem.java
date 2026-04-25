@@ -104,11 +104,15 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
 
   @Override
   public void whileInState(ImuState currentState) {
-    DogLog.log("Imu/RobotHeading", robotHeading, Degrees);
-    DogLog.log("Imu/AngularVelocity", robotAngularVelocity, DegreesPerSecond);
-    DogLog.log("Imu/Pitch", getPitch(), Degrees);
-    DogLog.log("Imu/Roll", getRoll(), Degrees);
-    DogLog.log("Imu/IsFlatDebounced", isFlatDebounced);
+    DogLog.log("Imu/Main/RobotHeading", robotHeading, Degrees);
+    DogLog.log("Imu/Main/AngularVelocity", robotAngularVelocity, DegreesPerSecond);
+    DogLog.log("Imu/Main/Pitch/Raw", rawPitch, Degrees);
+    DogLog.log("Imu/Main/Pitch/Offset", pitchOffset, Degrees);
+    DogLog.log("Imu/Main/Pitch", getPitch(), Degrees);
+    DogLog.log("Imu/Main/Roll", getRoll(), Degrees);
+    DogLog.log("Imu/Main/Roll/Raw", rawRoll, Degrees);
+    DogLog.log("Imu/Main/Roll/Offset", rollOffset, Degrees);
+    DogLog.log("Imu/Main/IsFlatDebounced", isFlatDebounced);
   }
 
   @Override

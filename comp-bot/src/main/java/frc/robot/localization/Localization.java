@@ -89,7 +89,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       DogLog.log(
-          "Localization/StuckOnBall/RobotTiltPose",
+          "Imu/RobotPoseWithTilt",
           new Pose3d(
               new Translation3d(robotPose.getX(), robotPose.getY(), 0.0),
               new Rotation3d(
@@ -97,13 +97,13 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
                   Math.toRadians(imu.getPitch()),
                   robotPose.getRotation().getRadians())));
       DogLog.log(
-          "Localization/StuckOnBall/RecoveryPose",
+          "Imu/BeachedRecovery/RecoveryPose",
           StuckOnBallRecovery.getRecoveryPose(
               robotPose,
               Rotation2d.fromDegrees(imu.getPitch()),
               Rotation2d.fromDegrees(imu.getRoll())));
       DogLog.log(
-          "Localization/StuckOnBall",
+          "Imu/BeachedRecovery/StuckOnBall",
           StuckOnBallRecovery.stuckOnBall(imu.getPitch(), imu.getRoll()));
     }
   }

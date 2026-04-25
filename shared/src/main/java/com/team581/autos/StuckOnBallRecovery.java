@@ -17,7 +17,7 @@ public class StuckOnBallRecovery {
   private static final double STUCK_ANGLE_THRESHOLD = 5.0;
 
   private static final DoubleSubscriber RECOVERY_POINT_DISTANCE =
-      DogLog.tunable("StuckOnBallRecovery/RecoveryPointDistance", 1.5);
+      DogLog.tunable("Imu/BeachedRecovery/RecoveryPointDistance", 1.5);
 
   // For logging visualization only
   public static Pose2d getRecoveryPose(Pose2d robotPose, Rotation2d pitch, Rotation2d roll) {
