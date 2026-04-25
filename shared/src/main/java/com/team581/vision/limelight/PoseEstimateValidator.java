@@ -7,7 +7,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 public class PoseEstimateValidator {
   // Degrees per second
   public static final DoubleSubscriber MAX_ANGULAR_VELOCITY =
-      DogLog.tunable("Limelight/MaxTagAngularRate", 100.0);
+      DogLog.tunable("Limelight/MaxTagAngularRate", 360.0);
 
   private final String name;
 
