@@ -144,7 +144,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     ingestTagResult(presentList);
 
     robotPose = swerve.getDriveState().Pose;
-
+    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
     trustFactor.update(robotPose, Swerve.TRANSLATION_STD_DEV, imu.collisionDetected());
   }
 }
