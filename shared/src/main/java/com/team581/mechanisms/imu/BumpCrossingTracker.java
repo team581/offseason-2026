@@ -68,8 +68,8 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     DogLog.log("Imu/BumpCrossing/TiltXField", tiltXField);
     DogLog.log("Imu/BumpCrossing/TiltYField", tiltYField);
     // Project the field-frame tilt onto the crossing direction
-    var tiltXProjection = (tiltYField * Math.cos(crossingDirection.getRadians()));
-    var tiltYProjection = (tiltXField * Math.sin(crossingDirection.getRadians()));
+    var tiltXProjection = (tiltXField * Math.cos(crossingDirection.getRadians()));
+    var tiltYProjection = (tiltYField * Math.sin(crossingDirection.getRadians()));
     DogLog.log("Imu/BumpCrossing/TiltXProjection", tiltXProjection);
     DogLog.log("Imu/BumpCrossing/TiltYProjection", tiltYProjection);
     return tiltXProjection + tiltYProjection;
