@@ -108,6 +108,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   public OptionalTagResult getTagResult() {
+    return tagResult;
+  }
+
+  private OptionalTagResult computeTagResult() {
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
       return tagResult.empty();
@@ -168,7 +172,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   @Override
   protected void collectInputs() {
-    tagResult = getTagResult();
+    tagResult = computeTagResult();
     if (tagResult.isPresent()) {
       lastGoodTagTimestamp = tagResult.orElseThrow().timestamp();
     }
@@ -226,6 +230,8 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       case OFF -> {}
     }
 
+    DogLog.log("Vision/" + name + "/Health", cameraHealth);
+
     LimelightHelpers.SetIMUMode(limelightTableName, 0);
   }
 
@@ -271,7 +277,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   public CameraHealth getCameraHealth() {
-    DogLog.log("Vision/" + name + "/Health", cameraHealth);
     return cameraHealth;
   }
 
