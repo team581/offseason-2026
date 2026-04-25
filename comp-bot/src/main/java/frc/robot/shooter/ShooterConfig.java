@@ -43,7 +43,7 @@ public class ShooterConfig {
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/FeederCurrentToShooterFeedForward",
           Map.entry(0.0, 0.0),
-          Map.entry(50.0, 40.0),
+          Map.entry(50.0, 22.0),
           Map.entry(20.0, 0.0),
           Map.entry(30.0, 15.0));
 
