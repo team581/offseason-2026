@@ -409,8 +409,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> timeout(5);
             default -> false;
           };
+    } else if (DSOptions.USE_TOWER_SENSOR.getAsBoolean()) {
+      towerSensorRaw = (RobotKind.IS_COMP_BOT != towerSensor.get());
     } else {
-      towerSensorRaw = RobotKind.IS_COMP_BOT != towerSensor.get();
+      towerSensorRaw = true;
     }
     towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
 
