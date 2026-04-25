@@ -30,6 +30,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
     START_SHOOT_RQ,
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
+    START_INTAKE_2,
+    START_INTAKE_3,
     CHECK_CLUSTER_MAP_TRENCH,
     CANCEL_CLUSTER_MAP_TRENCH,
     MAKE_CLUSTER_MAP_DECISION,
@@ -165,6 +167,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withMarker(Markers.START_INTAKE_2)
                   .withLinearConstraints(3.0, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
@@ -270,6 +273,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                       new Pose2d(
                           12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
+                  .withMarker(Markers.START_INTAKE_3)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -544,7 +548,10 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         trailblazer.setActiveSegment(defaultIntakeSecondCycle);
-        robotManager.intakeAutoRequest();
+        if (trailblazer.passedMarker(Markers.START_INTAKE_2)) {
+
+          robotManager.intakeAutoRequest();
+        }
       }
 
       case INTAKE_SECOND_CYCLE_FAR -> {
@@ -588,7 +595,10 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case SHOOT_2 -> robotManager.prepareScoreRequest();
       case INTAKE_THIRD_CYCLE -> {
         trailblazer.setActiveSegment(intakeThirdCycle);
-        robotManager.intakeAutoRequest();
+        if (trailblazer.passedMarker(Markers.START_INTAKE_3)) {
+
+          robotManager.intakeAutoRequest();
+        }
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
@@ -654,6 +664,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
         robotManager.idleRequest();
+        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case INTAKE_SECOND_CYCLE_FAR -> {
         storedStuckOnBallAutoSegment = intakeSecondCycleFar;
@@ -666,6 +677,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_THIRD_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeThirdCycle;
         robotManager.idleRequest();
+        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
         storedStuckOnBallAutoSegment = crossBumpToShootTwo;

@@ -103,6 +103,15 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  public void safeKickerStowRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
+        // Do nothing, we aren't homed
+      }
+      default -> setStateFromRequest(DeployState.SAFE_KICKER_STOW);
+    }
+  }
+
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
   }
