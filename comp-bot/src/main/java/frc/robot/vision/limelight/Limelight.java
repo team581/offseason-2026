@@ -164,6 +164,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     reusableStdDevs.set(1, 0, xyDev);
     reusableStdDevs.set(2, 0, thetaDev);
 
+    DogLog.log(
+        "Vision/" + name + "/Tags/TimestampDifference",
+        Timer.getFPGATimestamp() - mTEstimateTimestamp);
+
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
     DogLog.log("Vision/" + name + "/Tags/MTTimestamp", mTEstimateTimestamp);
     return tagResult.update(mTPose, mTEstimateTimestamp, reusableStdDevs);
