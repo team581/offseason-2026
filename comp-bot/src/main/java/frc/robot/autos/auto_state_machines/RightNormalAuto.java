@@ -45,7 +45,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = Units.inchesToMeters(-5);
+  private static final double BUMP_OFFSET = Units.inchesToMeters(-3);
 
   private boolean collisionEverDetected = false;
 
@@ -54,11 +54,11 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-130)))))
+                              Point.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-120)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
@@ -68,10 +68,10 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.200, 4.31, Rotation2d.fromDegrees(-30.0)))))
+                              Point.ofRed(new Pose2d(8.200, 4.5, Rotation2d.fromDegrees(-30.0)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 4.3, Rotation2d.fromDegrees(32.0)))
+              AutoPoint.ofRed(new Pose2d(9.31, 4.5, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(10.2, 5.4 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),

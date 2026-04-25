@@ -45,7 +45,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = Units.inchesToMeters(-5);
+  private static final double BUMP_OFFSET = Units.inchesToMeters(-3);
 
   private boolean collisionEverDetected = false;
 
@@ -54,11 +54,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))))
+                              Point.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(120)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
@@ -68,10 +68,10 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))))
+                              Point.ofRed(new Pose2d(8.200, 3.57, Rotation2d.fromDegrees(30)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(new Pose2d(9.31, 3.57, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
