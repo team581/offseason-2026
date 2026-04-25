@@ -80,7 +80,6 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   protected void collectInputs() {
     DogLog.log("Feeder/Top/VelocityRPM", topVelocitySignal.getValueAsDouble() * 60.0);
     DogLog.log("Feeder/Bottom/VelocityRPM", bottomVelocitySignal.getValueAsDouble() * 60.0);
-    DogLog.log("Feeder/Voltage", getState().getVoltage());
 
     averageCurrent =
         MathHelpers.average(
