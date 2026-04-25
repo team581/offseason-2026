@@ -20,8 +20,10 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private static final double FLAT_FALLBACK_DEBOUNCE_SECONDS = 0.75;
   private static final DoubleSubscriber FLAT_THRESHOLD =
       DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
-  private static final DoubleSubscriber CROSSING_THRESHOLD =
-      DogLog.tunable("BumpCrossing/CrossingThresholdDegrees", 5.0);
+  private static final DoubleSubscriber UPHILL_THRESHOLD =
+      DogLog.tunable("BumpCrossing/UphillThresholdDegrees", 5.0);
+  private static final DoubleSubscriber DOWNHILL_THRESHOLD =
+      DogLog.tunable("BumpCrossing/DownhillThresholdDegrees", -2.0);
 
   private final Debouncer flatDebouncer =
       new Debouncer(FLAT_DEBOUNCE_SECONDS, DebounceType.kRising);
@@ -107,13 +109,13 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
 
     return switch (currentState) {
       case FLAT_ABOUT_TO_CROSS -> {
-        if (directionalTilt > CROSSING_THRESHOLD.get()) {
+        if (directionalTilt > UPHILL_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_UPHILL;
         }
         yield currentState;
       }
       case CROSSING_UPHILL -> {
-        if (directionalTilt < -CROSSING_THRESHOLD.get()) {
+        if (directionalTilt < DOWNHILL_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_DOWNHILL;
         }
         yield currentState;
