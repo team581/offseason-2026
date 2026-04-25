@@ -43,7 +43,8 @@ public class DeployConfig {
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Brake)
+                  .withNeutralMode(
+                      RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))
@@ -65,7 +66,8 @@ public class DeployConfig {
                   .withSensorToMechanismRatio((40.0 / 8.0) * (1 / (Math.PI * (2 * 0.5)))))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(NeutralModeValue.Brake)
+                  .withNeutralMode(
+                      RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))

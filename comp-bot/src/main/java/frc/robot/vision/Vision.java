@@ -92,6 +92,10 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   public void setEstimatedPoseAngle(double robotHeading) {
     this.robotHeading = MathHelpers.angleModulus(robotHeading);
+    // Send IMU data to all limelights
+    shooterLimelight.sendImuData(this.robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    leftLimelight.sendImuData(this.robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    rightLimelight.sendImuData(this.robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
   }
 
   public OptionalTagResult getShooterLimelightTagResult() {
@@ -154,10 +158,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
 
   @Override
   public void whileInState(VisionState currentState) {
-    // Send IMU data to all limelights
-    shooterLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
-    leftLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
-    rightLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
     DogLog.log("Vision/SeeingTag", seeingTag);
   }
 }
