@@ -14,6 +14,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -21,6 +22,7 @@ import java.util.function.Supplier;
 
 public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   private static final double IS_FLAT_THRESHOLD = 5.0;
+  private static final int OFFSET_FILTER_TAPS = 25;
 
   private Supplier<SwerveDriveState> driveStateSupplier;
   private final Debouncer isFlatDebouncer = new Debouncer(0.5, DebounceType.kRising);
@@ -37,6 +39,8 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   protected double robotAngularVelocity = 0;
   private double rawPitch = 0;
   private double rawRoll = 0;
+  private final LinearFilter pitchOffsetFilter = LinearFilter.movingAverage(OFFSET_FILTER_TAPS);
+  private final LinearFilter rollOffsetFilter = LinearFilter.movingAverage(OFFSET_FILTER_TAPS);
   private double pitchOffset = 0;
   private double rollOffset = 0;
 
@@ -74,11 +78,6 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
 
   public boolean isFlatDebounced() {
     return isFlatDebounced;
-  }
-
-  public void resetPitchAndRoll() {
-    pitchOffset = rawPitch;
-    rollOffset = rawRoll;
   }
 
   /**
@@ -131,5 +130,13 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
         isFlatDebouncer.calculate(
             MathUtil.isNear(getPitch(), 0, IS_FLAT_THRESHOLD, -90, 90)
                 && MathUtil.isNear(getRoll(), 0, IS_FLAT_THRESHOLD, -180, 180));
+
+    // Only feed the offset filter when the robot is flat. During (and immediately after) a bump
+    // crossing the IMU is noisy, so we freeze the offset until things settle, then slowly absorb
+    // the new readings as the moving average refills.
+    if (isFlatDebounced) {
+      pitchOffset = pitchOffsetFilter.calculate(rawPitch);
+      rollOffset = rollOffsetFilter.calculate(rawRoll);
+    }
   }
 }
