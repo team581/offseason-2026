@@ -18,12 +18,12 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_state.IntegratedAutoState;
+import frc.robot.autos.auto_state_machines.auto_state.NormalAutoState;
 import frc.robot.cluster_map.Lane;
 import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
-public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
+public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   public enum Markers {
     PRIORITIZE_INTAKE,
@@ -336,7 +336,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getPitch()),
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
 
-  private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_FIRST_CYCLE;
+  private NormalAutoState storedStuckOnBallState = NormalAutoState.INTAKE_FIRST_CYCLE;
   private AutoSegment storedStuckOnBallAutoSegment = intakeFirstCycle;
   private int storedStuckOnBallIndex = 0;
 
@@ -345,7 +345,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   private boolean secondStuckOnBall = false;
 
   public LeftNormalAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(IntegratedAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
+    super(NormalAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
 
     this.bumpCrossingTracker = robotManager.localization.imu.bumpCrossingTracker;
   }
@@ -359,16 +359,16 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   protected void collectInputs() {
     super.collectInputs();
     if (!collisionEverDetected
-        && getState() == IntegratedAutoState.INTAKE_FIRST_CYCLE
+        && getState() == NormalAutoState.INTAKE_FIRST_CYCLE
         && DriverStation.isEnabled()
         && robotManager.localization.imu.collisionDetected()) {
       collisionEverDetected = true;
-      DogLog.log("LeftIntegratedAuto/CollisionDetected", collisionEverDetected);
+      DogLog.log("LeftNormalAuto/CollisionDetected", collisionEverDetected);
     }
   }
 
   @Override
-  protected IntegratedAutoState getNextState(IntegratedAutoState currentState) {
+  protected NormalAutoState getNextState(NormalAutoState currentState) {
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
@@ -379,7 +379,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
             INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
-            return IntegratedAutoState.STUCK_ON_BALL_RECOVERY;
+            return NormalAutoState.STUCK_ON_BALL_RECOVERY;
           }
         }
         default -> {}
@@ -398,7 +398,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_FIRST_CYCLE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           robotManager.powerManager.idleRequest();
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_1;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_1;
         } else {
           yield currentState;
         }
@@ -406,33 +406,33 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case CROSS_BUMP_TO_SHOOT_1 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield IntegratedAutoState.SHOOT_1;
+          yield NormalAutoState.SHOOT_1;
         } else {
           yield currentState;
         }
       }
       case SHOOT_1 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
-          yield IntegratedAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
+          yield NormalAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
         }
       }
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)) {
 
           Lane bestLane = robotManager.clusterMap.getBestClusterLane();
           yield switch (bestLane) {
-            case LANE_1 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_FAR;
+            case LANE_1 -> NormalAutoState.INTAKE_SECOND_CYCLE_FAR;
             default -> currentState;
           };
         } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH)) {
           if (robotManager.clusterMap.hasHighValueTrenchCluster()) {
-            yield IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
+            yield NormalAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
           }
         }
         yield currentState;
@@ -440,7 +440,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_SECOND_CYCLE_FAR, INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else {
           yield currentState;
         }
@@ -449,14 +449,14 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case CROSS_BUMP_TO_SHOOT_2 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield IntegratedAutoState.SHOOT_2;
+          yield NormalAutoState.SHOOT_2;
         } else {
           yield currentState;
         }
       }
       case SHOOT_2 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
-          yield IntegratedAutoState.INTAKE_THIRD_CYCLE;
+          yield NormalAutoState.INTAKE_THIRD_CYCLE;
         } else {
           yield currentState;
         }
@@ -464,7 +464,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_THIRD_CYCLE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_3;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_3;
         } else {
           yield currentState;
         }
@@ -472,14 +472,14 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case CROSS_BUMP_TO_SHOOT_3 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield IntegratedAutoState.SHOOT_3;
+          yield NormalAutoState.SHOOT_3;
         } else {
           yield currentState;
         }
       }
       case DONE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
-          yield IntegratedAutoState.DONE;
+          yield NormalAutoState.DONE;
         } else {
           yield currentState;
         }
@@ -489,8 +489,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   }
 
   @Override
-  protected void whileInState(IntegratedAutoState newState) {
-    if (getState() != IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+  protected void whileInState(NormalAutoState newState) {
+    if (getState() != NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallIndex = trailblazer.getCurrentPointIndex();
     }
 
@@ -625,20 +625,20 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   }
 
   @Override
-  protected void beforeTransition(IntegratedAutoState oldState, IntegratedAutoState newState) {
-    if (newState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+  protected void beforeTransition(NormalAutoState oldState, NormalAutoState newState) {
+    if (newState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallState = oldState;
       DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
       DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
     }
 
-    if (oldState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+    if (oldState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       trailblazer.setActiveSegment(storedStuckOnBallAutoSegment, storedStuckOnBallIndex);
     }
   }
 
   @Override
-  protected void afterTransition(IntegratedAutoState newState) {
+  protected void afterTransition(NormalAutoState newState) {
     switch (newState) {
       case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 -> {
         bumpCrossingTracker.bumpCrossRequest(
