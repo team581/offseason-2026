@@ -6,7 +6,9 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.function.Consumer;
@@ -28,6 +30,8 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private final DoubleSupplier rollSupplier;
   private final DoubleSupplier headingSupplier;
   private final Consumer<Translation2d> poseResetConsumer;
+  private Rotation3d robotRelativeImuState = new Rotation3d(0.0, 0.0, 0.0);
+  private Rotation3d fieldRelativeImuState = new Rotation3d(0.0, 0.0, 0.0);
   private Rotation2d crossingDirection = Rotation2d.kZero;
   private double directionalTilt = 0.0;
   private boolean isFlat = true;
@@ -75,16 +79,23 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     return tiltXProjection + tiltYProjection;
   }
 
+  public double calculateDirectionalTilt(
+      Rotation3d robotRelativeImuState, Rotation2d crossingDirection) {
+    fieldRelativeImuState =
+        robotRelativeImuState.rotateBy(new Rotation3d(0, 0, -1 * robotRelativeImuState.getZ()));
+    return Math.toDegrees(fieldRelativeImuState.getY()) * Math.cos(crossingDirection.getRadians());
+  }
+
   @Override
   protected void collectInputs() {
+    robotRelativeImuState =
+        new Rotation3d(
+            Math.toRadians(rollSupplier.getAsDouble()),
+            Math.toRadians(pitchSupplier.getAsDouble()),
+            Math.toRadians(headingSupplier.getAsDouble()));
     // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
     // Positive tilt should be tilted up toward the crossing direction
-    directionalTilt =
-        calculateDirectionalTilt(
-            pitchSupplier.getAsDouble(),
-            rollSupplier.getAsDouble(),
-            headingSupplier.getAsDouble(),
-            crossingDirection);
+    directionalTilt = calculateDirectionalTilt(robotRelativeImuState, crossingDirection);
     isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
     isFlatFallbackDebounced =
         flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
@@ -142,6 +153,8 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   public void log() {
     DogLog.log("Imu/BumpCrossing/State", getState());
     DogLog.log("Imu/BumpCrossing/CrossingDirection", crossingDirection);
+    DogLog.log(
+        "Imu/BumpCrossing/RobotRelativeImuState", new Pose3d(0.0, 0.0, 0.0, robotRelativeImuState));
     DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
     DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
     DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);
