@@ -82,7 +82,7 @@ public class PracticeTunerConstants {
               new MountPoseConfigs()
                   .withMountPosePitch(0)
                   .withMountPoseRoll(0)
-                  .withMountPoseYaw(90));
+                  .withMountPoseYaw(-90));
 
   // CAN bus that the devices are located on;
   // All swerve devices must share the same CAN bus
