@@ -71,6 +71,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private boolean updatedLimelightPos = false;
 
   private PoseEstimate latestEstimate = new PoseEstimate();
+  // Tracks whether latestEstimate was validated this loop, so seeingHubTag()
+  // can reuse the result without re-running the validator (which would mutate
+  // its duplicate-detection state).
+  private boolean latestEstimateTrusted = false;
 
   // Reused every loop to avoid allocating a new Matrix/Vector for stddevs.
   private final Vector<N3> reusableStdDevs = new Vector<>(N3.instance);
@@ -112,6 +116,8 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   private OptionalTagResult computeTagResult() {
+    latestEstimateTrusted = false;
+
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
       return tagResult.empty();
@@ -121,6 +127,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     latestEstimate = mT1Estimate;
 
     if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity)) {
+      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
       return tagResult.empty();
     }
 
@@ -138,6 +145,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
       if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity)) {
+        DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
         return tagResult.empty();
       }
 
@@ -149,6 +157,8 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         thetaDev = 0.03 * Math.pow(distance, 1.2);
       }
     }
+
+    latestEstimateTrusted = true;
 
     reusableStdDevs.set(0, 0, xyDev);
     reusableStdDevs.set(1, 0, xyDev);
@@ -288,7 +298,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   public boolean seeingHubTag() {
-    if (!poseEstimateValidator.shouldTrust(latestEstimate, angularVelocity)) {
+    if (!latestEstimateTrusted) {
       return false;
     }
 
