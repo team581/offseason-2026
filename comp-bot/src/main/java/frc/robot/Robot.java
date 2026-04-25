@@ -139,9 +139,6 @@ public class Robot extends Base581Robot {
         var docsDir = Path.of(System.getProperty("user.dir")).resolve("../docs");
         Files.writeString(
             docsDir.resolve("feeding_obstructions.svg"), FieldUtil.FEEDING_OBSTRUCTIONS.toSvg());
-        Files.writeString(
-            docsDir.resolve("hub_scoring_obstructions.svg"),
-            FieldUtil.HUB_SCORING_OBSTRUCTIONS.toSvg());
       } catch (IOException e) {
         throw new RuntimeException("Failed to write field obstacles SVG", e);
       }

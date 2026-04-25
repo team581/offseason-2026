@@ -57,7 +57,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isMoving = false;
   private boolean trenchOverride = false;
 
-  private boolean isInSafeScoringLocation = false;
   private boolean isInAllianceZone = false;
   private boolean isInSafeFeedingLocation = true;
 
@@ -116,7 +115,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         if (DriverStation.isEnabled()
             && hopperManager.isFull()
             && isInAllianceZone
-            && isInSafeScoringLocation
             && !hopperManager.isIntaking()
             && FeatureFlags.SMART_WARMUP.getAsBoolean()
             && swerve.isNear(scoringParameters.goalAngle(), 90)) {
@@ -129,7 +127,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && DriverStation.isTeleop()
             && hopperManager.isFull()
             && isInAllianceZone
-            && isInSafeScoringLocation
             && !hopperManager.isIntaking()
             && FeatureFlags.SMART_WARMUP.getAsBoolean()
             && swerve.isNear(scoringParameters.goalAngle(), 90)) {
@@ -178,7 +175,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && localization.isTrustworthy()
             && localization.imu.isFlatDebounced()
             && hubActivity.getTOFBasedHubActive()
-            && isInSafeScoringLocation
             && !nearTrench) {
           yield RobotState.SCORE;
         }
@@ -203,7 +199,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
                     && localization.imu.isFlatDebounced()
-                    && isInSafeScoringLocation
                     && hubActivity.getTOFBasedHubActive()))
             && !nearTrench) {
           yield currentState;
@@ -672,16 +667,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             ? hubActivity.getTOFBasedHubActive()
             : FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation());
 
-    isInSafeScoringLocation =
-        !health.isLocalizationHealthy()
-            || !FieldUtil.isScorePathObstructed(robotPose.getTranslation());
     isInSafeFeedingLocation =
         !health.isLocalizationHealthy()
             || !FieldUtil.isFeedPathObstructed(
                 robotPose.getTranslation(), feedLocation.getTranslation());
 
     shooter.updateHopperState(hopperManager.feeder.getAverageCurrent(), hopperManager.isFull());
-    DogLog.log("RobotManager/Scoring/IsInSafeScoringLocation", isInSafeScoringLocation);
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
   }
 
@@ -700,7 +691,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/HubActive", hubActivity.getTOFBasedHubActive());
-    DogLog.log("RobotManager/Scoring/ScoreTransition/IsInScoringZone", isInSafeScoringLocation);
     DogLog.log("RobotManager/Scoring/ScoreTransition/NotNearTrench", !nearTrench);
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/SwerveSafeSpeed", !swerve.isMovingBeyondSafeSpeed());
