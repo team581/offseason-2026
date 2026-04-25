@@ -61,7 +61,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     positionSignal = motor.getPosition(false);
     statorCurrentSignal = motor.getStatorCurrent(false);
     motorVoltageSignal = motor.getMotorVoltage(false);
-    Signals.ALL.addSignals(positionSignal, statorCurrentSignal, motorVoltageSignal);
+    Signals.forDevice(motor).addSignals(positionSignal, statorCurrentSignal, motorVoltageSignal);
   }
 
   public void scoreRequest(double distance) {

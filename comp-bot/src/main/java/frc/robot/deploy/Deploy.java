@@ -75,14 +75,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    Signals.ALL.addSignals(
-        leftPositionSignal,
-        rightPositionSignal,
-        differentialAveragePositionSignal,
-        leftStatorCurrentSignal,
-        rightStatorCurrentSignal,
-        leftSupplyCurrentSignal,
-        rightSupplyCurrentSignal);
+    Signals.forDevice(leftMotor)
+        .addSignals(
+            leftPositionSignal,
+            differentialAveragePositionSignal,
+            leftStatorCurrentSignal,
+            leftSupplyCurrentSignal);
+    Signals.forDevice(rightMotor)
+        .addSignals(rightPositionSignal, rightStatorCurrentSignal, rightSupplyCurrentSignal);
   }
 
   public void intakeRequest() {

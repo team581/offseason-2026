@@ -38,8 +38,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     bottomVelocitySignal = bottomMotor.getVelocity(false);
     topStatorCurrentSignal = topMotor.getStatorCurrent(false);
     bottomStatorCurrentSignal = bottomMotor.getStatorCurrent(false);
-    Signals.ALL.addSignals(
-        topVelocitySignal, bottomVelocitySignal, topStatorCurrentSignal, bottomStatorCurrentSignal);
+    Signals.forDevice(topMotor).addSignals(topVelocitySignal, topStatorCurrentSignal);
+    Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomStatorCurrentSignal);
   }
 
   public void shootRequest() {

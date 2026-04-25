@@ -52,7 +52,8 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     rollSignal = pigeon.getRoll(false);
     accelerationXSignal = pigeon.getAccelerationX(false);
     accelerationYSignal = pigeon.getAccelerationY(false);
-    Signals.ALL.addSignals(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
+    Signals.forDevice(pigeon)
+        .addSignals(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
   }
 
   public double getPitch() {

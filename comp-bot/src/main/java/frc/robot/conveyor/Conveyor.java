@@ -30,7 +30,8 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
     topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
     bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
-    Signals.ALL.addSignals(topSupplyCurrentSignal, bottomSupplyCurrentSignal);
+    Signals.forDevice(topMotor).addSignals(topSupplyCurrentSignal);
+    Signals.forDevice(bottomMotor).addSignals(bottomSupplyCurrentSignal);
   }
 
   public void initialShotRequest() {

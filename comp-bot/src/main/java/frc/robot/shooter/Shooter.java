@@ -143,21 +143,21 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     bottomRightSupplyCurrentSignal = bottomRightMotor.getSupplyCurrent(false);
     topRightTorqueCurrentSignal = topRightMotor.getTorqueCurrent(false);
 
-    Signals.ALL.addSignals(
-        topLeftVelocitySignal,
-        topRightVelocitySignal,
-        bottomLeftVelocitySignal,
-        bottomRightVelocitySignal,
-        topLeftVoltageSignal,
-        topRightVoltageSignal,
-        bottomLeftVoltageSignal,
-        bottomRightVoltageSignal,
-        topRightSupplyVoltageSignal,
-        topLeftSupplyCurrentSignal,
-        topRightSupplyCurrentSignal,
-        bottomLeftSupplyCurrentSignal,
-        bottomRightSupplyCurrentSignal,
-        topRightTorqueCurrentSignal);
+    Signals.forDevice(topLeftMotor)
+        .addSignals(topLeftVelocitySignal, topLeftVoltageSignal, topLeftSupplyCurrentSignal);
+    Signals.forDevice(topRightMotor)
+        .addSignals(
+            topRightVelocitySignal,
+            topRightVoltageSignal,
+            topRightSupplyVoltageSignal,
+            topRightSupplyCurrentSignal,
+            topRightTorqueCurrentSignal);
+    Signals.forDevice(bottomLeftMotor)
+        .addSignals(
+            bottomLeftVelocitySignal, bottomLeftVoltageSignal, bottomLeftSupplyCurrentSignal);
+    Signals.forDevice(bottomRightMotor)
+        .addSignals(
+            bottomRightVelocitySignal, bottomRightVoltageSignal, bottomRightSupplyCurrentSignal);
   }
 
   public void prepareScoreRequest(double distance) {

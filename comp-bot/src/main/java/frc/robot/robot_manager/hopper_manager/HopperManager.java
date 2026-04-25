@@ -83,7 +83,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     canRangeUpdateTimer.start();
 
     hopperDistanceSignal = hopperCANRange.getDistance(false);
-    Signals.ALL.addSignals(hopperDistanceSignal);
+    Signals.forDevice(hopperCANRange).addSignals(hopperDistanceSignal);
   }
 
   private HopperBallPosition getShotPosition() {

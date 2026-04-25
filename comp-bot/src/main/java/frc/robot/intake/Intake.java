@@ -30,7 +30,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    Signals.ALL.addSignals(leftSupplyCurrentSignal, rightSupplyCurrentSignal);
+    Signals.forDevice(leftMotor).addSignals(leftSupplyCurrentSignal);
+    Signals.forDevice(rightMotor).addSignals(rightSupplyCurrentSignal);
   }
 
   public void ejectRequest() {
