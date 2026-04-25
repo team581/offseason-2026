@@ -47,12 +47,14 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   }
 
   /**
-   * Calculates the signed tilt magnitude along the crossing direction.
+   * Calculates the signed tilt component along the crossing direction.
    *
    * <p>Pitch and roll are robot-frame, while crossing direction is field-frame. The robot's heading
-   * is used to rotate the tilt gradient from robot frame into field frame. The magnitude is the
-   * full tilt (hypot of pitch and roll), signed positive when tilted up toward the crossing
-   * direction and negative when tilted away.
+   * is used to rotate the tilt gradient from robot frame into field frame. The result is the scalar
+   * projection of the field-frame tilt gradient onto the crossing direction: positive when tilted
+   * up toward the crossing direction and negative when tilted away. The magnitude reaches
+   * hypot(pitch, roll) when the gradient is fully aligned with the crossing direction and varies
+   * smoothly to zero (and through to the opposite sign) as the alignment changes.
    */
   public static double calculateDirectionalTilt(
       double pitchDegrees,
@@ -63,11 +65,9 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     // Rotate the robot-frame tilt gradient (pitch, roll) into field frame by the robot's heading
     var tiltXField = pitchDegrees * Math.cos(heading) - rollDegrees * Math.sin(heading);
     var tiltYField = pitchDegrees * Math.sin(heading) + rollDegrees * Math.cos(heading);
-    // Project the field-frame tilt onto the hardcoded crossing direction
-    var projection =
-        (tiltXField * Math.cos(crossingDirection.getRadians()))
-            + (tiltYField * Math.sin(crossingDirection.getRadians()));
-    return Math.signum(projection) * Math.hypot(pitchDegrees, rollDegrees);
+    // Project the field-frame tilt onto the crossing direction
+    return (tiltXField * Math.cos(crossingDirection.getRadians()))
+        + (tiltYField * Math.sin(crossingDirection.getRadians()));
   }
 
   @Override
