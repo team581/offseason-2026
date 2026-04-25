@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
@@ -30,13 +31,12 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private final DoubleSupplier rollSupplier;
   private final DoubleSupplier headingSupplier;
   private final Consumer<Translation2d> poseResetConsumer;
-  private Rotation3d robotRelativeImuState = new Rotation3d(0.0, 0.0, 0.0);
-  private Rotation3d fieldRelativeImuState = new Rotation3d(0.0, 0.0, 0.0);
   private Rotation2d crossingDirection = Rotation2d.kZero;
   private double directionalTilt = 0.0;
   private boolean isFlat = true;
   private boolean isFlatFallbackDebounced = false;
   private Point landingPoint = new Point(Pose2d.kZero, Pose2d.kZero);
+  private Rotation3d robotRelativeImuState = Rotation3d.kZero;
 
   public BumpCrossingTracker(
       DoubleSupplier pitchSupplier,
@@ -53,49 +53,44 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   /**
    * Calculates the signed tilt component along the crossing direction.
    *
-   * <p>Pitch and roll are robot-frame, while crossing direction is field-frame. The robot's heading
-   * is used to rotate the tilt gradient from robot frame into field frame. The result is the scalar
-   * projection of the field-frame tilt gradient onto the crossing direction: positive when tilted
-   * up toward the crossing direction and negative when tilted away. The magnitude reaches
-   * hypot(pitch, roll) when the gradient is fully aligned with the crossing direction and varies
-   * smoothly to zero (and through to the opposite sign) as the alignment changes.
+   * <p>Pitch and roll are robot-frame, while crossing direction is field-frame. We rotate the
+   * body-up unit vector ({@code (0, 0, 1)}) by the robot's orientation to get body-up in the field
+   * frame, then rotate it again by the negative crossing direction so the crossing direction
+   * becomes the +X axis. The asin of the X component of the resulting vector is the tilt along the
+   * crossing direction: positive when tilted up toward the crossing direction, negative when tilted
+   * away.
    */
   public static double calculateDirectionalTilt(
       double pitchDegrees,
       double rollDegrees,
       double headingDegrees,
       Rotation2d crossingDirection) {
-    var heading = Math.toRadians(headingDegrees);
-    // Rotate the robot-frame tilt gradient (pitch, roll) into field frame by the robot's heading
-    var tiltXField = pitchDegrees * Math.cos(heading) - rollDegrees * Math.sin(heading);
-    var tiltYField = pitchDegrees * Math.sin(heading) + rollDegrees * Math.cos(heading);
-    DogLog.log("Imu/BumpCrossing/TiltXField", tiltXField);
-    DogLog.log("Imu/BumpCrossing/TiltYField", tiltYField);
-    // Project the field-frame tilt onto the crossing direction
-    var tiltXProjection = (tiltXField * Math.cos(crossingDirection.getRadians()));
-    var tiltYProjection = (tiltYField * Math.sin(crossingDirection.getRadians()));
-    DogLog.log("Imu/BumpCrossing/TiltXProjection", tiltXProjection);
-    DogLog.log("Imu/BumpCrossing/TiltYProjection", tiltYProjection);
-    return tiltXProjection + tiltYProjection;
-  }
-
-  public double calculateDirectionalTilt(
-      Rotation3d robotRelativeImuState, Rotation2d crossingDirection) {
-    fieldRelativeImuState =
-        robotRelativeImuState.rotateBy(new Rotation3d(0, 0, -1 * robotRelativeImuState.getZ()));
-    return Math.toDegrees(fieldRelativeImuState.getY()) * Math.cos(crossingDirection.getRadians());
+    var robotOrientation =
+        new Rotation3d(
+            Math.toRadians(rollDegrees),
+            Math.toRadians(pitchDegrees),
+            Math.toRadians(headingDegrees));
+    var bodyUpInCrossingFrame =
+        new Translation3d(0.0, 0.0, 1.0)
+            .rotateBy(robotOrientation)
+            .rotateBy(new Rotation3d(0.0, 0.0, -crossingDirection.getRadians()));
+    return Math.toDegrees(Math.asin(bodyUpInCrossingFrame.getX()));
   }
 
   @Override
   protected void collectInputs() {
+    var pitchDegrees = pitchSupplier.getAsDouble();
+    var rollDegrees = rollSupplier.getAsDouble();
+    var headingDegrees = headingSupplier.getAsDouble();
     robotRelativeImuState =
         new Rotation3d(
-            Math.toRadians(rollSupplier.getAsDouble()),
-            Math.toRadians(pitchSupplier.getAsDouble()),
-            Math.toRadians(headingSupplier.getAsDouble()));
+            Math.toRadians(rollDegrees),
+            Math.toRadians(pitchDegrees),
+            Math.toRadians(headingDegrees));
     // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
     // Positive tilt should be tilted up toward the crossing direction
-    directionalTilt = calculateDirectionalTilt(robotRelativeImuState, crossingDirection);
+    directionalTilt =
+        calculateDirectionalTilt(pitchDegrees, rollDegrees, headingDegrees, crossingDirection);
     isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
     isFlatFallbackDebounced =
         flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
