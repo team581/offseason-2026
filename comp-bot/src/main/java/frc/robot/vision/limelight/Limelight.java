@@ -152,7 +152,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
     DogLog.log("Vision/" + name + "/Tags/MTTimestamp", mTEstimateTimestamp);
-    DogLog.log("Vision/" + name + "/Tags/DistanceFromTag", distance);
     return tagResult.update(mTPose, mTEstimateTimestamp, reusableStdDevs);
   }
 
