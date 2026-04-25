@@ -81,7 +81,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
   protected void collectInputs() {
     DogLog.log("Intake/Left/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/Right/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
-    DogLog.log("Intake/RequestedVoltage", getState().getVoltage());
     DogLog.log("Intake/HasBeenIntaking", hasBeenIntaking());
   }
 

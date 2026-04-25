@@ -1,6 +1,6 @@
 package frc.robot.autos.auto_state_machines.auto_state;
 
-public enum IntegratedAutoState {
+public enum NormalAutoState {
   INTAKE_FIRST_CYCLE,
   // Fallback segment for non-cluster map (robot fully on our side)
   DEFAULT_INTAKE_SECOND_CYCLE,

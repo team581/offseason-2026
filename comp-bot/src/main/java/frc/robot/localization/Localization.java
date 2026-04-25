@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.imu.Imu;
@@ -86,8 +87,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
 
-    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
-        || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
+    if (DriverStation.isAutonomous()
+        && (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
+            || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean())) {
       DogLog.log(
           "Imu/RobotPoseWithTilt",
           new Pose3d(

@@ -18,18 +18,20 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_state.IntegratedAutoState;
+import frc.robot.autos.auto_state_machines.auto_state.NormalAutoState;
 import frc.robot.cluster_map.Lane;
 import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
-public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
+public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   public enum Markers {
     PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
     CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
+    START_INTAKE_2,
+    START_INTAKE_3,
     CHECK_CLUSTER_MAP_TRENCH,
     CANCEL_CLUSTER_MAP_TRENCH,
     MAKE_CLUSTER_MAP_DECISION,
@@ -165,6 +167,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  .withMarker(Markers.START_INTAKE_2)
                   .withLinearConstraints(3.0, 8.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
@@ -178,19 +181,17 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
               AutoPoint.ofRed(new Pose2d(10.628, 7.2, Rotation2d.fromDegrees(-140)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH),
-              AutoPoint.ofRed(new Pose2d(10.628, 5.9125, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(10.729, 4.4, Rotation2d.fromDegrees(-100)))
-                  .withMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
+              AutoPoint.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-130)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.862, 3.529, Rotation2d.k180deg))
+              AutoPoint.ofRed(new Pose2d(8.7, 5.593, Rotation2d.fromDegrees(-85)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
+                  .withMarker(Markers.MAKE_CLUSTER_MAP_DECISION),
+              AutoPoint.ofRed(new Pose2d(8.500, 4.31, Rotation2d.fromDegrees(-30.0)))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
-              AutoPoint.ofRed(new Pose2d(8.8, 4.4, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
-              AutoPoint.ofRed(new Pose2d(8.95, 5.3, Rotation2d.fromDegrees(60)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
-              AutoPoint.ofRed(new Pose2d(10.2, 5.4 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(10.2, 4.3, Rotation2d.fromDegrees(10.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(10.5, 5.4 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -199,20 +200,19 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                           Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .untilFinished(new PoseErrorTolerance(0.3, 100));
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
+          .untilFinished(new PoseErrorTolerance(0.2, 3));
 
   private final AutoSegment intakeSecondCycleFar =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(10.729, 4.4, Rotation2d.fromDegrees(-100)))
+              AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-85)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
+                  .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK),
+              AutoPoint.ofRed(new Pose2d(8.200, 4.31, Rotation2d.fromDegrees(-30.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.862, 3.529, Rotation2d.fromDegrees(-160)))
+              AutoPoint.ofRed(new Pose2d(9.31, 4.3, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.9, 3.529, Rotation2d.fromDegrees(160)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.2, 4.4, Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
-              AutoPoint.ofRed(new Pose2d(8.2, 5.3, Rotation2d.fromDegrees(60)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4)),
               AutoPoint.ofRed(new Pose2d(10.2, 5.4 + BUMP_OFFSET, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
@@ -222,7 +222,9 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                           Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
-          .untilFinished(new PoseErrorTolerance(0.3, 100));
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
+          .untilFinished(new PoseErrorTolerance(0.2, 3));
 
   private final AutoSegment crossBumpToShootTwo =
       Trailblazer.segment(
@@ -271,6 +273,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                       new Pose2d(
                           12.5, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
+                  .withMarker(Markers.START_INTAKE_3)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -333,7 +336,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getPitch()),
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
 
-  private IntegratedAutoState storedStuckOnBallState = IntegratedAutoState.INTAKE_FIRST_CYCLE;
+  private NormalAutoState storedStuckOnBallState = NormalAutoState.INTAKE_FIRST_CYCLE;
   private AutoSegment storedStuckOnBallAutoSegment = intakeFirstCycle;
   private int storedStuckOnBallIndex = 0;
 
@@ -342,7 +345,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   private boolean secondStuckOnBall = false;
 
   public RightNormalAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(IntegratedAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
+    super(NormalAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
 
     this.bumpCrossingTracker = robotManager.localization.imu.bumpCrossingTracker;
   }
@@ -355,17 +358,17 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   @Override
   protected void collectInputs() {
     super.collectInputs();
-    if (getState() == IntegratedAutoState.INTAKE_FIRST_CYCLE
+    if (!collisionEverDetected
+        && getState() == NormalAutoState.INTAKE_FIRST_CYCLE
         && DriverStation.isEnabled()
         && robotManager.localization.imu.collisionDetected()) {
       collisionEverDetected = true;
+      DogLog.log("RightNormalAuto/CollisionDetected", collisionEverDetected);
     }
-
-    DogLog.log("RightIntegratedAuto/CollisionDetected", collisionEverDetected);
   }
 
   @Override
-  protected IntegratedAutoState getNextState(IntegratedAutoState currentState) {
+  protected NormalAutoState getNextState(NormalAutoState currentState) {
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
@@ -376,7 +379,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
             INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
-            return IntegratedAutoState.STUCK_ON_BALL_RECOVERY;
+            return NormalAutoState.STUCK_ON_BALL_RECOVERY;
           }
         }
         default -> {}
@@ -395,7 +398,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_FIRST_CYCLE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
           robotManager.powerManager.idleRequest();
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_1;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_1;
         } else {
           yield currentState;
         }
@@ -403,33 +406,33 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case CROSS_BUMP_TO_SHOOT_1 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield IntegratedAutoState.SHOOT_1;
+          yield NormalAutoState.SHOOT_1;
         } else {
           yield currentState;
         }
       }
       case SHOOT_1 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
-          yield IntegratedAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
+          yield NormalAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
         }
       }
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)) {
 
           Lane bestLane = robotManager.clusterMap.getBestClusterLane();
           yield switch (bestLane) {
-            case LANE_1 -> IntegratedAutoState.INTAKE_SECOND_CYCLE_FAR;
+            case LANE_1 -> NormalAutoState.INTAKE_SECOND_CYCLE_FAR;
             default -> currentState;
           };
         } else if (trailblazer.passedMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH)) {
           if (robotManager.clusterMap.hasHighValueTrenchCluster()) {
-            yield IntegratedAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
+            yield NormalAutoState.INTAKE_SECOND_CYCLE_TRENCH_LANE;
           }
         }
         yield currentState;
@@ -437,7 +440,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_SECOND_CYCLE_FAR, INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_2;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else {
           yield currentState;
         }
@@ -446,14 +449,14 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case CROSS_BUMP_TO_SHOOT_2 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield IntegratedAutoState.SHOOT_2;
+          yield NormalAutoState.SHOOT_2;
         } else {
           yield currentState;
         }
       }
       case SHOOT_2 -> {
         if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
-          yield IntegratedAutoState.INTAKE_THIRD_CYCLE;
+          yield NormalAutoState.INTAKE_THIRD_CYCLE;
         } else {
           yield currentState;
         }
@@ -461,7 +464,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_THIRD_CYCLE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
-          yield IntegratedAutoState.CROSS_BUMP_TO_SHOOT_3;
+          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_3;
         } else {
           yield currentState;
         }
@@ -469,14 +472,14 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case CROSS_BUMP_TO_SHOOT_3 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield IntegratedAutoState.SHOOT_3;
+          yield NormalAutoState.SHOOT_3;
         } else {
           yield currentState;
         }
       }
       case DONE -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
-          yield IntegratedAutoState.DONE;
+          yield NormalAutoState.DONE;
         } else {
           yield currentState;
         }
@@ -486,12 +489,10 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   }
 
   @Override
-  protected void whileInState(IntegratedAutoState newState) {
-    if (getState() != IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+  protected void whileInState(NormalAutoState newState) {
+    if (getState() != NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallIndex = trailblazer.getCurrentPointIndex();
     }
-    DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
-    DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
 
     switch (newState) {
       case STUCK_ON_BALL_RECOVERY -> {
@@ -545,7 +546,10 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         trailblazer.setActiveSegment(defaultIntakeSecondCycle);
-        robotManager.intakeAutoRequest();
+        if (trailblazer.passedMarker(Markers.START_INTAKE_2)) {
+
+          robotManager.intakeAutoRequest();
+        }
       }
 
       case INTAKE_SECOND_CYCLE_FAR -> {
@@ -589,7 +593,10 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case SHOOT_2 -> robotManager.prepareScoreRequest();
       case INTAKE_THIRD_CYCLE -> {
         trailblazer.setActiveSegment(intakeThirdCycle);
-        robotManager.intakeAutoRequest();
+        if (trailblazer.passedMarker(Markers.START_INTAKE_3)) {
+
+          robotManager.intakeAutoRequest();
+        }
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
@@ -618,18 +625,20 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
   }
 
   @Override
-  protected void beforeTransition(IntegratedAutoState oldState, IntegratedAutoState newState) {
-    if (newState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+  protected void beforeTransition(NormalAutoState oldState, NormalAutoState newState) {
+    if (newState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallState = oldState;
+      DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
+      DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
     }
 
-    if (oldState == IntegratedAutoState.STUCK_ON_BALL_RECOVERY) {
+    if (oldState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       trailblazer.setActiveSegment(storedStuckOnBallAutoSegment, storedStuckOnBallIndex);
     }
   }
 
   @Override
-  protected void afterTransition(IntegratedAutoState newState) {
+  protected void afterTransition(NormalAutoState newState) {
     switch (newState) {
       case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 -> {
         bumpCrossingTracker.bumpCrossRequest(
@@ -655,6 +664,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
         robotManager.idleRequest();
+        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case INTAKE_SECOND_CYCLE_FAR -> {
         storedStuckOnBallAutoSegment = intakeSecondCycleFar;
@@ -667,6 +677,7 @@ public class RightNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
       case INTAKE_THIRD_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeThirdCycle;
         robotManager.idleRequest();
+        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
         storedStuckOnBallAutoSegment = crossBumpToShootTwo;

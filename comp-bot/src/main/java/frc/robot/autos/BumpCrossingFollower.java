@@ -48,7 +48,7 @@ public class BumpCrossingFollower implements PathFollower {
         switch (state) {
           case FLAT_ABOUT_TO_CROSS, CROSSING_UPHILL -> CROSSING_START_LINEAR_VELOCITY;
           case CROSSING_DOWNHILL -> CROSSING_DOWNHILL_LINEAR_VELOCITY;
-          case FLAT_NOT_CROSSING -> 0;
+          default -> originalSpeeds.vxMetersPerSecond;
         };
 
     var xVelocity = FmsUtil.isRedAlliance() ? unsignedXVelocity : -unsignedXVelocity;

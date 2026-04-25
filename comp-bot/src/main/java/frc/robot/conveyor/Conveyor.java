@@ -7,7 +7,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
-import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -70,11 +69,6 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
         bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
-  }
-
-  @Override
-  protected void collectInputs() {
-    DogLog.log("Conveyor/WantedVoltage", getState().getVoltage());
   }
 
   @Override
