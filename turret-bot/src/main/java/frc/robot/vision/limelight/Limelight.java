@@ -84,7 +84,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     var mTEstimateTimestamp = mTEstimate.timestampSeconds;
 
-    if (!MathUtil.isNear(0, angularVelocity, PoseEstimateValidator.MAX_ANGULAR_VELOCITY)) {
+    if (!MathUtil.isNear(0, angularVelocity, PoseEstimateValidator.MAX_ANGULAR_VELOCITY.get())) {
       return tagResult.empty();
     }
     if (mTEstimate.tagCount == 0) {
