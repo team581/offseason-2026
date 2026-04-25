@@ -96,7 +96,6 @@ public class Imu extends BaseImuSubsystem {
     DogLog.log("Imu/Pigeon/GForce", pigeonGForce);
     DogLog.log("Imu/Pigeon/MaxGForce", maxGForceDetected);
     DogLog.log("Imu/Pigeon/FilteredAccel", accel);
-    bumpCrossingTracker.log();
   }
 
   public boolean collisionDetected() {
@@ -111,5 +110,7 @@ public class Imu extends BaseImuSubsystem {
     if (DriverStation.isAutonomous()) {
       bumpCrossingTracker.periodic();
     }
+
+    bumpCrossingTracker.log();
   }
 }

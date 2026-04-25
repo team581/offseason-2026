@@ -6,6 +6,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import org.jspecify.annotations.Nullable;
 
 public class PoseEstimateValidator {
+  // Degrees per second
+  public static final double MAX_ANGULAR_VELOCITY = 100;
 
   private final String name;
   private @Nullable Pose2d previousPose = null;
@@ -19,7 +21,7 @@ public class PoseEstimateValidator {
       return false;
     }
 
-    if (Math.abs(angularVelocity) > 360) {
+    if (Math.abs(angularVelocity) > MAX_ANGULAR_VELOCITY) {
       return false;
     }
     if (poseEstimate.tagCount == 0) {

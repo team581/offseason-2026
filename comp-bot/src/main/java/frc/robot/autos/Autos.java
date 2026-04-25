@@ -54,7 +54,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
               || DriverStation.isFMSAttached())) {
         // Continuously reset pose
         robotManager.localization.resetPose(selectedAuto.getStartingPoint().getPose());
-        robotManager.localization.imu.resetPitchAndRoll();
       }
     }
 
