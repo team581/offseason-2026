@@ -65,9 +65,14 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     // Rotate the robot-frame tilt gradient (pitch, roll) into field frame by the robot's heading
     var tiltXField = pitchDegrees * Math.cos(heading) - rollDegrees * Math.sin(heading);
     var tiltYField = pitchDegrees * Math.sin(heading) + rollDegrees * Math.cos(heading);
+    DogLog.log("Imu/BumpCrossing/TiltXField", tiltXField);
+    DogLog.log("Imu/BumpCrossing/TiltYField", tiltYField);
     // Project the field-frame tilt onto the crossing direction
-    return (tiltXField * Math.cos(crossingDirection.getRadians()))
-        + (tiltYField * Math.sin(crossingDirection.getRadians()));
+    var tiltXProjection = (tiltXField * Math.sin(crossingDirection.getRadians()));
+    var tiltYProjection = (tiltYField * Math.cos(crossingDirection.getRadians()));
+    DogLog.log("Imu/BumpCrossing/TiltXProjection", tiltXField);
+    DogLog.log("Imu/BumpCrossing/TiltYProjection", tiltYField);
+    return tiltXProjection + tiltYProjection;
   }
 
   @Override
