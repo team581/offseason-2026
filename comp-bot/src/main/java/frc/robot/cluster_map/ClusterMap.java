@@ -3,7 +3,6 @@ package frc.robot.cluster_map;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Map.Entry.comparingByValue;
 
-import com.team581.GlobalConfig;
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
@@ -12,12 +11,12 @@ import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.GamePieceResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Ellipse2d;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
@@ -158,7 +157,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     }
 
     if (bestElement == null) {
-      DogLog.log("ClusterMap/BestClusterStatus", "No valid front-facing target met threshold");
+      DogLog.timestamp("ClusterMap/No valid front-facing target met threshold");
       DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
       return Optional.empty();
     }
@@ -340,35 +339,27 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   @Override
   protected void collectInputs() {
-    if (!FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
-      return;
+    if (FeatureFlags.CLUSTER_MAP.getAsBoolean() && DriverStation.isAutonomous()) {
+      swerveSpeeds = swerve.getRobotRelativeSpeeds();
+      updateMap();
     }
-    swerveSpeeds = swerve.getRobotRelativeSpeeds();
-    updateMap();
   }
 
   @Override
   protected void whileInState(ClusterMapState state) {
-    try {
-      DogLog.log("ClusterMap/Clusters", clusterMap.stream().toArray(ClusterMapElement[]::new));
-      DogLog.log(
-          "ClusterMap/Clusters/ClusterPoses",
-          clusterMap.stream()
-              .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
-              .toArray(Pose2d[]::new));
-    } catch (RuntimeException error) {
-      DogLog.logFault("ClusterMapLoggingError");
-      System.err.println(error);
-    }
+    if (DriverStation.isAutonomous() && FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
 
-    if (GlobalConfig.IS_DEVELOPMENT) {
-      for (int i = 0; i < clusterMap.size(); i++) {
-        var element = clusterMap.get(i);
-        var circle = new Ellipse2d(element.clusterTranslation(), element.detectionSize() * 0.05);
-        DogLog.log("ClusterMap/Clusters/Circles/" + i, MathHelpers.discretizeEllipse(circle, 10));
+      try {
+        DogLog.log("ClusterMap/Clusters", clusterMap.stream().toArray(ClusterMapElement[]::new));
+        DogLog.log(
+            "ClusterMap/Clusters/ClusterPoses",
+            clusterMap.stream()
+                .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
+                .toArray(Pose2d[]::new));
+      } catch (RuntimeException error) {
+        DogLog.logFault("ClusterMapLoggingError");
+        System.err.println(error);
       }
     }
-
-    DogLog.log("ClusterMap/BestLane", getBestClusterLane().toString());
   }
 }
