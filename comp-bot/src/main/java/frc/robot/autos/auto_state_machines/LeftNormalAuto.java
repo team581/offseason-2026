@@ -71,7 +71,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 - BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -133,7 +133,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 - BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -190,7 +190,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4)),
               AutoPoint.ofRed(new Pose2d(8.95, 2.77, Rotation2d.fromDegrees(-60)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 - BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -213,7 +213,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4)),
               AutoPoint.ofRed(new Pose2d(8.2, 2.77, Rotation2d.fromDegrees(-60)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 - BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -287,7 +287,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<IntegratedAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(new Pose2d(10.2, 2.67 - BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
