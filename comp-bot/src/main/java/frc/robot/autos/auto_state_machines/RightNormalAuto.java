@@ -372,11 +372,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
-        case INTAKE_FIRST_CYCLE,
-            DEFAULT_INTAKE_SECOND_CYCLE,
-            INTAKE_SECOND_CYCLE_FAR,
-            INTAKE_SECOND_CYCLE_TRENCH_LANE,
-            INTAKE_THIRD_CYCLE -> {
+        case INTAKE_FIRST_CYCLE, INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
             return NormalAutoState.STUCK_ON_BALL_RECOVERY;
