@@ -6,6 +6,7 @@ import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.ReusableOptional;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
+import com.team581.vision.limelight.PoseEstimateValidator;
 import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -83,7 +84,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     var mTEstimateTimestamp = mTEstimate.timestampSeconds;
 
-    if (!MathUtil.isNear(0, angularVelocity, 360)) {
+    if (!MathUtil.isNear(0, angularVelocity, PoseEstimateValidator.MAX_ANGULAR_VELOCITY)) {
       return tagResult.empty();
     }
     if (mTEstimate.tagCount == 0) {
