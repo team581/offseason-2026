@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.imu.Imu;
@@ -123,7 +124,10 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
       averageTimestamp += result.timestamp();
       swerve.drivetrain.addVisionMeasurement(
           visionPose,
-          Utils.fpgaToCurrentTime(result.timestamp() - (LATENCY_CONSTANT.get() / 1000)),
+          Utils.fpgaToCurrentTime(
+              Math.min(
+                  Timer.getFPGATimestamp() - (LATENCY_CONSTANT.get() / 1000),
+                  result.timestamp() - (LATENCY_CONSTANT.get() / 1000))),
           result.standardDevs());
     }
     averageTimestamp = averageTimestamp / results.size();
