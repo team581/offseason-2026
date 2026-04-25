@@ -100,6 +100,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   /** Returns the lane with the most detected balls, ignoring the trench. */
   public Lane getBestClusterLane() {
     var robotPose = localization.getPose();
+    DogLog.timestamp("ClusterMap/RanBestLane");
 
     return clusterMap.stream()
         // Sum up total detected balls per lane
@@ -126,6 +127,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
       return Optional.empty();
     }
+    DogLog.timestamp("ClusterMap/RanBestPose");
 
     ClusterMapElement bestElement = null;
     double highestImmediateScore = 0.0;
@@ -176,6 +178,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     if (clusterMap.isEmpty()) {
       return false;
     }
+    DogLog.timestamp("ClusterMap/RanHighValueCluster");
 
     var robotPose = localization.getPose();
 
@@ -214,7 +217,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
           10);
     }
     if (!hasDoneWarmup) {
-      hasDoneWarmup = true;
       return clusterDataResult.update(warmupTranslation, 20, 20);
     }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
@@ -342,6 +344,12 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     if (FeatureFlags.CLUSTER_MAP.getAsBoolean() && DriverStation.isAutonomous()) {
       swerveSpeeds = swerve.getRobotRelativeSpeeds();
       updateMap();
+      if (!hasDoneWarmup) {
+        var bestClusterLane = getBestClusterLane();
+        var bestClusterPose = getBestClusterPose();
+        var hasHighValueTrenchCluster = hasHighValueTrenchCluster();
+        hasDoneWarmup = true;
+      }
     }
   }
 
@@ -361,5 +369,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
         System.err.println(error);
       }
     }
+    DogLog.log("ClusterMap/HasDoneWarmup", hasDoneWarmup);
   }
 }
