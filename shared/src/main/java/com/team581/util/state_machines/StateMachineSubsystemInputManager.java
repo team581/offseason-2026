@@ -23,7 +23,7 @@ public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
 
   @Override
   public void periodic() {
-    Signals.ALL.refreshAll();
+    Signals.refreshAll();
     for (var stateMachineSubsystem : stateMachineSubsystems) {
       stateMachineSubsystem.beforePeriodic();
     }
