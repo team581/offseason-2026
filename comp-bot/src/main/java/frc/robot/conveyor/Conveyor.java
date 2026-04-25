@@ -74,10 +74,7 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Conveyor/Top/SupplyCurrent", topSupplyCurrentSignal.getValueAsDouble());
-    DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomSupplyCurrentSignal.getValueAsDouble());
-    DogLog.log("Conveyor/Voltage", getState().getVoltage());
-    DogLog.log("Conveyor/State", getState().name());
+    DogLog.log("Conveyor/WantedVoltage", getState().getVoltage());
   }
 
   @Override
