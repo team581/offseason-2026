@@ -1,11 +1,14 @@
 package frc.robot.conveyor;
 
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Conveyor extends StateMachineSubsystem<ConveyorState> implements PowerManaged {
@@ -15,6 +18,9 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
+  private final StatusSignal<Current> topSupplyCurrentSignal;
+  private final StatusSignal<Current> bottomSupplyCurrentSignal;
+
   public Conveyor(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);
     topMotor.getConfigurator().apply(ConveyorConfig.TOP_MOTOR_CONFIG);
@@ -22,6 +28,10 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
     this.topMotor = topMotor;
     this.bottomMotor = bottomMotor;
+
+    topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
+    bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
+    Signals.ALL.addSignals(topSupplyCurrentSignal, bottomSupplyCurrentSignal);
   }
 
   public void initialShotRequest() {
@@ -64,10 +74,7 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Conveyor/Top/SupplyCurrent", topMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomMotor.getSupplyCurrent().getValueAsDouble());
-    DogLog.log("Conveyor/Voltage", getState().getVoltage());
-    DogLog.log("Conveyor/State", getState().name());
+    DogLog.log("Conveyor/WantedVoltage", getState().getVoltage());
   }
 
   @Override

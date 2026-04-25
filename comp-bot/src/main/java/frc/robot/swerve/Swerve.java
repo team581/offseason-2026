@@ -215,6 +215,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return fieldRelativeSpeeds;
   }
 
+  public SwerveDriveState getDriveState() {
+    return drivetrainState;
+  }
+
   public ChassisSpeeds getRequestedSpeeds() {
     return driveSource.getRequestedSpeeds();
   }
@@ -599,7 +603,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         var actual = current[i];
         var target = targets[i];
 
-        if (MathUtil.isNear(actual.angle.getDegrees(), target.angle.getDegrees(), 5, -180, 180)) {
+        if (MathUtil.isNear(actual.angle.getDegrees(), target.angle.getDegrees(), 10, -180, 180)) {
           // it's within tolerance
         } else {
           isMisaligned = true;
@@ -628,10 +632,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
       }
       default -> {}
-    }
-    if (driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
-      DogLog.log(
-          "Swerve/SwerveTargetDirection", drivePerspectiveSnaps.TargetDirection.getDegrees());
     }
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);

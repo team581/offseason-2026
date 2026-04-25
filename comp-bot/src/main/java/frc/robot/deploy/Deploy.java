@@ -1,5 +1,6 @@
 package frc.robot.deploy;
 
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -8,11 +9,14 @@ import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.Signals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -39,8 +43,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private double rightMotorPosition = 0.0;
   private double leftStatorCurrent = 0.0;
   private double rightStatorCurrent = 0.0;
-  private double leftSupplyCurrent = 0.0;
-  private double rightSupplyCurrent = 0.0;
+
+  private final StatusSignal<Angle> leftPositionSignal;
+  private final StatusSignal<Angle> rightPositionSignal;
+  private final StatusSignal<Angle> differentialAveragePositionSignal;
+  private final StatusSignal<Current> leftStatorCurrentSignal;
+  private final StatusSignal<Current> rightStatorCurrentSignal;
+  private final StatusSignal<Current> leftSupplyCurrentSignal;
+  private final StatusSignal<Current> rightSupplyCurrentSignal;
 
   public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
@@ -57,6 +67,22 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         motionMagicTorqueCurrentFOCAverageRequest.withPosition(0),
         positionDifferentialRequest.withPosition(0.0));
     differentialMechanism.setNeutralOut();
+
+    leftPositionSignal = leftMotor.getPosition(false);
+    rightPositionSignal = rightMotor.getPosition(false);
+    differentialAveragePositionSignal = differentialMechanism.getAveragePosition(false);
+    leftStatorCurrentSignal = leftMotor.getStatorCurrent(false);
+    rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
+    leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
+    rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
+    Signals.ALL.addSignals(
+        leftPositionSignal,
+        rightPositionSignal,
+        differentialAveragePositionSignal,
+        leftStatorCurrentSignal,
+        rightStatorCurrentSignal,
+        leftSupplyCurrentSignal,
+        rightSupplyCurrentSignal);
   }
 
   public void intakeRequest() {
@@ -204,19 +230,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    leftMotorPosition = leftMotor.getPosition().getValueAsDouble();
-    rightMotorPosition = rightMotor.getPosition().getValueAsDouble();
+    leftMotorPosition = leftPositionSignal.getValueAsDouble();
+    rightMotorPosition = rightPositionSignal.getValueAsDouble();
     if (RobotBase.isSimulation()) {
       // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
       // so derive it from individual motor positions instead.
       differentialMechanismPosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
     } else {
-      differentialMechanismPosition = differentialMechanism.getAveragePosition().getValueAsDouble();
+      differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble();
     }
-    leftStatorCurrent = leftMotor.getStatorCurrent().getValueAsDouble();
-    rightStatorCurrent = rightMotor.getStatorCurrent().getValueAsDouble();
-    leftSupplyCurrent = leftMotor.getSupplyCurrent().getValueAsDouble();
-    rightSupplyCurrent = rightMotor.getSupplyCurrent().getValueAsDouble();
+    leftStatorCurrent = leftStatorCurrentSignal.getValueAsDouble();
+    rightStatorCurrent = rightStatorCurrentSignal.getValueAsDouble();
   }
 
   @Override

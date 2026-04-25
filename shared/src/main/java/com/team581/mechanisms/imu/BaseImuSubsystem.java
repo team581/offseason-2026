@@ -3,22 +3,32 @@ package com.team581.mechanisms.imu;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
-import com.ctre.phoenix6.swerve.SwerveDrivetrain;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.team581.math.MathHelpers;
+import com.team581.signals.Signals;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.wpilibj.RobotBase;
+import java.util.function.Supplier;
 
 public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   private static final double IS_FLAT_THRESHOLD = 5.0;
 
-  protected final SwerveDrivetrain<?, ?, ?> drivetrain;
+  private Supplier<SwerveDriveState> driveStateSupplier;
   private final Debouncer isFlatDebouncer = new Debouncer(0.5, DebounceType.kRising);
+
+  private final StatusSignal<Angle> pitchSignal;
+  private final StatusSignal<Angle> rollSignal;
+  protected final StatusSignal<LinearAcceleration> accelerationXSignal;
+  protected final StatusSignal<LinearAcceleration> accelerationYSignal;
 
   private boolean isFlatDebounced = false;
 
@@ -30,10 +40,19 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
   private double pitchOffset = 0;
   private double rollOffset = 0;
 
-  public BaseImuSubsystem(SubsystemPriorityBase priority, SwerveDrivetrain<?, ?, ?> drivetrain) {
+  public BaseImuSubsystem(
+      SubsystemPriorityBase priority,
+      Pigeon2 pigeon,
+      Supplier<SwerveDriveState> driveStateSupplier) {
     super(priority, ImuState.DEFAULT_STATE);
 
-    this.drivetrain = drivetrain;
+    this.driveStateSupplier = driveStateSupplier;
+
+    pitchSignal = pigeon.getPitch(false);
+    rollSignal = pigeon.getRoll(false);
+    accelerationXSignal = pigeon.getAccelerationX(false);
+    accelerationYSignal = pigeon.getAccelerationY(false);
+    Signals.ALL.addSignals(pitchSignal, rollSignal, accelerationXSignal, accelerationYSignal);
   }
 
   public double getPitch() {
@@ -61,6 +80,14 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
     rollOffset = rawRoll;
   }
 
+  /**
+   * Replace the {@link SwerveDriveState} supplier after construction. Workaround for circular
+   * import between Swerve and Imu.
+   */
+  public void setDriveStateSupplier(Supplier<SwerveDriveState> supplier) {
+    this.driveStateSupplier = supplier;
+  }
+
   // USE FOR SIM ONLY!!!
   public void setPitch(double newPitch) {
     if (RobotBase.isSimulation()) {
@@ -86,13 +113,13 @@ public class BaseImuSubsystem extends StateMachineSubsystem<ImuState> {
 
   @Override
   protected void collectInputs() {
-    driveState = drivetrain.getState();
+    driveState = driveStateSupplier.get();
     robotHeading = MathHelpers.angleModulus(driveState.Pose.getRotation().getDegrees());
     robotAngularVelocity = Math.toDegrees(driveState.Speeds.omegaRadiansPerSecond);
 
     if (RobotBase.isReal()) {
-      rawPitch = drivetrain.getPigeon2().getPitch().getValueAsDouble();
-      rawRoll = drivetrain.getPigeon2().getRoll().getValueAsDouble();
+      rawPitch = pitchSignal.getValueAsDouble();
+      rawRoll = rollSignal.getValueAsDouble();
     }
 
     isFlatDebounced =

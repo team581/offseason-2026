@@ -2,7 +2,6 @@ package frc.robot.cluster_map;
 
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
-import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 
@@ -34,7 +33,6 @@ public class LaneSystem {
     }
 
     double x = activeTarget.getX();
-    DogLog.log("ActiveX", x);
     double y = activeTarget.getY();
     double robotY = activeRobot.getY();
 

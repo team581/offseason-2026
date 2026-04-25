@@ -19,8 +19,11 @@ public class Imu extends BaseImuSubsystem {
   private double pigeonGForce = 0.0;
   private double maxGForceDetected = Double.NEGATIVE_INFINITY;
 
+  private final SwerveDrivetrain<?, ?, ?> drivetrain;
+
   public Imu(SwerveDrivetrain<?, ?, ?> drivetrain) {
-    super(SubsystemPriority.IMU, drivetrain);
+    super(SubsystemPriority.IMU, drivetrain.getPigeon2(), drivetrain::getState);
+    this.drivetrain = drivetrain;
   }
 
   @Override

@@ -97,43 +97,16 @@ public class PidPathFollower implements PathFollower {
         velocityConstrainer.constrainLinearVelocity(
             linearVelocity, currentSpeeds, distanceToEnd, linearConstraints);
 
-    // Compute a dynamic angular velocity cap so that rotation is spread evenly across the
-    // remaining travel time, rather than rotating as fast as possible and then waiting.
-    // estimatedTime = distance / constrained linear velocity gives us roughly how long until we
-    // arrive at the end of the segment. neededAngularVelocity = totalAngularWork / estimatedTime
-    // gives the steady-state omega to finish all remaining rotation right as we arrive.
-    var effectiveAngularConstraints = angularConstraints;
-
-    if (linearVelocity > 1e-3 && distanceToEnd > 1e-3) {
-      var estimatedTime = distanceToEnd / linearVelocity;
-
-      if (estimatedTime > 1e-3 && totalAngularWorkRadians > 1e-6) {
-        var neededAngularVelocity = totalAngularWorkRadians / estimatedTime;
-
-        DogLog.log("Trailblazer/Follower/TotalAngularWorkRadians", totalAngularWorkRadians);
-        DogLog.log("Trailblazer/Follower/DynamicAngularVelocityCap", neededAngularVelocity);
-
-        // Only apply the cap if it is lower than the existing constraint — we don't want to
-        // *increase* the allowed velocity, just potentially reduce it to spread rotation out.
-        if (neededAngularVelocity < angularConstraints.maxVelocity()) {
-          effectiveAngularConstraints =
-              new AngularConstraintOptions(
-                  neededAngularVelocity, angularConstraints.maxAcceleration());
-        }
-      }
-    }
-
     angularVelocity =
         velocityConstrainer.constrainAngularVelocity(
             angularVelocity,
             currentPose.getRotation().getRadians(),
             targetPose.getRotation().getRadians(),
             currentSpeeds,
-            effectiveAngularConstraints);
+            angularConstraints);
 
-    DogLog.log("Trailblazer/Follower/AngularLimit", effectiveAngularConstraints.maxVelocity());
-    DogLog.log(
-        "Trailblazer/Follower/AngularACCLimit", effectiveAngularConstraints.maxAcceleration());
+    DogLog.log("Trailblazer/Follower/AngularLimit", angularConstraints.maxVelocity());
+    DogLog.log("Trailblazer/Follower/AngularACCLimit", angularConstraints.maxAcceleration());
 
     DogLog.log("Trailblazer/Follower/AngularVelocityAfterConstraint", angularVelocity);
 
