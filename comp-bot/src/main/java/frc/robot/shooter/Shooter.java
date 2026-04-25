@@ -203,22 +203,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/BottomRight/RPM", bottomRightMotorRpm);
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
-    DogLog.log("Shooter/FeederCurrent", feederCurrent);
     DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
-    DogLog.log("Shooter/AtGoal", atGoal());
-    DogLog.log("Shooter/TopRight/Voltage", topRightVoltage);
-    DogLog.log("Shooter/TopRight/SupplyVoltage", topRightSupplyVoltage);
-
-    DogLog.log("Shooter/TopLeft/Voltage", topLeftVoltage);
-    DogLog.log("Shooter/BottomRight/Voltage", bottomRightVoltage);
-    DogLog.log("Shooter/BottomLeft/Voltage", bottomLeftVoltage);
+    DogLog.log("Shooter/AtGoal", atGoal);
 
     DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
     DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);
     DogLog.log("Shooter/BottomLeft/SupplyCurrent", bottomLeftSupplyCurrent);
     DogLog.log("Shooter/BottomRight/SupplyCurrent", bottomRightSupplyCurrent);
-
-    DogLog.log("Shooter/TopRight/TorqueCurrent", topRightTorqueCurrent);
 
     switch (state) {
       case IDLE -> {
