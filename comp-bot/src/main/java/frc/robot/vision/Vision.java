@@ -155,9 +155,9 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   @Override
   public void whileInState(VisionState currentState) {
     // Send IMU data to all limelights
-    shooterLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
-    leftLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
-    rightLimelight.sendImuData(robotHeading, 0, 0.0, 0.0, 0.0, 0.0);
+    shooterLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    leftLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
+    rightLimelight.sendImuData(robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
     DogLog.log("Vision/SeeingTag", seeingTag);
   }
 }

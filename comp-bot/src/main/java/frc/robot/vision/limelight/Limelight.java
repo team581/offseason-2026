@@ -99,7 +99,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       double roll,
       double rollRate) {
     LimelightHelpers.SetRobotOrientation(
-        limelightTableName, robotHeading, angularVelocity, pitch, pitchRate, roll, rollRate);
+        limelightTableName, robotHeading, 0.0, pitch, pitchRate, roll, rollRate);
     this.angularVelocity = angularVelocity;
   }
 

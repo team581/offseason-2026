@@ -3,11 +3,13 @@ package com.team581.vision.limelight;
 import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import org.jspecify.annotations.Nullable;
 
 public class PoseEstimateValidator {
   // Degrees per second
-  public static final double MAX_ANGULAR_VELOCITY = 100;
+  public static final DoubleSubscriber MAX_ANGULAR_VELOCITY =
+      DogLog.tunable("Limelight/MaxTagAngularRate", 100.0);
 
   private final String name;
   private @Nullable Pose2d previousPose = null;
@@ -21,7 +23,7 @@ public class PoseEstimateValidator {
       return false;
     }
 
-    if (Math.abs(angularVelocity) > MAX_ANGULAR_VELOCITY) {
+    if (Math.abs(angularVelocity) > MAX_ANGULAR_VELOCITY.getAsDouble()) {
       return false;
     }
     if (poseEstimate.tagCount == 0) {
