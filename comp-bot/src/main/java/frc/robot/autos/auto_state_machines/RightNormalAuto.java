@@ -28,7 +28,6 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
   public enum Markers {
     PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
-    CANCEL_INTAKE_RQ,
     READY_TO_SHOOT_FOR_2,
     START_INTAKE_2,
     START_INTAKE_3,
@@ -412,8 +411,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         yield currentState;
       }
       case INTAKE_SECOND_CYCLE_FAR, INTAKE_SECOND_CYCLE_TRENCH_LANE -> {
-        if (trailblazer.atGoal(robotManager.localization.getPose())
-            && trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+        if (trailblazer.atGoal(robotManager.localization.getPose())) {
           yield NormalAutoState.CROSS_BUMP_TO_SHOOT_2;
         } else {
           yield currentState;
