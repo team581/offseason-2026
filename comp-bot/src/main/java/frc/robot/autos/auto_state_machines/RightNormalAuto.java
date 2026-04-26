@@ -111,10 +111,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.kZero))
-                  .withLinearConstraints(0.4, 0.2)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
+                  .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
@@ -263,10 +260,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.kZero))
-                  .withLinearConstraints(0.4, 0.2)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
+                  .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
@@ -344,10 +338,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
-                  .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.kZero))
-                  .withLinearConstraints(0.4, 0.2)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
+                  .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.3, 100));
