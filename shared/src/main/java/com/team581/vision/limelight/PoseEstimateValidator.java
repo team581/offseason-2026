@@ -2,12 +2,17 @@ package com.team581.vision.limelight;
 
 import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class PoseEstimateValidator {
   // Degrees per second
   public static final DoubleSubscriber MAX_ANGULAR_VELOCITY =
       DogLog.tunable("Limelight/MaxTagAngularRate", 100.0);
+
+  // Degrees
+  public static final DoubleSubscriber MAX_ROTATION_ERROR =
+      DogLog.tunable("Limelight/MaxTagRotationError", 10.0);
 
   private final String name;
 
@@ -22,7 +27,8 @@ public class PoseEstimateValidator {
     this.name = name;
   }
 
-  public boolean shouldTrust(PoseEstimate poseEstimate, double angularVelocity) {
+  public boolean shouldTrust(
+      PoseEstimate poseEstimate, double angularVelocity, double expectedRotationDegrees) {
     if (poseEstimate == null) {
       return false;
     }
@@ -45,6 +51,17 @@ public class PoseEstimateValidator {
 
     // This prevents pose estimator from having crazy poses if the Limelight loses power
     if (mtPose.getX() == 0.0 && mtPose.getY() == 0.0) {
+      return false;
+    }
+
+    if (poseEstimate.isMegaTag2
+        && !MathUtil.isNear(
+            expectedRotationDegrees,
+            mtPose.getRotation().getDegrees(),
+            MAX_ROTATION_ERROR.getAsDouble(),
+            -180.0,
+            180.0)) {
+      DogLog.timestamp("Vision/" + name + "/Tags/RotationFilter");
       return false;
     }
 

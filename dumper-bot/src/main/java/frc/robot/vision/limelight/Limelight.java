@@ -48,6 +48,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private OptionalTagResult tagResult = new OptionalTagResult();
 
   private double angularVelocity = 0.0;
+  private double robotHeading = 0.0;
   private boolean updatedLimelightPos = false;
 
   public Limelight(String name, LimelightState initialState, CameraConfig config) {
@@ -69,6 +70,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     LimelightHelpers.SetRobotOrientation(
         limelightTableName, robotHeading, angularVelocity, pitch, pitchRate, roll, rollRate);
     this.angularVelocity = angularVelocity;
+    this.robotHeading = robotHeading;
   }
 
   public void setState(LimelightState state) {
@@ -83,7 +85,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     PoseEstimate mT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
 
-    if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity)) {
+    if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity, robotHeading)) {
       return tagResult.empty();
     }
 
@@ -98,7 +100,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       PoseEstimate mT2Estimate =
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
-      if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity)) {
+      if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, robotHeading)) {
         return tagResult.empty();
       }
 

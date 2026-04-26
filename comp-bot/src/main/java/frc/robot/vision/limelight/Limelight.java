@@ -68,6 +68,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   private double angularVelocity = 0.0;
   private double linearVelocity = 0.0;
+  private double robotHeading = 0.0;
   private boolean updatedLimelightPos = false;
 
   private PoseEstimate latestEstimate = new PoseEstimate();
@@ -105,6 +106,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     LimelightHelpers.SetRobotOrientation(
         limelightTableName, robotHeading, 0.0, pitch, pitchRate, roll, rollRate);
     this.angularVelocity = angularVelocity;
+    this.robotHeading = robotHeading;
   }
 
   public void setState(LimelightState state) {
@@ -126,7 +128,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     PoseEstimate mT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
     latestEstimate = mT1Estimate;
 
-    if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity)) {
+    if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity, robotHeading)) {
       DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
       return tagResult.empty();
     }
@@ -147,7 +149,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       PoseEstimate mT2Estimate =
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
-      if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity)) {
+      if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, robotHeading)) {
         DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
         return tagResult.empty();
       }
@@ -181,7 +183,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       return OptionalDouble.of(90 - (Math.random() * 5));
     }
     var maybeResult = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
-    if (poseEstimateValidator.shouldTrust(maybeResult, angularVelocity)) {
+    if (poseEstimateValidator.shouldTrust(maybeResult, angularVelocity, robotHeading)) {
       return OptionalDouble.of(maybeResult.pose.getRotation().getDegrees());
     }
     return OptionalDouble.empty();
