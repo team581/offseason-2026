@@ -1,9 +1,9 @@
 package frc.robot.power_manager;
 
 public enum PowerManagerState {
-  AUTO_FIRST_SEGMENT(5, 40, 15, 40, 10, 10, 70),
-  PRIORITIZE_INTAKE(5, 50, 15, 40, 10, 10, 20),
-  IDLE(5, 25, 15, 40, 10, 10, 35),
+  AUTO_FIRST_SEGMENT(50, 40, 15, 40, 10, 10, 70),
+  PRIORITIZE_INTAKE(50, 50, 15, 40, 10, 10, 20),
+  IDLE(50, 25, 15, 40, 10, 10, 35),
   SCORING(50, 20, 15, 40, 20, 20, 20),
   SCORING_FAR(50, 20, 15, 40, 10, 10, 20),
   BEAST_MODE(50, 10, 15, 40, 30, 30, 20),
