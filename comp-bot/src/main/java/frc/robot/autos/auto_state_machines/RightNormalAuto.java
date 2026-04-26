@@ -56,7 +56,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(1.0, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
@@ -665,7 +665,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                     13.25,
                     FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                     Rotation2d.fromDegrees(42.8))),
-            Rotation2d.k180deg);
+            FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
       }
       default -> {}
     }
