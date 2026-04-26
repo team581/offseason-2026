@@ -77,17 +77,10 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.2,
+                          9.7,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          11.875,
-                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 30))
-                  .withMarker(Markers.CANCEL_INTAKE_RQ))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
           .untilFinished(new PoseErrorTolerance(0.2, 3));
@@ -405,7 +398,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case INTAKE_FIRST_CYCLE -> {
-        if (trailblazer.passedMarker(Markers.CANCEL_INTAKE_RQ)) {
+        if (trailblazer.atGoal(robotManager.localization.getPose())) {
           robotManager.powerManager.idleRequest();
           yield NormalAutoState.CROSS_BUMP_TO_SHOOT_1;
         } else {
