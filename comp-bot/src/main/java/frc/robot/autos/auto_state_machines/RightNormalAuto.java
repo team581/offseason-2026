@@ -45,7 +45,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = Units.inchesToMeters(-3);
+  private static final double BUMP_OFFSET = 0.0;
 
   private static final double SHOOT_X = 13.7;
 
@@ -79,13 +79,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -100,7 +100,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                             new Pose2d(
                                 SHOOT_X,
                                 FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.fromDegrees(42.8)));
+                                Rotation2d.kZero));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
@@ -108,11 +108,11 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           SHOOT_X,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(42.8)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.fromDegrees(42.0)))
+              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.kZero))
                   .withLinearConstraints(0.4, 0.2)
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
@@ -145,13 +145,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -205,13 +205,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.5,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -231,13 +231,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -252,7 +252,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                             new Pose2d(
                                 SHOOT_X,
                                 FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.fromDegrees(42.8)));
+                                Rotation2d.kZero));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
@@ -260,11 +260,11 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           SHOOT_X,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(42.8)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.fromDegrees(42.0)))
+              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.kZero))
                   .withLinearConstraints(0.4, 0.2)
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
@@ -312,13 +312,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32.0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
@@ -333,7 +333,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                             new Pose2d(
                                 SHOOT_X,
                                 FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.fromDegrees(42.8)));
+                                Rotation2d.kZero));
                       })
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8),
@@ -341,11 +341,11 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           SHOOT_X,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(42.8)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ),
-              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.fromDegrees(42.0)))
+              AutoPoint.ofRed(new Pose2d(SHOOT_X, 7.225, Rotation2d.kZero))
                   .withLinearConstraints(0.4, 0.2)
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 0.5)))
           .withLinearConstraints(4.5, 8)
@@ -664,7 +664,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                 new Pose2d(
                     13.25,
                     FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                    Rotation2d.fromDegrees(42.8))),
+                    Rotation2d.kZero)),
             FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
       }
       default -> {}
