@@ -81,7 +81,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private final Vector<N3> reusableStdDevs = new Vector<>(N3.instance);
 
   private static final DoubleSubscriber ROBOT_VELOCITY_STD_DEV_MULTIPLIER =
-      DogLog.tunable("Vision/RobotVelocityStdDevMultiplier", 0.1);
+      DogLog.tunable("Vision/RobotVelocityStdDevMultiplier", 0.0);
 
   public Limelight(String name, LimelightState initialState, CameraConfig config) {
     super(SubsystemPriority.VISION, initialState);
