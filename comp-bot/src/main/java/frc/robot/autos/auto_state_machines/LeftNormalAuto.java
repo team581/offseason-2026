@@ -54,7 +54,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(1.0, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
@@ -73,7 +73,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.57, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.2,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -135,7 +139,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.2,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -156,32 +164,34 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(-160)))
                   .withLinearConstraints(0.5, 2.0)
-                  .withAngularConstraints(5.0, 10.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
+                  .withAngularConstraints(2.5, 1.5)
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 80)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(5.0, 10.0)
+                  .withAngularConstraints(2.5, 1.5)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withMarker(Markers.START_INTAKE_2)
                   .withLinearConstraints(3.0, 8.0)
+                  .withAngularConstraints(2.0, 1.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.5,
                           FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(180 - 20)))
+                          Rotation2d.fromDegrees(180)))
                   .withLinearConstraints(4.5, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
-                  .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH),
+                  .withAngularConstraints(0.5, 0.5)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(10.628, 0.87, Rotation2d.fromDegrees(140)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
-                  .withMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH),
+                  .withMarker(Markers.CHECK_CLUSTER_MAP_TRENCH)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))
+                  .withMarker(Markers.CANCEL_CLUSTER_MAP_TRENCH)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(8.7, 2.477, Rotation2d.fromDegrees(85)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
@@ -191,7 +201,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(10.2, 3.77, Rotation2d.fromDegrees(-10)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(10.5, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.5,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -213,7 +227,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.2,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -261,27 +279,29 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(-160)))
                   .withLinearConstraints(0.5, 2.0)
-                  .withAngularConstraints(5.0, 10.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
+                  .withAngularConstraints(2.5, 1.5)
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 80)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(5.0, 10.0)
+                  .withAngularConstraints(2.5, 1.5)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(3.0, 8.0)
+                  .withAngularConstraints(2.0, 1.0)
                   .withMarker(Markers.START_INTAKE_3)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.5,
                           FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),
-                          Rotation2d.fromDegrees(180 - 20)))
+                          Rotation2d.fromDegrees(180)))
                   .withLinearConstraints(4.5, 8.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withAngularConstraints(0.5, 0.5)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(7.983, 2.477, Rotation2d.fromDegrees(75)))
@@ -290,7 +310,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 2.67 + BUMP_OFFSET, Rotation2d.fromDegrees(-32)))
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          10.2,
+                          FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
+                          Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -372,11 +396,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
-        case INTAKE_FIRST_CYCLE,
-            DEFAULT_INTAKE_SECOND_CYCLE,
-            INTAKE_SECOND_CYCLE_FAR,
-            INTAKE_SECOND_CYCLE_TRENCH_LANE,
-            INTAKE_THIRD_CYCLE -> {
+        case INTAKE_FIRST_CYCLE, INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
             return NormalAutoState.STUCK_ON_BALL_RECOVERY;
@@ -527,7 +547,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
+            robotManager.localization.imu.setRoll(7.5);
           }
           if (timeout(0.4)) {
             robotManager.localization.imu.setPitch(0.0);
@@ -535,7 +555,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           }
           if (timeout(0.6)) {
             robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
+            robotManager.localization.imu.setRoll(-7.5);
           }
           if (timeout(.7)) {
             robotManager.localization.imu.setPitch(0.0);
@@ -573,7 +593,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
+            robotManager.localization.imu.setRoll(7.5);
           }
           if (timeout(0.4)) {
             robotManager.localization.imu.setPitch(0.0);
@@ -581,7 +601,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           }
           if (timeout(0.6)) {
             robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
+            robotManager.localization.imu.setRoll(-7.5);
           }
           if (timeout(.7)) {
             robotManager.localization.imu.setPitch(0.0);
@@ -603,7 +623,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
+            robotManager.localization.imu.setRoll(7.5);
           }
           if (timeout(0.4)) {
             robotManager.localization.imu.setPitch(0.0);
@@ -611,7 +631,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           }
           if (timeout(0.6)) {
             robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
+            robotManager.localization.imu.setRoll(-7.5);
           }
           if (timeout(.7)) {
             robotManager.localization.imu.setPitch(0.0);
