@@ -65,12 +65,12 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-85)))))
+                              Point.ofRed(new Pose2d(8.283, 5.593, Rotation2d.fromDegrees(-85)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.200, 4.5, Rotation2d.fromDegrees(-30.0)))))
+                              Point.ofRed(new Pose2d(8.300, 4.7, Rotation2d.fromDegrees(-30.0)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.5, Rotation2d.fromDegrees(32.0)))
@@ -162,14 +162,14 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           13.2,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(160)))
-                  .withLinearConstraints(1.0, 2.0)
-                  .withAngularConstraints(3.0, 3.0)
+                  .withLinearConstraints(2.0, 2.0)
+                  .withAngularConstraints(4.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(3.0, 2.0)
+                  .withAngularConstraints(4.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -217,7 +217,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment intakeSecondCycleFar =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-85)))
+              AutoPoint.ofRed(new Pose2d(8.183, 5.593, Rotation2d.fromDegrees(-85)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK),
               AutoPoint.ofRed(new Pose2d(8.200, 4.31, Rotation2d.fromDegrees(-30.0)))
@@ -272,14 +272,14 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           13.2,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(160)))
-                  .withLinearConstraints(1.0, 2.0)
-                  .withAngularConstraints(3.0, 3.0)
+                  .withLinearConstraints(2.0, 2.0)
+                  .withAngularConstraints(4.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(3.0, 2.0)
+                  .withAngularConstraints(4.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -296,9 +296,9 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-130)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(7.983, 5.593, Rotation2d.fromDegrees(-75)))
+              AutoPoint.ofRed(new Pose2d(8.283, 5.593, Rotation2d.fromDegrees(-75)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(8.200, 4.31, Rotation2d.fromDegrees(-30.0)))
+              AutoPoint.ofRed(new Pose2d(8.300, 4.31, Rotation2d.fromDegrees(-30.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.3, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
