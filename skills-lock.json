@@ -1,0 +1,8 @@
+{
+  "skills": {"analyze-wpilog": {
+    "computedHash": "4abcb78407bc329bd962e9242ac5dc768b1e470f55c9a4fdc7f76f0dca674fd4",
+    "sourceType": "github",
+    "source": "jonahsnider/wpilog-parser"
+  }},
+  "version": 1
+}
