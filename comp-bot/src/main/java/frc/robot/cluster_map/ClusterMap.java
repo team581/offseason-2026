@@ -69,6 +69,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     return Math.PI * (expectedWidthPx / 2.0) * (expectedHeightPx / 2.0);
   }
 
+  private Lane bestLane = Lane.LANE_0;
+  private Optional<Pose2d> bestPose = Optional.empty();
+
+  private boolean hasHighValueTrenchCluster = false;
+
   private final Limelight limelight;
 
   private final ArrayList<ClusterMapElement> clusterMap = new ArrayList<>();
@@ -99,6 +104,22 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   /** Returns the lane with the most detected balls, ignoring the trench. */
   public Lane getBestClusterLane() {
+    return bestLane;
+  }
+
+  public Optional<Pose2d> getBestClusterPose() {
+    return bestPose;
+  }
+
+  public boolean hasHighValueTrenchCluster() {
+    return hasHighValueTrenchCluster;
+  }
+
+  public void setDeployFullyExtended(boolean isFullyExtended) {
+    deployFullyExtended = isFullyExtended;
+  }
+
+  private Lane calculateBestClusterLane() {
     var robotPose = localization.getPose();
     DogLog.timestamp("ClusterMap/RanBestLane");
 
@@ -121,7 +142,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
         .orElse(Lane.NONE);
   }
 
-  public Optional<Pose2d> getBestClusterPose() {
+  private Optional<Pose2d> calculateBestClusterPose() {
 
     if (clusterMap.isEmpty()) {
       DogLog.log("ClusterMap/BestClusterPose", Pose2d.kZero);
@@ -174,7 +195,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     return Optional.of(clusterPoseWithIntakeRotation);
   }
 
-  public boolean hasHighValueTrenchCluster() {
+  private boolean calculateHasHighValueCluster() {
     if (clusterMap.isEmpty()) {
       return false;
     }
@@ -203,10 +224,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     }
 
     return false;
-  }
-
-  public void setDeployFullyExtended(boolean isFullyExtended) {
-    deployFullyExtended = isFullyExtended;
   }
 
   private OptionalVisionClusterData getRawClusterPoses() {
@@ -344,12 +361,10 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     if (FeatureFlags.CLUSTER_MAP.getAsBoolean() && DriverStation.isAutonomous()) {
       swerveSpeeds = swerve.getRobotRelativeSpeeds();
       updateMap();
-      if (!hasDoneWarmup) {
-        var bestClusterLane = getBestClusterLane();
-        var bestClusterPose = getBestClusterPose();
-        var hasHighValueTrenchCluster = hasHighValueTrenchCluster();
-        hasDoneWarmup = true;
-      }
+      bestLane = calculateBestClusterLane();
+      bestPose = calculateBestClusterPose();
+      hasHighValueTrenchCluster = calculateHasHighValueCluster();
+      hasDoneWarmup = true;
     }
   }
 
