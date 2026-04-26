@@ -112,8 +112,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case IDLE -> {
-        if (DriverStation.isEnabled()
-            && DriverStation.isTeleop()
+        if (DriverStation.isTeleopEnabled()
             && hopperManager.isFull()
             && isInAllianceZone
             && !hopperManager.isIntaking()
@@ -124,8 +123,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case WARMUP_SCORE -> {
-        if (DriverStation.isEnabled()
-            && DriverStation.isTeleop()
+        if (DriverStation.isTeleopEnabled()
             && hopperManager.isFull()
             && isInAllianceZone
             && !hopperManager.isIntaking()
