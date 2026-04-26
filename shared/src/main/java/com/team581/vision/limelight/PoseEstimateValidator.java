@@ -12,7 +12,7 @@ public class PoseEstimateValidator {
 
   // Degrees
   public static final DoubleSubscriber MAX_ROTATION_ERROR =
-      DogLog.tunable("Limelight/MaxTagRotationError", 10.0);
+      DogLog.tunable("Limelight/MaxTagRotationError", 45.0);
 
   private final String name;
 
