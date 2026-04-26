@@ -25,7 +25,7 @@ import java.util.List;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
   private static final DoubleSubscriber LATENCY_CONSTANT =
-      DogLog.tunable("Localization/StaticLatencyAdjustment", 15.0);
+      DogLog.tunable("Localization/StaticLatencyAdjustment", 0.0);
   public final Imu imu;
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
