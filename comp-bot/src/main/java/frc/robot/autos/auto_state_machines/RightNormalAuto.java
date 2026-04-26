@@ -45,9 +45,9 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double MIDLINE_OFFSET = 0.0;
 
-  private static final double BUMP_OFFSET = 0.0;
+  private static final double BUMP_OFFSET = -0.13;
 
-  private static final double SHOOT_X = 13.7;
+  private static final double SHOOT_X = 13.6;
 
   private boolean collisionEverDetected = false;
 
@@ -162,8 +162,8 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           13.2,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(160)))
-                  .withLinearConstraints(0.75, 2.0)
-                  .withAngularConstraints(3.0, 2.0)
+                  .withLinearConstraints(1.0, 2.0)
+                  .withAngularConstraints(3.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -272,8 +272,8 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           13.2,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(160)))
-                  .withLinearConstraints(0.75, 2.0)
-                  .withAngularConstraints(3.0, 2.0)
+                  .withLinearConstraints(1.0, 2.0)
+                  .withAngularConstraints(3.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
