@@ -135,9 +135,12 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var mTPose = mT1Estimate.pose;
     var distance = mT1Estimate.avgTagDist;
 
-    var xyDev =
-        0.01 * Math.pow(distance, 0.8)
-            + (linearVelocity * ROBOT_VELOCITY_STD_DEV_MULTIPLIER.getAsDouble());
+    double linearVelocityAddition =
+        linearVelocity > 2.0
+            ? linearVelocity * ROBOT_VELOCITY_STD_DEV_MULTIPLIER.getAsDouble()
+            : 0.0;
+
+    var xyDev = 0.01 * Math.pow(distance, 0.8) + linearVelocityAddition;
     var thetaDev = 999.0;
 
     if (config.useMt2()) {
