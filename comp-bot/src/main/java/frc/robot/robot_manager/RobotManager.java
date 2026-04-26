@@ -113,6 +113,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case IDLE -> {
         if (DriverStation.isEnabled()
+            && DriverStation.isTeleop()
             && hopperManager.isFull()
             && isInAllianceZone
             && !hopperManager.isIntaking()
