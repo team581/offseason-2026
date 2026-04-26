@@ -47,7 +47,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double BUMP_OFFSET = Units.inchesToMeters(-3);
 
-  private static final double SHOOT_X = 13.4;
+  private static final double SHOOT_X = 13.7;
 
   private boolean collisionEverDetected = false;
 
