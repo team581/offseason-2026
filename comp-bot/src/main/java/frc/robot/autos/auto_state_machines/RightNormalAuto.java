@@ -80,13 +80,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
@@ -146,13 +146,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(3.0))
@@ -165,14 +165,14 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           13.2,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(160)))
-                  .withLinearConstraints(0.5, 2.0)
-                  .withAngularConstraints(2.5, 1.5)
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 80)),
+                  .withLinearConstraints(0.75, 2.0)
+                  .withAngularConstraints(3.0, 2.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(2.5, 1.5)
+                  .withAngularConstraints(3.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -206,13 +206,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           10.5,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
@@ -232,13 +232,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           11.875,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 30))
                   .withMarker(Markers.CANCEL_INTAKE_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(4.0), Units.rotationsToRadians(4.0))
@@ -278,14 +278,14 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           13.2,
                           FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
                           Rotation2d.fromDegrees(160)))
-                  .withLinearConstraints(0.5, 2.0)
-                  .withAngularConstraints(2.5, 1.5)
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 80)),
+                  .withLinearConstraints(0.75, 2.0)
+                  .withAngularConstraints(3.0, 2.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
                   .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(2.5, 1.5)
+                  .withAngularConstraints(3.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
