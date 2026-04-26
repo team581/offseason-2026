@@ -18,6 +18,7 @@ import java.util.function.DoubleSupplier;
 public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private static final double FLAT_DEBOUNCE_SECONDS = 0.04;
   private static final double FLAT_FALLBACK_DEBOUNCE_SECONDS = 0.75;
+  private static final double STUCK_IN_STATE_TIMEOUT_DURATION = 1.5;
   private static final DoubleSubscriber FLAT_THRESHOLD =
       DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
   private static final DoubleSubscriber UPHILL_THRESHOLD =
@@ -98,12 +99,18 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
         flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
   }
 
+  private BumpCrossingState stuckInStateTimeout() {
+    poseResetConsumer.accept(landingPoint.getTranslation());
+    DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/StuckInStateTimeout");
+    return BumpCrossingState.FLAT_NOT_CROSSING;
+  }
+
   @Override
   public BumpCrossingState getNextState(BumpCrossingState currentState) {
     // Fallback
     if (currentState == BumpCrossingState.CROSSING_UPHILL && isFlatFallbackDebounced) {
       poseResetConsumer.accept(landingPoint.getTranslation());
-      DogLog.timestamp("Imu/BumpCrossing/FallbackFinishedCrossing");
+      DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/FallbackDebounced");
       return BumpCrossingState.FLAT_NOT_CROSSING;
     }
 
@@ -112,17 +119,26 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
         if (directionalTilt > UPHILL_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_UPHILL;
         }
+        if (timeout(STUCK_IN_STATE_TIMEOUT_DURATION)) {
+          yield stuckInStateTimeout();
+        }
         yield currentState;
       }
       case CROSSING_UPHILL -> {
         if (directionalTilt < DOWNHILL_THRESHOLD.get()) {
           yield BumpCrossingState.CROSSING_DOWNHILL;
         }
+        if (timeout(STUCK_IN_STATE_TIMEOUT_DURATION)) {
+          yield stuckInStateTimeout();
+        }
         yield currentState;
       }
       case CROSSING_DOWNHILL -> {
         if (isFlat) {
           yield BumpCrossingState.FLAT_NOT_CROSSING;
+        }
+        if (timeout(STUCK_IN_STATE_TIMEOUT_DURATION)) {
+          yield stuckInStateTimeout();
         }
         yield currentState;
       }
@@ -143,7 +159,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
         && newState == BumpCrossingState.FLAT_NOT_CROSSING) {
       // We just crossed, reset pose
       poseResetConsumer.accept(landingPoint.getTranslation());
-      DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing");
+      DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/NormalSequence");
     }
   }
 
