@@ -428,7 +428,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(4.0)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(3.0)) {
           yield NormalAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
@@ -471,7 +471,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case SHOOT_2 -> {
-        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(5.0)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(3.0)) {
           yield NormalAutoState.INTAKE_THIRD_CYCLE;
         } else {
           yield currentState;
