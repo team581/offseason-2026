@@ -14,8 +14,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
  * behavior.
  */
 public class BumpCrossingFollower implements PathFollower {
-  private static final double CROSSING_START_LINEAR_VELOCITY = 3;
-  private static final double CROSSING_DOWNHILL_LINEAR_VELOCITY = 3;
+  private static final double CROSSING_START_LINEAR_VELOCITY = 4;
+  private static final double CROSSING_DOWNHILL_LINEAR_VELOCITY = 4;
 
   private final PathFollower follower;
 
