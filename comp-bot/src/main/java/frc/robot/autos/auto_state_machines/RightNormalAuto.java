@@ -196,7 +196,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(new Pose2d(8.500, 4.31, Rotation2d.fromDegrees(-30.0)))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(10.2, 4.3, Rotation2d.fromDegrees(10.0)))
+              AutoPoint.ofRed(new Pose2d(10.07, 4.3, Rotation2d.fromDegrees(10.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
