@@ -85,6 +85,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   private boolean deployFullyExtended = false;
   private boolean hasDoneWarmup = false;
+  private int warmupTickCount = 0;
 
   private final GamePieceResult gamePieceResult = new GamePieceResult();
 
@@ -92,8 +93,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       new LaneSystem(7.0, 9.86, 1.5, FieldUtil.FIELD_WIDTH_Y - 1.5, 2);
 
   private final OptionalVisionClusterData clusterDataResult = new OptionalVisionClusterData();
-
-  private final Translation2d warmupTranslation = new Translation2d(1.0, 1.0);
 
   public ClusterMap(Localization localization, Swerve swerve, Limelight limelight) {
     super(SubsystemPriority.VISION, ClusterMapState.DEFAULT_STATE);
@@ -234,7 +233,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
           10);
     }
     if (!hasDoneWarmup) {
-      return clusterDataResult.update(warmupTranslation, 20, 20);
+      return getWarmupRawClusterPose();
     }
     if (limelight.getState() != LimelightState.CLUSTER_MAP && !deployFullyExtended) {
       return clusterDataResult.empty();
@@ -295,10 +294,82 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     return clusterDataResult.update(clusterPose, calculatedSize, clusterScore);
   }
 
+  /**
+   * Drives synthetic but realistic data through the same code path the real Limelight read uses, so
+   * the JIT compiles every method we'll need before auto starts. Inputs are varied across ticks so
+   * different downstream branches get exercised.
+   */
+  private OptionalVisionClusterData getWarmupRawClusterPose() {
+    // Touch the real Limelight read methods so they get JITed too. Result may be null/empty
+    // before the LL is publishing - we don't care, we just need the methods invoked. Exercise
+    // the staleData comparison too (without actually using its result, since we want updateMap
+    // to keep running so its blend/match branches get warmed up).
+    double[] result = LimelightHelpers.getPythonScriptData(limelight.limelightTableName);
+    if (result != null && previousResult != null) {
+      var unused = Arrays.equals(previousResult, result);
+      previousResult = result;
+    }
+    staleData = false;
+    LimelightHelpers.getLatency_Capture(limelight.limelightTableName);
+    LimelightHelpers.getLatency_Pipeline(limelight.limelightTableName);
+    LimelightHelpers.getTX(limelight.limelightTableName);
+    LimelightHelpers.getTY(limelight.limelightTableName);
+
+    // Synthetic ty/tx/area that vary each tick to exercise different downstream branches.
+    // Keep ty under MAX_VALID_TY so we don't always trip the rejection branch.
+    double tickPhase = (warmupTickCount % 60) / 60.0;
+    double syntheticTy = 5.0 + tickPhase * 10.0;
+    double syntheticTx = -15.0 + tickPhase * 30.0;
+    double syntheticArea = 50.0 + tickPhase * 200.0;
+
+    double timestamp = Timer.getFPGATimestamp();
+    var robotPoseAtCapture = localization.getPose(timestamp);
+
+    gamePieceResult.update(syntheticTx, syntheticTy, timestamp);
+
+    var clusterPose =
+        GamePieceDetectionCalculator.calculateFieldRelativeTranslationFromCamera(
+            robotPoseAtCapture, gamePieceResult, limelight.config);
+
+    if (Double.isNaN(clusterPose.getX()) || Double.isNaN(clusterPose.getY())) {
+      return clusterDataResult.empty();
+    }
+
+    double distanceMeters = robotPoseAtCapture.getTranslation().getDistance(clusterPose);
+    double estimatedBalls =
+        (syntheticArea * Math.pow(distanceMeters, 2)) / REFERENCE_BALL_AREA_AT_1M;
+    int calculatedSize = (int) Math.round(estimatedBalls);
+    calculatedSize = MathUtil.clamp(calculatedSize, 1, MAX_CLUSTER_SIZE_CAP);
+
+    return clusterDataResult.update(clusterPose, calculatedSize, 10.0);
+  }
+
   private boolean safeToTrack() {
     return swerveSpeeds.vxMetersPerSecond < SWERVE_MAX_LINEAR_SPEED_TRACKING
         && swerveSpeeds.vyMetersPerSecond < SWERVE_MAX_LINEAR_SPEED_TRACKING
         && swerveSpeeds.omegaRadiansPerSecond < Math.toRadians(SWERVE_MAX_ANGULAR_SPEED_TRACKING);
+  }
+
+  /**
+   * Seed the cluster map with synthetic entries so {@link #updateMap()} hits the "match existing
+   * cluster -> blend / interpolate" branch instead of only the "no match -> add new" branch, and so
+   * the lane / trench / front-facing scoring code paths all see real data.
+   */
+  private void seedWarmupClusters() {
+    if (!clusterMap.isEmpty()) {
+      return;
+    }
+    double expiry = Timer.getFPGATimestamp() + CLUSTER_LIFETIME_SECONDS;
+    Translation2d[] seeds = {
+      new Translation2d(8.0, 1.0),
+      new Translation2d(8.0, FieldUtil.FIELD_WIDTH_Y - 1.0),
+      new Translation2d(8.5, FieldUtil.FIELD_WIDTH_Y / 2.0 - 1.0),
+      new Translation2d(8.5, FieldUtil.FIELD_WIDTH_Y / 2.0 + 1.0),
+      new Translation2d(9.5, FieldUtil.FIELD_WIDTH_Y / 2.0),
+    };
+    for (Translation2d seed : seeds) {
+      clusterMap.add(new ClusterMapElement(expiry, seed, 5.0, 15.0, 5.0));
+    }
   }
 
   private void updateMap() {
@@ -360,11 +431,32 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   protected void collectInputs() {
     if (FeatureFlags.CLUSTER_MAP.getAsBoolean() && DriverStation.isAutonomous()) {
       swerveSpeeds = swerve.getRobotRelativeSpeeds();
-      updateMap();
-      bestLane = calculateBestClusterLane();
-      bestPose = calculateBestClusterPose();
-      hasHighValueTrenchCluster = calculateHasHighValueCluster();
-      hasDoneWarmup = true;
+
+      // While disabled in the autonomous period, run warmup continuously so the JIT can
+      // promote every method on the real cluster-map code path before the match starts.
+      // Latching after a single tick (the previous behavior) only let HotSpot see each method
+      // once, which left the actual auto code path being interpreted/compiled live - producing
+      // the lag spike we see at the midline.
+      if (DriverStation.isDisabled()) {
+        seedWarmupClusters();
+        updateMap();
+        bestLane = calculateBestClusterLane();
+        bestPose = calculateBestClusterPose();
+        hasHighValueTrenchCluster = calculateHasHighValueCluster();
+        warmupTickCount++;
+      } else {
+        // First enabled tick: drop any synthetic data we seeded during warmup so we start
+        // from a clean slate on real Limelight input.
+        if (!hasDoneWarmup) {
+          clusterMap.clear();
+          previousResult = new double[0];
+        }
+        hasDoneWarmup = true;
+        updateMap();
+        bestLane = calculateBestClusterLane();
+        bestPose = calculateBestClusterPose();
+        hasHighValueTrenchCluster = calculateHasHighValueCluster();
+      }
     }
   }
 
@@ -385,5 +477,6 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       }
     }
     DogLog.log("ClusterMap/HasDoneWarmup", hasDoneWarmup);
+    DogLog.log("ClusterMap/WarmupTickCount", warmupTickCount);
   }
 }
