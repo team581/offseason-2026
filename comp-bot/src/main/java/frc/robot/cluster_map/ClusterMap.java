@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -46,6 +47,8 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
 
   // Hard cap to prevent the inverse-square law from predicting thousands of balls
   private static final int MAX_CLUSTER_SIZE_CAP = 50;
+
+  private static final int WARMUP_TARGET_TICKS = 1000;
 
   private static final double REFERENCE_BALL_AREA_AT_1M = calculateTheoreticalArea();
 
@@ -437,7 +440,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       // Latching after a single tick (the previous behavior) only let HotSpot see each method
       // once, which left the actual auto code path being interpreted/compiled live - producing
       // the lag spike we see at the midline.
-      if (DriverStation.isDisabled() && warmupTickCount < 1000) {
+      if (DriverStation.isDisabled() && warmupTickCount < WARMUP_TARGET_TICKS) {
         seedWarmupClusters();
         updateMap();
         bestLane = calculateBestClusterLane();
@@ -478,5 +481,11 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     }
     DogLog.log("ClusterMap/HasDoneWarmup", hasDoneWarmup);
     DogLog.log("ClusterMap/WarmupTickCount", warmupTickCount);
+
+    if (warmupTickCount < WARMUP_TARGET_TICKS) {
+      DogLog.logFault("Cluster map warmup still running", AlertType.kWarning);
+    } else {
+      DogLog.clearFault("Cluster map warmup still running");
+    }
   }
 }
