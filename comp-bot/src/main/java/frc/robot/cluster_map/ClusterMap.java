@@ -437,7 +437,7 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
       // Latching after a single tick (the previous behavior) only let HotSpot see each method
       // once, which left the actual auto code path being interpreted/compiled live - producing
       // the lag spike we see at the midline.
-      if (DriverStation.isDisabled()) {
+      if (DriverStation.isDisabled() && warmupTickCount < 10000) {
         seedWarmupClusters();
         updateMap();
         bestLane = calculateBestClusterLane();
