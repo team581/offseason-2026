@@ -263,7 +263,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(8.7, 5.593, Rotation2d.fromDegrees(-90)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(8.600, 4.31, Rotation2d.fromDegrees(-90.0)))
+              AutoPoint.ofRed(new Pose2d(8.600, 4.31, Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 4.3, Rotation2d.fromDegrees(32.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
