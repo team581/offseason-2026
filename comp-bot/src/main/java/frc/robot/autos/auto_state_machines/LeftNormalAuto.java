@@ -25,6 +25,8 @@ import frc.robot.robot_manager.RobotManager;
 
 public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
+  private static final double SHOOTER_WARMUP_DISTANCE_FROM_HUB = 2.171;
+
   public enum Markers {
     PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
@@ -38,14 +40,14 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private BumpCrossingTracker bumpCrossingTracker;
 
-  private static final double COLLISION_X_OFFSET = 0.5;
+  private static final double COLLISION_X_OFFSET = 0.13;
   private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
 
   private static final double MIDLINE_OFFSET = 0.0;
 
   private static final double BUMP_OFFSET = -0.13;
 
-  private static final double SHOOT_X = 13.6;
+  private static final double SHOOT_X = 13.7;
 
   private boolean collisionEverDetected = false;
 
@@ -58,17 +60,17 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(120)))))
+                              Point.ofRed(new Pose2d(9.010, 1.417, Rotation2d.fromDegrees(120)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.783, 2.477, Rotation2d.fromDegrees(85)))))
+                              Point.ofRed(new Pose2d(8.553, 2.677, Rotation2d.fromDegrees(85)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.800, 3.37, Rotation2d.fromDegrees(30)))))
+                              Point.ofRed(new Pose2d(8.670, 3.37, Rotation2d.fromDegrees(30)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.57, Rotation2d.fromDegrees(-32)))
@@ -180,19 +182,19 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment intakeSecondCycleFar =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(8.183, 2.477, Rotation2d.fromDegrees(85)))
+              AutoPoint.ofRed(new Pose2d(8.283, 2.477, Rotation2d.fromDegrees(85)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK),
-              AutoPoint.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))
+              AutoPoint.ofRed(new Pose2d(8.300, 3.76, Rotation2d.fromDegrees(30)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(9.7, 3.77, Rotation2d.fromDegrees(-45)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           SHOOT_X,
@@ -257,11 +259,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withLinearConstraints(4.5, 8.0)
                   .withAngularConstraints(0.5, 0.5)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
-              AutoPoint.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))
+              AutoPoint.ofRed(new Pose2d(9.6, 1.717, Rotation2d.fromDegrees(130)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(8.7, 2.477, Rotation2d.fromDegrees(90)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(8.283, 2.477, Rotation2d.fromDegrees(75)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.ofRed(new Pose2d(8.300, 3.76, Rotation2d.fromDegrees(30)))
+              AutoPoint.ofRed(new Pose2d(8.600, 3.76, Rotation2d.fromDegrees(90)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(new Pose2d(9.31, 3.77, Rotation2d.fromDegrees(-32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
@@ -495,6 +497,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case CROSS_BUMP_TO_SHOOT_1 -> {
         trailblazer.setActiveSegment(crossBumpToShootOne);
         robotManager.cancelIntakeRequest();
+        robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
@@ -537,6 +540,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
+        robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
+
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
@@ -567,6 +572,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
+        robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
+
         if (RobotBase.isSimulation()) {
           if (timeout(0.2)) {
             robotManager.localization.imu.setPitch(-7.5);
