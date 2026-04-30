@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -19,7 +20,7 @@ public class DeployConfig {
   public static final double HOMING_END_POSITION_OUTWARD = 11.9;
   public static final double HOMING_VOLTAGE_INWARD = -2;
   public static final double HOMING_VOLTAGE_OUTWARD = 3;
-  public static final double HOMING_CURRENT = RobotKind.IS_COMP_BOT ? 40.0 : 10.0;
+  public static final double HOMING_CURRENT = RobotKind.IS_COMP_BOT ? 10.0 : 10.0;
   public static final double POSITION_TOLERANCE = 0.25;
 
   private static final Slot0Configs AVERAGE_GAINS =
@@ -35,6 +36,11 @@ public class DeployConfig {
   // Difference axis gains typically go in Slot 1
   private static final Slot1Configs DIFFERENCE_GAINS =
       new Slot1Configs().withKP(8.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+
+  // Separate differential gains where we rail kP on differential axis to force left/right side to
+  // sync up
+  private static final Slot2Configs DIFFERENCE_GAINS_FIX_DESYNC =
+      new Slot2Configs().withKP(100.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -57,7 +63,8 @@ public class DeployConfig {
                   .withMotionMagicCruiseVelocity(200.0)
                   .withMotionMagicAcceleration(50.0))
           .withSlot0(AVERAGE_GAINS)
-          .withSlot1(DIFFERENCE_GAINS);
+          .withSlot1(DIFFERENCE_GAINS)
+          .withSlot2(DIFFERENCE_GAINS_FIX_DESYNC);
 
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -80,7 +87,8 @@ public class DeployConfig {
                   .withMotionMagicCruiseVelocity(200.0)
                   .withMotionMagicAcceleration(50.0))
           .withSlot0(AVERAGE_GAINS)
-          .withSlot1(DIFFERENCE_GAINS);
+          .withSlot1(DIFFERENCE_GAINS)
+          .withSlot2(DIFFERENCE_GAINS_FIX_DESYNC);
 
   private DeployConfig() {}
 }

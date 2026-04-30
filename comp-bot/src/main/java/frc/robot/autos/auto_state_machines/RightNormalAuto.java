@@ -47,7 +47,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double BUMP_OFFSET = -0.13;
 
-  private static final double SHOOT_X = 13.7;
+  private static final double SHOOT_X = 13.83;
 
   private boolean collisionEverDetected = false;
 
@@ -73,13 +73,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                               Point.ofRed(new Pose2d(8.670, 4.7, Rotation2d.fromDegrees(-30.0)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.31, 4.5, Rotation2d.fromDegrees(32.0)))
+              AutoPoint.ofRed(new Pose2d(9.6, 4.5, Rotation2d.fromDegrees(90.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           9.7,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(32)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -100,27 +100,17 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment crossBumpToShootOne =
       Trailblazer.segment(
-              AutoPoint.of(
-                      () -> {
-                        return Point.ofRed(
-                            new Pose2d(
-                                SHOOT_X,
-                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.kZero));
-                      })
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           SHOOT_X,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
-          .untilFinished(new PoseErrorTolerance(1.0, 100));
+          .forever();
 
   private final AutoSegment defaultIntakeSecondCycle =
       Trailblazer.segment(
@@ -161,13 +151,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(new Pose2d(8.500, 4.31, Rotation2d.fromDegrees(-30.0)))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(10.07, 4.3, Rotation2d.fromDegrees(10.0)))
+              AutoPoint.ofRed(new Pose2d(10.07, 4.3, Rotation2d.fromDegrees(15.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(50)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -187,13 +177,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK),
               AutoPoint.ofRed(new Pose2d(8.300, 4.31, Rotation2d.fromDegrees(-30.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.7, 4.3, Rotation2d.fromDegrees(45.0)))
+              AutoPoint.ofRed(new Pose2d(9.7, 4.3, Rotation2d.fromDegrees(15.0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
+                          Rotation2d.fromDegrees(50)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -208,28 +198,17 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment crossBumpToShootTwo =
       Trailblazer.segment(
-              AutoPoint.of(
-                      () -> {
-                        return Point.ofRed(
-                            new Pose2d(
-                                SHOOT_X,
-                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.kZero));
-                      })
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           SHOOT_X,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
-          .untilFinished(new PoseErrorTolerance(1.0, 100));
-
+          .forever();
   private final AutoSegment intakeThirdCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(
@@ -292,28 +271,17 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment crossBumpToShootThree =
       Trailblazer.segment(
-              AutoPoint.of(
-                      () -> {
-                        return Point.ofRed(
-                            new Pose2d(
-                                SHOOT_X,
-                                FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                                Rotation2d.kZero));
-                      })
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
-                  .withLinearConstraints(4.5, 8),
               AutoPoint.ofRed(
                       new Pose2d(
                           SHOOT_X,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(1.75, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
                   .withLinearConstraints(4.5, 8)
                   .withMarker(Markers.START_SHOOT_RQ))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
-          .untilFinished(new PoseErrorTolerance(1.0, 100));
-
+          .forever();
   private AutoSegment stuckOnBall =
       StuckOnBallRecovery.getRecoverySegment(
           () -> robotManager.localization.getPose(),
