@@ -15,7 +15,7 @@ import frc.robot.config.RobotKind;
 
 public class DeployConfig {
   public static final double MAX_LENGTH = 11.8;
-  public static final double MIN_LENGTH = 0;
+  public static final double MIN_LENGTH = 5;
   public static final double HOMING_END_POSITION_INWARD = 0;
   public static final double HOMING_END_POSITION_OUTWARD = 11.9;
   public static final double HOMING_VOLTAGE_INWARD = -2;
