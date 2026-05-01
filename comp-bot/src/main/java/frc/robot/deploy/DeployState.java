@@ -5,18 +5,18 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DeployState {
   INTAKE(DeployConfig.MAX_LENGTH),
-  STOW(1.0),
+  STOW(5.0),
   SAFE_KICKER_STOW(7.915),
   // placeholder values
   SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 3.5),
   SCORE_COMPACTION(1.0),
   FEED_COMPACTION(6.915),
 
-  BEAST_MODE_COMPACTION(1.0),
+  BEAST_MODE_COMPACTION(5.0),
 
   FIX_DIFFERENTIAL_DESYNC(DeployConfig.MAX_LENGTH),
 
-  HOME_INWARD(DeployConfig.MIN_LENGTH),
+  HOME_INWARD(5.0),
   HOME_OUTWARD(DeployConfig.MAX_LENGTH),
   UNHOMED(0);
 
