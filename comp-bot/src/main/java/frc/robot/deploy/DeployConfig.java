@@ -19,8 +19,10 @@ public class DeployConfig {
   public static final double HOMING_END_POSITION_INWARD = 0;
   public static final double HOMING_END_POSITION_OUTWARD = 11.9;
   public static final double HOMING_VOLTAGE_INWARD = -2;
-  public static final double HOMING_VOLTAGE_OUTWARD = 3;
+  public static final double HOMING_VOLTAGE_OUTWARD = 4;
   public static final double HOMING_CURRENT = 20.0;
+  public static final double HOMING_CURRENT_OUTWARD = 35.0;
+
   public static final double POSITION_TOLERANCE = 0.25;
 
   private static final Slot0Configs AVERAGE_GAINS =
@@ -40,7 +42,7 @@ public class DeployConfig {
   // Separate differential gains where we rail kP on differential axis to force left/right side to
   // sync up
   private static final Slot2Configs DIFFERENCE_GAINS_FIX_DESYNC =
-      new Slot2Configs().withKP(100.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+      new Slot2Configs().withKP(200.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
