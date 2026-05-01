@@ -112,6 +112,19 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .forever();
 
+  private final AutoSegment shootOne =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          SHOOT_X,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
+                  .withLinearConstraints(4.5, 8))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
+          .untilFinished(new PoseErrorTolerance(0.2));
+
   private final AutoSegment defaultIntakeSecondCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(
@@ -209,6 +222,19 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .forever();
+
+  private final AutoSegment shootTwo =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          SHOOT_X,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
+                  .withLinearConstraints(4.5, 8))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
+          .untilFinished(new PoseErrorTolerance(0.2));
   private final AutoSegment intakeThirdCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(
@@ -282,6 +308,20 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .forever();
+
+  private final AutoSegment shootThree =
+      Trailblazer.segment(
+              AutoPoint.ofRed(
+                      new Pose2d(
+                          SHOOT_X,
+                          FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
+                          Rotation2d.kZero))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
+                  .withLinearConstraints(4.5, 8))
+          .withLinearConstraints(4.5, 8)
+          .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
+          .untilFinished(new PoseErrorTolerance(0.2));
+
   private AutoSegment stuckOnBall =
       StuckOnBallRecovery.getRecoverySegment(
           () -> robotManager.localization.getPose(),
@@ -485,7 +525,10 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           }
         }
       }
-      case SHOOT_1 -> robotManager.prepareScoreRequest();
+      case SHOOT_1 -> {
+        trailblazer.setActiveSegment(shootOne);
+        robotManager.prepareScoreRequest();
+      }
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         trailblazer.setActiveSegment(defaultIntakeSecondCycle);
         if (trailblazer.passedMarker(Markers.START_INTAKE_2)) {
@@ -530,7 +573,10 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
 
-      case SHOOT_2 -> robotManager.prepareScoreRequest();
+      case SHOOT_2 -> {
+        trailblazer.setActiveSegment(shootTwo);
+        robotManager.prepareScoreRequest();
+      }
       case INTAKE_THIRD_CYCLE -> {
         trailblazer.setActiveSegment(intakeThirdCycle);
         if (trailblazer.passedMarker(Markers.START_INTAKE_3)) {
@@ -561,7 +607,10 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           }
         }
       }
-      case SHOOT_3 -> robotManager.prepareScoreRequest();
+      case SHOOT_3 -> {
+        trailblazer.setActiveSegment(shootThree);
+        robotManager.prepareScoreRequest();
+      }
       case DONE -> {}
     }
   }
