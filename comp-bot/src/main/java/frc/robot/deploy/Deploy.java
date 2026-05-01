@@ -173,17 +173,19 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
               voltageDifferentialRequest.withOutput(0));
       case SCORE_COMPACTION, SCORE_COMPACTION_WAITING -> {
         differentialMechanism.setControl(
-            motionMagicTorqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())),
+            motionMagicTorqueCurrentFOCAverageRequest
+                .withPosition(clamp(newState.getLength()))
+                .withSlot(0),
             positionDifferentialRequest.withPosition(0.0).withSlot(1));
       }
       case FIX_DIFFERENTIAL_DESYNC -> {
         differentialMechanism.setControl(
-            torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())),
-            positionDifferentialRequest.withPosition(0.0).withSlot(2));
+            torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(2),
+            positionDifferentialRequest.withPosition(0.0).withSlot(1));
       }
       default ->
           differentialMechanism.setControl(
-              torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())),
+              torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(0),
               positionDifferentialRequest.withPosition(0.0).withSlot(1));
     }
   }
