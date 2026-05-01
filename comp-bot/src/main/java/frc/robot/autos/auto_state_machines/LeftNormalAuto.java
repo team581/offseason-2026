@@ -119,11 +119,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           SHOOT_X,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
-          .untilFinished(new PoseErrorTolerance(0.1));
+          .untilFinished(new PoseErrorTolerance(0.3));
 
   private final AutoSegment defaultIntakeSecondCycle =
       Trailblazer.segment(
@@ -230,11 +230,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           SHOOT_X,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
-          .untilFinished(new PoseErrorTolerance(0.1));
+          .untilFinished(new PoseErrorTolerance(0.3));
   private final AutoSegment intakeThirdCycle =
       Trailblazer.segment(
               AutoPoint.ofRed(
@@ -316,11 +316,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           SHOOT_X,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100))
                   .withLinearConstraints(4.5, 8))
           .withLinearConstraints(4.5, 8)
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
-          .untilFinished(new PoseErrorTolerance(0.1));
+          .untilFinished(new PoseErrorTolerance(0.3));
 
   private AutoSegment stuckOnBall =
       StuckOnBallRecovery.getRecoverySegment(
