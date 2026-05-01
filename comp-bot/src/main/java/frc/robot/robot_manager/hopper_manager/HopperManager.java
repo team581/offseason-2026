@@ -179,7 +179,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case IDLE_STOWED -> {
         deploy.stowRequest();
         intake.idleRequest();
-        smartBallFillRequest();
+        conveyor.idleRequest();
+        feeder.idleRequest();
       }
       case IDLE_SAFE_KICKER_STOW -> {
         deploy.safeKickerStowRequest();
@@ -263,6 +264,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         } else {
           deploy.waitHopperCompactionRequest();
         }
+      }
+      case IDLE_STOWED -> {
+        deploy.stowRequest();
+        intake.idleRequest();
+        conveyor.idleRequest();
+        feeder.idleRequest();
       }
       case FEED -> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
