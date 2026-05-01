@@ -143,8 +143,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       }
 
       case HOME_OUTWARD -> {
-        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
-            && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
+        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
+            && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
           differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
           yield DeployState.INTAKE;
         } else {
