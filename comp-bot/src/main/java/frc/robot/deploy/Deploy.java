@@ -183,6 +183,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
             torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(2),
             positionDifferentialRequest.withPosition(0.0).withSlot(1));
       }
+      case STOW -> {
+        differentialMechanism.setControl(
+            // Don't clamp
+            torqueCurrentFOCAverageRequest.withPosition(newState.getLength()).withSlot(0),
+            positionDifferentialRequest.withPosition(0.0).withSlot(1));
+      }
       default ->
           differentialMechanism.setControl(
               torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(0),
