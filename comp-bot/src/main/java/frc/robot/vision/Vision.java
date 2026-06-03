@@ -49,45 +49,32 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     this.groundLimelight = groundLimelight;
   }
 
-  @Override
-  protected VisionState getNextState(VisionState currentState) {
-    return switch (currentState) {
-      case HUB_TAGS, WAITING_FOR_HUB_TAGS -> {
-        if (seeingHubTags) {
-          yield VisionState.HUB_TAGS;
-        }
-        yield VisionState.WAITING_FOR_HUB_TAGS;
-      }
-      default -> currentState;
-    };
+  public OptionalTagResult getLeftLimelightTagResult() {
+    return leftResult;
   }
 
-  public void setRobotVelocity(double velocity) {
-    shooterLimelight.setRobotVelocity(velocity);
-    leftLimelight.setRobotVelocity(velocity);
-    rightLimelight.setRobotVelocity(velocity);
+  public OptionalTagResult getRightLimelightTagResult() {
+    return rightResult;
   }
 
-  @Override
-  protected void collectInputs() {
-    robotAngularVelocity = imu.getRobotAngularVelocity();
+  public OptionalTagResult getShooterLimelightTagResult() {
+    return shooterResult;
+  }
 
-    shooterResult = shooterLimelight.getTagResult();
-    leftResult = leftLimelight.getTagResult();
-    rightResult = rightLimelight.getTagResult();
+  public boolean hasSeenTag() {
+    return hasSeenTag;
+  }
 
-    if (shooterResult.isPresent() || leftResult.isPresent() || rightResult.isPresent()) {
-      hasSeenTag = true;
-      seeingTag = true;
-    } else {
-      seeingTag = false;
+  public void hubTagsRequest() {
+    if (getState() == VisionState.WAITING_FOR_HUB_TAGS || getState() == VisionState.HUB_TAGS) {
+      return;
     }
 
-    seeingHubTags =
-        seeingHubTagDebouncer.calculate(
-            shooterLimelight.seeingHubTag()
-                || leftLimelight.seeingHubTag()
-                || rightLimelight.seeingHubTag());
+    setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
+  }
+
+  public boolean seeingTag() {
+    return seeingTag || RobotBase.isSimulation();
   }
 
   public void setEstimatedPoseAngle(double robotHeading) {
@@ -98,36 +85,19 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     rightLimelight.sendImuData(this.robotHeading, robotAngularVelocity, 0.0, 0.0, 0.0, 0.0);
   }
 
-  public OptionalTagResult getShooterLimelightTagResult() {
-    return shooterResult;
-  }
-
-  public OptionalTagResult getLeftLimelightTagResult() {
-    return leftResult;
-  }
-
-  public OptionalTagResult getRightLimelightTagResult() {
-    return rightResult;
-  }
-
-  public boolean seeingTag() {
-    return seeingTag || RobotBase.isSimulation();
-  }
-
-  public boolean hasSeenTag() {
-    return hasSeenTag;
+  public void setRobotVelocity(double velocity) {
+    shooterLimelight.setRobotVelocity(velocity);
+    leftLimelight.setRobotVelocity(velocity);
+    rightLimelight.setRobotVelocity(velocity);
   }
 
   public void tagsRequest() {
     setStateFromRequest(VisionState.TAGS);
   }
 
-  public void hubTagsRequest() {
-    if (getState() == VisionState.WAITING_FOR_HUB_TAGS || getState() == VisionState.HUB_TAGS) {
-      return;
-    }
-
-    setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
+  @Override
+  public void whileInState(VisionState currentState) {
+    DogLog.log("Vision/SeeingTag", seeingTag);
   }
 
   @Override
@@ -157,7 +127,37 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   @Override
-  public void whileInState(VisionState currentState) {
-    DogLog.log("Vision/SeeingTag", seeingTag);
+  protected void collectInputs() {
+    robotAngularVelocity = imu.getRobotAngularVelocity();
+
+    shooterResult = shooterLimelight.getTagResult();
+    leftResult = leftLimelight.getTagResult();
+    rightResult = rightLimelight.getTagResult();
+
+    if (shooterResult.isPresent() || leftResult.isPresent() || rightResult.isPresent()) {
+      hasSeenTag = true;
+      seeingTag = true;
+    } else {
+      seeingTag = false;
+    }
+
+    seeingHubTags =
+        seeingHubTagDebouncer.calculate(
+            shooterLimelight.seeingHubTag()
+                || leftLimelight.seeingHubTag()
+                || rightLimelight.seeingHubTag());
+  }
+
+  @Override
+  protected VisionState getNextState(VisionState currentState) {
+    return switch (currentState) {
+      case HUB_TAGS, WAITING_FOR_HUB_TAGS -> {
+        if (seeingHubTags) {
+          yield VisionState.HUB_TAGS;
+        }
+        yield VisionState.WAITING_FOR_HUB_TAGS;
+      }
+      default -> currentState;
+    };
   }
 }

@@ -25,40 +25,41 @@ import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
-  public final Deploy deploy;
-  public final Intake intake;
-  public final Conveyor conveyor;
-  public final Feeder feeder;
-  public final CANrange hopperCANRange;
-  public final DigitalInput towerSensor;
-
-  private final Debouncer towerSensorDebouncer = new Debouncer(0.25, DebounceType.kFalling);
-  private boolean towerSensorDebounced = false;
-
-  private boolean driverWantsIntake = false;
-  private boolean driverWantsEject = false;
-  private boolean operatorWantsStow = false;
-  private boolean wantsSafeStow = false;
-  private boolean towerSensorRaw = false;
-  private boolean ballFilling = false;
-
-  private boolean shouldBeastMode = false;
-
-  private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
-
-  private double hopperDistance = 0.0;
-  private double filteredDistance = 0.0;
-  private double previousCanRangeDistance = 0.0;
-  public static final double HIGH_CAPACITY_THRESHOLD = 6.0;
-  public static final double MEDIUM_CAPACITY_THRESHOLD = 8.0;
-
-  private HopperCapacity hopperCapacity = HopperCapacity.LOW;
-
   public enum HopperBallPosition {
     CLOSE_TO_SHOOTER,
     AT_SENSOR,
     BELOW_SENSOR,
   }
+
+  public static final double HIGH_CAPACITY_THRESHOLD = 6.0;
+  public static final double MEDIUM_CAPACITY_THRESHOLD = 8.0;
+  public final Deploy deploy;
+  public final Intake intake;
+  public final Conveyor conveyor;
+
+  public final Feeder feeder;
+  public final CANrange hopperCANRange;
+
+  public final DigitalInput towerSensor;
+  private final Debouncer towerSensorDebouncer = new Debouncer(0.25, DebounceType.kFalling);
+  private boolean towerSensorDebounced = false;
+  private boolean driverWantsIntake = false;
+  private boolean driverWantsEject = false;
+  private boolean operatorWantsStow = false;
+
+  private boolean wantsSafeStow = false;
+
+  private boolean towerSensorRaw = false;
+
+  private boolean ballFilling = false;
+  private boolean shouldBeastMode = false;
+  private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
+  private double hopperDistance = 0.0;
+  private double filteredDistance = 0.0;
+
+  private double previousCanRangeDistance = 0.0;
+
+  private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 
   private final Timer canRangeUpdateTimer = new Timer();
 
@@ -86,6 +87,76 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     Signals.forDevice(hopperCANRange).addSignals(hopperDistanceSignal);
   }
 
+  public void feedRequest() {
+    setState(resolveFeedState());
+  }
+
+  public double getFeederToShooterTime() {
+    return switch (getShotPosition()) {
+      // TODO: Validate this
+      case CLOSE_TO_SHOOTER -> 0.25;
+      case AT_SENSOR -> 0.2;
+      case BELOW_SENSOR -> 0.3;
+    };
+  }
+
+  public void idleRequest() {
+    setState(resolveIdleState());
+  }
+
+  public boolean isFull() {
+    if (RobotBase.isSimulation()) {
+      return timeout(10.0);
+    }
+    return hopperCapacity == HopperCapacity.HIGH && DSOptions.USE_CANRANGE.getAsBoolean();
+  }
+
+  public boolean isIntaking() {
+    return intake.getState() == IntakeState.INTAKE;
+  }
+
+  public boolean isShooting() {
+    // You need to actually be in a shooting state
+    if (getState() != HopperState.SCORE
+        && getState() != HopperState.SCORE_AND_INTAKE
+        && getState() != HopperState.FEED
+        && getState() != HopperState.FEED_AND_INTAKE) {
+      return true;
+    }
+
+    return isShootingStrict();
+  }
+
+  public void scoreRequest() {
+    scoreRequest(false);
+  }
+
+  public void scoreRequest(boolean shouldBeastMode) {
+    this.shouldBeastMode = shouldBeastMode;
+    setState(resolveScoreState());
+  }
+
+  public void setDriverWantsEject(boolean wantsEject) {
+    driverWantsEject = wantsEject;
+  }
+
+  public void setDriverWantsIntake(boolean wantsIntake) {
+    wantsSafeStow = false;
+    driverWantsIntake = wantsIntake;
+  }
+
+  public void setOperatorWantsStow(boolean wantsStow) {
+    operatorWantsStow = wantsStow;
+  }
+
+  public void setWantsSafeStow(boolean wantsSafeStow) {
+    this.wantsSafeStow = wantsSafeStow;
+  }
+
+  public void unjamRequest() {
+    setState(HopperState.UNJAMMING);
+  }
+
   private HopperBallPosition getShotPosition() {
     if (towerSensorDebounced) {
       return HopperBallPosition.AT_SENSOR;
@@ -98,23 +169,59 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return HopperBallPosition.BELOW_SENSOR;
   }
 
-  public double getFeederToShooterTime() {
-    return switch (getShotPosition()) {
-      // TODO: Validate this
-      case CLOSE_TO_SHOOTER -> 0.25;
-      case AT_SENSOR -> 0.2;
-      case BELOW_SENSOR -> 0.3;
-    };
+  private boolean isShootingStrict() {
+    if (RobotBase.isSimulation()) {
+      return !timeout(1.5);
+    }
+    return towerSensorDebounced;
   }
 
-  @Override
-  protected HopperState getNextState(HopperState currentState) {
-    return switch (getState()) {
-      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING, EJECTING -> {
-        yield resolveIdleState();
-      }
-      default -> currentState;
-    };
+  private HopperState resolveFeedState() {
+    if (driverWantsEject) {
+      return HopperState.EJECTING;
+    }
+
+    if (driverWantsIntake) {
+      return HopperState.FEED_AND_INTAKE;
+    }
+
+    return HopperState.FEED;
+  }
+
+  private HopperState resolveIdleState() {
+    if (driverWantsEject) {
+      return HopperState.EJECTING;
+    }
+
+    if (driverWantsIntake) {
+      return HopperState.INTAKING;
+    }
+
+    if (operatorWantsStow) {
+      return HopperState.IDLE_STOWED;
+    }
+
+    if (wantsSafeStow) {
+      return HopperState.IDLE_SAFE_KICKER_STOW;
+    }
+
+    return HopperState.IDLE_DEPLOYED;
+  }
+
+  private HopperState resolveScoreState() {
+    if (driverWantsEject) {
+      return HopperState.EJECTING;
+    }
+
+    if (driverWantsIntake) {
+      return HopperState.SCORE_AND_INTAKE;
+    }
+
+    return HopperState.SCORE;
+  }
+
+  private void setState(HopperState newState) {
+    setStateFromRequest(newState);
   }
 
   private boolean shouldFillBalls() {
@@ -133,13 +240,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     // Otherwise, we fallback to running once we've been intaking for a few seconds
     return intake.hasBeenIntaking();
-  }
-
-  public boolean isFull() {
-    if (RobotBase.isSimulation()) {
-      return timeout(10.0);
-    }
-    return hopperCapacity == HopperCapacity.HIGH && DSOptions.USE_CANRANGE.getAsBoolean();
   }
 
   /** Sets conveyor and feeder to ball filling if conditions are met, otherwise idles them. */
@@ -240,6 +340,46 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   @Override
+  protected void collectInputs() {
+    if (RobotBase.isSimulation()) {
+      hopperDistance = 20;
+      towerSensorRaw =
+          switch (getState()) {
+            case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> timeout(5);
+            default -> false;
+          };
+    } else if (DSOptions.USE_TOWER_SENSOR.getAsBoolean()) {
+      towerSensorRaw = (RobotKind.IS_COMP_BOT != towerSensor.get());
+    } else {
+      towerSensorRaw = true;
+    }
+    towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
+
+    if (DSOptions.USE_CANRANGE.get()) {
+      hopperDistance = Units.metersToInches(hopperDistanceSignal.getValueAsDouble());
+    }
+    filteredDistance = hopperFilter.calculate(hopperDistance);
+
+    if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.HIGH;
+    } else if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
+      hopperCapacity = HopperCapacity.MEDIUM;
+    } else {
+      hopperCapacity = HopperCapacity.LOW;
+    }
+  }
+
+  @Override
+  protected HopperState getNextState(HopperState currentState) {
+    return switch (getState()) {
+      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING, EJECTING -> {
+        yield resolveIdleState();
+      }
+      default -> currentState;
+    };
+  }
+
+  @Override
   protected void whileInState(HopperState state) {
     if (state.canBallFill) {
       if (state == HopperState.INTAKING) {
@@ -296,144 +436,5 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.forceNt.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
     DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
-  }
-
-  private void setState(HopperState newState) {
-    setStateFromRequest(newState);
-  }
-
-  private HopperState resolveIdleState() {
-    if (driverWantsEject) {
-      return HopperState.EJECTING;
-    }
-
-    if (driverWantsIntake) {
-      return HopperState.INTAKING;
-    }
-
-    if (operatorWantsStow) {
-      return HopperState.IDLE_STOWED;
-    }
-
-    if (wantsSafeStow) {
-      return HopperState.IDLE_SAFE_KICKER_STOW;
-    }
-
-    return HopperState.IDLE_DEPLOYED;
-  }
-
-  private HopperState resolveScoreState() {
-    if (driverWantsEject) {
-      return HopperState.EJECTING;
-    }
-
-    if (driverWantsIntake) {
-      return HopperState.SCORE_AND_INTAKE;
-    }
-
-    return HopperState.SCORE;
-  }
-
-  private HopperState resolveFeedState() {
-    if (driverWantsEject) {
-      return HopperState.EJECTING;
-    }
-
-    if (driverWantsIntake) {
-      return HopperState.FEED_AND_INTAKE;
-    }
-
-    return HopperState.FEED;
-  }
-
-  public void scoreRequest(boolean shouldBeastMode) {
-    this.shouldBeastMode = shouldBeastMode;
-    setState(resolveScoreState());
-  }
-
-  public void scoreRequest() {
-    scoreRequest(false);
-  }
-
-  public void feedRequest() {
-    setState(resolveFeedState());
-  }
-
-  public boolean isIntaking() {
-    return intake.getState() == IntakeState.INTAKE;
-  }
-
-  public boolean isShooting() {
-    // You need to actually be in a shooting state
-    if (getState() != HopperState.SCORE
-        && getState() != HopperState.SCORE_AND_INTAKE
-        && getState() != HopperState.FEED
-        && getState() != HopperState.FEED_AND_INTAKE) {
-      return true;
-    }
-
-    return isShootingStrict();
-  }
-
-  private boolean isShootingStrict() {
-    if (RobotBase.isSimulation()) {
-      return !timeout(1.5);
-    }
-    return towerSensorDebounced;
-  }
-
-  public void idleRequest() {
-    setState(resolveIdleState());
-  }
-
-  public void unjamRequest() {
-    setState(HopperState.UNJAMMING);
-  }
-
-  public void setDriverWantsEject(boolean wantsEject) {
-    driverWantsEject = wantsEject;
-  }
-
-  public void setDriverWantsIntake(boolean wantsIntake) {
-    wantsSafeStow = false;
-    driverWantsIntake = wantsIntake;
-  }
-
-  public void setOperatorWantsStow(boolean wantsStow) {
-    operatorWantsStow = wantsStow;
-  }
-
-  public void setWantsSafeStow(boolean wantsSafeStow) {
-    this.wantsSafeStow = wantsSafeStow;
-  }
-
-  @Override
-  protected void collectInputs() {
-    if (RobotBase.isSimulation()) {
-      hopperDistance = 20;
-      towerSensorRaw =
-          switch (getState()) {
-            case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> timeout(5);
-            default -> false;
-          };
-    } else if (DSOptions.USE_TOWER_SENSOR.getAsBoolean()) {
-      towerSensorRaw = (RobotKind.IS_COMP_BOT != towerSensor.get());
-    } else {
-      towerSensorRaw = true;
-    }
-    towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
-
-    if (DSOptions.USE_CANRANGE.get()) {
-      hopperDistance = Units.metersToInches(hopperDistanceSignal.getValueAsDouble());
-    }
-    filteredDistance = hopperFilter.calculate(hopperDistance);
-
-    if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
-      hopperCapacity = HopperCapacity.HIGH;
-    } else if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
-      hopperCapacity = HopperCapacity.MEDIUM;
-    } else {
-      hopperCapacity = HopperCapacity.LOW;
-    }
   }
 }

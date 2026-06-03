@@ -25,8 +25,6 @@ import frc.robot.robot_manager.RobotManager;
 
 public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
-  private static final double SHOOTER_WARMUP_DISTANCE_FROM_HUB = 2.171;
-
   public enum Markers {
     PRIORITIZE_INTAKE,
     START_SHOOT_RQ,
@@ -38,16 +36,18 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
     READY_TO_CROSS_BUMP
   }
 
-  private BumpCrossingTracker bumpCrossingTracker;
+  private static final double SHOOTER_WARMUP_DISTANCE_FROM_HUB = 2.171;
 
   private static final double COLLISION_X_OFFSET = 0.13;
-  private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
 
+  private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
   private static final double MIDLINE_OFFSET = 0.0;
 
   private static final double BUMP_OFFSET = -0.13;
 
   private static final double SHOOT_X = 13.83;
+
+  private BumpCrossingTracker bumpCrossingTracker;
 
   private boolean collisionEverDetected = false;
 
@@ -347,6 +347,111 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
     return Point.ofRed(new Pose2d(12.1, 0.47, Rotation2d.kCCW_90deg));
   }
 
+  // Only use for lane 0 and 1 since we don't
+  private Point getClusterShiftedPoint(Point point) {
+    var targetCluster = robotManager.clusterMap.getBestClusterPose();
+
+    if (targetCluster.isEmpty()) {
+      return point;
+    }
+
+    Pose2d clusterPose = targetCluster.orElseThrow();
+    Pose2d basePose = point.getPose();
+
+    double clampedX =
+        MathUtil.clamp(
+            clusterPose.getX(),
+            basePose.getX() - MAX_CLUSTER_MAP_OFFSET,
+            basePose.getX() + MAX_CLUSTER_MAP_OFFSET);
+
+    return FmsUtil.isRedAlliance()
+        ? Point.ofRed(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()))
+        : Point.ofBlue(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()));
+  }
+
+  private Point getCollisionPoint(Point point) {
+    if (collisionEverDetected) {
+      return Point.ofRed(
+          new Pose2d(
+              point.redPose().getX() + COLLISION_X_OFFSET,
+              point.redPose().getY(),
+              point.redPose().getRotation()));
+    } else {
+      return point;
+    }
+  }
+
+  @Override
+  protected void afterTransition(NormalAutoState newState) {
+    switch (newState) {
+      case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 -> {
+        bumpCrossingTracker.bumpCrossRequest(
+            Point.ofRed(
+                new Pose2d(
+                    13.25, FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET, Rotation2d.kZero)),
+            FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
+      }
+      default -> {}
+    }
+
+    switch (newState) {
+      case INTAKE_FIRST_CYCLE -> {
+        storedStuckOnBallAutoSegment = intakeFirstCycle;
+        robotManager.homeDeployInAutoRequest();
+        robotManager.homeShooterHoodRequest();
+      }
+      case CROSS_BUMP_TO_SHOOT_1, SHOOT_1 -> {
+        storedStuckOnBallAutoSegment = crossBumpToShootOne;
+      }
+      case DEFAULT_INTAKE_SECOND_CYCLE -> {
+        storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
+        robotManager.idleRequest();
+        robotManager.hopperManager.setWantsSafeStow(true);
+      }
+      case INTAKE_SECOND_CYCLE_FAR -> {
+        storedStuckOnBallAutoSegment = intakeSecondCycleFar;
+        robotManager.idleRequest();
+      }
+      case INTAKE_THIRD_CYCLE -> {
+        storedStuckOnBallAutoSegment = intakeThirdCycle;
+        robotManager.idleRequest();
+        robotManager.hopperManager.setWantsSafeStow(true);
+      }
+      case CROSS_BUMP_TO_SHOOT_2 -> {
+        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
+      }
+      case SHOOT_2 -> {
+        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
+        robotManager.cancelIntakeRequest();
+      }
+      case CROSS_BUMP_TO_SHOOT_3 -> {
+        storedStuckOnBallAutoSegment = crossBumpToShootThree;
+        robotManager.idleRequest();
+      }
+      case SHOOT_3 -> {
+        storedStuckOnBallAutoSegment = crossBumpToShootThree;
+        robotManager.cancelIntakeRequest();
+      }
+      case DONE -> {
+        robotManager.idleRequest();
+      }
+      case STUCK_ON_BALL_RECOVERY -> {}
+    }
+  }
+
+  @Override
+  protected void beforeTransition(NormalAutoState oldState, NormalAutoState newState) {
+    if (newState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
+      storedStuckOnBallState = oldState;
+      DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
+      DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
+    }
+
+    if (oldState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
+      trailblazer.setActiveSegment(storedStuckOnBallAutoSegment, storedStuckOnBallIndex);
+    }
+  }
+
   @Override
   protected void collectInputs() {
     super.collectInputs();
@@ -613,110 +718,5 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       }
       case DONE -> {}
     }
-  }
-
-  @Override
-  protected void beforeTransition(NormalAutoState oldState, NormalAutoState newState) {
-    if (newState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
-      storedStuckOnBallState = oldState;
-      DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
-      DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
-    }
-
-    if (oldState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
-      trailblazer.setActiveSegment(storedStuckOnBallAutoSegment, storedStuckOnBallIndex);
-    }
-  }
-
-  @Override
-  protected void afterTransition(NormalAutoState newState) {
-    switch (newState) {
-      case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 -> {
-        bumpCrossingTracker.bumpCrossRequest(
-            Point.ofRed(
-                new Pose2d(
-                    13.25, FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET, Rotation2d.kZero)),
-            FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
-      }
-      default -> {}
-    }
-
-    switch (newState) {
-      case INTAKE_FIRST_CYCLE -> {
-        storedStuckOnBallAutoSegment = intakeFirstCycle;
-        robotManager.homeDeployInAutoRequest();
-        robotManager.homeShooterHoodRequest();
-      }
-      case CROSS_BUMP_TO_SHOOT_1, SHOOT_1 -> {
-        storedStuckOnBallAutoSegment = crossBumpToShootOne;
-      }
-      case DEFAULT_INTAKE_SECOND_CYCLE -> {
-        storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
-        robotManager.idleRequest();
-        robotManager.hopperManager.setWantsSafeStow(true);
-      }
-      case INTAKE_SECOND_CYCLE_FAR -> {
-        storedStuckOnBallAutoSegment = intakeSecondCycleFar;
-        robotManager.idleRequest();
-      }
-      case INTAKE_THIRD_CYCLE -> {
-        storedStuckOnBallAutoSegment = intakeThirdCycle;
-        robotManager.idleRequest();
-        robotManager.hopperManager.setWantsSafeStow(true);
-      }
-      case CROSS_BUMP_TO_SHOOT_2 -> {
-        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
-      }
-      case SHOOT_2 -> {
-        storedStuckOnBallAutoSegment = crossBumpToShootTwo;
-        robotManager.cancelIntakeRequest();
-      }
-      case CROSS_BUMP_TO_SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = crossBumpToShootThree;
-        robotManager.idleRequest();
-      }
-      case SHOOT_3 -> {
-        storedStuckOnBallAutoSegment = crossBumpToShootThree;
-        robotManager.cancelIntakeRequest();
-      }
-      case DONE -> {
-        robotManager.idleRequest();
-      }
-      case STUCK_ON_BALL_RECOVERY -> {}
-    }
-  }
-
-  private Point getCollisionPoint(Point point) {
-    if (collisionEverDetected) {
-      return Point.ofRed(
-          new Pose2d(
-              point.redPose().getX() + COLLISION_X_OFFSET,
-              point.redPose().getY(),
-              point.redPose().getRotation()));
-    } else {
-      return point;
-    }
-  }
-
-  // Only use for lane 0 and 1 since we don't
-  private Point getClusterShiftedPoint(Point point) {
-    var targetCluster = robotManager.clusterMap.getBestClusterPose();
-
-    if (targetCluster.isEmpty()) {
-      return point;
-    }
-
-    Pose2d clusterPose = targetCluster.orElseThrow();
-    Pose2d basePose = point.getPose();
-
-    double clampedX =
-        MathUtil.clamp(
-            clusterPose.getX(),
-            basePose.getX() - MAX_CLUSTER_MAP_OFFSET,
-            basePose.getX() + MAX_CLUSTER_MAP_OFFSET);
-
-    return FmsUtil.isRedAlliance()
-        ? Point.ofRed(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()))
-        : Point.ofBlue(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()));
   }
 }
