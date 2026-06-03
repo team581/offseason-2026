@@ -45,43 +45,35 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       BLUE_HUB_TAGS_SET.stream().mapToInt(Integer::intValue).toArray();
   private static final double IS_OFFLINE_TIMEOUT = 3;
 
-  private Set<Integer> getActiveHubTagsSet() {
-    return FmsUtil.isRedAlliance() ? RED_HUB_TAGS_SET : BLUE_HUB_TAGS_SET;
-  }
-
-  private int[] getActiveHubTags() {
-    return FmsUtil.isRedAlliance() ? RED_HUB_TAGS : BLUE_HUB_TAGS;
-  }
+  private static final DoubleSubscriber ROBOT_VELOCITY_STD_DEV_MULTIPLIER =
+      DogLog.tunable("Vision/RobotVelocityStdDevMultiplier", 0.0);
 
   public final String limelightTableName;
+
   public final CameraConfig config;
   private final String name;
   private final PoseEstimateValidator poseEstimateValidator;
-
   private final Timer limelightTimer = new Timer();
+
   private final Timer seedImuTimer = new Timer();
   private CameraHealth cameraHealth = CameraHealth.NO_TARGETS;
   private double limelightHeartbeat = -1;
-
   private double lastGoodTagTimestamp = Double.MIN_VALUE;
-  private OptionalTagResult tagResult = new OptionalTagResult();
 
+  private OptionalTagResult tagResult = new OptionalTagResult();
   private double angularVelocity = 0.0;
+
   private double linearVelocity = 0.0;
   private double robotHeading = 0.0;
   private boolean updatedLimelightPos = false;
-
   private PoseEstimate latestEstimate = new PoseEstimate();
+
   // Tracks whether latestEstimate was validated this loop, so seeingHubTag()
   // can reuse the result without re-running the validator (which would mutate
   // its duplicate-detection state).
   private boolean latestEstimateTrusted = false;
-
   // Reused every loop to avoid allocating a new Matrix/Vector for stddevs.
   private final Vector<N3> reusableStdDevs = new Vector<>(N3.instance);
-
-  private static final DoubleSubscriber ROBOT_VELOCITY_STD_DEV_MULTIPLIER =
-      DogLog.tunable("Vision/RobotVelocityStdDevMultiplier", 0.0);
 
   public Limelight(String name, LimelightState initialState, CameraConfig config) {
     super(SubsystemPriority.VISION, initialState);
@@ -92,8 +84,114 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     this.poseEstimateValidator = new PoseEstimateValidator(name);
   }
 
-  public void setRobotVelocity(double velocity) {
-    this.linearVelocity = velocity;
+  @Override
+  public void autonomousInit() {
+    seedImuTimer.reset();
+    seedImuTimer.start();
+  }
+
+  @Override
+  public void disabledInit() {
+    if (config.model() == LimelightModel.FOUR) {
+      LimelightHelpers.triggerRewindCapture(limelightTableName, 165.0);
+    }
+  }
+
+  public CameraHealth getCameraHealth() {
+    return cameraHealth;
+  }
+
+  public OptionalDouble getLimelightRotation() {
+    if (RobotBase.isSimulation()) {
+      return OptionalDouble.of(90 - (Math.random() * 5));
+    }
+    var maybeResult = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
+    if (poseEstimateValidator.shouldTrust(maybeResult, angularVelocity, robotHeading)) {
+      return OptionalDouble.of(maybeResult.pose.getRotation().getDegrees());
+    }
+    return OptionalDouble.empty();
+  }
+
+  public OptionalTagResult getTagResult() {
+    return tagResult;
+  }
+
+  public boolean isOnlineForTags() {
+    return switch (getState()) {
+      case TAGS, HUB_TAGS, OFF -> getCameraHealth() != CameraHealth.OFFLINE;
+      default -> false;
+    };
+  }
+
+  @Override
+  public void robotPeriodic() {
+    super.robotPeriodic();
+
+    if (DriverStation.isDisabled()) {
+      if (!updatedLimelightPos && getCameraHealth() != CameraHealth.OFFLINE) {
+        LimelightHelpers.setCameraPose_RobotSpace(
+            limelightTableName,
+            config.forward(),
+            config.right(),
+            config.up(),
+            config.roll(),
+            config.pitch(),
+            config.yaw());
+
+        updatedLimelightPos = true;
+      }
+      if (config.model() == LimelightModel.FOUR) {
+        LimelightHelpers.SetThrottle(limelightTableName, 10);
+      }
+    } else {
+      LimelightHelpers.SetThrottle(limelightTableName, 0);
+    }
+    DogLog.log("Vision/" + name + "/State", getState());
+
+    if (getState() == LimelightState.TAGS || getState() == LimelightState.HUB_TAGS) {
+      if (Timer.getTimestamp() - lastGoodTagTimestamp > 30) {
+        DogLog.logFault(
+            limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
+      } else {
+        DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
+      }
+    } else {
+      DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
+    }
+
+    LimelightHelpers.setPipelineIndex(limelightTableName, getState().pipelineIndex);
+    switch (getState()) {
+      case TAGS -> {
+        LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, VALID_APRILTAGS);
+        updateHealth(tagResult);
+      }
+      case HUB_TAGS -> {
+        LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, getActiveHubTags());
+        updateHealth(tagResult);
+      }
+      case CLUSTER_MAP -> {
+        updateHealth(LimelightHelpers.getTV(limelightTableName));
+      }
+      case OFF -> {}
+    }
+
+    DogLog.log("Vision/" + name + "/Health", cameraHealth);
+
+    LimelightHelpers.SetIMUMode(limelightTableName, 0);
+  }
+
+  public boolean seeingHubTag() {
+    if (!latestEstimateTrusted) {
+      return false;
+    }
+
+    for (RawFiducial fiducial : latestEstimate.rawFiducials) {
+      if (getActiveHubTagsSet().contains(fiducial.id)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   public void sendImuData(
@@ -109,12 +207,20 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     this.robotHeading = robotHeading;
   }
 
-  public void setState(LimelightState state) {
-    setStateFromRequest(state);
+  public void setBlinkEnabled(boolean enabled) {
+    if (enabled) {
+      LimelightHelpers.setLEDMode_ForceBlink(limelightTableName);
+    } else {
+      LimelightHelpers.setLEDMode_ForceOff(limelightTableName);
+    }
   }
 
-  public OptionalTagResult getTagResult() {
-    return tagResult;
+  public void setRobotVelocity(double velocity) {
+    this.linearVelocity = velocity;
+  }
+
+  public void setState(LimelightState state) {
+    setStateFromRequest(state);
   }
 
   private OptionalTagResult computeTagResult() {
@@ -178,86 +284,12 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     return tagResult.update(mTPose, mTEstimateTimestamp, reusableStdDevs);
   }
 
-  public OptionalDouble getLimelightRotation() {
-    if (RobotBase.isSimulation()) {
-      return OptionalDouble.of(90 - (Math.random() * 5));
-    }
-    var maybeResult = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
-    if (poseEstimateValidator.shouldTrust(maybeResult, angularVelocity, robotHeading)) {
-      return OptionalDouble.of(maybeResult.pose.getRotation().getDegrees());
-    }
-    return OptionalDouble.empty();
+  private int[] getActiveHubTags() {
+    return FmsUtil.isRedAlliance() ? RED_HUB_TAGS : BLUE_HUB_TAGS;
   }
 
-  @Override
-  protected void collectInputs() {
-    tagResult = computeTagResult();
-    if (tagResult.isPresent()) {
-      lastGoodTagTimestamp = tagResult.orElseThrow().timestamp();
-    }
-  }
-
-  @Override
-  public void robotPeriodic() {
-    super.robotPeriodic();
-
-    if (DriverStation.isDisabled()) {
-      if (!updatedLimelightPos && getCameraHealth() != CameraHealth.OFFLINE) {
-        LimelightHelpers.setCameraPose_RobotSpace(
-            limelightTableName,
-            config.forward(),
-            config.right(),
-            config.up(),
-            config.roll(),
-            config.pitch(),
-            config.yaw());
-
-        updatedLimelightPos = true;
-      }
-      if (config.model() == LimelightModel.FOUR) {
-        LimelightHelpers.SetThrottle(limelightTableName, 10);
-      }
-    } else {
-      LimelightHelpers.SetThrottle(limelightTableName, 0);
-    }
-    DogLog.log("Vision/" + name + "/State", getState());
-
-    if (getState() == LimelightState.TAGS || getState() == LimelightState.HUB_TAGS) {
-      if (Timer.getTimestamp() - lastGoodTagTimestamp > 30) {
-        DogLog.logFault(
-            limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
-      } else {
-        DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
-      }
-    } else {
-      DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
-    }
-
-    LimelightHelpers.setPipelineIndex(limelightTableName, getState().pipelineIndex);
-    switch (getState()) {
-      case TAGS -> {
-        LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, VALID_APRILTAGS);
-        updateHealth(tagResult);
-      }
-      case HUB_TAGS -> {
-        LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, getActiveHubTags());
-        updateHealth(tagResult);
-      }
-      case CLUSTER_MAP -> {
-        updateHealth(LimelightHelpers.getTV(limelightTableName));
-      }
-      case OFF -> {}
-    }
-
-    DogLog.log("Vision/" + name + "/Health", cameraHealth);
-
-    LimelightHelpers.SetIMUMode(limelightTableName, 0);
-  }
-
-  @Override
-  public void autonomousInit() {
-    seedImuTimer.reset();
-    seedImuTimer.start();
+  private Set<Integer> getActiveHubTagsSet() {
+    return FmsUtil.isRedAlliance() ? RED_HUB_TAGS_SET : BLUE_HUB_TAGS_SET;
   }
 
   private void updateHealth(boolean hasTargets) {
@@ -287,43 +319,11 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     updateHealth(result.isPresent());
   }
 
-  public void setBlinkEnabled(boolean enabled) {
-    if (enabled) {
-      LimelightHelpers.setLEDMode_ForceBlink(limelightTableName);
-    } else {
-      LimelightHelpers.setLEDMode_ForceOff(limelightTableName);
-    }
-  }
-
-  public CameraHealth getCameraHealth() {
-    return cameraHealth;
-  }
-
-  public boolean isOnlineForTags() {
-    return switch (getState()) {
-      case TAGS, HUB_TAGS, OFF -> getCameraHealth() != CameraHealth.OFFLINE;
-      default -> false;
-    };
-  }
-
-  public boolean seeingHubTag() {
-    if (!latestEstimateTrusted) {
-      return false;
-    }
-
-    for (RawFiducial fiducial : latestEstimate.rawFiducials) {
-      if (getActiveHubTagsSet().contains(fiducial.id)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   @Override
-  public void disabledInit() {
-    if (config.model() == LimelightModel.FOUR) {
-      LimelightHelpers.triggerRewindCapture(limelightTableName, 165.0);
+  protected void collectInputs() {
+    tagResult = computeTagResult();
+    if (tagResult.isPresent()) {
+      lastGoodTagTimestamp = tagResult.orElseThrow().timestamp();
     }
   }
 }

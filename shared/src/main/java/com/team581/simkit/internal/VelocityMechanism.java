@@ -13,22 +13,6 @@ import java.util.OptionalDouble;
 
 /** Predicts a simple velocity-controlled mechanism using TalonFX configuration state. */
 public final class VelocityMechanism {
-  private static SimMotor getLeader(ControlRequest controlRequest, List<SimMotor> devices) {
-    if (controlRequest instanceof Follower f) {
-      return devices.stream()
-          .filter(d -> d.motor().getDeviceID() == f.LeaderID)
-          .findFirst()
-          .orElseThrow();
-    } else if (controlRequest instanceof StrictFollower f) {
-      return devices.stream()
-          .filter(d -> d.motor().getDeviceID() == f.LeaderID)
-          .findFirst()
-          .orElseThrow();
-    } else {
-      throw new IllegalStateException("Unexpected control request type");
-    }
-  }
-
   private static double desiredMechanismVelocity(List<SimMotor> devices) {
     return devices.stream()
         .mapToDouble(
@@ -45,6 +29,22 @@ public final class VelocityMechanism {
             })
         .average()
         .orElse(0.0);
+  }
+
+  private static SimMotor getLeader(ControlRequest controlRequest, List<SimMotor> devices) {
+    if (controlRequest instanceof Follower f) {
+      return devices.stream()
+          .filter(d -> d.motor().getDeviceID() == f.LeaderID)
+          .findFirst()
+          .orElseThrow();
+    } else if (controlRequest instanceof StrictFollower f) {
+      return devices.stream()
+          .filter(d -> d.motor().getDeviceID() == f.LeaderID)
+          .findFirst()
+          .orElseThrow();
+    } else {
+      throw new IllegalStateException("Unexpected control request type");
+    }
   }
 
   private static double getMechanismAccelerationLimit(List<SimMotor> devices) {

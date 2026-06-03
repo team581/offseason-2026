@@ -20,11 +20,6 @@ public class ObstructionCalculator {
   private static final MonotoneChain MONOTONE_CHAIN = new MonotoneChain();
 
   @SafeVarargs
-  public static ObstructionCalculator fromTranslations(List<Translation2d>... obstructionCorners) {
-    return fromTranslations(0, obstructionCorners);
-  }
-
-  @SafeVarargs
   public static ObstructionCalculator fromTranslations(
       double expansionMeters, List<Translation2d>... obstructionCorners) {
     return new ObstructionCalculator(
@@ -32,6 +27,11 @@ public class ObstructionCalculator {
         Arrays.stream(obstructionCorners)
             .map(corners -> corners.stream().map(ObstructionCalculator::vector2d).toList())
             .toList());
+  }
+
+  @SafeVarargs
+  public static ObstructionCalculator fromTranslations(List<Translation2d>... obstructionCorners) {
+    return fromTranslations(0, obstructionCorners);
   }
 
   /**

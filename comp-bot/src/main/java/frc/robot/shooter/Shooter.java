@@ -23,16 +23,16 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> implements PowerManaged {
-  private static double distanceToScoringRpm(double distance) {
-    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
-        : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
-  }
-
   private static double distanceToFeedingRpm(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
         : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
+  }
+
+  private static double distanceToScoringRpm(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
   }
 
   // Top left motor is the leader
@@ -160,6 +160,64 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
             bottomRightVelocitySignal, bottomRightVoltageSignal, bottomRightSupplyCurrentSignal);
   }
 
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    topLeftMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.TOP_LEFT_MOTOR_CONFIGS.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    topRightMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.TOP_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    bottomLeftMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    bottomRightMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+  }
+
+  public boolean atGoal() {
+    return atGoal;
+  }
+
+  public boolean atGoalDebounced() {
+    return atGoalDebounced;
+  }
+
+  public void feedRequest(double distance) {
+    this.feedDistance = distance;
+    setStateFromRequest(ShooterState.FEED);
+  }
+
+  public double getFeedTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
+  }
+
+  public double getScoreTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(distance);
+  }
+
+  public void idleRequest() {
+    setStateFromRequest(ShooterState.IDLE);
+  }
+
+  public void prepareFeedRequest(double distance) {
+    this.feedDistance = distance;
+    setStateFromRequest(ShooterState.PREPARE_FEED);
+  }
+
   public void prepareScoreRequest(double distance) {
     this.scoreDistance = distance;
     if (getState() != ShooterState.SCORE) {
@@ -172,22 +230,23 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     setStateFromRequest(ShooterState.SCORE);
   }
 
-  public void prepareFeedRequest(double distance) {
-    this.feedDistance = distance;
-    setStateFromRequest(ShooterState.PREPARE_FEED);
-  }
-
-  public void feedRequest(double distance) {
-    this.feedDistance = distance;
-    setStateFromRequest(ShooterState.FEED);
-  }
-
-  public void idleRequest() {
-    setStateFromRequest(ShooterState.IDLE);
-  }
-
   public void setTurboMode(boolean useTurboMode) {
     turboMode = useTurboMode;
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    var shooterSimulation =
+        SimKit.velocityMechanism(
+            "shooter",
+            (mechanism) ->
+                mechanism
+                    .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)
+                    .addMotor(bottomLeftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(bottomRightMotor, ChassisReference.CounterClockwise_Positive));
+
+    shooterSimulation.update();
   }
 
   public void updateHopperState(double feederCurrent, boolean hopperFull) {
@@ -195,53 +254,18 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.hopperFull = hopperFull || !DSOptions.USE_CANRANGE.getAsBoolean();
   }
 
-  @Override
-  protected void whileInState(ShooterState state) {
-    DogLog.log("Shooter/TopLeft/RPM", topLeftMotorRpm);
-    DogLog.log("Shooter/TopRight/RPM", topRightMotorRpm);
-    DogLog.log("Shooter/BottomLeft/RPM", bottomLeftMotorRpm);
-    DogLog.log("Shooter/BottomRight/RPM", bottomRightMotorRpm);
-    DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
-    DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
-    DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
-    DogLog.log("Shooter/AtGoal", atGoal);
-
-    DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
-    DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);
-    DogLog.log("Shooter/BottomLeft/SupplyCurrent", bottomLeftSupplyCurrent);
-    DogLog.log("Shooter/BottomRight/SupplyCurrent", bottomRightSupplyCurrent);
-
-    switch (state) {
-      case IDLE -> {
-        var setpoint = ShooterConfig.IDLE_RPM / 60.0;
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
-        DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
-      }
-      case PREPARE_SCORE -> {
-        var setpoint = shootingRpm / 60.0;
-        topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
-        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
-      }
-      case SCORE -> {
-        var setpoint = shootingRpm / 60.0;
-        topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
-        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
-      }
-      case PREPARE_FEED -> {
-        var setpoint = feedingRpm / 60.0;
-        topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
-        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
-      }
-      case FEED -> {
-        var setpoint = feedingRpm / 60.0;
-        topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
-        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
-      }
-    }
+  private boolean calculateAtGoal() {
+    return switch (getState()) {
+      case IDLE -> false;
+      case PREPARE_SCORE ->
+          MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
+      case SCORE ->
+          MathUtil.isNear(
+              topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
+      case PREPARE_FEED, FEED ->
+          MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
+      default -> true;
+    };
   }
 
   @Override
@@ -297,76 +321,52 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     }
   }
 
-  public boolean atGoal() {
-    return atGoal;
-  }
-
-  public boolean atGoalDebounced() {
-    return atGoalDebounced;
-  }
-
-  private boolean calculateAtGoal() {
-    return switch (getState()) {
-      case IDLE -> false;
-      case PREPARE_SCORE ->
-          MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-      case SCORE ->
-          MathUtil.isNear(
-              topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
-      case PREPARE_FEED, FEED ->
-          MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
-      default -> true;
-    };
-  }
-
   @Override
-  public void simulationPeriodic() {
-    var shooterSimulation =
-        SimKit.velocityMechanism(
-            "shooter",
-            (mechanism) ->
-                mechanism
-                    .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)
-                    .addMotor(bottomLeftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(bottomRightMotor, ChassisReference.CounterClockwise_Positive));
+  protected void whileInState(ShooterState state) {
+    DogLog.log("Shooter/TopLeft/RPM", topLeftMotorRpm);
+    DogLog.log("Shooter/TopRight/RPM", topRightMotorRpm);
+    DogLog.log("Shooter/BottomLeft/RPM", bottomLeftMotorRpm);
+    DogLog.log("Shooter/BottomRight/RPM", bottomRightMotorRpm);
+    DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
+    DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
+    DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
+    DogLog.log("Shooter/AtGoal", atGoal);
 
-    shooterSimulation.update();
-  }
+    DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
+    DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);
+    DogLog.log("Shooter/BottomLeft/SupplyCurrent", bottomLeftSupplyCurrent);
+    DogLog.log("Shooter/BottomRight/SupplyCurrent", bottomRightSupplyCurrent);
 
-  public double getScoreTimeOfFlight(double distance) {
-    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(distance)
-        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(distance);
-  }
-
-  public double getFeedTimeOfFlight(double distance) {
-    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
-        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
-  }
-
-  @Override
-  public void applyCurrentLimits(double supplyCurrentLimit) {
-    topLeftMotor
-        .getConfigurator()
-        .apply(
-            ShooterConfig.TOP_LEFT_MOTOR_CONFIGS.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    topRightMotor
-        .getConfigurator()
-        .apply(
-            ShooterConfig.TOP_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    bottomLeftMotor
-        .getConfigurator()
-        .apply(
-            ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    bottomRightMotor
-        .getConfigurator()
-        .apply(
-            ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+    switch (state) {
+      case IDLE -> {
+        var setpoint = ShooterConfig.IDLE_RPM / 60.0;
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
+      }
+      case PREPARE_SCORE -> {
+        var setpoint = shootingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
+      }
+      case SCORE -> {
+        var setpoint = shootingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
+      }
+      case PREPARE_FEED -> {
+        var setpoint = feedingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
+      }
+      case FEED -> {
+        var setpoint = feedingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
+      }
+    }
   }
 }

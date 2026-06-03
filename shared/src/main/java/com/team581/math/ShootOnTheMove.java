@@ -20,13 +20,6 @@ public class ShootOnTheMove {
     this.distanceToTimeOfFlight = distanceToTimeOfFlight;
   }
 
-  public record SeparatedVelocityCompensatedGoal(
-      double radialVelocity,
-      Translation2d radiallyCompensatedGoal,
-      double tangentialVelocity,
-      Translation2d tangentiallyCompensatedGoal,
-      Translation2d fullyCompensatedGoal) {}
-
   public double getEffectiveTimeOfFlight(double tof) {
     return (1 - Math.pow(Math.E, (-DRAG_CONSTANT.getAsDouble() * tof)))
         / DRAG_CONSTANT.getAsDouble();
@@ -201,4 +194,11 @@ public class ShootOnTheMove {
 
     return new Translation2d(compGoalX, compGoalY);
   }
+
+  public record SeparatedVelocityCompensatedGoal(
+      double radialVelocity,
+      Translation2d radiallyCompensatedGoal,
+      double tangentialVelocity,
+      Translation2d tangentiallyCompensatedGoal,
+      Translation2d fullyCompensatedGoal) {}
 }

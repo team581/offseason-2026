@@ -34,12 +34,22 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     Signals.forDevice(rightMotor).addSignals(rightSupplyCurrentSignal);
   }
 
-  public void ejectRequest() {
-    setStateFromRequest(IntakeState.EJECT);
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    leftMotor
+        .getConfigurator()
+        .apply(
+            IntakeConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            IntakeConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 
-  public void shootRequest() {
-    setStateFromRequest(IntakeState.SHOOT);
+  public void ejectRequest() {
+    setStateFromRequest(IntakeState.EJECT);
   }
 
   public boolean hasBeenIntaking() {
@@ -49,19 +59,23 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     return false;
   }
 
-  public void stopShootingRequest() {
-    switch (getState()) {
-      case SHOOT -> setStateFromRequest(IntakeState.IDLE);
-      default -> {}
-    }
+  public void idleRequest() {
+    setStateFromRequest(IntakeState.IDLE);
   }
 
   public void intakeRequest() {
     setStateFromRequest(IntakeState.INTAKE);
   }
 
-  public void idleRequest() {
-    setStateFromRequest(IntakeState.IDLE);
+  public void shootRequest() {
+    setStateFromRequest(IntakeState.SHOOT);
+  }
+
+  public void stopShootingRequest() {
+    switch (getState()) {
+      case SHOOT -> setStateFromRequest(IntakeState.IDLE);
+      default -> {}
+    }
   }
 
   @Override
@@ -83,19 +97,5 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     DogLog.log("Intake/Left/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/Right/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/HasBeenIntaking", hasBeenIntaking());
-  }
-
-  @Override
-  public void applyCurrentLimits(double supplyCurrentLimit) {
-    leftMotor
-        .getConfigurator()
-        .apply(
-            IntakeConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    rightMotor
-        .getConfigurator()
-        .apply(
-            IntakeConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
   }
 }

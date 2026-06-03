@@ -264,10 +264,6 @@ public class MathHelpers {
     return new Rotation2d(x, y);
   }
 
-  public static Translation2d roundTo(Translation2d input, double precision) {
-    return new Translation2d(roundTo(input.getX(), precision), roundTo(input.getY(), precision));
-  }
-
   /**
    * Returns a value rounded to the specified number of decimal places.
    *
@@ -278,6 +274,10 @@ public class MathHelpers {
     var factor = Math.pow(10, numDigits);
 
     return Math.round(value * factor * (1 + EPSILON)) / factor;
+  }
+
+  public static Translation2d roundTo(Translation2d input, double precision) {
+    return new Translation2d(roundTo(input.getX(), precision), roundTo(input.getY(), precision));
   }
 
   public static double signedSqrt(double value) {

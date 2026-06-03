@@ -25,6 +25,10 @@ public class PolarChassisSpeeds extends ChassisSpeeds {
     this(other.vxMetersPerSecond, other.vyMetersPerSecond, other.omegaRadiansPerSecond);
   }
 
+  public PolarChassisSpeeds(double vx, double vy, double omega) {
+    this(Math.hypot(vx, vy), MathHelpers.rotation2d(vx, vy), omega);
+  }
+
   public PolarChassisSpeeds(
       double vMetersPerSecond, Rotation2d direction, double omegaRadiansPerSecond) {
     super(
@@ -33,9 +37,5 @@ public class PolarChassisSpeeds extends ChassisSpeeds {
         omegaRadiansPerSecond);
     this.vMetersPerSecond = vMetersPerSecond;
     this.direction = direction;
-  }
-
-  public PolarChassisSpeeds(double vx, double vy, double omega) {
-    this(Math.hypot(vx, vy), MathHelpers.rotation2d(vx, vy), omega);
   }
 }

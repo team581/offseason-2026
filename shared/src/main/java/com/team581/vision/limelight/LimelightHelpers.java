@@ -805,119 +805,38 @@ public class LimelightHelpers {
     NetworkTableInstance.getDefault().flush();
   }
 
-  /**
-   * Sets the downscaling factor for AprilTag detection. Increasing downscale can improve
-   * performance at the cost of potentially reduced detection range.
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param downscale Downscale factor. Valid values: 1.0 (no downscale), 1.5, 2.0, 3.0, 4.0. Set to
-   *     0 for pipeline control.
-   */
-  public static void SetFiducialDownscalingOverride(String limelightName, float downscale) {
-    int d = 0; // pipeline
-    if (downscale == 1.0) {
-      d = 1;
-    }
-    if (downscale == 1.5) {
-      d = 2;
-    }
-    if (downscale == 2) {
-      d = 3;
-    }
-    if (downscale == 3) {
-      d = 4;
-    }
-    if (downscale == 4) {
-      d = 5;
-    }
-    setLimelightNTDouble(limelightName, "fiducial_downscale_set", d);
-  }
-
-  /**
-   * Overrides the valid AprilTag IDs that will be used for localization. Tags not in this list will
-   * be ignored for robot pose estimation.
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param validIDs Array of valid AprilTag IDs to track
-   */
-  public static void SetFiducialIDFiltersOverride(String limelightName, int[] validIDs) {
-    double[] validIDsDouble = new double[validIDs.length];
-    for (int i = 0; i < validIDs.length; i++) {
-      validIDsDouble[i] = validIDs[i];
-    }
-    setLimelightNTDoubleArray(limelightName, "fiducial_id_filters_set", validIDsDouble);
-  }
-
-  /**
-   * Configures the complementary filter alpha value for IMU Assist Modes (Modes 3 and 4)
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param alpha Defaults to .001. Higher values will cause the internal IMU to converge onto the
-   *     assist source more rapidly.
-   */
-  public static void SetIMUAssistAlpha(String limelightName, double alpha) {
-    setLimelightNTDouble(limelightName, "imuassistalpha_set", alpha);
-  }
-
-  /**
-   * Configures the IMU mode for MegaTag2 Localization
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param mode IMU mode.
-   */
-  public static void SetIMUMode(String limelightName, int mode) {
-    setLimelightNTDouble(limelightName, "imumode_set", mode);
-  }
-
-  /**
-   * Sets robot orientation values used by MegaTag2 localization algorithm.
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param yaw Robot yaw in degrees. 0 = robot facing red alliance wall in FRC
-   * @param yawRate (Unnecessary) Angular velocity of robot yaw in degrees per second
-   * @param pitch (Unnecessary) Robot pitch in degrees
-   * @param pitchRate (Unnecessary) Angular velocity of robot pitch in degrees per second
-   * @param roll (Unnecessary) Robot roll in degrees
-   * @param rollRate (Unnecessary) Angular velocity of robot roll in degrees per second
-   */
-  public static void SetRobotOrientation(
-      String limelightName,
-      double yaw,
-      double yawRate,
-      double pitch,
-      double pitchRate,
-      double roll,
-      double rollRate) {
-    SetRobotOrientation_INTERNAL(
-        limelightName, yaw, yawRate, pitch, pitchRate, roll, rollRate, true);
-  }
-
-  public static void SetRobotOrientation_NoFlush(
-      String limelightName,
-      double yaw,
-      double yawRate,
-      double pitch,
-      double pitchRate,
-      double roll,
-      double rollRate) {
-    SetRobotOrientation_INTERNAL(
-        limelightName, yaw, yawRate, pitch, pitchRate, roll, rollRate, false);
-  }
-
-  /**
-   * Configures the throttle value. Set to 100-200 while disabled to reduce thermal
-   * output/temperature.
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @param throttle Defaults to 0. Your Limelgiht will process one frame after skipping <throttle>
-   *     frames.
-   */
-  public static void SetThrottle(String limelightName, int throttle) {
-    setLimelightNTDouble(limelightName, "throttle_set", throttle);
+  /** Switch to getBotPose */
+  @Deprecated
+  public static double[] getBotpose(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "botpose");
   }
 
   public static double[] getBotPose(String limelightName) {
     return getLimelightNTDoubleArray(limelightName, "botpose");
+  }
+
+  public static double[] getBotPose_TargetSpace(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "botpose_targetspace");
+  }
+
+  /** Switch to getBotPose_wpiBlue */
+  @Deprecated
+  public static double[] getBotpose_wpiBlue(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");
+  }
+
+  public static double[] getBotPose_wpiBlue(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");
+  }
+
+  /** Switch to getBotPose_wpiRed */
+  @Deprecated
+  public static double[] getBotpose_wpiRed(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
+  }
+
+  public static double[] getBotPose_wpiRed(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
   }
 
   /** Gets the Pose2d for easy use with Odometry vision pose estimator (addVisionMeasurement) */
@@ -1014,36 +933,8 @@ public class LimelightHelpers {
     return getBotPoseEstimate(limelightName, "botpose_orb_wpired", true);
   }
 
-  public static double[] getBotPose_TargetSpace(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "botpose_targetspace");
-  }
-
-  public static double[] getBotPose_wpiBlue(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");
-  }
-
-  public static double[] getBotPose_wpiRed(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
-  }
-
-  /////
-
-  /** Switch to getBotPose */
-  @Deprecated
-  public static double[] getBotpose(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "botpose");
-  }
-
-  /** Switch to getBotPose_wpiBlue */
-  @Deprecated
-  public static double[] getBotpose_wpiBlue(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "botpose_wpiblue");
-  }
-
-  /** Switch to getBotPose_wpiRed */
-  @Deprecated
-  public static double[] getBotpose_wpiRed(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "botpose_wpired");
+  public static double[] getCameraPose_TargetSpace(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "camerapose_targetspace");
   }
 
   /**
@@ -1068,10 +959,6 @@ public class LimelightHelpers {
     return toPose3D(poseArray);
   }
 
-  public static double[] getCameraPose_TargetSpace(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "camerapose_targetspace");
-  }
-
   /**
    * Gets the current neural classifier result class name.
    *
@@ -1081,6 +968,8 @@ public class LimelightHelpers {
   public static String getClassifierClass(String limelightName) {
     return getLimelightNTString(limelightName, "tcclass");
   }
+
+  //
 
   /**
    * Gets the classifier class index from the currently running neural classifier pipeline
@@ -1372,9 +1261,6 @@ public class LimelightHelpers {
     return rawFiducials;
   }
 
-  /////
-  /////
-
   /**
    * Gets the raw target contours from NetworkTables. Returns ungrouped contours in normalized
    * screen space (-1 to 1).
@@ -1426,6 +1312,63 @@ public class LimelightHelpers {
    */
   public static double getTA(String limelightName) {
     return getLimelightNTDouble(limelightName, "ta");
+  }
+
+  /**
+   * Gets the average color under the crosshair region as a 3-element array.
+   *
+   * @param limelightName Name of the Limelight camera
+   * @return Array containing [Blue, Green, Red] color values (BGR order)
+   */
+  public static double[] getTargetColor(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "tc");
+  }
+
+  /**
+   * Gets the number of targets currently detected.
+   *
+   * @param limelightName Name of the Limelight camera
+   * @return Number of detected targets
+   */
+  public static int getTargetCount(String limelightName) {
+    double[] t2d = getT2DArray(limelightName);
+    if (t2d.length == 17) {
+      return (int) t2d[1];
+    }
+    return 0;
+  }
+
+  public static double[] getTargetPose_CameraSpace(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "targetpose_cameraspace");
+  }
+
+  public static double[] getTargetPose_RobotSpace(String limelightName) {
+    return getLimelightNTDoubleArray(limelightName, "targetpose_robotspace");
+  }
+
+  /////
+  /////
+
+  /**
+   * Gets the target's 3D pose with respect to the camera's coordinate system.
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @return Pose3d object representing the target's position and orientation relative to the camera
+   */
+  public static Pose3d getTargetPose3d_CameraSpace(String limelightName) {
+    double[] poseArray = getLimelightNTDoubleArray(limelightName, "targetpose_cameraspace");
+    return toPose3D(poseArray);
+  }
+
+  /**
+   * Gets the target's 3D pose with respect to the robot's coordinate system.
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @return Pose3d object representing the target's position and orientation relative to the robot
+   */
+  public static Pose3d getTargetPose3d_RobotSpace(String limelightName) {
+    double[] poseArray = getLimelightNTDoubleArray(limelightName, "targetpose_robotspace");
+    return toPose3D(poseArray);
   }
 
   /**
@@ -1483,60 +1426,6 @@ public class LimelightHelpers {
   }
 
   /**
-   * Gets the average color under the crosshair region as a 3-element array.
-   *
-   * @param limelightName Name of the Limelight camera
-   * @return Array containing [Blue, Green, Red] color values (BGR order)
-   */
-  public static double[] getTargetColor(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "tc");
-  }
-
-  /**
-   * Gets the number of targets currently detected.
-   *
-   * @param limelightName Name of the Limelight camera
-   * @return Number of detected targets
-   */
-  public static int getTargetCount(String limelightName) {
-    double[] t2d = getT2DArray(limelightName);
-    if (t2d.length == 17) {
-      return (int) t2d[1];
-    }
-    return 0;
-  }
-
-  /**
-   * Gets the target's 3D pose with respect to the camera's coordinate system.
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @return Pose3d object representing the target's position and orientation relative to the camera
-   */
-  public static Pose3d getTargetPose3d_CameraSpace(String limelightName) {
-    double[] poseArray = getLimelightNTDoubleArray(limelightName, "targetpose_cameraspace");
-    return toPose3D(poseArray);
-  }
-
-  /**
-   * Gets the target's 3D pose with respect to the robot's coordinate system.
-   *
-   * @param limelightName Name/identifier of the Limelight
-   * @return Pose3d object representing the target's position and orientation relative to the robot
-   */
-  public static Pose3d getTargetPose3d_RobotSpace(String limelightName) {
-    double[] poseArray = getLimelightNTDoubleArray(limelightName, "targetpose_robotspace");
-    return toPose3D(poseArray);
-  }
-
-  public static double[] getTargetPose_CameraSpace(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "targetpose_cameraspace");
-  }
-
-  public static double[] getTargetPose_RobotSpace(String limelightName) {
-    return getLimelightNTDoubleArray(limelightName, "targetpose_robotspace");
-  }
-
-  /**
    * Converts a Pose2d object to an array of doubles in the format [x, y, z, roll, pitch, yaw].
    * Translation components are in meters, rotation components are in degrees. Note: z, roll, and
    * pitch will be 0 since Pose2d only contains x, y, and yaw.
@@ -1572,9 +1461,6 @@ public class LimelightHelpers {
     result[5] = Math.toDegrees(pose.getRotation().getZ());
     return result;
   }
-
-  /////
-  /////
 
   /**
    * Prints detailed information about a PoseEstimate to standard output. Includes timestamp,
@@ -1678,6 +1564,73 @@ public class LimelightHelpers {
   }
 
   /**
+   * Sets the downscaling factor for AprilTag detection. Increasing downscale can improve
+   * performance at the cost of potentially reduced detection range.
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @param downscale Downscale factor. Valid values: 1.0 (no downscale), 1.5, 2.0, 3.0, 4.0. Set to
+   *     0 for pipeline control.
+   */
+  public static void SetFiducialDownscalingOverride(String limelightName, float downscale) {
+    int d = 0; // pipeline
+    if (downscale == 1.0) {
+      d = 1;
+    }
+    if (downscale == 1.5) {
+      d = 2;
+    }
+    if (downscale == 2) {
+      d = 3;
+    }
+    if (downscale == 3) {
+      d = 4;
+    }
+    if (downscale == 4) {
+      d = 5;
+    }
+    setLimelightNTDouble(limelightName, "fiducial_downscale_set", d);
+  }
+
+  /**
+   * Overrides the valid AprilTag IDs that will be used for localization. Tags not in this list will
+   * be ignored for robot pose estimation.
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @param validIDs Array of valid AprilTag IDs to track
+   */
+  public static void SetFiducialIDFiltersOverride(String limelightName, int[] validIDs) {
+    double[] validIDsDouble = new double[validIDs.length];
+    for (int i = 0; i < validIDs.length; i++) {
+      validIDsDouble[i] = validIDs[i];
+    }
+    setLimelightNTDoubleArray(limelightName, "fiducial_id_filters_set", validIDsDouble);
+  }
+
+  /**
+   * Configures the complementary filter alpha value for IMU Assist Modes (Modes 3 and 4)
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @param alpha Defaults to .001. Higher values will cause the internal IMU to converge onto the
+   *     assist source more rapidly.
+   */
+  public static void SetIMUAssistAlpha(String limelightName, double alpha) {
+    setLimelightNTDouble(limelightName, "imuassistalpha_set", alpha);
+  }
+
+  /////
+  /////
+
+  /**
+   * Configures the IMU mode for MegaTag2 Localization
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @param mode IMU mode.
+   */
+  public static void SetIMUMode(String limelightName, int mode) {
+    setLimelightNTDouble(limelightName, "imumode_set", mode);
+  }
+
+  /**
    * Sets the keystone modification for the crop window.
    *
    * @param limelightName Name of the Limelight camera
@@ -1743,6 +1696,41 @@ public class LimelightHelpers {
   }
 
   /**
+   * Sets robot orientation values used by MegaTag2 localization algorithm.
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @param yaw Robot yaw in degrees. 0 = robot facing red alliance wall in FRC
+   * @param yawRate (Unnecessary) Angular velocity of robot yaw in degrees per second
+   * @param pitch (Unnecessary) Robot pitch in degrees
+   * @param pitchRate (Unnecessary) Angular velocity of robot pitch in degrees per second
+   * @param roll (Unnecessary) Robot roll in degrees
+   * @param rollRate (Unnecessary) Angular velocity of robot roll in degrees per second
+   */
+  public static void SetRobotOrientation(
+      String limelightName,
+      double yaw,
+      double yawRate,
+      double pitch,
+      double pitchRate,
+      double roll,
+      double rollRate) {
+    SetRobotOrientation_INTERNAL(
+        limelightName, yaw, yawRate, pitch, pitchRate, roll, rollRate, true);
+  }
+
+  public static void SetRobotOrientation_NoFlush(
+      String limelightName,
+      double yaw,
+      double yawRate,
+      double pitch,
+      double pitchRate,
+      double roll,
+      double rollRate) {
+    SetRobotOrientation_INTERNAL(
+        limelightName, yaw, yawRate, pitch, pitchRate, roll, rollRate, false);
+  }
+
+  /**
    * Enables Picture-in-Picture mode with secondary stream in the corner.
    *
    * @param limelightName Name of the Limelight camera
@@ -1767,6 +1755,18 @@ public class LimelightHelpers {
    */
   public static void setStreamMode_Standard(String limelightName) {
     setLimelightNTDouble(limelightName, "stream", 0);
+  }
+
+  /**
+   * Configures the throttle value. Set to 100-200 while disabled to reduce thermal
+   * output/temperature.
+   *
+   * @param limelightName Name/identifier of the Limelight
+   * @param throttle Defaults to 0. Your Limelgiht will process one frame after skipping <throttle>
+   *     frames.
+   */
+  public static void SetThrottle(String limelightName, int throttle) {
+    setLimelightNTDouble(limelightName, "throttle_set", throttle);
   }
 
   /**
@@ -1863,29 +1863,6 @@ public class LimelightHelpers {
     return pose != null && pose.rawFiducials != null && pose.rawFiducials.length != 0;
   }
 
-  private static void SetRobotOrientation_INTERNAL(
-      String limelightName,
-      double yaw,
-      double yawRate,
-      double pitch,
-      double pitchRate,
-      double roll,
-      double rollRate,
-      boolean flush) {
-
-    double[] entries = new double[6];
-    entries[0] = yaw;
-    entries[1] = yawRate;
-    entries[2] = pitch;
-    entries[3] = pitchRate;
-    entries[4] = roll;
-    entries[5] = rollRate;
-    setLimelightNTDoubleArray(limelightName, "robot_orientation_set", entries);
-    if (flush) {
-      Flush();
-    }
-  }
-
   private static double extractArrayEntry(double[] inData, int position) {
     if (inData.length < position + 1) {
       return 0;
@@ -1949,6 +1926,29 @@ public class LimelightHelpers {
         tagArea,
         rawFiducials,
         isMegaTag2);
+  }
+
+  private static void SetRobotOrientation_INTERNAL(
+      String limelightName,
+      double yaw,
+      double yawRate,
+      double pitch,
+      double pitchRate,
+      double roll,
+      double rollRate,
+      boolean flush) {
+
+    double[] entries = new double[6];
+    entries[0] = yaw;
+    entries[1] = yawRate;
+    entries[2] = pitch;
+    entries[3] = pitchRate;
+    entries[4] = roll;
+    entries[5] = rollRate;
+    setLimelightNTDoubleArray(limelightName, "robot_orientation_set", entries);
+    if (flush) {
+      Flush();
+    }
   }
 
   static final String sanitizeName(String name) {

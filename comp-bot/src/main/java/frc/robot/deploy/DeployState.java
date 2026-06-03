@@ -27,14 +27,14 @@ public enum DeployState {
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
 
+  public double getLength() {
+    return tunableLength.get();
+  }
+
   public boolean isHoming() {
     return switch (this) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> true;
       default -> false;
     };
-  }
-
-  public double getLength() {
-    return tunableLength.get();
   }
 }

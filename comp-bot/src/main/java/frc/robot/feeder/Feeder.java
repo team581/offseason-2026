@@ -42,24 +42,41 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomStatorCurrentSignal);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(FeederState.SHOOT);
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    topMotor
+        .getConfigurator()
+        .apply(
+            FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
+    bottomMotor
+        .getConfigurator()
+        .apply(
+            FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 
-  public void intakeRequest() {
-    setStateFromRequest(FeederState.INTAKING);
-  }
-
-  public void idleRequest() {
-    setStateFromRequest(FeederState.IDLE);
+  public void ballFillingRequest() {
+    setStateFromRequest(FeederState.BALL_FILLING);
   }
 
   public void ejectRequest() {
     setStateFromRequest(FeederState.EJECT);
   }
 
-  public void ballFillingRequest() {
-    setStateFromRequest(FeederState.BALL_FILLING);
+  public double getAverageCurrent() {
+    return averageCurrent;
+  }
+
+  public void idleRequest() {
+    setStateFromRequest(FeederState.IDLE);
+  }
+
+  public void intakeRequest() {
+    setStateFromRequest(FeederState.INTAKING);
+  }
+
+  public void shootRequest() {
+    setStateFromRequest(FeederState.SHOOT);
   }
 
   @Override
@@ -85,22 +102,5 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
         MathHelpers.average(
             topStatorCurrentSignal.getValueAsDouble(),
             bottomStatorCurrentSignal.getValueAsDouble());
-  }
-
-  public double getAverageCurrent() {
-    return averageCurrent;
-  }
-
-  @Override
-  public void applyCurrentLimits(double supplyCurrentLimit) {
-    topMotor
-        .getConfigurator()
-        .apply(
-            FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
-    bottomMotor
-        .getConfigurator()
-        .apply(
-            FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
   }
 }

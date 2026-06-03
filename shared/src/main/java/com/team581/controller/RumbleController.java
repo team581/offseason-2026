@@ -18,6 +18,27 @@ public class RumbleController extends StateMachineSubsystem<RumbleControllerStat
   private boolean didMatchTimeRumble60 = false;
   private boolean didMatchTimeRumble30 = false;
 
+  public RumbleController(
+      GenericHID controller,
+      boolean matchTimeRumble,
+      SubsystemPriorityBase rumbleControllerPriority) {
+    super(rumbleControllerPriority, RumbleControllerState.OFF);
+    this.controller = controller;
+    this.matchTimeRumble = matchTimeRumble;
+  }
+
+  @Override
+  public void disabledInit() {
+    matchTimer.stop();
+  }
+
+  public void rumbleRequest() {
+    if (!DriverStation.isAutonomous()) {
+      setStateFromRequest(RumbleControllerState.ON);
+      resetTimeout();
+    }
+  }
+
   @Override
   public void teleopInit() {
     matchTimer.reset();
@@ -28,24 +49,19 @@ public class RumbleController extends StateMachineSubsystem<RumbleControllerStat
   }
 
   @Override
-  public void disabledInit() {
-    matchTimer.stop();
-  }
-
-  public RumbleController(
-      GenericHID controller,
-      boolean matchTimeRumble,
-      SubsystemPriorityBase rumbleControllerPriority) {
-    super(rumbleControllerPriority, RumbleControllerState.OFF);
-    this.controller = controller;
-    this.matchTimeRumble = matchTimeRumble;
-  }
-
-  public void rumbleRequest() {
-    if (!DriverStation.isAutonomous()) {
-      setStateFromRequest(RumbleControllerState.ON);
-      resetTimeout();
+  protected void afterTransition(RumbleControllerState newState) {
+    switch (newState) {
+      case ON -> controller.setRumble(RumbleType.kBothRumble, 1);
+      case OFF -> controller.setRumble(RumbleType.kBothRumble, 0);
     }
+  }
+
+  @Override
+  protected RumbleControllerState getNextState(RumbleControllerState currentState) {
+    return switch (currentState) {
+      case ON -> timeout(0.5) ? RumbleControllerState.OFF : currentState;
+      case OFF -> currentState;
+    };
   }
 
   @Override
@@ -65,22 +81,6 @@ public class RumbleController extends StateMachineSubsystem<RumbleControllerStat
     if (!didMatchTimeRumble30) {
       rumbleRequest();
       didMatchTimeRumble30 = true;
-    }
-  }
-
-  @Override
-  protected RumbleControllerState getNextState(RumbleControllerState currentState) {
-    return switch (currentState) {
-      case ON -> timeout(0.5) ? RumbleControllerState.OFF : currentState;
-      case OFF -> currentState;
-    };
-  }
-
-  @Override
-  protected void afterTransition(RumbleControllerState newState) {
-    switch (newState) {
-      case ON -> controller.setRumble(RumbleType.kBothRumble, 1);
-      case OFF -> controller.setRumble(RumbleType.kBothRumble, 0);
     }
   }
 }

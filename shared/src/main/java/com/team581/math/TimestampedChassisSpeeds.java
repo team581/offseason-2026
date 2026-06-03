@@ -22,14 +22,6 @@ public class TimestampedChassisSpeeds extends ChassisSpeeds {
         timestampSeconds);
   }
 
-  public TimestampedChassisSpeeds(TimestampedChassisSpeeds speeds) {
-    this(
-        speeds.vxMetersPerSecond,
-        speeds.vyMetersPerSecond,
-        speeds.omegaRadiansPerSecond,
-        speeds.timestampSeconds);
-  }
-
   public TimestampedChassisSpeeds(double timestampSeconds) {
     this(0, 0, 0, timestampSeconds);
   }
@@ -41,6 +33,14 @@ public class TimestampedChassisSpeeds extends ChassisSpeeds {
   public TimestampedChassisSpeeds(double vx, double vy, double omega, double timestampSeconds) {
     super(vx, vy, omega);
     this.timestampSeconds = timestampSeconds;
+  }
+
+  public TimestampedChassisSpeeds(TimestampedChassisSpeeds speeds) {
+    this(
+        speeds.vxMetersPerSecond,
+        speeds.vyMetersPerSecond,
+        speeds.omegaRadiansPerSecond,
+        speeds.timestampSeconds);
   }
 
   public double timestampDifference(TimestampedChassisSpeeds other) {

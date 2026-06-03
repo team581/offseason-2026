@@ -34,16 +34,18 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     Signals.forDevice(bottomMotor).addSignals(bottomSupplyCurrentSignal);
   }
 
-  public void initialShotRequest() {
-    setStateFromRequest(ConveyorState.INITIAL_SHOT);
-  }
-
-  public void shootRequest() {
-    setStateFromRequest(ConveyorState.SHOOT);
-  }
-
-  public void idleRequest() {
-    setStateFromRequest(ConveyorState.IDLE);
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    topMotor
+        .getConfigurator()
+        .apply(
+            ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    bottomMotor
+        .getConfigurator()
+        .apply(
+            ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
   }
 
   public void ballFillingRequest() {
@@ -54,8 +56,20 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.EJECT);
   }
 
+  public void idleRequest() {
+    setStateFromRequest(ConveyorState.IDLE);
+  }
+
+  public void initialShotRequest() {
+    setStateFromRequest(ConveyorState.INITIAL_SHOT);
+  }
+
   public void intakeRequest() {
     setStateFromRequest(ConveyorState.INTAKE);
+  }
+
+  public void shootRequest() {
+    setStateFromRequest(ConveyorState.SHOOT);
   }
 
   @Override
@@ -70,19 +84,5 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
         bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
-  }
-
-  @Override
-  public void applyCurrentLimits(double supplyCurrentLimit) {
-    topMotor
-        .getConfigurator()
-        .apply(
-            ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    bottomMotor
-        .getConfigurator()
-        .apply(
-            ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
   }
 }

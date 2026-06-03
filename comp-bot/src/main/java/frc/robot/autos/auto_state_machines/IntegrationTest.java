@@ -21,13 +21,13 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
   private static final double MAX_VELOCITY = 3.0;
   private static final double MAX_ACCELERATION = 0.75;
 
-  private boolean bButtonReleased = true;
-  private boolean xButtonReleased = true;
-
   private static final Pose2d RED_START_POSE =
       FieldUtil.HUB_POSE
           .redPose()
           .plus(new Transform2d(Units.inchesToMeters(60.0), 0.0, Rotation2d.kZero));
+  private boolean bButtonReleased = true;
+
+  private boolean xButtonReleased = true;
 
   private final AutoSegment segment1DriveToStart =
       Trailblazer.segment(AutoPoint.ofRed(RED_START_POSE))
@@ -74,8 +74,9 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
     super(IntegrationTestState.SEGMENT_1_DRIVE_TO_START, robotManager, trailblazer);
   }
 
-  public void skipRequest() {
-    setStateFromRequest(getState().nextState());
+  @Override
+  public Point getStartingPoint() {
+    return Point.ofRed(Pose2d.kZero);
   }
 
   public void previousRequest() {
@@ -83,8 +84,12 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
   }
 
   @Override
-  public Point getStartingPoint() {
-    return Point.ofRed(Pose2d.kZero);
+  public boolean shouldRun() {
+    return FeatureFlags.INTEGRATION_TEST.getAsBoolean();
+  }
+
+  public void skipRequest() {
+    setStateFromRequest(getState().nextState());
   }
 
   @Override
@@ -169,10 +174,5 @@ public class IntegrationTest extends BaseImperativeAuto<IntegrationTestState> {
         robotManager.prepareScoreRequest();
       }
     }
-  }
-
-  @Override
-  public boolean shouldRun() {
-    return FeatureFlags.INTEGRATION_TEST.getAsBoolean();
   }
 }

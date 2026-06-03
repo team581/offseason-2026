@@ -10,6 +10,19 @@ import org.hipparchus.fitting.WeightedObservedPoint;
 
 public class PolynomialRegression {
   /**
+   * Creates a {@link PolynomialRegression} for a quadratic polynomial with the given coefficients.
+   *
+   * @param prefix The prefix to use for logging.
+   * @param a The leading coefficient.
+   * @param b The slope coefficient.
+   * @param c The y-intercept.
+   * @return A {@link PolynomialRegression} of the form {@code ax^2 + bx + c}.
+   */
+  public static PolynomialRegression quadratic(String prefix, double a, double b, double c) {
+    return new PolynomialRegression(prefix, new double[] {a, b, c});
+  }
+
+  /**
    * Perform a quadratic regression on the points in the interpolation table and returns a {@link
    * PolynomialRegression} that is fit to the points.
    */
@@ -32,19 +45,6 @@ public class PolynomialRegression {
                 .toList());
 
     return new PolynomialRegression(prefix, coefficients);
-  }
-
-  /**
-   * Creates a {@link PolynomialRegression} for a quadratic polynomial with the given coefficients.
-   *
-   * @param prefix The prefix to use for logging.
-   * @param a The leading coefficient.
-   * @param b The slope coefficient.
-   * @param c The y-intercept.
-   * @return A {@link PolynomialRegression} of the form {@code ax^2 + bx + c}.
-   */
-  public static PolynomialRegression quadratic(String prefix, double a, double b, double c) {
-    return new PolynomialRegression(prefix, new double[] {a, b, c});
   }
 
   // This is ripped from the original library but rounds to 2 decimal places

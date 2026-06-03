@@ -15,6 +15,9 @@ import org.jspecify.annotations.Nullable;
  */
 public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMachine<S>
     implements Subsystem {
+  private static final StateMachineSubsystemInputManager MANAGER =
+      new StateMachineSubsystemInputManager();
+
   public static String getSubsystemName(Class<?> cls) {
     var name = cls.getSimpleName();
 
@@ -25,9 +28,6 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
 
     return name;
   }
-
-  private static final StateMachineSubsystemInputManager MANAGER =
-      new StateMachineSubsystemInputManager();
 
   private final SubsystemPriorityBase priority;
 
@@ -57,27 +57,11 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
     MANAGER.register(this);
   }
 
-  @Override
-  public SubsystemPriorityBase getPriority() {
-    return priority;
-  }
-
-  /** {@link IterativeRobotBase#robotPeriodic()} */
-  public void robotPeriodic() {
-    super.periodic();
-  }
-
   /** {@link IterativeRobotBase#autonomousInit()} */
   public void autonomousInit() {}
 
   /** {@link IterativeRobotBase#autonomousPeriodic()} */
   public void autonomousPeriodic() {}
-
-  /** {@link IterativeRobotBase#teleopInit()} */
-  public void teleopInit() {}
-
-  /** {@link IterativeRobotBase#teleopPeriodic()} */
-  public void teleopPeriodic() {}
 
   /** {@link IterativeRobotBase#disabledInit()} */
   public void disabledInit() {}
@@ -85,8 +69,10 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
   /** {@link IterativeRobotBase#disabledPeriodic()} */
   public void disabledPeriodic() {}
 
-  /** {@link IterativeRobotBase#simulationPeriodic()} */
-  public void simulationPeriodic() {}
+  @Override
+  public SubsystemPriorityBase getPriority() {
+    return priority;
+  }
 
   @Override
   public void periodic() {
@@ -130,4 +116,18 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
 
     previousStage = stage;
   }
+
+  /** {@link IterativeRobotBase#robotPeriodic()} */
+  public void robotPeriodic() {
+    super.periodic();
+  }
+
+  /** {@link IterativeRobotBase#simulationPeriodic()} */
+  public void simulationPeriodic() {}
+
+  /** {@link IterativeRobotBase#teleopInit()} */
+  public void teleopInit() {}
+
+  /** {@link IterativeRobotBase#teleopPeriodic()} */
+  public void teleopPeriodic() {}
 }
