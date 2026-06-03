@@ -9,11 +9,18 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class ShootOnTheMove {
+  public record SeparatedVelocityCompensatedGoal(
+      double radialVelocity,
+      Translation2d radiallyCompensatedGoal,
+      double tangentialVelocity,
+      Translation2d tangentiallyCompensatedGoal,
+      Translation2d fullyCompensatedGoal) {}
+
   private static final int MAX_ITERATIONS = 5;
   // TODO: Do more thorough tuning with integration test, this was quickly tuned
-
   public static final DoubleSubscriber DRAG_CONSTANT =
       DogLog.tunable("ShootOnTheMoove/DragCoeff", 0.465);
+
   private final InterpolatingDoubleTreeMap distanceToTimeOfFlight;
 
   public ShootOnTheMove(InterpolatingDoubleTreeMap distanceToTimeOfFlight) {
@@ -194,11 +201,4 @@ public class ShootOnTheMove {
 
     return new Translation2d(compGoalX, compGoalY);
   }
-
-  public record SeparatedVelocityCompensatedGoal(
-      double radialVelocity,
-      Translation2d radiallyCompensatedGoal,
-      double tangentialVelocity,
-      Translation2d tangentiallyCompensatedGoal,
-      Translation2d fullyCompensatedGoal) {}
 }

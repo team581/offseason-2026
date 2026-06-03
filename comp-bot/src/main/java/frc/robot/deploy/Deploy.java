@@ -22,8 +22,13 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
+  private static double clamp(double deployLength) {
+    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
+  }
+
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
+
   private final DifferentialMechanism<TalonFX> differentialMechanism;
 
   private final PositionTorqueCurrentFOC torqueCurrentFOCAverageRequest =
@@ -34,22 +39,22 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   private final PositionTorqueCurrentFOC positionDifferentialRequest =
       new PositionTorqueCurrentFOC(0).withSlot(1);
-
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
-  private final VoltageOut voltageDifferentialRequest = new VoltageOut(0).withEnableFOC(false);
 
+  private final VoltageOut voltageDifferentialRequest = new VoltageOut(0).withEnableFOC(false);
   private double differentialMechanismPosition = 0.0;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
   private double leftStatorCurrent = 0.0;
-  private double rightStatorCurrent = 0.0;
 
+  private double rightStatorCurrent = 0.0;
   private final StatusSignal<Angle> leftPositionSignal;
   private final StatusSignal<Angle> rightPositionSignal;
   private final StatusSignal<Angle> differentialAveragePositionSignal;
   private final StatusSignal<Current> leftStatorCurrentSignal;
   private final StatusSignal<Current> rightStatorCurrentSignal;
   private final StatusSignal<Current> leftSupplyCurrentSignal;
+
   private final StatusSignal<Current> rightSupplyCurrentSignal;
 
   public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
@@ -85,6 +90,77 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         .addSignals(rightPositionSignal, rightStatorCurrentSignal, rightSupplyCurrentSignal);
   }
 
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    leftMotor
+        .getConfigurator()
+        .apply(
+            DeployConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            DeployConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+  }
+
+  public boolean atGoal() {
+    return atGoal(getState());
+  }
+
+  public boolean atGoal(DeployState state) {
+    return switch (state) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
+      default ->
+          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+              && MathUtil.isNear(
+                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+    };
+  }
+
+  public void beastModeRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
+    }
+  }
+
+  public void feedCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.FEED_COMPACTION);
+    }
+  }
+
+  public void fixDifferentialDesyncRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.FIX_DIFFERENTIAL_DESYNC);
+    }
+  }
+
+  public double getPosition() {
+    return differentialMechanismPosition;
+  }
+
+  public void homeInAutoRequest() {
+    setStateFromRequest(DeployState.HOME_INWARD);
+  }
+
+  public void homingRequest() {
+    if (DriverStation.isAutonomous()) {
+      setStateFromRequest(DeployState.HOME_INWARD);
+    }
+    setStateFromRequest(DeployState.HOME_OUTWARD);
+  }
+
+  public void hopperCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
+    }
+  }
+
   public void intakeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -94,13 +170,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
-  public void stowRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
-      }
-      default -> setStateFromRequest(DeployState.STOW);
-    }
+  public boolean isFullyExtended() {
+    return atGoal(DeployState.INTAKE);
   }
 
   public void safeKickerStowRequest() {
@@ -112,51 +183,45 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
-  public boolean isFullyExtended() {
-    return atGoal(DeployState.INTAKE);
-  }
-
-  public void homingRequest() {
-    if (DriverStation.isAutonomous()) {
-      setStateFromRequest(DeployState.HOME_INWARD);
-    }
-    setStateFromRequest(DeployState.HOME_OUTWARD);
-  }
-
-  public void homeInAutoRequest() {
-    setStateFromRequest(DeployState.HOME_INWARD);
-  }
-
   @Override
-  protected DeployState getNextState(DeployState currentState) {
-    return switch (currentState) {
-      case UNHOMED, INTAKE, STOW -> currentState;
+  public void simulationPeriodic() {
+    var deploySimulation =
+        SimKit.positionMechanism(
+            "Deploy",
+            mechanism ->
+                mechanism
+                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
+                    .withMinPosition(DeployConfig.MIN_LENGTH)
+                    .withMaxPosition(DeployConfig.MAX_LENGTH));
 
-      case HOME_INWARD -> {
-        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
-            && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
-          yield DeployState.INTAKE;
-        } else {
-          yield currentState;
-        }
-      }
+    if (getState() == DeployState.HOME_INWARD) {
+      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+      setStateFromRequest(DeployState.INTAKE);
+    }
 
-      case HOME_OUTWARD -> {
-        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
-            && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
-          yield DeployState.INTAKE;
-        } else {
-          yield currentState;
-        }
-      }
-      default -> currentState;
-    };
+    if (getState() == DeployState.HOME_OUTWARD) {
+      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+      setStateFromRequest(DeployState.INTAKE);
+    }
+
+    deploySimulation.update(clamp(getState().getLength()));
   }
 
-  private static double clamp(double deployLength) {
-    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
+  public void stowRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
+        // Do nothing, we aren't homed
+      }
+      default -> setStateFromRequest(DeployState.STOW);
+    }
+  }
+
+  public void waitHopperCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
+    }
   }
 
   @Override
@@ -197,67 +262,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   @Override
-  protected void whileInState(DeployState state) {
-    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
-    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
-    DogLog.log("Deploy/GoalPosition", getState().getLength());
-    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
-  }
-
-  public double getPosition() {
-    return differentialMechanismPosition;
-  }
-
-  public boolean atGoal() {
-    return atGoal(getState());
-  }
-
-  public void waitHopperCompactionRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
-    }
-  }
-
-  public void feedCompactionRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.FEED_COMPACTION);
-    }
-  }
-
-  public void hopperCompactionRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
-    }
-  }
-
-  public void beastModeRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
-    }
-  }
-
-  public void fixDifferentialDesyncRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.FIX_DIFFERENTIAL_DESYNC);
-    }
-  }
-
-  public boolean atGoal(DeployState state) {
-    return switch (state) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
-      default ->
-          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
-              && MathUtil.isNear(
-                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
-    };
-  }
-
-  @Override
   protected void collectInputs() {
     leftMotorPosition = leftPositionSignal.getValueAsDouble();
     rightMotorPosition = rightPositionSignal.getValueAsDouble();
@@ -273,41 +277,38 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   @Override
-  public void simulationPeriodic() {
-    var deploySimulation =
-        SimKit.positionMechanism(
-            "Deploy",
-            mechanism ->
-                mechanism
-                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(DeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DeployConfig.MAX_LENGTH));
+  protected DeployState getNextState(DeployState currentState) {
+    return switch (currentState) {
+      case UNHOMED, INTAKE, STOW -> currentState;
 
-    if (getState() == DeployState.HOME_INWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
-      setStateFromRequest(DeployState.INTAKE);
-    }
+      case HOME_INWARD -> {
+        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
+            && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+          yield DeployState.INTAKE;
+        } else {
+          yield currentState;
+        }
+      }
 
-    if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
-      setStateFromRequest(DeployState.INTAKE);
-    }
-
-    deploySimulation.update(clamp(getState().getLength()));
+      case HOME_OUTWARD -> {
+        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
+            && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+          yield DeployState.INTAKE;
+        } else {
+          yield currentState;
+        }
+      }
+      default -> currentState;
+    };
   }
 
   @Override
-  public void applyCurrentLimits(double supplyCurrentLimit) {
-    leftMotor
-        .getConfigurator()
-        .apply(
-            DeployConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    rightMotor
-        .getConfigurator()
-        .apply(
-            DeployConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+  protected void whileInState(DeployState state) {
+    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
+    DogLog.log("Deploy/GoalPosition", getState().getLength());
+    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
   }
 }

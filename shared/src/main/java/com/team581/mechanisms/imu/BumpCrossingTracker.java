@@ -26,33 +26,6 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private static final DoubleSubscriber DOWNHILL_THRESHOLD =
       DogLog.tunable("BumpCrossing/DownhillThresholdDegrees", -5.0);
 
-  private final Debouncer flatDebouncer =
-      new Debouncer(FLAT_DEBOUNCE_SECONDS, DebounceType.kRising);
-  private final Debouncer flatFallbackDebouncer =
-      new Debouncer(FLAT_FALLBACK_DEBOUNCE_SECONDS, DebounceType.kRising);
-  private final DoubleSupplier pitchSupplier;
-  private final DoubleSupplier rollSupplier;
-  private final DoubleSupplier headingSupplier;
-  private final Consumer<Translation2d> poseResetConsumer;
-  private Rotation2d crossingDirection = Rotation2d.kZero;
-  private double directionalTilt = 0.0;
-  private boolean isFlat = true;
-  private boolean isFlatFallbackDebounced = false;
-  private Point landingPoint = new Point(Pose2d.kZero, Pose2d.kZero);
-  private Rotation3d robotRelativeImuState = Rotation3d.kZero;
-
-  public BumpCrossingTracker(
-      DoubleSupplier pitchSupplier,
-      DoubleSupplier rollSupplier,
-      DoubleSupplier headingSupplier,
-      Consumer<Translation2d> poseResetConsumer) {
-    super(BumpCrossingState.FLAT_NOT_CROSSING);
-    this.poseResetConsumer = poseResetConsumer;
-    this.pitchSupplier = pitchSupplier;
-    this.rollSupplier = rollSupplier;
-    this.headingSupplier = headingSupplier;
-  }
-
   /**
    * Calculates the signed tilt component along the crossing direction.
    *
@@ -80,29 +53,39 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     return Math.toDegrees(Math.asin(bodyUpInCrossingFrame.getX()));
   }
 
-  @Override
-  protected void collectInputs() {
-    var pitchDegrees = pitchSupplier.getAsDouble();
-    var rollDegrees = rollSupplier.getAsDouble();
-    var headingDegrees = headingSupplier.getAsDouble();
-    robotRelativeImuState =
-        new Rotation3d(
-            Math.toRadians(rollDegrees),
-            Math.toRadians(pitchDegrees),
-            Math.toRadians(headingDegrees));
-    // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
-    // Positive tilt should be tilted up toward the crossing direction
-    directionalTilt =
-        calculateDirectionalTilt(pitchDegrees, rollDegrees, headingDegrees, crossingDirection);
-    isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
-    isFlatFallbackDebounced =
-        flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
+  private final Debouncer flatDebouncer =
+      new Debouncer(FLAT_DEBOUNCE_SECONDS, DebounceType.kRising);
+  private final Debouncer flatFallbackDebouncer =
+      new Debouncer(FLAT_FALLBACK_DEBOUNCE_SECONDS, DebounceType.kRising);
+  private final DoubleSupplier pitchSupplier;
+  private final DoubleSupplier rollSupplier;
+  private final DoubleSupplier headingSupplier;
+  private final Consumer<Translation2d> poseResetConsumer;
+  private Rotation2d crossingDirection = Rotation2d.kZero;
+  private double directionalTilt = 0.0;
+  private boolean isFlat = true;
+  private boolean isFlatFallbackDebounced = false;
+  private Point landingPoint = new Point(Pose2d.kZero, Pose2d.kZero);
+
+  private Rotation3d robotRelativeImuState = Rotation3d.kZero;
+
+  public BumpCrossingTracker(
+      DoubleSupplier pitchSupplier,
+      DoubleSupplier rollSupplier,
+      DoubleSupplier headingSupplier,
+      Consumer<Translation2d> poseResetConsumer) {
+    super(BumpCrossingState.FLAT_NOT_CROSSING);
+    this.poseResetConsumer = poseResetConsumer;
+    this.pitchSupplier = pitchSupplier;
+    this.rollSupplier = rollSupplier;
+    this.headingSupplier = headingSupplier;
   }
 
-  private BumpCrossingState stuckInStateTimeout() {
-    poseResetConsumer.accept(landingPoint.getTranslation());
-    DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/StuckInStateTimeout");
-    return BumpCrossingState.FLAT_NOT_CROSSING;
+  public void bumpCrossRequest(Point landingPoint, Rotation2d crossingDirection) {
+    this.landingPoint = landingPoint;
+    this.crossingDirection = crossingDirection;
+    DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
+    setStateFromRequest(BumpCrossingState.FLAT_ABOUT_TO_CROSS);
   }
 
   @Override
@@ -146,11 +129,20 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     };
   }
 
-  public void bumpCrossRequest(Point landingPoint, Rotation2d crossingDirection) {
-    this.landingPoint = landingPoint;
-    this.crossingDirection = crossingDirection;
-    DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
-    setStateFromRequest(BumpCrossingState.FLAT_ABOUT_TO_CROSS);
+  public void log() {
+    DogLog.log("Imu/BumpCrossing/State", getState());
+    DogLog.log("Imu/BumpCrossing/CrossingDirection", crossingDirection);
+    DogLog.log(
+        "Imu/BumpCrossing/RobotRelativeImuState", new Pose3d(0.0, 0.0, 0.0, robotRelativeImuState));
+    DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
+    DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
+    DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);
+  }
+
+  private BumpCrossingState stuckInStateTimeout() {
+    poseResetConsumer.accept(landingPoint.getTranslation());
+    DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/StuckInStateTimeout");
+    return BumpCrossingState.FLAT_NOT_CROSSING;
   }
 
   @Override
@@ -163,13 +155,22 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     }
   }
 
-  public void log() {
-    DogLog.log("Imu/BumpCrossing/State", getState());
-    DogLog.log("Imu/BumpCrossing/CrossingDirection", crossingDirection);
-    DogLog.log(
-        "Imu/BumpCrossing/RobotRelativeImuState", new Pose3d(0.0, 0.0, 0.0, robotRelativeImuState));
-    DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
-    DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
-    DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);
+  @Override
+  protected void collectInputs() {
+    var pitchDegrees = pitchSupplier.getAsDouble();
+    var rollDegrees = rollSupplier.getAsDouble();
+    var headingDegrees = headingSupplier.getAsDouble();
+    robotRelativeImuState =
+        new Rotation3d(
+            Math.toRadians(rollDegrees),
+            Math.toRadians(pitchDegrees),
+            Math.toRadians(headingDegrees));
+    // Get the tilt relative to the known crossing direction (set via bumpCrossRequest)
+    // Positive tilt should be tilted up toward the crossing direction
+    directionalTilt =
+        calculateDirectionalTilt(pitchDegrees, rollDegrees, headingDegrees, crossingDirection);
+    isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
+    isFlatFallbackDebounced =
+        flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
   }
 }

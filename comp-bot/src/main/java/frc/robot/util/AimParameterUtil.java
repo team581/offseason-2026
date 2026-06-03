@@ -13,6 +13,9 @@ import frc.robot.shooter.ShooterConfig;
 
 public class AimParameterUtil {
 
+  public record AimingParameters(
+      double goalAngle, double distance, double swerveTolerance, double swerveFeedForwardRadians) {}
+
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
 
@@ -22,8 +25,8 @@ public class AimParameterUtil {
   private static final double FEEDING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(20);
 
   private static final double SCORING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(5);
-
   private static final double FEEDING_FALLBACK_DISTANCE_TO_GOAL = 8.0;
+
   private static final double FEEDING_FALLBACK_TOLERANCE = 5.0;
 
   public static AimingParameters getFallbackFeedingParameters(Rotation2d robotRotation) {
@@ -129,7 +132,4 @@ public class AimParameterUtil {
 
     return new AimingParameters(swerveAngle, distance, swerveTolerance, swerveFeedForwardRadians);
   }
-
-  public record AimingParameters(
-      double goalAngle, double distance, double swerveTolerance, double swerveFeedForwardRadians) {}
 }
