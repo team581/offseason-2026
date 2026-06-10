@@ -7,12 +7,12 @@ public class Intake extends StateMachineSubsystem<IntakeState> { // No state mac
   private final TalonFX leftmotor;
   private final TalonFX rightmotor;
 
-  public Intake(TalonFX leftMotor, TalonFX rightMotor) {
+  public Intake(TalonFX leftmotor, TalonFX rightmotor) {
     super(SubsystemPriority.INTAKING, IntakeState.IDLE); // no subsystem priority
-    this.leftmotor = leftMotor;
-    this.rightmotor = rightMotor;
-    leftMotor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);
-    rightMotor.getConfigurator().apply(IntakeConfig.RIGHT_MOTOR_CONFIG);
+    this.leftmotor = leftmotor;
+    this.rightmotor = rightmotor;
+    leftmotor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);
+    rightmotor.getConfigurator().apply(IntakeConfig.RIGHT_MOTOR_CONFIG);
   }
 
   public void ejectRequest() {
