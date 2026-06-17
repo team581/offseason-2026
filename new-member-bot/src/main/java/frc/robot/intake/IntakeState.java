@@ -6,4 +6,3 @@ public enum IntakeState {
   IDLE,
   SHOOTING;
 }
-// Not sure about current

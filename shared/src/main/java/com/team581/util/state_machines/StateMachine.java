@@ -18,6 +18,11 @@ public abstract class StateMachine<S extends Enum<S>> {
     state = initialState;
   }
 
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'applyCurrentLimits'");
+  }
+
   public void beforePeriodic() {
     collectInputs();
   }
