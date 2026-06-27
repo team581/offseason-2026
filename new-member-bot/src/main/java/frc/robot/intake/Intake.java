@@ -1,7 +1,10 @@
 package frc.robot.intake;
 
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -15,6 +18,15 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   private final StatusSignal<Current> rightSupplyCurrentSignal;
   private double leftCurrent;
   private double rightCurrent;
+
+  private VoltageOut voltageRequest = new VoltageOut(0.0);
+
+  private TalonFXConfiguration leftConfiguration =
+      new TalonFXConfiguration()
+          .withCurrentLimits(new CurrentLimitsConfigs().withSupplyCurrentLimit(20));
+  private TalonFXConfiguration rightConfiguration =
+      new TalonFXConfiguration()
+          .withCurrentLimits(new CurrentLimitsConfigs().withSupplyCurrentLimit(20));
 
   public Intake(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.INTAKING, IntakeState.IDLE);
@@ -30,9 +42,13 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   @Override
   public void afterTransition(IntakeState state) {
     if (state == IntakeState.IDLE) {
-      haltIntake();
-    } else {
-      // setIntakeVoltage();
+      setIntakeVoltage(0.0);
+    }
+    if (state == IntakeState.EJECT) {
+      setIntakeVoltage(-12.0);
+    }
+    if (state == IntakeState.INTAKING) {
+      setIntakeVoltage(12.0);
     }
   }
 
@@ -62,11 +78,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   }
 
   // halt or stop I can change name if needed
-  public void haltshootingRequest() {
-    if (getState() == IntakeState.SHOOTING) {
-      setStateFromRequest(IntakeState.INTAKING);
-    }
-  }
 
   public void idleRequest() {
     setStateFromRequest(IntakeState.IDLE);
@@ -76,14 +87,10 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     setStateFromRequest(IntakeState.INTAKING);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(IntakeState.SHOOTING);
+  public void setIntakeVoltage(double voltage) {
+    leftMotor.setControl(voltageRequest.withOutput(voltage));
+    rightMotor.setControl(voltageRequest.withOutput(voltage));
   }
-
-  // public void setIntakeVoltage(double voltage) {
-  // leftMotor.setControl();
-  // rightMotor.setControl();
-  // }
 
   @Override
   protected void collectInputs() {
