@@ -1,0 +1,34 @@
+package frc.robot;
+
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.XboxController;
+
+public class Hardware {
+  public final XboxController driverController = new XboxController(0);
+  public final XboxController operatorController = new XboxController(1);
+
+  private final CANBus canivore = new CANBus("581CANivore");
+  private final CANBus rio = CANBus.roboRIO();
+
+  public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
+  public final TalonFX intakeRightMotor = new TalonFX(17, rio);
+
+  public final TalonFX conveyorTopMotor = new TalonFX(18, canivore);
+  public final TalonFX conveyorBottomMotor = new TalonFX(19, canivore);
+
+  public final TalonFX feederTopMotor = new TalonFX(20, canivore);
+  public final TalonFX feederBottomMotor = new TalonFX(21, canivore);
+
+  public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
+
+  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, canivore);
+  public final TalonFX shooterBottomRightMotor = new TalonFX(24, canivore);
+  public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
+  public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
+
+  public final DigitalInput towerSensor = new DigitalInput(9);
+  // public final TalonFX extender = new TalonFX(28);
+
+}

@@ -79,7 +79,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
 
   // halt or stop I can change name if needed
 
-  public void idleRequest() {
+  public void haltIntakeRequest() {
     setStateFromRequest(IntakeState.IDLE);
   }
 
