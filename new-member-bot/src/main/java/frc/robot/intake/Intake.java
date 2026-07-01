@@ -9,6 +9,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Current;
+import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Intake extends StateMachineSubsystem<IntakeState> {
   private final TalonFX leftMotor;
@@ -29,7 +30,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
           .withCurrentLimits(new CurrentLimitsConfigs().withSupplyCurrentLimit(20));
 
   public Intake(TalonFX leftMotor, TalonFX rightMotor) {
-    super(SubsystemPriority.INTAKING, IntakeState.IDLE);
+    super(SubsystemPriority.INTAKE, IntakeState.IDLE);
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
     leftMotor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);
