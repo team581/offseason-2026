@@ -5,3 +5,4 @@ public enum ShooterState {
   HUB_SCORING,
   FEEDING;
 }
+// consists of 3 states

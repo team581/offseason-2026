@@ -35,7 +35,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     this.rightMotor = rightMotor;
     leftMotor.getConfigurator().apply(IntakeConfig.LEFT_MOTOR_CONFIG);
     rightMotor.getConfigurator().apply(IntakeConfig.RIGHT_MOTOR_CONFIG);
-
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
   }
