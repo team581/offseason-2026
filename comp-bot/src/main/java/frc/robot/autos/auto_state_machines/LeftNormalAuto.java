@@ -60,21 +60,21 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.010, 1.417, Rotation2d.fromDegrees(120)))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+                              Point.ofRed(
+                                  new Pose2d(8.944, 2.021, Rotation2d.fromDegrees(136.857)))))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.553, 2.677, Rotation2d.fromDegrees(85)))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+                              Point.ofRed(new Pose2d(8.316, 2.725, Rotation2d.fromDegrees(127.4)))))
+                  .withMarker(Markers.PRIORITIZE_INTAKE)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
+                  .withLinearConstraints(2.0, 3.0),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(8.670, 3.37, Rotation2d.fromDegrees(30)))))
-                  .withMarker(Markers.PRIORITIZE_INTAKE)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.6, 3.57, Rotation2d.kCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           9.7,
