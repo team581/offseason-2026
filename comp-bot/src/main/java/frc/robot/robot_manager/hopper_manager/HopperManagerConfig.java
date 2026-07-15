@@ -18,5 +18,7 @@ public class HopperManagerConfig {
                   .withFOVCenterX(0.0))
           .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.LongRangeUserFreq));
   public static final DoubleSubscriber HOPPER_COMPACTION_DELAY =
-      DogLog.tunable("HopperManager/CompactionDelay", 0.7);
+      DogLog.tunable("HopperManager/CompactionDelay", 0.5);
+  public static final DoubleSubscriber HOPPER_COMPACTION_SHUFFLE_INTERVAL =
+      DogLog.tunable("HopperManager/CompactionShuffleInterval", 0.5);
 }

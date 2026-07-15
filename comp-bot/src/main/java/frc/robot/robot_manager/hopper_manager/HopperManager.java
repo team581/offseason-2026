@@ -306,7 +306,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       }
       case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (deploy.getState() != DeployState.SCORE_COMPACTION
+        if (!operatorWantsStow
+            && deploy.getState() != DeployState.SCORE_COMPACTION
             && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
@@ -393,12 +394,20 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     switch (state) {
       default -> {}
       case SCORE -> {
-        if (shouldBeastMode) {
+        if (operatorWantsStow) {
+          deploy.stowRequest();
+        } else if (shouldBeastMode) {
           deploy.beastModeRequest();
           intake.shootRequest();
           conveyor.shootRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
-          deploy.hopperCompactionRequest();
+          double shuffleInterval =
+              HopperManagerConfig.HOPPER_COMPACTION_SHUFFLE_INTERVAL.getAsDouble();
+          if (((int) (Timer.getFPGATimestamp() / shuffleInterval)) % 2 == 0) {
+            deploy.hopperCompactionRequest();
+          } else {
+            deploy.waitHopperCompactionRequest();
+          }
           intake.idleRequest();
           conveyor.shootRequest();
         } else {
