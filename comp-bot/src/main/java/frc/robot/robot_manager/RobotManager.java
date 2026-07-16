@@ -65,7 +65,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       DogLog.tunable("RobotManager/FarScoreThreshold", 4.0);
 
   private DoubleSubscriber SLOW_FEEDING_DISTANCE_THRESHOLD =
-      DogLog.tunable("RobotManager/FarFeedThreshold", 7.0);
+      DogLog.tunable("RobotManager/FarFeedThreshold", 8.5);
 
   private FeedLocation feedLocation = FeedLocation.RIGHT;
 
