@@ -38,7 +38,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double SHOOTER_WARMUP_DISTANCE_FROM_HUB = 2.171;
 
-  private static final double COLLISION_X_OFFSET = 0.13;
+  private static final double COLLISION_X_OFFSET = -0.1;
 
   private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
   private static final double MIDLINE_OFFSET = 0.0;
@@ -67,7 +67,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       () ->
                           getCollisionPoint(
                               Point.ofRed(
-                                  new Pose2d(8.316, 5.345, Rotation2d.fromDegrees(-127.400)))))
+                                  new Pose2d(7.916, 4.945, Rotation2d.fromDegrees(-127.400)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withLinearConstraints(2.0, 3.0),
@@ -80,7 +80,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           9.7,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.fromDegrees(32)))
+                          Rotation2d.fromDegrees(-30)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(

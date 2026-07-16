@@ -66,7 +66,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.316, 2.725, Rotation2d.fromDegrees(127.4)))))
+                              Point.ofRed(
+                                  new Pose2d(7.916, 3.125, Rotation2d.fromDegrees(127.4)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
                   .withLinearConstraints(2.0, 3.0),
@@ -79,7 +80,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           9.7,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-32)))
+                          Rotation2d.fromDegrees(30)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
