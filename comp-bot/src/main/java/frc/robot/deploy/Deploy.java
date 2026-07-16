@@ -236,7 +236,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           differentialMechanism.setControl(
               voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD),
               voltageDifferentialRequest.withOutput(0));
-      case SCORE_COMPACTION, SCORE_COMPACTION_WAITING -> {
+      case SCORE_COMPACTION_WAITING -> {
         differentialMechanism.setControl(
             motionMagicTorqueCurrentFOCAverageRequest
                 .withPosition(clamp(newState.getLength()))

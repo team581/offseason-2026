@@ -406,7 +406,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           if (((int) (Timer.getFPGATimestamp() / shuffleInterval)) % 2 == 0) {
             deploy.hopperCompactionRequest();
           } else {
-            deploy.waitHopperCompactionRequest();
+            deploy.intakeRequest();
           }
           intake.idleRequest();
           conveyor.shootRequest();

@@ -8,7 +8,7 @@ public enum DeployState {
   STOW(5.0),
   SAFE_KICKER_STOW(7.915),
   // placeholder values
-  SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 3.5),
+  SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 2.5),
   SCORE_COMPACTION(1.0),
   FEED_COMPACTION(6.915),
 
