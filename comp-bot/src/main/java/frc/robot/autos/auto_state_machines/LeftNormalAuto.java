@@ -594,7 +594,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case INTAKE_FIRST_CYCLE -> {
         trailblazer.setActiveSegment(intakeFirstCycle);
         robotManager.intakeAutoRequest();
-        robotManager.powerManager.firstAutoSegmentRequest();
+        if (trailblazer.passedMarker(Markers.PRIORITIZE_INTAKE)) {
+          robotManager.powerManager.prioritizeIntakeRequest();
+        } else {
+          robotManager.powerManager.firstAutoSegmentRequest();
+        }
 
         if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
             && timeout(1.5)
@@ -602,9 +606,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
             && !firstStuckOnBall) {
           firstStuckOnBall = true;
           robotManager.localization.imu.setPitch(-30.0);
-        }
-        if (trailblazer.passedMarker(Markers.PRIORITIZE_INTAKE)) {
-          robotManager.powerManager.prioritizeIntakeRequest();
         }
       }
       case CROSS_BUMP_TO_SHOOT_1 -> {
