@@ -60,14 +60,12 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(
-                                  new Pose2d(8.744, 2.021, Rotation2d.fromDegrees(115)))))
+                              Point.ofRed(new Pose2d(8.744, 2.021, Rotation2d.fromDegrees(115)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(
-                                  new Pose2d(8.316, 3.125, Rotation2d.fromDegrees(115)))))
+                              Point.ofRed(new Pose2d(8.316, 3.125, Rotation2d.fromDegrees(115)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.25, 100))
                   .withLinearConstraints(2.5, 3.0),
@@ -75,15 +73,14 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       () ->
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(8.156, 3.525, Rotation2d.fromDegrees(50)))))
-                              .withLinearConstraints(2.0, 3.0)
-                              .withAngularConstraints(1.75, 1.0)
+                  .withLinearConstraints(2.0, 3.0)
+                  .withAngularConstraints(1.75, 1.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 20)),
-                   AutoPoint.of(
+              AutoPoint.of(
                       () ->
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(9.416, 3.025, Rotation2d.fromDegrees(30)))))
-                                                            .withAngularConstraints(1.75, 1.0)
-
+                  .withAngularConstraints(1.75, 1.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 35)),
               AutoPoint.ofRed(
                       new Pose2d(
