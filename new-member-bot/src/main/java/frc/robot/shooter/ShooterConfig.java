@@ -47,4 +47,6 @@ public class ShooterConfig {
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimit(0)
                   .withSupplyCurrentLimit(0)); // assign currents
+  public static final double MAX_SAFE_RPM =
+      0; // Values can be assigned and adjusted if needed later on
 }

@@ -1,10 +1,12 @@
 package frc.robot.shooter;
 
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
+import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -14,8 +16,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX LbottomMotor;
   private final TalonFX RbottomMotor;
 
-  // private final Follower leftFollower; not sure
-  // private final Follower rightFollower; not sure
+  private final Follower LtopFollower;
+  private final Follower LbottomFollower;
+  private final Follower RbottomFollower;
 
   // FYI:L=left and R=right and then the rest pretty self explanitory
   private double LtopCurrent;
@@ -28,8 +31,15 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double LbottomVoltage;
   private double RbottomVoltage;
 
-  private double scoreDistance = 0; // TBD
-  private double feedDistance = 0; // TBD
+  // Values can be assigned and adjusted if needed later on
+  private double LtopMotorRpm = 0;
+  private double RtopMotorRpm = 0;
+  private double LbottomMotorRpm = 0;
+  private double RbottomMotorRpm = 0;
+  private double shootingRpm = 0;
+  private double scoreDistance = 0;
+  private double feedingRpm = 0;
+  private double feedDistance = 0;
   private boolean AtGoal;
 
   private final StatusSignal<Current> leftSupplyCurrentSignal;
@@ -48,6 +58,17 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.RtopMotor = toprightMotor;
     this.LbottomMotor = bottomleftMotor;
     this.RbottomMotor = bottomrightMotor;
+
+    this.LtopFollower =
+        new Follower(RtopMotor.getDeviceID(), null); // not sure what alignment we would want
+    this.LbottomFollower =
+        new Follower(RtopMotor.getDeviceID(), null); // not sure what alignment we would want
+    this.RbottomFollower =
+        new Follower(RtopMotor.getDeviceID(), null); // not sure what alignment we would want
+
+    LtopMotor.setControl(LtopFollower);
+    LbottomMotor.setControl(LbottomFollower);
+    RbottomMotor.setControl(RbottomFollower);
 
     LtopMotor.getConfigurator().apply(ShooterConfig.TOP_LEFT_MOTOR_CONFIG);
     RtopMotor.getConfigurator().apply(ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
@@ -98,8 +119,19 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   public void idleRequest() {
     setStateFromRequest(ShooterState.IDLE);
   }
-}
-// @Override
-// protected void collectInputs() {
 
-// } //TODO
+  @Override
+  public void whileInState(ShooterState state) {
+    DogLog.log("Shooter/TopLeft/RPM", LtopMotorRpm);
+    DogLog.log("Shooter/BottomLeft/RPM", LbottomMotorRpm);
+    DogLog.log("Shooter/BottomRight/RPM", RbottomMotorRpm);
+    DogLog.log("Shooter/TopRight/RPM", RtopMotorRpm);
+  }
+
+  @Override
+  protected void collectInputs() {
+    // shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
+    // feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
+    // fix later
+  }
+}
