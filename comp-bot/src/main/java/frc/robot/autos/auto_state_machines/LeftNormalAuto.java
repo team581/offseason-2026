@@ -38,7 +38,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double SHOOTER_WARMUP_DISTANCE_FROM_HUB = 2.171;
 
-  private static final double COLLISION_X_OFFSET = 0.13;
+  private static final double COLLISION_X_OFFSET = -0.1;
 
   private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
   private static final double MIDLINE_OFFSET = 0.0;
@@ -61,26 +61,36 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       () ->
                           getCollisionPoint(
                               Point.ofRed(
-                                  new Pose2d(8.944, 2.021, Rotation2d.fromDegrees(136.857)))))
+                                  new Pose2d(8.744, 2.021, Rotation2d.fromDegrees(115)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.416, 3.125, Rotation2d.fromDegrees(127.4)))))
+                              Point.ofRed(
+                                  new Pose2d(8.316, 3.125, Rotation2d.fromDegrees(115)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.25, 100))
                   .withLinearConstraints(2.5, 3.0),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.670, 4.07, Rotation2d.fromDegrees(-32)))))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                              Point.ofRed(new Pose2d(8.156, 3.525, Rotation2d.fromDegrees(50)))))
+                              .withLinearConstraints(2.0, 3.0)
+                              .withAngularConstraints(1.75, 1.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 20)),
+                   AutoPoint.of(
+                      () ->
+                          getCollisionPoint(
+                              Point.ofRed(new Pose2d(9.416, 3.025, Rotation2d.fromDegrees(30)))))
+                                                            .withAngularConstraints(1.75, 1.0)
+
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 35)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          9.7,
+                          9.85,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-32)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
+                          Rotation2d.fromDegrees(0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.6,
@@ -134,7 +144,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           Rotation2d.fromDegrees(-160)))
                   .withLinearConstraints(2.0, 2.0)
                   .withAngularConstraints(4.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
@@ -244,7 +254,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           Rotation2d.fromDegrees(-160)))
                   .withLinearConstraints(2.0, 2.0)
                   .withAngularConstraints(4.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(2.0, 50)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
