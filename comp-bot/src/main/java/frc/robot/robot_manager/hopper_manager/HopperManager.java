@@ -31,7 +31,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     BELOW_SENSOR,
   }
 
-  public static final double HIGH_CAPACITY_THRESHOLD = 6.0;
+  public static final double HIGH_CAPACITY_THRESHOLD = 4.0;
   public static final double MEDIUM_CAPACITY_THRESHOLD = 8.0;
   public final Deploy deploy;
   public final Intake intake;
