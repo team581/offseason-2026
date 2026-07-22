@@ -86,7 +86,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           9.85,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(0)))
+                          Rotation2d.kZero))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
