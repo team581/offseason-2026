@@ -145,22 +145,16 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(
                       new Pose2d(
                           13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(4.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 360)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                          12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(),Rotation2d.fromDegrees(-179)))
                   .withMarker(Markers.START_INTAKE_2)
-                  .withLinearConstraints(3.0, 8.0)
-                  .withAngularConstraints(2.0, 1.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 360)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          11.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(4.5, 8.0)
-                  .withAngularConstraints(0.5, 0.5)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                          11.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.fromDegrees(-179)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 360)),
               AutoPoint.ofRed(new Pose2d(10.628, 0.87, Rotation2d.fromDegrees(140)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.140, 1.417, Rotation2d.fromDegrees(130)))
@@ -192,10 +186,10 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment intakeSecondCycleFar =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(7.983, 2.477, Rotation2d.fromDegrees(85)))
+              AutoPoint.ofRed(new Pose2d(7.993, 2.877, Rotation2d.fromDegrees(90)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK),
-              AutoPoint.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))
+              AutoPoint.ofRed(new Pose2d(7.993, 3.97, Rotation2d.fromDegrees(30)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.7, 3.77, Rotation2d.fromDegrees(-15)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
@@ -203,7 +197,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.2,
                           FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET,
-                          Rotation2d.fromDegrees(-50)))
+                          Rotation2d.fromDegrees(0)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -254,22 +248,16 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.5, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(2.5, 8.0)
-                  .withAngularConstraints(4.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                          13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.fromDegrees(180)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(3.0, 8.0)
-                  .withAngularConstraints(2.0, 1.0)
+                          12.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.fromDegrees(-179)))
                   .withMarker(Markers.START_INTAKE_3)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          11.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withLinearConstraints(4.5, 8.0)
-                  .withAngularConstraints(0.5, 0.5)
+                          11.5, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.fromDegrees(-179)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
               AutoPoint.ofRed(new Pose2d(9.6, 1.717, Rotation2d.fromDegrees(130)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
