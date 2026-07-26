@@ -192,10 +192,10 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private final AutoSegment intakeSecondCycleFar =
       Trailblazer.segment(
-              AutoPoint.ofRed(new Pose2d(8.283, 2.477, Rotation2d.fromDegrees(85)))
+              AutoPoint.ofRed(new Pose2d(7.983, 2.477, Rotation2d.fromDegrees(85)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100))
                   .withMarker(Markers.CANCEL_CLUSTER_MAP_CHECK),
-              AutoPoint.ofRed(new Pose2d(8.300, 3.76, Rotation2d.fromDegrees(30)))
+              AutoPoint.ofRed(new Pose2d(8.200, 3.76, Rotation2d.fromDegrees(30)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(9.7, 3.77, Rotation2d.fromDegrees(-15)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
