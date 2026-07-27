@@ -97,10 +97,8 @@ jobs:
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v7
-      - name: Setup Ruff
-        uses: astral-sh/ruff-action@v4.1.0
       - name: Lint with Ruff
-        run: ruff check
+        uses: astral-sh/ruff-action@v4.1.0
       - name: Check formatting with Ruff
         run: ruff format --check
   ty:
