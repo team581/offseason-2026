@@ -1,11 +1,12 @@
-import sys
+import argparse
+import json
 import os
 import subprocess
-import argparse
-import wpiutil.log
-import pandas as pd
+import sys
+
 import matplotlib.pyplot as plt
-import json
+import pandas as pd
+import wpiutil.log
 
 
 def parse_args():
