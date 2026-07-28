@@ -19,8 +19,6 @@ public class FeatureFlags {
 
   public static final BooleanSupplier CLUSTER_MAP = FeatureFlag.of("ClusterMap", true);
 
-  public static final BooleanSupplier SMART_WARMUP = FeatureFlag.of("SmartWarmup", true);
-
   public static final BooleanSupplier UNBEACH_AUTO_IRL = FeatureFlag.of("UnbeachAutoIRL", true);
   public static final BooleanSupplier UNBEACH_AUTO_SIM_ONLY =
       FeatureFlag.of("UnbeachAutoSimOnly", false);

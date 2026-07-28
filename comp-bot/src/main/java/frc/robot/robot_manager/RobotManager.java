@@ -479,7 +479,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && hopperManager.isFull()
             && isInAllianceZone
             && !hopperManager.isIntaking()
-            && FeatureFlags.SMART_WARMUP.getAsBoolean()
+            && DSOptions.SMART_WARMUP.getAsBoolean()
             && swerve.isNear(scoringParameters.goalAngle(), 90)) {
           yield RobotState.WARMUP_SCORE;
         }
@@ -490,7 +490,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && hopperManager.isFull()
             && isInAllianceZone
             && !hopperManager.isIntaking()
-            && FeatureFlags.SMART_WARMUP.getAsBoolean()
+            && DSOptions.SMART_WARMUP.getAsBoolean()
             && swerve.isNear(scoringParameters.goalAngle(), 90)) {
           yield currentState;
         }
