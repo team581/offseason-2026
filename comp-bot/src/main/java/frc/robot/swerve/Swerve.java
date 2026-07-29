@@ -725,13 +725,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     if (FeatureFlags.DYNAMIC_CENTER_OF_ROTATION.getAsBoolean()
         && closestObstacle.isPresent()
         && targetRotation.isPresent()) {
-      if (drivetrainState.Pose.getTranslation().getDistance(closestObstacle.get())
+      if (drivetrainState.Pose.getTranslation().getDistance(closestObstacle.orElseThrow())
           <= Units.feetToMeters(1.0) + 0.4) {
         if (MathUtil.isNear(
-            0, drivetrainState.Pose.getRotation().minus(targetRotation.get()).getDegrees(), 50.0)) {
+            0,
+            drivetrainState.Pose.getRotation().minus(targetRotation.orElseThrow()).getDegrees(),
+            50.0)) {
           centerOfRotation =
               closestObstacle
-                  .get()
+                  .orElseThrow()
                   .minus(drivetrainState.Pose.getTranslation())
                   .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
         }
