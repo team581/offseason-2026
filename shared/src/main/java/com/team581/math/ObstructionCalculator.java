@@ -5,6 +5,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.geometry.euclidean.twod.ConvexArea;
 import org.apache.commons.geometry.euclidean.twod.Lines;
 import org.apache.commons.geometry.euclidean.twod.RegionBSPTree2D;
@@ -129,6 +130,14 @@ public class ObstructionCalculator {
 
       region.add(ConvexArea.convexPolygonFromVertices(hull, PRECISION));
     }
+  }
+
+  public Optional<Translation2d> closestPoint(Translation2d point) {
+    Vector2D projected = region.project(vector2d(point));
+    if (projected == null) {
+      return Optional.empty();
+    }
+    return Optional.of(new Translation2d(projected.getX(), projected.getY()));
   }
 
   public boolean contains(Translation2d point) {

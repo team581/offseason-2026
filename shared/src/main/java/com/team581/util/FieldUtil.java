@@ -431,6 +431,53 @@ public class FieldUtil {
       ObstructionCalculator.fromTranslations(
           Units.inchesToMeters(0.0), BLUE_CLIMB_TOWER_CORNERS, RED_CLIMB_TOWER_CORNERS);
 
+  private static final List<Translation2d> BLUE_OUTPOST_BARRIER_CORNERS =
+      MathHelpers.getCorners(
+          new Rectangle2d(
+              new Pose2d(
+                  BLUE_TRENCH_BUMP_HUB_X,
+                  TRENCH_LENGTH_Y + TRENCH_BUMP_BARRIER_LENGTH_Y / 2.0,
+                  Rotation2d.kZero),
+              BUMP_LENGTH_X,
+              TRENCH_BUMP_BARRIER_LENGTH_Y));
+  private static final List<Translation2d> BLUE_DEPOT_BARRIER_CORNERS =
+      MathHelpers.getCorners(
+          new Rectangle2d(
+              new Pose2d(
+                  BLUE_TRENCH_BUMP_HUB_X,
+                  FIELD_WIDTH_Y - (TRENCH_LENGTH_Y + TRENCH_BUMP_BARRIER_LENGTH_Y / 2.0),
+                  Rotation2d.kZero),
+              BUMP_LENGTH_X,
+              TRENCH_BUMP_BARRIER_LENGTH_Y));
+  private static final List<Translation2d> RED_DEPOT_BARRIER_CORNERS =
+      MathHelpers.getCorners(
+          new Rectangle2d(
+              new Pose2d(
+                  RED_TRENCH_BUMP_HUB_X,
+                  TRENCH_LENGTH_Y + TRENCH_BUMP_BARRIER_LENGTH_Y / 2.0,
+                  Rotation2d.kZero),
+              BUMP_LENGTH_X,
+              TRENCH_BUMP_BARRIER_LENGTH_Y));
+  private static final List<Translation2d> RED_OUTPOST_BARRIER_CORNERS =
+      MathHelpers.getCorners(
+          new Rectangle2d(
+              new Pose2d(
+                  RED_TRENCH_BUMP_HUB_X,
+                  FIELD_WIDTH_Y - (TRENCH_LENGTH_Y + TRENCH_BUMP_BARRIER_LENGTH_Y / 2.0),
+                  Rotation2d.kZero),
+              BUMP_LENGTH_X,
+              TRENCH_BUMP_BARRIER_LENGTH_Y));
+
+  public static final ObstructionCalculator SNAPPING_OBSTACLES =
+      ObstructionCalculator.fromTranslations(
+          Units.inchesToMeters(0.0),
+          BLUE_CLIMB_TOWER_CORNERS,
+          RED_CLIMB_TOWER_CORNERS,
+          BLUE_OUTPOST_BARRIER_CORNERS,
+          BLUE_DEPOT_BARRIER_CORNERS,
+          RED_DEPOT_BARRIER_CORNERS,
+          RED_OUTPOST_BARRIER_CORNERS);
+
   public static Pose2d clampPoseToAllianceZone(Pose2d robot) {
     if (isRobotInAllianceZone(robot.getTranslation())) {
       return robot;

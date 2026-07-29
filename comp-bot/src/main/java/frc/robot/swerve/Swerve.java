@@ -16,6 +16,7 @@ import com.team581.swerve.SwerveAssist;
 import com.team581.swerve.TrailblazerDriveSource;
 import com.team581.swerve.XboxControllerDriveSource;
 import com.team581.trailblazer.Trailblazer;
+import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -25,6 +26,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
@@ -34,6 +36,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
+import frc.robot.config.FeatureFlags;
 import frc.robot.config.RobotKind;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.PracticeTunerConstants;
@@ -700,5 +703,41 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     drivePerspectiveSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
     fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
+
+    java.util.Optional<Rotation2d> targetRotation = java.util.Optional.empty();
+    switch (getState()) {
+      case WARMUP_SCORE, SCORE -> targetRotation = java.util.Optional.of(scoringAngleRotation);
+      case WARMUP_FEED, FEED -> targetRotation = java.util.Optional.of(feedingAngleRotation);
+      case MANUAL -> {
+        if (ableToBumpAssist) {
+          targetRotation =
+              java.util.Optional.of(
+                  SwerveAssist.getRoundedSnapAngle(
+                      drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE));
+        }
+      }
+      default -> {}
+    }
+
+    java.util.Optional<Translation2d> closestObstacle =
+        FieldUtil.SNAPPING_OBSTACLES.closestPoint(drivetrainState.Pose.getTranslation());
+    Translation2d centerOfRotation = Translation2d.kZero;
+    if (FeatureFlags.DYNAMIC_CENTER_OF_ROTATION.getAsBoolean()
+        && closestObstacle.isPresent()
+        && targetRotation.isPresent()) {
+      if (drivetrainState.Pose.getTranslation().getDistance(closestObstacle.get())
+          <= Units.feetToMeters(1.0) + 0.4) {
+        if (MathUtil.isNear(
+            0, drivetrainState.Pose.getRotation().minus(targetRotation.get()).getDegrees(), 50.0)) {
+          centerOfRotation =
+              closestObstacle
+                  .get()
+                  .minus(drivetrainState.Pose.getTranslation())
+                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+        }
+      }
+    }
+    drivePerspectiveSnaps.withCenterOfRotation(centerOfRotation);
+    fieldCentricSnaps.withCenterOfRotation(centerOfRotation);
   }
 }
