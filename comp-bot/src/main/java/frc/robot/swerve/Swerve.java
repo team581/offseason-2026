@@ -73,8 +73,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
-  public static final PhoenixPIDController ORIGINAL_HEADING_PID =
-      new PhoenixPIDController(7.5, 0, 0);
+  public static final PhoenixPIDController ORIGINAL_HEADING_PID = new PhoenixPIDController(9, 0, 0);
 
   private static final double MIN_AIMED_TOLERANCE = 2.0;
   private boolean useLooseTolerance = false;

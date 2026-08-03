@@ -467,34 +467,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     return switch (currentState) {
       // No auto transitions for these states
-      case UNJAM, FORCE_SCORE, WARMUP_FEED -> currentState;
+      case UNJAM, FORCE_SCORE, WARMUP_FEED, WARMUP_SCORE, IDLE -> currentState;
       case PREPARE_FORCE_SCORE -> {
         if (shooter.atGoalDebounced() && shooterHood.atGoal()) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
-      }
-      case IDLE -> {
-        if (DriverStation.isTeleopEnabled()
-            && hopperManager.isFull()
-            && isInAllianceZone
-            && !hopperManager.isIntaking()
-            && DSOptions.SMART_WARMUP.getAsBoolean()
-            && swerve.isNear(scoringParameters.goalAngle(), 90)) {
-          yield RobotState.WARMUP_SCORE;
-        }
-        yield currentState;
-      }
-      case WARMUP_SCORE -> {
-        if (DriverStation.isTeleopEnabled()
-            && hopperManager.isFull()
-            && isInAllianceZone
-            && !hopperManager.isIntaking()
-            && DSOptions.SMART_WARMUP.getAsBoolean()
-            && swerve.isNear(scoringParameters.goalAngle(), 90)) {
-          yield currentState;
-        }
-        yield RobotState.IDLE;
       }
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
         // In pit functionality, we don't care about anything other than raw mechanism

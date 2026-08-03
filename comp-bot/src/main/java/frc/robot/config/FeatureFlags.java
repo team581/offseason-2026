@@ -26,7 +26,7 @@ public class FeatureFlags {
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
   public static final BooleanSupplier DYNAMIC_CENTER_OF_ROTATION =
-      FeatureFlag.of("DynamicCenterOfRotation", false);
+      FeatureFlag.of("DynamicCenterOfRotation", true);
 
   private FeatureFlags() {}
 }
