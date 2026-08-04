@@ -1,6 +1,7 @@
 package frc.robot.sim;
 
 import edu.wpi.first.hal.AllianceStationID;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -31,8 +32,8 @@ public class StuckOnBallSimSelfTest {
   private static final double TIMEOUT_SECONDS = 45.0;
 
   private static String formatPose(Pose2d pose) {
-    return String.format(
-        "(%.2f, %.2f, %.1fdeg)", pose.getX(), pose.getY(), pose.getRotation().getDegrees());
+    return ("(%.2f, %.2f, %.1fdeg)")
+        .formatted(pose.getX(), pose.getY(), pose.getRotation().getDegrees());
   }
 
   private final RobotManager robotManager;
@@ -154,25 +155,25 @@ public class StuckOnBallSimSelfTest {
 
   private void printResult(boolean pass, double t, String unmet) {
     String summary =
-        String.format(
-            "maxTilt=%.2fdeg hoodOffset=[%.2f,%.2f]deg backoff=%.3fm (enter=%.3f exit=%.3f)"
+        ("maxTilt=%.2fdeg hoodOffset=[%.2f,%.2f]deg backoff=%.3fm (enter=%.3f exit=%.3f)"
                 + " movedAt=%.2fs beachedAt=%.2fs hoodCompAt=%.2fs backedOffAt=%.2fs"
-                + " recoveredAt=%.2fs stillScoringAt=%.2fs states=[%s]",
-            maxTiltSeenDegrees,
-            hoodOffsetMin == Double.POSITIVE_INFINITY ? 0.0 : hoodOffsetMin,
-            hoodOffsetMax == Double.NEGATIVE_INFINITY ? 0.0 : hoodOffsetMax,
-            beachEnterDistance >= 0.0 && beachExitDistance >= 0.0
-                ? beachExitDistance - beachEnterDistance
-                : 0.0,
-            beachEnterDistance,
-            beachExitDistance,
-            robotMovedAt,
-            beachedAt,
-            hoodCompensatedAt,
-            backedOffAt,
-            recoveredToScoreAt,
-            stillScoringAt,
-            String.join(" -> ", timeline));
+                + " recoveredAt=%.2fs stillScoringAt=%.2fs states=[%s]")
+            .formatted(
+                maxTiltSeenDegrees,
+                hoodOffsetMin == Double.POSITIVE_INFINITY ? 0.0 : hoodOffsetMin,
+                hoodOffsetMax == Double.NEGATIVE_INFINITY ? 0.0 : hoodOffsetMax,
+                beachEnterDistance >= 0.0 && beachExitDistance >= 0.0
+                    ? beachExitDistance - beachEnterDistance
+                    : 0.0,
+                beachEnterDistance,
+                beachExitDistance,
+                robotMovedAt,
+                beachedAt,
+                hoodCompensatedAt,
+                backedOffAt,
+                recoveredToScoreAt,
+                stillScoringAt,
+                String.join(" -> ", timeline));
     String line =
         pass
             ? "SIM_SELF_TEST PASS " + summary
@@ -185,10 +186,9 @@ public class StuckOnBallSimSelfTest {
     var state = robotManager.getState();
 
     if (state != lastLoggedState) {
-      String entry = String.format("%.2f:%s", t, state);
+      String entry = ("%.2f:%s").formatted(t, state);
       timeline.add(entry);
-      System.out.println(
-          "SIM_SELF_TEST timeline t=" + String.format("%.2f", t) + " state=" + state);
+      System.out.println("SIM_SELF_TEST timeline t=" + ("%.2f").formatted(t) + " state=" + state);
       lastLoggedState = state;
     }
 
@@ -217,7 +217,9 @@ public class StuckOnBallSimSelfTest {
       hoodOffsetMax = Math.max(hoodOffsetMax, offset);
       if (hoodCompensatedAt < 0.0) {
         double expected = TiltCompensation.getHoodCompensationDegrees(pitch, roll);
-        if (Math.abs(offset) > 1.0 && Math.abs(offset - expected) <= 0.5 && offset * pitch < 0.0) {
+        if (!MathUtil.isNear(0, offset, 1.0)
+            && MathUtil.isNear(offset, expected, 0.5)
+            && offset * pitch < 0.0) {
           hoodCompensatedAt = t;
         }
       }
