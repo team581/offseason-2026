@@ -9,4 +9,5 @@ requires-python = ">=3.14"
 members = [
   "shared/src/main/python/snap_scripts",
   "shared/src/main/python/profiling",
+  "shared/src/main/python/sim_agent",
 ]
