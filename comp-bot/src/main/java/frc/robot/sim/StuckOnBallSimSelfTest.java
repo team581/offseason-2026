@@ -32,7 +32,7 @@ public class StuckOnBallSimSelfTest {
   private static final double TIMEOUT_SECONDS = 45.0;
 
   private static String formatPose(Pose2d pose) {
-    return ("(%.2f, %.2f, %.1fdeg)")
+    return "(%.2f, %.2f, %.1fdeg)"
         .formatted(pose.getX(), pose.getY(), pose.getRotation().getDegrees());
   }
 
@@ -186,9 +186,9 @@ public class StuckOnBallSimSelfTest {
     var state = robotManager.getState();
 
     if (state != lastLoggedState) {
-      String entry = ("%.2f:%s").formatted(t, state);
+      String entry = "%.2f:%s".formatted(t, state);
       timeline.add(entry);
-      System.out.println("SIM_SELF_TEST timeline t=" + ("%.2f").formatted(t) + " state=" + state);
+      System.out.println("SIM_SELF_TEST timeline t=" + "%.2f".formatted(t) + " state=" + state);
       lastLoggedState = state;
     }
 
