@@ -389,6 +389,8 @@ class SimSession:
             case "chassis_speeds":
                 sub = table.getRawTopic(key).subscribe("struct:ChassisSpeeds", b"")
                 return lambda: decode_chassis_speeds(sub.get())
+            case _:
+                raise ValueError(f"Unsupported topic kind {kind!r}")
 
     def get(self, topic_path: str, kind: ValueKind) -> Any:
         """One-shot read of a topic."""
