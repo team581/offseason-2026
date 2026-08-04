@@ -58,20 +58,21 @@ A scenario is any Python file with a `run(session)` function; pass its path to t
 import time
 from sim_agent import SimSession
 
+
 def run(session: SimSession) -> None:
-    session.set_alliance("Red1")          # optional; shim defaults to whatever DS had
-    session.enable_teleop()               # or session.enable_auto("RIGHT")
+    session.set_alliance("Red1")  # optional; shim defaults to whatever DS had
+    session.enable_teleop()  # or session.enable_auto("RIGHT")
     session.wait_state("IDLE", timeout=5.0)
 
-    session.set_sticks(left_y=-0.6)       # WPILib Xbox conventions: -1 = full forward
+    session.set_sticks(left_y=-0.6)  # WPILib Xbox conventions: -1 = full forward
     session.wait_pose_moved(1.0, timeout=10.0)
     session.set_sticks(left_y=0.0)
 
-    session.set_sticks(right_trigger=1.0) # LT/RT are AXES; bindings fire at >= 0.5
+    session.set_sticks(right_trigger=1.0)  # LT/RT are AXES; bindings fire at >= 0.5
     session.wait_state("PREPARE_SCORE", "SCORE", "PREPARE_FEED", "FEED", timeout=5.0)
     session.set_sticks(right_trigger=0.0)
 
-    session.set_buttons(back=True)        # zero gyro; buttons only fire while ENABLED
+    session.set_buttons(back=True)  # zero gyro; buttons only fire while ENABLED
     session.set_buttons(back=False)
     session.disable()
 ```
