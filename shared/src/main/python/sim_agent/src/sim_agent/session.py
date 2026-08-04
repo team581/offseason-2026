@@ -469,14 +469,15 @@ class SimSession:
         teleport makes ``wait_pose_moved`` pass without the robot driving.
         Poll until the pose moves less than ``tolerance_m`` across ``window_s``.
         """
-        deadline = time.monotonic() + timeout
         last = self.wait_for(
             ESTIMATED_POSE,
             "pose2d",
             lambda p: p is not None,
-            timeout=5.0,
+            timeout=timeout,
             description="first pose sample",
         )
+        # Budget the settle window separately from first-sample latency.
+        deadline = time.monotonic() + timeout
         while True:
             time.sleep(window_s)
             current = self.get(ESTIMATED_POSE, "pose2d")
