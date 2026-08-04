@@ -8,9 +8,8 @@ How to run and debug the comp-bot robot code in the WPILib simulator.
 ./gradlew comp-bot:simulateJava
 ```
 
-This starts the robot code plus the WPILib Sim GUI and a simulated DriverStation (configured in
-`comp-bot/build.gradle` via `wpi.sim.addGui().defaultEnabled = true` and
-`wpi.sim.addDriverstation()`).
+This starts the robot code plus the WPILib Sim GUI and a simulated DriverStation. The GUI is
+enabled unless `SIM_HEADLESS` is set. The configuration is in `comp-bot/build.gradle`.
 
 ## Controls
 
