@@ -9,6 +9,7 @@ public enum RobotState {
   WARMUP_SCORE,
   PREPARE_SCORE,
   SCORE,
+  SCORE_STUCK_ON_BALL,
 
   WARMUP_FEED,
   PREPARE_FEED,
@@ -31,7 +32,8 @@ public enum RobotState {
 
   public boolean isScoring() {
     return switch (this) {
-      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE, PREPARE_SCORE, SCORE -> true;
+      case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE, PREPARE_SCORE, SCORE, SCORE_STUCK_ON_BALL ->
+          true;
       default -> false;
     };
   }

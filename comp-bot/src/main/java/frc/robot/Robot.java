@@ -30,6 +30,8 @@ import frc.robot.robot_manager.RobotManager;
 import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
+import frc.robot.sim.StuckOnBallSim;
+import frc.robot.sim.StuckOnBallSimSelfTest;
 import frc.robot.swerve.Swerve;
 import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.Vision;
@@ -84,6 +86,7 @@ public class Robot extends Base581Robot {
       new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
+  private final StuckOnBallSim stuckOnBallSim = new StuckOnBallSim(localization, imu);
   private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
@@ -115,6 +118,14 @@ public class Robot extends Base581Robot {
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
   private final Autos autos = new Autos(robotManager, trailblazer);
+
+  // Headless end-to-end test of the stuck-on-ball feature; only active in sim when the
+  // SIM_SELF_TEST env var is set
+  private final StuckOnBallSimSelfTest simSelfTest =
+      RobotBase.isSimulation() && System.getenv("SIM_SELF_TEST") != null
+          ? new StuckOnBallSimSelfTest(
+              robotManager, localization, imu, stuckOnBallSim, hopperManager, shooterHood)
+          : null;
 
   public Robot() {
     logMetadata(
@@ -149,10 +160,18 @@ public class Robot extends Base581Robot {
   public void robotPeriodic() {
     super.robotPeriodic();
 
+    // Runs after the subsystem sequencer on purpose: auto bump-crossing tilt pulses are written
+    // during the sequencer, while this sustains tilt whenever the robot is parked on the ball
+    stuckOnBallSim.periodic();
+
     if (FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() && !FmsUtil.isRedAlliance()) {
       DogLog.logFault("Clamped auto points are enabled but current alliance is blue");
     } else {
       DogLog.clearFault("Clamped auto points are enabled but current alliance is blue");
+    }
+
+    if (simSelfTest != null) {
+      simSelfTest.periodic();
     }
   }
 
