@@ -5,6 +5,10 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.team581.math.PolynomialRegression;
+import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import java.util.Map;
 
 public class ShooterConfig {
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIG =
@@ -47,6 +51,28 @@ public class ShooterConfig {
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimit(0)
                   .withSupplyCurrentLimit(0)); // assign currents
-  public static final double MAX_SAFE_RPM =
-      0; // Values can be assigned and adjusted if needed later on
+
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreRPM",
+          Map.entry(0.0, 0.0),
+          Map.entry(0.0, 0.0),
+          Map.entry(0.0, 0.0),
+          Map.entry(0.0, 0.0));
+
+  public static final PolynomialRegression SCORING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
+
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToFeedingRPM",
+          Map.entry(0.0, 0.0),
+          Map.entry(0.0, 0.0),
+          Map.entry(0.0, 0.0));
+
+  public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/FeedingRegression", DISTANCE_TO_FEEDING_RPM);
+
+  public static final double MAX_SAFE_RPM = 0; // can be adjusted
+  public static final double IDLE_RPM = 0; // can be adjusted
 }

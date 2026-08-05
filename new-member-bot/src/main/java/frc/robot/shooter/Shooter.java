@@ -4,6 +4,7 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -15,23 +16,20 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX RtopMotor;
   private final TalonFX LbottomMotor;
   private final TalonFX RbottomMotor;
-
   private final Follower LtopFollower;
   private final Follower LbottomFollower;
-  private final Follower RbottomFollower;
+  private final Follower
+      RbottomFollower; // FYI:L=left and R=right and then the rest pretty self explanitory
 
-  // FYI:L=left and R=right and then the rest pretty self explanitory
   private double LtopCurrent;
   private double RtopCurrent;
   private double LbottomCurrent;
   private double RbottomCurrent;
-
   private double LtopVoltage;
   private double RtopVoltage;
   private double LbottomVoltage;
-  private double RbottomVoltage;
+  private double RbottomVoltage; // Values can be assigned and adjusted if needed later on
 
-  // Values can be assigned and adjusted if needed later on
   private double LtopMotorRpm = 0;
   private double RtopMotorRpm = 0;
   private double LbottomMotorRpm = 0;
@@ -40,7 +38,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double scoreDistance = 0;
   private double feedingRpm = 0;
   private double feedDistance = 0;
-  private boolean AtGoal;
+  private boolean AtGoal = false;
 
   private final StatusSignal<Current> leftSupplyCurrentSignal;
   private final StatusSignal<Current> rightSupplyCurrentSignal;
@@ -59,12 +57,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.LbottomMotor = bottomleftMotor;
     this.RbottomMotor = bottomrightMotor;
 
-    this.LtopFollower =
-        new Follower(RtopMotor.getDeviceID(), null); // not sure what alignment we would want
-    this.LbottomFollower =
-        new Follower(RtopMotor.getDeviceID(), null); // not sure what alignment we would want
+    this.LtopFollower = new Follower(RtopMotor.getDeviceID(), MotorAlignmentValue.Aligned);
+    this.LbottomFollower = new Follower(RtopMotor.getDeviceID(), MotorAlignmentValue.Aligned);
     this.RbottomFollower =
-        new Follower(RtopMotor.getDeviceID(), null); // not sure what alignment we would want
+        new Follower(
+            RtopMotor.getDeviceID(),
+            MotorAlignmentValue.Aligned); // not sure what alignment we would want
 
     LtopMotor.setControl(LtopFollower);
     LbottomMotor.setControl(LbottomFollower);
@@ -122,16 +120,53 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
   @Override
   public void whileInState(ShooterState state) {
+
     DogLog.log("Shooter/TopLeft/RPM", LtopMotorRpm);
     DogLog.log("Shooter/BottomLeft/RPM", LbottomMotorRpm);
     DogLog.log("Shooter/BottomRight/RPM", RbottomMotorRpm);
     DogLog.log("Shooter/TopRight/RPM", RtopMotorRpm);
+
+    switch (state) {
+      case IDLE -> {
+        RtopMotor.setControl(velocityRequest.withVelocity(ShooterConfig.IDLE_RPM / 60.0));
+        DogLog.log("Shooter/IdleRPM", ShooterConfig.IDLE_RPM);
+      }
+
+      case HUB_SCORING -> {
+        RtopMotor.setControl(velocityRequest.withVelocity(shootingRpm / 60.0));
+        DogLog.log("Shooter/ScoringRPM", shootingRpm);
+      }
+
+      case FEEDING -> {
+        RtopMotor.setControl(velocityRequest.withVelocity(feedingRpm / 60.0));
+        DogLog.log("Shooter/FeedingRPM", feedingRpm);
+      }
+    }
+  }
+
+  private double distanceToFeedingRpm(double distance) {
+    return distance * 0.0;
+  }
+
+  private double distanceToScoringRpm(double distance) {
+    return distance * 0.0;
   }
 
   @Override
   protected void collectInputs() {
-    // shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
-    // feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
-    // fix later
+    shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
+    feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
+
+    LtopCurrent = leftSupplyCurrentSignal.getValueAsDouble();
+    RtopCurrent = rightSupplyCurrentSignal.getValueAsDouble();
+    LbottomCurrent = bottomSupplyCurrentSignal.getValueAsDouble();
+    RbottomCurrent = topSupplyCurrentSignal.getValueAsDouble();
+
+    LtopMotorRpm = LtopMotor.getVelocity().getValueAsDouble() * 60.0;
+    RtopMotorRpm = RtopMotor.getVelocity().getValueAsDouble() * 60.0;
+    LbottomMotorRpm = LbottomMotor.getVelocity().getValueAsDouble() * 60.0;
+    RbottomMotorRpm = RbottomMotor.getVelocity().getValueAsDouble() * 60.0;
+
+    AtGoal = false;
   }
 }
