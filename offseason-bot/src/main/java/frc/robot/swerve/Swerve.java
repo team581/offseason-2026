@@ -304,8 +304,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setFeedingAngle(feedingParameters.goalAngle());
     feedingTolerance =
         MathUtil.clamp(
-            feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
+            feedingParameters.turretTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    feedingFeedForward = feedingParameters.turretFeedForwardRadians();
     setStateFromRequest(SwerveState.FEED);
   }
 
@@ -344,8 +344,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setScoringAngle(scoringParameters.goalAngle());
     scoringTolerance =
         MathUtil.clamp(
-            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
+            scoringParameters.turretTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringFeedForward = scoringParameters.turretFeedForwardRadians();
     setStateFromRequest(SwerveState.SCORE);
   }
 
@@ -372,8 +372,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setFeedingAngle(feedingParameters.goalAngle());
     feedingTolerance =
         MathUtil.clamp(
-            feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
+            feedingParameters.turretTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    feedingFeedForward = feedingParameters.turretFeedForwardRadians();
     setStateFromRequest(SwerveState.WARMUP_FEED);
   }
 
@@ -381,8 +381,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setScoringAngle(scoringParameters.goalAngle());
     scoringTolerance =
         MathUtil.clamp(
-            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
+            scoringParameters.turretTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringFeedForward = scoringParameters.turretFeedForwardRadians();
     setStateFromRequest(SwerveState.WARMUP_SCORE);
   }
 

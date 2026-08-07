@@ -14,7 +14,7 @@ import frc.robot.shooter.ShooterConfig;
 public class AimParameterUtil {
 
   public record AimingParameters(
-      double goalAngle, double distance, double swerveTolerance, double swerveFeedForwardRadians) {}
+      double goalAngle, double distance, double turretTolerance, double turretFeedForwardRadians) {}
 
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
