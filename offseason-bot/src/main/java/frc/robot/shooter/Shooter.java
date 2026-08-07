@@ -1,0 +1,372 @@
+package frc.robot.shooter;
+
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.Signals;
+import com.team581.simkit.SimKit;
+import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunablePid;
+import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
+import frc.robot.config.DSOptions;
+import frc.robot.config.FeatureFlags;
+import frc.robot.util.scheduling.SubsystemPriority;
+
+public class Shooter extends StateMachineSubsystem<ShooterState> implements PowerManaged {
+  private static double distanceToFeedingRpm(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
+  }
+
+  private static double distanceToScoringRpm(double distance) {
+    return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
+  }
+
+  // Top left motor is the leader
+  private final TalonFX topLeftMotor;
+  private final TalonFX topRightMotor;
+  public final TalonFX bottomLeftMotor;
+  public final TalonFX bottomRightMotor;
+
+  private final Follower topLeftFollower;
+  private final Follower bottomLeftFollower;
+  private final Follower bottomRightFollower;
+
+  private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
+
+  private final StatusSignal<AngularVelocity> topLeftVelocitySignal;
+  private final StatusSignal<AngularVelocity> topRightVelocitySignal;
+  private final StatusSignal<AngularVelocity> bottomLeftVelocitySignal;
+  private final StatusSignal<AngularVelocity> bottomRightVelocitySignal;
+  private final StatusSignal<Voltage> topLeftVoltageSignal;
+  private final StatusSignal<Voltage> topRightVoltageSignal;
+  private final StatusSignal<Voltage> bottomLeftVoltageSignal;
+  private final StatusSignal<Voltage> bottomRightVoltageSignal;
+  private final StatusSignal<Voltage> topRightSupplyVoltageSignal;
+  private final StatusSignal<Current> topLeftSupplyCurrentSignal;
+  private final StatusSignal<Current> topRightSupplyCurrentSignal;
+  private final StatusSignal<Current> bottomLeftSupplyCurrentSignal;
+  private final StatusSignal<Current> bottomRightSupplyCurrentSignal;
+  private final StatusSignal<Current> topRightTorqueCurrentSignal;
+
+  private double topLeftVoltage = 0;
+  private double topRightVoltage = 0;
+  private double bottomLeftVoltage = 0;
+  private double bottomRightVoltage = 0;
+  private double topRightSupplyVoltage = 0;
+  private double topLeftSupplyCurrent = 0;
+  private double topRightSupplyCurrent = 0;
+  private double bottomLeftSupplyCurrent = 0;
+  private double bottomRightSupplyCurrent = 0;
+  private double topRightTorqueCurrent = 0;
+
+  private double scoreDistance = 0;
+  private double feedDistance = 0;
+
+  private double shootingRpm = 0;
+  private double feedingRpm = 0;
+  private double topLeftMotorRpm = 0;
+  private double topRightMotorRpm = 0;
+  private double bottomLeftMotorRpm = 0;
+  private double bottomRightMotorRpm = 0;
+  private double feederCurrent = 0.0;
+  private double feederBasedFeedForward = 0.0;
+  private boolean hopperFull = false;
+
+  private boolean atGoal = false;
+  private boolean atGoalDebounced = false;
+
+  private boolean turboMode = false;
+
+  // Debounce for delay between shots at 15 bps
+  private final Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
+
+  public Shooter(
+      TalonFX topLeftMotor,
+      TalonFX topRightMotor,
+      TalonFX bottomLeftMotor,
+      TalonFX bottomRightMotor) {
+    super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
+
+    topLeftMotor.getConfigurator().apply(ShooterConfig.TOP_LEFT_MOTOR_CONFIGS);
+    topRightMotor.getConfigurator().apply(ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
+    bottomLeftMotor.getConfigurator().apply(ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
+    bottomRightMotor.getConfigurator().apply(ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
+
+    TunablePid.register("Shooter/TopLeft", topLeftMotor, ShooterConfig.TOP_LEFT_MOTOR_CONFIGS);
+    TunablePid.register("Shooter/TopRight", topRightMotor, ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
+    TunablePid.register(
+        "Shooter/BottomLeft", bottomLeftMotor, ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
+    TunablePid.register(
+        "Shooter/BottomRight", bottomRightMotor, ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
+
+    this.topLeftMotor = topLeftMotor;
+    this.topRightMotor = topRightMotor;
+    this.bottomLeftMotor = bottomLeftMotor;
+    this.bottomRightMotor = bottomRightMotor;
+
+    this.topLeftFollower = new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Opposed);
+    this.bottomLeftFollower =
+        new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Opposed);
+    this.bottomRightFollower =
+        new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Aligned);
+
+    topLeftMotor.setControl(topLeftFollower);
+    bottomLeftMotor.setControl(bottomLeftFollower);
+    bottomRightMotor.setControl(bottomRightFollower);
+
+    topLeftVelocitySignal = topLeftMotor.getVelocity(false);
+    topRightVelocitySignal = topRightMotor.getVelocity(false);
+    bottomLeftVelocitySignal = bottomLeftMotor.getVelocity(false);
+    bottomRightVelocitySignal = bottomRightMotor.getVelocity(false);
+    topLeftVoltageSignal = topLeftMotor.getMotorVoltage(false);
+    topRightVoltageSignal = topRightMotor.getMotorVoltage(false);
+    bottomLeftVoltageSignal = bottomLeftMotor.getMotorVoltage(false);
+    bottomRightVoltageSignal = bottomRightMotor.getMotorVoltage(false);
+    topRightSupplyVoltageSignal = topRightMotor.getSupplyVoltage(false);
+    topLeftSupplyCurrentSignal = topLeftMotor.getSupplyCurrent(false);
+    topRightSupplyCurrentSignal = topRightMotor.getSupplyCurrent(false);
+    bottomLeftSupplyCurrentSignal = bottomLeftMotor.getSupplyCurrent(false);
+    bottomRightSupplyCurrentSignal = bottomRightMotor.getSupplyCurrent(false);
+    topRightTorqueCurrentSignal = topRightMotor.getTorqueCurrent(false);
+
+    Signals.forDevice(topLeftMotor)
+        .addSignals(topLeftVelocitySignal, topLeftVoltageSignal, topLeftSupplyCurrentSignal);
+    Signals.forDevice(topRightMotor)
+        .addSignals(
+            topRightVelocitySignal,
+            topRightVoltageSignal,
+            topRightSupplyVoltageSignal,
+            topRightSupplyCurrentSignal,
+            topRightTorqueCurrentSignal);
+    Signals.forDevice(bottomLeftMotor)
+        .addSignals(
+            bottomLeftVelocitySignal, bottomLeftVoltageSignal, bottomLeftSupplyCurrentSignal);
+    Signals.forDevice(bottomRightMotor)
+        .addSignals(
+            bottomRightVelocitySignal, bottomRightVoltageSignal, bottomRightSupplyCurrentSignal);
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    topLeftMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.TOP_LEFT_MOTOR_CONFIGS.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    topRightMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.TOP_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    bottomLeftMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    bottomRightMotor
+        .getConfigurator()
+        .apply(
+            ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+  }
+
+  public boolean atGoal() {
+    return atGoal;
+  }
+
+  public boolean atGoalDebounced() {
+    return atGoalDebounced;
+  }
+
+  public void feedRequest(double distance) {
+    this.feedDistance = distance;
+    setStateFromRequest(ShooterState.FEED);
+  }
+
+  public double getFeedTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
+  }
+
+  public double getScoreTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(distance);
+  }
+
+  public void idleRequest() {
+    setStateFromRequest(ShooterState.IDLE);
+  }
+
+  public void prepareFeedRequest(double distance) {
+    this.feedDistance = distance;
+    setStateFromRequest(ShooterState.PREPARE_FEED);
+  }
+
+  public void prepareScoreRequest(double distance) {
+    this.scoreDistance = distance;
+    if (getState() != ShooterState.SCORE) {
+      setStateFromRequest(ShooterState.PREPARE_SCORE);
+    }
+  }
+
+  public void scoreRequest(double distance) {
+    this.scoreDistance = distance;
+    setStateFromRequest(ShooterState.SCORE);
+  }
+
+  public void setTurboMode(boolean useTurboMode) {
+    turboMode = useTurboMode;
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    var shooterSimulation =
+        SimKit.velocityMechanism(
+            "shooter",
+            (mechanism) ->
+                mechanism
+                    .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)
+                    .addMotor(bottomLeftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(bottomRightMotor, ChassisReference.CounterClockwise_Positive));
+
+    shooterSimulation.update();
+  }
+
+  public void updateHopperState(double feederCurrent, boolean hopperFull) {
+    this.feederCurrent = feederCurrent;
+    this.hopperFull = hopperFull || !DSOptions.USE_CANRANGE.getAsBoolean();
+  }
+
+  private boolean calculateAtGoal() {
+    return switch (getState()) {
+      case IDLE -> false;
+      case PREPARE_SCORE ->
+          MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
+      case SCORE ->
+          MathUtil.isNear(
+              topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
+      case PREPARE_FEED, FEED ->
+          MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
+      default -> true;
+    };
+  }
+
+  @Override
+  protected void collectInputs() {
+    shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
+    feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
+
+    if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
+      shootingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
+      feedingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
+    }
+
+    topLeftMotorRpm = topLeftVelocitySignal.getValueAsDouble() * 60.0;
+    topRightMotorRpm = topRightVelocitySignal.getValueAsDouble() * 60.0;
+    bottomLeftMotorRpm = bottomLeftVelocitySignal.getValueAsDouble() * 60.0;
+    bottomRightMotorRpm = bottomRightVelocitySignal.getValueAsDouble() * 60.0;
+
+    topLeftVoltage = topLeftVoltageSignal.getValueAsDouble();
+    topRightVoltage = topRightVoltageSignal.getValueAsDouble();
+    bottomLeftVoltage = bottomLeftVoltageSignal.getValueAsDouble();
+    bottomRightVoltage = bottomRightVoltageSignal.getValueAsDouble();
+    topRightSupplyVoltage = topRightSupplyVoltageSignal.getValueAsDouble();
+    topLeftSupplyCurrent = topLeftSupplyCurrentSignal.getValueAsDouble();
+    topRightSupplyCurrent = topRightSupplyCurrentSignal.getValueAsDouble();
+    bottomLeftSupplyCurrent = bottomLeftSupplyCurrentSignal.getValueAsDouble();
+    bottomRightSupplyCurrent = bottomRightSupplyCurrentSignal.getValueAsDouble();
+    topRightTorqueCurrent = topRightTorqueCurrentSignal.getValueAsDouble();
+
+    atGoal = calculateAtGoal();
+    atGoalDebounced = atGoalDebouncer.calculate(atGoal);
+
+    switch (getState()) {
+      case SCORE, FEED -> {
+        if (!timeout(0.7) && hopperFull) {
+          feederBasedFeedForward =
+              Math.max(
+                  ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent),
+                  ShooterConfig.FULL_HOPPER_INITIAL_FF.getAsDouble());
+        } else if (!timeout(0.1)) {
+          feederBasedFeedForward =
+              Math.max(
+                  ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent),
+                  ShooterConfig.LOW_HOPPER_INITIAL_FFF.getAsDouble());
+        } else {
+          feederBasedFeedForward =
+              ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent);
+        }
+      }
+      default -> {
+        feederBasedFeedForward =
+            ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent);
+      }
+    }
+  }
+
+  @Override
+  protected void whileInState(ShooterState state) {
+    DogLog.log("Shooter/TopLeft/RPM", topLeftMotorRpm);
+    DogLog.log("Shooter/TopRight/RPM", topRightMotorRpm);
+    DogLog.log("Shooter/BottomLeft/RPM", bottomLeftMotorRpm);
+    DogLog.log("Shooter/BottomRight/RPM", bottomRightMotorRpm);
+    DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
+    DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
+    DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
+    DogLog.log("Shooter/AtGoal", atGoal);
+
+    DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
+    DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);
+    DogLog.log("Shooter/BottomLeft/SupplyCurrent", bottomLeftSupplyCurrent);
+    DogLog.log("Shooter/BottomRight/SupplyCurrent", bottomRightSupplyCurrent);
+
+    switch (state) {
+      case IDLE -> {
+        var setpoint = ShooterConfig.IDLE_RPM / 60.0;
+        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
+      }
+      case PREPARE_SCORE -> {
+        var setpoint = shootingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
+      }
+      case SCORE -> {
+        var setpoint = shootingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
+      }
+      case PREPARE_FEED -> {
+        var setpoint = feedingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
+      }
+      case FEED -> {
+        var setpoint = feedingRpm / 60.0;
+        topRightMotor.setControl(
+            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
+      }
+    }
+  }
+}

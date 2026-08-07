@@ -1,0 +1,40 @@
+package frc.robot.deploy;
+
+import dev.doglog.DogLog;
+import edu.wpi.first.networktables.DoubleSubscriber;
+
+public enum DeployState {
+  INTAKE(DeployConfig.MAX_LENGTH),
+  STOW(5.0),
+  SAFE_KICKER_STOW(7.915),
+  // placeholder values
+  SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 2.5),
+  SCORE_COMPACTION(1.0),
+  FEED_COMPACTION(6.915),
+
+  BEAST_MODE_COMPACTION(5.0),
+
+  FIX_DIFFERENTIAL_DESYNC(DeployConfig.MAX_LENGTH),
+
+  HOME_INWARD(5.0),
+  HOME_OUTWARD(DeployConfig.MAX_LENGTH),
+  UNHOMED(0);
+
+  private final DoubleSubscriber tunableLength;
+
+  DeployState(double length) {
+
+    this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
+  }
+
+  public double getLength() {
+    return tunableLength.get();
+  }
+
+  public boolean isHoming() {
+    return switch (this) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> true;
+      default -> false;
+    };
+  }
+}
