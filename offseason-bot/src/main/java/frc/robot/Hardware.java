@@ -11,9 +11,8 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.RobotKind;
 import frc.robot.deploy.DeployConfig;
-import frc.robot.generated.CompTunerConstants;
-import frc.robot.generated.PracticeTunerConstants;
-import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.RobotTunerConstants;
+import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -56,11 +55,9 @@ public class Hardware {
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
-          RobotKind.IS_COMP_BOT
-              ? CompTunerConstants.DrivetrainConstants
-              : PracticeTunerConstants.DrivetrainConstants,
-          RobotKind.IS_COMP_BOT ? CompTunerConstants.FrontLeft : PracticeTunerConstants.FrontLeft,
-          RobotKind.IS_COMP_BOT ? CompTunerConstants.FrontRight : PracticeTunerConstants.FrontRight,
-          RobotKind.IS_COMP_BOT ? CompTunerConstants.BackLeft : PracticeTunerConstants.BackLeft,
-          RobotKind.IS_COMP_BOT ? CompTunerConstants.BackRight : PracticeTunerConstants.BackRight);
+          RobotTunerConstants.DrivetrainConstants,
+          RobotTunerConstants.FrontLeft,
+          RobotTunerConstants.FrontRight,
+          RobotTunerConstants.BackLeft,
+          RobotTunerConstants.BackRight);
 }

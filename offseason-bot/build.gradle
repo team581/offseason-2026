@@ -54,6 +54,13 @@ dependencies {
 
 	testImplementation 'org.junit.jupiter:junit-jupiter:6.1.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+
+	// https://central.sonatype.com/artifact/com.google.guava/guava
+	implementation 'com.google.guava:guava:33.6.0-jre'
+
+	// https://central.sonatype.com/artifact/org.apache.commons/commons-geometry-euclidean
+	implementation 'org.apache.commons:commons-geometry-euclidean:1.0'
 }
 
 test {
