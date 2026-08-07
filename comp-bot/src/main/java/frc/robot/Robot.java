@@ -207,8 +207,8 @@ public class Robot extends Base581Robot {
 
     operator
         .rightTrigger()
-        .onPress(robotManager::prepareScoreRequest)
-        .onRelease(robotManager::idleRequest);
+        .onPress(robotManager::warmupScoreRequest)
+        .onRelease(robotManager::cancelWarmupRequest);
 
     operator
         .leftTrigger()
