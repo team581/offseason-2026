@@ -8,6 +8,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -185,7 +186,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     bottomleftMotorRpm = bottomleftMotor.getVelocity().getValueAsDouble() * 60.0;
     bottomrightMotorRpm = bottomrightMotor.getVelocity().getValueAsDouble() * 60.0;
 
-    AtGoal = Math.abs(toprightMotorRpm - shootingRpm) < ShooterConfig.RPM_TOLERANCE;
+    AtGoal = MathUtil.isNear(toprightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
     ;
   }
 }
