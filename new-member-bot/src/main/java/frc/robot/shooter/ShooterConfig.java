@@ -75,4 +75,5 @@ public class ShooterConfig {
 
   public static final double MAX_SAFE_RPM = 0; // can be adjusted
   public static final double IDLE_RPM = 0; // can be adjusted
+  public static double RPM_TOLERANCE;
 }
