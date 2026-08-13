@@ -32,7 +32,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public static final double HIGH_CAPACITY_THRESHOLD = 4.0;
-  public static final double MEDIUM_CAPACITY_THRESHOLD = 8.0;
   public final Deploy deploy;
   public final Intake intake;
   public final Conveyor conveyor;
@@ -235,7 +234,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     if (!canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
       // If we are using the hopper CANrange, we can start filling the tower once the hopper is
       // starting ot fill up
-      return hopperCapacity == HopperCapacity.MEDIUM || hopperCapacity == HopperCapacity.HIGH;
+      return hopperCapacity == HopperCapacity.HIGH;
     }
 
     // Otherwise, we fallback to running once we've been intaking for a few seconds
@@ -363,8 +362,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     if (filteredDistance <= HIGH_CAPACITY_THRESHOLD) {
       hopperCapacity = HopperCapacity.HIGH;
-    } else if (filteredDistance <= MEDIUM_CAPACITY_THRESHOLD) {
-      hopperCapacity = HopperCapacity.MEDIUM;
     } else {
       hopperCapacity = HopperCapacity.LOW;
     }
