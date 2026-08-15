@@ -30,7 +30,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double topleftVoltage;
   private double toprightVoltage;
   private double bottomleftVoltage;
-  private double bottomrightVoltage; // Values can be assigned and adjusted if needed later on
+  private double bottomrightVoltage;
 
   private double topleftMotorRpm = 0;
   private double toprightMotorRpm = 0;
@@ -41,7 +41,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double feedingRpm = 0;
   private double feedDistance = 0;
   private boolean AtGoal = false;
-
+  // Values can be assigned and adjusted if needed later on
   private final StatusSignal<Current> topleftSupplyCurrentSignal;
   private final StatusSignal<Current> toprightSupplyCurrentSignal;
   private final StatusSignal<Current> bottomleftSupplyCurrentSignal;
@@ -128,6 +128,18 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     setStateFromRequest(ShooterState.FEEDING);
   }
 
+  public double getFeedTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
+  }
+
+  public double getScoreTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(distance)
+        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(distance);
+  }
+
   public void hubscoreRequest(double distance) {
     this.scoreDistance = distance;
     setStateFromRequest(ShooterState.HUB_SCORING);
@@ -187,6 +199,5 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     bottomrightMotorRpm = bottomrightMotor.getVelocity().getValueAsDouble() * 60.0;
 
     AtGoal = MathUtil.isNear(toprightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-    ;
   }
 }
