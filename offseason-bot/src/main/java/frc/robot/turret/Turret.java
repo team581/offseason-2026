@@ -11,7 +11,6 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -37,7 +36,6 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   private double statorCurrent = 0.0;
   private double feedForward = 0.0;
 
-  private double stuckAngle = 0.0;
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   private final NeutralOut neutralRequest = new NeutralOut();
@@ -65,7 +63,6 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(AimingParameters aimingParameters) {
-    // TODO: replace 0 with upcoming turret angle
     return atGoal(aimingParameters.turretTolerance(), 0.0);
   }
 
@@ -89,18 +86,6 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
         yield MathUtil.isNear(setpoint, currentAngle, tolerance, -180, 180);
       }
     };
-  }
-
-  public void climbRequest(Pose2d robotPose, double feedForward) {
-    this.feedForward = feedForward;
-    goalAngle = 0.0;
-    setState(TurretState.CLIMB);
-  }
-
-  public void climbScoreRequest(boolean isLeft, double feedForward) {
-    this.feedForward = feedForward;
-    this.goalAngle = 0.0;
-    setState(TurretState.CLIMB_SCORE);
   }
 
   public void feedRequest(double goalAngle, double feedForward) {
@@ -225,7 +210,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     setpoint =
         switch (getState()) {
           case UNHOMED -> 0.0;
-          case SCORE, FEED, CLIMB, CLIMB_SCORE, STUCK ->
+          case SCORE, FEED, STUCK ->
               clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle));
           case IDLE_SCORE, IDLE_FEED ->
               clamp(TurretCalculator.getSmartUnwrapAngle(goalAngle, currentAngle));
@@ -263,17 +248,12 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
             positionRequest.withPosition(
                 Units.degreesToRotations(clamp(TurretConfig.FAUX_DUMPER_ANGLE))));
       }
-      case SCORE, FEED, CLIMB ->
+      case SCORE, FEED ->
           motor.setControl(
               positionRequest
                   .withPosition(Units.degreesToRotations(clamp(setpoint)))
                   .withVelocity(Units.radiansToRotations(getFeedForward())));
       case IDLE_SCORE, IDLE_FEED ->
-          motor.setControl(
-              positionRequest
-                  .withPosition(Units.degreesToRotations(clamp(setpoint)))
-                  .withVelocity(Units.radiansToRotations(getFeedForward())));
-      case CLIMB_SCORE ->
           motor.setControl(
               positionRequest
                   .withPosition(Units.degreesToRotations(clamp(setpoint)))
