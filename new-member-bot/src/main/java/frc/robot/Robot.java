@@ -27,12 +27,12 @@ public class Robot extends Base581Robot {
   @Override
   public void robotPeriodic() {
     super.robotPeriodic();
-    
+
     if (xbox.getLeftTriggerAxis() > 0.5) {
       intake.collectRequest();
-    }else if(xbox.getRightTriggerAxis() > 0.5){
+    } else if (xbox.getRightTriggerAxis() > 0.5) {
       intake.ejectRequest();
-    }else{
+    } else {
       intake.idleRequest();
     }
   }

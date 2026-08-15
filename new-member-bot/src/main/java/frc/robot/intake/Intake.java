@@ -11,9 +11,13 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   public Intake(TalonFX left, TalonFX right) {
     // Create a state machine subsystem, starting in IDLE and running at INTAKE priority
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);
-     
+
     this.intakeMotorR = right;
     this.intakeMotorL = left;
+  }
+
+  public void collectRequest() {
+    setStateFromRequest(IntakeState.COLLECTING);
   }
 
   // Request methods are used to ask this subsystem to do a thing
@@ -26,24 +30,19 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
     setStateFromRequest(IntakeState.IDLE);
   }
 
-
-  public void collectRequest() {
-    setStateFromRequest(IntakeState.COLLECTING);
-  }
-  
-  
   @Override
   protected void afterTransition(IntakeState newState) {
     // afterTransition runs after a state transition (ex. A -> B)
-    // It tells you what the new state is, so that you can trigger logic like setting motor voltages here
-    if (newState.equals(IntakeState.IDLE)){
+    // It tells you what the new state is, so that you can trigger logic like setting motor voltages
+    // here
+    if (newState == IntakeState.IDLE) {
       intakeMotorL.setVoltage(0);
       intakeMotorR.setVoltage(0);
-    }else if (newState.equals(IntakeState.COLLECTING)){
+    } else if (newState == IntakeState.COLLECTING) {
       intakeMotorL.setVoltage(10);
       intakeMotorR.setVoltage(10);
 
-    }else{
+    } else {
       intakeMotorL.setVoltage(-10);
       intakeMotorR.setVoltage(-10);
     }
