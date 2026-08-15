@@ -163,7 +163,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
 
   private boolean ableToBumpAssist = false;
-  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.1);
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
 
   private boolean ableToXSwerve = false;
 
