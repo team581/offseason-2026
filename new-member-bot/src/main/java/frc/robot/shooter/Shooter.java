@@ -70,7 +70,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.bottomrightFollower =
         new Follower(
             toprightMotor.getDeviceID(),
-            MotorAlignmentValue.Aligned); // not sure what alignment we would want
+            MotorAlignmentValue.Aligned); // Inverted Value or Aligned totally up to me
 
     topleftMotor.setControl(topleftFollower);
     bottomleftMotor.setControl(bottomleftFollower);
@@ -81,7 +81,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     bottomleftMotor.getConfigurator().apply(ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
     bottomrightMotor.getConfigurator().apply(ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
 
-    topleftSupplyCurrentSignal = topleftMotor.getSupplyCurrent();
+    topleftSupplyCurrentSignal = topleftMotor.getSupplyCurrent(false);
     toprightSupplyCurrentSignal = toprightMotor.getSupplyCurrent();
     bottomleftSupplyCurrentSignal = bottomleftMotor.getSupplyCurrent();
     bottomrightSupplyCurrentSignal = bottomrightMotor.getSupplyCurrent();
