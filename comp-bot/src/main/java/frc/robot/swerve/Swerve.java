@@ -202,38 +202,42 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            RobotKind.IS_COMP_BOT
-                ? CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
-                : PracticeTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
-                    .withSupplyCurrentLimit(supplyCurrentLimit));
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
+                .withSupplyCurrentLimit(supplyCurrentLimit));
     drivetrain
         .getModule(1)
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            RobotKind.IS_COMP_BOT
-                ? CompTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
-                : PracticeTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
-                    .withSupplyCurrentLimit(supplyCurrentLimit));
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
+                .withSupplyCurrentLimit(supplyCurrentLimit));
     drivetrain
         .getModule(2)
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            RobotKind.IS_COMP_BOT
-                ? CompTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
-                : PracticeTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
-                    .withSupplyCurrentLimit(supplyCurrentLimit));
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
+                .withSupplyCurrentLimit(supplyCurrentLimit));
 
     drivetrain
         .getModule(3)
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            RobotKind.IS_COMP_BOT
-                ? CompTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
-                : PracticeTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
-                    .withSupplyCurrentLimit(supplyCurrentLimit));
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
+                .withSupplyCurrentLimit(supplyCurrentLimit));
   }
 
   public boolean atGoal() {
