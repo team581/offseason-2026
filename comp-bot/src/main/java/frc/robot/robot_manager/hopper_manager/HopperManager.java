@@ -55,6 +55,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private final LinearFilter hopperFilter = LinearFilter.movingAverage(50);
   private double hopperDistance = 0.0;
   private double filteredDistance = 0.0;
+  private double hopperSignalStrength = 0.0;
+  private boolean hopperSignalStrengthHigh = false;
 
   private double previousCanRangeDistance = 0.0;
 
@@ -63,6 +65,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private final Timer canRangeUpdateTimer = new Timer();
 
   private final StatusSignal<Distance> hopperDistanceSignal;
+  private final StatusSignal<Double> hopperSignalStrengthSignal;
 
   public HopperManager(
       Deploy deploy,
@@ -83,7 +86,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     canRangeUpdateTimer.start();
 
     hopperDistanceSignal = hopperCANRange.getDistance(false);
-    Signals.forDevice(hopperCANRange).addSignals(hopperDistanceSignal);
+    hopperSignalStrengthSignal = hopperCANRange.getSignalStrength(false);
+    Signals.forDevice(hopperCANRange).addSignals(hopperDistanceSignal, hopperSignalStrengthSignal);
   }
 
   public void feedRequest() {
@@ -225,17 +229,27 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private boolean shouldFillBalls() {
     if (towerSensorDebounced) {
+      DogLog.timestamp("HopperManager/Fault/TowerSensor");
+
       // The sensor in the tower shows we are holding fuel, so we can't fill anymore
       return false;
     }
     if (!deploy.isFullyExtended()) {
+      DogLog.timestamp("HopperManager/Fault/DeployNotExtended");
       return false;
     }
     if (!canRangeUpdateTimer.hasElapsed(3.0) && DSOptions.USE_CANRANGE.get()) {
+      if (!hopperSignalStrengthHigh) {
+        DogLog.timestamp("HopperManager/Fault/LowSignalStrength");
+        return false;
+      }
+      DogLog.timestamp("HopperManager/Fault/CheckingCapacity");
+
       // If we are using the hopper CANrange, we can start filling the tower once the hopper is
       // starting ot fill up
       return hopperCapacity == HopperCapacity.HIGH;
     }
+    DogLog.timestamp("HopperManager/Fault/NotUsingRange");
 
     // Otherwise, we fallback to running once we've been intaking for a few seconds
     return intake.hasBeenIntaking();
@@ -343,6 +357,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   protected void collectInputs() {
     if (RobotBase.isSimulation()) {
       hopperDistance = 20;
+      hopperSignalStrength = 2000.0;
       towerSensorRaw =
           switch (getState()) {
             case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> timeout(5);
@@ -357,6 +372,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     if (DSOptions.USE_CANRANGE.get()) {
       hopperDistance = Units.metersToInches(hopperDistanceSignal.getValueAsDouble());
+      hopperSignalStrength = hopperSignalStrengthSignal.getValueAsDouble();
+      hopperSignalStrengthHigh =
+          hopperSignalStrength > HopperManagerConfig.MIN_SIGNAL_STRENGTH_VALUE.getAsDouble();
     }
     filteredDistance = hopperFilter.calculate(hopperDistance);
 
@@ -442,5 +460,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.forceNt.log("HopperManager/FilteredHopperDistance", filteredDistance);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
     DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
+    DogLog.forceNt.log("HopperManager/SignalStrength", hopperSignalStrength);
+    DogLog.forceNt.log("HopperManager/SignalStrengthHigh", hopperSignalStrengthHigh);
   }
 }

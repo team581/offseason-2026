@@ -19,6 +19,9 @@ public class HopperManagerConfig {
           .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.LongRangeUserFreq));
   public static final DoubleSubscriber HOPPER_COMPACTION_DELAY =
       DogLog.tunable("HopperManager/CompactionDelay", 0.25);
+
+  public static final DoubleSubscriber MIN_SIGNAL_STRENGTH_VALUE =
+      DogLog.tunable("HopperManager/MinSignalStrength", 500.0);
   public static final DoubleSubscriber HOPPER_COMPACTION_SHUFFLE_INTERVAL =
       DogLog.tunable("HopperManager/CompactionShuffleInterval", 0.25);
 }
