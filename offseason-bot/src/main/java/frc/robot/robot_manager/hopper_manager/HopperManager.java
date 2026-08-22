@@ -267,11 +267,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       if (towerSensorDebounced) {
         conveyor.idleRequest();
         feeder.idleRequest();
-      funneler.idleRequest();
+        funneler.idleRequest();
       } else {
         conveyor.intakeRequest();
         feeder.intakeRequest();
-      funneler.intakeRequest();
+        funneler.intakeRequest();
       }
     }
   }
@@ -415,7 +415,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.beastModeRequest();
           intake.shootRequest();
           conveyor.shootRequest();
-        funneler.shootRequest();
+          funneler.shootRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           double shuffleInterval =
               HopperManagerConfig.HOPPER_COMPACTION_SHUFFLE_INTERVAL.getAsDouble();
