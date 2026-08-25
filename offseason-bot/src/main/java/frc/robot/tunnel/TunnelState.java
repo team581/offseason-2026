@@ -1,9 +1,9 @@
-package frc.robot.feeder;
+package frc.robot.tunnel;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
-public enum FeederState {
+public enum TunnelState {
   SHOOT(10),
   BALL_FILLING(1),
   INTAKING(-1),
@@ -13,7 +13,7 @@ public enum FeederState {
   public final double voltage;
   public final DoubleSubscriber tunableVoltage;
 
-  FeederState(double voltage) {
+  TunnelState(double voltage) {
     this.voltage = voltage;
     this.tunableVoltage = DogLog.tunable("Feeder/" + this, voltage);
   }

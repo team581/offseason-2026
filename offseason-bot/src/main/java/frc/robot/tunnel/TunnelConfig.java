@@ -1,4 +1,4 @@
-package frc.robot.feeder;
+package frc.robot.tunnel;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -7,7 +7,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-public class FeederConfig {
+public class TunnelConfig {
   public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(

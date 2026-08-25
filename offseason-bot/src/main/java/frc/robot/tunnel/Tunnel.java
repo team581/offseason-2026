@@ -1,4 +1,4 @@
-package frc.robot.feeder;
+package frc.robot.tunnel;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -13,7 +13,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
 
-public class Feeder extends StateMachineSubsystem<FeederState> implements PowerManaged {
+public class Tunnel extends StateMachineSubsystem<TunnelState> implements PowerManaged {
 
   private final TalonFX topMotor;
   private final TalonFX bottomMotor;
@@ -27,10 +27,10 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   private double averageCurrent = 0.0;
 
-  public Feeder(TalonFX topMotor, TalonFX bottomMotor) {
-    super(SubsystemPriority.FEEDER, FeederState.IDLE);
-    topMotor.getConfigurator().apply(FeederConfig.TOP_MOTOR_CONFIG);
-    bottomMotor.getConfigurator().apply(FeederConfig.BOTTOM_MOTOR_CONFIG);
+  public Tunnel(TalonFX topMotor, TalonFX bottomMotor) {
+    super(SubsystemPriority.FEEDER, TunnelState.IDLE);
+    topMotor.getConfigurator().apply(TunnelConfig.TOP_MOTOR_CONFIG);
+    bottomMotor.getConfigurator().apply(TunnelConfig.BOTTOM_MOTOR_CONFIG);
     this.topMotor = topMotor;
     this.bottomMotor = bottomMotor;
 
@@ -47,20 +47,20 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     topMotor
         .getConfigurator()
         .apply(
-            FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
+            TunnelConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
     bottomMotor
         .getConfigurator()
         .apply(
-            FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            TunnelConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 
   public void ballFillingRequest() {
-    setStateFromRequest(FeederState.BALL_FILLING);
+    setStateFromRequest(TunnelState.BALL_FILLING);
   }
 
   public void ejectRequest() {
-    setStateFromRequest(FeederState.EJECT);
+    setStateFromRequest(TunnelState.EJECT);
   }
 
   public double getAverageCurrent() {
@@ -68,19 +68,19 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   }
 
   public void idleRequest() {
-    setStateFromRequest(FeederState.IDLE);
+    setStateFromRequest(TunnelState.IDLE);
   }
 
   public void intakeRequest() {
-    setStateFromRequest(FeederState.INTAKING);
+    setStateFromRequest(TunnelState.INTAKING);
   }
 
   public void shootRequest() {
-    setStateFromRequest(FeederState.SHOOT);
+    setStateFromRequest(TunnelState.SHOOT);
   }
 
   @Override
-  protected void afterTransition(FeederState newState) {
+  protected void afterTransition(TunnelState newState) {
     switch (newState) {
       case IDLE -> {
         topMotor.setControl(neutralRequest);
