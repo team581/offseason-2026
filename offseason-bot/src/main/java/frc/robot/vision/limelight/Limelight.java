@@ -92,7 +92,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   @Override
   public void disabledInit() {
-    if (config.model() == LimelightModel.FOUR) {
+    if (config != null && config.model() == LimelightModel.FOUR) {
       LimelightHelpers.triggerRewindCapture(limelightTableName, 165.0);
     }
   }
@@ -128,7 +128,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     super.robotPeriodic();
 
     if (DriverStation.isDisabled()) {
-      if (!updatedLimelightPos && getCameraHealth() != CameraHealth.OFFLINE) {
+      if (!updatedLimelightPos && getCameraHealth() != CameraHealth.OFFLINE && config != null) {
         LimelightHelpers.setCameraPose_RobotSpace(
             limelightTableName,
             config.forward(),
@@ -140,7 +140,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
         updatedLimelightPos = true;
       }
-      if (config.model() == LimelightModel.FOUR) {
+      if (config != null && config.model() == LimelightModel.FOUR) {
         LimelightHelpers.SetThrottle(limelightTableName, 10);
       }
     } else {
@@ -251,7 +251,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     var xyDev = 0.01 * Math.pow(distance, 0.8) + linearVelocityAddition;
     var thetaDev = 999.0;
 
-    if (config.useMt2()) {
+    if (config != null && config.useMt2()) {
       PoseEstimate mT2Estimate =
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 

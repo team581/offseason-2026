@@ -286,7 +286,8 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(SHOOTING_TIMEOUT_1) && !robotManager.hopperManager.isShooting())
+        if ((timeout(SHOOTING_TIMEOUT_1)
+                && (robotManager.hopperManager == null || !robotManager.hopperManager.isShooting()))
             || timeout(SHOOTING_TIMEOUT_2)) {
           yield SpecialAutoState.DEFAULT_SECOND_INTAKE_SEGMENT;
         } else {

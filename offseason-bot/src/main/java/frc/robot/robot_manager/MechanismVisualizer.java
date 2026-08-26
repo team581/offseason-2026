@@ -27,7 +27,9 @@ public final class MechanismVisualizer {
       double shooterHoodAngleDegrees,
       double deployLengthInches) {
     var turretPose =
-        new Pose3d(Translation3d.kZero, new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
+        new Pose3d(
+            new Translation3d(frc.robot.turret.TurretConfig.TURRET_TO_ROBOT.getX(), 0, 0),
+            new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
     var shooterHoodPose =
         Pose3d.kZero
             .rotateAround(
@@ -37,7 +39,10 @@ public final class MechanismVisualizer {
                     -Math.toRadians(
                         shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
                     0))
-            .rotateBy(turretPose.getRotation());
+            .rotateBy(turretPose.getRotation())
+            .plus(
+                new edu.wpi.first.math.geometry.Transform3d(
+                    turretPose.getTranslation(), Rotation3d.kZero));
     var deployPose =
         new Pose3d(
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0)

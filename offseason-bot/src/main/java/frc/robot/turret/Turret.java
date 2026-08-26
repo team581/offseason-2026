@@ -163,11 +163,12 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
                     .withMaxPosition(Units.degreesToRotations(TurretConfig.MAX_ANGLE)));
 
     if (getState() == TurretState.UNHOMED) {
-      motor.setPosition(0);
+      turretSimulation.seedPosition(0);
       setStateFromRequest(TurretState.SCORE);
     }
 
     turretSimulation.update();
+    System.out.println("Turret setpoint: " + setpoint + ", currentAngle: " + currentAngle);
   }
 
   public void stuckRequest() {
