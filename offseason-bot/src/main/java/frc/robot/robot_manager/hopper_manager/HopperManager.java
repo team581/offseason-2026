@@ -19,9 +19,11 @@ import frc.robot.config.RobotKind;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
-import frc.robot.feeder.Feeder;
+import frc.robot.funneler.Funneler;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
+import frc.robot.kicker.Kicker;
+import frc.robot.tunnel.Tunnel;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
@@ -37,8 +39,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final Intake intake;
   public final Conveyor conveyor;
 
-  public final Feeder feeder;
   public final Funneler funneler;
+  public final Tunnel tunnel;
+  public final Kicker kicker;
   public final CANrange hopperCANRange;
 
   public final DigitalInput towerSensor;
@@ -70,16 +73,18 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       Deploy deploy,
       Intake intake,
       Conveyor conveyor,
-      Feeder feeder,
       Funneler funneler,
+      Tunnel tunnel,
+      Kicker kicker,
       CANrange hopperCANRange,
       DigitalInput towerSensor) {
     super(SubsystemPriority.HOPPER_MANAGER, HopperState.IDLE_DEPLOYED);
     this.deploy = deploy;
-    this.funneler = funneler;
     this.intake = intake;
     this.conveyor = conveyor;
-    this.feeder = feeder;
+    this.funneler = funneler;
+    this.tunnel = tunnel;
+    this.kicker = kicker;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
 
@@ -249,29 +254,34 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private void smartBallFillRequest() {
     if (shouldFillBalls()) {
       conveyor.ballFillingRequest();
-      feeder.ballFillingRequest();
+      tunnel.ballFillingRequest();
       funneler.ballFillingRequest();
+      kicker.ballFillingRequest();
     } else {
       conveyor.idleRequest();
-      feeder.idleRequest();
+      tunnel.idleRequest();
       funneler.idleRequest();
+      kicker.idleRequest();
     }
   }
 
   private void smartIntakeBallFillRequest() {
     if (shouldFillBalls()) {
       conveyor.ballFillingRequest();
-      feeder.ballFillingRequest();
       funneler.ballFillingRequest();
+      tunnel.ballFillingRequest();
+      kicker.ballFillingRequest();
     } else {
       if (towerSensorDebounced) {
         conveyor.idleRequest();
-        feeder.idleRequest();
         funneler.idleRequest();
+        tunnel.idleRequest();
+        kicker.idleRequest();
       } else {
         conveyor.intakeRequest();
-        feeder.intakeRequest();
         funneler.intakeRequest();
+        tunnel.intakeRequest();
+        kicker.intakeRequest();
       }
     }
   }
@@ -288,7 +298,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.stowRequest();
         intake.idleRequest();
         conveyor.idleRequest();
-        feeder.idleRequest();
+        tunnel.idleRequest();
+        kicker.idleRequest();
         funneler.idleRequest();
       }
       case IDLE_SAFE_KICKER_STOW -> {
@@ -305,15 +316,17 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.intakeRequest();
         intake.ejectRequest();
         conveyor.ejectRequest();
-        feeder.idleRequest();
+        tunnel.idleRequest();
+        kicker.idleRequest();
         funneler.idleRequest();
       }
       case UNJAMMING -> {
         deploy.intakeRequest();
+        funneler.shootingRequest();
         intake.ejectRequest();
         conveyor.shootRequest();
-        feeder.shootRequest();
-        funneler.shootRequest();
+        tunnel.shootRequest();
+        kicker.shootRequest();
       }
       case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
@@ -324,15 +337,17 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
         intake.shootRequest();
         conveyor.initialShotRequest();
-        feeder.shootRequest();
-        funneler.shootRequest();
+        tunnel.shootRequest();
+        funneler.shootingRequest();
+        kicker.shootRequest();
       }
       case SCORE_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
-        feeder.shootRequest();
-        funneler.shootRequest();
+        tunnel.shootRequest();
+        funneler.shootingRequest();
+        kicker.shootRequest();
       }
 
       case FEED -> {
@@ -342,15 +357,17 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
         intake.shootRequest();
         conveyor.initialShotRequest();
-        feeder.shootRequest();
-        funneler.shootRequest();
+        tunnel.shootRequest();
+        funneler.shootingRequest();
+        kicker.shootRequest();
       }
       case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.shootRequest();
-        feeder.shootRequest();
-        funneler.shootRequest();
+        tunnel.shootRequest();
+        funneler.shootingRequest();
+        kicker.shootRequest();
       }
     }
   }
@@ -415,7 +432,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.beastModeRequest();
           intake.shootRequest();
           conveyor.shootRequest();
-          funneler.shootRequest();
+          tunnel.shootRequest();
+          kicker.shootRequest();
+          funneler.shootingRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           double shuffleInterval =
               HopperManagerConfig.HOPPER_COMPACTION_SHUFFLE_INTERVAL.getAsDouble();
@@ -426,7 +445,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           }
           intake.idleRequest();
           conveyor.shootRequest();
-          funneler.shootRequest();
+          tunnel.shootRequest();
+          kicker.shootRequest();
+          funneler.shootingRequest();
         } else {
           deploy.waitHopperCompactionRequest();
         }
@@ -435,7 +456,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.stowRequest();
         intake.idleRequest();
         conveyor.idleRequest();
-        feeder.idleRequest();
+        tunnel.idleRequest();
+        kicker.idleRequest();
         funneler.idleRequest();
       }
       case FEED -> {

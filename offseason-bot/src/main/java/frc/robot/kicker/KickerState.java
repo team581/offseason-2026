@@ -1,9 +1,9 @@
-package frc.robot.funneler;
+package frc.robot.kicker;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
-public enum FunnelerState {
+public enum KickerState {
   SHOOT(0.0),
   BALL_FILLING(0.0),
   IDLE(0.0),
@@ -11,7 +11,7 @@ public enum FunnelerState {
 
   public final DoubleSubscriber tunableVoltage;
 
-  private FunnelerState(double voltage) {
+  private KickerState(double voltage) {
     this.tunableVoltage = DogLog.tunable("Conveyor/" + this, voltage);
   }
 

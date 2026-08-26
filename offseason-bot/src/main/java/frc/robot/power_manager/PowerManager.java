@@ -5,11 +5,11 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
-import frc.robot.feeder.Feeder;
 import frc.robot.intake.Intake;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.tunnel.Tunnel;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,7 +20,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   private final PowerManaged intake;
   private final PowerManaged deploy;
   private final PowerManaged shooterHood;
-  private final PowerManaged feeder;
+  private final PowerManaged tunnel;
   private final PowerManaged conveyor;
   private final PowerManaged swerve;
 
@@ -29,7 +29,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
       Intake intake,
       Deploy deploy,
       ShooterHood shooterHood,
-      Feeder feeder,
+      Tunnel tunnel,
       Conveyor conveyor,
       Swerve swerve) {
     super(SubsystemPriority.POWER_MANAGER, PowerManagerState.IDLE);
@@ -37,7 +37,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.intake = intake;
     this.deploy = deploy;
     this.shooterHood = shooterHood;
-    this.feeder = feeder;
+    this.tunnel = tunnel;
     this.conveyor = conveyor;
     this.swerve = swerve;
   }
@@ -87,7 +87,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
           intake.applyCurrentLimits(newState.intakeSupplyCurrent);
           deploy.applyCurrentLimits(newState.deploySupplyCurrent);
           shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
-          feeder.applyCurrentLimits(newState.feederSupplyCurrent);
+          tunnel.applyCurrentLimits(newState.tunnelSupplyCurrent);
           conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
           swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
         });
