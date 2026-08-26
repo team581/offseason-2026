@@ -104,11 +104,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void cancelIntakeRequest() {
-    hopperManager.setDriverWantsIntake(false);
+    if (hopperManager != null) hopperManager.setDriverWantsIntake(false);
   }
 
   public void cancelStowDeployRequest() {
-    hopperManager.setOperatorWantsStow(false);
+    if (hopperManager != null) hopperManager.setOperatorWantsStow(false);
   }
 
   public void cancelWarmupRequest() {
@@ -134,11 +134,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void homeDeployInAutoRequest() {
-    hopperManager.deploy.homeInAutoRequest();
+    if (hopperManager != null) hopperManager.deploy.homeInAutoRequest();
   }
 
   public void homeDeployRequest() {
-    hopperManager.deploy.homingRequest();
+    if (hopperManager != null) hopperManager.deploy.homingRequest();
   }
 
   public void homeShooterHoodRequest() {
@@ -150,7 +150,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void intakeAutoRequest() {
-    hopperManager.setDriverWantsIntake(true);
+    if (hopperManager != null) hopperManager.setDriverWantsIntake(true);
   }
 
   public void prepareFeedRequest() {
@@ -190,7 +190,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   public void stowDeployRequest() {
-    hopperManager.setOperatorWantsStow(true);
+    if (hopperManager != null) hopperManager.setOperatorWantsStow(true);
   }
 
   @Override
@@ -402,7 +402,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         powerManager.scoringRequest();
       }
       case UNJAM -> {
-        hopperManager.unjamRequest();
+        if (hopperManager != null) hopperManager.unjamRequest();
         vision.tagsRequest();
         shooter.scoreRequest(3);
         shooterHood.scoreRequest(3);
@@ -417,7 +417,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             scoringParameters.goalAngle(), scoringParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
         powerManager.scoringRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
       }
       case WARMUP_FEED -> {
         vision.tagsRequest();
@@ -427,7 +427,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             feedingParameters.goalAngle(), feedingParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
         smartFeedingPowerManagerRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
       }
     }
   }
@@ -439,7 +439,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     robotPose = localization.getPose();
     feedLocation = FeedLocation.closest(robotPose);
     double robotRotation = robotPose.getRotation().getDegrees();
-    clusterMap.setDeployFullyExtended(hopperManager.deploy.isFullyExtended());
+    if (clusterMap != null && hopperManager != null) {
+      clusterMap.setDeployFullyExtended(hopperManager.deploy.isFullyExtended());
+    }
     vision.setEstimatedPoseAngle(robotRotation);
     var speeds = swerve.getFieldRelativeSpeeds();
     var velocity = MathHelpers.getLinearVelocity(speeds);
@@ -482,7 +484,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             || !FieldUtil.isFeedPathObstructed(
                 robotPose.getTranslation(), feedLocation.getTranslation());
 
-    shooter.updateHopperState(hopperManager.tunnel.getAverageCurrent(), hopperManager.isFull());
+    if (hopperManager != null) {
+      shooter.updateHopperState(hopperManager.tunnel.getAverageCurrent(), hopperManager.isFull());
+    } else {
+      shooter.updateHopperState(0.0, false);
+    }
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
   }
 
@@ -614,7 +620,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       case IDLE -> {
         shooterHood.idleRequest();
         swerve.normalDriveRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
       }
 
       case PREPARE_SCORE -> {
@@ -624,7 +630,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             scoringParameters.goalAngle(), scoringParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
         smartScoringPowerManagerRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
         // isHubActive always logged
       }
       case SCORE -> {
@@ -633,13 +639,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.scoreRequest(
             scoringParameters.goalAngle(), scoringParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
+        if (hopperManager != null) hopperManager.scoreRequest(hubActivity.shouldBeastMode());
         smartScoringPowerManagerRequest();
       }
       case FORCE_SCORE -> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
-        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
+        if (hopperManager != null) hopperManager.scoreRequest(hubActivity.shouldBeastMode());
       }
       case PREPARE_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());
@@ -647,7 +653,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedRequest(
             feedingParameters.goalAngle(), feedingParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
         smartFeedingPowerManagerRequest();
       }
       case FEED -> {
@@ -656,7 +662,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedRequest(
             feedingParameters.goalAngle(), feedingParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.feedRequest();
+        if (hopperManager != null) hopperManager.feedRequest();
         smartFeedingPowerManagerRequest();
       }
 
@@ -680,7 +686,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.scoreRequest(
             scoringParameters.goalAngle(), scoringParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
+        if (hopperManager != null) hopperManager.scoreRequest(hubActivity.shouldBeastMode());
       }
       case PREPARE_FALLBACK_FEED -> {
         turret.feedRequest(
@@ -694,7 +700,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             fallbackFeedingParameters.goalAngle(),
             fallbackFeedingParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.feedRequest();
+        if (hopperManager != null) hopperManager.feedRequest();
         smartFeedingPowerManagerRequest();
       }
       case WARMUP_SCORE -> {
@@ -703,7 +709,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.scoreRequest(
             scoringParameters.goalAngle(), scoringParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
       }
       case WARMUP_FEED -> {
         shooter.prepareFeedRequest(feedingParameters.distance());
@@ -711,7 +717,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         turret.feedRequest(
             feedingParameters.goalAngle(), feedingParameters.turretFeedForwardRadians());
         swerve.normalDriveRequest();
-        hopperManager.idleRequest();
+        if (hopperManager != null) hopperManager.idleRequest();
         smartFeedingPowerManagerRequest();
       }
       default -> {}
@@ -723,6 +729,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
 
-    MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
+    MechanismVisualizer.log(
+        robotPose,
+        turret.getAngle(),
+        shooterHood.getAngle(),
+        hopperManager != null ? hopperManager.deploy.getPosition() : 0.0);
   }
 }

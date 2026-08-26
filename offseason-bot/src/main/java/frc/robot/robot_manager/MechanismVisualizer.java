@@ -22,14 +22,22 @@ public final class MechanismVisualizer {
   private static final Rotation2d DEPLOY_ANGLE_FROM_HORIZONTAL = Rotation2d.fromDegrees(6.55);
 
   public static void log(
-      Pose2d robotPose, double shooterHoodAngleDegrees, double deployLengthInches) {
+      Pose2d robotPose,
+      double turretAngleDegrees,
+      double shooterHoodAngleDegrees,
+      double deployLengthInches) {
+    var turretPose =
+        new Pose3d(Translation3d.kZero, new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
     var shooterHoodPose =
-        Pose3d.kZero.rotateAround(
-            SHOOTER_HOOD_PIVOT_POINT,
-            new Rotation3d(
-                0,
-                -Math.toRadians(shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
-                0));
+        Pose3d.kZero
+            .rotateAround(
+                SHOOTER_HOOD_PIVOT_POINT,
+                new Rotation3d(
+                    0,
+                    -Math.toRadians(
+                        shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
+                    0))
+            .rotateBy(turretPose.getRotation());
     var deployPose =
         new Pose3d(
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0)
@@ -37,7 +45,8 @@ public final class MechanismVisualizer {
             Rotation3d.kZero);
 
     DogLog.log(
-        "SuperstructureVisualization/Components", new Pose3d[] {shooterHoodPose, deployPose});
+        "SuperstructureVisualization/Components",
+        new Pose3d[] {turretPose, shooterHoodPose, deployPose, Pose3d.kZero, Pose3d.kZero});
   }
 
   private MechanismVisualizer() {}
