@@ -18,6 +18,7 @@ import frc.robot.robot_manager.RobotManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
 
 public class Robot extends Base581Robot {
@@ -63,6 +64,7 @@ public class Robot extends Base581Robot {
           hardware.shooterBottomRightMotor);
 
   private final HubActivity hubActivity = new HubActivity();
+  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
   private final PowerManager powerManager =
       new PowerManager(shooter, null, null, shooterHood, null, null, swerve);
   private final RobotManager robotManager =
@@ -79,7 +81,8 @@ public class Robot extends Base581Robot {
           trailblazer,
           null,
           hardware,
-          powerManager);
+          powerManager,
+          turret);
 
   public Robot() {
     logMetadata(
