@@ -63,7 +63,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(AimingParameters aimingParameters) {
-    return atGoal(aimingParameters.turretTolerance(), 0.0);
+    return atGoal(aimingParameters.turretTolerance(), aimingParameters.upcomingTurretAngle());
   }
 
   public boolean atGoal(double tolerance) {

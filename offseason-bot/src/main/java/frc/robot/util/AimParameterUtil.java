@@ -1,20 +1,28 @@
 package frc.robot.util;
 
+import com.team581.math.MathHelpers;
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import frc.robot.shooter.ShooterConfig;
+import frc.robot.turret.TurretCalculator;
 
 public class AimParameterUtil {
 
   public record AimingParameters(
-      double goalAngle, double distance, double turretTolerance, double turretFeedForwardRadians) {}
+      double goalAngle,
+      double distance,
+      double turretTolerance,
+      double turretFeedForwardRadians,
+      double upcomingTurretAngle) {}
 
   private static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
@@ -29,12 +37,19 @@ public class AimParameterUtil {
 
   private static final double FEEDING_FALLBACK_TOLERANCE = 5.0;
 
+  private static final DoubleSubscriber UPCOMING_TURRET_ANGLE_LOOKAHEAD =
+      DogLog.tunable("AimingParameters/UpcomingTurretAngleLookahead", 0.5);
+
   public static AimingParameters getFallbackFeedingParameters(Rotation2d robotRotation) {
-    var swerveAngle =
-        FmsUtil.isRedAlliance() ? Rotation2d.k180deg.getDegrees() : Rotation2d.kZero.getDegrees();
+    var fieldRelativeGoal = FmsUtil.isRedAlliance() ? Rotation2d.kZero : Rotation2d.k180deg;
+    var turretAngle = fieldRelativeGoal.minus(robotRotation);
 
     return new AimingParameters(
-        swerveAngle, FEEDING_FALLBACK_DISTANCE_TO_GOAL, FEEDING_FALLBACK_TOLERANCE, 0.0);
+        turretAngle.getDegrees(),
+        FEEDING_FALLBACK_DISTANCE_TO_GOAL,
+        FEEDING_FALLBACK_TOLERANCE,
+        0,
+        0);
   }
 
   public static AimingParameters getFeedingParameters(
@@ -83,27 +98,39 @@ public class AimParameterUtil {
       double tolerance,
       Pose2d robotPose,
       ChassisSpeeds fieldRelativeSpeeds) {
-    var shooterPose = ShooterConfig.getShooterPose(robotPose);
-    var shooterTranslation = shooterPose.getTranslation();
-    var shooterFieldRelativeSpeeds =
-        ShooterConfig.getShooterSpeeds(fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
+
+    var turretPose = TurretCalculator.getTurretPose(robotPose);
+    var turretTranslation = turretPose.getTranslation();
+
+    var turretFieldRelativeSpeeds =
+        TurretCalculator.getTurretChassisSpeeds(
+            fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
 
     var separatedVelocityCompensatedGoal =
         sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            shooterTranslation, goalTranslation, shooterFieldRelativeSpeeds);
+            turretTranslation, goalTranslation, turretFieldRelativeSpeeds);
 
     var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
-    double distance = shooterTranslation.getDistance(compensatedGoal);
-    double swerveAngle =
-        ShooterConfig.calculateAimingAngle(shooterTranslation, compensatedGoal).getDegrees();
-    double swerveTolerance =
-        ShooterConfig.getGoalCentricTolerance(compensatedGoal, shooterPose, tolerance);
+    double distance = turretTranslation.getDistance(compensatedGoal);
+    double turretAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, compensatedGoal);
+    double turretTolerance =
+        TurretCalculator.getGoalCentricTurretTolerance(compensatedGoal, robotPose, tolerance);
 
     double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
-    double realDistanceToGoal = shooterTranslation.getDistance(goalTranslation);
-    double swerveFeedForwardRadians = -(tangentialVelocity / realDistanceToGoal);
+    double realDistanceToGoal = turretTranslation.getDistance(goalTranslation);
+    double translationalFF = tangentialVelocity / realDistanceToGoal;
 
-    return new AimingParameters(swerveAngle, distance, swerveTolerance, swerveFeedForwardRadians);
+    double totalTurretFFRadians =
+        -translationalFF - turretFieldRelativeSpeeds.omegaRadiansPerSecond;
+
+    var upcomingTurretAngle =
+        TurretCalculator.calculateTurretAimingAngle(
+            MathHelpers.getLookaheadPose(
+                turretPose, fieldRelativeSpeeds, UPCOMING_TURRET_ANGLE_LOOKAHEAD.get()),
+            compensatedGoal);
+
+    return new AimingParameters(
+        turretAngle, distance, turretTolerance, totalTurretFFRadians, upcomingTurretAngle);
   }
 
   private static AimingParameters getStaticAimingParameters(
@@ -112,24 +139,32 @@ public class AimParameterUtil {
       double tolerance,
       Pose2d robotPose,
       ChassisSpeeds fieldRelativeSpeeds) {
-    var shooterPose = ShooterConfig.getShooterPose(robotPose);
-    var shooterTranslation = shooterPose.getTranslation();
-    var shooterFieldRelativeSpeeds =
-        ShooterConfig.getShooterSpeeds(fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
+
+    var turretPose = TurretCalculator.getTurretPose(robotPose);
+    var turretTranslation = turretPose.getTranslation();
+
+    var turretFieldRelativeSpeeds =
+        TurretCalculator.getTurretChassisSpeeds(
+            fieldRelativeSpeeds, robotPose.getRotation().getDegrees());
 
     var separatedVelocityCompensatedGoal =
         sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            shooterTranslation, goalTranslation, shooterFieldRelativeSpeeds);
+            turretTranslation, goalTranslation, turretFieldRelativeSpeeds);
 
-    double distance = shooterTranslation.getDistance(goalTranslation);
-    double swerveAngle =
-        ShooterConfig.calculateAimingAngle(shooterTranslation, goalTranslation).getDegrees();
-    double swerveTolerance =
-        ShooterConfig.getGoalCentricTolerance(goalTranslation, shooterPose, tolerance);
+    double distance = turretTranslation.getDistance(goalTranslation);
+    double turretAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalTranslation);
+    double turretTolerance =
+        TurretCalculator.getGoalCentricTurretTolerance(goalTranslation, robotPose, tolerance);
 
     double tangentialVelocity = separatedVelocityCompensatedGoal.tangentialVelocity();
-    double swerveFeedForwardRadians = -(tangentialVelocity / distance);
+    double translationalFF = tangentialVelocity / distance;
 
-    return new AimingParameters(swerveAngle, distance, swerveTolerance, swerveFeedForwardRadians);
+    double totalTurretFFRadians =
+        -translationalFF - turretFieldRelativeSpeeds.omegaRadiansPerSecond;
+
+    var upcomingTurretAngle = turretAngle; // For static, upcoming is just the current angle
+
+    return new AimingParameters(
+        turretAngle, distance, turretTolerance, totalTurretFFRadians, upcomingTurretAngle);
   }
 }

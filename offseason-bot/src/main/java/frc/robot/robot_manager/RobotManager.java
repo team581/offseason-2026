@@ -51,10 +51,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private Pose2d robotPose = Pose2d.kZero;
 
   private boolean nearTrench = false;
-  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0);
-  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0);
+  private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0, 0);
+  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0, 0);
 
-  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0);
+  private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0, 0);
   private boolean isMoving = false;
   private boolean trenchOverride = false;
 
