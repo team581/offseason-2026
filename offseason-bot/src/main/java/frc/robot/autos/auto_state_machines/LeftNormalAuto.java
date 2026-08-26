@@ -409,7 +409,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
         robotManager.idleRequest();
-        if (robotManager.hopperManager != null) robotManager.hopperManager.setWantsSafeStow(true);
+        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case INTAKE_SECOND_CYCLE_FAR -> {
         storedStuckOnBallAutoSegment = intakeSecondCycleFar;
@@ -418,7 +418,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case INTAKE_THIRD_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeThirdCycle;
         robotManager.idleRequest();
-        if (robotManager.hopperManager != null) robotManager.hopperManager.setWantsSafeStow(true);
+        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
         storedStuckOnBallAutoSegment = crossBumpToShootTwo;
@@ -508,9 +508,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(2.0)
-                && (robotManager.hopperManager == null || !robotManager.hopperManager.isShooting()))
-            || timeout(3.25)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(3.25)) {
           yield NormalAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
@@ -547,9 +545,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case SHOOT_2 -> {
-        if ((timeout(2.0)
-                && (robotManager.hopperManager == null || !robotManager.hopperManager.isShooting()))
-            || timeout(3.25)) {
+        if ((timeout(2.0) && !robotManager.hopperManager.isShooting()) || timeout(3.25)) {
           yield NormalAutoState.INTAKE_THIRD_CYCLE;
         } else {
           yield currentState;
