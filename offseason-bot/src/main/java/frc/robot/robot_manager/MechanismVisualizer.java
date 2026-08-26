@@ -10,14 +10,6 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.shooter_hood.ShooterHoodConfig;
 
 public final class MechanismVisualizer {
-  /**
-   * If (0, 0, 0) is the robot origin, this translation defines the point that the shooter hood
-   * pivots around.
-   */
-  private static final Translation3d SHOOTER_HOOD_PIVOT_POINT =
-      new Translation3d(
-          -Units.inchesToMeters(11.35), Units.inchesToMeters(13.85), Units.inchesToMeters(18.85));
-
   /** Angle from the horizontal to the deploy extension point. */
   private static final Rotation2d DEPLOY_ANGLE_FROM_HORIZONTAL = Rotation2d.fromDegrees(6.55);
 
@@ -26,23 +18,26 @@ public final class MechanismVisualizer {
       double turretAngleDegrees,
       double shooterHoodAngleDegrees,
       double deployLengthInches) {
+    var turretTranslation =
+        new Translation3d(
+            frc.robot.turret.TurretConfig.TURRET_TO_ROBOT.getX(), 0, Units.inchesToMeters(14.0));
+    var hoodPivotTranslation =
+        new Translation3d(
+            frc.robot.turret.TurretConfig.TURRET_TO_ROBOT.getX(), 0, Units.inchesToMeters(18.85));
+
     var turretPose =
-        new Pose3d(
-            new Translation3d(frc.robot.turret.TurretConfig.TURRET_TO_ROBOT.getX(), 0, 0),
-            new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
+        new Pose3d(turretTranslation, new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
     var shooterHoodPose =
-        Pose3d.kZero
+        new Pose3d(hoodPivotTranslation, Rotation3d.kZero)
             .rotateAround(
-                SHOOTER_HOOD_PIVOT_POINT,
+                hoodPivotTranslation,
                 new Rotation3d(
                     0,
                     -Math.toRadians(
                         shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
                     0))
-            .rotateBy(turretPose.getRotation())
-            .plus(
-                new edu.wpi.first.math.geometry.Transform3d(
-                    turretPose.getTranslation(), Rotation3d.kZero));
+            .rotateAround(
+                turretTranslation, new Rotation3d(0, 0, Math.toRadians(turretAngleDegrees)));
     var deployPose =
         new Pose3d(
             new Translation3d(Units.inchesToMeters(deployLengthInches), 0, 0)
