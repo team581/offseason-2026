@@ -14,7 +14,9 @@ import frc.robot.config.RobotKind;
 import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.limelight.Limelight;
+import frc.robot.vision.limelight.LimelightState;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -54,11 +56,14 @@ public class Hardware {
   public final TalonFX turretMotor = new TalonFX(31, canivore);
   public final CANcoder turretEncoder = new CANcoder(32, canivore);
 
-  // TODO: PLaceholder LimeLights
-  public final Limelight shooterLimeLight = new Limelight(null, null, null);
-  public final Limelight leftLimeLight = new Limelight(null, null, null);
-  public final Limelight rightLimeLight = new Limelight(null, null, null);
-  public final Limelight groundLimeLight = new Limelight(null, null, null);
+  public final Limelight shooterLimeLight =
+      new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
+  public final Limelight leftLimeLight =
+      new Limelight("left", LimelightState.TAGS, CameraConfigs.LEFT);
+  public final Limelight rightLimeLight =
+      new Limelight("right", LimelightState.TAGS, CameraConfigs.RIGHT);
+  public final Limelight groundLimeLight =
+      new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
 
   public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
   public final DigitalInput towerSensor = new DigitalInput(9);
