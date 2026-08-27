@@ -734,7 +734,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         if (MathUtil.isNear(
             0,
             drivetrainState.Pose.getRotation().minus(targetRotation.orElseThrow()).getDegrees(),
-            50.0)) {
+            20.0)) {
           centerOfRotation =
               closestObstacle
                   .orElseThrow()
