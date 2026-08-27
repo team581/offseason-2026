@@ -1,9 +1,12 @@
 package frc.robot.swerve;
 
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.sim.Pigeon2SimState;
+import com.ctre.phoenix6.swerve.SimSwerveDrivetrain;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
+import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
@@ -48,6 +51,21 @@ import org.jspecify.annotations.Nullable;
 
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
+
+  private static final class ResettableSimSwerveDrivetrain extends SimSwerveDrivetrain {
+    ResettableSimSwerveDrivetrain(
+        Translation2d[] wheelLocations,
+        Pigeon2SimState pigeonSim,
+        SwerveModuleConstants<?, ?, ?>... moduleConstants) {
+      super(wheelLocations, pigeonSim, moduleConstants);
+    }
+
+    void setSteerAngles(Rotation2d[] angles) {
+      for (int i = 0; i < angles.length; i++) {
+        m_modules[i].SteerMotor.setAngle(angles[i].getRadians());
+      }
+    }
+  }
 
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
       DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
@@ -141,6 +159,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private final HealthManager health;
   private double lastSimTime;
+  private boolean simulationModulePrepointPending = false;
+  private volatile Rotation2d @Nullable [] simulationModulePrepointAngles = null;
+  private @Nullable ResettableSimSwerveDrivetrain swerveSimulation = null;
 
   private @Nullable Notifier simNotifier = null;
   private SwerveDriveState drivetrainState = new SwerveDriveState();
@@ -180,6 +201,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     this.health = health;
 
     if (Utils.isSimulation()) {
+      swerveSimulation =
+          new ResettableSimSwerveDrivetrain(
+              drivetrain.getModuleLocations(),
+              drivetrain.getPigeon2().getSimState(),
+              RobotKind.IS_COMP_BOT
+                  ? CompTunerConstants.FrontLeft
+                  : PracticeTunerConstants.FrontLeft,
+              RobotKind.IS_COMP_BOT
+                  ? CompTunerConstants.FrontRight
+                  : PracticeTunerConstants.FrontRight,
+              RobotKind.IS_COMP_BOT ? CompTunerConstants.BackLeft : PracticeTunerConstants.BackLeft,
+              RobotKind.IS_COMP_BOT
+                  ? CompTunerConstants.BackRight
+                  : PracticeTunerConstants.BackRight);
       startSimThread();
     }
 
@@ -323,6 +358,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  public void finishSimulationModulePrepoint() {
+    simulationModulePrepointAngles = null;
+    simulationModulePrepointPending = false;
+  }
+
   public SwerveDriveState getDriveState() {
     return drivetrainState;
   }
@@ -352,6 +392,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void normalDriveRequest() {
     setStateFromRequest(SwerveState.MANUAL);
+  }
+
+  public void requestSimulationModulePrepoint() {
+    simulationModulePrepointPending = true;
   }
 
   public void scoreRequest(AimingParameters scoringParameters) {
@@ -522,6 +566,20 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       }
     }
 
+    if (Utils.isSimulation() && DriverStation.isDisabled() && simulationModulePrepointPending) {
+      var simulation = swerveSimulation;
+      if (simulation != null) {
+        var modules = drivetrain.getModules();
+        var targetAngles = new Rotation2d[modules.length];
+        for (int i = 0; i < modules.length; i++) {
+          targetAngles[i] = modules[i].getTargetState().angle;
+        }
+        simulationModulePrepointAngles = targetAngles;
+        simulation.setSteerAngles(targetAngles);
+      }
+      simulationModulePrepointPending = false;
+    }
+
     if (DriverStation.isAutonomous() && DriverStation.isDisabled()) {
       var current = drivetrainState.ModuleStates;
       var targets = drivetrainState.ModuleTargets;
@@ -614,7 +672,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               lastSimTime = currentTime;
 
               /* use the measured time delta, get battery voltage from WPILib */
-              drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
+              var simulation = swerveSimulation;
+              if (simulation != null) {
+                var prepointAngles = simulationModulePrepointAngles;
+                if (DriverStation.isDisabled() && prepointAngles != null) {
+                  simulation.setSteerAngles(prepointAngles);
+                }
+                simulation.update(
+                    deltaTime, RobotController.getBatteryVoltage(), drivetrain.getModules());
+              }
             });
     simNotifier.startPeriodic(SIM_LOOP_PERIOD);
   }

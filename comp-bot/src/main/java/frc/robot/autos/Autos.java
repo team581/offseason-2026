@@ -33,6 +33,12 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   protected void afterTransition(AutoSelection newState) {
     // Recreate the auto instances when the selection changes
     selectedAuto = newState.auto.apply(robotManager, trailblazer);
+
+    if (RobotBase.isSimulation() && DriverStation.isDisabled()) {
+      // The simulated DS does not enter autonomous-disabled when the dashboard selection changes,
+      // so discard the previous path and seed the new module targets after this auto initializes.
+      trailblazer.clearActiveSegment();
+    }
   }
 
   @Override
@@ -46,6 +52,10 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
 
   @Override
   protected void whileInState(AutoSelection state) {
+    if (RobotBase.isSimulation() && DriverStation.isEnabled()) {
+      robotManager.swerve.finishSimulationModulePrepoint();
+    }
+
     if (DriverStation.isDisabled()) {
       if (!hasEnabledAuto
           && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()
@@ -61,10 +71,18 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       hasEnabledAuto = true;
     }
 
-    if (selectedAuto.shouldRun()) {
+    // On the real robot, selecting autonomous mode while disabled initializes the auto and applies
+    // all of its commanded states. Mirror that lifecycle when an auto is selected in simulation.
+    var shouldRunAuto =
+        selectedAuto.shouldRun() || (RobotBase.isSimulation() && DriverStation.isDisabled());
+
+    if (shouldRunAuto) {
       selectedAuto.beforePeriodic();
       selectedAuto.periodic();
       robotManager.swerve.setDriveSourceType(DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP);
+      if (RobotBase.isSimulation() && DriverStation.isDisabled()) {
+        robotManager.swerve.requestSimulationModulePrepoint();
+      }
       DogLog.log("Autos/ShouldRun", true);
     } else {
       // Restore teleop drive source
