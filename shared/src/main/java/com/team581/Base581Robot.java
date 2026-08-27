@@ -1,6 +1,7 @@
 package com.team581;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.team581.sim.AgentSimShim;
 import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.tuning.ElasticLayoutUtil;
 import dev.doglog.DogLog;
@@ -23,6 +24,8 @@ public abstract class Base581Robot extends TimedRobot {
       new BooleanEvent(buttonBindingsLoop, DriverStation::isEnabled);
 
   private boolean isInitialized = false;
+
+  private final AgentSimShim agentSimShim = RobotBase.isSimulation() ? new AgentSimShim() : null;
 
   public Base581Robot() {
     DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
@@ -64,6 +67,11 @@ public abstract class Base581Robot extends TimedRobot {
   public void robotPeriodic() {
     DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
     DogLog.time("Scheduler/TimeSinceLastLoop");
+
+    // Before the button bindings loop so agent inputs take effect in the same robot loop.
+    if (agentSimShim != null) {
+      agentSimShim.periodic();
+    }
 
     DogLog.time("Scheduler/ButtonBindingsLoop");
     buttonBindingsLoop.poll();

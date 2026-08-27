@@ -98,7 +98,9 @@ test {
 }
 
 // Simulation configuration (e.g. environment variables).
-wpi.sim.addGui().defaultEnabled = true
+// SIM_HEADLESS=1 disables the in-process Sim GUI (used by agent-driven runs; also avoids
+// libhalsim_gui crashes). The robot still hosts the NT4 server, so AdvantageScope can connect.
+wpi.sim.addGui().defaultEnabled = System.getenv('SIM_HEADLESS') == null
 wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
