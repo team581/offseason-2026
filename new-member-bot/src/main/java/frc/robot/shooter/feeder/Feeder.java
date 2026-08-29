@@ -17,7 +17,15 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     this.topMotor = topMotor;
     this.bottomMotor = bottomMotor;
   }
-
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    topMotor
+    .getConfigurator()
+    .apply(FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
+    bottomMotor
+    .getConfigurator()
+    .apply(FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit( supplyCurrentLimit));
+  }
   public void ballFillingRequest() {
     setStateFromRequest(FeederState.BALL_FILLING);
   }
@@ -37,4 +45,17 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   public void shootRequest() {
     setStateFromRequest(FeederState.SHOOTING);
   }
+}
+  @Override
+  protected void afterTransition(FeederState newState) {
+ switch (newState) {
+  case IDLE -> {
+  topMotor.setControl(neutralRequest);
+  bottomMotor.setControl(neutralRequest);
+}
+  default -> {
+  topMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+  bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+  }
+ }
 }
