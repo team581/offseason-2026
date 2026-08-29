@@ -24,4 +24,6 @@ public class HopperManagerConfig {
       DogLog.tunable("HopperManager/MinSignalStrength", 1000.0);
   public static final DoubleSubscriber HOPPER_COMPACTION_SHUFFLE_INTERVAL =
       DogLog.tunable("HopperManager/CompactionShuffleInterval", 0.25);
+  public static final DoubleSubscriber BEAST_MODE_SHUFFLE_INTERVAL =
+      DogLog.tunable("HopperManager/BeastModeShuffleInterval", 0.125);
 }

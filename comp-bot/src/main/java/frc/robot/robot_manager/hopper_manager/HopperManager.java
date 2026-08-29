@@ -412,7 +412,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (operatorWantsStow) {
           deploy.stowRequest();
         } else if (shouldBeastMode) {
-          deploy.beastModeRequest();
+          double shuffleInterval = HopperManagerConfig.BEAST_MODE_SHUFFLE_INTERVAL.getAsDouble();
+          if (((int) (Timer.getFPGATimestamp() / shuffleInterval)) % 2 == 0) {
+            deploy.beastModeCompactionRequest();
+          } else {
+            deploy.beastModeIntakeRequest();
+          }
           intake.shootRequest();
           conveyor.shootRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {

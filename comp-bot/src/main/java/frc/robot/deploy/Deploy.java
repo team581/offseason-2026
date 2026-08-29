@@ -118,10 +118,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     };
   }
 
-  public void beastModeRequest() {
+  public void beastModeCompactionRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
       default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
+    }
+  }
+
+  public void beastModeIntakeRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.BEAST_MODE_INTAKE);
     }
   }
 
