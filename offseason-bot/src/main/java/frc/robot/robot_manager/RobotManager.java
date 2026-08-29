@@ -30,7 +30,6 @@ import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
-
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   private static final double PRESET_FEED_DISTANCE = 0.0;
   public final HopperManager hopperManager;
