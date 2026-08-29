@@ -4,7 +4,8 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum KickerState {
-  SHOOT(0.0),
+  SCORE(0.0),
+  FEED(0.0),
   BALL_FILLING(0.0),
   IDLE(0.0),
   INTAKE(0.0);

@@ -67,13 +67,17 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.INTAKE);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(IntakeState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(IntakeState.SCORE);
+  }
+
+  public void feedRequest() {
+    setStateFromRequest(IntakeState.FEED);
   }
 
   public void stopShootingRequest() {
     switch (getState()) {
-      case SHOOT -> setStateFromRequest(IntakeState.IDLE);
+      case SCORE, FEED -> setStateFromRequest(IntakeState.IDLE);
       default -> {}
     }
   }

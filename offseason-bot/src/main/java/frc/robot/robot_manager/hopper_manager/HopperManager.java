@@ -318,15 +318,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.ejectRequest();
         tunnel.idleRequest();
         kicker.idleRequest();
-        funneler.idleRequest();
+        funneler.scoreRequest();
       }
       case UNJAMMING -> {
         deploy.intakeRequest();
-        funneler.shootingRequest();
+        funneler.scoreRequest();
         intake.ejectRequest();
-        conveyor.shootRequest();
-        tunnel.shootRequest();
-        kicker.shootRequest();
+        conveyor.scoreRequest();
+        tunnel.scoreRequest();
+        kicker.scoreRequest();
       }
       case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
@@ -335,19 +335,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
-        intake.shootRequest();
-        conveyor.initialShotRequest();
-        tunnel.shootRequest();
-        funneler.shootingRequest();
-        kicker.shootRequest();
+        intake.scoreRequest();
+        conveyor.initialScoreRequest();
+        tunnel.scoreRequest();
+        funneler.scoreRequest();
+        kicker.scoreRequest();
       }
       case SCORE_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        conveyor.shootRequest();
-        tunnel.shootRequest();
-        funneler.shootingRequest();
-        kicker.shootRequest();
+        conveyor.scoreRequest();
+        tunnel.scoreRequest();
+        funneler.scoreRequest();
+        kicker.scoreRequest();
       }
 
       case FEED -> {
@@ -355,19 +355,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (deploy.getState() != DeployState.FEED_COMPACTION) {
           deploy.intakeRequest();
         }
-        intake.shootRequest();
-        conveyor.initialShotRequest();
-        tunnel.shootRequest();
-        funneler.shootingRequest();
-        kicker.shootRequest();
+        intake.feedRequest();
+        conveyor.initialFeedRequest();
+        tunnel.feedRequest();
+        funneler.feedRequest();
+        kicker.feedRequest();
       }
       case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        conveyor.shootRequest();
-        tunnel.shootRequest();
-        funneler.shootingRequest();
-        kicker.shootRequest();
+        conveyor.feedRequest();
+        tunnel.feedRequest();
+        funneler.feedRequest();
+        kicker.feedRequest();
       }
     }
   }
@@ -430,11 +430,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.stowRequest();
         } else if (shouldBeastMode) {
           deploy.beastModeRequest();
-          intake.shootRequest();
-          conveyor.shootRequest();
-          tunnel.shootRequest();
-          kicker.shootRequest();
-          funneler.shootingRequest();
+          intake.scoreRequest();
+          conveyor.scoreRequest();
+          tunnel.scoreRequest();
+          kicker.scoreRequest();
+          funneler.scoreRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           double shuffleInterval =
               HopperManagerConfig.HOPPER_COMPACTION_SHUFFLE_INTERVAL.getAsDouble();
@@ -444,10 +444,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             deploy.intakeRequest();
           }
           intake.idleRequest();
-          conveyor.shootRequest();
-          tunnel.shootRequest();
-          kicker.shootRequest();
-          funneler.shootingRequest();
+          conveyor.scoreRequest();
+          tunnel.scoreRequest();
+          kicker.scoreRequest();
+          funneler.scoreRequest();
         } else {
           deploy.waitHopperCompactionRequest();
         }
@@ -464,7 +464,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.feedCompactionRequest();
           intake.idleRequest();
-          conveyor.shootRequest();
+          conveyor.feedRequest();
+          funneler.feedRequest();
         }
       }
     }

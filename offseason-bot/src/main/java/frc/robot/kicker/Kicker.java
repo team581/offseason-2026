@@ -37,8 +37,12 @@ public class Kicker extends StateMachineSubsystem<KickerState> implements PowerM
     setStateFromRequest(KickerState.INTAKE);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(KickerState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(KickerState.SCORE);
+  }
+
+  public void feedRequest() {
+    setStateFromRequest(KickerState.FEED);
   }
 
   @Override

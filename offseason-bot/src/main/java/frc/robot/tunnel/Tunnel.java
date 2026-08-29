@@ -75,8 +75,12 @@ public class Tunnel extends StateMachineSubsystem<TunnelState> implements PowerM
     setStateFromRequest(TunnelState.INTAKING);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(TunnelState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(TunnelState.SCORE);
+  }
+
+  public void feedRequest() {
+    setStateFromRequest(TunnelState.FEED);
   }
 
   @Override

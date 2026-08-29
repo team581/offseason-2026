@@ -4,8 +4,10 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum ConveyorState {
-  SHOOT(10),
-  INITIAL_SHOT(10),
+  SCORE(10),
+  FEED(10),
+  INITIAL_SCORE(10),
+  INITIAL_FEED(10),
   BALL_FILLING(1),
   EJECT(-12),
   IDLE(0),

@@ -4,7 +4,8 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum TunnelState {
-  SHOOT(10),
+  SCORE(10),
+  FEED(10),
   BALL_FILLING(1),
   INTAKING(-1),
   EJECT(-6),

@@ -38,8 +38,12 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
     setStateFromRequest(FunnelerState.INTAKE);
   }
 
-  public void shootingRequest() {
-    setStateFromRequest(FunnelerState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(FunnelerState.SCORE);
+  }
+
+  public void feedRequest() {
+    setStateFromRequest(FunnelerState.FEED);
   }
 
   @Override
