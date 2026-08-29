@@ -186,7 +186,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private HopperState resolveFeedState() {
     if (driverWantsEject) {
-      return HopperState.EJECTING;
+      return HopperState.EJECT;
     }
 
     if (driverWantsIntake) {
@@ -198,7 +198,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private HopperState resolveIdleState() {
     if (driverWantsEject) {
-      return HopperState.EJECTING;
+      return HopperState.EJECT;
     }
 
     if (driverWantsIntake) {
@@ -218,7 +218,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   private HopperState resolveScoreState() {
     if (driverWantsEject) {
-      return HopperState.EJECTING;
+      return HopperState.EJECT;
     }
 
     if (driverWantsIntake) {
@@ -312,7 +312,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         intake.intakeRequest();
         smartIntakeBallFillRequest();
       }
-      case EJECTING -> {
+      case EJECT -> {
         deploy.intakeRequest();
         intake.ejectRequest();
         conveyor.ejectRequest();
@@ -405,7 +405,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   @Override
   protected HopperState getNextState(HopperState currentState) {
     return switch (getState()) {
-      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING, EJECTING -> {
+      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING, EJECT -> {
         yield resolveIdleState();
       }
       default -> currentState;

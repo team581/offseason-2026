@@ -20,7 +20,8 @@ public enum RobotState {
   PREPARE_FALLBACK_FEED,
   FALLBACK_FEED,
 
-  UNJAM;
+  UNJAM,
+  EJECT;
 
   public boolean isFeeding() {
     return switch (this) {

@@ -149,7 +149,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFromRequest(RobotState.IDLE);
   }
 
-  public void intakeAutoRequest() {
+  public void intakeRequest() {
     if (hopperManager != null) hopperManager.setDriverWantsIntake(true);
   }
 
@@ -303,6 +303,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.idleRequest();
         swerve.normalDriveRequest();
         powerManager.idleRequest();
+      }
+      case EJECT -> {
+        if (hopperManager != null) hopperManager.ejectRequest();
+        shooter.scoreRequest(3);
+        shooterHood.scoreRequest(3);
       }
       case PREPARE_FORCE_SCORE -> {
         // hoppermanager controlled separately

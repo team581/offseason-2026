@@ -5,7 +5,7 @@ public enum HopperState {
   IDLE_STOWED(false),
   IDLE_SAFE_KICKER_STOW(false),
   INTAKING(true),
-  EJECTING(false),
+  EJECT(false),
   UNJAMMING(false),
   SCORE(false),
   SCORE_AND_INTAKE(false),

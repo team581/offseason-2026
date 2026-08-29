@@ -107,7 +107,7 @@ public class Robot extends Base581Robot {
 
     driver
         .leftTrigger()
-        .onPress(robotManager::intakeAutoRequest)
+        .onPress(robotManager::intakeRequest)
         .onRelease(robotManager::cancelIntakeRequest);
 
     driver
@@ -117,10 +117,13 @@ public class Robot extends Base581Robot {
 
     driver.rightBumper().onPress(robotManager::stowDeployRequest);
 
-    driver.leftBumper().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
+    driver.leftBumper().onPress(()->hopperManager.setDriverWantsEject(true)).onRelease(()->hopperManager.setDriverWantsEject(false));
 
     operator.leftTrigger().onPress(robotManager::stowDeployRequest);
     operator.rightTrigger().onPress(robotManager::prepareScoreRequest);
+
+    operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest)
+    operator.y().onPress(powerManager::turboRequest)
 
     operator.leftBumper().onPress(powerManager::prioritizeIntakeRequest);
     operator
