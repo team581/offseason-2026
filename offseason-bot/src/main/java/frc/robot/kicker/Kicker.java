@@ -29,6 +29,10 @@ public class Kicker extends StateMachineSubsystem<KickerState> implements PowerM
     setStateFromRequest(KickerState.BALL_FILLING);
   }
 
+  public void feedRequest() {
+    setStateFromRequest(KickerState.FEED);
+  }
+
   public void idleRequest() {
     setStateFromRequest(KickerState.IDLE);
   }
@@ -39,10 +43,6 @@ public class Kicker extends StateMachineSubsystem<KickerState> implements PowerM
 
   public void scoreRequest() {
     setStateFromRequest(KickerState.SCORE);
-  }
-
-  public void feedRequest() {
-    setStateFromRequest(KickerState.FEED);
   }
 
   @Override

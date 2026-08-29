@@ -63,6 +63,10 @@ public class Tunnel extends StateMachineSubsystem<TunnelState> implements PowerM
     setStateFromRequest(TunnelState.EJECT);
   }
 
+  public void feedRequest() {
+    setStateFromRequest(TunnelState.FEED);
+  }
+
   public double getAverageCurrent() {
     return averageCurrent;
   }
@@ -77,10 +81,6 @@ public class Tunnel extends StateMachineSubsystem<TunnelState> implements PowerM
 
   public void scoreRequest() {
     setStateFromRequest(TunnelState.SCORE);
-  }
-
-  public void feedRequest() {
-    setStateFromRequest(TunnelState.FEED);
   }
 
   @Override
