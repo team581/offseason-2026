@@ -48,5 +48,14 @@ public class Robot extends Base581Robot {
 
     // X = Halt Intake
     driver.x().onPress(intake::haltIntakeRequest);
+
+    // Y = Spin to Score
+    driver.y().onPress(() -> shooter.hubscoreRequest(14.0));
+
+    // Left Bumper = Spin to Feed
+    driver.leftBumper().onPress(() -> shooter.feedRequest(14.0));
+
+    // Right Bumper = Spin to Idle
+    driver.rightBumper().onPress(shooter::idleRequest);
   }
 }
