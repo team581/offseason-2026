@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
+import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
@@ -86,6 +87,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
+
+  private static final DoubleSubscriber STUCK_ON_BALL_BACKOFF_SPEED =
+      DogLog.tunable("Swerve/StuckOnBallBackoffSpeed", 0.3);
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
@@ -181,6 +185,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private double scoringXSwerveTolerance = 0.0;
   private double scoringFeedForward = 0.0;
+  private Rotation2d stuckOnBallPitch = Rotation2d.kZero;
+  private Rotation2d stuckOnBallRoll = Rotation2d.kZero;
   private double feedingAngle = 0.0;
   private Rotation2d feedingAngleRotation = Rotation2d.kZero;
 
@@ -286,7 +292,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public boolean atGoal() {
     return switch (getState()) {
-      case WARMUP_SCORE, SCORE ->
+      case WARMUP_SCORE, SCORE, SCORE_STUCK_ON_BALL ->
           MathUtil.isNear(
               drivetrainState.Pose.getRotation().getDegrees(),
               scoringAngle,
@@ -306,7 +312,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public boolean atGoal(double lookaheadTime) {
     switch (getState()) {
-      case WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {}
+      case WARMUP_SCORE, SCORE, SCORE_STUCK_ON_BALL, WARMUP_FEED, FEED -> {}
       default -> {
         return atGoal();
       }
@@ -417,6 +423,18 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.SCORE);
   }
 
+  public void scoreStuckOnBallRequest(
+      AimingParameters scoringParameters, double pitchDegrees, double rollDegrees) {
+    setScoringAngle(scoringParameters.goalAngle());
+    scoringTolerance =
+        MathUtil.clamp(
+            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
+    stuckOnBallPitch = Rotation2d.fromDegrees(pitchDegrees);
+    stuckOnBallRoll = Rotation2d.fromDegrees(rollDegrees);
+    setStateFromRequest(SwerveState.SCORE_STUCK_ON_BALL);
+  }
+
   /**
    * Set the {@link DriveSource} to use. For some states, this might be ignored (ex. a state where
    * we are always using Trailblazer speeds instead of teleop).
@@ -525,6 +543,29 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           }
         }
       }
+      case SCORE_STUCK_ON_BALL -> {
+        // Ignore the drive source entirely: creep away from the ball at a fixed slow speed while
+        // keeping the scoring heading
+        var recoveryPose =
+            StuckOnBallRecovery.getRecoveryPose(
+                drivetrainState.Pose, stuckOnBallPitch, stuckOnBallRoll);
+        var toRecovery = recoveryPose.getTranslation().minus(drivetrainState.Pose.getTranslation());
+        var norm = toRecovery.getNorm();
+        double vx = 0.0;
+        double vy = 0.0;
+        if (norm >= 1e-6) {
+          vx = toRecovery.getX() / norm * STUCK_ON_BALL_BACKOFF_SPEED.get();
+          vy = toRecovery.getY() / norm * STUCK_ON_BALL_BACKOFF_SPEED.get();
+        }
+        var backoffSpeeds = new ChassisSpeeds(vx, vy, 0.0);
+        DogLog.log("Swerve/StuckOnBallBackoffSpeeds", backoffSpeeds);
+        drivetrain.setControl(
+            fieldCentricSnaps
+                .withVelocityX(vx)
+                .withVelocityY(vy)
+                .withTargetDirection(scoringAngleRotation)
+                .withTargetRateFeedforward(scoringFeedForward));
+      }
       case WARMUP_FEED, FEED -> {
         var speeds = driveSource.getRequestedSpeeds();
 
@@ -622,7 +663,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     switch (currentState) {
-      case WARMUP_SCORE, SCORE -> {
+      case WARMUP_SCORE, SCORE, SCORE_STUCK_ON_BALL -> {
         DogLog.log("Swerve/ScoringAngle", scoringAngle);
         DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
         DogLog.log("Swerve/ScoringXSwerveTolerance", scoringXSwerveTolerance);
@@ -644,7 +685,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private double getTargetAngleDegrees() {
     return switch (getState()) {
-      case WARMUP_SCORE, SCORE -> scoringAngle;
+      case WARMUP_SCORE, SCORE, SCORE_STUCK_ON_BALL -> scoringAngle;
       case WARMUP_FEED, FEED -> feedingAngle;
       default -> 0.0;
     };
@@ -652,7 +693,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private double getToleranceDegrees() {
     return switch (getState()) {
-      case WARMUP_SCORE, SCORE -> scoringTolerance;
+      case WARMUP_SCORE, SCORE, SCORE_STUCK_ON_BALL -> scoringTolerance;
       case WARMUP_FEED, FEED -> useLooseTolerance ? LOOSE_TOLERANCE : feedingTolerance;
       default -> 0.0;
     };
@@ -761,7 +802,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
 
     switch (getState()) {
-      case SCORE -> {
+      case SCORE, SCORE_STUCK_ON_BALL -> {
         currentMaxAngularRate =
             maxAngularVelocityRateLimiter.calculate(MAX_ANGULAR_RATE_SHOOTING.get());
         currentMaxLinearRate =

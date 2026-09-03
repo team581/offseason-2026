@@ -1,6 +1,7 @@
 package frc.robot.robot_manager;
 
 import com.team581.autos.Point;
+import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
@@ -27,6 +28,7 @@ import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
+import frc.robot.util.TiltCompensation;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
@@ -59,6 +61,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0);
   private boolean isMoving = false;
   private boolean trenchOverride = false;
+  private boolean stuckOnBall = false;
 
   private boolean isInAllianceZone = false;
   private boolean isInSafeFeedingLocation = true;
@@ -114,6 +117,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public void cancelWarmupRequest() {
     switch (getState()) {
       case SCORE,
+          SCORE_STUCK_ON_BALL,
           PREPARE_SCORE,
           PREPARE_FALLBACK_SCORE,
           FALLBACK_SCORE,
@@ -283,7 +287,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     } else {
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NotNearTrench");
 
-      shooterHood.scoreRequest(scoringParameters.distance());
+      // Pass live tilt compensation while stuck so the hood target matches SCORE_STUCK_ON_BALL
+      // and shooterHood.atGoal() doesn't flap across the PREPARE_SCORE -> SCORE_STUCK_ON_BALL
+      // transition
+      var tiltCompensationDegrees =
+          stuckOnBall
+              ? TiltCompensation.getHoodCompensationDegrees(
+                  localization.imu.getPitch(), localization.imu.getRoll())
+              : 0.0;
+      shooterHood.scoreRequest(scoringParameters.distance(), tiltCompensationDegrees);
     }
   }
 
@@ -354,6 +366,19 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        smartScoringPowerManagerRequest();
+      }
+      case SCORE_STUCK_ON_BALL -> {
+        // hoppermanager controlled separately
+        vision.hubTagsRequest();
+        shooter.scoreRequest(scoringParameters.distance());
+        var tiltCompensationDegrees =
+            TiltCompensation.getHoodCompensationDegrees(
+                localization.imu.getPitch(), localization.imu.getRoll());
+        DogLog.log("RobotManager/Scoring/TiltCompensationDegrees", tiltCompensationDegrees);
+        shooterHood.scoreRequest(scoringParameters.distance(), tiltCompensationDegrees);
+        swerve.scoreStuckOnBallRequest(
+            scoringParameters, localization.imu.getPitch(), localization.imu.getRoll());
         smartScoringPowerManagerRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
@@ -467,6 +492,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             || !FieldUtil.isFeedPathObstructed(
                 robotPose.getTranslation(), feedLocation.getTranslation());
 
+    stuckOnBall =
+        FeatureFlags.UNBEACH_SCORE.getAsBoolean()
+            && StuckOnBallRecovery.stuckOnBall(
+                localization.imu.getPitch(), localization.imu.getRoll());
+    DogLog.log("RobotManager/Scoring/StuckOnBall", stuckOnBall);
+
     shooter.updateHopperState(hopperManager.feeder.getAverageCurrent(), hopperManager.isFull());
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
     DogLog.log(
@@ -518,14 +549,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         if (isSwerveAimReadyForScoring()
             && !swerve.isMovingBeyondSafeSpeed()
-            && !swerve.driverStillDecidingSotm()
-            && localization.imu.accelerationLowEnoughToShoot()
+            && (stuckOnBall || !swerve.driverStillDecidingSotm())
+            && (stuckOnBall || localization.imu.accelerationLowEnoughToShoot())
             && shooter.atGoalDebounced()
             && shooterHood.atGoal()
             && localization.isTrustworthy()
             && hubActivity.getTOFBasedHubActive()
             && !nearTrench) {
-          yield RobotState.SCORE;
+          yield stuckOnBall ? RobotState.SCORE_STUCK_ON_BALL : RobotState.SCORE;
         }
         yield currentState;
       }
@@ -539,6 +570,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
 
+        if (stuckOnBall) {
+          yield RobotState.SCORE_STUCK_ON_BALL;
+        }
+
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
                 || (isSwerveAimReadyForScoring()
                     && !swerve.isMovingBeyondSafeSpeed()
@@ -547,6 +582,32 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && shooter.atGoalDebounced()
                     && localization.isTrustworthy()
                     && shooterHood.atGoal()
+                    && hubActivity.getTOFBasedHubActive()))
+            && !nearTrench) {
+          yield currentState;
+        }
+
+        yield RobotState.PREPARE_SCORE;
+      }
+      case SCORE_STUCK_ON_BALL -> {
+        logScoringTransition();
+
+        if (!isInAllianceZone) {
+          if (DriverStation.isTeleop()) {
+            yield RobotState.PREPARE_FEED;
+          }
+          yield currentState;
+        }
+
+        if (!stuckOnBall) {
+          yield RobotState.PREPARE_SCORE;
+        }
+
+        if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
+                || (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                    && shooter.atGoalDebounced()
+                    && shooterHood.atGoal()
+                    && localization.isTrustworthy()
                     && hubActivity.getTOFBasedHubActive()))
             && !nearTrench) {
           yield currentState;
@@ -618,6 +679,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         swerve.scoreRequest(scoringParameters);
+        hopperManager.scoreRequest(hubActivity.shouldBeastMode());
+        smartScoringPowerManagerRequest();
+      }
+      case SCORE_STUCK_ON_BALL -> {
+        shooter.scoreRequest(scoringParameters.distance());
+        var tiltCompensationDegrees =
+            TiltCompensation.getHoodCompensationDegrees(
+                localization.imu.getPitch(), localization.imu.getRoll());
+        DogLog.log("RobotManager/Scoring/TiltCompensationDegrees", tiltCompensationDegrees);
+        shooterHood.scoreRequest(scoringParameters.distance(), tiltCompensationDegrees);
+        swerve.scoreStuckOnBallRequest(
+            scoringParameters, localization.imu.getPitch(), localization.imu.getRoll());
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
         smartScoringPowerManagerRequest();
       }

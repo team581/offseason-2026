@@ -44,6 +44,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
 
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
   private double scoreDistance = 0;
+  private double scoreAngleOffsetDegrees = 0.0;
   private double feedDistance = 0;
   private double currentAngle = 0;
   private double statorCurrent = 0.0;
@@ -101,6 +102,10 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     return currentAngle;
   }
 
+  public double getScoreAngleOffsetDegrees() {
+    return scoreAngleOffsetDegrees;
+  }
+
   public void homingRequest() {
     setStateFromRequest(ShooterHoodState.HOMING);
   }
@@ -115,7 +120,13 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   }
 
   public void scoreRequest(double distance) {
+    // Zero offset so the single-arg path never carries a stale tilt offset
+    scoreRequest(distance, 0.0);
+  }
+
+  public void scoreRequest(double distance, double angleOffsetDegrees) {
     this.scoreDistance = distance;
+    this.scoreAngleOffsetDegrees = angleOffsetDegrees;
     switch (getState()) {
       case UNHOMED, HOMING -> {
         // Do nothing, we aren't homed
@@ -148,7 +159,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     return switch (getState()) {
       case UNHOMED, HOMING -> -1;
       case IDLE -> ShooterHoodConfig.IDLE_ANGLE;
-      case SCORING -> distanceToScoringAngle(scoreDistance);
+      case SCORING -> distanceToScoringAngle(scoreDistance) + scoreAngleOffsetDegrees;
       case FEEDING -> distanceToFeedingAngle(feedDistance);
     };
   }
@@ -213,5 +224,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     DogLog.log("ShooterHood/AtGoal", atGoal());
     DogLog.log("ShooterHood/Angle", currentAngle);
     DogLog.log("ShooterHood/GoalAngle", goalAngle);
+    DogLog.log("ShooterHood/ScoreAngleOffset", scoreAngleOffsetDegrees);
   }
 }

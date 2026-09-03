@@ -23,6 +23,8 @@ public class FeatureFlags {
   public static final BooleanSupplier UNBEACH_AUTO_SIM_ONLY =
       FeatureFlag.of("UnbeachAutoSimOnly", false);
 
+  public static final BooleanSupplier UNBEACH_SCORE = FeatureFlag.of("UnbeachScore", true);
+
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
   public static final BooleanSupplier DYNAMIC_CENTER_OF_ROTATION =
