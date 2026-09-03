@@ -95,16 +95,24 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       new PhoenixPIDController(15, 0, 0);
 
   private static final double MIN_AIMED_TOLERANCE = 2.0;
+  private static final double SCORING_X_SWERVE_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(5.0);
+
+  static double calculateScoringXSwerveToleranceDegrees(double scoringDistanceMeters) {
+    return Math.toDegrees(
+        Math.atan2(SCORING_X_SWERVE_GOAL_CENTRIC_TOLERANCE, scoringDistanceMeters));
+  }
+
   private boolean useLooseTolerance = false;
+
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(1);
 
   private final SlewRateLimiter maxLinearVelocityRateLimiter =
       new SlewRateLimiter(100.0, -10.0, MAX_LINEAR_RATE);
 
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
-
   public final TunerSwerveDrivetrain drivetrain;
   private final XboxControllerDriveSource teleopDriveSource;
+
   private final TrailblazerDriveSource trailblazerDriveSource;
 
   private DriveSource driveSource;
@@ -156,39 +164,40 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private final SwerveRequest.SwerveDriveBrake xRequest =
       new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
-
   private final HealthManager health;
   private double lastSimTime;
   private boolean simulationModulePrepointPending = false;
   private volatile Rotation2d @Nullable [] simulationModulePrepointAngles = null;
-  private @Nullable ResettableSimSwerveDrivetrain swerveSimulation = null;
 
+  private @Nullable ResettableSimSwerveDrivetrain swerveSimulation = null;
   private @Nullable Notifier simNotifier = null;
   private SwerveDriveState drivetrainState = new SwerveDriveState();
-  private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
 
+  private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
   private double scoringAngle = 0.0;
   private Rotation2d scoringAngleRotation = Rotation2d.kZero;
   private double scoringTolerance = 0.0;
 
+  private double scoringXSwerveTolerance = 0.0;
   private double scoringFeedForward = 0.0;
   private double feedingAngle = 0.0;
   private Rotation2d feedingAngleRotation = Rotation2d.kZero;
-  private double feedingTolerance = 0.0;
 
+  private double feedingTolerance = 0.0;
   private double feedingFeedForward = 0.0;
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
+
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
 
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
-
   private boolean ableToBumpAssist = false;
+
   private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
 
   private boolean ableToXSwerve = false;
-
   private boolean driverWantsSotm = false;
+
   private boolean driverStillDecidingSotm = false;
 
   public Swerve(
@@ -403,6 +412,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     scoringTolerance =
         MathUtil.clamp(
             scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringXSwerveTolerance = calculateScoringXSwerveToleranceDegrees(scoringParameters.distance());
     scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.SCORE);
   }
@@ -440,6 +450,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     scoringTolerance =
         MathUtil.clamp(
             scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringXSwerveTolerance = calculateScoringXSwerveToleranceDegrees(scoringParameters.distance());
     scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.WARMUP_SCORE);
   }
@@ -614,6 +625,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       case WARMUP_SCORE, SCORE -> {
         DogLog.log("Swerve/ScoringAngle", scoringAngle);
         DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
+        DogLog.log("Swerve/ScoringXSwerveTolerance", scoringXSwerveTolerance);
       }
       case WARMUP_FEED, FEED -> {
         DogLog.log("Swerve/FeedingAngle", feedingAngle);
@@ -714,7 +726,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 MathUtil.isNear(
                         Math.toDegrees(MathUtil.angleModulus(Math.toRadians(scoringAngle))),
                         drivetrainState.Pose.getRotation().getDegrees(),
-                        scoringTolerance,
+                        scoringXSwerveTolerance,
                         -180.0,
                         180.0)
                     && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);

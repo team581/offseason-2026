@@ -31,6 +31,7 @@ import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
+  private static final double LOCALIZATION_TRUSTWORTHY_LOOKAHEAD_DELAY_SECONDS = 1.0;
   private static final double PRESET_FEED_DISTANCE = 0.0;
   public final HopperManager hopperManager;
   public final Localization localization;
@@ -48,6 +49,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public final PowerManager powerManager;
   private Pose2d robotPose = Pose2d.kZero;
+  private final ScoringAimReadiness scoringAimReadiness =
+      new ScoringAimReadiness(LOCALIZATION_TRUSTWORTHY_LOOKAHEAD_DELAY_SECONDS);
 
   private boolean nearTrench = false;
   private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0);
@@ -226,6 +229,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
+  private boolean isSwerveAimReadyForScoring() {
+    return scoringAimReadiness.isAtGoal(
+        swerve::atGoal, () -> swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
+  }
+
   private void logFeedTransition() {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
     DogLog.log(
@@ -243,9 +251,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void logScoringTransition() {
     DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
-    DogLog.log(
-        "RobotManager/Scoring/ScoreTransition/SwerveLookaheadAtGoal",
-        swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get()));
+    DogLog.log("RobotManager/Scoring/ScoreTransition/SwerveAimReady", isSwerveAimReadyForScoring());
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/ShooterAtGoalDebounced", shooter.atGoalDebounced());
     DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
@@ -413,6 +419,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected void collectInputs() {
     hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
 
+    scoringAimReadiness.updateLocalizationTrustworthiness(localization.isTrustworthy());
+
     robotPose = localization.getPose();
     feedLocation = FeedLocation.closest(robotPose);
     double robotRotation = robotPose.getRotation().getDegrees();
@@ -461,6 +469,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     shooter.updateHopperState(hopperManager.feeder.getAverageCurrent(), hopperManager.isFull());
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
+    DogLog.log(
+        "RobotManager/Scoring/LookaheadPermitted", scoringAimReadiness.isLookaheadPermitted());
   }
 
   @Override
@@ -484,7 +494,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         yield !isMoving
-                && (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                && (isSwerveAimReadyForScoring()
                     && shooter.atGoalDebounced()
                     && shooterHood.atGoal())
             ? RobotState.FALLBACK_SCORE
@@ -506,7 +516,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield currentState;
         }
 
-        if (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+        if (isSwerveAimReadyForScoring()
             && !swerve.isMovingBeyondSafeSpeed()
             && !swerve.driverStillDecidingSotm()
             && localization.imu.accelerationLowEnoughToShoot()
@@ -530,7 +540,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-                || (swerve.atGoal(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
+                || (isSwerveAimReadyForScoring()
                     && !swerve.isMovingBeyondSafeSpeed()
                     && !swerve.driverStillDecidingSotm()
                     && localization.imu.accelerationLowEnoughToShoot()
