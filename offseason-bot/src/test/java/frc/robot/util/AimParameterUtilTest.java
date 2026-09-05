@@ -1,8 +1,8 @@
 package frc.robot.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.team581.math.ShootOnTheMove;
 import com.team581.util.FeedLocation;
@@ -90,8 +90,8 @@ final class AimParameterUtilTest {
     var rotating =
         AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
 
-    assertTrue(lateral.turretFeedForwardRadians() < 0.0);
-    assertTrue(rotating.turretFeedForwardRadians() < -1.0);
+    assertThat(lateral.turretFeedForwardRadians() < 0.0).isTrue();
+    assertThat(rotating.turretFeedForwardRadians() < -1.0).isTrue();
   }
 
   @Test
@@ -138,10 +138,10 @@ final class AimParameterUtilTest {
     var parameters =
         AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
 
-    assertTrue(Double.isFinite(parameters.turretAngle()));
-    assertTrue(Double.isFinite(parameters.distance()));
-    assertTrue(Double.isFinite(parameters.turretTolerance()));
-    assertTrue(Double.isFinite(parameters.turretFeedForwardRadians()));
-    assertTrue(Double.isFinite(parameters.upcomingTurretAngle()));
+    assertThat(Double.isFinite(parameters.turretAngle())).isTrue();
+    assertThat(Double.isFinite(parameters.distance())).isTrue();
+    assertThat(Double.isFinite(parameters.turretTolerance())).isTrue();
+    assertThat(Double.isFinite(parameters.turretFeedForwardRadians())).isTrue();
+    assertThat(Double.isFinite(parameters.upcomingTurretAngle())).isTrue();
   }
 }
