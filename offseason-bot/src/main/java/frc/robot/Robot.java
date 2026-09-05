@@ -144,5 +144,9 @@ public class Robot extends Base581Robot {
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
         .onRelease(() -> robotManager.setTrenchOverrideRequest(false));
+
+    operator.start().onPress(() -> hopperManager.deploy.homingRequest());
+
+    operator.back().onPress(robotManager::homeShooterHoodRequest);
   }
 }
