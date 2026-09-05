@@ -44,7 +44,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HealthManager health;
   private final HubActivity hubActivity;
   private final Trailblazer trailblazer;
-  private final Turret turret;
 
   public final PowerManager powerManager;
   private Pose2d robotPose = Pose2d.kZero;
@@ -83,8 +82,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       HubActivity hubActivity,
       Trailblazer trailblazer,
       Hardware hardware,
-      PowerManager powerManager,
-      Turret turret) {
+      PowerManager powerManager) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
     this.hopperManager = hopperManager;
     this.shooterHood = shooterHood;
@@ -100,7 +98,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     this.hardware = hardware;
     this.powerManager = powerManager;
-    this.turret = turret;
   }
 
   public void cancelIntakeRequest() {
