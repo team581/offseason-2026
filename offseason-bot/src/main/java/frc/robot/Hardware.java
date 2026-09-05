@@ -53,6 +53,8 @@ public class Hardware {
   public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
   public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
+  public final TalonFX funnelerMotor = new TalonFX(27, canivore);
+
   // TODO: PLaceholder LimeLights
   public final Limelight shooterLimeLight =
       new Limelight(

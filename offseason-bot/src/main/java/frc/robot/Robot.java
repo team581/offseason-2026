@@ -11,6 +11,7 @@ import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
+import frc.robot.funneler.Funneler;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
@@ -72,13 +73,14 @@ public class Robot extends Base581Robot {
   private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
+  private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
       new HopperManager(
           deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
   private final PowerManager powerManager =
-      new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
+      new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve);
   private final RobotManager robotManager =
       new RobotManager(
           hopperManager,

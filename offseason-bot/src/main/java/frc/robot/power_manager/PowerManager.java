@@ -6,6 +6,7 @@ import dev.doglog.DogLog;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
+import frc.robot.funneler.Funneler;
 import frc.robot.intake.Intake;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
@@ -22,6 +23,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   private final PowerManaged shooterHood;
   private final PowerManaged feeder;
   private final PowerManaged conveyor;
+  private final PowerManaged funneler;
   private final PowerManaged swerve;
 
   public PowerManager(
@@ -31,6 +33,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
       ShooterHood shooterHood,
       Feeder feeder,
       Conveyor conveyor,
+      Funneler funneler,
       Swerve swerve) {
     super(SubsystemPriority.POWER_MANAGER, PowerManagerState.IDLE);
     this.shooter = shooter;
@@ -39,6 +42,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.shooterHood = shooterHood;
     this.feeder = feeder;
     this.conveyor = conveyor;
+    this.funneler = funneler;
     this.swerve = swerve;
   }
 
@@ -89,6 +93,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
           shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
           feeder.applyCurrentLimits(newState.feederSupplyCurrent);
           conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
+          funneler.applyCurrentLimits(newState.funnelerSupplyCurrent);
           swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
         });
   }
