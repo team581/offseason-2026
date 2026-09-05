@@ -8,13 +8,18 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.autos.BumpCrossingFollower;
+import frc.robot.conveyor.Conveyor;
+import frc.robot.deploy.Deploy;
+import frc.robot.feeder.Feeder;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.hub_activity.HubActivity;
 import frc.robot.imu.Imu;
+import frc.robot.intake.Intake;
 import frc.robot.localization.Localization;
 import frc.robot.power_manager.PowerManager;
 import frc.robot.robot_manager.RobotManager;
+import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
@@ -62,12 +67,21 @@ public class Robot extends Base581Robot {
           hardware.shooterBottomLeftMotor,
           hardware.shooterBottomRightMotor);
 
+  private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
+  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
+  private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+  private final Conveyor conveyor =
+      new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
+
   private final HubActivity hubActivity = new HubActivity();
+  private final HopperManager hopperManager =
+      new HopperManager(
+          deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
   private final PowerManager powerManager =
-      new PowerManager(shooter, null, null, shooterHood, null, null, swerve);
+      new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
   private final RobotManager robotManager =
       new RobotManager(
-          null,
+          hopperManager,
           shooterHood,
           localization,
           swerve,
