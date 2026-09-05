@@ -90,7 +90,7 @@ final class AimParameterUtilTest {
     var rotating =
         AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
 
-    assertThat(lateral.turretFeedForwardRadians()).isLessThan(0.0);
+    assertThat(lateral.turretFeedForwardRadians()).isNegative();
     assertThat(rotating.turretFeedForwardRadians()).isLessThan(-1.0);
   }
 
