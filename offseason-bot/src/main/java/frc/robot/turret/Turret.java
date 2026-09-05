@@ -25,15 +25,44 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
   }
 
-  private final TalonFX motor;
+  static boolean isAtGoal(
+      TurretState state, double setpoint, double currentAngle, double tolerance) {
+    return switch (state) {
+      case UNHOMED -> false;
+      case STUCK -> false;
+      default -> MathUtil.isNear(setpoint, currentAngle, tolerance);
+    };
+  }
 
+  static boolean isAtGoal(
+      TurretState state,
+      double setpoint,
+      double currentAngle,
+      double tolerance,
+      double upcomingAngle) {
+    return switch (state) {
+      case UNHOMED -> false;
+      case STUCK -> false;
+      default -> {
+        var potentialSetpoint = TurretCalculator.getOptimalAngle(upcomingAngle, currentAngle);
+        if (!MathUtil.isNear(potentialSetpoint, setpoint, 90)) {
+          yield false;
+        }
+        yield MathUtil.isNear(setpoint, currentAngle, tolerance, -180, 180);
+      }
+    };
+  }
+
+  private final TalonFX motor;
   private final CANcoder encoder;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double setpoint = 0.0;
   private double velocity = 0.0;
   private double voltage = 0.0;
+
   private double statorCurrent = 0.0;
+
   private double feedForward = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
@@ -63,29 +92,19 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(AimingParameters aimingParameters) {
-    return atGoal(aimingParameters.turretTolerance(), 0.0);
+    return atGoal(aimingParameters.turretTolerance(), aimingParameters.upcomingTurretAngle());
   }
 
   public boolean atGoal(double tolerance) {
-    return switch (getState()) {
-      case UNHOMED -> false;
-      case STUCK -> true;
-      default -> MathUtil.isNear(setpoint, currentAngle, tolerance);
-    };
+    return isAtGoal(getState(), setpoint, currentAngle, tolerance);
   }
 
   public boolean atGoal(double tolerance, double upcomingAngle) {
-    return switch (getState()) {
-      case UNHOMED -> false;
-      case STUCK -> true;
-      default -> {
-        var potentialSetpoint = TurretCalculator.getOptimalAngle(upcomingAngle, currentAngle);
-        if (!MathUtil.isNear(potentialSetpoint, setpoint, 90)) {
-          yield false;
-        }
-        yield MathUtil.isNear(setpoint, currentAngle, tolerance, -180, 180);
-      }
-    };
+    return isAtGoal(getState(), setpoint, currentAngle, tolerance, upcomingAngle);
+  }
+
+  public void feedRequest(AimingParameters parameters) {
+    feedRequest(parameters.turretAngle(), parameters.turretFeedForwardRadians());
   }
 
   public void feedRequest(double goalAngle, double feedForward) {
@@ -102,10 +121,18 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     return velocity;
   }
 
+  public void idleFeedRequest(AimingParameters parameters) {
+    idleFeedRequest(parameters.turretAngle(), parameters.turretFeedForwardRadians());
+  }
+
   public void idleFeedRequest(double goalAngle, double feedForward) {
     this.feedForward = feedForward;
     this.goalAngle = goalAngle;
     setState(TurretState.IDLE_FEED);
+  }
+
+  public void idleScoreRequest(AimingParameters parameters) {
+    idleScoreRequest(parameters.turretAngle(), parameters.turretFeedForwardRadians());
   }
 
   public void idleScoreRequest(double goalAngle, double feedForward) {
@@ -136,6 +163,10 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     } else {
       DogLog.clearFault("Turret is misaligned");
     }
+  }
+
+  public void scoreRequest(AimingParameters parameters) {
+    scoreRequest(parameters.turretAngle(), parameters.turretFeedForwardRadians());
   }
 
   public void scoreRequest(double goalAngle, double feedForward) {

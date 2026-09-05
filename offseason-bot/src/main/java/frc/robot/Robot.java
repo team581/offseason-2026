@@ -99,7 +99,8 @@ public class Robot extends Base581Robot {
           hubActivity,
           trailblazer,
           hardware,
-          powerManager);
+          powerManager,
+          turret);
 
   public Robot() {
     logMetadata(
