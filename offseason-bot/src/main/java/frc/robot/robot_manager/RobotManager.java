@@ -13,7 +13,6 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
-import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.health.HealthManager;
@@ -43,8 +42,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HealthManager health;
   private final HubActivity hubActivity;
   private final Trailblazer trailblazer;
-
-  public final ClusterMap clusterMap;
 
   public final PowerManager powerManager;
   private Pose2d robotPose = Pose2d.kZero;
@@ -80,7 +77,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       HealthManager health,
       HubActivity hubActivity,
       Trailblazer trailblazer,
-      ClusterMap clusterMap,
       Hardware hardware,
       PowerManager powerManager) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
@@ -94,7 +90,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.health = health;
     this.hubActivity = hubActivity;
     this.trailblazer = trailblazer;
-    this.clusterMap = clusterMap;
 
     this.hardware = hardware;
     this.powerManager = powerManager;
@@ -416,7 +411,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     robotPose = localization.getPose();
     feedLocation = FeedLocation.closest(robotPose);
     double robotRotation = robotPose.getRotation().getDegrees();
-    clusterMap.setDeployFullyExtended(hopperManager.deploy.isFullyExtended());
     vision.setEstimatedPoseAngle(robotRotation);
     var speeds = swerve.getFieldRelativeSpeeds();
     var velocity = MathHelpers.getLinearVelocity(speeds);

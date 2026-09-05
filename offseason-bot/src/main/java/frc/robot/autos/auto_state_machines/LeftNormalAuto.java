@@ -11,7 +11,6 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -19,7 +18,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.NormalAutoState;
-import frc.robot.cluster_map.Lane;
 import frc.robot.config.FeatureFlags;
 import frc.robot.robot_manager.RobotManager;
 
@@ -351,26 +349,26 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
   }
 
   // Only use for lane 0 and 1 since we don't
-  private Point getClusterShiftedPoint(Point point) {
-    var targetCluster = robotManager.clusterMap.getBestClusterPose();
+  // private Point getClusterShiftedPoint(Point point) {
+  //   var targetCluster = robotManager.clusterMap.getBestClusterPose();
 
-    if (targetCluster.isEmpty()) {
-      return point;
-    }
+  //   if (targetCluster.isEmpty()) {
+  //     return point;
+  //   }
 
-    Pose2d clusterPose = targetCluster.orElseThrow();
-    Pose2d basePose = point.getPose();
+  //   Pose2d clusterPose = targetCluster.orElseThrow();
+  //   Pose2d basePose = point.getPose();
 
-    double clampedX =
-        MathUtil.clamp(
-            clusterPose.getX(),
-            basePose.getX() - MAX_CLUSTER_MAP_OFFSET,
-            basePose.getX() + MAX_CLUSTER_MAP_OFFSET);
+  //   double clampedX =
+  //       MathUtil.clamp(
+  //           clusterPose.getX(),
+  //           basePose.getX() - MAX_CLUSTER_MAP_OFFSET,
+  //           basePose.getX() + MAX_CLUSTER_MAP_OFFSET);
 
-    return FmsUtil.isRedAlliance()
-        ? Point.ofRed(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()))
-        : Point.ofBlue(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()));
-  }
+  //   return FmsUtil.isRedAlliance()
+  //       ? Point.ofRed(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()))
+  //       : Point.ofBlue(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()));
+  // }
 
   private Point getCollisionPoint(Point point) {
     if (collisionEverDetected) {
@@ -520,11 +518,12 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         } else if (trailblazer.passedMarker(Markers.MAKE_CLUSTER_MAP_DECISION)
             && !trailblazer.passedMarker(Markers.CANCEL_CLUSTER_MAP_CHECK)) {
 
-          Lane bestLane = robotManager.clusterMap.getBestClusterLane();
-          yield switch (bestLane) {
-            case LANE_1 -> NormalAutoState.INTAKE_SECOND_CYCLE_FAR;
-            default -> currentState;
-          };
+          // Lane bestLane = robotManager.clusterMap.getBestClusterLane();
+          // yield switch (bestLane) {
+          //   case LANE_1 -> NormalAutoState.INTAKE_SECOND_CYCLE_FAR;
+          //   default -> currentState;
+          // };
+          yield currentState;
         }
         yield currentState;
       }

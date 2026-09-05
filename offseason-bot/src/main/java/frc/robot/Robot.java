@@ -77,7 +77,6 @@ public class Robot extends Base581Robot {
           health,
           hubActivity,
           trailblazer,
-          null,
           hardware,
           powerManager);
 
