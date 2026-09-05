@@ -24,6 +24,7 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter.ShooterConfig;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
 import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -42,6 +43,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HealthManager health;
   private final HubActivity hubActivity;
   private final Trailblazer trailblazer;
+  private final Turret turret;
 
   public final PowerManager powerManager;
   private Pose2d robotPose = Pose2d.kZero;
@@ -72,6 +74,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Localization localization,
       Swerve swerve,
       Shooter shooter,
+      Turret turret,
       Vision vision,
       XboxController driverController,
       HealthManager health,
@@ -85,6 +88,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.localization = localization;
     this.swerve = swerve;
     this.shooter = shooter;
+    this.turret = turret;
     this.vision = vision;
     this.driverController = driverController;
     this.health = health;

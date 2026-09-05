@@ -24,6 +24,7 @@ import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
 
 public class Robot extends Base581Robot {
@@ -75,12 +76,15 @@ public class Robot extends Base581Robot {
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
+  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
+
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
       new HopperManager(
           deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
   private final PowerManager powerManager =
-      new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve);
+      new PowerManager(
+          shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);
   private final RobotManager robotManager =
       new RobotManager(
           hopperManager,
@@ -88,6 +92,7 @@ public class Robot extends Base581Robot {
           localization,
           swerve,
           shooter,
+          turret,
           vision,
           hardware.driverController,
           health,

@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
@@ -54,6 +55,9 @@ public class Hardware {
   public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
   public final TalonFX funnelerMotor = new TalonFX(27, canivore);
+
+  public final TalonFX turretMotor = new TalonFX(28, rio);
+  public final CANcoder turretEncoder = new CANcoder(29, rio);
 
   // TODO: PLaceholder LimeLights
   public final Limelight shooterLimeLight =

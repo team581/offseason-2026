@@ -11,6 +11,7 @@ import frc.robot.intake.Intake;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.turret.Turret;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +26,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   private final PowerManaged conveyor;
   private final PowerManaged funneler;
   private final PowerManaged swerve;
+  private final PowerManaged turret;
 
   public PowerManager(
       Shooter shooter,
@@ -34,7 +36,8 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
       Feeder feeder,
       Conveyor conveyor,
       Funneler funneler,
-      Swerve swerve) {
+      Swerve swerve,
+      Turret turret) {
     super(SubsystemPriority.POWER_MANAGER, PowerManagerState.IDLE);
     this.shooter = shooter;
     this.intake = intake;
@@ -44,6 +47,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
     this.conveyor = conveyor;
     this.funneler = funneler;
     this.swerve = swerve;
+    this.turret = turret;
   }
 
   public void beastModeRequest() {
@@ -95,6 +99,7 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
           conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
           funneler.applyCurrentLimits(newState.funnelerSupplyCurrent);
           swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
+          turret.applyCurrentLimits(newState.turretSupplyCurrent);
         });
   }
 }
