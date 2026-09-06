@@ -628,6 +628,25 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void whileInState(RobotState state) {
+    var turretTrackingGoal =
+        switch (state) {
+          case PREPARE_FORCE_SCORE,
+              FORCE_SCORE,
+              WARMUP_SCORE,
+              PREPARE_SCORE,
+              SCORE,
+              PREPARE_FALLBACK_SCORE,
+              FALLBACK_SCORE ->
+              FieldUtil.HUB_POSE.getTranslation();
+          case WARMUP_FEED, PREPARE_FEED, FEED -> feedLocation.getTranslation();
+          case IDLE, UNJAM ->
+              DriverStation.isAutonomous() || isInAllianceZone
+                  ? FieldUtil.HUB_POSE.getTranslation()
+                  : feedLocation.getTranslation();
+          case PREPARE_FALLBACK_FEED, FALLBACK_FEED -> null;
+        };
+    swerve.setTurretTrackingGoal(turretTrackingGoal, Math.toRadians(turret.getVelocity()));
+
     switch (state) {
       case IDLE -> {
         shooterHood.idleRequest();

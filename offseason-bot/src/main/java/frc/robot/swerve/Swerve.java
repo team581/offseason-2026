@@ -9,6 +9,7 @@ import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
+import com.team581.swerve.DriveConstraints;
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
 import com.team581.swerve.SwerveAssist;
@@ -38,6 +39,7 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
+import frc.robot.turret.TurretConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
@@ -65,6 +67,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
+  private static final double CONTROL_PERIOD_SECONDS = 0.02;
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
   public static final PhoenixPIDController ORIGINAL_HEADING_PID =
@@ -76,9 +79,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       new SlewRateLimiter(100.0, -10.0, MAX_LINEAR_RATE);
 
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
-
   public final TunerSwerveDrivetrain drivetrain;
   private final XboxControllerDriveSource teleopDriveSource;
+
   private final TrailblazerDriveSource trailblazerDriveSource;
 
   private DriveSource driveSource;
@@ -120,19 +123,23 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final HealthManager health;
 
   private double lastSimTime;
-
   private @Nullable Notifier simNotifier = null;
   private SwerveDriveState drivetrainState = new SwerveDriveState();
-  private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
 
+  private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
+  private ChassisSpeeds constrainedRequestedFieldRelativeSpeeds = new ChassisSpeeds();
+  private @Nullable Translation2d turretTrackingGoal = null;
+  private double measuredTurretVelocityRadiansPerSecond = 0.0;
+  private double limitedRequestedTurretVelocityRadiansPerSecond = 0.0;
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
+
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
 
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
-
   private boolean ableToBumpAssist = false;
   private boolean driverWantsSotm = false;
+
   private boolean driverStillDecidingSotm = false;
 
   public Swerve(
@@ -209,6 +216,33 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  /**
+   * Gets the turret feedforward correction implied by driver motion not yet reflected in measured
+   * chassis motion. Translation, rotation, and the offset turret pivot are all included when a
+   * point target is available. This is zero for autonomous/path-following drive sources.
+   */
+  public double getDriverIntentTurretFeedForwardCorrection() {
+    if (!DriverStation.isTeleopEnabled()
+        || driveSource.getDriveSourceType() != DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+      return 0.0;
+    }
+
+    if (turretTrackingGoal == null) {
+      return 0.0;
+    }
+
+    double requestedTurretVelocity =
+        getLimitedRequestedTurretVelocity(
+            toFieldRelativeSpeeds(driveSource.getRequestedSpeeds()), turretTrackingGoal);
+    double measuredMotionTurretVelocity =
+        DriveConstraints.getTurretTrackingAngularVelocity(
+            fieldRelativeSpeeds,
+            drivetrainState.Pose,
+            turretTrackingGoal,
+            TurretConfig.TURRET_TO_ROBOT.getTranslation());
+    return requestedTurretVelocity - measuredMotionTurretVelocity;
+  }
+
   public SwerveDriveState getDriveState() {
     return drivetrainState;
   }
@@ -259,6 +293,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         };
   }
 
+  /**
+   * Supplies the target and measured turret state used to protect goal tracking. Passing {@code
+   * null} disables the geometry-based constraint, such as for fallback feeding toward a field
+   * direction instead of a known point.
+   */
+  public void setTurretTrackingGoal(
+      @Nullable Translation2d goalTranslation, double turretVelocityRadiansPerSecond) {
+    turretTrackingGoal = goalTranslation;
+    measuredTurretVelocityRadiansPerSecond = turretVelocityRadiansPerSecond;
+  }
+
   public void warmupFeedRequest() {
     setStateFromRequest(SwerveState.WARMUP_FEED);
   }
@@ -274,8 +319,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     switch (currentState) {
       case MANUAL, WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {
-        var speeds = driveSource.getRequestedSpeeds();
-        if (ableToBumpAssist) {
+        var speeds = getTurretConstrainedRequestedSpeeds();
+        if (ableToBumpAssist && !isTurretTrackingConstrainedState()) {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                   drivePerspectiveSnaps
@@ -341,10 +386,73 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
+    DogLog.log(
+        "Swerve/TurretTracking/ConstrainedRequestedFieldRelativeSpeeds",
+        constrainedRequestedFieldRelativeSpeeds);
+    DogLog.log(
+        "Swerve/TurretTracking/RequiredVelocityRadiansPerSecond",
+        limitedRequestedTurretVelocityRadiansPerSecond);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
 
     DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
     DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
+  }
+
+  private ChassisSpeeds fromFieldRelativeSpeeds(ChassisSpeeds speeds) {
+    // A 180-degree operator-perspective transform is its own inverse.
+    return toFieldRelativeSpeeds(speeds);
+  }
+
+  private double getLimitedRequestedTurretVelocity(
+      ChassisSpeeds requestedFieldRelativeSpeeds, Translation2d goalTranslation) {
+    return DriveConstraints.getLimitedTurretTrackingAngularVelocity(
+        DriveConstraints.getTurretTrackingAngularVelocity(
+            requestedFieldRelativeSpeeds,
+            drivetrainState.Pose,
+            goalTranslation,
+            TurretConfig.TURRET_TO_ROBOT.getTranslation()),
+        measuredTurretVelocityRadiansPerSecond,
+        TurretConfig.MAX_VELOCITY_RAD_PER_SEC,
+        TurretConfig.MAX_ACCELERATION_RAD_PER_SEC_SQUARED,
+        CONTROL_PERIOD_SECONDS);
+  }
+
+  private ChassisSpeeds getTurretConstrainedRequestedSpeeds() {
+    ChassisSpeeds requestedSpeeds = driveSource.getRequestedSpeeds();
+    ChassisSpeeds requestedFieldRelativeSpeeds = toFieldRelativeSpeeds(requestedSpeeds);
+
+    boolean trackingState = isTurretTrackingConstrainedState();
+
+    constrainedRequestedFieldRelativeSpeeds =
+        trackingState && turretTrackingGoal != null
+            ? DriveConstraints.getTurretConstrainedSpeeds(
+                requestedFieldRelativeSpeeds,
+                drivetrainState.Pose,
+                turretTrackingGoal,
+                TurretConfig.TURRET_TO_ROBOT.getTranslation(),
+                measuredTurretVelocityRadiansPerSecond,
+                TurretConfig.MAX_VELOCITY_RAD_PER_SEC,
+                TurretConfig.MAX_ACCELERATION_RAD_PER_SEC_SQUARED,
+                CONTROL_PERIOD_SECONDS)
+            : requestedFieldRelativeSpeeds;
+
+    limitedRequestedTurretVelocityRadiansPerSecond =
+        turretTrackingGoal != null
+            ? getLimitedRequestedTurretVelocity(requestedFieldRelativeSpeeds, turretTrackingGoal)
+            : 0.0;
+
+    return fromFieldRelativeSpeeds(constrainedRequestedFieldRelativeSpeeds);
+  }
+
+  private boolean isTurretTrackingConstrainedState() {
+    if (turretTrackingGoal == null) {
+      return false;
+    }
+
+    return switch (getState()) {
+      case WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> true;
+      default -> false;
+    };
   }
 
   private void startSimThread() {
@@ -362,6 +470,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
             });
     simNotifier.startPeriodic(SIM_LOOP_PERIOD);
+  }
+
+  private ChassisSpeeds toFieldRelativeSpeeds(ChassisSpeeds speeds) {
+    if (driveSource.getDriveSourceType() != DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+        || !FmsUtil.isRedAlliance()) {
+      return speeds;
+    }
+
+    Translation2d fieldVelocity =
+        new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond)
+            .rotateBy(Rotation2d.k180deg);
+    return new ChassisSpeeds(
+        fieldVelocity.getX(), fieldVelocity.getY(), speeds.omegaRadiansPerSecond);
   }
 
   private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(

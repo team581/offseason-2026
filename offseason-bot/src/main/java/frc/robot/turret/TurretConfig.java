@@ -4,6 +4,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -31,6 +32,8 @@ public class TurretConfig {
   public static final double MOTOR_ROTOR_CAL_OFFSET = RobotKind.IS_COMP_BOT ? 0.157227 : 0.0;
 
   public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
+  public static final double MAX_VELOCITY_RAD_PER_SEC = 10.0;
+  public static final double MAX_ACCELERATION_RAD_PER_SEC_SQUARED = 35.0;
   public static final double ENCODER_TO_TURRET =
       (float) 220.0 / 25.0 * 8.0 / 30.0 * 8.0 / 35.0; // Encoder rot to turret rot
 
@@ -51,7 +54,12 @@ public class TurretConfig {
                   .withKV(RobotKind.IS_COMP_BOT ? 5.0 : 6.0)
                   .withKG(0.0)
                   .withKD(1.7)
-                  .withKS(RobotKind.IS_COMP_BOT ? 0.35 : 0.2));
+                  .withKS(RobotKind.IS_COMP_BOT ? 0.35 : 0.2))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(Units.radiansToRotations(MAX_VELOCITY_RAD_PER_SEC))
+                  .withMotionMagicAcceleration(
+                      Units.radiansToRotations(MAX_ACCELERATION_RAD_PER_SEC_SQUARED)));
   public static final CANcoderConfiguration ENCODER_CONFIG =
       new CANcoderConfiguration()
           .withMagnetSensor(
