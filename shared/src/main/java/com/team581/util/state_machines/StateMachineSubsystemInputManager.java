@@ -3,6 +3,7 @@ package com.team581.util.state_machines;
 import static java.util.Comparator.comparingInt;
 
 import com.team581.signals.Signals;
+import com.team581.util.profiling.LoopTiming;
 import com.team581.util.scheduling.RegisteredSubsystem;
 import com.team581.util.scheduling.SubsystemPriorityBase;
 import java.util.PriorityQueue;
@@ -23,10 +24,16 @@ public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
 
   @Override
   public void periodic() {
+    long aggregateStart = LoopTiming.start();
+    long refreshStart = LoopTiming.start();
     Signals.refreshAll();
+    LoopTiming.end("Scheduler/Inputs/Signals.refreshAll()", refreshStart);
     for (var stateMachineSubsystem : stateMachineSubsystems) {
+      long inputStart = LoopTiming.start();
       stateMachineSubsystem.beforePeriodic();
+      LoopTiming.end(stateMachineSubsystem.getInputLoggerName(), inputStart);
     }
+    LoopTiming.end("Scheduler/Inputs/Total", aggregateStart);
   }
 
   public void register(StateMachineSubsystem<?> stateMachine) {

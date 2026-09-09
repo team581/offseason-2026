@@ -1,3 +1,6 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
 plugins {
 	id "edu.wpi.first.GradleRIO"
 	id "com.peterabeles.gversion" version "1.11.0"
@@ -56,7 +59,7 @@ def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 wpi.java.debugJni = false
 
 // Set this to true to enable desktop support.
-def includeDesktopSupport = false
+def includeDesktopSupport = true
 
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
@@ -135,4 +138,138 @@ gversion {
 	dateFormat = "yyyy-MM-dd HH:mm:ss z"
 	timeZone = "America/Los_Angeles"
 	indent = "  "
+}
+
+sourceSets {
+	benchmark {
+		java.srcDir 'src/benchmark/java'
+		compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+		runtimeClasspath += output + compileClasspath
+	}
+}
+
+configurations {
+	benchmarkImplementation.extendsFrom testImplementation
+	benchmarkRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+def loopProfileDir = layout.buildDirectory.dir('reports/loop-profile')
+def loopBenchmarkTasks = []
+['auto': 15, 'teleop': 30].each { benchmarkMode, durationSeconds ->
+	(1..5).each { runNumber ->
+		def capitalizedMode = benchmarkMode.capitalize()
+		def taskName = "loopBenchmark${capitalizedMode}${runNumber}"
+		loopBenchmarkTasks << taskName
+		tasks.register(taskName, JavaExec) {
+			group = 'verification'
+			description = "Runs comp-bot ${benchmarkMode} loop benchmark (${runNumber}/5)"
+			dependsOn benchmarkClasses, wpi.java.extractNativeReleaseArtifacts
+			classpath = sourceSets.benchmark.runtimeClasspath
+			mainClass = 'frc.robot.LoopBenchmark'
+			def outputDir = loopProfileDir.get().asFile
+			def jsonOutput = new File(outputDir, "${benchmarkMode}-${runNumber}.json")
+			def jfrOutput = new File(outputDir, "${benchmarkMode}-${runNumber}.jfr")
+			args benchmarkMode, durationSeconds.toString(), jsonOutput.absolutePath
+			jvmArgs "-XX:StartFlightRecording=filename=${jfrOutput.absolutePath},settings=profile,dumponexit=true"
+			doFirst {
+				outputDir.mkdirs()
+				def nativeDir = wpi.java.extractNativeReleaseArtifacts.get().destinationDirectory.get().asFile.absolutePath
+				systemProperty 'java.library.path', nativeDir
+				environment 'LD_LIBRARY_PATH', nativeDir
+				environment 'DYLD_LIBRARY_PATH', nativeDir
+				environment 'DYLD_FALLBACK_LIBRARY_PATH', nativeDir
+			}
+		}
+	}
+}
+
+tasks.register('loopBenchmark') {
+	group = 'verification'
+	description = 'Runs five fresh-JVM auto and teleop loop benchmarks with JFR enabled'
+	dependsOn loopBenchmarkTasks
+}
+
+tasks.register('loopBenchmarkReport') {
+	group = 'verification'
+	description = 'Summarizes loop benchmark runs and optionally compares them with -PloopBenchmarkBaseline=<file>'
+	dependsOn loopBenchmark
+	doLast {
+		def outputDir = loopProfileDir.get().asFile
+		def parser = new JsonSlurper()
+		def summary = [
+			schema_version: 1,
+			note: 'Laptop results demonstrate relative improvement but do not prove absolute roboRIO timing.',
+			modes: [:]
+		]
+		['auto', 'teleop'].each { benchmarkMode ->
+			def runs = (1..5).collect {
+				parser.parse(new File(outputDir, "${benchmarkMode}-${it}.json"))
+			}
+			def sortedP99 = runs.collect { it.p99 as double }.sort()
+			summary.modes[benchmarkMode] = [
+				median_p99: sortedP99[2],
+				runs: runs,
+				behavior_consistent: runs.collect {
+					it.behavior_sha256
+				}.toSet().size() == 1,
+				doglog_queue_acceptable: runs.every { it.doglog_queue_acceptable }
+			]
+		}
+
+		if (project.hasProperty('loopBenchmarkBaseline')) {
+			def baseline = parser.parse(file(project.property('loopBenchmarkBaseline')))
+			summary.comparison = [:]
+			['auto', 'teleop'].each { benchmarkMode ->
+				def oldP99 = baseline.modes[benchmarkMode].median_p99 as double
+				def newP99 = summary.modes[benchmarkMode].median_p99 as double
+				def pairedImprovements = (0..<5).count {
+					(summary.modes[benchmarkMode].runs[it].p99 as double) <
+					(baseline.modes[benchmarkMode].runs[it].p99 as double)
+				}
+				def behaviorMatches =
+						summary.modes[benchmarkMode].runs.collect { it.behavior_sha256 } ==
+						baseline.modes[benchmarkMode].runs.collect { it.behavior_sha256 }
+				def improvementPercent = (oldP99 - newP99) / oldP99 * 100.0
+				summary.comparison[benchmarkMode] = [
+					baseline_p99: oldP99,
+					candidate_p99: newP99,
+					improvement_percent: improvementPercent,
+					improved_runs: pairedImprovements,
+					behavior_matches: behaviorMatches,
+					accepted: improvementPercent >= 20.0 && pairedImprovements >= 4 && behaviorMatches &&
+					summary.modes[benchmarkMode].doglog_queue_acceptable
+				]
+			}
+		}
+		new File(outputDir, 'summary.json').text = JsonOutput.prettyPrint(JsonOutput.toJson(summary)) + '\n'
+
+		def markdown = new StringBuilder('# Comp-bot loop benchmark\n\n')
+		markdown << '| Mode | Median p99 (ms) | Behavior consistent | DogLog queue acceptable |\n'
+		markdown << '|---|---:|---:|---:|\n'
+		['auto', 'teleop'].each { benchmarkMode ->
+			def result = summary.modes[benchmarkMode]
+			markdown << "| ${benchmarkMode} | ${String.format('%.3f', result.median_p99 * 1000)} | ${result.behavior_consistent} | ${result.doglog_queue_acceptable} |\n"
+		}
+		if (summary.comparison) {
+			markdown << '\n## Baseline comparison\n\n'
+			markdown << '| Mode | Baseline p99 (ms) | Candidate p99 (ms) | Improvement | Improved runs | Accepted |\n'
+			markdown << '|---|---:|---:|---:|---:|---:|\n'
+			['auto', 'teleop'].each { benchmarkMode ->
+				def result = summary.comparison[benchmarkMode]
+				markdown << "| ${benchmarkMode} | ${String.format('%.3f', result.baseline_p99 * 1000)} | ${String.format('%.3f', result.candidate_p99 * 1000)} | ${String.format('%.1f%%', result.improvement_percent)} | ${result.improved_runs}/5 | ${result.accepted} |\n"
+			}
+		}
+		markdown << '\n> Laptop results demonstrate relative improvement but do not prove absolute roboRIO timing. Native CAN refresh is excluded because vendor simulation cannot reproduce real bus timing.\n'
+		new File(outputDir, 'summary.md').text = markdown.toString()
+	}
+}
+
+tasks.register('loopBenchmarkBaseline') {
+	group = 'verification'
+	description = 'Runs the benchmark and saves its summary as the local comparison baseline'
+	dependsOn loopBenchmarkReport
+	doLast {
+		def outputDir = loopProfileDir.get().asFile
+		new File(outputDir, 'baseline.json').bytes = new File(outputDir, 'summary.json').bytes
+	}
 }

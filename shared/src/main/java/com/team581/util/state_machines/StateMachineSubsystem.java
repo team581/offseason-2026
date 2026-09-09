@@ -32,6 +32,7 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
   private final SubsystemPriorityBase priority;
 
   private final String loggerName;
+  private final String inputLoggerName;
 
   protected final String subsystemName;
 
@@ -53,6 +54,7 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
 
     subsystemName = getSubsystemName(getClass());
     loggerName = "Scheduler/Subsystems/" + subsystemName + ".periodic()";
+    inputLoggerName = "Scheduler/Inputs/" + subsystemName + ".collectInputs()";
 
     MANAGER.register(this);
   }
@@ -130,4 +132,8 @@ public abstract class StateMachineSubsystem<S extends Enum<S>> extends StateMach
 
   /** {@link IterativeRobotBase#teleopPeriodic()} */
   public void teleopPeriodic() {}
+
+  String getInputLoggerName() {
+    return inputLoggerName;
+  }
 }
