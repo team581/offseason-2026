@@ -2,6 +2,7 @@ package frc.robot.cluster_map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,15 +22,14 @@ final class ClusterMapTest {
     for (int trial = 0; trial < 10_000; trial++) {
       double now = 10.0;
       double newExpiry = now + 2.0;
-      Translation2d observed =
-          new Translation2d(random.nextDouble() * 20.0, random.nextDouble() * 10.0);
+      Translation2d observed = new Translation2d(random.nextDouble(20.0), random.nextDouble(10.0));
       List<ClusterMapElement> clusters = new ArrayList<>();
       for (int index = 0; index < random.nextInt(51); index++) {
         clusters.add(
             element(
-                random.nextBoolean() ? now - 0.01 : now + random.nextDouble() * 4.0,
-                random.nextDouble() * 20.0,
-                random.nextDouble() * 10.0));
+                random.nextBoolean() ? now - 0.01 : now + random.nextDouble(4.0),
+                random.nextDouble(20.0),
+                random.nextDouble(10.0)));
       }
 
       // updateMap removes expired entries before searching.
@@ -50,11 +50,11 @@ final class ClusterMapTest {
   @Test
   void closestClusterReturnsEmptyAndPreservesEqualDistanceEncounterOrder() {
     Translation2d observed = new Translation2d(1.0, 1.0);
-    assertThat(ClusterMap.findClosestCluster(List.of(), observed, 10.0)).isNull();
+    assertThat(ClusterMap.findClosestCluster(ImmutableList.of(), observed, 10.0)).isNull();
 
     var first = element(9.0, 0.5, 1.0);
     var second = element(9.0, 1.5, 1.0);
-    assertThat(ClusterMap.findClosestCluster(List.of(first, second), observed, 10.0))
+    assertThat(ClusterMap.findClosestCluster(ImmutableList.of(first, second), observed, 10.0))
         .isSameAs(first);
   }
 

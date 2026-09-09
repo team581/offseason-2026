@@ -215,8 +215,10 @@ def markdown(report: dict[str, Any]) -> str:
         lines.extend(
             [
                 "",
-                f"Instrumentation clock overhead: {overhead['median_percent']:.3f}% "
-                f"(`acceptable={str(overhead['acceptable']).lower()}`).",
+                (
+                    f"Instrumentation clock overhead: {overhead['median_percent']:.3f}% "
+                    f"(`acceptable={str(overhead['acceptable']).lower()}`)."
+                ),
             ]
         )
     if comparisons := report.get("comparison"):
@@ -239,8 +241,10 @@ def markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "> Laptop and historical-log measurements demonstrate relative changes; they do not "
-            "prove absolute roboRIO execution time.",
+            (
+                "> Laptop and historical-log measurements demonstrate relative changes; they do not "
+                "prove absolute roboRIO execution time."
+            ),
             "",
         ]
     )
