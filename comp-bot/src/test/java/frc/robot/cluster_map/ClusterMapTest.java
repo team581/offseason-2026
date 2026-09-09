@@ -27,7 +27,7 @@ final class ClusterMapTest {
       for (int index = 0; index < random.nextInt(51); index++) {
         clusters.add(
             element(
-                random.nextBoolean() ? now - 0.01 : now + random.nextDouble(4.0),
+                random.nextBoolean() ? now - 0.01 : random.nextDouble(now, now + 4.0),
                 random.nextDouble(20.0),
                 random.nextDouble(10.0)));
       }
