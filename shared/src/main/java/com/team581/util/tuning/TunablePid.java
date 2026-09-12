@@ -49,7 +49,7 @@ public class TunablePid {
                 .apply(defaultConfig.MotionMagic.withMotionMagicCruiseVelocity(newMaxVelocity)));
     DogLog.tunable(
         key + "/MotionMagic/MaxAccel",
-        defaultConfig.MotionMagic.MotionMagicCruiseVelocity,
+        defaultConfig.MotionMagic.MotionMagicAcceleration,
         newMaxAccel ->
             motor
                 .getConfigurator()

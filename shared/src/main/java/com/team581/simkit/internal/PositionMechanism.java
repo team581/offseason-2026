@@ -34,7 +34,12 @@ public final class PositionMechanism {
             .mapToDouble(device -> device.motor().getClosedLoopReference().getValueAsDouble())
             .average()
             .orElse(0.0);
-    return new TrapezoidProfile.State(reference, 0.0);
+    var referenceVelocity =
+        devices.stream()
+            .mapToDouble(device -> device.motor().getClosedLoopReferenceSlope().getValueAsDouble())
+            .average()
+            .orElse(0.0);
+    return desiredMechanismState(reference, referenceVelocity);
   }
 
   private static TrapezoidProfile.Constraints getConfigConstraints(List<SimMotor> devices) {
@@ -86,11 +91,43 @@ public final class PositionMechanism {
     return Optional.empty();
   }
 
+  static TrapezoidProfile.State applyBounds(
+      TrapezoidProfile.State state, OptionalDouble minPosition, OptionalDouble maxPosition) {
+    var clampedPosition =
+        MathUtil.clamp(
+            state.position,
+            minPosition.orElse(Double.NEGATIVE_INFINITY),
+            maxPosition.orElse(Double.POSITIVE_INFINITY));
+
+    if (clampedPosition == state.position) {
+      return state;
+    }
+
+    return new TrapezoidProfile.State(clampedPosition, 0.0);
+  }
+
+  static TrapezoidProfile.State calculateProfile(
+      TrapezoidProfile.Constraints constraints,
+      double elapsedSeconds,
+      TrapezoidProfile.State currentState,
+      TrapezoidProfile.State wantedState) {
+    return new TrapezoidProfile(constraints).calculate(elapsedSeconds, currentState, wantedState);
+  }
+
+  static TrapezoidProfile.State desiredMechanismState(double position, double velocity) {
+    return new TrapezoidProfile.State(position, velocity);
+  }
+
+  static TrapezoidProfile.State disabledState(TrapezoidProfile.State currentState) {
+    return new TrapezoidProfile.State(currentState.position, 0.0);
+  }
+
   private final List<SimMotor> devices;
   private final OptionalDouble minPosition;
   private final OptionalDouble maxPosition;
   private final Timer updateTimer = new Timer();
   private boolean hasRefreshedConfigConstraints = false;
+
   private TrapezoidProfile.Constraints configConstraints = new TrapezoidProfile.Constraints(0, 0);
 
   PositionMechanism(List<SimMotor> motors, OptionalDouble minPosition, OptionalDouble maxPosition) {
@@ -121,17 +158,7 @@ public final class PositionMechanism {
   }
 
   private TrapezoidProfile.State applyBounds(TrapezoidProfile.State state) {
-    var clampedPosition =
-        MathUtil.clamp(
-            state.position,
-            minPosition.orElse(Double.NEGATIVE_INFINITY),
-            maxPosition.orElse(Double.POSITIVE_INFINITY));
-
-    if (clampedPosition == state.position) {
-      return state;
-    }
-
-    return new TrapezoidProfile.State(clampedPosition, 0.0);
+    return applyBounds(state, minPosition, maxPosition);
   }
 
   private void update(TrapezoidProfile.State wantedState) {
@@ -151,11 +178,11 @@ public final class PositionMechanism {
     var currentState = currentMechanismState(devices);
 
     var predictedState =
-        new TrapezoidProfile(constraints).calculate(updateTimer.get(), currentState, wantedState);
+        calculateProfile(constraints, updateTimer.get(), currentState, wantedState);
 
     // When disabled, overwrite predicted position to be current position and force 0 velocity
     if (DriverStation.isDisabled()) {
-      predictedState = new TrapezoidProfile.State(currentState.position, 0.0);
+      predictedState = disabledState(currentState);
     }
 
     var boundedState = applyBounds(predictedState);

@@ -76,7 +76,12 @@ public class Robot extends Base581Robot {
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
-  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
+  private final Turret turret =
+      new Turret(
+          hardware.turretMotor,
+          hardware.turretEncoder,
+          vision,
+          swerve::getDriverIntentTurretFeedForwardCorrection);
 
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
