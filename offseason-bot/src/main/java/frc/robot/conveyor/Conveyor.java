@@ -56,6 +56,10 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.EJECT);
   }
 
+  public void feedRequest() {
+    setStateFromRequest(ConveyorState.FEED);
+  }
+
   public void idleRequest() {
     setStateFromRequest(ConveyorState.IDLE);
   }
@@ -68,8 +72,8 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     setStateFromRequest(ConveyorState.INTAKE);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(ConveyorState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(ConveyorState.SCORE);
   }
 
   @Override

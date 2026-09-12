@@ -301,8 +301,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case UNJAMMING -> {
         deploy.intakeRequest();
         intake.ejectRequest();
-        conveyor.shootRequest();
-        feeder.shootRequest();
+        conveyor.scoreRequest();
+        feeder.scoreRequest();
       }
       case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
@@ -311,15 +311,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
-        intake.shootRequest();
+        intake.scoreRequest();
         conveyor.initialShotRequest();
-        feeder.shootRequest();
+        feeder.scoreRequest();
       }
       case SCORE_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        conveyor.shootRequest();
-        feeder.shootRequest();
+        conveyor.scoreRequest();
+        feeder.scoreRequest();
       }
 
       case FEED -> {
@@ -327,15 +327,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (deploy.getState() != DeployState.FEED_COMPACTION) {
           deploy.intakeRequest();
         }
-        intake.shootRequest();
+        intake.feeedRequest();
         conveyor.initialShotRequest();
-        feeder.shootRequest();
+        feeder.feedRequest();
       }
       case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        conveyor.shootRequest();
-        feeder.shootRequest();
+        conveyor.feedRequest();
+        feeder.feedRequest();
       }
     }
   }
@@ -398,8 +398,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           deploy.stowRequest();
         } else if (shouldBeastMode) {
           deploy.beastModeRequest();
-          intake.shootRequest();
-          conveyor.shootRequest();
+          intake.scoreRequest();
+          conveyor.scoreRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           double shuffleInterval =
               HopperManagerConfig.HOPPER_COMPACTION_SHUFFLE_INTERVAL.getAsDouble();
@@ -409,7 +409,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             deploy.intakeRequest();
           }
           intake.idleRequest();
-          conveyor.shootRequest();
+          conveyor.scoreRequest();
         } else {
           deploy.waitHopperCompactionRequest();
         }
@@ -424,7 +424,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.feedCompactionRequest();
           intake.idleRequest();
-          conveyor.shootRequest();
+          conveyor.feedRequest();
         }
       }
     }

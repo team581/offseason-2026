@@ -63,6 +63,10 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     setStateFromRequest(FeederState.EJECT);
   }
 
+  public void feedRequest() {
+    setStateFromRequest(FeederState.FEED);
+  }
+
   public double getAverageCurrent() {
     return averageCurrent;
   }
@@ -75,8 +79,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     setStateFromRequest(FeederState.INTAKING);
   }
 
-  public void shootRequest() {
-    setStateFromRequest(FeederState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(FeederState.SCORE);
   }
 
   @Override
