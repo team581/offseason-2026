@@ -1,5 +1,6 @@
 package frc.robot;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
@@ -9,7 +10,10 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
+import com.team581.util.profiling.DiagnosticCadence;
+import com.team581.util.profiling.LoopTiming;
 import dev.doglog.DogLog;
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
@@ -40,8 +44,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Robot extends Base581Robot {
-  private final Hardware hardware = new Hardware();
+  private static DogLogOptions compDogLogOptions() {
+    return new DogLogOptions()
+        .withCaptureDs(true)
+        .withNtPublish(GlobalConfig.IS_DEVELOPMENT)
+        .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
+        .withLogEntryQueueCapacity(4096)
+        .withUseLogThread(true);
+  }
 
+  private final Hardware hardware = new Hardware();
   private final Limelight shooterLimelight =
       new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
   private final Limelight leftLimelight =
@@ -50,6 +62,7 @@ public class Robot extends Base581Robot {
       new Limelight("right", LimelightState.TAGS, CameraConfigs.RIGHT);
   private final Limelight groundLimelight =
       new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
+
   private final HealthManager health =
       new HealthManager(shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
 
@@ -71,7 +84,6 @@ public class Robot extends Base581Robot {
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
-
   private final Shooter shooter =
       new Shooter(
           hardware.shooterTopLeftMotor,
@@ -85,14 +97,15 @@ public class Robot extends Base581Robot {
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
-
   private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
-  private final HubActivity hubActivity = new HubActivity();
 
+  private final HubActivity hubActivity = new HubActivity();
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
+
   private final HopperManager hopperManager =
       new HopperManager(
           deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
@@ -117,6 +130,11 @@ public class Robot extends Base581Robot {
   private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
+    super(compDogLogOptions());
+
+    DiagnosticCadence.setEnabled(true);
+    LoopTiming.setEnabled(true);
+
     logMetadata(
         BuildConstants.MAVEN_NAME,
         BuildConstants.BUILD_DATE,
@@ -147,6 +165,10 @@ public class Robot extends Base581Robot {
 
   @Override
   public void robotPeriodic() {
+    DiagnosticCadence.beginLoop();
+    LoopTiming.recordClockOverhead();
+    long loopStart = LoopTiming.start();
+
     super.robotPeriodic();
 
     if (FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() && !FmsUtil.isRedAlliance()) {
@@ -154,6 +176,8 @@ public class Robot extends Base581Robot {
     } else {
       DogLog.clearFault("Clamped auto points are enabled but current alliance is blue");
     }
+
+    LoopTiming.end("Scheduler/RobotPeriodicExecution", loopStart);
   }
 
   @Override
@@ -223,5 +247,71 @@ public class Robot extends Base581Robot {
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
         .onRelease(() -> robotManager.setTrenchOverrideRequest(false));
+  }
+
+  String benchmarkBehaviorSnapshot() {
+    return robotManager.getState()
+        + "|"
+        + hopperManager.getState()
+        + "|"
+        + swerve.getState()
+        + "|"
+        + shooter.getState()
+        + "|"
+        + shooterHood.getState()
+        + "|"
+        + intake.getState()
+        + "|"
+        + conveyor.getState()
+        + "|"
+        + feeder.getState()
+        + "|"
+        + deploy.getState()
+        + "|"
+        + swerve.getRequestedSpeeds()
+        + "|"
+        + shooterHood.getAngle()
+        + "|"
+        + deploy.getPosition()
+        + "|"
+        + localization.getPose()
+        + "|"
+        + clusterMap.getBestClusterLane()
+        + "|"
+        + clusterMap.getBestClusterPose();
+  }
+
+  /** Removes the native CAN-dependent odometry worker from deterministic desktop benchmarks. */
+  void benchmarkInitializeSimulation() {
+    hardware.drivetrain.getOdometryThread().stop();
+  }
+
+  /** Seeds deterministic desktop-simulation inputs before a benchmark loop. */
+  void benchmarkSimulationStep(double elapsedSeconds) {
+    hardware.drivetrain.updateSimState(0.020, 12.0);
+
+    double rotorVelocity = 5.0 * Math.sin(elapsedSeconds * 0.5);
+    TalonFX[] motors = {
+      hardware.deployDifferentialMechanism.getLeader(),
+      hardware.deployDifferentialMechanism.getFollower(),
+      hardware.intakeLeftMotor,
+      hardware.intakeRightMotor,
+      hardware.conveyorTopMotor,
+      hardware.conveyorBottomMotor,
+      hardware.feederTopMotor,
+      hardware.feederBottomMotor,
+      hardware.shooterHoodMotor,
+      hardware.shooterBottomLeftMotor,
+      hardware.shooterBottomRightMotor,
+      hardware.shooterTopLeftMotor,
+      hardware.shooterTopRightMotor
+    };
+    for (var motor : motors) {
+      motor.getSimState().setSupplyVoltage(12.0);
+      motor.getSimState().setRotorVelocity(rotorVelocity);
+    }
+
+    hardware.hopperCANRange.getSimState().setSupplyVoltage(12.0);
+    hardware.hopperCANRange.getSimState().setDistance(0.20 + 0.04 * Math.sin(elapsedSeconds));
   }
 }
