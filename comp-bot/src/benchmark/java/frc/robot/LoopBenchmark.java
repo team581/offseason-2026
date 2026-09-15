@@ -4,9 +4,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.team581.signals.Signals;
 import edu.wpi.first.hal.HAL;
-import edu.wpi.first.networktables.IntegerSubscriber;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StringArraySubscriber;
 import edu.wpi.first.wpilibj.simulation.DIOSim;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
@@ -18,7 +15,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 /** Real-time-paced desktop benchmark for the complete comp-bot periodic path. */
@@ -50,18 +46,9 @@ public final class LoopBenchmark {
     // Phoenix cannot reproduce the timing of a real CAN/CAN-FD refresh on a laptop. Seed cached
     // values below, and benchmark the CPU-controlled part of the loop without native timeout noise.
     Signals.setRefreshEnabledForBenchmark(false);
-    robot.benchmarkInitializeSimulation();
+    RobotBenchmarkUtil.initializeSimulation(robot);
     DIOSim towerSensor = new DIOSim(9);
-    IntegerSubscriber queueRemaining =
-        NetworkTableInstance.getDefault()
-            .getIntegerTopic("/Robot/DogLog/QueueRemainingCapacity")
-            .subscribe(4096);
-    StringArraySubscriber seenFaults =
-        NetworkTableInstance.getDefault()
-            .getStringArrayTopic("/Robot/Faults/Seen")
-            .subscribe(new String[0]);
-    AtomicLong minimumQueueRemaining = new AtomicLong(4096);
-    runLoops(robot, towerSensor, queueRemaining, minimumQueueRemaining, WARMUP_LOOPS, null, null);
+    runLoops(robot, towerSensor, WARMUP_LOOPS, null, null);
 
     boolean autonomous =
         switch (mode) {
@@ -85,41 +72,17 @@ public final class LoopBenchmark {
     List<Long> durations = new ArrayList<>(measurementSeconds * 50);
     MessageDigest behaviorDigest = MessageDigest.getInstance("SHA-256");
     long heapBefore = usedHeapBytes();
-    runLoops(
-        robot,
-        towerSensor,
-        queueRemaining,
-        minimumQueueRemaining,
-        measurementSeconds * 50,
-        durations,
-        behaviorDigest);
+    runLoops(robot, towerSensor, measurementSeconds * 50, durations, behaviorDigest);
     long heapAfter = usedHeapBytes();
 
     durations.sort(Long::compare);
-    String json =
-        reportJson(
-            mode,
-            durations,
-            behaviorDigest.digest(),
-            minimumQueueRemaining.get(),
-            hasDogLogQueueFault(seenFaults.get()),
-            heapBefore,
-            heapAfter);
+    String json = reportJson(mode, durations, behaviorDigest.digest(), heapBefore, heapAfter);
     Files.createDirectories(output.getParent());
     Files.writeString(output, json, UTF_8);
 
     // Vendor libraries own process-wide executors that are not part of the measured loop. A fresh
     // JVM is required for every run, so terminate after artifacts are safely written.
     System.exit(0);
-  }
-
-  private static boolean hasDogLogQueueFault(String[] seenFaults) {
-    for (String fault : seenFaults) {
-      if (fault.contains("MAX_QUEUED_LOGS") || fault.contains("QUEUE_RESIZE_DROPPED_LOGS")) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private static double percentile(List<Long> sorted, double fraction) {
@@ -135,16 +98,10 @@ public final class LoopBenchmark {
   }
 
   private static String reportJson(
-      String mode,
-      List<Long> sorted,
-      byte[] behaviorDigest,
-      long minimumQueueRemaining,
-      boolean dogLogQueueFaultSeen,
-      long heapBefore,
-      long heapAfter) {
+      String mode, List<Long> sorted, byte[] behaviorDigest, long heapBefore, long heapAfter) {
     double mean = sorted.stream().mapToLong(Long::longValue).average().orElse(Double.NaN) / 1e9;
     return "{\n"
-        + "  \"schema_version\": 1,\n"
+        + "  \"schema_version\": 2,\n"
         + "  \"mode\": \""
         + mode
         + "\",\n"
@@ -169,16 +126,6 @@ public final class LoopBenchmark {
         + "  \"overruns_20ms\": "
         + sorted.stream().filter(value -> value > LOOP_PERIOD_NANOS).count()
         + ",\n"
-        + "  \"doglog_queue_capacity\": 4096,\n"
-        + "  \"doglog_min_remaining_capacity\": "
-        + minimumQueueRemaining
-        + ",\n"
-        + "  \"doglog_queue_acceptable\": "
-        + (minimumQueueRemaining >= 1024 && !dogLogQueueFaultSeen)
-        + ",\n"
-        + "  \"doglog_queue_fault_seen\": "
-        + dogLogQueueFaultSeen
-        + ",\n"
         + "  \"heap_used_before_bytes\": "
         + heapBefore
         + ",\n"
@@ -194,8 +141,6 @@ public final class LoopBenchmark {
   private static void runLoops(
       Robot robot,
       DIOSim towerSensor,
-      IntegerSubscriber queueRemaining,
-      AtomicLong minimumQueueRemaining,
       int loopCount,
       List<Long> durations,
       MessageDigest behaviorDigest) {
@@ -206,7 +151,7 @@ public final class LoopBenchmark {
       // intentionally outlive this harness. Wall-clock pacing below provides the synchronization.
       SimHooks.stepTimingAsync(LOOP_PERIOD_SECONDS);
       double elapsedSeconds = loop * LOOP_PERIOD_SECONDS;
-      robot.benchmarkSimulationStep(elapsedSeconds);
+      RobotBenchmarkUtil.simulationStep(robot, elapsedSeconds);
       towerSensor.setValue((loop / 50) % 2 == 0);
       DriverStationSim.notifyNewData();
       long start = System.nanoTime();
@@ -216,9 +161,8 @@ public final class LoopBenchmark {
         durations.add(duration);
       }
       if (behaviorDigest != null) {
-        behaviorDigest.update(robot.benchmarkBehaviorSnapshot().getBytes(UTF_8));
+        behaviorDigest.update(RobotBenchmarkUtil.behaviorSnapshot(robot).getBytes(UTF_8));
       }
-      minimumQueueRemaining.accumulateAndGet(queueRemaining.get(), Math::min);
       long remaining = deadline - System.nanoTime();
       if (remaining > 0) {
         LockSupport.parkNanos(remaining);

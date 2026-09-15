@@ -5,11 +5,14 @@ from analyze_loop_timing import analyze, compare, percentile, robot_mode, summar
 
 class LoopTimingTest(unittest.TestCase):
     def test_percentile_interpolates(self):
-        self.assertEqual(percentile([0.0, 1.0, 2.0, 3.0], 0.5), 1.5)
+        self.assertEqual(percentile([3.0, 0.0, 2.0, 1.0], 0.5), 1.5)
+        self.assertAlmostEqual(percentile([0.0, 1.0, 2.0, 3.0], 0.95), 2.85)
 
     def test_summarize_counts_overruns(self):
         result = summarize([0.001, 0.010, 0.021, float("nan"), -1.0])
         self.assertEqual(result["count"], 3)
+        self.assertAlmostEqual(result["mean"], (0.001 + 0.010 + 0.021) / 3)
+        self.assertEqual(result["max"], 0.021)
         self.assertEqual(result["overruns_20ms"], 1)
 
     def test_robot_mode(self):

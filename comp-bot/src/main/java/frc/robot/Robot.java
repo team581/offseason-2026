@@ -1,6 +1,5 @@
 package frc.robot;
 
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
@@ -13,7 +12,6 @@ import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.profiling.LoopTiming;
 import dev.doglog.DogLog;
-import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
@@ -44,15 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Robot extends Base581Robot {
-  private static DogLogOptions compDogLogOptions() {
-    return new DogLogOptions()
-        .withCaptureDs(true)
-        .withNtPublish(GlobalConfig.IS_DEVELOPMENT)
-        .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
-        .withLogEntryQueueCapacity(4096)
-        .withUseLogThread(true);
-  }
-
   private final Hardware hardware = new Hardware();
   private final Limelight shooterLimelight =
       new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
@@ -130,8 +119,6 @@ public class Robot extends Base581Robot {
   private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
-    super(compDogLogOptions());
-
     DiagnosticCadence.setEnabled(true);
     LoopTiming.setEnabled(true);
 
@@ -151,7 +138,6 @@ public class Robot extends Base581Robot {
     if (GlobalConfig.IS_DEVELOPMENT) {
       FieldUtil.debugLogFieldZones();
     }
-
     if (RobotBase.isSimulation()) {
       try {
         var docsDir = Path.of(System.getProperty("user.dir")).resolve("../docs");
@@ -247,71 +233,5 @@ public class Robot extends Base581Robot {
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
         .onRelease(() -> robotManager.setTrenchOverrideRequest(false));
-  }
-
-  String benchmarkBehaviorSnapshot() {
-    return robotManager.getState()
-        + "|"
-        + hopperManager.getState()
-        + "|"
-        + swerve.getState()
-        + "|"
-        + shooter.getState()
-        + "|"
-        + shooterHood.getState()
-        + "|"
-        + intake.getState()
-        + "|"
-        + conveyor.getState()
-        + "|"
-        + feeder.getState()
-        + "|"
-        + deploy.getState()
-        + "|"
-        + swerve.getRequestedSpeeds()
-        + "|"
-        + shooterHood.getAngle()
-        + "|"
-        + deploy.getPosition()
-        + "|"
-        + localization.getPose()
-        + "|"
-        + clusterMap.getBestClusterLane()
-        + "|"
-        + clusterMap.getBestClusterPose();
-  }
-
-  /** Removes the native CAN-dependent odometry worker from deterministic desktop benchmarks. */
-  void benchmarkInitializeSimulation() {
-    hardware.drivetrain.getOdometryThread().stop();
-  }
-
-  /** Seeds deterministic desktop-simulation inputs before a benchmark loop. */
-  void benchmarkSimulationStep(double elapsedSeconds) {
-    hardware.drivetrain.updateSimState(0.020, 12.0);
-
-    double rotorVelocity = 5.0 * Math.sin(elapsedSeconds * 0.5);
-    TalonFX[] motors = {
-      hardware.deployDifferentialMechanism.getLeader(),
-      hardware.deployDifferentialMechanism.getFollower(),
-      hardware.intakeLeftMotor,
-      hardware.intakeRightMotor,
-      hardware.conveyorTopMotor,
-      hardware.conveyorBottomMotor,
-      hardware.feederTopMotor,
-      hardware.feederBottomMotor,
-      hardware.shooterHoodMotor,
-      hardware.shooterBottomLeftMotor,
-      hardware.shooterBottomRightMotor,
-      hardware.shooterTopLeftMotor,
-      hardware.shooterTopRightMotor
-    };
-    for (var motor : motors) {
-      motor.getSimState().setSupplyVoltage(12.0);
-      motor.getSimState().setRotorVelocity(rotorVelocity);
-    }
-
-    hardware.hopperCANRange.getSimState().setSupplyVoltage(12.0);
-    hardware.hopperCANRange.getSimState().setDistance(0.20 + 0.04 * Math.sin(elapsedSeconds));
   }
 }

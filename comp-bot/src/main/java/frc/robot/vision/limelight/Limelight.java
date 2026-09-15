@@ -162,9 +162,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     } else {
       LimelightHelpers.SetThrottle(limelightTableName, 0);
     }
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      DogLog.log(stateKey, getState());
-    }
+    DogLog.log(stateKey, getState());
 
     if (getState() == LimelightState.TAGS || getState() == LimelightState.HUB_TAGS) {
       if (Timer.getTimestamp() - lastGoodTagTimestamp > 30) {

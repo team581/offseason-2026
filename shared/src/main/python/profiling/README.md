@@ -1,7 +1,8 @@
 # Robot loop profiling
 
 The loop analyzer reads one or more WPILOG files, removes the first two seconds after startup and
-each Driver Station mode transition, and emits machine-readable JSON plus a Markdown report.
+each Driver Station mode transition, and emits machine-readable JSON plus a Markdown report. Run it
+through the existing uv project so its WPILOG and NumPy dependencies are available.
 
 ```sh
 cd shared/src/main/python/profiling

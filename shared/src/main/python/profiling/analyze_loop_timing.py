@@ -5,15 +5,22 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import statistics
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import wpiutil.log
+import numpy as np
 
 SCHEDULER_PREFIX = "/Robot/Scheduler/"
 BUILD_SHA_KEY = "/Robot/Metadata/GitSHA"
+
+
+def percentile(values: list[float], fraction: float) -> float:
+    """Return an interpolated percentile while keeping the analyzer's small public API."""
+    if not values:
+        return math.nan
+    return float(np.percentile(np.asarray(values, dtype=float), fraction * 100.0))
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,30 +37,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def percentile(sorted_values: list[float], fraction: float) -> float:
-    if not sorted_values:
-        return math.nan
-    position = (len(sorted_values) - 1) * fraction
-    lower = math.floor(position)
-    upper = math.ceil(position)
-    if lower == upper:
-        return sorted_values[lower]
-    weight = position - lower
-    return sorted_values[lower] * (1.0 - weight) + sorted_values[upper] * weight
-
-
 def summarize(values: list[float]) -> dict[str, float | int]:
-    finite = sorted(value for value in values if math.isfinite(value) and value >= 0.0)
-    if not finite:
+    finite = np.asarray(
+        [value for value in values if math.isfinite(value) and value >= 0.0], dtype=float
+    )
+    if finite.size == 0:
         return {"count": 0}
     return {
-        "count": len(finite),
-        "mean": statistics.fmean(finite),
-        "p50": percentile(finite, 0.50),
-        "p95": percentile(finite, 0.95),
-        "p99": percentile(finite, 0.99),
-        "max": finite[-1],
-        "overruns_20ms": sum(value > 0.020 for value in finite),
+        "count": int(finite.size),
+        "mean": float(np.mean(finite)),
+        "p50": percentile(finite.tolist(), 0.50),
+        "p95": percentile(finite.tolist(), 0.95),
+        "p99": percentile(finite.tolist(), 0.99),
+        "max": float(np.max(finite)),
+        "overruns_20ms": int(np.count_nonzero(finite > 0.020)),
     }
 
 

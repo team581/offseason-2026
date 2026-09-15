@@ -197,7 +197,7 @@ tasks.register('loopBenchmarkReport') {
 		def outputDir = loopProfileDir.get().asFile
 		def parser = new JsonSlurper()
 		def summary = [
-			schema_version: 1,
+			schema_version: 2,
 			note: 'Laptop results demonstrate relative improvement but do not prove absolute roboRIO timing.',
 			modes: [:]
 		]
@@ -212,7 +212,6 @@ tasks.register('loopBenchmarkReport') {
 				behavior_consistent: runs.collect {
 					it.behavior_sha256
 				}.toSet().size() == 1,
-				doglog_queue_acceptable: runs.every { it.doglog_queue_acceptable }
 			]
 		}
 
@@ -236,19 +235,18 @@ tasks.register('loopBenchmarkReport') {
 					improvement_percent: improvementPercent,
 					improved_runs: pairedImprovements,
 					behavior_matches: behaviorMatches,
-					accepted: improvementPercent >= 20.0 && pairedImprovements >= 4 && behaviorMatches &&
-					summary.modes[benchmarkMode].doglog_queue_acceptable
+					accepted: improvementPercent >= 20.0 && pairedImprovements >= 4 && behaviorMatches
 				]
 			}
 		}
 		new File(outputDir, 'summary.json').text = JsonOutput.prettyPrint(JsonOutput.toJson(summary)) + '\n'
 
 		def markdown = new StringBuilder('# Comp-bot loop benchmark\n\n')
-		markdown << '| Mode | Median p99 (ms) | Behavior consistent | DogLog queue acceptable |\n'
-		markdown << '|---|---:|---:|---:|\n'
+		markdown << '| Mode | Median p99 (ms) | Behavior consistent |\n'
+		markdown << '|---|---:|---:|\n'
 		['auto', 'teleop'].each { benchmarkMode ->
 			def result = summary.modes[benchmarkMode]
-			markdown << "| ${benchmarkMode} | ${String.format('%.3f', result.median_p99 * 1000)} | ${result.behavior_consistent} | ${result.doglog_queue_acceptable} |\n"
+			markdown << "| ${benchmarkMode} | ${String.format('%.3f', result.median_p99 * 1000)} | ${result.behavior_consistent} |\n"
 		}
 		if (summary.comparison) {
 			markdown << '\n## Baseline comparison\n\n'

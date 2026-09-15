@@ -5,7 +5,9 @@ import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.tuning.ElasticLayoutUtil;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
@@ -15,6 +17,15 @@ import edu.wpi.first.wpilibj.event.EventLoop;
 
 public abstract class Base581Robot extends TimedRobot {
   private static final String FINALIZE_INIT_FAULT = "Robot finalizeInit() never called";
+  private static int limelightNtLogHandle = -1;
+
+  private static synchronized void registerLimelightNtLogging() {
+    if (limelightNtLogHandle == -1) {
+      limelightNtLogHandle =
+          NetworkTableInstance.getDefault()
+              .startEntryDataLog(DataLogManager.getLog(), "/limelight-", "NT:/limelight-");
+    }
+  }
 
   protected final EventLoop buttonBindingsLoop = new EventLoop();
 
@@ -25,20 +36,18 @@ public abstract class Base581Robot extends TimedRobot {
   private boolean isInitialized = false;
 
   public Base581Robot() {
-    this(
+    DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
+
+    SignalLogger.start();
+
+    DogLog.setOptions(
         new DogLogOptions()
             .withCaptureDs(true)
             .withNtPublish(GlobalConfig.IS_DEVELOPMENT)
             .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
             .withUseLogThread(false));
-  }
 
-  protected Base581Robot(DogLogOptions dogLogOptions) {
-    DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
-
-    SignalLogger.start();
-
-    DogLog.setOptions(dogLogOptions);
+    registerLimelightNtLogging();
 
     DogLog.log("Metadata/RoborioSerialNumber", RobotController.getSerialNumber());
 

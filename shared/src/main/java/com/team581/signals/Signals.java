@@ -3,6 +3,7 @@ package com.team581.signals;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignalCollection;
 import com.ctre.phoenix6.hardware.ParentDevice;
+import edu.wpi.first.wpilibj.RobotBase;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +45,9 @@ public final class Signals {
 
   /** Disables native refresh waits in deterministic desktop benchmarks. */
   public static void setRefreshEnabledForBenchmark(boolean enabled) {
+    if (!RobotBase.isSimulation()) {
+      return;
+    }
     refreshEnabled = enabled;
   }
 
