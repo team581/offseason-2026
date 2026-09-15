@@ -9,8 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-import wpiutil.log
 import numpy as np
+import wpiutil.log
 
 SCHEDULER_PREFIX = "/Robot/Scheduler/"
 BUILD_SHA_KEY = "/Robot/Metadata/GitSHA"
@@ -39,7 +39,8 @@ def parse_args() -> argparse.Namespace:
 
 def summarize(values: list[float]) -> dict[str, float | int]:
     finite = np.asarray(
-        [value for value in values if math.isfinite(value) and value >= 0.0], dtype=float
+        [value for value in values if math.isfinite(value) and value >= 0.0],
+        dtype=float,
     )
     if finite.size == 0:
         return {"count": 0}
