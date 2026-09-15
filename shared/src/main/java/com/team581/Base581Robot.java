@@ -25,16 +25,20 @@ public abstract class Base581Robot extends TimedRobot {
   private boolean isInitialized = false;
 
   public Base581Robot() {
-    DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
-
-    SignalLogger.start();
-
-    DogLog.setOptions(
+    this(
         new DogLogOptions()
             .withCaptureDs(true)
             .withNtPublish(GlobalConfig.IS_DEVELOPMENT)
             .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
             .withUseLogThread(false));
+  }
+
+  protected Base581Robot(DogLogOptions dogLogOptions) {
+    DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
+
+    SignalLogger.start();
+
+    DogLog.setOptions(dogLogOptions);
 
     DogLog.log("Metadata/RoborioSerialNumber", RobotController.getSerialNumber());
 

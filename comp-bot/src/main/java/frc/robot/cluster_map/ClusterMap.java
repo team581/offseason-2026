@@ -1,11 +1,9 @@
 package frc.robot.cluster_map;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static java.util.Map.Entry.comparingByValue;
-
 import com.team581.math.GamePieceDetectionCalculator;
 import com.team581.math.MathHelpers;
 import com.team581.util.FieldUtil;
+import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.results.GamePieceResult;
@@ -28,7 +26,7 @@ import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
@@ -72,20 +70,74 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     return Math.PI * (expectedWidthPx / 2.0) * (expectedHeightPx / 2.0);
   }
 
+  private static Lane scoringLane(int index) {
+    return switch (index) {
+      case 0 -> Lane.LANE_0;
+      case 1 -> Lane.LANE_1;
+      case 2 -> Lane.LANE_2;
+      case 3 -> Lane.LANE_3;
+      case 4 -> Lane.LANE_4;
+      default -> Lane.NONE;
+    };
+  }
+
+  private static int scoringLaneIndex(Lane lane) {
+    return switch (lane) {
+      case LANE_0 -> 0;
+      case LANE_1 -> 1;
+      case LANE_2 -> 2;
+      case LANE_3 -> 3;
+      case LANE_4 -> 4;
+      case TRENCH, NONE -> -1;
+    };
+  }
+
+  static Lane chooseBestLane(int[] counts, int[] firstSeen) {
+    Lane best = Lane.NONE;
+    int bestCount = Integer.MIN_VALUE;
+    int bestFirstSeen = Integer.MAX_VALUE;
+    for (int i = 0; i < counts.length; i++) {
+      if (firstSeen[i] != Integer.MAX_VALUE
+          && (counts[i] > bestCount || (counts[i] == bestCount && firstSeen[i] < bestFirstSeen))) {
+        best = scoringLane(i);
+        bestCount = counts[i];
+        bestFirstSeen = firstSeen[i];
+      }
+    }
+    return best;
+  }
+
+  static ClusterMapElement findClosestCluster(
+      List<ClusterMapElement> clusters, Translation2d visionTranslation, double newClusterExpiry) {
+    ClusterMapElement existingElement = null;
+    double closestDistance = Double.POSITIVE_INFINITY;
+    for (ClusterMapElement rememberedCluster : clusters) {
+      double distance = rememberedCluster.clusterTranslation().getDistance(visionTranslation);
+      if (rememberedCluster.expiresAt() != newClusterExpiry
+          && distance < SAME_CLUSTER_DETECTION_THRESHOLD_METERS
+          && distance < closestDistance) {
+        existingElement = rememberedCluster;
+        closestDistance = distance;
+      }
+    }
+    return existingElement;
+  }
+
   private Lane bestLane = Lane.LANE_0;
   private Optional<Pose2d> bestPose = Optional.empty();
-
   private final Limelight limelight;
-
   private final ArrayList<ClusterMapElement> clusterMap = new ArrayList<>();
   private double[] previousResult = new double[0];
   private boolean staleData = false;
+
   private ChassisSpeeds swerveSpeeds = new ChassisSpeeds();
   private Localization localization;
   private Swerve swerve;
 
   private boolean deployFullyExtended = false;
+
   private boolean hasDoneWarmup = false;
+
   private int warmupTickCount = 0;
 
   private final GamePieceResult gamePieceResult = new GamePieceResult();
@@ -119,23 +171,22 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     var robotPose = localization.getPose();
     DogLog.timestamp("ClusterMap/RanBestLane");
 
-    return clusterMap.stream()
-        // Sum up total detected balls per lane
-        .collect(
-            toImmutableMap(
-                element ->
-                    laneSystem.getLane(
-                        new Pose2d(element.clusterTranslation(), Rotation2d.kZero), robotPose),
-                element -> (int) element.detectionSize(),
-                Integer::sum))
-        .entrySet()
-        .stream()
-        // Only consider actual scoring lanes
-        .filter(entry -> entry.getKey() != Lane.NONE && entry.getKey() != Lane.TRENCH)
-        // Pick the lane with the highest ball count
-        .max(comparingByValue())
-        .map(Map.Entry::getKey)
-        .orElse(Lane.NONE);
+    int[] counts = new int[5];
+    int[] firstSeen = {
+      Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE
+    };
+    int encounterIndex = 0;
+    for (ClusterMapElement element : clusterMap) {
+      Lane lane =
+          laneSystem.getLane(new Pose2d(element.clusterTranslation(), Rotation2d.kZero), robotPose);
+      int laneIndex = scoringLaneIndex(lane);
+      if (laneIndex >= 0) {
+        counts[laneIndex] += (int) element.detectionSize();
+        firstSeen[laneIndex] = Math.min(firstSeen[laneIndex], encounterIndex);
+      }
+      encounterIndex++;
+    }
+    return chooseBestLane(counts, firstSeen);
   }
 
   private Optional<Pose2d> calculateBestClusterPose() {
@@ -349,30 +400,19 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
     var visionSize = visionData.size();
     var visionScore = visionData.score();
 
-    clusterMap.removeIf(element -> element.expiresAt() < Timer.getFPGATimestamp());
+    double now = Timer.getFPGATimestamp();
+    clusterMap.removeIf(element -> element.expiresAt() < now);
 
     if (staleData) {
       return;
     }
 
-    double newClusterExpiry = Timer.getFPGATimestamp() + CLUSTER_LIFETIME_SECONDS;
+    double newClusterExpiry = now + CLUSTER_LIFETIME_SECONDS;
 
-    Optional<ClusterMapElement> match =
-        clusterMap.stream()
-            .filter(
-                rememberedCluster -> {
-                  return rememberedCluster.expiresAt() != newClusterExpiry
-                      && (rememberedCluster.clusterTranslation().getDistance(visionTranslation)
-                          < SAME_CLUSTER_DETECTION_THRESHOLD_METERS);
-                })
-            .min(
-                (a, b) ->
-                    Double.compare(
-                        a.clusterTranslation().getDistance(visionTranslation),
-                        b.clusterTranslation().getDistance(visionTranslation)));
+    ClusterMapElement existingElement =
+        findClosestCluster(clusterMap, visionTranslation, newClusterExpiry);
 
-    if (match.isPresent()) {
-      var existingElement = match.orElseThrow();
+    if (existingElement != null) {
       var health = Math.min(existingElement.health() + 1, 20);
 
       // Blend the old position with the newly observed position
@@ -427,21 +467,24 @@ public class ClusterMap extends StateMachineSubsystem<ClusterMapState> {
   @Override
   protected void whileInState(ClusterMapState state) {
     if (DriverStation.isAutonomous() && FeatureFlags.CLUSTER_MAP.getAsBoolean()) {
-
-      try {
-        DogLog.log("ClusterMap/Clusters", clusterMap.stream().toArray(ClusterMapElement[]::new));
-        DogLog.log(
-            "ClusterMap/Clusters/ClusterPoses",
-            clusterMap.stream()
-                .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
-                .toArray(Pose2d[]::new));
-      } catch (RuntimeException error) {
-        DogLog.logFault("ClusterMapLoggingError");
-        System.err.println(error);
+      if (DiagnosticCadence.shouldLogHeavy()) {
+        try {
+          DogLog.log("ClusterMap/Clusters", clusterMap.toArray(ClusterMapElement[]::new));
+          DogLog.log(
+              "ClusterMap/Clusters/ClusterPoses",
+              clusterMap.stream()
+                  .map(l -> new Pose2d(l.clusterTranslation(), Rotation2d.kZero))
+                  .toArray(Pose2d[]::new));
+        } catch (RuntimeException error) {
+          DogLog.logFault("ClusterMapLoggingError");
+          System.err.println(error);
+        }
       }
     }
-    DogLog.log("ClusterMap/HasDoneWarmup", hasDoneWarmup);
-    DogLog.log("ClusterMap/WarmupTickCount", warmupTickCount);
+    if (DiagnosticCadence.shouldLogRoutine()) {
+      DogLog.log("ClusterMap/HasDoneWarmup", hasDoneWarmup);
+      DogLog.log("ClusterMap/WarmupTickCount", warmupTickCount);
+    }
 
     if (warmupTickCount < WARMUP_TARGET_TICKS) {
       DogLog.logFault("Cluster map warmup still running", AlertType.kWarning);

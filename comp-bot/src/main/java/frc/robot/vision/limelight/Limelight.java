@@ -6,6 +6,7 @@ import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.FmsUtil;
 import com.team581.util.ReusableOptional;
+import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
@@ -51,7 +52,14 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   public final String limelightTableName;
 
   public final CameraConfig config;
-  private final String name;
+  private final String healthKey;
+  private final String heartbeatKey;
+  private final String mtTimestampKey;
+  private final String rawPoseKey;
+  private final String stateKey;
+  private final String timestampDifferenceKey;
+  private final String noTagsFault;
+  private final String offlineFault;
   private final PoseEstimateValidator poseEstimateValidator;
   private final Timer limelightTimer = new Timer();
 
@@ -78,7 +86,15 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   public Limelight(String name, LimelightState initialState, CameraConfig config) {
     super(SubsystemPriority.VISION, initialState);
     limelightTableName = "limelight-" + name;
-    this.name = name;
+    String logPrefix = "Vision/" + name;
+    healthKey = logPrefix + "/Health";
+    heartbeatKey = logPrefix + "/Heartbeat";
+    mtTimestampKey = logPrefix + "/Tags/MTTimestamp";
+    rawPoseKey = logPrefix + "/Tags/RawLimelightPose";
+    stateKey = logPrefix + "/State";
+    timestampDifferenceKey = logPrefix + "/Tags/TimestampDifference";
+    noTagsFault = limelightTableName + " has not seen a tag in the last 30 seconds";
+    offlineFault = name.toUpperCase(Locale.US) + " LIMELIGHT IS OFFLINE";
     limelightTimer.start();
     this.config = config;
     this.poseEstimateValidator = new PoseEstimateValidator(name);
@@ -146,17 +162,18 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     } else {
       LimelightHelpers.SetThrottle(limelightTableName, 0);
     }
-    DogLog.log("Vision/" + name + "/State", getState());
+    if (DiagnosticCadence.shouldLogRoutine()) {
+      DogLog.log(stateKey, getState());
+    }
 
     if (getState() == LimelightState.TAGS || getState() == LimelightState.HUB_TAGS) {
       if (Timer.getTimestamp() - lastGoodTagTimestamp > 30) {
-        DogLog.logFault(
-            limelightTableName + " has not seen a tag in the last 30 seconds", AlertType.kWarning);
+        DogLog.logFault(noTagsFault, AlertType.kWarning);
       } else {
-        DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
+        DogLog.clearFault(noTagsFault);
       }
     } else {
-      DogLog.clearFault(limelightTableName + " has not seen a tag in the last 30 seconds");
+      DogLog.clearFault(noTagsFault);
     }
 
     LimelightHelpers.setPipelineIndex(limelightTableName, getState().pipelineIndex);
@@ -175,7 +192,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       case OFF -> {}
     }
 
-    DogLog.log("Vision/" + name + "/Health", cameraHealth);
+    if (DiagnosticCadence.shouldLogRoutine()) {
+      DogLog.log(healthKey, cameraHealth);
+    }
 
     LimelightHelpers.SetIMUMode(limelightTableName, 0);
   }
@@ -227,7 +246,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     latestEstimateTrusted = false;
 
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
-      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
+      if (DiagnosticCadence.shouldLogHeavy()) {
+        DogLog.log(rawPoseKey, Pose2d.kZero);
+      }
       return tagResult.empty();
     }
 
@@ -235,7 +256,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     latestEstimate = mT1Estimate;
 
     if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity, robotHeading)) {
-      DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
+      if (DiagnosticCadence.shouldLogHeavy()) {
+        DogLog.log(rawPoseKey, Pose2d.kZero);
+      }
       return tagResult.empty();
     }
 
@@ -256,7 +279,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
       if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, robotHeading)) {
-        DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", Pose2d.kZero);
+        if (DiagnosticCadence.shouldLogHeavy()) {
+          DogLog.log(rawPoseKey, Pose2d.kZero);
+        }
         return tagResult.empty();
       }
 
@@ -275,12 +300,13 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     reusableStdDevs.set(1, 0, xyDev);
     reusableStdDevs.set(2, 0, thetaDev);
 
-    DogLog.log(
-        "Vision/" + name + "/Tags/TimestampDifference",
-        Timer.getFPGATimestamp() - mTEstimateTimestamp);
-
-    DogLog.log("Vision/" + name + "/Tags/RawLimelightPose", mTPose);
-    DogLog.log("Vision/" + name + "/Tags/MTTimestamp", mTEstimateTimestamp);
+    if (DiagnosticCadence.shouldLogRoutine()) {
+      DogLog.log(timestampDifferenceKey, Timer.getFPGATimestamp() - mTEstimateTimestamp);
+      DogLog.log(mtTimestampKey, mTEstimateTimestamp);
+    }
+    if (DiagnosticCadence.shouldLogHeavy()) {
+      DogLog.log(rawPoseKey, mTPose);
+    }
     return tagResult.update(mTPose, mTEstimateTimestamp, reusableStdDevs);
   }
 
@@ -294,7 +320,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   private void updateHealth(boolean hasTargets) {
     var newHeartbeat = LimelightHelpers.getHeartbeat(limelightTableName);
-    DogLog.log("Vision/" + name + "/Heartbeat", newHeartbeat);
+    if (DiagnosticCadence.shouldLogRoutine()) {
+      DogLog.log(heartbeatKey, newHeartbeat);
+    }
     if (limelightHeartbeat != newHeartbeat) {
       limelightTimer.restart();
     }
@@ -302,10 +330,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     if (limelightTimer.hasElapsed(IS_OFFLINE_TIMEOUT) && RobotBase.isReal()) {
       cameraHealth = CameraHealth.OFFLINE;
-      DogLog.logFault(name.toUpperCase(Locale.US) + " LIMELIGHT IS OFFLINE", AlertType.kError);
+      DogLog.logFault(offlineFault, AlertType.kError);
       return;
     } else {
-      DogLog.clearFault(name.toUpperCase(Locale.US) + " LIMELIGHT IS OFFLINE");
+      DogLog.clearFault(offlineFault);
     }
 
     if (hasTargets) {
