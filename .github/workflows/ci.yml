@@ -89,3 +89,32 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Check formatting
         run: ./gradlew spotlessCheck
+  ruff:
+    name: Lint Python
+
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@v7
+      - name: Lint with Ruff
+        uses: astral-sh/ruff-action@v4.1.0
+      - name: Check formatting with Ruff
+        run: ruff format --check
+  ty:
+    name: Type check Python
+
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+
+    steps:
+      - name: Checkout Git repository
+        uses: actions/checkout@v7
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+          prune-cache: false
+      - name: Install dependencies
+        run: uv sync --all-packages
+      - name: Type check with ty
+        run: uv run --all-packages ty check
