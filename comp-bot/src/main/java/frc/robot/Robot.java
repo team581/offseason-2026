@@ -48,11 +48,8 @@ public class Robot extends Base581Robot {
       new Limelight("left", LimelightState.TAGS, CameraConfigs.LEFT);
   private final Limelight rightLimelight =
       new Limelight("right", LimelightState.TAGS, CameraConfigs.RIGHT);
-  private final Limelight groundLimelight =
-      new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
-
   private final HealthManager health =
-      new HealthManager(shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
+      new HealthManager(shooterLimelight, leftLimelight, rightLimelight);
 
   private final Imu imu = new Imu(hardware.drivetrain);
 
@@ -80,8 +77,7 @@ public class Robot extends Base581Robot {
           hardware.shooterBottomRightMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
   private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
-  private final Vision vision =
-      new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
+  private final Vision vision = new Vision(imu, shooterLimelight, leftLimelight, rightLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);

@@ -3,8 +3,7 @@ package frc.robot.vision.limelight;
 public enum LimelightState {
   OFF(1),
   TAGS(1),
-  HUB_TAGS(1),
-  CLUSTER_MAP(2);
+  HUB_TAGS(1);
 
   final int pipelineIndex;
 

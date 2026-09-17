@@ -20,8 +20,6 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private final Limelight leftLimelight;
   private final Limelight rightLimelight;
 
-  private final Limelight groundLimelight;
-
   private OptionalTagResult shooterResult = new OptionalTagResult();
   private OptionalTagResult leftResult = new OptionalTagResult();
   private OptionalTagResult rightResult = new OptionalTagResult();
@@ -36,17 +34,12 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   private boolean seeingHubTags = false;
 
   public Vision(
-      Imu imu,
-      Limelight shooterLimelight,
-      Limelight leftLimelight,
-      Limelight rightLimelight,
-      Limelight groundLimelight) {
+      Imu imu, Limelight shooterLimelight, Limelight leftLimelight, Limelight rightLimelight) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.imu = imu;
     this.shooterLimelight = shooterLimelight;
     this.leftLimelight = leftLimelight;
     this.rightLimelight = rightLimelight;
-    this.groundLimelight = groundLimelight;
   }
 
   public OptionalTagResult getLeftLimelightTagResult() {
@@ -107,20 +100,16 @@ public class Vision extends StateMachineSubsystem<VisionState> {
         shooterLimelight.setState(LimelightState.TAGS);
         leftLimelight.setState(LimelightState.TAGS);
         rightLimelight.setState(LimelightState.TAGS);
-
-        groundLimelight.setState(LimelightState.CLUSTER_MAP);
       }
       case HUB_TAGS -> {
         shooterLimelight.setState(LimelightState.HUB_TAGS);
         leftLimelight.setState(LimelightState.HUB_TAGS);
         rightLimelight.setState(LimelightState.HUB_TAGS);
-        groundLimelight.setState(LimelightState.CLUSTER_MAP);
       }
       case WAITING_FOR_HUB_TAGS -> {
         shooterLimelight.setState(LimelightState.TAGS);
         leftLimelight.setState(LimelightState.TAGS);
         rightLimelight.setState(LimelightState.TAGS);
-        groundLimelight.setState(LimelightState.CLUSTER_MAP);
       }
       default -> {}
     }
