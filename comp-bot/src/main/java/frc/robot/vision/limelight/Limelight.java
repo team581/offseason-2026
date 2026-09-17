@@ -184,9 +184,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, getActiveHubTags());
         updateHealth(tagResult);
       }
-      case CLUSTER_MAP -> {
-        updateHealth(LimelightHelpers.getTV(limelightTableName));
-      }
       case OFF -> {}
     }
 

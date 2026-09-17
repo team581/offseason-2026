@@ -94,11 +94,7 @@ final class RobotBenchmarkUtil {
         + "|"
         + value(robot, "deploy", "getPosition")
         + "|"
-        + value(robot, "localization", "getPose")
-        + "|"
-        + value(robot, "clusterMap", "getBestClusterLane")
-        + "|"
-        + value(robot, "clusterMap", "getBestClusterPose");
+        + value(robot, "localization", "getPose");
   }
 
   static void initializeSimulation(Robot robot) {

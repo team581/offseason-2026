@@ -60,17 +60,5 @@ public class CameraConfigs {
           // Roll
           0.0);
 
-  public static final CameraConfig GROUND =
-      new CameraConfig(
-          LimelightModel.THREE,
-          false,
-          false,
-          Units.inchesToMeters(25.054733),
-          Units.inchesToMeters(0.0),
-          Units.inchesToMeters(12.056034),
-          -21.4,
-          0.0,
-          0.0);
-
   private CameraConfigs() {}
 }
