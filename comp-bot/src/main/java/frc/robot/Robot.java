@@ -16,7 +16,6 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
-import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -89,8 +88,6 @@ public class Robot extends Base581Robot {
 
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
-  private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
-
   private final HubActivity hubActivity = new HubActivity();
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
@@ -111,7 +108,6 @@ public class Robot extends Base581Robot {
           health,
           hubActivity,
           trailblazer,
-          clusterMap,
           hardware,
           powerManager);
 

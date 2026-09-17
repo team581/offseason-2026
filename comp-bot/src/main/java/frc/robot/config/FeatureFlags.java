@@ -17,8 +17,6 @@ public class FeatureFlags {
   public static final BooleanSupplier CANCEL_IN_PROGRESS_SHOT =
       FeatureFlag.of("CancelInProgressShot", true);
 
-  public static final BooleanSupplier CLUSTER_MAP = FeatureFlag.of("ClusterMap", true);
-
   public static final BooleanSupplier UNBEACH_AUTO_IRL = FeatureFlag.of("UnbeachAutoIRL", true);
   public static final BooleanSupplier UNBEACH_AUTO_SIM_ONLY =
       FeatureFlag.of("UnbeachAutoSimOnly", false);
