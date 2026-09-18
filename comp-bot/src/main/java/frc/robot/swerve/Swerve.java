@@ -51,7 +51,7 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
-  private static final double DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES = 30.0;
+  private static final double DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES = 10.0;
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
       DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
   ;
