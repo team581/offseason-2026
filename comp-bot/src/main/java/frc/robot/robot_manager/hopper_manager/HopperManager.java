@@ -99,6 +99,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     };
   }
 
+  public boolean hasBallsInTower() {
+    return towerSensorDebounced;
+  }
+
   public void idleRequest() {
     setState(resolveIdleState());
   }

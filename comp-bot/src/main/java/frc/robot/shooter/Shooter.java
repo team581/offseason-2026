@@ -84,7 +84,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double bottomRightMotorRpm = 0;
   private double feederCurrent = 0.0;
   private double feederBasedFeedForward = 0.0;
-  private boolean hopperFull = false;
+  private boolean ballsInTower = false;
 
   private boolean atGoal = false;
   private boolean atGoalDebounced = false;
@@ -249,9 +249,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     shooterSimulation.update();
   }
 
-  public void updateHopperState(double feederCurrent, boolean hopperFull) {
+  public void updateHopperState(double feederCurrent, boolean ballsInTower) {
     this.feederCurrent = feederCurrent;
-    this.hopperFull = hopperFull || !DSOptions.USE_CANRANGE.getAsBoolean();
+    this.ballsInTower = ballsInTower || !DSOptions.USE_TOWER_SENSOR.getAsBoolean();
   }
 
   private boolean calculateAtGoal() {
@@ -299,7 +299,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
     switch (getState()) {
       case SCORE, FEED -> {
-        if (!timeout(0.7) && hopperFull) {
+        if (!timeout(0.7) && ballsInTower) {
           feederBasedFeedForward =
               Math.max(
                   ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent),

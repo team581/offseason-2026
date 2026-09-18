@@ -453,7 +453,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             || !FieldUtil.isFeedPathObstructed(
                 robotPose.getTranslation(), feedLocation.getTranslation());
 
-    shooter.updateHopperState(hopperManager.feeder.getAverageCurrent(), hopperManager.isFull());
+    shooter.updateHopperState(
+        hopperManager.feeder.getAverageCurrent(), hopperManager.hasBallsInTower());
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
   }
 
