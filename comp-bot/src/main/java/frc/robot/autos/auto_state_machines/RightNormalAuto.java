@@ -143,8 +143,16 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
+                          13.2,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(160)))
+                  .withLinearConstraints(2.0, 2.0)
+                  .withAngularConstraints(4.0, 3.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 50)),
+              AutoPoint.ofRed(
+                      new Pose2d(
                           13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 25)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 360)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5,
@@ -229,8 +237,16 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
+                          13.2,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(160)))
+                  .withLinearConstraints(2.0, 2.0)
+                  .withAngularConstraints(4.0, 3.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 50)),
+              AutoPoint.ofRed(
+                      new Pose2d(
                           13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 25)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           12.5,
