@@ -13,10 +13,8 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   private final Limelight frontLimelight;
   private final Limelight leftLimelight;
   private final Limelight rightLimelight;
-  private final Limelight groundLimelight;
 
   private boolean localizationHealthy = true;
-  private boolean fuelDetectionHealthy = true;
   private boolean allCamerasHealthy = true;
 
   private final BlinkingBooleanBox localizationBlinkingBooleanBox =
@@ -25,26 +23,17 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
   public HealthManager(
-      Limelight frontLimelight,
-      Limelight leftLimelight,
-      Limelight rightLimelight,
-      Limelight groundLimelight) {
+      Limelight frontLimelight, Limelight leftLimelight, Limelight rightLimelight) {
     super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
 
     this.frontLimelight = frontLimelight;
     this.leftLimelight = leftLimelight;
     this.rightLimelight = rightLimelight;
-    this.groundLimelight = groundLimelight;
   }
 
   /** Returns whether all cameras are healthy. */
   public boolean isAllCamerasHealthy() {
     return allCamerasHealthy;
-  }
-
-  /** Returns whether the robot's ability to detect fuel is healthy. */
-  public boolean isFuelDetectionHealthy() {
-    return fuelDetectionHealthy;
   }
 
   /** Returns whether the robot's ability to localize itself is healthy. */
@@ -61,20 +50,16 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
             || frontLimelight.getCameraHealth() != CameraHealth.OFFLINE
             || leftLimelight.getCameraHealth() != CameraHealth.OFFLINE
             || rightLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    fuelDetectionHealthy =
-        RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
     allCamerasHealthy =
         RobotBase.isSimulation()
             || (frontLimelight.getCameraHealth() != CameraHealth.OFFLINE
                 && leftLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && rightLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && groundLimelight.getCameraHealth() != CameraHealth.OFFLINE);
+                && rightLimelight.getCameraHealth() != CameraHealth.OFFLINE);
   }
 
   @Override
   protected void whileInState(HealthState state) {
     DogLog.log("Health/LocalizationHealthy", localizationHealthy);
-    DogLog.log("Health/FuelDetectionHealthy", fuelDetectionHealthy);
     DogLog.log("Health/AllCamerasHealthy", allCamerasHealthy);
 
     localizationBlinkingBooleanBox.update(localizationHealthy);

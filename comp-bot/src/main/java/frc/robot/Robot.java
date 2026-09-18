@@ -9,12 +9,13 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
+import com.team581.util.profiling.DiagnosticCadence;
+import com.team581.util.profiling.LoopTiming;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
-import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -41,17 +42,14 @@ import java.nio.file.Path;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
-
   private final Limelight shooterLimelight =
       new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
   private final Limelight leftLimelight =
       new Limelight("left", LimelightState.TAGS, CameraConfigs.LEFT);
   private final Limelight rightLimelight =
       new Limelight("right", LimelightState.TAGS, CameraConfigs.RIGHT);
-  private final Limelight groundLimelight =
-      new Limelight("ground", LimelightState.CLUSTER_MAP, CameraConfigs.GROUND);
   private final HealthManager health =
-      new HealthManager(shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
+      new HealthManager(shooterLimelight, leftLimelight, rightLimelight);
 
   private final Imu imu = new Imu(hardware.drivetrain);
 
@@ -71,7 +69,6 @@ public class Robot extends Base581Robot {
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
-
   private final Shooter shooter =
       new Shooter(
           hardware.shooterTopLeftMotor,
@@ -80,19 +77,17 @@ public class Robot extends Base581Robot {
           hardware.shooterBottomRightMotor);
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
   private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
-  private final Vision vision =
-      new Vision(imu, shooterLimelight, leftLimelight, rightLimelight, groundLimelight);
+  private final Vision vision = new Vision(imu, shooterLimelight, leftLimelight, rightLimelight);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
   private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
-
-  private final ClusterMap clusterMap = new ClusterMap(localization, swerve, groundLimelight);
   private final HubActivity hubActivity = new HubActivity();
-
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
+
   private final HopperManager hopperManager =
       new HopperManager(
           deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
@@ -109,7 +104,6 @@ public class Robot extends Base581Robot {
           health,
           hubActivity,
           trailblazer,
-          clusterMap,
           hardware,
           powerManager);
 
@@ -117,6 +111,9 @@ public class Robot extends Base581Robot {
   private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
+    DiagnosticCadence.setEnabled(true);
+    LoopTiming.setEnabled(true);
+
     logMetadata(
         BuildConstants.MAVEN_NAME,
         BuildConstants.BUILD_DATE,
@@ -133,7 +130,6 @@ public class Robot extends Base581Robot {
     if (GlobalConfig.IS_DEVELOPMENT) {
       FieldUtil.debugLogFieldZones();
     }
-
     if (RobotBase.isSimulation()) {
       try {
         var docsDir = Path.of(System.getProperty("user.dir")).resolve("../docs");
@@ -147,6 +143,10 @@ public class Robot extends Base581Robot {
 
   @Override
   public void robotPeriodic() {
+    DiagnosticCadence.beginLoop();
+    LoopTiming.recordClockOverhead();
+    long loopStart = LoopTiming.start();
+
     super.robotPeriodic();
 
     if (FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() && !FmsUtil.isRedAlliance()) {
@@ -154,6 +154,8 @@ public class Robot extends Base581Robot {
     } else {
       DogLog.clearFault("Clamped auto points are enabled but current alliance is blue");
     }
+
+    LoopTiming.end("Scheduler/RobotPeriodicExecution", loopStart);
   }
 
   @Override

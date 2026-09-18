@@ -6,6 +6,7 @@ import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
+import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -13,7 +14,6 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.Hardware;
-import frc.robot.cluster_map.ClusterMap;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.health.HealthManager;
@@ -43,8 +43,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final HealthManager health;
   private final HubActivity hubActivity;
   private final Trailblazer trailblazer;
-
-  public final ClusterMap clusterMap;
 
   public final PowerManager powerManager;
   private Pose2d robotPose = Pose2d.kZero;
@@ -80,7 +78,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       HealthManager health,
       HubActivity hubActivity,
       Trailblazer trailblazer,
-      ClusterMap clusterMap,
       Hardware hardware,
       PowerManager powerManager) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
@@ -94,8 +91,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.health = health;
     this.hubActivity = hubActivity;
     this.trailblazer = trailblazer;
-    this.clusterMap = clusterMap;
-
     this.hardware = hardware;
     this.powerManager = powerManager;
   }
@@ -416,7 +411,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     robotPose = localization.getPose();
     feedLocation = FeedLocation.closest(robotPose);
     double robotRotation = robotPose.getRotation().getDegrees();
-    clusterMap.setDeployFullyExtended(hopperManager.deploy.isFullyExtended());
     vision.setEstimatedPoseAngle(robotRotation);
     var speeds = swerve.getFieldRelativeSpeeds();
     var velocity = MathHelpers.getLinearVelocity(speeds);
@@ -676,10 +670,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     swerve.setUseLooseTolerance(getState().isFeeding() && timeout(1.0));
 
-    DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
-    DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
-    DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
-
-    MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
+    if (DiagnosticCadence.shouldLogRoutine()) {
+      DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
+    }
+    if (DiagnosticCadence.shouldLogHeavy()) {
+      DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
+      DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
+      MechanismVisualizer.log(
+          robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
+    }
   }
 }

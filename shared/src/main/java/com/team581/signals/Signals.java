@@ -3,6 +3,7 @@ package com.team581.signals;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignalCollection;
 import com.ctre.phoenix6.hardware.ParentDevice;
+import edu.wpi.first.wpilibj.RobotBase;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import java.util.Map;
  */
 public final class Signals {
   private static final Map<String, StatusSignalCollection> COLLECTIONS = new HashMap<>();
+  private static boolean refreshEnabled = true;
 
   /** Returns the collection of signals for the given CAN bus, creating one if needed. */
   public static StatusSignalCollection forBus(CANBus canBus) {
@@ -33,9 +35,20 @@ public final class Signals {
 
   /** Refreshes every per-bus signal collection. */
   public static void refreshAll() {
+    if (!refreshEnabled) {
+      return;
+    }
     for (var collection : COLLECTIONS.values()) {
       collection.refreshAll();
     }
+  }
+
+  /** Disables native refresh waits in deterministic desktop benchmarks. */
+  public static void setRefreshEnabledForBenchmark(boolean enabled) {
+    if (!RobotBase.isSimulation()) {
+      return;
+    }
+    refreshEnabled = enabled;
   }
 
   private Signals() {}

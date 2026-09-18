@@ -11,7 +11,6 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -33,7 +32,6 @@ public class LeftSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
 
   private static final double COLLISION_X_OFFSET = 0.5;
 
-  private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
   private static final double MIDLINE_OFFSET = 0.0;
 
   private static final double BUMP_OFFSET = Units.inchesToMeters(5);
@@ -152,28 +150,6 @@ public class LeftSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
   @Override
   public Point getStartingPoint() {
     return Point.ofRed(new Pose2d(13.0, 0.47, Rotation2d.kCCW_90deg));
-  }
-
-  // Only use for lane 0 and 1 since we don't
-  private Point getClusterShiftedPoint(Point point) {
-    var targetCluster = robotManager.clusterMap.getBestClusterPose();
-
-    if (targetCluster.isEmpty()) {
-      return point;
-    }
-
-    Pose2d clusterPose = targetCluster.orElseThrow();
-    Pose2d basePose = point.getPose();
-
-    double clampedX =
-        MathUtil.clamp(
-            clusterPose.getX(),
-            basePose.getX() - MAX_CLUSTER_MAP_OFFSET,
-            basePose.getX() + MAX_CLUSTER_MAP_OFFSET);
-
-    return FmsUtil.isRedAlliance()
-        ? Point.ofRed(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()))
-        : Point.ofBlue(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()));
   }
 
   private Point getCollisionPoint(Point point) {
