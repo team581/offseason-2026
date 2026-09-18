@@ -36,6 +36,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private double toprightMotorRpm = 0;
   private double bottomleftMotorRpm = 0;
   private double bottomrightMotorRpm = 0;
+  private double targetRpm = 0;
   private double shootingRpm = 0;
   private double scoreDistance = 0;
   private double feedingRpm = 0;
@@ -88,8 +89,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
 
     topleftVoltageSignal = topleftMotor.getMotorVoltage();
     toprightVoltageSignal = toprightMotor.getMotorVoltage();
-    bottomrightVoltageSignal = bottomleftMotor.getMotorVoltage();
-    bottomleftVoltageSignal = bottomrightMotor.getMotorVoltage();
+    bottomrightVoltageSignal = bottomrightMotor.getMotorVoltage();
+    bottomleftVoltageSignal = bottomleftMotor.getMotorVoltage();
 
     TunablePid.register("Shooter/TopLeft", topleftMotor, ShooterConfig.TOP_LEFT_MOTOR_CONFIG);
     TunablePid.register("Shooter/TopRight", toprightMotor, ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
@@ -144,6 +145,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     DogLog.log("Shooter/TopRight/RPM", toprightMotorRpm);
     DogLog.log("Shooter/BottomLeft/RPM", bottomleftMotorRpm);
     DogLog.log("Shooter/BottomRight/RPM", bottomrightMotorRpm);
+
+    topleftMotor.setControl(topleftFollower);
+    bottomleftMotor.setControl(bottomleftFollower);
+    bottomrightMotor.setControl(bottomrightFollower);
 
     switch (state) {
       case IDLE -> {
