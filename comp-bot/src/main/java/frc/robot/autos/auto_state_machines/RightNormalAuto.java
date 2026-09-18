@@ -36,11 +36,9 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double COLLISION_X_OFFSET = -0.1;
 
-  private static final double MIDLINE_OFFSET = 0.0;
-
   private static final double BUMP_OFFSET = -0.13;
 
-  private static final double SHOOT_X = 13.576;
+  private static final double SHOOT_X = 13.83;
 
   private BumpCrossingTracker bumpCrossingTracker;
 
@@ -62,39 +60,27 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                           getCollisionPoint(
                               Point.ofRed(new Pose2d(8.316, 4.945, Rotation2d.fromDegrees(-115)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.35, 100))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.25, 100))
                   .withLinearConstraints(2.5, 3.0),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.856, 4.445, Rotation2d.fromDegrees(-40.0)))))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.356, 4.245, Rotation2d.kZero))))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.756, 4.545, Rotation2d.fromDegrees(35.0)))))
+                              Point.ofRed(new Pose2d(8.156, 4.545, Rotation2d.fromDegrees(-50.0)))))
                   .withLinearConstraints(2.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 55)),
+                  .withAngularConstraints(1.75, 1.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 20)),
               AutoPoint.of(
                       () ->
                           getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.816, 5.245, Rotation2d.fromDegrees(15.0)))))
-                  .withAngularConstraints(2.5, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 35)),
+                              Point.ofRed(new Pose2d(9.416, 5.045, Rotation2d.fromDegrees(-30.0)))))
+                  .withAngularConstraints(1.75, 1.0)
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 35)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.15,
+                          9.85,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
                           Rotation2d.kZero))
-                  .withAngularConstraints(2.5, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 35)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           10.6,
@@ -168,34 +154,20 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 360)),
               AutoPoint.ofRed(new Pose2d(10.628, 7.2, Rotation2d.fromDegrees(-140)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.140, 5.653, Rotation2d.fromDegrees(-130)))
+              AutoPoint.ofRed(new Pose2d(9.140, 6.653, Rotation2d.fromDegrees(-130)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.500, 4.81, Rotation2d.fromDegrees(-120.0)))
+              AutoPoint.ofRed(new Pose2d(8.7, 5.593, Rotation2d.fromDegrees(-95)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.456, 4.245, Rotation2d.fromDegrees(-10.0)))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withLinearConstraints(2.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.ofRed(new Pose2d(9.156, 4.445, Rotation2d.fromDegrees(15.0)))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withLinearConstraints(2.0, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.ofRed(new Pose2d(9.556, 4.445, Rotation2d.fromDegrees(-10.0)))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withLinearConstraints(2.0, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.ofRed(new Pose2d(10.356, 4.045, Rotation2d.kZero))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 30)),
-              AutoPoint.ofRed(new Pose2d(9.556, 5.145, Rotation2d.fromDegrees(15.0)))
-                  .withAngularConstraints(2.75, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 25)),
+              AutoPoint.ofRed(new Pose2d(8.500, 4.31, Rotation2d.fromDegrees(-30.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              AutoPoint.ofRed(new Pose2d(10.07, 4.3, Rotation2d.fromDegrees(15.0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.5, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.5,
+                          10.2,
                           FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET,
-                          Rotation2d.kZero))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 100)),
+                          Rotation2d.fromDegrees(0)))
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
                           SHOOT_X,
@@ -245,7 +217,9 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.5, 50)),
               AutoPoint.ofRed(
                       new Pose2d(
-                          13.2, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                          13.2,
+                          FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(),
+                          Rotation2d.fromDegrees(180)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
               AutoPoint.ofRed(
                       new Pose2d(
@@ -330,7 +304,6 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   // FOR SIM ONLY!!!
   private boolean firstStuckOnBall = false;
-  private boolean secondStuckOnBall = false;
 
   public RightNormalAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(NormalAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
@@ -489,13 +462,6 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
         yield currentState;
       }
-      case INTAKE_SECOND_CYCLE_FAR -> {
-        if (trailblazer.passedMarker(Markers.READY_TO_CROSS_BUMP)) {
-          yield NormalAutoState.CROSS_BUMP_TO_SHOOT_2;
-        } else {
-          yield currentState;
-        }
-      }
 
       case CROSS_BUMP_TO_SHOOT_2 -> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
@@ -606,6 +572,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           robotManager.intakeAutoRequest();
         }
       }
+
       case CROSS_BUMP_TO_SHOOT_2 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
         robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
