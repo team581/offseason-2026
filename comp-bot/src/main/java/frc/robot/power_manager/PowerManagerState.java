@@ -5,7 +5,7 @@ public enum PowerManagerState {
   PRIORITIZE_INTAKE(50, 85, 15, 40, 10, 10, 10),
   IDLE(50, 50, 25, 40, 10, 10, 35),
   SCORING(50, 20, 15, 40, 20, 20, 30),
-  SCORING_FAR(50, 20, 15, 40, 10, 10, 20),
+  SCORING_FAR(50, 20, 15, 40, 15, 15, 20),
   BEAST_MODE(50, 10, 15, 40, 30, 30, 20),
   FEEDING(35, 20, 15, 40, 30, 30, 35),
   FEEDING_FAR(35, 20, 15, 40, 15, 15, 30),
