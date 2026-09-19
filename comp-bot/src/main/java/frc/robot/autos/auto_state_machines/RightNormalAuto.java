@@ -321,6 +321,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
   private NormalAutoState storedStuckOnBallState = NormalAutoState.INTAKE_FIRST_CYCLE;
   private AutoSegment storedStuckOnBallAutoSegment = intakeFirstCycle;
   private int storedStuckOnBallIndex = 0;
+  private boolean returningFromStuckOnBall = false;
 
   // FOR SIM ONLY!!!
   private boolean firstStuckOnBall = false;
@@ -367,8 +368,10 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
     switch (newState) {
       case INTAKE_FIRST_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeFirstCycle;
-        robotManager.homeDeployInAutoRequest();
-        robotManager.homeShooterHoodRequest();
+        if (!returningFromStuckOnBall) {
+          robotManager.homeDeployInAutoRequest();
+          robotManager.homeShooterHoodRequest();
+        }
       }
       case CROSS_BUMP_TO_SHOOT_1, SHOOT_1 -> {
         storedStuckOnBallAutoSegment = crossBumpToShootOne;
@@ -407,6 +410,8 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   @Override
   protected void beforeTransition(NormalAutoState oldState, NormalAutoState newState) {
+    returningFromStuckOnBall = oldState == NormalAutoState.STUCK_ON_BALL_RECOVERY;
+
     if (newState == NormalAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallState = oldState;
       DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
