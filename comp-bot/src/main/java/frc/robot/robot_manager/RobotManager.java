@@ -58,9 +58,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private boolean isInAllianceZone = false;
   private boolean isInSafeFeedingLocation = true;
 
-  // Number gotten from trench scoring point
+  // Separates close scoring (about 2.38 m) from next-to-trench scoring (about 2.90 m).
   private DoubleSubscriber SLOW_SCORING_DISTANCE_THRESHOLD =
-      DogLog.tunable("RobotManager/FarScoreThreshold", 4.0);
+      DogLog.tunable("RobotManager/FarScoreThreshold", 3.0);
 
   private DoubleSubscriber SLOW_FEEDING_DISTANCE_THRESHOLD =
       DogLog.tunable("RobotManager/FarFeedThreshold", 8.5);
