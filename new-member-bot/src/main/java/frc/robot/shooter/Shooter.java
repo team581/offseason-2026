@@ -169,11 +169,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   private double distanceToFeedingRpm(double distance) {
-    return distance * 0.0; // can be given a value instead of 0
+    return distance * 3000.0;
   }
 
   private double distanceToScoringRpm(double distance) {
-    return distance * 0.0; // can be given a value instead of 0
+    return distance * 3000.0;
   }
 
   @Override
