@@ -1,9 +1,7 @@
 package com.team581;
 
-import edu.wpi.first.wpilibj.RobotBase;
-
 public final class GlobalConfig {
-  public static final boolean IS_DEVELOPMENT = RobotBase.isSimulation();
+  public static final boolean IS_DEVELOPMENT = true;
 
   private GlobalConfig() {}
 }

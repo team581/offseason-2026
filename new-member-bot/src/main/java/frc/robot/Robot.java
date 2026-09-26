@@ -4,10 +4,17 @@ import com.team581.Base581Robot;
 import com.team581.controller.ControllerBindings;
 import frc.robot.generated.BuildConstants;
 import frc.robot.intake.Intake;
+import frc.robot.shooter.Shooter;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
+  private final Shooter shooter =
+      new Shooter(
+          hardware.shooterTopLeftMotor,
+          hardware.shooterTopRightMotor,
+          hardware.shooterBottomRightMotor,
+          hardware.shooterBottomLeftMotor);
 
   // 1. Create an Intake instance, we wrote the class but need to actually use it + do something
   // with it
