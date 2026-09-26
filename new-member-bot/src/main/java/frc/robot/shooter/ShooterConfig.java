@@ -67,9 +67,6 @@ public class ShooterConfig {
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingRegression", DISTANCE_TO_FEEDING_RPM);
 
-  public static final double MAX_SAFE_RPM = 3000.0;
-  public static final double IDLE_RPM = 40.0;
-  public static double RPM_TOLERANCE = 60.0;
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF",
@@ -90,4 +87,8 @@ public class ShooterConfig {
               Map.entry(0.0, 0.0));
   public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
+
+  public static final double MAX_SAFE_RPM = 3000.0;
+  public static final double IDLE_RPM = 40.0;
+  public static double RPM_TOLERANCE = 60.0;
 }
