@@ -5,6 +5,7 @@ import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -139,12 +140,32 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   @Override
+  public void simulationPeriodic() {
+    var shooterSimulation =
+        SimKit.velocityMechanism(
+            "shooter",
+            (mechanism) ->
+                mechanism
+                    .addMotor(topleftMotor)
+                    .addMotor(toprightMotor)
+                    .addMotor(bottomleftMotor)
+                    .addMotor(bottomrightMotor));
+
+    shooterSimulation.update();
+  }
+
+  @Override
   public void whileInState(ShooterState state) {
 
     DogLog.log("Shooter/TopLeft/RPM", topleftMotorRpm);
     DogLog.log("Shooter/TopRight/RPM", toprightMotorRpm);
     DogLog.log("Shooter/BottomLeft/RPM", bottomleftMotorRpm);
     DogLog.log("Shooter/BottomRight/RPM", bottomrightMotorRpm);
+    DogLog.log("Shooter/TopLeft/Voltage", topleftVoltage);
+
+    DogLog.log("Shooter/TopRight/Voltage", toprightVoltage);
+    DogLog.log("Shooter/BottomLeft/Voltage", bottomleftVoltage);
+    DogLog.log("Shooter/BottomRight/Voltage", bottomrightVoltage);
 
     topleftMotor.setControl(topleftFollower);
     bottomleftMotor.setControl(bottomleftFollower);
@@ -185,6 +206,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     toprightCurrent = toprightSupplyCurrentSignal.getValueAsDouble();
     bottomleftCurrent = bottomleftSupplyCurrentSignal.getValueAsDouble();
     bottomrightCurrent = bottomrightSupplyCurrentSignal.getValueAsDouble();
+
+    topleftVoltage = topleftVoltageSignal.getValueAsDouble();
+    toprightVoltage = toprightVoltageSignal.getValueAsDouble();
+    bottomleftVoltage = bottomleftVoltageSignal.getValueAsDouble();
+    bottomrightVoltage = bottomrightVoltageSignal.getValueAsDouble();
 
     topleftMotorRpm = topleftMotor.getVelocity().getValueAsDouble() * 60.0;
     toprightMotorRpm = toprightMotor.getVelocity().getValueAsDouble() * 60.0;

@@ -49,10 +49,10 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(0.0, 0.0),
-          Map.entry(0.0, 0.0),
-          Map.entry(0.0, 0.0),
-          Map.entry(0.0, 0.0));
+          Map.entry(4.92, 1900.0),
+          Map.entry(3.46, 1610.0),
+          Map.entry(2.79, 1560.0),
+          Map.entry(1.42, 1350.0));
 
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
@@ -70,4 +70,24 @@ public class ShooterConfig {
   public static final double MAX_SAFE_RPM = 3000.0;
   public static final double IDLE_RPM = 40.0;
   public static double RPM_TOLERANCE = 60.0;
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_TOF =
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreToF",
+          Map.entry(1.36, 1.017),
+          Map.entry(2.42, 1.233),
+          Map.entry(3.54, 1.148),
+          Map.entry(5.5, 1.348));
+  public static final PolynomialRegression SCORING_TOF_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/ScoringToFRegression", DISTANCE_TO_SCORE_TOF);
+
+  public static final InterpolatingDoubleTreeMap
+      DISTANCE_TO_FEED_TOF = // if I want to do SOM will have to watch and review film and research
+          // to see how many balls are released through testing
+          TunableInterpolatingDoubleTreeMap.ofEntries(
+              "Shooter/DistanceToFeedToF",
+              Map.entry(0.0, 0.0),
+              Map.entry(0.0, 0.0),
+              Map.entry(0.0, 0.0));
+  public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
+      PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
 }
