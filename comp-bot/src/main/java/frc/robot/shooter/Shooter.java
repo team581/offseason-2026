@@ -1,10 +1,9 @@
 package frc.robot.shooter;
 
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
@@ -41,9 +40,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   public final TalonFX bottomLeftMotor;
   public final TalonFX bottomRightMotor;
 
-  private final Follower topLeftFollower;
-  private final Follower bottomLeftFollower;
-  private final Follower bottomRightFollower;
+  private final StrictFollower topLeftFollower;
+  private final StrictFollower bottomLeftFollower;
+  private final StrictFollower bottomRightFollower;
 
   private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
 
@@ -118,11 +117,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.bottomLeftMotor = bottomLeftMotor;
     this.bottomRightMotor = bottomRightMotor;
 
-    this.topLeftFollower = new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Opposed);
-    this.bottomLeftFollower =
-        new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Opposed);
-    this.bottomRightFollower =
-        new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Aligned);
+    this.topLeftFollower = new StrictFollower(topRightMotor.getDeviceID());
+    this.bottomLeftFollower = new StrictFollower(topRightMotor.getDeviceID());
+    this.bottomRightFollower = new StrictFollower(topRightMotor.getDeviceID());
 
     topLeftMotor.setControl(topLeftFollower);
     bottomLeftMotor.setControl(bottomLeftFollower);

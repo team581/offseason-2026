@@ -5,6 +5,7 @@ import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.team581.signals.Signals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
@@ -92,6 +93,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     toprightVoltageSignal = toprightMotor.getMotorVoltage();
     bottomrightVoltageSignal = bottomrightMotor.getMotorVoltage();
     bottomleftVoltageSignal = bottomleftMotor.getMotorVoltage();
+
+    Signals.forDevice(bottomrightMotor)
+        .addSignals(bottomrightSupplyCurrentSignal, bottomrightVoltageSignal);
+    Signals.forDevice(bottomleftMotor)
+        .addSignals(bottomleftSupplyCurrentSignal, bottomleftVoltageSignal);
+    Signals.forDevice(toprightMotor).addSignals(toprightSupplyCurrentSignal, toprightVoltageSignal);
+    Signals.forDevice(topleftMotor).addSignals(topleftSupplyCurrentSignal, topleftVoltageSignal);
 
     TunablePid.register("Shooter/TopLeft", topleftMotor, ShooterConfig.TOP_LEFT_MOTOR_CONFIG);
     TunablePid.register("Shooter/TopRight", toprightMotor, ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
