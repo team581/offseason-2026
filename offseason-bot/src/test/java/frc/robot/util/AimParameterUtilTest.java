@@ -33,8 +33,10 @@ final class AimParameterUtilTest {
   void dynamicSolutionAndLookaheadUseProjectedRobotPose() {
     var robotPose = new Pose2d(3.0, 2.0, Rotation2d.fromDegrees(25.0));
     var speeds = new ChassisSpeeds(0.7, -0.4, 0.6);
-    var dynamic = AimParameterUtil.getScoringParameters(robotPose, speeds);
-    var stationary = AimParameterUtil.getStaticScoringParameters(robotPose, speeds);
+    var commandedSpeeds = speeds;
+    var dynamic = AimParameterUtil.getScoringParameters(robotPose, speeds, commandedSpeeds);
+    var stationary =
+        AimParameterUtil.getStaticScoringParameters(robotPose, speeds, commandedSpeeds);
 
     assertNotEquals(stationary.turretAngle(), dynamic.turretAngle(), 1e-5);
 
@@ -44,7 +46,10 @@ final class AimParameterUtilTest {
     var compensatedGoal =
         new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF)
             .getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-                turretPose.getTranslation(), FieldUtil.HUB_POSE.getTranslation(), turretSpeeds)
+                turretPose.getTranslation(),
+                FieldUtil.HUB_POSE.getTranslation(),
+                turretSpeeds,
+                commandedSpeeds)
             .fullyCompensatedGoal();
     var futureRobotPose =
         new Pose2d(
@@ -84,11 +89,10 @@ final class AimParameterUtilTest {
     var goal = FieldUtil.HUB_POSE.getTranslation();
     var robotPose =
         new Pose2d(goal.minus(offset).minus(new Translation2d(4.0, 0.0)), Rotation2d.kZero);
-
-    var lateral =
-        AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 1.0, 0.0));
-    var rotating =
-        AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
+    var lateralSpeeds = new ChassisSpeeds(0.0, 1.0, 0.0);
+    var lateral = AimParameterUtil.getScoringParameters(robotPose, lateralSpeeds, lateralSpeeds);
+    var rotatingSpeeds = new ChassisSpeeds(0.0, 0.0, 1.0);
+    var rotating = AimParameterUtil.getScoringParameters(robotPose, rotatingSpeeds, rotatingSpeeds);
 
     assertThat(lateral.turretFeedForwardRadians()).isNegative();
     assertThat(rotating.turretFeedForwardRadians()).isLessThan(-1.0);
@@ -99,7 +103,7 @@ final class AimParameterUtilTest {
     var robotPose = new Pose2d(4.0, 2.0, Rotation2d.fromDegrees(-20.0));
     var parameters =
         AimParameterUtil.getStaticFeedingParameters(
-            FeedLocation.RIGHT, robotPose, new ChassisSpeeds());
+            FeedLocation.RIGHT, robotPose, new ChassisSpeeds(), new ChassisSpeeds());
 
     assertEquals(
         TurretCalculator.getGoalCentricTurretTolerance(
@@ -111,7 +115,9 @@ final class AimParameterUtilTest {
   @Test
   void staticScoringUsesCornerTurretPoseAndFiveInchTolerance() {
     var robotPose = new Pose2d(2.0, 3.0, Rotation2d.fromDegrees(35.0));
-    var parameters = AimParameterUtil.getStaticScoringParameters(robotPose, new ChassisSpeeds());
+    var parameters =
+        AimParameterUtil.getStaticScoringParameters(
+            robotPose, new ChassisSpeeds(), new ChassisSpeeds());
     var turretPose = TurretCalculator.getTurretPose(robotPose);
     var goal = FieldUtil.HUB_POSE.getTranslation();
 
@@ -135,8 +141,8 @@ final class AimParameterUtilTest {
                 .getTranslation()
                 .minus(TurretConfig.TURRET_TO_ROBOT.getTranslation()),
             Rotation2d.kZero);
-    var parameters =
-        AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
+    var speeds = new ChassisSpeeds(0.0, 0.0, 1.0);
+    var parameters = AimParameterUtil.getScoringParameters(robotPose, speeds, speeds);
 
     assertThat(Double.isFinite(parameters.turretAngle())).isTrue();
     assertThat(Double.isFinite(parameters.distance())).isTrue();

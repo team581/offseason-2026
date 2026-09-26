@@ -16,6 +16,11 @@ public class ShootOnTheMove {
       Translation2d tangentiallyCompensatedGoal,
       Translation2d fullyCompensatedGoal) {}
 
+  // TODO: needs to be tuned
+  private static final double LINEAR_LAG_CONSTANT = 0.15;
+  private static final double COMMANDED_VELOCITY_PERCENTAGE_ERROR =
+      1 - Math.exp(-0.02 / LINEAR_LAG_CONSTANT);
+
   private static final int MAX_ITERATIONS = 5;
   // TODO: Do more thorough tuning with integration test, this was quickly tuned
   public static final DoubleSubscriber DRAG_CONSTANT =
@@ -33,7 +38,10 @@ public class ShootOnTheMove {
   }
 
   public SeparatedVelocityCompensatedGoal getSeparatedVelocityCompensatedGoal(
-      Translation2d robot, Translation2d goal, ChassisSpeeds robotVelocity) {
+      Translation2d robot,
+      Translation2d goal,
+      ChassisSpeeds robotVelocity,
+      ChassisSpeeds driverCommandedVelocity) {
 
     double robotX = robot.getX();
     double robotY = robot.getY();
@@ -41,6 +49,8 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
+    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
+    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -94,7 +104,10 @@ public class ShootOnTheMove {
   }
 
   public SeparatedVelocityCompensatedGoal getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-      Translation2d turretTranslation, Translation2d goal, ChassisSpeeds robotVelocity) {
+      Translation2d turretTranslation,
+      Translation2d goal,
+      ChassisSpeeds robotVelocity,
+      ChassisSpeeds driverCommandedVelocity) {
 
     double turretX = turretTranslation.getX();
     double turretY = turretTranslation.getY();
@@ -102,6 +115,8 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
+    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
+    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -179,13 +194,18 @@ public class ShootOnTheMove {
   }
 
   public Translation2d getVelocityCompensatedGoalWithEffectiveTof(
-      Translation2d robot, Translation2d target, ChassisSpeeds robotVelocity) {
+      Translation2d robot,
+      Translation2d target,
+      ChassisSpeeds robotVelocity,
+      ChassisSpeeds driverCommandedVelocity) {
     double robotX = robot.getX();
     double robotY = robot.getY();
     double targetX = target.getX();
     double targetY = target.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
+    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
+    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
 
     double compGoalX = targetX;
     double compGoalY = targetY;

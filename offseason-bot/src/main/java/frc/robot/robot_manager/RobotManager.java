@@ -461,13 +461,17 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
     scoringParameters =
         getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
-            ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, speeds)
-            : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, speeds);
+            ? AimParameterUtil.getStaticScoringParameters(
+                robotPoseUsedForScoring, speeds, swerve.getRequestedSpeeds())
+            : AimParameterUtil.getScoringParameters(
+                robotPoseUsedForScoring, speeds, swerve.getRequestedSpeeds());
 
     feedingParameters =
         getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()
-            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
-            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
+            ? AimParameterUtil.getStaticFeedingParameters(
+                feedLocation, robotPose, speeds, swerve.getRequestedSpeeds())
+            : AimParameterUtil.getFeedingParameters(
+                feedLocation, robotPose, speeds, swerve.getRequestedSpeeds());
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());

@@ -47,43 +47,53 @@ public class AimParameterUtil {
   }
 
   public static AimingParameters getFeedingParameters(
-      FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+      FeedLocation feedLocation,
+      Pose2d robotPose,
+      ChassisSpeeds fieldRelativeSpeeds,
+      ChassisSpeeds driverCommandedVelocity) {
     return getAimingParameters(
         FEEDING_SOTM,
         feedLocation.getTranslation(),
         FEEDING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
-        fieldRelativeSpeeds);
+        fieldRelativeSpeeds,
+        driverCommandedVelocity);
   }
 
   public static AimingParameters getScoringParameters(
-      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, ChassisSpeeds driverCommandedVelocity) {
     return getAimingParameters(
         SCORING_SOTM,
         FieldUtil.HUB_POSE.getTranslation(),
         SCORING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
-        fieldRelativeSpeeds);
+        fieldRelativeSpeeds,
+        driverCommandedVelocity);
   }
 
   public static AimingParameters getStaticFeedingParameters(
-      FeedLocation feedLocation, Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+      FeedLocation feedLocation,
+      Pose2d robotPose,
+      ChassisSpeeds fieldRelativeSpeeds,
+      ChassisSpeeds driverCommandedVelocity) {
     return getStaticAimingParameters(
         FEEDING_SOTM,
         feedLocation.getTranslation(),
         FEEDING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
-        fieldRelativeSpeeds);
+        fieldRelativeSpeeds,
+        driverCommandedVelocity);
   }
 
   public static AimingParameters getStaticScoringParameters(
-      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
+      Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, ChassisSpeeds driverCommandedVelocity) {
     return getStaticAimingParameters(
         SCORING_SOTM,
         FieldUtil.HUB_POSE.getTranslation(),
         SCORING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
-        fieldRelativeSpeeds);
+        fieldRelativeSpeeds,
+        driverCommandedVelocity);
   }
 
   private static AimingParameters getAimingParameters(
@@ -91,7 +101,8 @@ public class AimParameterUtil {
       Translation2d goalTranslation,
       double tolerance,
       Pose2d robotPose,
-      ChassisSpeeds fieldRelativeSpeeds) {
+      ChassisSpeeds fieldRelativeSpeeds,
+      ChassisSpeeds driverCommandedVelocity) {
     var turretPose = TurretCalculator.getTurretPose(robotPose);
     var turretTranslation = turretPose.getTranslation();
     var turretFieldRelativeSpeeds =
@@ -100,7 +111,7 @@ public class AimParameterUtil {
 
     var separatedVelocityCompensatedGoal =
         sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            turretTranslation, goalTranslation, turretFieldRelativeSpeeds);
+            turretTranslation, goalTranslation, turretFieldRelativeSpeeds, driverCommandedVelocity);
 
     var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
     double distance = turretTranslation.getDistance(compensatedGoal);
@@ -137,7 +148,8 @@ public class AimParameterUtil {
       Translation2d goalTranslation,
       double tolerance,
       Pose2d robotPose,
-      ChassisSpeeds fieldRelativeSpeeds) {
+      ChassisSpeeds fieldRelativeSpeeds,
+      ChassisSpeeds driverCommandedVelocity) {
     var turretPose = TurretCalculator.getTurretPose(robotPose);
     var turretTranslation = turretPose.getTranslation();
     var turretFieldRelativeSpeeds =
@@ -146,7 +158,7 @@ public class AimParameterUtil {
 
     var separatedVelocityCompensatedGoal =
         sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            turretTranslation, goalTranslation, turretFieldRelativeSpeeds);
+            turretTranslation, goalTranslation, turretFieldRelativeSpeeds, driverCommandedVelocity);
 
     double distance = turretTranslation.getDistance(goalTranslation);
     double turretAngle = TurretCalculator.calculateTurretAimingAngle(robotPose, goalTranslation);
