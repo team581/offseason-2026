@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
-import java.util.function.DoubleSupplier;
 
 public class Turret extends StateMachineSubsystem<TurretState> implements PowerManaged {
   private static double clamp(double wantedAngle) {
@@ -65,30 +64,15 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
 
   private double statorCurrent = 0.0;
   private double feedForward = 0.0;
-  private double baseFeedForward = 0.0;
-  private double driverFeedForwardCorrection = 0.0;
-
-  private double appliedFeedForward = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   private final NeutralOut neutralRequest = new NeutralOut();
   private final Vision vision;
 
-  private final DoubleSupplier driverIntentTurretFeedForwardCorrection;
-
   public Turret(TalonFX motor, CANcoder encoder, Vision vision) {
-    this(motor, encoder, vision, () -> 0.0);
-  }
-
-  public Turret(
-      TalonFX motor,
-      CANcoder encoder,
-      Vision vision,
-      DoubleSupplier driverIntentTurretFeedForwardCorrection) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
     this.vision = vision;
-    this.driverIntentTurretFeedForwardCorrection = driverIntentTurretFeedForwardCorrection;
 
     motor.getConfigurator().apply(TurretConfig.MOTOR_CONFIG);
     encoder.getConfigurator().apply(TurretConfig.ENCODER_CONFIG);
@@ -227,18 +211,11 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   private double getFeedForward() {
-    return appliedFeedForward;
-  }
-
-  private void updateFeedForward() {
-    baseFeedForward = feedForward;
-    driverFeedForwardCorrection = driverIntentTurretFeedForwardCorrection.getAsDouble();
-    appliedFeedForward = baseFeedForward + driverFeedForwardCorrection;
-
     if (MathUtil.isNear(TurretConfig.MAX_ANGLE, currentAngle, 3)
         || MathUtil.isNear(TurretConfig.MIN_ANGLE, currentAngle, 3)) {
-      appliedFeedForward = 0.0;
+      return 0.0;
     }
+    return feedForward;
   }
 
   private void updateSetpoint() {
@@ -304,7 +281,6 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     // RobotManager submits the current goal during its action phase. Derive the setpoint here so
     // the command sent to the motor uses that same-loop goal instead of the previous loop's one.
     updateSetpoint();
-    updateFeedForward();
 
     switch (currentState) {
       case UNHOMED -> motor.setControl(neutralRequest);
@@ -329,9 +305,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     DogLog.log("Turret/StatorCurrent", statorCurrent);
     DogLog.log("Turret/Voltage", voltage);
     DogLog.log("Turret/Setpoint", setpoint);
-    DogLog.log("Turret/BaseFeedForwardRadiansPerSecond", baseFeedForward);
-    DogLog.log("Turret/DriverFeedForwardCorrectionRadiansPerSecond", driverFeedForwardCorrection);
-    DogLog.log("Turret/FeedForwardRadiansPerSecond", appliedFeedForward);
+    DogLog.log("Turret/FeedForwardRadiansPerSecond", getFeedForward());
     DogLog.log("Turret/AngleErrorDegrees", getAngleError());
   }
 }
