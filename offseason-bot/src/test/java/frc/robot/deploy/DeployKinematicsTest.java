@@ -30,8 +30,8 @@ final class DeployKinematicsTest {
     }
     var middle = DeployKinematics.componentPoses(5.95)[0];
     var end = DeployKinematics.componentPoses(11.9)[0];
-    assertThat(middle.getTranslation().getDistance(end.getTranslation().times(0.5)) > 0.05)
-        .isTrue();
+    assertThat(middle.getTranslation().getDistance(end.getTranslation().times(0.5)))
+        .isGreaterThan(0.05);
   }
 
   @Test
@@ -40,8 +40,8 @@ final class DeployKinematicsTest {
     assertEquals(
         DeployKinematics.componentPoses(11.9)[0], DeployKinematics.componentPoses(20.0)[0]);
     // STOW is an intermediate linkage angle, not the CAD's fully inward endpoint.
-    assertThat(DeployKinematics.angleDegrees(5.0) > 0.0).isTrue();
-    assertThat(DeployKinematics.angleDegrees(5.0) < 88.4).isTrue();
+    assertThat(DeployKinematics.angleDegrees(5.0)).isGreaterThan(0.0);
+    assertThat(DeployKinematics.angleDegrees(5.0)).isLessThan(88.4);
   }
 
   @Test
