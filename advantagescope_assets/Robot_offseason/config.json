@@ -2,16 +2,23 @@
   "cameras": [],
   "components": [
     {
-      "zeroedRotations": [
-        {
-          "axis": "x",
-          "degrees": 90
-        },
-        {
-          "axis": "z",
-          "degrees": 180
-        }
-      ],
+      "zeroedRotations": [],
+      "zeroedPosition": [
+        0.014985981,
+        -0.203835,
+        -0.457770893
+      ]
+    },
+    {
+      "zeroedRotations": [],
+      "zeroedPosition": [
+        0.12065,
+        -0.203835,
+        -0.37465
+      ]
+    },
+    {
+      "zeroedRotations": [],
       "zeroedPosition": [
         0,
         0,
@@ -19,71 +26,35 @@
       ]
     },
     {
-      "zeroedRotations": [
-        {
-          "axis": "x",
-          "degrees": 90
-        },
-        {
-          "axis": "z",
-          "degrees": 180
-        }
-      ],
+      "zeroedRotations": [],
       "zeroedPosition": [
-        0,
-        0,
-        0
+        0.014985981,
+        -0.203835,
+        -0.457770893
       ]
     },
     {
-      "zeroedRotations": [
-        {
-          "axis": "x",
-          "degrees": 90
-        },
-        {
-          "axis": "z",
-          "degrees": 180
-        }
-      ],
+      "zeroedRotations": [],
       "zeroedPosition": [
-        0,
-        0,
-        0
+        0.12065,
+        -0.203835,
+        -0.37465
       ]
     },
     {
-      "zeroedRotations": [
-        {
-          "axis": "x",
-          "degrees": 90
-        },
-        {
-          "axis": "z",
-          "degrees": 180
-        }
-      ],
+      "zeroedRotations": [],
       "zeroedPosition": [
-        0,
-        0,
-        0
+        -0.14604999999999407,
+        -4.046193105484455E-17,
+        -0.26263852490581985
       ]
     },
     {
-      "zeroedRotations": [
-        {
-          "axis": "x",
-          "degrees": 90
-        },
-        {
-          "axis": "z",
-          "degrees": 180
-        }
-      ],
+      "zeroedRotations": [],
       "zeroedPosition": [
-        0,
-        0,
-        0
+        -0.23087274455928036,
+        8.181923382689241E-17,
+        -0.20320000000000193
       ]
     }
   ],
@@ -94,14 +65,5 @@
     0,
     0
   ],
-  "rotations": [
-    {
-      "axis": "x",
-      "degrees": 90
-    },
-    {
-      "axis": "z",
-      "degrees": 180
-    }
-  ]
+  "rotations": []
 }

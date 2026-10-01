@@ -24,6 +24,16 @@ final class MechanismVisualizerTest {
   }
 
   @Test
+  void deployArmsRemainVisibleAndFollowTheSameMotionAcrossRobotStates() {
+    var score = MechanismVisualizer.buildComponentPoses(RobotState.SCORE, 0, 11, 5.95);
+    var stow = MechanismVisualizer.buildComponentPoses(RobotState.IDLE, 0, 11, 5.95);
+    for (var index : new int[] {2, 5, 6}) {
+      assertEquals(score[index], stow[index]);
+      assertEquals(true, isVisible(score[index]));
+    }
+  }
+
+  @Test
   void hoodIsFlatAtItsHorizontalAngleAndRaisesItsRearForPositiveExtension() {
     var flatPoses =
         MechanismVisualizer.buildComponentPoses(
@@ -52,7 +62,7 @@ final class MechanismVisualizerTest {
               state, 0.0, ShooterHoodConfig.ANGLE_FROM_HORIZONTAL, 0.0);
       var shouldUseGreen = state == RobotState.SCORE || state == RobotState.FEED;
 
-      assertEquals(5, poses.length);
+      assertEquals(7, poses.length);
       assertEquals(shouldUseGreen, isVisible(poses[0]));
       assertEquals(shouldUseGreen, isVisible(poses[1]));
       assertEquals(!shouldUseGreen, isVisible(poses[3]));
@@ -72,11 +82,11 @@ final class MechanismVisualizerTest {
     var turretPose = poses[1];
     var hoodPose = poses[0];
 
-    assertEquals(Units.inchesToMeters(8.0), turretPose.getX(), DELTA);
-    assertEquals(Units.inchesToMeters(8.0), turretPose.getY(), DELTA);
-    assertEquals(Units.inchesToMeters(14.0), turretPose.getZ(), DELTA);
-    assertEquals(Units.inchesToMeters(8.0), hoodPose.getX(), DELTA);
-    assertEquals(Units.inchesToMeters(11.0), hoodPose.getY(), DELTA);
-    assertEquals(Units.inchesToMeters(20.0), hoodPose.getZ(), DELTA);
+    assertEquals(Units.inchesToMeters(-4.750), turretPose.getX(), DELTA);
+    assertEquals(Units.inchesToMeters(8.025), turretPose.getY(), DELTA);
+    assertEquals(Units.inchesToMeters(14.750), turretPose.getZ(), DELTA);
+    assertEquals(Units.inchesToMeters(-4.750), hoodPose.getX(), DELTA);
+    assertEquals(Units.inchesToMeters(8.025) + 0.105664019, hoodPose.getY(), DELTA);
+    assertEquals(0.457770893, hoodPose.getZ(), DELTA);
   }
 }

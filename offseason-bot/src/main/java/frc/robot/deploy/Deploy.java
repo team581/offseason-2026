@@ -139,6 +139,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  /** Calibrated motor/sprocket travel in inches, not the intake's Cartesian displacement. */
   public double getPosition() {
     return differentialMechanismPosition;
   }
@@ -192,8 +193,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
                     .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(DeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DeployConfig.MAX_LENGTH));
+                    .withMinPosition(DeployConfig.HOMING_END_POSITION_INWARD)
+                    .withMaxPosition(DeployConfig.HOMING_END_POSITION_OUTWARD));
 
     if (getState() == DeployState.HOME_INWARD) {
       deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
@@ -310,5 +311,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
     DogLog.log("Deploy/GoalPosition", getState().getLength());
     DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
+    DogLog.log("Deploy/LinkageAngleDegrees", DeployKinematics.angleDegrees(getPosition()));
   }
 }
