@@ -90,8 +90,11 @@ final class AimParameterUtilTest {
     var rotating =
         AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
 
-    assertThat(lateral.turretFeedForwardRadians()).isNegative();
-    assertThat(rotating.turretFeedForwardRadians()).isLessThan(-1.0);
+    assertEquals(-1.0 / 4.0, lateral.turretFeedForwardRadians(), DELTA);
+    // The turret is behind the chassis center: positive yaw moves its axis in -Y,
+    // reducing the relative tracking rate below the chassis's 1 rad/s yaw rate.
+    assertEquals(
+        -(1.0 - Units.inchesToMeters(4.750) / 4.0), rotating.turretFeedForwardRadians(), DELTA);
   }
 
   @Test

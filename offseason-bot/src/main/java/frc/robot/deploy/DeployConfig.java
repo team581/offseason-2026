@@ -14,6 +14,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import frc.robot.config.RobotKind;
 
 public class DeployConfig {
+  // Calibrated motor/sprocket travel in inches. These are not Cartesian intake positions:
+  // the intake follows a parallel-linkage arc, mapped by DeployKinematics.
   public static final double MAX_LENGTH = 11.8;
   public static final double MIN_LENGTH = 5;
   public static final double HOMING_END_POSITION_INWARD = 0;
