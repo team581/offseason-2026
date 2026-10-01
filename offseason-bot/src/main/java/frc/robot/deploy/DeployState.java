@@ -27,6 +27,7 @@ public enum DeployState {
     this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
 
+  /** Target motor/sprocket travel in calibrated inches, rather than intake displacement. */
   public double getLength() {
     return tunableLength.get();
   }

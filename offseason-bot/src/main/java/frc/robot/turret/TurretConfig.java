@@ -37,9 +37,9 @@ public class TurretConfig {
   public static final double ENCODER_TO_TURRET =
       (float) 220.0 / 25.0 * 8.0 / 30.0 * 8.0 / 35.0; // Encoder rot to turret rot
 
-  // Turret 2d transform relative to robot center
+  // Turret axis relative to robot center: 4.750 inches back and 8.025 inches left.
   public static final Transform2d TURRET_TO_ROBOT =
-      new Transform2d(Units.inchesToMeters(8.0), Units.inchesToMeters(8.0), Rotation2d.kZero);
+      new Transform2d(Units.inchesToMeters(-4.750), Units.inchesToMeters(8.025), Rotation2d.kZero);
 
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
