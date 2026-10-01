@@ -2,6 +2,7 @@ package com.team581.simulation;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 /** Versioned, complete input frame. Never contains NetworkTables values. */
@@ -23,7 +24,7 @@ public record SimControlSnapshot(
             && sequence >= 0
             && mode != null
             && alliance != null
-            && List.of("teleop", "auto", "test").contains(mode)
+            && ImmutableList.of("teleop", "auto", "test").contains(mode)
             && List.of("Unknown", "Red1", "Red2", "Red3", "Blue1", "Blue2", "Blue3")
                 .contains(alliance)
             && Double.isFinite(matchTime)
