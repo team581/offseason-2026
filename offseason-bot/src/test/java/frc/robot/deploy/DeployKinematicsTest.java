@@ -1,7 +1,7 @@
 package frc.robot.deploy;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -30,7 +30,8 @@ final class DeployKinematicsTest {
     }
     var middle = DeployKinematics.componentPoses(5.95)[0];
     var end = DeployKinematics.componentPoses(11.9)[0];
-    assertTrue(middle.getTranslation().getDistance(end.getTranslation().times(0.5)) > 0.05);
+    assertThat(middle.getTranslation().getDistance(end.getTranslation().times(0.5)) > 0.05)
+        .isTrue();
   }
 
   @Test
@@ -39,8 +40,8 @@ final class DeployKinematicsTest {
     assertEquals(
         DeployKinematics.componentPoses(11.9)[0], DeployKinematics.componentPoses(20.0)[0]);
     // STOW is an intermediate linkage angle, not the CAD's fully inward endpoint.
-    assertTrue(DeployKinematics.angleDegrees(5.0) > 0.0);
-    assertTrue(DeployKinematics.angleDegrees(5.0) < 88.4);
+    assertThat(DeployKinematics.angleDegrees(5.0) > 0.0).isTrue();
+    assertThat(DeployKinematics.angleDegrees(5.0) < 88.4).isTrue();
   }
 
   @Test
