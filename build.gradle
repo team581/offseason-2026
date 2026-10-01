@@ -141,3 +141,37 @@ Instead, deploy to a specific robot:
 This prevents race conditions where each robot tries to deploy at the same time, causing the wrong code to be deployed.""".trim())
 	}
 }
+
+// Compile only when inputs change; no dev server or Node process during simulation.
+tasks.register('prepareSimApp', Exec) {
+	group = 'simulation'
+	description = 'Build the native Simulation Studio app (requires Node and Rust).'
+	workingDir rootProject.file('sim-app')
+	inputs.files(fileTree('sim-app/scripts'), fileTree('sim-app/src'), fileTree('sim-app/src-tauri/src'),
+			fileTree('sim-app/src-tauri/capabilities'), fileTree('sim-app/src-tauri/icons'),
+			'sim-app/package.json', 'sim-app/package-lock.json', 'sim-app/tsconfig.json',
+			'sim-app/vite.config.ts', 'sim-app/index.html', 'sim-app/src-tauri/Cargo.toml',
+			'sim-app/src-tauri/Cargo.lock', 'sim-app/src-tauri/build.rs', 'sim-app/src-tauri/tauri.conf.json')
+	def windows = org.gradle.internal.os.OperatingSystem.current().isWindows()
+	outputs.file('sim-app/src-tauri/target/release/simulation-studio' + (windows ? '.exe' : ''))
+	if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+		outputs.dir('sim-app/src-tauri/target/release/bundle/macos/Simulation Studio.app')
+	}
+	dependsOn 'installSimAppDependencies'
+	commandLine windows ? [
+		'cmd',
+		'/c',
+		'npm',
+		'run',
+		'package'
+	] : ['npm', 'run', 'package']
+}
+
+tasks.register('installSimAppDependencies', Exec) {
+	group = 'simulation'
+	workingDir rootProject.file('sim-app')
+	inputs.files('sim-app/package.json', 'sim-app/package-lock.json')
+	outputs.file('sim-app/node_modules/.package-lock.json')
+	def windows = org.gradle.internal.os.OperatingSystem.current().isWindows()
+	commandLine windows ? ['cmd', '/c', 'npm', 'ci'] : ['npm', 'ci']
+}
