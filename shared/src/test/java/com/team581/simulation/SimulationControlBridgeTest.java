@@ -1,15 +1,16 @@
 package com.team581.simulation;
 
+import static java.util.Comparator.naturalOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import java.net.URI;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import org.java_websocket.client.WebSocketClient;
@@ -57,7 +58,11 @@ final class SimulationControlBridgeTest {
     long sentSequence = sequence++;
     var stick =
         new SimControlSnapshot.Joystick(
-            "Fixture", true, List.of(0.25, -0.5), List.of(true, false), List.of(90));
+            "Fixture",
+            true,
+            ImmutableList.of(0.25, -0.5),
+            ImmutableList.of(true, false),
+            ImmutableList.of(90));
     client.send(
         JSON.writeValueAsString(
             new SimControlSnapshot(
@@ -123,7 +128,7 @@ final class SimulationControlBridgeTest {
     var executor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
     var samples = new java.util.ArrayList<Double>();
     try {
-      executor.scheduleAtFixedRate(bridge::applyLatest, 0, 20, TimeUnit.MILLISECONDS);
+      var unused = executor.scheduleAtFixedRate(bridge::applyLatest, 0, 20, TimeUnit.MILLISECONDS);
       for (int i = 0; i < 100; i++) {
         long sentAt = System.nanoTime();
         long id = send(false, false);
@@ -135,7 +140,7 @@ final class SimulationControlBridgeTest {
         samples.add((client.receivedAt - sentAt) / 1_000_000.0);
         Thread.sleep(3);
       }
-      samples.sort(Double::compareTo);
+      samples.sort(naturalOrder());
       System.out.println(
           "Simulation bridge roundtrip p95: "
               + samples.get(94)
@@ -161,7 +166,11 @@ final class SimulationControlBridgeTest {
             Collections.nCopies(
                 6,
                 new SimControlSnapshot.Joystick(
-                    "x", true, List.of(Double.NaN), List.of(), List.of())));
+                    "x",
+                    true,
+                    ImmutableList.of(Double.NaN),
+                    ImmutableList.of(),
+                    ImmutableList.of())));
     assertThatThrownBy(invalid::validate).isInstanceOf(IllegalArgumentException.class);
   }
 

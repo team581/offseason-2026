@@ -1,15 +1,20 @@
 package com.team581.simulation;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import org.java_websocket.WebSocket;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
@@ -49,7 +54,7 @@ public final class SimulationControlBridge extends WebSocketServer {
   private boolean wasAttached;
 
   public SimulationControlBridge(String executable, String project, int port) {
-    super(new InetSocketAddress("127.0.0.1", port), 1);
+    super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 1);
     this.executable = executable;
     this.project = project;
     setConnectionLostTimeout(2);
@@ -139,7 +144,7 @@ public final class SimulationControlBridge extends WebSocketServer {
 
   @Override
   public synchronized void onClose(WebSocket connection, int code, String reason, boolean remote) {
-    if (connection == controller) {
+    if (Objects.equals(connection, controller)) {
       controller = null;
       latest.set(null);
       armed = false;
@@ -153,21 +158,15 @@ public final class SimulationControlBridge extends WebSocketServer {
 
   @Override
   public synchronized void onMessage(WebSocket connection, String message) {
-    if (connection != controller) {
+    if (!Objects.equals(connection, controller)) {
       return;
     }
     try {
-      if (message.length() > 16_384) {
-        throw new IllegalArgumentException("Frame too large");
-      }
+      checkArgument(message.length() <= 16_384, "Frame too large");
       var frame = JSON.readValue(message, SimControlSnapshot.class);
       frame.validate();
-      if (frame.sequence() <= lastSequence) {
-        throw new IllegalArgumentException("Out of order control frame");
-      }
-      if (!armed && frame.enabled()) {
-        throw new IllegalArgumentException("Send a disabled frame before enabling");
-      }
+      checkArgument(frame.sequence() > lastSequence, "Out of order control frame");
+      checkArgument(armed || !frame.enabled(), "Send a disabled frame before enabling");
       armed = true;
       lastSequence = frame.sequence();
       latest.set(new Received(frame, System.nanoTime(), connection));
@@ -201,7 +200,7 @@ public final class SimulationControlBridge extends WebSocketServer {
       if (path.endsWith(".app")) {
         // Launch Services initializes the macOS webview properly. -n lets single-instance
         // forwarding deliver new simulation arguments even when the app is already running.
-        command.addAll(List.of("/usr/bin/open", "-n", "-a", path, "--args"));
+        command.addAll(ImmutableList.of("/usr/bin/open", "-n", "-a", path, "--args"));
       } else {
         command.add(path);
       }
