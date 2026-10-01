@@ -1,0 +1,19 @@
+// Applied by each robot project. Also included in VS Code external simulation metadata.
+def useWpilibGui = providers.gradleProperty('wpilibSimGui').map {
+	it.toBoolean()
+}.getOrElse(false)
+if (useWpilibGui) {
+	wpi.sim.addGui().defaultEnabled = true
+	wpi.sim.addDriverstation()
+} else {
+	def os = org.gradle.internal.os.OperatingSystem.current()
+	def appExe = rootProject.file(os.isMacOsX()
+			? 'sim-app/src-tauri/target/release/bundle/macos/Simulation Studio.app'
+			: 'sim-app/src-tauri/target/release/simulation-studio' + (os.isWindows() ? '.exe' : ''))
+	wpi.sim.environment.put('TEAM581_CUSTOM_SIM', 'true')
+	wpi.sim.environment.put('TEAM581_SIM_APP', appExe.absolutePath)
+	wpi.sim.environment.put('TEAM581_SIM_PROJECT', project.name)
+	tasks.matching { it.name.startsWith('simulate') }.configureEach {
+		dependsOn rootProject.tasks.named('prepareSimApp')
+	}
+}
