@@ -8,6 +8,9 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
@@ -24,13 +27,33 @@ import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
 import frc.robot.turret.TurretCalculator;
+import frc.robot.turret.TurretConfig;
 import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
+import frc.robot.util.ShotMotion;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
+  private static final DoubleSubscriber SHOT_LOOKAHEAD =
+      DogLog.tunable("ShotCoordinator/LookaheadSeconds", 0.10);
   private static final double PRESET_FEED_DISTANCE = 0.0;
+
+  private static boolean isFeedRouteClear(FeedLocation location, Pose2d pose) {
+    // Reserve the turret's swept footprint plus 35 cm of drive response, so a turn does not
+    // suddenly force an aim-target jump after feeding has begun.
+    double radius = TurretConfig.TURRET_TO_ROBOT.getTranslation().getNorm() + 0.35;
+    for (int i = 0; i < 16; i++) {
+      var axis =
+          pose.getTranslation()
+              .plus(new Translation2d(radius, Rotation2d.fromRadians(i * Math.PI / 8)));
+      if (FieldUtil.isFeedPathObstructed(axis, location.getTranslation())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public final HopperManager hopperManager;
   public final Localization localization;
   public final Swerve swerve;
@@ -41,21 +64,22 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private final Vision vision;
   public final XboxController driverController;
   private final HealthManager health;
+
   private final HubActivity hubActivity;
-
   public final PowerManager powerManager;
-  private Pose2d robotPose = Pose2d.kZero;
 
+  private Pose2d robotPose = Pose2d.kZero;
   private boolean nearTrench = false;
   private AimingParameters scoringParameters = new AimingParameters(0, 0, 0, 0, 0);
-  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0, 0);
 
+  private AimingParameters feedingParameters = new AimingParameters(0, 0, 0, 0, 0);
   private AimingParameters fallbackFeedingParameters = new AimingParameters(0, 0, 0, 0, 0);
   private boolean isMoving = false;
-  private boolean trenchOverride = false;
 
+  private boolean trenchOverride = false;
   private boolean isInAllianceZone = false;
   private boolean isInSafeFeedingLocation = true;
+
   private boolean isScorePathObstructed = false;
 
   // Number gotten from trench scoring point
@@ -254,6 +278,32 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         "RobotManager/Scoring/ScoreTransition/SwerveSafeSpeed", !swerve.isMovingBeyondSafeSpeed());
   }
 
+  private void selectSafeFeedLocation(ChassisSpeeds measured, ChassisSpeeds requested) {
+    var predicted = ShotMotion.predict(robotPose, measured, requested, 0.25);
+    boolean backup =
+        feedLocation == FeedLocation.BACKUP_LEFT || feedLocation == FeedLocation.BACKUP_RIGHT;
+    // Keep a clear backup route for this feeding request instead of bouncing between targets.
+    if (getState().isFeeding()
+        && backup
+        && isFeedRouteClear(feedLocation, robotPose)
+        && isFeedRouteClear(feedLocation, predicted.pose())) {
+      return;
+    }
+    var preferred = FeedLocation.closest(TurretCalculator.getTurretPose(robotPose));
+    if (!isFeedRouteClear(preferred, robotPose) || !isFeedRouteClear(preferred, predicted.pose())) {
+      var alternative =
+          preferred == FeedLocation.LEFT || preferred == FeedLocation.BACKUP_LEFT
+              ? FeedLocation.BACKUP_LEFT
+              : FeedLocation.BACKUP_RIGHT;
+      if (isFeedRouteClear(alternative, robotPose)
+          && isFeedRouteClear(alternative, predicted.pose())) {
+        preferred = alternative;
+      }
+    }
+    feedLocation = preferred;
+    DogLog.log("ShotCoordinator/Feeding/Target", feedLocation.name());
+  }
+
   private void smartFeedingPowerManagerRequest() {
     if (robotPose.getTranslation().getDistance(feedLocation.getTranslation())
         > SLOW_FEEDING_DISTANCE_THRESHOLD.get()) {
@@ -300,6 +350,50 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     } else {
       turret.idleFeedRequest(feedingParameters);
     }
+  }
+
+  private void updateShotSolution() {
+    var requested = swerve.prepareMotionCommand();
+    var measured = swerve.getFieldRelativeSpeeds();
+    selectSafeFeedLocation(measured, requested);
+    isInSafeFeedingLocation =
+        !health.isLocalizationHealthy()
+            || !FieldUtil.isFeedPathObstructed(
+                TurretCalculator.getTurretPose(robotPose).getTranslation(),
+                feedLocation.getTranslation());
+    var scoringPose =
+        health.isLocalizationHealthy()
+            ? robotPose
+            : new Pose2d(
+                FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
+    scoringParameters =
+        health.isLocalizationHealthy()
+            ? AimParameterUtil.getPredictiveScoringParameters(
+                scoringPose, measured, requested, SHOT_LOOKAHEAD.get())
+            : AimParameterUtil.getStaticScoringParameters(scoringPose, measured);
+    feedingParameters =
+        AimParameterUtil.getPredictiveFeedingParameters(
+            feedLocation, robotPose, measured, requested, SHOT_LOOKAHEAD.get());
+    double feedingDistance =
+        getState() == RobotState.PREPARE_FALLBACK_FEED || getState() == RobotState.FALLBACK_FEED
+            ? PRESET_FEED_DISTANCE
+            : feedingParameters.distance();
+    shooter.updateShotDistances(scoringParameters.distance(), feedingDistance);
+    shooterHood.updateShotDistances(scoringParameters.distance(), feedingDistance);
+    hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
+    DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
+    DogLog.log("ShotCoordinator/Feeding/Target", feedLocation.name());
+    DogLog.log("ShotCoordinator/Feeding/TurretTolerance", feedingParameters.turretTolerance());
+    DogLog.log(
+        "ShotCoordinator/Feeding/TurretError",
+        Math.abs(
+            Rotation2d.fromDegrees(turret.getAngle())
+                .minus(Rotation2d.fromDegrees(feedingParameters.turretAngle()))
+                .getDegrees()));
+    DogLog.log("ShotCoordinator/Scoring/TurretAngle", scoringParameters.turretAngle());
+    DogLog.log("ShotCoordinator/Scoring/Distance", scoringParameters.distance());
+    DogLog.log(
+        "ShotCoordinator/Scoring/TurretVelocity", scoringParameters.turretFeedForwardRadians());
   }
 
   @Override
@@ -434,10 +528,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void collectInputs() {
-    hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
-
     robotPose = localization.getPose();
-    feedLocation = FeedLocation.closest(robotPose);
+    feedLocation =
+        getState().isFeeding()
+            ? feedLocation
+            : FeedLocation.closest(TurretCalculator.getTurretPose(robotPose));
     double robotRotation = robotPose.getRotation().getDegrees();
     vision.setEstimatedPoseAngle(robotRotation);
     var speeds = swerve.getFieldRelativeSpeeds();
@@ -454,21 +549,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     : FieldUtil.inTrench(robotPose.getTranslation()))
                 || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
-    Pose2d robotPoseUsedForScoring =
-        health.isLocalizationHealthy()
-            ? robotPose
-            : new Pose2d(
-                FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
-    scoringParameters =
-        getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
-            ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, speeds)
-            : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, speeds);
-
-    feedingParameters =
-        getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()
-            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
-            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
-
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
     isInAllianceZone =
@@ -476,22 +556,17 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             ? hubActivity.getTOFBasedHubActive()
             : FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation());
 
-    isInSafeFeedingLocation =
-        !health.isLocalizationHealthy()
-            || !FieldUtil.isFeedPathObstructed(
-                TurretCalculator.getTurretPose(robotPose).getTranslation(),
-                feedLocation.getTranslation());
     isScorePathObstructed =
         health.isLocalizationHealthy()
             && FieldUtil.isScorePathObstructed(
                 TurretCalculator.getTurretPose(robotPose).getTranslation());
 
     shooter.updateHopperState(hopperManager.feeder.getAverageCurrent(), hopperManager.isFull());
-    DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
   }
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
+    updateShotSolution();
     return switch (currentState) {
       // No auto transitions for these states
       case UNJAM, FORCE_SCORE, WARMUP_FEED, WARMUP_SCORE, IDLE -> currentState;

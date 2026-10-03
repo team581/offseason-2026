@@ -144,6 +144,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     shooterHoodSimulation.update();
   }
 
+  public void updateShotDistances(double scoring, double feeding) {
+    scoreDistance = scoring;
+    feedDistance = feeding;
+  }
+
   private double getGoalAngle() {
     return switch (getState()) {
       case UNHOMED, HOMING -> -1;

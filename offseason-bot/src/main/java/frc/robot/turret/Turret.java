@@ -25,6 +25,15 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     return MathUtil.clamp(wantedAngle, TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
   }
 
+  static boolean isAtGoal(TurretState state, double currentAngle, AimingParameters parameters) {
+    double goal = clamp(TurretCalculator.getOptimalAngle(parameters.turretAngle(), currentAngle));
+    // Feeding readiness describes this shot, not a hypothetical unwrap half a second later.
+    // Still reject a real unwrap and require the beam to match the unclamped shot direction.
+    return isAtGoal(state, goal, currentAngle, parameters.turretTolerance())
+        && MathUtil.isNear(
+            parameters.turretAngle(), currentAngle, parameters.turretTolerance(), -180, 180);
+  }
+
   static boolean isAtGoal(
       TurretState state, double setpoint, double currentAngle, double tolerance) {
     return switch (state) {
@@ -44,11 +53,16 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
       case UNHOMED -> false;
       case STUCK -> false;
       default -> {
-        var potentialSetpoint = TurretCalculator.getOptimalAngle(upcomingAngle, currentAngle);
-        if (!MathUtil.isNear(potentialSetpoint, setpoint, 90)) {
+        // A large future angle change is normal while rotating. Only reject a future
+        // trajectory that would leave this unwrap branch and require crossing a hard stop.
+        double continuousUpcomingAngle =
+            setpoint + MathUtil.inputModulus(upcomingAngle - setpoint, -180, 180);
+        if (continuousUpcomingAngle < TurretConfig.MIN_ANGLE
+            || continuousUpcomingAngle > TurretConfig.MAX_ANGLE) {
           yield false;
         }
-        yield MathUtil.isNear(setpoint, currentAngle, tolerance, -180, 180);
+        // Motor position is unwrapped: being one revolution away is not actuator readiness.
+        yield MathUtil.isNear(setpoint, currentAngle, tolerance);
       }
     };
   }
@@ -58,16 +72,17 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double setpoint = 0.0;
+
   private double velocity = 0.0;
 
   private double voltage = 0.0;
-
   private double statorCurrent = 0.0;
+
   private double feedForward = 0.0;
 
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
-
   private final NeutralOut neutralRequest = new NeutralOut();
+
   private final Vision vision;
 
   public Turret(TalonFX motor, CANcoder encoder, Vision vision) {
@@ -91,7 +106,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(AimingParameters aimingParameters) {
-    return atGoal(aimingParameters.turretTolerance(), aimingParameters.upcomingTurretAngle());
+    return isAtGoal(getState(), currentAngle, aimingParameters);
   }
 
   public boolean atGoal(double tolerance) {

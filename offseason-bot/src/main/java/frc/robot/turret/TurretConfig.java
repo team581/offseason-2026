@@ -17,8 +17,8 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.config.RobotKind;
 
 public class TurretConfig {
-  public static final double MIN_ANGLE = RobotKind.IS_COMP_BOT ? -390.0 : -355.0;
-  public static final double MAX_ANGLE = RobotKind.IS_COMP_BOT ? 40.0 : 5.0;
+  public static final double MIN_ANGLE = -320.0;
+  public static final double MAX_ANGLE = 320.0;
   public static final double FAUX_DUMPER_ANGLE = -180;
 
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;

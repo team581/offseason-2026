@@ -44,10 +44,6 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
-  private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
-      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
-  ;
-
   public static final double TRANSLATION_STD_DEV = 0.01;
 
   public static final double MAX_LINEAR_RATE = 4.75;
@@ -87,9 +83,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final SwerveRequest.FieldCentric driverPerspective =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
-          .withDeadband(0.07)
-          .withRotationalDeadband(0.05);
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withDeadband(0.0)
+          .withRotationalDeadband(0.0);
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
@@ -132,8 +128,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
 
   private boolean ableToBumpAssist = false;
-  private boolean driverWantsSotm = false;
-  private boolean driverStillDecidingSotm = false;
+  private ChassisSpeeds motionCommand = new ChassisSpeeds();
+  private Translation2d motionCenterOfRotation = Translation2d.kZero;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -154,6 +150,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     this.teleopDriveSource =
         new XboxControllerDriveSource(
             driverController, Swerve.MAX_LINEAR_RATE, Swerve.TELEOP_MAX_ANGULAR_RATE);
+    drivePerspectiveSnaps.HeadingController.enableContinuousInput(-Math.PI, Math.PI);
     this.trailblazerDriveSource =
         new TrailblazerDriveSource(
             trailblazer, () -> drivetrainState.Pose, this::getFieldRelativeSpeeds);
@@ -198,11 +195,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public boolean driverStillDecidingSotm() {
-    return driverStillDecidingSotm;
+    return false;
   }
 
   public boolean driverWantsSotm() {
-    return driverWantsSotm;
+    return true;
   }
 
   public void feedRequest() {
@@ -215,10 +212,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public ChassisSpeeds getFieldRelativeSpeeds() {
     return fieldRelativeSpeeds;
-  }
-
-  public ChassisSpeeds getRequestedSpeeds() {
-    return driveSource.getRequestedSpeeds();
   }
 
   public ChassisSpeeds getRobotRelativeSpeeds() {
@@ -238,6 +231,53 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void normalDriveRequest() {
     setStateFromRequest(SwerveState.MANUAL);
+  }
+
+  /** Freeze one command after autos runs and before RobotManager calculates the shot. */
+  public ChassisSpeeds prepareMotionCommand() {
+    var source = getState() == SwerveState.CLIMB_ASSIST ? trailblazerDriveSource : driveSource;
+    var requested = source.getRequestedSpeeds();
+    var translation = new Translation2d(requested.vxMetersPerSecond, requested.vyMetersPerSecond);
+    if (source.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP) {
+      translation =
+          translation.rotateBy(FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
+    }
+    if (translation.getNorm() < 0.07) {
+      translation = Translation2d.kZero;
+    }
+    double omega =
+        MathUtil.isNear(0, requested.omegaRadiansPerSecond, 0.05)
+            ? 0.0
+            : requested.omegaRadiansPerSecond;
+    boolean usingBumpAssist =
+        ableToBumpAssist
+            && source.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
+    motionCenterOfRotation =
+        usingBumpAssist ? drivePerspectiveSnaps.CenterOfRotation : Translation2d.kZero;
+    if (usingBumpAssist) {
+      var target =
+          SwerveAssist.getRoundedSnapAngle(
+              drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE);
+      omega =
+          MathUtil.clamp(
+              drivePerspectiveSnaps.HeadingController.calculate(
+                  drivetrainState.Pose.getRotation().getRadians(),
+                  target.getRadians(),
+                  Utils.getCurrentTimeSeconds()),
+              -Units.rotationsToRadians(currentMaxAngularRate),
+              Units.rotationsToRadians(currentMaxAngularRate));
+    }
+    motionCommand =
+        DriverStation.isEnabled()
+            ? new ChassisSpeeds(translation.getX(), translation.getY(), omega)
+            : new ChassisSpeeds();
+    DogLog.log("Swerve/MotionCommandFieldRelative", motionCommand);
+    // Phoenix interprets translation at the center of rotation; aiming needs chassis-center speed.
+    var center = motionCenterOfRotation.rotateBy(drivetrainState.Pose.getRotation());
+    return new ChassisSpeeds(
+        motionCommand.vxMetersPerSecond + motionCommand.omegaRadiansPerSecond * center.getY(),
+        motionCommand.vyMetersPerSecond - motionCommand.omegaRadiansPerSecond * center.getX(),
+        motionCommand.omegaRadiansPerSecond);
   }
 
   public void scoreRequest() {
@@ -272,42 +312,22 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     drivetrain.setOperatorPerspectiveForward(
         FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
 
-    switch (currentState) {
-      case MANUAL, WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {
-        var speeds = driveSource.getRequestedSpeeds();
-        if (ableToBumpAssist) {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveSnaps
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  SwerveAssist.getRoundedSnapAngle(
-                      drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-        } else {
-          var swerveRequest =
-              switch (driveSource.getDriveSourceType()) {
-                case DRIVER_PERSPECTIVE_OPEN_LOOP -> driverPerspective;
-                case FIELD_CENTRIC_CLOSED_LOOP -> fieldCentric;
-              };
-
-          drivetrain.setControl(
-              swerveRequest
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withRotationalRate(speeds.omegaRadiansPerSecond));
-        }
-      }
-      case CLIMB_ASSIST -> {
-        // Always use Trailblazer drive source for climb alignment
-        var speeds = trailblazerDriveSource.getRequestedSpeeds();
-
-        drivetrain.setControl(
-            fieldCentric
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withRotationalRate(speeds.omegaRadiansPerSecond));
-      }
-    }
+    var request =
+        driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+            ? driverPerspective
+            : fieldCentric;
+    request.withDriveRequestType(
+        ableToBumpAssist
+                || getState() == SwerveState.CLIMB_ASSIST
+                || driveSource.getDriveSourceType() == DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP
+            ? DriveRequestType.Velocity
+            : DriveRequestType.OpenLoopVoltage);
+    drivetrain.setControl(
+        request
+            .withVelocityX(motionCommand.vxMetersPerSecond)
+            .withVelocityY(motionCommand.vyMetersPerSecond)
+            .withRotationalRate(motionCommand.omegaRadiansPerSecond)
+            .withCenterOfRotation(motionCenterOfRotation));
 
     if (DriverStation.isAutonomous() && DriverStation.isDisabled()) {
       var current = drivetrainState.ModuleStates;
@@ -343,8 +363,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
 
-    DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
-    DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
+    DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm());
+    DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm());
   }
 
   private void startSimThread() {
@@ -364,20 +384,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     simNotifier.startPeriodic(SIM_LOOP_PERIOD);
   }
 
-  private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(
-      SwerveRequest.FieldCentricFacingAngle request, Rotation2d targetDirection) {
-    if (request.ForwardPerspective == ForwardPerspectiveValue.OperatorPerspective) {
-      var snapSetpoint =
-          FmsUtil.isRedAlliance()
-              ? targetDirection.plus(drivetrain.getOperatorForwardDirection())
-              : targetDirection;
-
-      return request.withTargetDirection(snapSetpoint);
-    }
-
-    return request.withTargetDirection(targetDirection);
-  }
-
   @Override
   protected void collectInputs() {
     drivetrainState = drivetrain.getState();
@@ -391,16 +397,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
-
-    var requestedSpeeds = driveSource.getRequestedSpeeds();
-    var movingInScoreOrFeed =
-        MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
-            && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
-    var usingTeleopDrive =
-        driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
-    var sotmDelayElapsed = timeout(DRIVER_WANTS_SOTM_DELAY.get());
-    driverWantsSotm = (sotmDelayElapsed && movingInScoreOrFeed) || !usingTeleopDrive;
-    driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
 
     // Use the normal driving caps in teleop, including while scoring and feeding.
     var velocityLimitState = DriverStation.isTeleop() ? SwerveState.MANUAL : getState();

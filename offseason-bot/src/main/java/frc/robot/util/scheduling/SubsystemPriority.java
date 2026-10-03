@@ -6,7 +6,8 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   // 20-30 is for manager subsystems
   AUTOS(30),
   ROBOT_MANAGER(29),
-  HOPPER_MANAGER(29),
+  // RobotManager must submit hopper requests before HopperManager runs its actions.
+  HOPPER_MANAGER(27),
   HEALTH(28),
   POWER_MANAGER(28),
 

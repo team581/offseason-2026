@@ -27,9 +27,10 @@ public class AimParameterUtil {
   private static final ShootOnTheMove FEEDING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_FEED_TOF);
 
-  private static final double FEEDING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(20);
+  private static final double FEEDING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(100);
 
-  private static final double SCORING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(5);
+  private static final double SCORING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(15);
+
   private static final double FEEDING_FALLBACK_DISTANCE_TO_GOAL = 8.0;
 
   private static final double FEEDING_FALLBACK_TOLERANCE = 5.0;
@@ -54,6 +55,34 @@ public class AimParameterUtil {
         FEEDING_GOAL_CENTRIC_TOLERANCE,
         robotPose,
         fieldRelativeSpeeds);
+  }
+
+  public static AimingParameters getPredictiveFeedingParameters(
+      FeedLocation location,
+      Pose2d pose,
+      ChassisSpeeds measured,
+      ChassisSpeeds requested,
+      double lookahead) {
+    return getPredictiveParameters(
+        FEEDING_SOTM,
+        location.getTranslation(),
+        FEEDING_GOAL_CENTRIC_TOLERANCE,
+        pose,
+        measured,
+        requested,
+        lookahead);
+  }
+
+  public static AimingParameters getPredictiveScoringParameters(
+      Pose2d pose, ChassisSpeeds measured, ChassisSpeeds requested, double lookahead) {
+    return getPredictiveParameters(
+        SCORING_SOTM,
+        FieldUtil.HUB_POSE.getTranslation(),
+        SCORING_GOAL_CENTRIC_TOLERANCE,
+        pose,
+        measured,
+        requested,
+        lookahead);
   }
 
   public static AimingParameters getScoringParameters(
@@ -130,6 +159,37 @@ public class AimParameterUtil {
 
     return new AimingParameters(
         turretAngle, distance, turretTolerance, turretFeedForwardRadians, upcomingTurretAngle);
+  }
+
+  private static AimingParameters getPredictiveParameters(
+      ShootOnTheMove sotm,
+      Translation2d goal,
+      double tolerance,
+      Pose2d pose,
+      ChassisSpeeds measured,
+      ChassisSpeeds requested,
+      double lookahead) {
+    var release = ShotMotion.predict(pose, measured, requested, lookahead);
+    var next = ShotMotion.predict(release.pose(), release.speeds(), requested, 0.02);
+    var parameters = getAimingParameters(sotm, goal, tolerance, release.pose(), release.speeds());
+    var nextParameters = getAimingParameters(sotm, goal, tolerance, next.pose(), next.speeds());
+    // The shot is predicted in the release frame, but the motor is in the CURRENT chassis frame.
+    // Keeping the future chassis yaw here adds omega * lookahead of unwanted counter-rotation.
+    var fieldAngle =
+        Rotation2d.fromDegrees(parameters.turretAngle()).plus(release.pose().getRotation());
+    var nextFieldAngle =
+        Rotation2d.fromDegrees(nextParameters.turretAngle()).plus(next.pose().getRotation());
+    double currentTurretAngle = fieldAngle.minus(pose.getRotation()).getDegrees();
+    // Track the changing field aim and cancel measured yaw once. Predicted yaw still contributes
+    // to release position and offset-axis velocity, but is not an extra chassis rotation command.
+    double velocity =
+        nextFieldAngle.minus(fieldAngle).getRadians() / 0.02 - measured.omegaRadiansPerSecond;
+    return new AimingParameters(
+        currentTurretAngle,
+        parameters.distance(),
+        parameters.turretTolerance(),
+        velocity,
+        parameters.upcomingTurretAngle());
   }
 
   private static AimingParameters getStaticAimingParameters(

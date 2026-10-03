@@ -98,7 +98,7 @@ final class AimParameterUtilTest {
   }
 
   @Test
-  void staticFeedingUsesTwentyInchTolerance() {
+  void staticFeedingUsesConfiguredTolerance() {
     var robotPose = new Pose2d(4.0, 2.0, Rotation2d.fromDegrees(-20.0));
     var parameters =
         AimParameterUtil.getStaticFeedingParameters(
@@ -106,13 +106,13 @@ final class AimParameterUtilTest {
 
     assertEquals(
         TurretCalculator.getGoalCentricTurretTolerance(
-            FeedLocation.RIGHT.getTranslation(), robotPose, Units.inchesToMeters(20.0)),
+            FeedLocation.RIGHT.getTranslation(), robotPose, Units.inchesToMeters(100.0)),
         parameters.turretTolerance(),
         DELTA);
   }
 
   @Test
-  void staticScoringUsesCornerTurretPoseAndFiveInchTolerance() {
+  void staticScoringUsesCornerTurretPoseAndConfiguredTolerance() {
     var robotPose = new Pose2d(2.0, 3.0, Rotation2d.fromDegrees(35.0));
     var parameters = AimParameterUtil.getStaticScoringParameters(robotPose, new ChassisSpeeds());
     var turretPose = TurretCalculator.getTurretPose(robotPose);
@@ -124,7 +124,7 @@ final class AimParameterUtilTest {
         DELTA);
     assertEquals(turretPose.getTranslation().getDistance(goal), parameters.distance(), DELTA);
     assertEquals(
-        TurretCalculator.getGoalCentricTurretTolerance(goal, robotPose, Units.inchesToMeters(5.0)),
+        TurretCalculator.getGoalCentricTurretTolerance(goal, robotPose, Units.inchesToMeters(15.0)),
         parameters.turretTolerance(),
         DELTA);
     assertEquals(parameters.turretAngle(), parameters.upcomingTurretAngle(), DELTA);

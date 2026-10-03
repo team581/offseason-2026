@@ -194,6 +194,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void feedRequest(double distance) {
     this.feedDistance = distance;
+    updateRpmGoals();
     setStateFromRequest(ShooterState.FEED);
   }
 
@@ -215,11 +216,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void prepareFeedRequest(double distance) {
     this.feedDistance = distance;
+    updateRpmGoals();
     setStateFromRequest(ShooterState.PREPARE_FEED);
   }
 
   public void prepareScoreRequest(double distance) {
     this.scoreDistance = distance;
+    updateRpmGoals();
     if (getState() != ShooterState.SCORE) {
       setStateFromRequest(ShooterState.PREPARE_SCORE);
     }
@@ -227,6 +230,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void scoreRequest(double distance) {
     this.scoreDistance = distance;
+    updateRpmGoals();
     setStateFromRequest(ShooterState.SCORE);
   }
 
@@ -254,6 +258,25 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.hopperFull = hopperFull || !DSOptions.USE_CANRANGE.getAsBoolean();
   }
 
+  public void updateShotDistances(double scoring, double feeding) {
+    double previousScoreRpm = shootingRpm;
+    double previousFeedRpm = feedingRpm;
+    scoreDistance = scoring;
+    feedDistance = feeding;
+    updateRpmGoals();
+    atGoal = calculateAtGoal();
+    // Preserve flywheel-droop debounce for the current goal, but invalidate a newly unmet goal.
+    boolean goalChanged =
+        switch (getState()) {
+          case PREPARE_SCORE, SCORE -> !MathUtil.isNear(previousScoreRpm, shootingRpm, 1e-6);
+          case PREPARE_FEED, FEED -> !MathUtil.isNear(previousFeedRpm, feedingRpm, 1e-6);
+          case IDLE -> false;
+        };
+    if (goalChanged && !atGoal) {
+      atGoalDebounced = false;
+    }
+  }
+
   private boolean calculateAtGoal() {
     return switch (getState()) {
       case IDLE -> false;
@@ -268,8 +291,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     };
   }
 
-  @Override
-  protected void collectInputs() {
+  private void updateRpmGoals() {
     shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
     feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
 
@@ -277,6 +299,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
       shootingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
       feedingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
     }
+  }
+
+  @Override
+  protected void collectInputs() {
+    updateRpmGoals();
 
     topLeftMotorRpm = topLeftVelocitySignal.getValueAsDouble() * 60.0;
     topRightMotorRpm = topRightVelocitySignal.getValueAsDouble() * 60.0;
