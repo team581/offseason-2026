@@ -49,8 +49,12 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
-    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    var xDiff = (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    var yDiff = (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    DogLog.log("SOTM/SV/xDiff", xDiff);
+    DogLog.log("SOTM/SV/yDiff", yDiff);
+    vx += xDiff;
+    vy += yDiff;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -115,8 +119,12 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
-    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    var xDiff = (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    var yDiff = (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    DogLog.log("SOTM/SVETof/xDiff", xDiff);
+    DogLog.log("SOTM/SVETof/yDiff", yDiff);
+    vx += xDiff;
+    vy += yDiff;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -204,8 +212,12 @@ public class ShootOnTheMove {
     double targetY = target.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
-    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    var xDiff = (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    var yDiff = (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    DogLog.log("SOTM/VETof/xDiff", xDiff);
+    DogLog.log("SOTM/VETof/yDiff", yDiff);
+    vx += xDiff;
+    vy += yDiff;
 
     double compGoalX = targetX;
     double compGoalY = targetY;
