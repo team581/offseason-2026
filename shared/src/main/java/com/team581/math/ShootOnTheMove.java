@@ -18,7 +18,7 @@ public class ShootOnTheMove {
 
   // TODO: needs to be tuned
   private static final double LINEAR_LAG_CONSTANT = 0.15;
-  private static final double COMMANDED_VELOCITY_PERCENTAGE_ERROR =
+  private static final double COMMANDED_VELOCITY_USAGE_PERCENT =
       1 - Math.exp(-0.02 / LINEAR_LAG_CONSTANT);
 
   private static final int MAX_ITERATIONS = 5;
@@ -49,8 +49,8 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
-    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
-    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
+    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -115,8 +115,8 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
-    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
-    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
+    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -204,8 +204,8 @@ public class ShootOnTheMove {
     double targetY = target.getY();
     double vx = robotVelocity.vxMetersPerSecond;
     double vy = robotVelocity.vyMetersPerSecond;
-    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
-    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_PERCENTAGE_ERROR;
+    vx += (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    vy += (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
 
     double compGoalX = targetX;
     double compGoalY = targetY;
