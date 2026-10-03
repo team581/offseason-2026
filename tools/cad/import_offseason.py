@@ -1,3 +1,6 @@
+# cadquery-ocp ships no type stubs; its submodules star-import from one compiled
+# extension module, so ty cannot resolve `from OCP.X import Y` members.
+# ty: ignore[unresolved-import]
 """Convert the offseason Onshape export package to articulated AdvantageScope assets.
 
 Run from the repository root:
@@ -17,6 +20,8 @@ from pathlib import Path
 
 import numpy as np
 import trimesh
+import trimesh.visual
+import trimesh.visual.material
 from scipy.spatial.transform import Rotation
 
 ROBOT_FROM_CAD = np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
