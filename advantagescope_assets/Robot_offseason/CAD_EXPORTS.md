@@ -68,10 +68,10 @@ angle, not the fully inward CAD pose.
 
 ## Regenerate
 
-Create a Python 3.14 environment and install `tools/cad/requirements.txt`, then run:
+From the repository root, run:
 
 ```sh
-python tools/cad/import_offseason.py '/path/to/offseason STEP'
+uv run --package cad python tools/cad/import_offseason.py '/path/to/offseason STEP'
 ```
 
 The source folder needs `offseason-base.step`, `offseason-turret.step`,
