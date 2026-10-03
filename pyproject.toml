@@ -8,4 +8,10 @@ requires-python = ">=3.14"
 [tool.uv.workspace]
 members = [
   "shared/src/main/python/profiling",
+  "tools/cad",
 ]
+
+[tool.ty.rules]
+# cadquery-ocp ships no type stubs; its submodules star-import from one compiled
+# extension module, so ty cannot resolve `from OCP.X import Y` members.
+unresolved-import = "warn"

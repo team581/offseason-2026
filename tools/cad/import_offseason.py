@@ -1,7 +1,7 @@
 """Convert the offseason Onshape export package to articulated AdvantageScope assets.
 
-Run in a Python 3.14 environment with requirements.txt installed:
-    python tools/cad/import_offseason.py '/path/to/offseason STEP'
+Run from the repository root:
+    uv run --package cad python tools/cad/import_offseason.py '/path/to/offseason STEP'
 
 STEP sources remain outside Git. --cache-dir can reuse intermediate OCCT GLBs.
 All final vertices use robot coordinates (X forward, Y left, Z up), in meters.
