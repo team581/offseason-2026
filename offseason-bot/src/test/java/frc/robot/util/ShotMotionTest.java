@@ -3,6 +3,7 @@ package frc.robot.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.team581.math.MathHelpers;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -71,8 +72,7 @@ final class ShotMotionTest {
   void startAnticipatesInputWithoutAssumingInstantaneousDriveResponse() {
     var result =
         ShotMotion.predict(Pose2d.kZero, new ChassisSpeeds(), new ChassisSpeeds(4, 3, 6), 0.1);
-    assertThat(Math.hypot(result.speeds().vxMetersPerSecond, result.speeds().vyMetersPerSecond))
-        .isBetween(0.01, 0.5000001);
+    assertThat(MathHelpers.getLinearVelocity(result.speeds())).isBetween(0.01, 0.5000001);
     assertThat(result.speeds().omegaRadiansPerSecond).isBetween(0.01, 2.0000001);
     assertThat(result.pose().getTranslation().getNorm()).isBetween(0.0, 0.0500001);
   }

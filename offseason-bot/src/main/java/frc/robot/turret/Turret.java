@@ -5,6 +5,7 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -56,7 +57,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
         // A large future angle change is normal while rotating. Only reject a future
         // trajectory that would leave this unwrap branch and require crossing a hard stop.
         double continuousUpcomingAngle =
-            setpoint + MathUtil.inputModulus(upcomingAngle - setpoint, -180, 180);
+            setpoint + MathHelpers.angleModulus(upcomingAngle - setpoint);
         if (continuousUpcomingAngle < TurretConfig.MIN_ANGLE
             || continuousUpcomingAngle > TurretConfig.MAX_ANGLE) {
           yield false;
