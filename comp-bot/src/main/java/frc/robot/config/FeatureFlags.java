@@ -26,5 +26,13 @@ public class FeatureFlags {
   public static final BooleanSupplier DYNAMIC_CENTER_OF_ROTATION =
       FeatureFlag.of("DynamicCenterOfRotation", true);
 
+  /**
+   * Uses closed-loop velocity control for teleop driving instead of open-loop voltage, so the
+   * drivetrain compensates battery sag and load up to the voltage limit. Validate at a practice
+   * session (slip behavior, feel) before enabling by default.
+   */
+  public static final BooleanSupplier TELEOP_CLOSED_LOOP_DRIVE =
+      FeatureFlag.of("TeleopClosedLoopDrive", false);
+
   private FeatureFlags() {}
 }
