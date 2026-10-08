@@ -19,7 +19,7 @@ public final class SpotCameraProfiles {
 
   public static List<VisionCamera> mounts() {
     checkState(
-        !CAMERAS.stream().anyMatch(SpotProtos.CameraDefinition::getMovingMount),
+        CAMERAS.stream().noneMatch(SpotProtos.CameraDefinition::getMovingMount),
         "Moving Spot mount requires an explicit capture-time joint history provider");
     return CAMERAS.stream()
         .map(

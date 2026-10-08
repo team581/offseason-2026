@@ -1,6 +1,7 @@
 package com.team581.vision;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -328,7 +329,7 @@ public final class VisionProcessor {
           || !Double.isFinite(candidate.getImageSpreadFraction())
           || candidate.getImageSpreadFraction() < 0
           || candidate.getImageSpreadFraction() > 1
-          || !ImmutableSet.of(
+          || !Sets.immutableEnumSet(
                   SpotProtos.PoseCandidate.Method.MULTI_TAG_SQPNP,
                   SpotProtos.PoseCandidate.Method.SINGLE_TAG_IPPE_SQUARE)
               .contains(candidate.getMethod())) {

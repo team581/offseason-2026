@@ -121,8 +121,8 @@ final class BetaContractTest {
     }
   }
 
-  @ParameterizedTest
   @CsvSource({".08, 1.", ".02, 1.", ".005, 2.", ".00125, 4.", ".0003125, 4."})
+  @ParameterizedTest
   void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
       double imageAreaFraction, double expectedFactor) throws IOException {
     var observation = sample("multi").observation().toBuilder().setTimestampUncertaintyS(1e-12);
