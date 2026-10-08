@@ -2,6 +2,7 @@ package com.team581.vision;
 
 import com.google.common.collect.ImmutableSet;
 import com.team581.vision.proto.SpotProtos;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -409,7 +410,7 @@ public final class VisionProcessor {
     }
     var candidate = observation.getCandidates(selected);
     double range = candidate.getAverageTagDistanceM();
-    double conditioning = Math.clamp(1., Math.sqrt(.02 / candidate.getImageAreaFraction()), 4.);
+    double conditioning = MathUtil.clamp(Math.sqrt(.02 / candidate.getImageAreaFraction()), 1., 4.);
     // Count benefit capped at sqrt(3). Overlapping simultaneous cameras are
     // additionally inflated by correlation policy at source collection.
     double sigma =

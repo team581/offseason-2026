@@ -16,6 +16,8 @@ import edu.wpi.first.networktables.TimestampedRaw;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 final class BetaContractTest {
   private static SpotProtos.Acknowledgement ack() throws IOException {
@@ -117,6 +119,25 @@ final class BetaContractTest {
     } finally {
       nt.close();
     }
+  }
+
+  @ParameterizedTest
+  @CsvSource({".08, 1.", ".02, 1.", ".005, 2.", ".00125, 4.", ".0003125, 4."})
+  void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
+      double imageAreaFraction, double expectedFactor) throws IOException {
+    var observation = sample("multi").observation().toBuilder().setTimestampUncertaintyS(1e-12);
+    observation.getCandidatesBuilder(0).setImageAreaFraction(.02);
+    var baseline =
+        processor()
+            .process(new VisionIO.Sample(observation.build(), 10.05), ack(), 10.1, false)
+            .measurement()
+            .orElseThrow();
+    observation.getCandidatesBuilder(0).setImageAreaFraction(imageAreaFraction);
+    var result =
+        processor().process(new VisionIO.Sample(observation.build(), 10.05), ack(), 10.1, false);
+    assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    assertThat(result.measurement().orElseThrow().stdX())
+        .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));
   }
 
   @Test
