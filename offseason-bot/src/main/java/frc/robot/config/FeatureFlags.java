@@ -28,5 +28,9 @@ public class FeatureFlags {
   public static final BooleanSupplier DYNAMIC_CENTER_OF_ROTATION =
       FeatureFlag.of("DynamicCenterOfRotation", true);
 
+  public static final BooleanSupplier SPOT_FUSION = FeatureFlag.of("SpotFusion", false);
+  public static final BooleanSupplier SPOT_REVISED_TRUST =
+      FeatureFlag.of("SpotRevisedTrust", false);
+
   private FeatureFlags() {}
 }
