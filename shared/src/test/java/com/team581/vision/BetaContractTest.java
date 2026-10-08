@@ -121,7 +121,7 @@ final class BetaContractTest {
     }
   }
 
-  @CsvSource({".08, 1.", ".02, 1.", ".005, 2.", ".00125, 4.", ".0003125, 4."})
+  @CsvSource({".0003125, 4.", ".00125, 4.", ".005, 2.", ".02, 1.", ".08, 1."})
   @ParameterizedTest
   void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
       double imageAreaFraction, double expectedFactor) throws IOException {
