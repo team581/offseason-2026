@@ -114,7 +114,7 @@ The core challenge of holonomic navigation is deciding when rotation takes prece
 |                                                                         |
 |  HARD GATE:                                                             |
 |  - Heading MUST be within tolerance upon arrival at the anchor.         |
-|  - Translation velocity is capped: v_cap = d_anchor / t_rot.            |
+|  - Translation velocity is capped by bounded-deceleration & braking envelopes. |
 |  - If robot reaches anchor and heading is not ready, translation stops. |
 |  - Best for: Scoring shots, intake acquisitions, precise docking.       |
 +-------------------------------------------------------------------------+
@@ -125,35 +125,68 @@ For a `soft` gate:
 - Translation velocity $v_{profile}$ is unaffected by heading error.
 - The robot accelerates and corners at maximum linear speed, while rotating as quickly as $\alpha_{max}$ and $\omega_{max}$ permit.
 
-### 4.2 Hard Gate Policy: Analytical Speed Capping
+### 4.2 Hard Gate Policy: Analytical Speed Capping & Pacing
 For a `hard` gate anchored at path progress $s_{anchor}$:
 The robot must arrive at $s_{anchor}$ with $|\theta - \theta^*| \le \epsilon_\theta$.
 
 1. **Calculate Remaining Rotation Time $t_{rot}$:**
-   The time required for a trapezoidal angular profile to traverse $|\Delta \theta| - \epsilon_\theta$ from current angular speed $\omega_{meas}$ to rest is solved analytically:
+   Let $\Delta \theta$ be the signed angular difference to the target: $\Delta \theta = \mathrm{angleModulus}(\theta^* - \theta)$. (If a specific direction is forced via `TurnDirection.CW` or `CCW`, $\Delta \theta$ is unwrapped along that turn direction).
+   
+   The net angular distance to traverse after accounting for arrival tolerance $\epsilon_\theta$ is:
+   $$|\Delta \theta_{net}| = \max\left(0.0, \; |\Delta \theta| - \epsilon_\theta\right)$$
+   If $|\Delta \theta_{net}| = 0$, $t_{rot} = 0.0$ (heading is already satisfied).
+
+   **Directional Alignment Check (Reversal Handling):**  
+   If the robot is currently rotating in the direction *opposite* to the desired displacement ($\omega_{meas} \cdot \Delta \theta < 0$):
+   The robot must first decelerate to zero angular speed before reversing toward $\theta^*$:
+   $$t_{turn} = \frac{|\omega_{meas}|}{\alpha_{max}}$$
+   $$d_{turn} = \frac{\omega_{meas}^2}{2 \alpha_{max}}$$
+   The effective angular distance from rest becomes:
+   $$|\Delta \theta|_{eff} = |\Delta \theta_{net}| + d_{turn}$$
+   The time required to traverse $|\Delta \theta|_{eff}$ from rest ($\omega_0 = 0$) using trapezoidal / triangular motion is:
+   $$t_{profile} = \begin{cases} 
+   2 \sqrt{\frac{|\Delta \theta|_{eff}}{\alpha_{max}}} & \text{if } |\Delta \theta|_{eff} \le \frac{\omega_{max}^2}{\alpha_{max}} \quad (\text{triangular}) \\ 
+   \frac{|\Delta \theta|_{eff}}{\omega_{max}} + \frac{\omega_{max}}{\alpha_{max}} & \text{otherwise} \quad (\text{trapezoidal}) 
+   \end{cases}$$
+   Total rotation time:
+   $$t_{rot} = t_{turn} + t_{profile}$$
+
+   **Aligned Rotation ($\omega_{meas} \cdot \Delta \theta \ge 0$):**  
+   If the robot is already rotating toward the target:
    $$t_{acc} = \frac{\omega_{max} - |\omega_{meas}|}{\alpha_{max}}$$
-   $$d_{acc} = |\omega_{meas}| t_{acc} + \frac{1}{2} \alpha_{max} t_{acc}^2$$
+   $$d_{acc} = \frac{\omega_{max}^2 - \omega_{meas}^2}{2 \alpha_{max}}$$
    $$d_{dec} = \frac{\omega_{max}^2}{2 \alpha_{max}}$$
-   If total angular distance $|\Delta \theta| \le d_{acc} + d_{dec}$, the profile is triangular:
-   $$\omega_{peak} = \sqrt{\alpha_{max} |\Delta \theta| + \frac{1}{2} \omega_{meas}^2}$$
+   If $|\Delta \theta_{net}| \le d_{acc} + d_{dec}$ (triangular profile):
+   $$\omega_{peak} = \sqrt{\alpha_{max} |\Delta \theta_{net}| + \frac{1}{2} \omega_{meas}^2}$$
    $$t_{rot} = \frac{\omega_{peak} - |\omega_{meas}|}{\alpha_{max}} + \frac{\omega_{peak}}{\alpha_{max}}$$
-   Otherwise:
-   $$t_{cruise} = \frac{|\Delta \theta| - (d_{acc} + d_{dec})}{\omega_{max}}$$
+   Otherwise (trapezoidal profile with cruise at $\omega_{max}$):
+   $$t_{cruise} = \frac{|\Delta \theta_{net}| - (d_{acc} + d_{dec})}{\omega_{max}}$$
    $$t_{rot} = t_{acc} + t_{cruise} + \frac{\omega_{max}}{\alpha_{max}}$$
 
 2. **Calculate Distance to Anchor:**
    $$d_{anchor} = \max\left(0, \; s_{anchor} - s\right)$$
 
-3. **Compute Linear Velocity Ceiling:**
-   To guarantee the robot takes at least $t_{rot}$ seconds to reach $s_{anchor}$:
-   $$v_{cap} = \frac{d_{anchor}}{t_{rot}}$$
+3. **Compute Linear Velocity Ceiling (Bounded Deceleration & Braking Envelopes):**
+   A naive constant-velocity formula ($v = d / t$) ignores braking limits and causes high-speed overshoot when heading lags. Trailblazer 2 solves this via two coupled physical envelopes:
+   
+   - **Kinematic Average-Velocity Envelope:** Under bounded linear deceleration, average velocity to reach exit speed $v_{target}$ (where $v_{target} = 0.0\text{ m/s}$ for a stop goal, or $v_{pass}$ for a through goal) over duration $t_{rot}$ is $\bar{v} = \frac{v_{cap} + v_{target}}{2}$. Equating $d_{anchor} = \bar{v} \cdot t_{rot}$:
+     $$v_{cap, kin} = \frac{2 \cdot d_{anchor}}{t_{rot} + \epsilon} - v_{target}$$
+   - **Traction Braking Envelope:** Commanded velocity must never exceed what physical braking deceleration $a_{brake}$ can safely arrest within the remaining distance:
+     $$v_{cap, brake} = \sqrt{v_{target}^2 + 2 \cdot a_{brake} \cdot d_{anchor}}$$
+   - **Composite Velocity Ceiling:**
+     $$v_{cap} = \max\left(0.0, \; \min\left(v_{cap, kin}, \; v_{cap, brake}\right)\right)$$
 
-4. **Inject into Velocity Profiler:**
-   The velocity profiler treats $v_{cap}$ as a local speed ceiling at $s$.
-   - As $d_{anchor} \to 0$, if heading is aligned, $t_{rot} \to 0$ and $v_{cap}$ lifts.
-   - If heading is delayed, $v_{cap}$ smoothly slows the robot down to a standstill exactly at the anchor:
-     $$d_{anchor} \le \text{tolerance} \implies v_{cap} = 0.0$$
-   - The robot halts cleanly at the anchor, waits for rotation to clear, and then proceeds.
+4. **Corridor-Wide Pacing & Backward Profiler Propagation:**
+   Applying $v_{cap}$ only at the anchor node $k_{anchor}$ would allow the robot to cruise at full speed and slam the brakes at the last second, arriving prematurely and lingering at rest while rotation completes.
+   
+   To achieve smooth, synchronous arrival:
+   1. **Approach Corridor Pacing:** $v_{cap}$ caps the maximum allowable linear speed across all nodes from current progress up to the anchor:
+      $$v_{lim, k} \leftarrow \min\left(v_{lim, k}, \; v_{cap}\right) \quad \forall k \in [0, \; k_{anchor}]$$
+      This forces both the backward and forward profiler passes to pace translation smoothly across the approach interval so that transit duration $\Delta t_{transit} \approx t_{rot}$.
+   2. **Anchor Boundary Condition:** At the anchor node itself, $v_{lim, k_{anchor}} = \min(v_{lim, k_{anchor}}, v_{target})$.
+   3. **Dynamic Unlocking:**
+      - If heading finishes early ($t_{rot} \to 0$), $v_{cap, kin}$ rises, lifting the pacing cap and allowing translation to proceed at full speed without hesitation.
+      - If heading is delayed, $v_{cap}$ drops. As $d_{anchor} \to 0$, $v_{cap} \to 0$, bringing the robot smoothly to rest at $s_{anchor}$ until the heading tolerance gate clears.
 
 ### 4.3 Stalled Gate Protection
 If a hard gate is blocked from achieving tolerance (e.g. robot physically pinned or wedged against another bumper), a configurable watchdog timer ($t_{timeout} = 1.0$ s) triggers:

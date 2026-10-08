@@ -42,7 +42,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
           .addGoal(
               Goal.through(() -> getCollisionPoint(FieldAnchors.BALL_A))
                   .within(0.30)
-                  .heading(HeadingPlan.to(115.0).before(1.0).gate(GatePolicy.SOFT))
+                  .heading(HeadingPlan.to(Rotation2d.fromDegrees(115.0)).before(1.0).gate(GatePolicy.SOFT))
                   .marker(Markers.PRIORITIZE_INTAKE))
           .addGoal(
               Goal.stop(FieldAnchors.RED_DEPOT_BUMP.plus(0, BUMP_OFFSET))

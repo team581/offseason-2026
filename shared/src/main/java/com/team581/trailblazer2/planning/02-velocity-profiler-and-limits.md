@@ -78,29 +78,34 @@ The composite speed ceiling at sample $k$ is:
 $$v_{lim, k} = \min\left(v_{max}, \; \sqrt{\frac{a_{lat}}{\kappa_k + \epsilon}}, \; v_{zone, k}, \; v_{goal, k}\right)$$
 
 ### 3.2 Friction Circle Coupling (Tangential Acceleration Capacity)
-When cornering at speed $v_k$, lateral acceleration $a_{lat, k} = v_k^2 \kappa_k$ consumes a portion of available tire friction ($a_{fric}$).  
+When cornering at speed $v$, lateral acceleration $a_{lat} = v^2 \kappa$ consumes a portion of available tire friction ($a_{fric}$).  
 By the circular friction envelope ($a_{tangential}^2 + a_{lateral}^2 \le a_{fric}^2$), the remaining tangential acceleration capacity is:
-$$a_{t, k} = \sqrt{\max\left(0, \; a_{fric}^2 - (v_k^2 \kappa_k)^2\right)}$$
-
-Effective braking deceleration at node $k$:
-$$a_{brake, k} = \min\left(a_{brake}, \; a_{t, k}\right)$$
-
-Effective forward motor acceleration at node $k$:
-$$a_{acc, k} = \min\left(a_0 \left(1 - \frac{v_k}{v_{free}}\right), \; a_{t, k}\right)$$
+$$a_{t}(v, \kappa) = \sqrt{\max\left(0, \; a_{fric}^2 - (v^2 \kappa)^2\right)}$$
 
 ### 3.3 Dynamic Programming Sweeps
 
 #### Pass 1: Backward Pass (Enforcing Braking Limits)
-The backward pass iterates from the horizon terminus $k = N-1$ down to the robot's current position $k = 0$. It propagates braking deceleration backwards to guarantee the robot can stop or slow down in time for all upcoming corners and goals:
+The backward pass iterates from the horizon terminus $k = N-1$ down to the robot's current position $k = 0$. It propagates braking deceleration backwards to guarantee the robot can stop or slow down in time for all upcoming corners and goals.
+
+To eliminate circular dependency during backward integration (since $v_k$ is the unknown being computed), braking traction capacity is evaluated using the known downstream state at node $k+1$:
+$$a_{t, k+1} = a_t(v_{k+1}, \kappa_{k+1}) = \sqrt{\max\left(0, \; a_{fric}^2 - (v_{k+1}^2 \kappa_{k+1})^2\right)}$$
+$$a_{brake, k+1} = \min\left(a_{brake}, \; a_{t, k+1}\right)$$
+
 1. Initialize terminal node: $v_{N-1} = v_{lim, N-1}$.
 2. For $k = N-2$ down to $0$:
-   $$v_k \leftarrow \min\left(v_{lim, k}, \; \sqrt{v_{k+1}^2 + 2 \cdot a_{brake, k} \cdot \Delta s}\right)$$
+   $$v_k \leftarrow \min\left(v_{lim, k}, \; \sqrt{v_{k+1}^2 + 2 \cdot a_{brake, k+1} \cdot \Delta s}\right)$$
+
+*(Note: Curvature centripetal constraints at node $k$ are strictly enforced by $v_{lim, k} \le \sqrt{a_{lat}/(\kappa_k + \epsilon)}$, ensuring $v_k$ never exceeds local traction limits).*
 
 #### Pass 2: Forward Pass (Enforcing Motor Acceleration Limits)
 The forward pass sweeps from $k = 0$ up to $N-1$, ensuring velocity does not increase faster than available motor torque and traction:
 1. Initialize origin node $k = 0$:
    $$v_0 = v_{start}$$
 2. For $k = 0$ up to $N-2$:
+   Compute available motor acceleration at the known upstream state $v_k$:
+   $$a_{t, k} = a_t(v_k, \kappa_k) = \sqrt{\max\left(0, \; a_{fric}^2 - (v_k^2 \kappa_k)^2\right)}$$
+   $$a_{acc, k} = \max\left(0.0, \; \min\left(a_0 \left(1 - \frac{v_k}{v_{free}}\right), \; a_{t, k}\right)\right)$$
+   *(Guarding against negative acceleration when $v_k > v_{free}$, which would cause $v_k^2 + 2 a_{acc, k} \Delta s < 0$ and result in `NaN` during the forward pass).*
    $$v_{k+1} \leftarrow \min\left(v_{k+1}, \; \sqrt{v_k^2 + 2 \cdot a_{acc, k} \cdot \Delta s}\right)$$
 
 ```mermaid
@@ -126,7 +131,16 @@ RoboRIO CAN latency, motor controller velocity filter lag, and swerve azimuth st
 If the controller commands the profile speed at the exact current position $s$, the robot will consistently lag behind the intended setpoint.
 
 Trailblazer 2 evaluates the profile at an advanced lookahead arc length:
-$$s_{eval} = s + v \cdot \left(\Delta t + \tau_{lag}\right)$$
+$$s_{eval} = s + v \cdot \tau_{effective}$$
+
+### 4.1 Distance-Based Lookahead Tapering at Stop Goals
+When approaching a stop goal (where $v(S_{horizon}) = 0.0$), an unconstrained lookahead lead $v \cdot (\Delta t + \tau_{lag})$ can advance $s_{eval}$ beyond the horizon terminus $S_{horizon}$. If $s_{eval}$ is clamped to $S_{horizon}$, commanded velocity drops prematurely to zero. As $v \to 0$, $s_{eval}$ retreats backwards, creating setpoint hunting and chatter right before coming to rest.
+
+To eliminate this chatter, the lookahead lead time constant is smoothly tapered to zero within braking distance of the goal:
+$$\tau_{effective} = (\Delta t + \tau_{lag}) \cdot \min\left(1.0, \; \frac{S_{horizon} - s}{d_{brake}}\right)$$
+where $d_{brake} = \max\left(0.30\text{ m}, \; \frac{v^2}{2 \cdot a_{brake}}\right)$.  
+On unconstrained continuous paths (or when far from a stop goal), $\tau_{effective} = \Delta t + \tau_{lag}$. Near the stop goal, $\tau_{effective} \to 0$, ensuring $s_{eval} \to S_{horizon}$ monotonically with zero chatter.
+
 The profiler interpolates linearly between sample nodes $k$ and $k+1$ at $s_{eval}$ to extract:
 - Profile tangential speed: $v_{profile}$
 - Unit path tangent: $\hat{t}$
@@ -137,11 +151,22 @@ The profiler interpolates linearly between sample nodes $k$ and $k+1$ at $s_{eva
 ## 5. Cross-Track Control and 2D Vector Slew Limiter
 
 The nominal feedforward velocity vector along the path is $v_{profile} \hat{t}$. To eliminate cross-track error $e_{xt}$, a proportional correction velocity is injected along path normal $\hat{n}$:
-$$v_{xt} = \mathrm{clamp}\left(\frac{e_{xt}}{\tau_{xt}}, \; -v_{xt, max}, \; v_{xt, max}\right)$$
-where $\tau_{xt}$ is the cross-track convergence time constant (default: $0.25$ s).
+$$v_{xt, limit} = \min(v_{xt, max}, \; v_{max})$$
+$$v_{xt} = \mathrm{clamp}\left(\frac{e_{xt}}{\tau_{xt}}, \; -v_{xt, limit}, \; v_{xt, limit}\right)$$
+where $\tau_{xt}$ is the cross-track convergence time constant (default: $0.25$ s) and $v_{xt, max}$ is the maximum lateral speed demand (default: $1.20$ m/s). Clamping against $v_{max}$ ensures that lateral correction alone can never demand more speed than the drivetrain can physically execute.
 
-The unconstrained desired chassis velocity vector is:
+### 5.1 Upstream Elliptical Desaturation (Preserving Cross-Track Authority)
+If $v_{profile} \approx v_{max}$ and cross-track correction demands $v_{xt} > 0$, the raw combined magnitude $\sqrt{v_{profile}^2 + v_{xt}^2}$ exceeds $v_{max}$. If passed directly downstream to `SwerveDriveKinematics.desaturateWheelSpeeds`, WPILib scales down all chassis vector components proportionally, causing tangential speed to dip unpredictably whenever lateral error is present.
+
+To prevent this, Trailblazer 2 performs **upstream elliptical priority desaturation**, allocating chassis capability to lateral correction first, and capping allowable profile velocity accordingly:
+$$v_{profile, allowable} = \sqrt{\max\left(0.0, \; v_{max}^2 - v_{xt}^2\right)}$$
+$$v_{profile} \leftarrow \min(v_{profile}, \; v_{profile, allowable})$$
+
+The desired chassis velocity vector is then constructed:
 $$\vec{v}_{des} = v_{profile} \hat{t} + v_{xt} \hat{n}$$
+Because $|v_{xt}| \le v_{max}$ and $v_{profile} \le \sqrt{v_{max}^2 - v_{xt}^2}$, the vector magnitude strictly satisfies:
+$$\|\vec{v}_{des}\| = \sqrt{v_{profile}^2 + v_{xt}^2} \le \sqrt{(v_{max}^2 - v_{xt}^2) + v_{xt}^2} = v_{max}$$
+This strictly guarantees that $\|\vec{v}_{des}\| \le v_{max}$ unconditionally before passing to the 2D `VectorLimiter`.
 
 ```
               ^ n̂ (Path Normal)
@@ -158,7 +183,7 @@ $$\vec{v}_{des} = v_{profile} \hat{t} + v_{xt} \hat{n}$$
             Robot
 ```
 
-### 5.1 Isotropic 2D Vector Acceleration Clamp
+### 5.2 Isotropic 2D Vector Acceleration Clamp
 To guarantee that the physical drivetrain friction limit ($a_{fric}$) is never exceeded in any 2D direction, the change in the velocity vector between loops is bounded:
 
 Let $\Delta t$ be loop elapsed time.  
@@ -173,7 +198,7 @@ $$\vec{v}_{cmd} = \vec{v}_{prev} + \Delta \vec{v} \cdot \left( \frac{\Delta v_{m
 Else:
 $$\vec{v}_{cmd} = \vec{v}_{des}$$
 
-### 5.2 Mathematical Guarantees of the 2D Vector Limiter
+### 5.3 Mathematical Guarantees of the 2D Vector Limiter
 1. **Perfect Acceleration/Braking Symmetry:** A speed drop is limited by the exact same vector magnitude as a speed increase.
 2. **Smooth Corner Entry:** When turning a corner or re-latching, the path tangent $\hat{t}$ changes direction. The vector limiter prevents instantaneous velocity vector snapping, smoothly rotating the velocity vector at rate:
    $$\dot{\theta}_{vel} \le \frac{a_{fric}}{v}$$

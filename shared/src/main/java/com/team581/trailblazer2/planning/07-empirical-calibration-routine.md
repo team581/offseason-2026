@@ -39,7 +39,24 @@ The calibration routine identifies eight fundamental physical constants:
 
 ## 3. The Automated Calibration Routine (`CalibrateDrivetrainAuto`)
 
-The calibration sequence executes as an automated, self-contained autonomous routine selectable via the standard `AutoChooser`. It requires an open $5.0 \times 3.0$ meter carpet area.
+The calibration sequence executes as an automated, self-contained autonomous routine selectable via the standard `AutoChooser`. 
+
+### Carpet Dimension & Safety Profiles: Analytical Motor Kinematics
+Because DC brushless motors exhibit linear back-EMF torque decay ($a(v) = a_0(1 - v / v_{free})$), acceleration is not constant. Integrating the differential equation of motion $\frac{dv}{dx} = \frac{a(v)}{v}$:
+$$\int_0^x dx = \int_0^v \frac{v'}{a_0 \left(1 - \frac{v'}{v_{free}}\right)} dv' \implies x(v) = \frac{v_{free}^2}{a_0} \left[ -\ln\left(1 - \frac{v}{v_{free}}\right) - \frac{v}{v_{free}} \right]$$
+
+For typical Kraken X60 swerve parameters ($a_0 \approx 8.2\text{ m/s}^2, \; v_{free} \approx 5.1\text{ m/s}, \; a_{brake} \approx 4.10\text{ m/s}^2$):
+- In $d_{sprint} = 1.25\text{ m}$, the robot reaches $v \approx 3.31\text{ m/s}$ ($\approx 65\%$ of free speed). Braking from $3.31\text{ m/s}$ requires $d_{brake} = \frac{3.31^2}{2 \times 4.10} \approx 1.33\text{ m}$. Total dynamic travel is $1.25 + 1.33 = \mathbf{2.58\text{ meters}}$.
+- To achieve $v = 4.53\text{ m/s}$ ($>88\%$ of $v_{free}$), the differential equation requires $d_{sprint} \ge \mathbf{4.13\text{ meters}}$ of acceleration, plus $d_{brake} = \frac{4.53^2}{2 \times 4.10} \approx \mathbf{2.50\text{ meters}}$ to stop, demanding $\mathbf{6.63\text{ meters}}$ of active travel.
+
+The routine therefore formally establishes two calibration profiles:
+1. **Standard Workshop Strip Profile ($5.0 \times 3.0\text{ meters}$):**
+   - Active track: $4.0\text{ m}$ ($0.5\text{ m}$ buffers at each end).
+   - Sprint distance: $d_{sprint} = 1.25\text{ m}$.
+   - The robot sprints to $\approx 3.3\text{ m/s}$ and stops within $2.58\text{ m}$, leaving over $1.4\text{ m}$ of stopping margin.
+   - Least-squares linear regression over the $[0, \; 3.3\text{ m/s}]$ velocity domain accurately estimates stall acceleration $a_0$, slope $m$, and theoretical free speed $v_{free} = a_0 / m$.
+2. **Full-Field Extended Strip Profile ($\ge 8.5 \times 3.0\text{ meters}$):**
+   - For practice fields with open floor space: permits $d_{sprint} = 4.15\text{ m}$ to directly observe high-speed terminal velocity ($> 4.5\text{ m/s}$) and empirical braking at full speed ($6.65\text{ m}$ dynamic travel $+ 1.85\text{ m}$ safety margins).
 
 ```mermaid
 sequenceDiagram
@@ -51,9 +68,9 @@ sequenceDiagram
     participant Out as drivetrain-limits.json
 
     Tech->>DS: Select CalibrateDrivetrainAuto and Enable Auto
-    Auto->>HW: Stage 1: Straight-Line Sprint (4.0m)
+    Auto->>HW: Stage 1: Straight-Line Sprint (1.25m standard / 4.15m extended)
     HW-->>Auto: Stream high-speed pose, odometry and current (250 Hz)
-    Auto->>HW: Stage 2: Controlled Emergency Braking
+    Auto->>HW: Stage 2: Controlled Emergency Braking (stops within active track)
     HW-->>Auto: Log deceleration slope and wheel slip
     Auto->>HW: Stage 3: Skidpad Circle (R = 1.5m, ramping speed)
     HW-->>Auto: Record lateral accel until gyro/wheel divergence
@@ -66,12 +83,12 @@ sequenceDiagram
 ```
 
 ### 3.1 Stage 1 & 2: Straight-Line Sprint & Braking Test
-1. Robot accelerates forward along the field $X$-axis under closed-loop velocity commands requesting $6.0$ m/s for $3.5$ meters.
-2. Odometry velocity $v(t)$ and acceleration $a(t) = \frac{\Delta v}{\Delta t}$ are logged at 50 Hz.
-3. At $x = 3.5$ m, the robot commands immediate $v = 0$ with active motor braking (brake mode / neutral reverse voltage).
+1. Robot accelerates forward along the field $X$-axis under closed-loop velocity commands requesting $6.0$ m/s for $d_{sprint}$ ($1.25\text{ m}$ for standard $5.0\text{ m}$ strip; $4.15\text{ m}$ for extended strip).
+2. Odometry velocity $v(t)$ and acceleration $a(t) = \frac{\Delta v}{\Delta t}$ are logged at 50 Hz (with motor telemetry recorded at 250 Hz over CAN).
+3. At $x = d_{sprint}$, the robot commands immediate $v = 0$ with active neutral reverse-braking.
 4. **Mathematical Extraction:**
-   - $v_{max}$ is taken as the 99th percentile velocity reached during cruise.
-   - For points during the acceleration phase ($v < 0.9 v_{max}$), a linear least-squares regression is fit:
+   - $v_{max}$ is determined from the peak cruise velocity (or asymptotic regression extrapolation on the standard strip).
+   - For points during the acceleration phase ($v < 0.9 v_{peak}$), a linear least-squares regression is fit:
      $$a(v) = a_0 - m \cdot v$$
      $$v_{free} = \frac{a_0}{m}$$
    - $a_{brake}$ is taken as the median deceleration during the braking transition:

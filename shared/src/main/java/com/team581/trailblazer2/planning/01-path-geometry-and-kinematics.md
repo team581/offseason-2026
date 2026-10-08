@@ -37,10 +37,14 @@ Let outgoing leg vector be $\vec{L}_{out} = P_{k+1} - P_k$, with length $L_{out}
 Unit direction vectors:
 $$\hat{u} = \frac{\vec{L}_{in}}{L_{in}}, \quad \hat{v} = \frac{\vec{L}_{out}}{L_{out}}$$
 
-### 2.1 Corner Deflection Angle $\theta$
-The deflection angle $\theta \in [0, \pi)$ represents the directional change of the robot's travel:
-$$\cos\theta = \hat{u} \cdot \hat{v}, \quad \sin\theta = \|\hat{u} \times \hat{v}\| = u_x v_y - u_y v_x$$
-$$\theta = \mathrm{atan2}\left(u_x v_y - u_y v_x, \; u_x v_x + u_y v_y\right)$$
+### 2.1 Corner Deflection Angle $\theta$ and Turn Orientation
+The corner deflection angle magnitude $\theta \in [0, \pi)$ represents the unsigned angular change between legs:
+$$\theta = \left| \mathrm{atan2}\left(u_x v_y - u_y v_x, \; u_x v_x + u_y v_y\right) \right|$$
+
+Taking the absolute value is critical: a signed angle ($\theta < 0$ for clockwise turns) would yield a negative tangent length $t = r \tan(\theta/2) < 0$, corrupting fillet geometry and arc length parameterization.
+
+The turn direction sign $\sigma_{turn} \in \{-1, +1\}$ is preserved separately to position the fillet circle center $C$:
+$$\sigma_{turn} = \mathrm{sgn}(u_x v_y - u_y v_x) \quad (+1 = \text{Left / CCW turn}, \; -1 = \text{Right / CW turn})$$
 
 - $\theta = 0$: Collinear, straight motion (no turn).
 - $\theta = \frac{\pi}{2}$ ($90^\circ$): Right-angle turn.
@@ -104,17 +108,20 @@ When waypoints are collinear or near-collinear:
 - The denominator of $r_{\delta}$ approaches zero.
 - **Handling:** If $\theta < 1.0^\circ$ ($0.0175$ rad), the fillet is omitted ($r = 0, t = 0$). The two legs are merged into a continuous straight line segment with $\kappa = 0$.
 
-### 3.2 Directional Reversals ($\theta \ge \theta_{reversal}$)
-When $\theta \to 180^\circ$ (e.g. driving forward into an intake, then backing straight out):
-- $\tan(\theta/2) \to \infty$. A circular fillet cannot fit on finite legs without requiring infinite tangent length.
+### 3.2 Sharp Turns and Directional Reversals ($\theta \ge 135^\circ$)
+When turn angle $\theta$ becomes large ($\theta \to 180^\circ$):
+- Tangent length $t = r \tan(\theta/2) \to \infty$. A circular fillet cannot fit on finite legs without requiring large tangent distances.
 - Holonomic drivetrains cannot reverse translation direction instantaneously at non-zero speed without infinite wheel acceleration and wheel scrubbing.
-- **Handling:** If $\theta \ge 150^\circ$ ($2.618$ rad), the corner is automatically classified as a **forced `stop` goal**:
-  - $r = 0$, $t = 0$.
-  - Target exit velocity is forced to $0.0$ m/s.
-  - The incoming leg terminates at $P_k$, the robot decelerates to rest, and the outgoing leg starts from $P_k$ with $v_0 = 0$.
+- The tangent allocation clamp ($t \le t_{max} = \min(\eta L_{in}, \eta L_{out})$) naturally scales down the permissible fillet radius $r_{geom} = t_{clamped} / \tan(\theta/2) \to 0$, forcing pass speed $v = \sqrt{a_{lat} \cdot r}$ toward zero.
 
-### 3.3 Stop Goals
-Any goal declared with `pass: stop` has:
+Rather than imposing an arbitrary cliff at $150^\circ$ that abruptly converts a continuous waypoint into an unexpected stop, Trailblazer 2 follows two explicit design rules:
+1. **Explicit Stop Declarations:** Directional reversals or intentional halts must be declared explicitly in code using `Goal.stop(...)`.
+2. **Sharp Turn Previewer Warnings:** For sharp turns where $\theta \ge 135^\circ$ ($2.356$ rad), if authored as `Goal.through(...)`, the geometry and centripetal acceleration limits naturally bottleneck pass speed to a crawl. The CLI previewer and simulation raise an informational warning:
+   > `WARN: Sharp turn of 142.5° at goal 'depot_corner' bottlenecks pass speed to 0.42 m/s. If a full directional halt was intended, use Goal.stop() instead.`
+   This prevents invisible behavior changes from minor waypoint tweaks while ensuring physical consistency.
+
+### 3.3 Explicit Stop Goals (`Goal.stop(...)`)
+Any goal declared with `Goal.stop(...)` has:
 - $r = 0$, $t = 0$.
 - No fillet is constructed. The robot travels along the straight line directly to $P_k$.
 - The velocity profiler pins the exit speed at $P_k$ to $0.0$ m/s.
@@ -133,10 +140,10 @@ $$d_{horizon} = \frac{v_{max}^2}{2 \cdot a_{brake}} + d_{margin}$$
 ### 4.2 Horizon Termination Criteria
 The path builder ingests goals forward from the robot's current leg until:
 1. Cumulative path length along the horizon exceeds $d_{horizon}$, **OR**
-2. A goal with `pass: stop` is reached, **OR**
+2. A goal declared with `Goal.stop(...)` is reached, **OR**
 3. The end of the active segment is reached.
 
-Any goal beyond a `stop` goal has zero causal influence on the current command, because the robot must come to a complete rest at the stop goal regardless. This keeps horizon construction bounded to $O(K)$ where $K \le 5$ goals.
+Any goal beyond a `Goal.stop(...)` goal has zero causal influence on the current command, because the robot must come to a complete rest at the stop goal regardless. This keeps horizon construction bounded to $O(K)$ where $K \le 5$ goals.
 
 ---
 

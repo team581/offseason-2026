@@ -62,19 +62,30 @@ stateDiagram-v2
     ASSISTED_TRAILBLAZER --> MANUAL_TELEOP : Cancel Request or Timeout
 ```
 
-### 3.1 Preemption Detection
-`TrailblazerDriveSource` continuously monitors driver joystick magnitudes via `ControllerHelpers`:
+### 3.1 Preemption Detection (Decoupled Translation & Rotation)
+`TrailblazerDriveSource` continuously monitors driver joystick magnitudes via `ControllerHelpers`. To support both full preemption and semi-autonomous assisted modes (such as Driver Translation + Auto Aim Hub), translation and rotation intervention are evaluated independently:
+
 ```java
-public boolean isDriverIntervention() {
+public boolean isTranslationIntervention() {
     double translationMagnitude = Math.hypot(driverController.getLeftX(), driverController.getLeftY());
+    return translationMagnitude > DRIVER_OVERRIDE_THRESHOLD;
+}
+
+public boolean isRotationIntervention() {
     double rotationMagnitude = Math.abs(driverController.getRightX());
-    return translationMagnitude > DRIVER_OVERRIDE_THRESHOLD 
-        || rotationMagnitude > DRIVER_ROTATION_OVERRIDE_THRESHOLD;
+    return rotationMagnitude > DRIVER_ROTATION_OVERRIDE_THRESHOLD;
+}
+
+public boolean isDriverIntervention() {
+    return isTranslationIntervention() || isRotationIntervention();
 }
 ```
+
 Default thresholds:
 - `DRIVER_OVERRIDE_THRESHOLD = 0.15` (15% stick deflection)
 - `DRIVER_ROTATION_OVERRIDE_THRESHOLD = 0.15`
+
+In full automated alignment (`driveTo`), any intervention (`isDriverIntervention()`) hands control back to manual teleop. In hybrid assisted modes (§5), only the relevant axis triggers preemption—for example, in "Driver Translation + Auto Aim", translational stick deflection drives the robot while rotational control remains locked to the autonomous target until `isRotationIntervention()` is detected.
 
 ### 3.2 Continuous Velocity Handoff (Eliminating Handoff Jitter)
 In naive implementations, canceling an automated drive causes the robot to suddenly brake or jerk because manual teleop starts reading raw stick inputs from zero.
