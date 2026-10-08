@@ -1,11 +1,11 @@
 package com.team581.vision;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.DoubleFunction;
 
@@ -36,7 +36,7 @@ final class SpotBetaRobotExample {
     var processor =
         new VisionProcessor(
             profile,
-            List.of(VisionCamera.fixed("front", measuredMount)),
+            ImmutableList.of(VisionCamera.fixed("front", measuredMount)),
             history,
             VisionProcessor.Policy.conservative());
     var vision =
@@ -44,7 +44,7 @@ final class SpotBetaRobotExample {
             new SpotVisionIO(robotNtServer, profile),
             profile,
             processor,
-            List.of(),
+            ImmutableList.of(),
             new VisionDiagnostics());
     return new Integration(vision, history, profile);
   }

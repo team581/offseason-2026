@@ -31,7 +31,7 @@ public final class VisionDiagnostics {
           && camera.getRequired()
           && (!health.available()
               || generation.isEmpty()
-              || !generation.get().getCalibrationValid()
+              || !generation.orElseThrow().getCalibrationValid()
               || now - observed.getOrDefault(camera.getName(), Double.NEGATIVE_INFINITY) > .5)) {
         desiredFaults.add(
             "Spot " + camera.getName() + " missing or calibration/configuration invalid");

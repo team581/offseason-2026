@@ -1,5 +1,6 @@
 package com.team581.vision;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.vision.results.OptionalTagResult;
 import java.util.List;
 import java.util.function.DoubleSupplier;
@@ -48,7 +49,7 @@ public final class LimelightVisionIO {
                     deviations.get(0, 0),
                     deviations.get(1, 0),
                     deviations.get(2, 0),
-                    List.of(),
+                    ImmutableList.of(),
                     Double.NaN,
                     Double.NaN));
           } catch (IllegalArgumentException exception) {

@@ -1,5 +1,7 @@
 package com.team581.vision;
 
+import static java.util.UUID.randomUUID;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.team581.vision.proto.SpotProtos;
@@ -15,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
-import java.util.UUID;
 
 /** NT4 robot server adapter; transport bytes and metadata stay atomic. */
 public final class SpotVisionIO implements VisionIO {
@@ -71,7 +72,7 @@ public final class SpotVisionIO implements VisionIO {
     this.manifest =
         SpotProtos.Manifest.newBuilder()
             .setProfile(profile)
-            .setRobotSession(UUID.randomUUID().toString())
+            .setRobotSession(randomUUID().toString())
             .setManifestHash(VisionProfiles.hash(profile))
             .build();
     manifestPublisher =

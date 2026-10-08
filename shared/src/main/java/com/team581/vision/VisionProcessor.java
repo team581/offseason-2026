@@ -1,5 +1,6 @@
 package com.team581.vision;
 
+import com.google.common.collect.ImmutableSet;
 import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -90,7 +91,7 @@ public final class VisionProcessor {
                       Math.abs(other.timestamp() - observation.timestamp()) <= .02
                           && other.tagIds().stream().anyMatch(observation.tagIds()::contains))
               .count();
-      double factor = Math.sqrt(Math.max(maximumSources, correlated));
+      double factor = Math.sqrt((double) Math.max(maximumSources, correlated));
       result.add(
           new VisionMeasurement(
               observation.source(),
@@ -200,19 +201,19 @@ public final class VisionProcessor {
     if (cameraGeneration.isEmpty()) {
       return Decision.reject(Reason.CONFIGURATION);
     }
-    var applied = cameraGeneration.get();
+    var applied = cameraGeneration.orElseThrow();
     var definition =
         profile.getCamerasList().stream()
             .filter(camera -> camera.getName().equals(observation.getCameraName()))
             .findFirst();
     if (definition.isEmpty()
-        || !definition.get().getEnabled()
+        || !definition.orElseThrow().getEnabled()
         || !observation.getBindingId().equals(applied.getBindingId())
         || observation.getBindingGeneration() != applied.getBindingGeneration()
         || !observation.getCalibrationHash().equals(applied.getCalibrationHash())
         || !observation.getModeId().equals(applied.getModeId())
         || !observation.getOpticalSignature().equals(applied.getOpticalSignature())
-        || definition.get().getAllowedModesList().stream()
+        || definition.orElseThrow().getAllowedModesList().stream()
             .noneMatch(
                 mode ->
                     mode.getId().equals(observation.getModeId())
@@ -299,7 +300,7 @@ public final class VisionProcessor {
     if (!Double.isFinite(timeUncertainty)
         || timeUncertainty <= 0
         || timeUncertainty > policy.maxTimestampUncertaintyS()
-        || !Set.of(
+        || !ImmutableSet.of(
                 "read-completion-local-nt",
                 "driver-exposure-start-local-nt",
                 "driver-exposure-end-local-nt")
@@ -326,7 +327,7 @@ public final class VisionProcessor {
           || !Double.isFinite(candidate.getImageSpreadFraction())
           || candidate.getImageSpreadFraction() < 0
           || candidate.getImageSpreadFraction() > 1
-          || !Set.of(
+          || !ImmutableSet.of(
                   SpotProtos.PoseCandidate.Method.MULTI_TAG_SQPNP,
                   SpotProtos.PoseCandidate.Method.SINGLE_TAG_IPPE_SQUARE)
               .contains(candidate.getMethod())) {
@@ -362,7 +363,8 @@ public final class VisionProcessor {
         return Decision.reject(Reason.RESIDUAL);
       }
       alternatives.add(
-          VisionProfiles.pose(candidate.getFieldToCamera()).transformBy(mount.get().inverse()));
+          VisionProfiles.pose(candidate.getFieldToCamera())
+              .transformBy(mount.orElseThrow().inverse()));
     }
     int selected = 0;
     if (observation.getCandidates(0).getMethod()
@@ -370,8 +372,8 @@ public final class VisionProcessor {
       if (alternatives.size() != 2) {
         return Decision.reject(Reason.AMBIGUOUS);
       }
-      double a = headingError(alternatives.get(0), captured.get().pose());
-      double b = headingError(alternatives.get(1), captured.get().pose());
+      double a = headingError(alternatives.get(0), captured.orElseThrow().pose());
+      double b = headingError(alternatives.get(1), captured.orElseThrow().pose());
       if (Math.abs(a - b) < policy.candidateHeadingMarginRad()
           || Math.min(a, b) > policy.maxHeadingDifferenceRad()) {
         return Decision.reject(Reason.AMBIGUOUS);
@@ -387,7 +389,7 @@ public final class VisionProcessor {
         || robot.getY() > profile.getField().getWidthM() + .25) {
       return Decision.reject(Reason.FIELD_BOUNDS);
     }
-    var state = captured.get();
+    var state = captured.orElseThrow();
     for (double value :
         new double[] {
           state.speedMps(),
@@ -407,8 +409,7 @@ public final class VisionProcessor {
     }
     var candidate = observation.getCandidates(selected);
     double range = candidate.getAverageTagDistanceM();
-    double conditioning =
-        Math.min(4., Math.max(1., Math.sqrt(.02 / candidate.getImageAreaFraction())));
+    double conditioning = Math.clamp(1., Math.sqrt(.02 / candidate.getImageAreaFraction()), 4.);
     // Count benefit capped at sqrt(3). Overlapping simultaneous cameras are
     // additionally inflated by correlation policy at source collection.
     double sigma =

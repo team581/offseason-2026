@@ -1,5 +1,7 @@
 package com.team581.vision;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
 
 /**
@@ -54,13 +56,9 @@ public final class VisionTrust {
   }
 
   public void updateOdometry(double distanceM, double elapsedS, boolean collision) {
-    if (!Double.isFinite(distanceM)
-        || !Double.isFinite(elapsedS)
-        || distanceM < 0
-        || elapsedS < 0) {
-      throw new IllegalArgumentException(
-          "nonnegative finite odometry distance and elapsed time required");
-    }
+    checkArgument(
+        Double.isFinite(distanceM) && Double.isFinite(elapsedS) && distanceM >= 0 && elapsedS >= 0,
+        "nonnegative finite odometry distance and elapsed time required");
     // Robot trials must fit these heuristic degradation rates before enabling.
     score += distanceM * .05 + elapsedS * .01;
     if (collision && !collisionActive) {

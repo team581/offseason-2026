@@ -1,7 +1,9 @@
 package com.team581.vision;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Comparator.comparingDouble;
+
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -9,7 +11,7 @@ import java.util.PriorityQueue;
 public final class MeasurementQueue {
   private final PriorityQueue<VisionMeasurement> pending =
       new PriorityQueue<>(
-          Comparator.comparingDouble(VisionMeasurement::timestamp)
+          comparingDouble(VisionMeasurement::timestamp)
               .thenComparing(VisionMeasurement::source)
               .thenComparing(VisionMeasurement::frameId));
   private final double windowS;
@@ -20,9 +22,9 @@ public final class MeasurementQueue {
   private long overloadCount;
 
   public MeasurementQueue(double windowS, int capacity) {
-    if (!Double.isFinite(windowS) || windowS < 0 || capacity < 1) {
-      throw new IllegalArgumentException("valid reorder window and capacity required");
-    }
+    checkArgument(
+        Double.isFinite(windowS) && windowS >= 0 && capacity >= 1,
+        "valid reorder window and capacity required");
     this.windowS = windowS;
     this.capacity = capacity;
   }

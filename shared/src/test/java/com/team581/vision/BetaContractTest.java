@@ -1,7 +1,9 @@
 package com.team581.vision;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -12,7 +14,6 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.TimestampedRaw;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -36,14 +37,23 @@ final class BetaContractTest {
 
   private static VisionMeasurement measurement(String source, double timestamp) {
     return new VisionMeasurement(
-        source, source + timestamp, Pose2d.kZero, timestamp, .1, .1, 1e6, List.of(1), .1, 1.);
+        source,
+        source + timestamp,
+        Pose2d.kZero,
+        timestamp,
+        .1,
+        .1,
+        1e6,
+        ImmutableList.of(1),
+        .1,
+        1.);
   }
 
   private static VisionProcessor processor() throws IOException {
     var mount = new Transform3d(new Translation3d(.2, 0, .5), new Rotation3d());
     return new VisionProcessor(
         manifest().getProfile(),
-        List.of(VisionCamera.fixed("front", mount)),
+        ImmutableList.of(VisionCamera.fixed("front", mount)),
         timestamp ->
             Optional.of(
                 new VisionProcessor.CaptureState(
@@ -59,14 +69,14 @@ final class BetaContractTest {
   void correlatedMeasurementsInflateUncertaintyAndCannotImproveTrustByCameraCount() {
     var result =
         VisionProcessor.accountForCorrelation(
-            List.of(measurement("a", 10.), measurement("b", 10.)));
+            ImmutableList.of(measurement("a", 10.), measurement("b", 10.)));
     assertThat(result.get(0).stdX()).isGreaterThan(.1);
     var trust = new VisionTrust();
-    trust.ingest(List.of(result.get(0)));
+    trust.ingest(ImmutableList.of(result.get(0)));
     double before = trust.get();
     trust.ingest(result);
     assertThat(trust.get()).isEqualTo(before);
-    trust.ingest(List.of());
+    trust.ingest(ImmutableList.of());
     assertThat(trust.get()).isEqualTo(before);
     trust.updateOdometry(1., .02, false);
     assertThat(trust.get()).isGreaterThan(before);
@@ -76,7 +86,8 @@ final class BetaContractTest {
   void documentationExampleCreatesIndependentProfilesForTwoRobots() throws Exception {
     var field =
         new edu.wpi.first.apriltag.AprilTagFieldLayout(
-            List.of(new edu.wpi.first.apriltag.AprilTag(1, new Pose3d(4, 1, 1, new Rotation3d()))),
+            ImmutableList.of(
+                new edu.wpi.first.apriltag.AprilTag(1, new Pose3d(4, 1, 1, new Rotation3d()))),
             16,
             8);
     var mode = manifest().getProfile().getCameras(0).getAllowedModes(0);
@@ -93,7 +104,8 @@ final class BetaContractTest {
         assertThat(first.profile().getRobotId()).isEqualTo("fixture-offseason");
         assertThat(second.profile().getRobotId()).isEqualTo("fixture-second-robot");
         assertThat(first.history()).isNotSameAs(second.history());
-        assertThat(first.profile().getCamerasList()).isEqualTo(second.profile().getCamerasList());
+        assertThat(first.profile().getCamerasList())
+            .containsExactlyElementsOf(second.profile().getCamerasList());
         assertThat(first.profile().getFusionEnabled()).isFalse();
         assertThat(second.profile().getHeadingEnabled()).isFalse();
         assertThat(VisionProfiles.hash(first.profile()))
@@ -122,7 +134,7 @@ final class BetaContractTest {
     var processor =
         new VisionProcessor(
             manifest().getProfile(),
-            List.of(),
+            ImmutableList.of(),
             timestamp -> Optional.empty(),
             VisionProcessor.Policy.conservative());
     assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
@@ -130,7 +142,7 @@ final class BetaContractTest {
     processor =
         new VisionProcessor(
             manifest().getProfile(),
-            List.of(new VisionCamera("front", timestamp -> Optional.empty())),
+            ImmutableList.of(new VisionCamera("front", timestamp -> Optional.empty())),
             timestamp -> Optional.of(new VisionProcessor.CaptureState(Pose2d.kZero, 0, 0, 0, 0, 0)),
             VisionProcessor.Policy.conservative());
     assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
@@ -158,13 +170,13 @@ final class BetaContractTest {
     latest.put("frame_id", "new-accepted-frame");
     latest.put("fused", false);
     SpotVisionIO.markDecisionFused(latest, "old-accepted-frame");
-    assertThat(latest.get("fused")).isEqualTo(false);
+    assertThat(latest).containsEntry("fused", false);
     latest.put("frame_id", "");
     SpotVisionIO.markDecisionFused(latest, "old-accepted-frame");
-    assertThat(latest.get("fused")).isEqualTo(false);
+    assertThat(latest).containsEntry("fused", false);
     latest.put("frame_id", "current-accepted-frame");
     SpotVisionIO.markDecisionFused(latest, "current-accepted-frame");
-    assertThat(latest.get("fused")).isEqualTo(true);
+    assertThat(latest).containsEntry("fused", true);
   }
 
   @Test
@@ -174,14 +186,14 @@ final class BetaContractTest {
     assertThat(VisionProfiles.hash(manifest.getProfile())).isEqualTo(manifest.getManifestHash());
     assertThat(VisionProfiles.hash(manifest.getProfile().getField()))
         .isEqualTo(ack().getFieldHash());
-    for (String name : List.of("empty", "multi", "ippe", "ambiguous")) {
+    for (String name : ImmutableList.of("empty", "multi", "ippe", "ambiguous")) {
       assertThat(sample(name).observation().toByteArray()).containsExactly(fixture(name));
     }
     var accepted = processor().process(sample("multi"), ack(), 10.1, false);
     assertThat(accepted.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     var measurement = accepted.measurement().orElseThrow();
-    assertThat(measurement.pose().getX()).isCloseTo(2., org.assertj.core.data.Offset.offset(1e-12));
-    assertThat(measurement.pose().getY()).isCloseTo(0., org.assertj.core.data.Offset.offset(1e-12));
+    assertThat(measurement.pose().getX()).isCloseTo(2., offset(1e-12));
+    assertThat(measurement.pose().getY()).isCloseTo(0., offset(1e-12));
     assertThat(measurement.timestamp()).isEqualTo(10.05);
     assertThat(measurement.stdX()).isPositive();
     assertThat(measurement.stdHeading()).isEqualTo(1e6);
@@ -204,8 +216,9 @@ final class BetaContractTest {
   @Test
   void sourceCountFloorCoversCorrelatedCamerasSplitAcrossReleaseBatches() {
     var value =
-        new VisionMeasurement("front", "one", new Pose2d(), 1, .1, .1, 1e6, List.of(1), 0, 0);
-    var released = VisionProcessor.accountForCorrelation(List.of(value), 4);
+        new VisionMeasurement(
+            "front", "one", new Pose2d(), 1, .1, .1, 1e6, ImmutableList.of(1), 0, 0);
+    var released = VisionProcessor.accountForCorrelation(ImmutableList.of(value), 4);
     assertThat(released.get(0).stdX()).isEqualTo(.2);
     assertThat(value.stdX()).isEqualTo(.1);
   }
@@ -238,7 +251,7 @@ final class BetaContractTest {
   void timestampDomainsHandleSentinelsAndRejectUnverifiedClientEpoch() {
     var remote = new TimestampedRaw(10_050_000, 10_050_000, new byte[0]);
     assertThat(SpotVisionIO.captureTimestamp(remote, true).orElseThrow()).isEqualTo(10.05);
-    for (long sentinel : List.of(0L, 1L)) {
+    for (long sentinel : ImmutableList.of(0L, 1L)) {
       assertThat(
               SpotVisionIO.captureTimestamp(
                       new TimestampedRaw(10_050_000, sentinel, new byte[0]), true)

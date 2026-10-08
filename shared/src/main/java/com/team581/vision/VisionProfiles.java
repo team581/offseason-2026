@@ -1,5 +1,7 @@
 package com.team581.vision;
 
+import static java.util.Comparator.comparingInt;
+
 import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -65,7 +67,7 @@ public final class VisionProfiles {
             .setWidthM(layout.getFieldWidth());
     // Stable ascending IDs produce the same profile hash across restarts.
     layout.getTags().stream()
-        .sorted(java.util.Comparator.comparingInt(tag -> tag.ID))
+        .sorted(comparingInt(tag -> tag.ID))
         .forEach(
             tag ->
                 field.addTags(

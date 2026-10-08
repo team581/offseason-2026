@@ -1,5 +1,7 @@
 package com.team581.vision;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -20,22 +22,21 @@ public record VisionMeasurement(
     double normalizedInnovation) {
   public VisionMeasurement {
     tagIds = List.copyOf(tagIds);
-    if (source == null
-        || frameId == null
-        || pose == null
-        || !Double.isFinite(timestamp)
-        || !Double.isFinite(pose.getX())
-        || !Double.isFinite(pose.getY())
-        || !Double.isFinite(pose.getRotation().getRadians())
-        || !Double.isFinite(stdX)
-        || !Double.isFinite(stdY)
-        || !Double.isFinite(stdHeading)
-        || stdX <= 0
-        || stdY <= 0
-        || stdHeading <= 0) {
-      throw new IllegalArgumentException(
-          "finite pose/time and positive finite deviations required");
-    }
+    checkArgument(
+        source != null
+            && frameId != null
+            && pose != null
+            && Double.isFinite(timestamp)
+            && Double.isFinite(pose.getX())
+            && Double.isFinite(pose.getY())
+            && Double.isFinite(pose.getRotation().getRadians())
+            && Double.isFinite(stdX)
+            && Double.isFinite(stdY)
+            && Double.isFinite(stdHeading)
+            && stdX > 0
+            && stdY > 0
+            && stdHeading > 0,
+        "finite pose/time and positive finite deviations required");
   }
 
   /** Returns a fresh vector; callers cannot modify a queued measurement. */

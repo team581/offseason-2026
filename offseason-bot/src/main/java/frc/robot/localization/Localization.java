@@ -1,8 +1,10 @@
 package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
+import com.google.common.collect.ImmutableList;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.localization.TrustFactor;
+import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.CaptureHistory;
 import com.team581.vision.LimelightVisionIO;
@@ -68,7 +70,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
                 SpotCameraProfiles.mounts(),
                 captureHistory,
                 VisionProcessor.Policy.conservative()),
-            List.of(
+            ImmutableList.of(
                 new LimelightVisionIO(
                     "Limelight/shooter",
                     vision::getShooterLimelightTagResult,
@@ -243,7 +245,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
         now,
         new VisionProcessor.CaptureState(
             swerve.getDriveState().Pose,
-            Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond),
+            MathHelpers.getLinearVelocity(speeds),
             speeds.omegaRadiansPerSecond,
             Math.toRadians(imu.getRoll()),
             Math.toRadians(imu.getPitch()),
@@ -254,9 +256,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     double elapsed =
         Double.isFinite(lastVisionLoopTimestamp) ? Math.max(0., now - lastVisionLoopTimestamp) : 0.;
     revisedTrust.updateOdometry(
-        Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) * elapsed,
-        elapsed,
-        imu.collisionDetected());
+        MathHelpers.getLinearVelocity(speeds) * elapsed, elapsed, imu.collisionDetected());
     lastVisionLoopTimestamp = now;
     DogLog.log("Vision/Spot/ShadowAccepted", visionPipeline.shadowMeasurements().size());
     DogLog.log("Vision/Spot/TrustEvidenceAgeS", revisedTrust.evidenceAge(now));
