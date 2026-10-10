@@ -69,6 +69,46 @@ jobs:
           fields: repo,author,message
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  sim:
+    name: Headless tests
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: assemble
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Run headless tests
+        run: ./gradlew headlessTest
+
+      - name: Show motion summaries
+        if: always()
+        run: |
+          for report in */build/reports/headlessTest/motion/*.md; do
+            if [ -f "$report" ]; then
+              cat "$report" >> "$GITHUB_STEP_SUMMARY"
+              printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: headless-results
+          retention-days: 14
+          path: |
+            **/build/reports/tests/headlessTest/
+            **/build/test-results/headlessTest/
+            **/build/reports/headlessTest/
+            **/logs/*.wpilog
   style:
     name: Check formatting
 

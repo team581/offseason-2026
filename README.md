@@ -42,12 +42,27 @@ This repository is organized as a Gradle monorepo with the following projects:
 ### Running tests
 
 ```sh
-# Run all tests
+# Run all unit tests
 ./gradlew test
 
 # Run tests for specific project
 ./gradlew comp-bot:test
+
+# Run all headless tests as one suite
+./gradlew headlessTest
+
+# Run just the offseason straight-line tests
+./gradlew :offseason-bot:straightLineTest
+
+# Strict four-leg drive qualification (currently exposes a startup acceleration violation)
+./gradlew :offseason-bot:driveRegressionTest
 ```
+
+Headless JUnit tests live in `offseason-bot/src/simTest/java` and are discovered automatically by
+`headlessTest`. CI runs this suite in the **Headless tests** job and uploads one results artifact.
+See [headless testing](docs/headless-testing.md) for outputs and adding another test.
+See [robot regression design](docs/robot-regression.md) for whole-robot coverage, proposed tolerances,
+and simulation/physical run procedures.
 
 ### Code formatting
 
