@@ -12,6 +12,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import frc.robot.testing.DiagnosticReport;
+import frc.robot.testing.DiagnosticRoutine;
 import frc.robot.testing.StraightLineConfig;
 import frc.robot.testing.StraightLineRoutine;
 import frc.robot.testing.TestManager;
@@ -154,6 +156,7 @@ final class StraightLineSimTest {
                         "sim." + key, StraightLineConfig.DEFAULTS.get(key).toString())));
     double voltage = Double.parseDouble(System.getProperty("sim.batteryVoltage", "12.0"));
     double heading = Double.parseDouble(System.getProperty("sim.startHeading", "0.0"));
+    boolean regression = Boolean.getBoolean("sim.regression");
     if (!Double.isFinite(voltage) || voltage <= 0 || !Double.isFinite(heading)) {
       throw new IllegalArgumentException(
           "Battery voltage must be positive and start heading finite");
@@ -173,7 +176,10 @@ final class StraightLineSimTest {
                 fixture.applyRequest(requested);
               },
               () -> {},
-              () -> TestManager.Selection.STRAIGHT_LINE,
+              () ->
+                  regression
+                      ? TestManager.Selection.DRIVE_REGRESSION
+                      : TestManager.Selection.STRAIGHT_LINE,
               () -> config);
       DriverStationSim.setEnabled(true);
       DriverStationSim.notifyNewData();
@@ -187,17 +193,25 @@ final class StraightLineSimTest {
             () -> {
               manager.getRoutine().ifPresent(active -> samples.add(active.sample()));
             },
-            config.timeout() + 2.0);
+            (regression ? 4 * config.timeout() : config.timeout()) + 2.0);
       } finally {
         writeDriveSamples(driveSamples);
         if (manager.getRoutine().isPresent()) {
           writeReport(config, voltage, heading, manager.getRoutine().orElseThrow(), samples);
         }
+        if (regression) {
+          DiagnosticReport.write(
+              Path.of(
+                  System.getProperty("sim.outputDir", "build/reports/driveRegressionTest/motion")),
+              manager.getRunId(),
+              config + "; voltage=" + voltage + "; heading=" + heading,
+              manager.getResults());
+        }
       }
-      var routine = manager.getRoutine().orElseThrow();
-      assertThat(routine.getState())
-          .as(routine.reason())
-          .isEqualTo(StraightLineRoutine.State.PASSED);
+      var diagnostic = manager.getActiveDiagnostic().orElseThrow();
+      assertThat(diagnostic.result().status())
+          .as(diagnostic.result().reason())
+          .isEqualTo(DiagnosticRoutine.Status.PASSED);
     }
   }
 }

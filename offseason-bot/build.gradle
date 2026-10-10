@@ -115,7 +115,8 @@ configurations {
 
 [
 	headlessTest: 'Runs all desktop headless tests',
-	straightLineTest: 'Runs the straight-line test headlessly through the Test-mode manager'
+	straightLineTest: 'Runs the straight-line test headlessly through the Test-mode manager',
+	driveRegressionTest: 'Runs strict four-leg drive qualification; fails on measured or commanded constraint violations'
 ].each { taskName, taskDescription ->
 	def headlessTask = tasks.register(taskName, Test) {
 		group = 'verification'
@@ -126,6 +127,9 @@ configurations {
 		if (taskName == 'straightLineTest') {
 			include '**/StraightLine*Test.class', '**/TestManagerTest.class'
 		}
+		if (taskName == 'driveRegressionTest') {
+			include '**/StraightLineSimTest.class'
+		}
 		useJUnitPlatform()
 		maxParallelForks = 1
 		forkEvery = 1
@@ -135,6 +139,9 @@ configurations {
 			key.startsWith('sim.')
 		}.each { key, value ->
 			systemProperty key, value.toString()
+		}
+		if (taskName == 'driveRegressionTest') {
+			systemProperty 'sim.regression', 'true'
 		}
 		// Every invocation is a new measurement, even when the code did not change.
 		outputs.upToDateWhen { false }

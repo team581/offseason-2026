@@ -50,6 +50,7 @@ public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.
   private boolean started;
   private double previousTime;
   private double previousVelocity;
+  private double angularVelocity;
   private double stableSince = -1;
   private double peakVelocity;
   private double peakAcceleration;
@@ -144,6 +145,7 @@ public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.
       return;
     }
     var speeds = speedsSupplier.get();
+    angularVelocity = speeds.omegaRadiansPerSecond;
     double now = Timer.getFPGATimestamp();
     double velocity =
         speeds.vxMetersPerSecond * direction.getCos()
@@ -193,7 +195,8 @@ public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.
     if (!Double.isFinite(sample.positionError())
         || !Double.isFinite(sample.velocity())
         || !Double.isFinite(sample.acceleration())
-        || !Double.isFinite(sample.crossTrackError())) {
+        || !Double.isFinite(sample.crossTrackError())
+        || !Double.isFinite(angularVelocity)) {
       reason = "Nonfinite sensor data";
       return State.FAILED;
     }
@@ -210,7 +213,9 @@ public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.
       stableSince = -1;
       return State.DRIVING;
     }
-    boolean stopped = Math.hypot(sample.vx(), sample.vy()) <= config.stoppedVelocity();
+    boolean stopped =
+        Math.hypot(sample.vx(), sample.vy()) <= config.stoppedVelocity()
+            && Math.abs(angularVelocity) <= Math.toRadians(5);
     if (!stopped) {
       stableSince = -1;
       return State.SETTLING;

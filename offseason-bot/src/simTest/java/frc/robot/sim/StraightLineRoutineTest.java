@@ -156,6 +156,24 @@ final class StraightLineRoutineTest {
   }
 
   @Test
+  void rotationAlsoResetsTheSettleWindow() {
+    var routine = routine();
+    enabled = true;
+    tick(routine, 0.02);
+    pose = new Pose2d(4, 2, Rotation2d.kZero);
+    tick(routine, 0.02);
+    tick(routine, 0.20);
+    speeds = new ChassisSpeeds(0, 0, Math.toRadians(10));
+    tick(routine, 0.02);
+    speeds = new ChassisSpeeds();
+    tick(routine, 0.02);
+    tick(routine, 0.20);
+    assertThat(routine.finished()).isFalse();
+    tick(routine, 0.10);
+    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.PASSED);
+  }
+
+  @Test
   void stuckRobotFailsAndClearsMotion() {
     var routine = routine();
     enabled = true;

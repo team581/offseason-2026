@@ -4,7 +4,6 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Objects.requireNonNullElse;
 
 import com.team581.math.PoseErrorTolerance;
-import com.team581.swerve.TrailblazerDriveSource;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
@@ -17,18 +16,19 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Runs a selected diagnostic once per Test-mode enable, independently of autonomous. */
+/** Test-mode adapter. Its lifecycle/controllers are separate from production robot management. */
 public final class TestManager extends StateMachineSubsystem<TestManager.State> {
   public enum Selection {
     NONE,
-    STRAIGHT_LINE
+    STRAIGHT_LINE,
+    DRIVE_REGRESSION
   }
 
   public enum State {
@@ -49,36 +49,24 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
 
   private static Supplier<Selection> dashboardSelection() {
     var chooser = new SendableChooser<Selection>();
-    chooser.setDefaultOption("NONE", Selection.NONE);
-    chooser.addOption("STRAIGHT_LINE", Selection.STRAIGHT_LINE);
+    chooser.setDefaultOption(Selection.NONE.name(), Selection.NONE);
+    for (var option : Selection.values()) {
+      if (option != Selection.NONE) {
+        chooser.addOption(option.name(), option);
+      }
+    }
     SmartDashboard.putData("Tests/SelectedTest", chooser);
     return () -> requireNonNullElse(chooser.getSelected(), Selection.NONE);
   }
 
-  private final Supplier<Pose2d> pose;
-  private final Supplier<ChassisSpeeds> speeds;
-  private final Consumer<ChassisSpeeds> driveOutput;
-  private final Runnable prepareForTest;
-  private final Supplier<Selection> selectedTest;
-  private final Supplier<StraightLineConfig> config;
-  // A dedicated test controller. The production auto controller is left unchanged.
+  // Dedicated diagnostic controller; does not share controller state with autonomous.
   private final Trailblazer trailblazer =
       new Trailblazer(
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
-          new PidPathFollower(
-              new PIDController(3.5, 0, 0),
-              new PIDController(
-                  Swerve.ORIGINAL_HEADING_PID.getP(),
-                  Swerve.ORIGINAL_HEADING_PID.getI(),
-                  Swerve.ORIGINAL_HEADING_PID.getD())));
-  private final TrailblazerDriveSource driveSource;
-  private Optional<StraightLineRoutine> routine = Optional.empty();
+          new PidPathFollower(new PIDController(3.5, 0, 0), new PIDController(15, 0, 0)));
+  private final DiagnosticSession session;
   private Selection selection = Selection.NONE;
-  private boolean testEnabled;
-  private boolean previouslyEnabled;
-  private boolean enteringTest;
-
-  private boolean leavingTest;
+  private String runId = "NOT_STARTED";
 
   public TestManager(
       Supplier<Pose2d> pose,
@@ -94,7 +82,7 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
         () -> StraightLineConfig.from(key -> TUNABLES.get(key).get()));
   }
 
-  /** Inject sensors, outputs, selection and configuration for the headless runner. */
+  // Test-owned injection points; no production manager implements a diagnostic interface.
   public TestManager(
       Supplier<Pose2d> pose,
       Supplier<ChassisSpeeds> speeds,
@@ -103,83 +91,111 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
       Supplier<Selection> selectedTest,
       Supplier<StraightLineConfig> config) {
     super(SubsystemPriority.TEST_MANAGER, State.INACTIVE);
-    this.pose = pose;
-    this.speeds = speeds;
-    this.driveOutput = driveOutput;
-    this.prepareForTest = prepareForTest;
-    this.selectedTest = selectedTest;
-    this.config = config;
-    driveSource = new TrailblazerDriveSource(trailblazer, pose, speeds);
+    session =
+        new DiagnosticSession(
+            () -> {
+              runId = java.util.UUID.randomUUID().toString();
+              selection = requireNonNullElse(selectedTest.get(), Selection.NONE);
+              trailblazer.clearActiveSegment();
+              if (selection == Selection.NONE) {
+                return Optional.empty();
+              }
+              var snapshot = config.get();
+              if (selection == Selection.STRAIGHT_LINE) {
+                return Optional.of(
+                    new StraightLineDiagnostic(
+                        "StraightLine", snapshot, trailblazer, pose, speeds, false));
+              }
+              // Four independently judged legs form a square relative to the initial heading.
+              var steps = new java.util.ArrayList<DiagnosticSequence.Step>();
+              for (int i = 0; i < 4; i++) {
+                double direction = snapshot.direction() + i * 90;
+                var legConfig =
+                    new StraightLineConfig(
+                        snapshot.distance(),
+                        direction,
+                        snapshot.maxVelocity(),
+                        snapshot.maxAcceleration(),
+                        snapshot.timeout(),
+                        snapshot.positionTolerance(),
+                        snapshot.headingTolerance(),
+                        snapshot.stoppedVelocity(),
+                        snapshot.settleSeconds(),
+                        snapshot.crossTrackTolerance());
+                String name = "DriveLeg" + (i + 1);
+                steps.add(
+                    new DiagnosticSequence.Step(
+                        name,
+                        snapshot.timeout() + 0.02,
+                        () ->
+                            new StraightLineDiagnostic(
+                                name, legConfig, trailblazer, pose, speeds, true)));
+              }
+              return Optional.of(new DiagnosticSequence(steps));
+            },
+            prepareForTest,
+            driveOutput);
   }
 
+  public Optional<DiagnosticRoutine> getActiveDiagnostic() {
+    return session.active();
+  }
+
+  public List<DiagnosticRoutine.Result> getResults() {
+    return session.results();
+  }
+
+  // Existing straight-line callers retain access to their motion samples.
   public Optional<StraightLineRoutine> getRoutine() {
-    return routine;
+    return session
+        .active()
+        .filter(StraightLineDiagnostic.class::isInstance)
+        .map(StraightLineDiagnostic.class::cast)
+        .map(StraightLineDiagnostic::routine);
   }
 
-  @Override
-  protected void collectInputs() {
-    testEnabled = DriverStation.isTestEnabled();
-    enteringTest = testEnabled && !previouslyEnabled;
-    leavingTest = !testEnabled && previouslyEnabled;
-    previouslyEnabled = testEnabled;
+  public String getRunId() {
+    return runId;
   }
 
   @Override
   protected State getNextState(State current) {
-    if (!testEnabled) {
-      if (leavingTest) {
-        routine.ifPresent(
-            active -> {
-              active.beforePeriodic();
-              active.periodic();
-            });
-        trailblazer.clearActiveSegment();
-        driveOutput.accept(new ChassisSpeeds());
-      }
-      return State.INACTIVE;
-    }
-    if (enteringTest) {
-      selection = selectedTest.get();
-      routine = Optional.empty();
-      trailblazer.clearActiveSegment();
-      if (selection == Selection.NONE) {
-        return State.INACTIVE;
-      }
-      try {
-        routine =
-            Optional.of(
-                new StraightLineRoutine(
-                    config.get(), trailblazer, pose, speeds, DriverStation::isTestEnabled));
-        DogLog.log("Tests/StraightLine/InvalidConfig", false);
-        return State.RUNNING;
-      } catch (IllegalArgumentException exception) {
-        DogLog.log("Tests/StraightLine/InvalidConfig", true);
-        DogLog.log("Tests/StraightLine/State", "INVALID_CONFIG");
-        DogLog.log("Tests/StraightLine/Passed", false);
-        DogLog.log("Tests/StraightLine/Reason", exception.getMessage());
-        return State.INVALID_CONFIG;
-      }
-    }
-    if (current == State.RUNNING && routine.orElseThrow().finished()) {
-      return State.FINISHED;
-    }
-    return current;
+    session.tick(DriverStation.isTestEnabled());
+    return State.valueOf(session.state().name());
   }
 
   @Override
   protected void whileInState(State state) {
-    if (testEnabled) {
-      prepareForTest.run();
-      if (state == State.RUNNING) {
-        var active = routine.orElseThrow();
-        active.beforePeriodic();
-        active.periodic();
-        driveOutput.accept(driveSource.getRequestedSpeeds());
-      } else {
-        driveOutput.accept(new ChassisSpeeds());
-      }
-    }
     DogLog.log("Tests/ManagerState", state);
     DogLog.log("Tests/SelectedTest", selection);
+    DogLog.log("Tests/Reason", session.reason());
+    DogLog.log("Tests/Regression/RunId", runId);
+    DogLog.log(
+        "Tests/Regression/Status",
+        session.result().map(result -> result.status().name()).orElse("INACTIVE"));
+    DogLog.log(
+        "Tests/Regression/Passed",
+        session
+            .result()
+            .map(result -> result.status() == DiagnosticRoutine.Status.PASSED)
+            .orElse(false));
+    if (state == State.INVALID_CONFIG) {
+      DogLog.log("Tests/StraightLine/InvalidConfig", true);
+      DogLog.log("Tests/StraightLine/State", "INVALID_CONFIG");
+      DogLog.log("Tests/StraightLine/Passed", false);
+      DogLog.log("Tests/StraightLine/Reason", session.reason());
+    } else if (state == State.RUNNING) {
+      DogLog.log("Tests/StraightLine/InvalidConfig", false);
+    }
+    session
+        .result()
+        .ifPresent(
+            overall -> {
+              for (var result : getResults()) {
+                DogLog.log(
+                    "Tests/Regression/Steps/" + result.name() + "/Status", result.status().name());
+                DogLog.log("Tests/Regression/Steps/" + result.name() + "/Reason", result.reason());
+              }
+            });
   }
 }
