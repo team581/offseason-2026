@@ -9,6 +9,7 @@ import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.event.BooleanEvent;
+import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -108,6 +109,9 @@ public class Robot extends Base581Robot {
           hubActivity,
           hardware,
           powerManager);
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem.
+  private final Autos autos = new Autos(robotManager, trailblazer);
 
   @SuppressWarnings("unused") // Registers itself with the existing subsystem sequencer.
   private final TestManager testManager =
