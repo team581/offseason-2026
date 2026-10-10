@@ -1,6 +1,7 @@
 package frc.robot.testing;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.Objects.requireNonNullElse;
 
 import com.team581.math.PoseErrorTolerance;
 import com.team581.swerve.TrailblazerDriveSource;
@@ -51,7 +52,7 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
     chooser.setDefaultOption("NONE", Selection.NONE);
     chooser.addOption("STRAIGHT_LINE", Selection.STRAIGHT_LINE);
     SmartDashboard.putData("Tests/SelectedTest", chooser);
-    return () -> Optional.ofNullable(chooser.getSelected()).orElse(Selection.NONE);
+    return () -> requireNonNullElse(chooser.getSelected(), Selection.NONE);
   }
 
   private final Supplier<Pose2d> pose;

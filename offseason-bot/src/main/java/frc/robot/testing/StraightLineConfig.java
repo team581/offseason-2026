@@ -1,5 +1,8 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.function.ToDoubleFunction;
 
@@ -16,7 +19,7 @@ public record StraightLineConfig(
     double settleSeconds,
     double crossTrackTolerance) {
   public static final Map<String, Double> DEFAULTS =
-      Map.ofEntries(
+      ImmutableMap.ofEntries(
           Map.entry("distance", 2.0),
           Map.entry("direction", 0.0),
           Map.entry("maxVelocity", 1.0),
@@ -43,10 +46,9 @@ public record StraightLineConfig(
   }
 
   public StraightLineConfig {
-    if (!Double.isFinite(distance) || distance == 0 || !Double.isFinite(direction)) {
-      throw new IllegalArgumentException(
-          "Distance must be finite and nonzero; direction must be finite");
-    }
+    checkArgument(
+        Double.isFinite(distance) && distance != 0 && Double.isFinite(direction),
+        "Distance must be finite and nonzero; direction must be finite");
     for (double positive :
         new double[] {
           maxVelocity,
@@ -58,14 +60,12 @@ public record StraightLineConfig(
           settleSeconds,
           crossTrackTolerance
         }) {
-      if (!Double.isFinite(positive) || positive <= 0) {
-        throw new IllegalArgumentException(
-            "Limits, tolerances and durations must be finite and positive");
-      }
+      checkArgument(
+          Double.isFinite(positive) && positive > 0,
+          "Limits, tolerances and durations must be finite and positive");
     }
-    if (positionTolerance >= Math.abs(distance) || settleSeconds >= timeout) {
-      throw new IllegalArgumentException(
-          "Position tolerance must be smaller than distance; settle time smaller than timeout");
-    }
+    checkArgument(
+        positionTolerance < Math.abs(distance) && settleSeconds < timeout,
+        "Position tolerance must be smaller than distance; settle time smaller than timeout");
   }
 }
