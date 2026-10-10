@@ -34,7 +34,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   private Pose2d robotPose = Pose2d.kZero;
 
-  private final List<TagResult> presentList = new ArrayList<>(3);
+  private final List<TagResult> presentList = new ArrayList<>(2);
 
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision, Imu imu) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
@@ -137,7 +137,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   @Override
   protected void collectInputs() {
     presentList.clear();
-    vision.getShooterLimelightTagResult().ifPresent(presentList::add);
     vision.getLeftLimelightTagResult().ifPresent(presentList::add);
     vision.getRightLimelightTagResult().ifPresent(presentList::add);
 

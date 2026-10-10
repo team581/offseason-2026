@@ -48,18 +48,9 @@ public class Robot extends Base581Robot {
               imu.bumpCrossingTracker));
 
   private final HealthManager health =
-      new HealthManager(
-          hardware.shooterLimeLight,
-          hardware.leftLimeLight,
-          hardware.rightLimeLight,
-          hardware.groundLimeLight);
+      new HealthManager(hardware.leftLimeLight, hardware.rightLimeLight, hardware.groundLimeLight);
   private final Vision vision =
-      new Vision(
-          imu,
-          hardware.shooterLimeLight,
-          hardware.leftLimeLight,
-          hardware.rightLimeLight,
-          hardware.groundLimeLight);
+      new Vision(imu, hardware.leftLimeLight, hardware.rightLimeLight, hardware.groundLimeLight);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Localization localization =
@@ -80,7 +71,7 @@ public class Robot extends Base581Robot {
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
-  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
+  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder);
 
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
