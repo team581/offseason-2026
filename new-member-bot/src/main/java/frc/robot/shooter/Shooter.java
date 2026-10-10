@@ -1,10 +1,9 @@
 package frc.robot.shooter;
 
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.team581.signals.Signals;
 import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -20,9 +19,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   private final TalonFX toprightMotor;
   private final TalonFX bottomleftMotor;
   private final TalonFX bottomrightMotor;
-  private final Follower topleftFollower;
-  private final Follower bottomleftFollower;
-  private final Follower
+  private final StrictFollower topleftFollower;
+  private final StrictFollower bottomleftFollower;
+  private final StrictFollower
       bottomrightFollower; // FYI:L=left and R=right and then the rest pretty self explanitory
 
   private double topleftCurrent;
@@ -67,14 +66,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     this.bottomleftMotor = bottomleftMotor;
     this.bottomrightMotor = bottomrightMotor;
 
-    this.topleftFollower = new Follower(toprightMotor.getDeviceID(), MotorAlignmentValue.Aligned);
-    this.bottomleftFollower =
-        new Follower(toprightMotor.getDeviceID(), MotorAlignmentValue.Aligned);
-    this.bottomrightFollower =
-        new Follower(
-            toprightMotor.getDeviceID(),
-            MotorAlignmentValue.Aligned); // not sure what alignment we would want
-
+    this.topleftFollower = new StrictFollower(toprightMotor.getDeviceID());
+    this.bottomleftFollower = new StrictFollower(toprightMotor.getDeviceID());
+    this.bottomrightFollower = new StrictFollower(toprightMotor.getDeviceID());
+    // not sure what alignment we would want
     topleftMotor.setControl(topleftFollower);
     bottomleftMotor.setControl(bottomleftFollower);
     bottomrightMotor.setControl(bottomrightFollower);
