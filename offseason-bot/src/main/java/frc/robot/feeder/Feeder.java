@@ -27,6 +27,9 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   private double averageCurrent = 0.0;
 
+  private double topSurfaceSpeedMetersPerSecond = 0.0;
+  private double bottomSurfaceSpeedMetersPerSecond = 0.0;
+
   public Feeder(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.FEEDER, FeederState.IDLE);
     topMotor.getConfigurator().apply(FeederConfig.TOP_MOTOR_CONFIG);
@@ -99,8 +102,18 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Feeder/Top/VelocityRPM", topVelocitySignal.getValueAsDouble() * 60.0);
-    DogLog.log("Feeder/Bottom/VelocityRPM", bottomVelocitySignal.getValueAsDouble() * 60.0);
+    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    double topVelocityRps = topVelocitySignal.getValueAsDouble();
+    topSurfaceSpeedMetersPerSecond =
+        topVelocityRps * Math.PI * FeederConfig.TOP_ROLLER_DIAMETER_METERS;
+    double bottomVelocityRps = bottomVelocitySignal.getValueAsDouble();
+    bottomSurfaceSpeedMetersPerSecond =
+        bottomVelocityRps * Math.PI * FeederConfig.BOTTOM_ROLLER_DIAMETER_METERS;
+
+    DogLog.log("Feeder/Top/VelocityRPM", topVelocityRps * 60.0);
+    DogLog.log("Feeder/Top/SurfaceSpeedMetersPerSecond", topSurfaceSpeedMetersPerSecond);
+    DogLog.log("Feeder/Bottom/VelocityRPM", bottomVelocityRps * 60.0);
+    DogLog.log("Feeder/Bottom/SurfaceSpeedMetersPerSecond", bottomSurfaceSpeedMetersPerSecond);
 
     averageCurrent =
         MathHelpers.average(

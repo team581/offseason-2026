@@ -32,7 +32,6 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
 
   private static final double COLLISION_X_OFFSET = 0.5;
 
-  private static final double MAX_CLUSTER_MAP_OFFSET = 0.35;
   private static final double MIDLINE_OFFSET = 0.0;
 
   private static final double BUMP_OFFSET = Units.inchesToMeters(5);
@@ -138,6 +137,7 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
   private SpecialAutoState storedStuckOnBallState = SpecialAutoState.STARTING_WITH_DELAY;
   private AutoSegment storedStuckOnBallAutoSegment = intakeAcrossMidline;
   private int storedStuckOnBallIndex = 0;
+  private boolean returningFromStuckOnBall = false;
 
   // FOR SIM ONLY!!!
   private boolean firstStuckOnBall = false;
@@ -152,28 +152,6 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
   public Point getStartingPoint() {
     return Point.ofRed(new Pose2d(13.0, 7.60, Rotation2d.kCW_90deg));
   }
-
-  // Only use for lane 0 and 1 since we don't
-  // private Point getClusterShiftedPoint(Point point) {
-  //   var targetCluster = robotManager.clusterMap.getBestClusterPose();
-
-  //   if (targetCluster.isEmpty()) {
-  //     return point;
-  //   }
-
-  //   Pose2d clusterPose = targetCluster.orElseThrow();
-  //   Pose2d basePose = point.getPose();
-
-  //   double clampedX =
-  //       MathUtil.clamp(
-  //           clusterPose.getX(),
-  //           basePose.getX() - MAX_CLUSTER_MAP_OFFSET,
-  //           basePose.getX() + MAX_CLUSTER_MAP_OFFSET);
-
-  //   return FmsUtil.isRedAlliance()
-  //       ? Point.ofRed(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()))
-  //       : Point.ofBlue(new Pose2d(clampedX, basePose.getY(), basePose.getRotation()));
-  // }
 
   private Point getCollisionPoint(Point point) {
     if (collisionEverDetected) {
@@ -194,8 +172,10 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
         storedStuckOnBallAutoSegment = intakeAcrossMidline;
       }
       case STARTING_WITH_DELAY -> {
-        robotManager.homeDeployInAutoRequest();
-        robotManager.homeShooterHoodRequest();
+        if (!returningFromStuckOnBall) {
+          robotManager.homeDeployInAutoRequest();
+          robotManager.homeShooterHoodRequest();
+        }
       }
       case DRIVE_BACK_1, SHOOT_1 -> {
         storedStuckOnBallAutoSegment = driveBackAndShootOne;
@@ -213,6 +193,8 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
 
   @Override
   protected void beforeTransition(SpecialAutoState oldState, SpecialAutoState newState) {
+    returningFromStuckOnBall = oldState == SpecialAutoState.STUCK_ON_BALL_RECOVERY;
+
     if (newState == SpecialAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallState = oldState;
       DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);

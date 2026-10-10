@@ -8,6 +8,7 @@ import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -17,8 +18,14 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
+  private final StatusSignal<AngularVelocity> leftVelocitySignal;
+  private final StatusSignal<AngularVelocity> rightVelocitySignal;
+
   private final StatusSignal<Current> leftSupplyCurrentSignal;
   private final StatusSignal<Current> rightSupplyCurrentSignal;
+
+  private double leftSurfaceSpeedMetersPerSecond = 0.0;
+  private double rightSurfaceSpeedMetersPerSecond = 0.0;
 
   public Intake(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.INTAKE, IntakeState.IDLE);
@@ -28,10 +35,12 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
 
+    leftVelocitySignal = leftMotor.getVelocity(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
+    rightVelocitySignal = rightMotor.getVelocity(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    Signals.forDevice(leftMotor).addSignals(leftSupplyCurrentSignal);
-    Signals.forDevice(rightMotor).addSignals(rightSupplyCurrentSignal);
+    Signals.forDevice(leftMotor).addSignals(leftVelocitySignal, leftSupplyCurrentSignal);
+    Signals.forDevice(rightMotor).addSignals(rightVelocitySignal, rightSupplyCurrentSignal);
   }
 
   @Override
@@ -105,6 +114,19 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
   @Override
   protected void collectInputs() {
+    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    double leftVelocityRps = leftVelocitySignal.getValueAsDouble();
+    leftSurfaceSpeedMetersPerSecond =
+        leftVelocityRps * Math.PI * IntakeConfig.LEFT_ROLLER_DIAMETER_METERS;
+    double rightVelocityRps = rightVelocitySignal.getValueAsDouble();
+    rightSurfaceSpeedMetersPerSecond =
+        rightVelocityRps * Math.PI * IntakeConfig.RIGHT_ROLLER_DIAMETER_METERS;
+
+    DogLog.log("Intake/Left/VelocityRPM", leftVelocityRps * 60.0);
+    DogLog.log("Intake/Left/SurfaceSpeedMetersPerSecond", leftSurfaceSpeedMetersPerSecond);
+    DogLog.log("Intake/Right/VelocityRPM", rightVelocityRps * 60.0);
+    DogLog.log("Intake/Right/SurfaceSpeedMetersPerSecond", rightSurfaceSpeedMetersPerSecond);
+
     DogLog.log("Intake/Left/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/Right/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/HasBeenIntaking", hasBeenIntaking());

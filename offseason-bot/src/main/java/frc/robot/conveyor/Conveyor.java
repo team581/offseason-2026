@@ -7,6 +7,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
+import dev.doglog.DogLog;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -17,8 +19,14 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
+  private final StatusSignal<AngularVelocity> topVelocitySignal;
+  private final StatusSignal<AngularVelocity> bottomVelocitySignal;
+
   private final StatusSignal<Current> topSupplyCurrentSignal;
   private final StatusSignal<Current> bottomSupplyCurrentSignal;
+
+  private double topSurfaceSpeedMetersPerSecond = 0.0;
+  private double bottomSurfaceSpeedMetersPerSecond = 0.0;
 
   public Conveyor(TalonFX topMotor, TalonFX bottomMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);
@@ -28,10 +36,12 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     this.topMotor = topMotor;
     this.bottomMotor = bottomMotor;
 
+    topVelocitySignal = topMotor.getVelocity(false);
     topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
+    bottomVelocitySignal = bottomMotor.getVelocity(false);
     bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
-    Signals.forDevice(topMotor).addSignals(topSupplyCurrentSignal);
-    Signals.forDevice(bottomMotor).addSignals(bottomSupplyCurrentSignal);
+    Signals.forDevice(topMotor).addSignals(topVelocitySignal, topSupplyCurrentSignal);
+    Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomSupplyCurrentSignal);
   }
 
   @Override
@@ -88,5 +98,21 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
         bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
+  }
+
+  @Override
+  protected void collectInputs() {
+    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    double topVelocityRps = topVelocitySignal.getValueAsDouble();
+    topSurfaceSpeedMetersPerSecond =
+        topVelocityRps * Math.PI * ConveyorConfig.TOP_ROLLER_DIAMETER_METERS;
+    double bottomVelocityRps = bottomVelocitySignal.getValueAsDouble();
+    bottomSurfaceSpeedMetersPerSecond =
+        bottomVelocityRps * Math.PI * ConveyorConfig.BOTTOM_ROLLER_DIAMETER_METERS;
+
+    DogLog.log("Conveyor/Top/VelocityRPM", topVelocityRps * 60.0);
+    DogLog.log("Conveyor/Top/SurfaceSpeedMetersPerSecond", topSurfaceSpeedMetersPerSecond);
+    DogLog.log("Conveyor/Bottom/VelocityRPM", bottomVelocityRps * 60.0);
+    DogLog.log("Conveyor/Bottom/SurfaceSpeedMetersPerSecond", bottomSurfaceSpeedMetersPerSecond);
   }
 }
