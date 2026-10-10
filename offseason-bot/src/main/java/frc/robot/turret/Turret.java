@@ -15,10 +15,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.Vision;
 
 public class Turret extends StateMachineSubsystem<TurretState> implements PowerManaged {
   private static double clamp(double wantedAngle) {
@@ -68,11 +66,9 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
 
   private final NeutralOut neutralRequest = new NeutralOut();
-  private final Vision vision;
 
-  public Turret(TalonFX motor, CANcoder encoder, Vision vision) {
+  public Turret(TalonFX motor, CANcoder encoder) {
     super(SubsystemPriority.TURRET, TurretState.UNHOMED);
-    this.vision = vision;
 
     motor.getConfigurator().apply(TurretConfig.MOTOR_CONFIG);
     encoder.getConfigurator().apply(TurretConfig.ENCODER_CONFIG);
@@ -237,14 +233,11 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     voltage = motor.getMotorVoltage().getValueAsDouble();
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
 
-    // Predict the turret's current angle to account for sensor latency
+    // Predict the turret's current angle for diagnostics.
     double latencyCompensatedAngle =
         Units.rotationsToDegrees(
             BaseStatusSignal.getLatencyCompensatedValueAsDouble(
                 motor.getPosition(), motor.getVelocity()));
-
-    // Add the predicted angle to the vision buffer at the current timestamp
-    vision.addTurretObservation(Timer.getFPGATimestamp(), latencyCompensatedAngle, velocity);
 
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/VelocityDegreesPerSecond", velocity);

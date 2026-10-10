@@ -6,24 +6,6 @@ import edu.wpi.first.math.util.Units;
 
 public class CameraConfigs {
 
-  public static final CameraConfig SHOOTER =
-      new CameraConfig(
-          LimelightModel.FOUR,
-          true,
-          false,
-          // Forward
-          Units.inchesToMeters(-12.6378),
-          // Right
-          Units.inchesToMeters(-0.0002),
-          // Up
-          Units.inchesToMeters(16.156),
-          // Pitch
-          20.0,
-          // Yaw
-          180.0,
-          // Roll
-          0.0);
-
   public static final CameraConfig LEFT =
       new CameraConfig(
           LimelightModel.FOUR,

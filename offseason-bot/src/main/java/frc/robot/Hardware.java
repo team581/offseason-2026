@@ -60,11 +60,6 @@ public class Hardware {
   public final CANcoder turretEncoder = new CANcoder(29, rio);
 
   // TODO: PLaceholder LimeLights
-  public final Limelight shooterLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
   public final Limelight leftLimeLight =
       new Limelight(
           "placeholder",
