@@ -84,7 +84,13 @@ public class Robot extends Base581Robot {
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
       new HopperManager(
-          deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
+          deploy,
+          intake,
+          conveyor,
+          feeder,
+          funneler,
+          hardware.hopperCANRange,
+          hardware.towerSensor);
   private final PowerManager powerManager =
       new PowerManager(
           shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);

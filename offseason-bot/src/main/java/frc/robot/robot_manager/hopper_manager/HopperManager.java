@@ -20,6 +20,7 @@ import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
+import frc.robot.funneler.Funneler;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -38,6 +39,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final Conveyor conveyor;
 
   public final Feeder feeder;
+  public final Funneler funneler;
   public final CANrange hopperCANRange;
 
   public final DigitalInput towerSensor;
@@ -70,6 +72,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       Intake intake,
       Conveyor conveyor,
       Feeder feeder,
+      Funneler funneler,
       CANrange hopperCANRange,
       DigitalInput towerSensor) {
     super(SubsystemPriority.HOPPER_MANAGER, HopperState.IDLE_DEPLOYED);
@@ -77,6 +80,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.intake = intake;
     this.conveyor = conveyor;
     this.feeder = feeder;
+    this.funneler = funneler;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
 
@@ -268,6 +272,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
   }
 
+  private void updateFunnelerRequest() {
+    switch (conveyor.getState()) {
+      case IDLE, EJECT -> funneler.idleRequest();
+      case INTAKE -> funneler.intakeRequest();
+      case BALL_FILLING -> funneler.ballFillingRequest();
+      case SCORE, FEED, INITIAL_SHOT -> funneler.shootingRequest();
+    }
+  }
+
   @Override
   protected void afterTransition(HopperState newState) {
     switch (newState) {
@@ -338,6 +351,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         feeder.feedRequest();
       }
     }
+    updateFunnelerRequest();
   }
 
   @Override
@@ -428,6 +442,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         }
       }
     }
+
+    updateFunnelerRequest();
 
     if (previousCanRangeDistance != hopperDistance) {
       canRangeUpdateTimer.reset();
