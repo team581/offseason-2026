@@ -1,6 +1,7 @@
 package frc.robot.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,7 @@ final class MotionAssertionsTest {
     var assertions = new MotionAssertions(1, 0.75);
     assertions.start(0, new ChassisSpeeds(0.2, 0, 0));
     assertThat(assertions.check(0.02, new ChassisSpeeds(0.2, 0, 0), new ChassisSpeeds(0, 0.2, 0)))
-        .contains("Commanded vector acceleration exceeded limit");
+        .hasValue("Commanded vector acceleration exceeded limit");
   }
 
   @Test
@@ -19,10 +20,10 @@ final class MotionAssertionsTest {
     var assertions = new MotionAssertions(1, 0.75);
     assertions.start(0, new ChassisSpeeds());
     assertThat(assertions.check(0.02, new ChassisSpeeds(1.11, 0, 0), new ChassisSpeeds()))
-        .contains("Measured velocity exceeded tolerance");
+        .hasValue("Measured velocity exceeded tolerance");
     assertions.start(0, new ChassisSpeeds());
     assertThat(assertions.check(0.02, new ChassisSpeeds(0, 0.1, 0), new ChassisSpeeds()))
-        .contains("Measured vector acceleration exceeded tolerance");
+        .hasValue("Measured vector acceleration exceeded tolerance");
   }
 
   @Test
@@ -33,8 +34,7 @@ final class MotionAssertionsTest {
       var speeds = new ChassisSpeeds(t * 0.5, 0, 0);
       assertThat(assertions.check(t, speeds, speeds)).isEmpty();
     }
-    assertThat(assertions.peakMeasuredAcceleration())
-        .isCloseTo(0.5, org.assertj.core.data.Offset.offset(1e-9));
+    assertThat(assertions.peakMeasuredAcceleration()).isCloseTo(0.5, offset(1e-9));
     assertThat(
             assertions.check(0.25, new ChassisSpeeds(0.085, 0, 0), new ChassisSpeeds(0.085, 0, 0)))
         .isEmpty();
@@ -45,7 +45,7 @@ final class MotionAssertionsTest {
     var assertions = new MotionAssertions(1, 0.75);
     assertions.start(0, new ChassisSpeeds());
     assertThat(assertions.check(0.02, new ChassisSpeeds(), new ChassisSpeeds(0.5, 0, 0)))
-        .contains("Commanded vector acceleration exceeded limit");
+        .hasValue("Commanded vector acceleration exceeded limit");
     assertThat(assertions.peakCommandAcceleration()).isEqualTo(25);
   }
 
@@ -54,10 +54,10 @@ final class MotionAssertionsTest {
     var assertions = new MotionAssertions(1, 0.75);
     assertions.start(1, new ChassisSpeeds());
     assertThat(assertions.check(1, new ChassisSpeeds(), new ChassisSpeeds()))
-        .contains("Motion timestamps must increase");
+        .hasValue("Motion timestamps must increase");
     assertThat(assertions.check(1.11, new ChassisSpeeds(), new ChassisSpeeds()))
-        .contains("Motion sample gap exceeded 100 ms");
+        .hasValue("Motion sample gap exceeded 100 ms");
     assertThat(assertions.check(1.02, new ChassisSpeeds(0, 0, Double.NaN), new ChassisSpeeds()))
-        .contains("Nonfinite motion data");
+        .hasValue("Nonfinite motion data");
   }
 }

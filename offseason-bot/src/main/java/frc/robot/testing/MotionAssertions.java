@@ -1,5 +1,8 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.team581.math.MathHelpers;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.ArrayDeque;
 import java.util.Optional;
@@ -24,12 +27,12 @@ public final class MotionAssertions {
   private double peakMeasuredAcceleration;
 
   public MotionAssertions(double velocityLimit, double accelerationLimit) {
-    if (!Double.isFinite(velocityLimit)
-        || velocityLimit <= 0
-        || !Double.isFinite(accelerationLimit)
-        || accelerationLimit <= 0) {
-      throw new IllegalArgumentException("Motion limits must be finite and positive");
-    }
+    checkArgument(
+        Double.isFinite(velocityLimit)
+            && velocityLimit > 0
+            && Double.isFinite(accelerationLimit)
+            && accelerationLimit > 0,
+        "Motion limits must be finite and positive");
     this.velocityLimit = velocityLimit;
     this.accelerationLimit = accelerationLimit;
   }
@@ -45,10 +48,10 @@ public final class MotionAssertions {
     if (time - previous.time() > 0.10 + 1e-6) {
       return Optional.of("Motion sample gap exceeded 100 ms");
     }
-    if (Math.hypot(command.vxMetersPerSecond, command.vyMetersPerSecond) > velocityLimit + 0.01) {
+    if (MathHelpers.getLinearVelocity(command) > velocityLimit + 0.01) {
       return Optional.of("Commanded velocity exceeded limit");
     }
-    if (Math.hypot(actual.vxMetersPerSecond, actual.vyMetersPerSecond)
+    if (MathHelpers.getLinearVelocity(actual)
         > velocityLimit + Math.max(0.10, velocityLimit * 0.10)) {
       return Optional.of("Measured velocity exceeded tolerance");
     }
@@ -99,9 +102,7 @@ public final class MotionAssertions {
 
   /** Seed before requesting movement so startup acceleration is included. */
   public void start(double time, ChassisSpeeds initial) {
-    if (!finite(time, initial)) {
-      throw new IllegalArgumentException("Nonfinite initial motion data");
-    }
+    checkArgument(finite(time, initial), "Nonfinite initial motion data");
     previousCommand =
         Optional.of(new Sample(time, initial.vxMetersPerSecond, initial.vyMetersPerSecond));
     measured.clear();

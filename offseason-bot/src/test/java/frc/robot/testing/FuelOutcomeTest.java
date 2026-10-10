@@ -1,18 +1,21 @@
 package frc.robot.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
 final class FuelOutcomeTest {
   @Test
   void impossibleOrUnreconciledCountsAreRejected() {
-    assertThatIllegalArgumentException().isThrownBy(() -> new FuelOutcome(5, 4, 5, 1));
-    assertThatIllegalArgumentException().isThrownBy(() -> new FuelOutcome(5, 4, 4, 0));
-    assertThatIllegalArgumentException().isThrownBy(() -> new FuelOutcome(0, 0, 0, 0));
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> new FuelOutcome(5, 5, 5, 0).evaluate("score", 0));
+    assertThatThrownBy(() -> new FuelOutcome(5, 4, 5, 1))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new FuelOutcome(5, 4, 4, 0))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new FuelOutcome(0, 0, 0, 0))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new FuelOutcome(5, 5, 5, 0).evaluate("score", 0))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

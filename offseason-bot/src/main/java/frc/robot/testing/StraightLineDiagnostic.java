@@ -1,7 +1,9 @@
 package frc.robot.testing;
 
+import com.team581.math.MathHelpers;
 import com.team581.swerve.TrailblazerDriveSource;
 import com.team581.trailblazer.Trailblazer;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
@@ -91,9 +93,8 @@ public final class StraightLineDiagnostic implements DiagnosticRoutine {
       started = true;
       startTime = now;
       if (strict
-          && (Math.hypot(actual.vxMetersPerSecond, actual.vyMetersPerSecond)
-                  > config.stoppedVelocity()
-              || Math.abs(actual.omegaRadiansPerSecond) > Math.toRadians(5))) {
+          && (MathHelpers.getLinearVelocity(actual) > config.stoppedVelocity()
+              || !MathUtil.isNear(0, actual.omegaRadiansPerSecond, Math.toRadians(5)))) {
         result = new Result(name, Status.FAILED, "Robot must be stopped before starting");
         stop();
         return;
@@ -144,7 +145,7 @@ public final class StraightLineDiagnostic implements DiagnosticRoutine {
           };
       if (strict
           && status == Status.PASSED
-          && Math.abs(actual.omegaRadiansPerSecond) > Math.toRadians(5)) {
+          && !MathUtil.isNear(0, actual.omegaRadiansPerSecond, Math.toRadians(5))) {
         status = Status.FAILED;
         result = new Result(name, status, "Still rotating at completion");
       } else {

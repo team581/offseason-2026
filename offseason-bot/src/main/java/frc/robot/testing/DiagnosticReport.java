@@ -1,5 +1,7 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,9 +12,8 @@ public final class DiagnosticReport {
   public static Path write(
       Path directory, String runId, String configuration, List<DiagnosticRoutine.Result> results)
       throws IOException {
-    if (!runId.matches("[a-zA-Z0-9-]+")) {
-      throw new IllegalArgumentException("Run ID must contain only letters, digits and hyphens");
-    }
+    checkArgument(
+        runId.matches("[a-zA-Z0-9-]+"), "Run ID must contain only letters, digits and hyphens");
     Files.createDirectories(directory);
     String overall =
         !results.isEmpty()

@@ -6,6 +6,7 @@ import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -215,7 +216,7 @@ public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.
     }
     boolean stopped =
         Math.hypot(sample.vx(), sample.vy()) <= config.stoppedVelocity()
-            && Math.abs(angularVelocity) <= Math.toRadians(5);
+            && MathUtil.isNear(0, angularVelocity, Math.toRadians(5));
     if (!stopped) {
       stableSince = -1;
       return State.SETTLING;

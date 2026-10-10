@@ -1,5 +1,7 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.ArrayList;
@@ -11,9 +13,9 @@ import java.util.function.Supplier;
 public final class DiagnosticSequence implements DiagnosticRoutine {
   public record Step(String name, double timeoutSeconds, Supplier<DiagnosticRoutine> factory) {
     public Step {
-      if (name.isBlank() || !Double.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
-        throw new IllegalArgumentException("Each diagnostic needs a name and positive deadline");
-      }
+      checkArgument(
+          !name.isBlank() && Double.isFinite(timeoutSeconds) && timeoutSeconds > 0,
+          "Each diagnostic needs a name and positive deadline");
     }
   }
 
@@ -25,9 +27,9 @@ public final class DiagnosticSequence implements DiagnosticRoutine {
   private Result result = new Result("Sequence", Status.RUNNING, "Waiting for first step");
 
   public DiagnosticSequence(List<Step> steps) {
-    if (steps.isEmpty() || steps.stream().map(Step::name).distinct().count() != steps.size()) {
-      throw new IllegalArgumentException("Sequence steps must be nonempty and uniquely named");
-    }
+    checkArgument(
+        !steps.isEmpty() && steps.stream().map(Step::name).distinct().count() == steps.size(),
+        "Sequence steps must be nonempty and uniquely named");
     this.steps = List.copyOf(steps);
   }
 

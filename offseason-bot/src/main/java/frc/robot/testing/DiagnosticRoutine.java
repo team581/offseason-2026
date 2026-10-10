@@ -1,5 +1,6 @@
 package frc.robot.testing;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public interface DiagnosticRoutine {
   Result result();
 
   default List<Result> results() {
-    return List.of(result());
+    return ImmutableList.of(result());
   }
 
   /** Must be safe before the first tick and after any terminal result. */

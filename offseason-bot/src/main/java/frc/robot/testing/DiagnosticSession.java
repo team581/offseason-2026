@@ -1,8 +1,11 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,12 +46,12 @@ public final class DiagnosticSession {
   }
 
   public Optional<DiagnosticRoutine.Result> result() {
-    return failure.isPresent() ? failure : active.map(DiagnosticRoutine::result);
+    return failure.or(() -> active.map(DiagnosticRoutine::result));
   }
 
   public List<DiagnosticRoutine.Result> results() {
     return failure.isPresent()
-        ? List.of(failure.orElseThrow())
+        ? ImmutableList.of(failure.orElseThrow())
         : active.map(DiagnosticRoutine::results).orElseGet(List::of);
   }
 
@@ -84,7 +87,7 @@ public final class DiagnosticSession {
         failure = Optional.empty();
         try {
           // Factory construction snapshots selection and configuration once per enable.
-          active = Objects.requireNonNull(factory.get());
+          active = requireNonNull(factory.get());
           state = active.isPresent() ? State.RUNNING : State.INACTIVE;
           reason = active.isPresent() ? "Running" : "No diagnostic selected";
         } catch (IllegalArgumentException exception) {
@@ -106,11 +109,11 @@ public final class DiagnosticSession {
           routine.stop();
         } else {
           var next = routine.requestedSpeeds();
-          if (!Double.isFinite(next.vxMetersPerSecond)
-              || !Double.isFinite(next.vyMetersPerSecond)
-              || !Double.isFinite(next.omegaRadiansPerSecond)) {
-            throw new IllegalStateException("Diagnostic requested nonfinite drive output");
-          }
+          checkState(
+              Double.isFinite(next.vxMetersPerSecond)
+                  && Double.isFinite(next.vyMetersPerSecond)
+                  && Double.isFinite(next.omegaRadiansPerSecond),
+              "Diagnostic requested nonfinite drive output");
           requested = next;
         }
       }

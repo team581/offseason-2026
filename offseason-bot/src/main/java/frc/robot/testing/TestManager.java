@@ -2,6 +2,7 @@ package frc.robot.testing;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Objects.requireNonNullElse;
+import static java.util.UUID.randomUUID;
 
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
@@ -94,7 +95,7 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
     session =
         new DiagnosticSession(
             () -> {
-              runId = java.util.UUID.randomUUID().toString();
+              runId = randomUUID().toString();
               selection = requireNonNullElse(selectedTest.get(), Selection.NONE);
               trailblazer.clearActiveSegment();
               if (selection == Selection.NONE) {
@@ -177,8 +178,8 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
         "Tests/Regression/Passed",
         session
             .result()
-            .map(result -> result.status() == DiagnosticRoutine.Status.PASSED)
-            .orElse(false));
+            .filter(result -> result.status() == DiagnosticRoutine.Status.PASSED)
+            .isPresent());
     if (state == State.INVALID_CONFIG) {
       DogLog.log("Tests/StraightLine/InvalidConfig", true);
       DogLog.log("Tests/StraightLine/State", "INVALID_CONFIG");

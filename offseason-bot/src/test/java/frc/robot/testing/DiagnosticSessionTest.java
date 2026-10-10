@@ -1,5 +1,6 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -17,9 +18,7 @@ final class DiagnosticSessionTest {
 
     @Override
     public void abort() {
-      if (throwOnAbort) {
-        throw new IllegalStateException("injected cleanup failure");
-      }
+      checkState(!throwOnAbort, "injected cleanup failure");
       if (!result.finished()) {
         result = new Result("fake", Status.ABORTED, "Interrupted");
       }
@@ -44,9 +43,7 @@ final class DiagnosticSessionTest {
     @Override
     public void tick() {
       ticks++;
-      if (throwOnTick) {
-        throw new IllegalStateException("injected failure");
-      }
+      checkState(!throwOnTick, "injected failure");
     }
   }
 
@@ -71,7 +68,7 @@ final class DiagnosticSessionTest {
     session.tick(true);
     routine.throwOnAbort = true;
     session.tick(false);
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
     assertThat(session.state()).isEqualTo(DiagnosticSession.State.INACTIVE);
     assertThat(session.result().orElseThrow().status()).isEqualTo(DiagnosticRoutine.Status.FAILED);
     assertThat(session.reason()).contains("cleanup failure");
@@ -89,7 +86,7 @@ final class DiagnosticSessionTest {
             speeds -> output = speeds);
     session.tick(true);
     assertThat(session.result().orElseThrow().reason()).contains("factory failed");
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
   }
 
   @Test
@@ -97,9 +94,9 @@ final class DiagnosticSessionTest {
     var routine = new FakeRoutine();
     var session = session(routine);
     session.tick(false);
-    assertThat(creations).isZero();
-    assertThat(prepareCalls).isZero();
-    assertThat(routine.ticks).isZero();
+    assertThat(creations).isEqualTo(0);
+    assertThat(prepareCalls).isEqualTo(0);
+    assertThat(routine.ticks).isEqualTo(0);
   }
 
   @Test
@@ -109,7 +106,7 @@ final class DiagnosticSessionTest {
     session.tick(true);
     routine.throwOnTick = true;
     session.tick(true);
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
     assertThat(session.result().orElseThrow().status()).isEqualTo(DiagnosticRoutine.Status.FAILED);
     routine.throwOnTick = false;
     routine.output = new ChassisSpeeds(Double.NaN, 0, 0);
@@ -118,7 +115,7 @@ final class DiagnosticSessionTest {
         new DiagnosticRoutine.Result("fake", DiagnosticRoutine.Status.RUNNING, "Running");
     session.tick(true);
     assertThat(session.result().orElseThrow().reason()).contains("nonfinite");
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
   }
 
   @Test
@@ -135,7 +132,7 @@ final class DiagnosticSessionTest {
     assertThat(session.state()).isEqualTo(DiagnosticSession.State.INVALID_CONFIG);
     session.tick(true);
     assertThat(creations).isEqualTo(1);
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
     assertThat(session.results().get(0).reason()).isEqualTo("invalid limit");
   }
 
@@ -148,7 +145,7 @@ final class DiagnosticSessionTest {
     assertThat(creations).isEqualTo(1);
     assertThat(output.vxMetersPerSecond).isEqualTo(0.5);
     session.tick(false);
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
     assertThat(session.result().orElseThrow().status()).isEqualTo(DiagnosticRoutine.Status.ABORTED);
     assertThat(routine.stops).isEqualTo(1);
     assertThat(session.state()).isEqualTo(DiagnosticSession.State.INACTIVE);
@@ -166,7 +163,7 @@ final class DiagnosticSessionTest {
     routine.result =
         new DiagnosticRoutine.Result("fake", DiagnosticRoutine.Status.FAILED, "Too fast");
     session.tick(true);
-    assertThat(output.vxMetersPerSecond).isZero();
+    assertThat(output.vxMetersPerSecond).isEqualTo(0);
     assertThat(session.state()).isEqualTo(DiagnosticSession.State.FINISHED);
     int ticks = routine.ticks;
     session.tick(true);
