@@ -100,7 +100,7 @@ gversion {
 	indent = "  "
 }
 
-// Opt-in desktop integration tests. Kept out of test/check until CI is agreed on.
+// Desktop integration tests have their own suite, separate from unit tests and deployment.
 sourceSets {
 	simTest {
 		compileClasspath += sourceSets.main.output
@@ -113,25 +113,33 @@ configurations {
 	simTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
-def straightLineTestTask = tasks.register('straightLineTest', Test) {
-	group = 'verification'
-	description = 'Runs the straight-line test headlessly through the Test-mode manager'
-	testClassesDirs = sourceSets.simTest.output.classesDirs
-	classpath = sourceSets.simTest.runtimeClasspath
-	include '**/StraightLine*Test.class', '**/TestManagerTest.class'
-	useJUnitPlatform()
-	maxParallelForks = 1
-	forkEvery = 1
-	systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
-	systemProperty 'sim.outputDir', layout.buildDirectory.dir('reports/straightLineTest/motion').get().asFile.absolutePath
-	project.properties.findAll { key, value ->
-		key.startsWith('sim.')
-	}.each { key, value ->
-		systemProperty key, value.toString()
+[
+	headlessTest: 'Runs all desktop headless tests',
+	straightLineTest: 'Runs the straight-line test headlessly through the Test-mode manager'
+].each { taskName, taskDescription ->
+	def headlessTask = tasks.register(taskName, Test) {
+		group = 'verification'
+		description = taskDescription
+		testClassesDirs = sourceSets.simTest.output.classesDirs
+		classpath = sourceSets.simTest.runtimeClasspath
+		// The suite discovers every JUnit test; only the focused command filters classes.
+		if (taskName == 'straightLineTest') {
+			include '**/StraightLine*Test.class', '**/TestManagerTest.class'
+		}
+		useJUnitPlatform()
+		maxParallelForks = 1
+		forkEvery = 1
+		systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
+		systemProperty 'sim.outputDir', layout.buildDirectory.dir("reports/${taskName}/motion").get().asFile.absolutePath
+		project.properties.findAll { key, value ->
+			key.startsWith('sim.')
+		}.each { key, value ->
+			systemProperty key, value.toString()
+		}
+		// Every invocation is a new measurement, even when the code did not change.
+		outputs.upToDateWhen { false }
+		outputs.cacheIf { false }
+		testLogging { events 'passed', 'failed', 'skipped' }
 	}
-	// Every invocation is a new measurement, even when the code did not change.
-	outputs.upToDateWhen { false }
-	outputs.cacheIf { false }
-	testLogging { events 'passed', 'failed', 'skipped' }
+	wpi.java.configureTestTasks(headlessTask.get())
 }
-wpi.java.configureTestTasks(straightLineTestTask.get())

@@ -70,7 +70,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   sim:
-    name: Straight-line test
+    name: Headless tests
     runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: assemble
     timeout-minutes: 10
@@ -85,28 +85,30 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Run straight-line test
-        run: ./gradlew :offseason-bot:straightLineTest
+      - name: Run headless tests
+        run: ./gradlew headlessTest
 
-      - name: Show motion summary
+      - name: Show motion summaries
         if: always()
         run: |
-          report=offseason-bot/build/reports/straightLineTest/motion/summary.md
-          if [ -f "$report" ]; then
-            cat "$report" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          for report in */build/reports/headlessTest/motion/*.md; do
+            if [ -f "$report" ]; then
+              cat "$report" >> "$GITHUB_STEP_SUMMARY"
+              printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: straight-line-results
+          name: headless-results
           retention-days: 14
           path: |
-            offseason-bot/build/reports/tests/straightLineTest/
-            offseason-bot/build/test-results/straightLineTest/
-            offseason-bot/build/reports/straightLineTest/
-            offseason-bot/logs/
+            **/build/reports/tests/headlessTest/
+            **/build/test-results/headlessTest/
+            **/build/reports/headlessTest/
+            **/logs/*.wpilog
   style:
     name: Check formatting
 
