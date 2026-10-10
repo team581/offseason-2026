@@ -12,6 +12,25 @@ offseason bot is the only project with a headless suite. The tests share one Gra
 they run serially with a fresh JVM per test class because HAL and Phoenix use process-wide resources.
 No simulator GUI or physical robot is needed.
 
+For the proposed whole-robot suite, including Trailblazer limits, fuel handling, scoring outcomes,
+and the matching physical test procedure, see [robot regression design](robot-regression.md).
+That design distinguishes the existing runnable tests from the automation still to be implemented.
+
+The test-management layer now supports named diagnostic sequences and independent results. Normal
+`headlessTest` validates this infrastructure and the legacy motion diagnostic. Run strict four-leg
+motion qualification separately:
+
+```sh
+./gradlew :offseason-bot:driveRegressionTest
+```
+
+This runs the same `DRIVE_REGRESSION` selection available in Driver Station Test mode on hardware.
+It enforces commanded/measured translation speed and vector acceleration as well as endpoint and
+settling checks. It currently fails on Trailblazer's initial 0.5 m/s command jump; production code is
+unchanged. Failure reports are saved under `offseason-bot/build/reports/driveRegressionTest/motion/`
+with unique filenames. Qualification failure must not be interpreted as a passing robot merely
+because the test-framework validation suite passes.
+
 Keep using the focused command when working on the straight-line test:
 
 ```sh
@@ -69,6 +88,9 @@ instructions, see [acceleration investigation](acceleration-investigation.md).
    changing Gradle or CI. Use a separate class for each physical scenario to isolate native resources.
 2. Reuse `HeadlessRunner` with a fixture and a state-machine routine. Hardware tests must still run
    through the Test-mode-only `TestManager`; headless discovery does not add a robot test selection.
+   New diagnostics can implement the test-owned `DiagnosticRoutine` protocol and compose bounded
+   `DiagnosticSequence` steps. Keep production managers/mechanisms unchanged; tests consume their
+   existing public APIs. Inaccessible inputs or outcome observations are explicit coverage gaps.
 3. If the test writes motion reports, use `System.getProperty("sim.outputDir")` and unique filenames
    such as `turn-summary.md` and `turn.csv` so it does not overwrite another test's output. CI collects
    every Markdown file in that motion directory and uploads the entire directory.
