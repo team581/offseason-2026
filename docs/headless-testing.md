@@ -53,10 +53,15 @@ For the offseason suite, outputs are under `offseason-bot/build/`:
 | `test-results/headlessTest/*.xml` | Machine-readable JUnit results |
 | `reports/headlessTest/motion/summary.md` | Straight-line settings, result and measurements |
 | `reports/headlessTest/motion/straight-line.csv` | Straight-line pose, velocity, acceleration and errors |
+| `reports/headlessTest/motion/drive-output.csv` | Stopped baseline, actual manager commands and measured field-relative speeds at each output |
 
 The focused command uses the same paths with `straightLineTest` in place of `headlessTest`.
 Each invocation reruns the tests and overwrites its reports. Use `-Psim.outputDir=/absolute/path`
 to save motion reports somewhere else. Ordinary WPILOG files are in `offseason-bot/logs/`.
+
+The straight-line result checks reaching and settling at the endpoint; it does not certify
+acceleration compliance. For the acceleration sweep, startup/braking violations, and analysis
+instructions, see [acceleration investigation](acceleration-investigation.md).
 
 ## Add another headless test
 

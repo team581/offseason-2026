@@ -8,7 +8,9 @@ import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.testing.StraightLineConfig;
 import frc.robot.testing.StraightLineRoutine;
@@ -23,6 +25,40 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 final class StraightLineSimTest {
+  private record DriveSample(
+      double time, double commandedVx, double commandedVy, double measuredVx, double measuredVy) {
+    static DriveSample of(double time, ChassisSpeeds commanded, ChassisSpeeds measured) {
+      return new DriveSample(
+          time,
+          commanded.vxMetersPerSecond,
+          commanded.vyMetersPerSecond,
+          measured.vxMetersPerSecond,
+          measured.vyMetersPerSecond);
+    }
+  }
+
+  private static void writeDriveSamples(List<DriveSample> samples) throws IOException {
+    Path output =
+        Path.of(System.getProperty("sim.outputDir", "build/reports/straightLineTest/motion"));
+    Files.createDirectories(output);
+    var csv =
+        new StringBuilder(
+            "time_s,commanded_vx_mps,commanded_vy_mps,measured_vx_mps,measured_vy_mps\n");
+    double start = samples.get(0).time();
+    for (var sample : samples) {
+      csv.append(
+          String.format(
+              Locale.ROOT,
+              "%.9f,%.9f,%.9f,%.9f,%.9f%n",
+              sample.time() - start,
+              sample.commandedVx(),
+              sample.commandedVy(),
+              sample.measuredVx(),
+              sample.measuredVy()));
+    }
+    Files.writeString(output.resolve("drive-output.csv"), csv);
+  }
+
   private static void writeReport(
       StraightLineConfig config,
       double voltage,
@@ -75,6 +111,10 @@ final class StraightLineSimTest {
 						| Final position error (m) | %.3f |
 
 						Acceleration is the finite difference of measured velocity and includes vendor timing noise.
+
+						This result checks endpoint and settling, not acceleration-limit compliance.
+						`drive-output.csv` records the stopped baseline and each actual manager command alongside
+						the measured field-relative velocity immediately before applying that command.
 						""",
             routine.getState(),
             routine.reason(),
@@ -119,18 +159,27 @@ final class StraightLineSimTest {
           "Battery voltage must be positive and start heading finite");
     }
     List<StraightLineRoutine.Sample> samples = new ArrayList<>();
+    List<DriveSample> driveSamples = new ArrayList<>();
     try (var fixture =
         new SwerveFixture(voltage, new Pose2d(2, 2, Rotation2d.fromDegrees(heading)))) {
       var manager =
           new TestManager(
               fixture::pose,
               fixture::speeds,
-              fixture::applyRequest,
+              requested -> {
+                // Observe the actual manager output without calling the follower a second time.
+                driveSamples.add(
+                    DriveSample.of(Timer.getFPGATimestamp(), requested, fixture.speeds()));
+                fixture.applyRequest(requested);
+              },
               () -> {},
               () -> TestManager.Selection.STRAIGHT_LINE,
               () -> config);
       DriverStationSim.setEnabled(true);
       DriverStationSim.notifyNewData();
+      // Preserve the stopped baseline so the first nonzero command remains visible.
+      driveSamples.add(
+          DriveSample.of(Timer.getFPGATimestamp(), new ChassisSpeeds(), fixture.speeds()));
       try {
         HeadlessRunner.run(
             manager,
@@ -140,6 +189,7 @@ final class StraightLineSimTest {
             },
             config.timeout() + 2.0);
       } finally {
+        writeDriveSamples(driveSamples);
         if (manager.getRoutine().isPresent()) {
           writeReport(config, voltage, heading, manager.getRoutine().orElseThrow(), samples);
         }
