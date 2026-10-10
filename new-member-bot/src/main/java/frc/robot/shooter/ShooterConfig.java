@@ -28,7 +28,7 @@ public class ShooterConfig {
                   .withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(50))
-          .withSlot0(new Slot0Configs().withKP(1.0));
+          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.01));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
