@@ -7,6 +7,8 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.event.BooleanEvent;
 import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -24,6 +26,7 @@ import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.testing.TestManager;
 import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
 
@@ -100,6 +103,18 @@ public class Robot extends Base581Robot {
           hardware,
           powerManager);
 
+  @SuppressWarnings("unused") // Registers itself with the existing subsystem sequencer.
+  private final TestManager testManager =
+      new TestManager(
+          localization::getPose,
+          swerve::getFieldRelativeSpeeds,
+          swerve::setTestDriveSpeeds,
+          () -> {
+            robotManager.idleRequest();
+            robotManager.cancelIntakeRequest();
+            hopperManager.setDriverWantsEject(false);
+          });
+
   public Robot() {
     logMetadata(
         BuildConstants.MAVEN_NAME,
@@ -114,10 +129,13 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
+    var normalEnabled =
+        new BooleanEvent(
+            buttonBindingsLoop, () -> DriverStation.isEnabled() && !DriverStation.isTest());
     var driver =
-        new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
+        new ControllerBindings(buttonBindingsLoop, normalEnabled, hardware.driverController);
     var operator =
-        new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.operatorController);
+        new ControllerBindings(buttonBindingsLoop, normalEnabled, hardware.operatorController);
 
     driver.back().onPress(localization::zeroGyro);
 

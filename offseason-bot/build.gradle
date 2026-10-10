@@ -99,3 +99,39 @@ gversion {
 	timeZone = "America/Los_Angeles"
 	indent = "  "
 }
+
+// Opt-in desktop integration tests. Kept out of test/check until CI is agreed on.
+sourceSets {
+	simTest {
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+configurations {
+	simTestImplementation.extendsFrom testImplementation
+	simTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+def straightLineTestTask = tasks.register('straightLineTest', Test) {
+	group = 'verification'
+	description = 'Runs the straight-line test headlessly through the Test-mode manager'
+	testClassesDirs = sourceSets.simTest.output.classesDirs
+	classpath = sourceSets.simTest.runtimeClasspath
+	include '**/StraightLine*Test.class', '**/TestManagerTest.class'
+	useJUnitPlatform()
+	maxParallelForks = 1
+	forkEvery = 1
+	systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
+	systemProperty 'sim.outputDir', layout.buildDirectory.dir('reports/straightLineTest/motion').get().asFile.absolutePath
+	project.properties.findAll { key, value ->
+		key.startsWith('sim.')
+	}.each { key, value ->
+		systemProperty key, value.toString()
+	}
+	// Every invocation is a new measurement, even when the code did not change.
+	outputs.upToDateWhen { false }
+	outputs.cacheIf { false }
+	testLogging { events 'passed', 'failed', 'skipped' }
+}
+wpi.java.configureTestTasks(straightLineTestTask.get())
