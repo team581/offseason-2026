@@ -51,9 +51,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       long queueDrops,
       String generation,
       Map<String, CameraStatus> cameras) {
-    public Status {
-      cameras = cameras;
-    }
+    public Status {}
   }
 
   private static final Set<Integer> RED_HUB = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
