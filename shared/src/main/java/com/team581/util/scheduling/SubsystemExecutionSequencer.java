@@ -11,11 +11,6 @@ public final class SubsystemExecutionSequencer {
   private static final Comparator<Subsystem> BY_PRIORITY_DESCENDING =
       comparingInt((Subsystem subsystem) -> subsystem.getPriority().getValue()).reversed();
 
-  /**
-   * Kept sorted by priority (highest first). A {@link java.util.PriorityQueue} cannot be used here:
-   * its iterator traverses heap order, not sorted order, so periodic execution would not respect
-   * priorities.
-   */
   private static final List<Subsystem> SUBSYSTEMS = new ArrayList<>();
 
   public static RobotMatchState getStage() {
@@ -36,7 +31,6 @@ public final class SubsystemExecutionSequencer {
 
   public static void registerSubsystem(Subsystem subsystem) {
     SUBSYSTEMS.add(subsystem);
-    // Stable sort: equal priorities keep registration order
     SUBSYSTEMS.sort(BY_PRIORITY_DESCENDING);
   }
 

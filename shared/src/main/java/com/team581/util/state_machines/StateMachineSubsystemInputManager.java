@@ -12,8 +12,7 @@ import java.util.List;
 
 /** Helps ensure that state machines can collect inputs before executing state actions. */
 public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
-  // Sort by lowest priority first. A PriorityQueue cannot be used here: its iterator traverses
-  // heap order, not sorted order, so inputs would be collected out of priority order.
+  // Sort by lowest priority first
   private static final Comparator<StateMachineSubsystem<?>> BY_PRIORITY_ASCENDING =
       comparingInt(stateMachine -> stateMachine.getPriority().getValue());
 
@@ -42,7 +41,6 @@ public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
 
   public void register(StateMachineSubsystem<?> stateMachine) {
     stateMachineSubsystems.add(stateMachine);
-    // Stable sort: equal priorities keep registration order
     stateMachineSubsystems.sort(BY_PRIORITY_ASCENDING);
   }
 }
