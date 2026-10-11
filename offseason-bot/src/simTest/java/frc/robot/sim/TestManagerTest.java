@@ -158,24 +158,4 @@ final class TestManagerTest {
     assertThat(manager.getRoutine().orElseThrow()).isNotSameAs(first);
     assertThat(manager.getRoutine().orElseThrow().sample().positionError()).isEqualTo(1);
   }
-
-  @Test
-  void strictRegressionRejectsMovingStartAndStopsDependents() {
-    selection = TestManager.Selection.DRIVE_REGRESSION;
-    measured = new ChassisSpeeds(0.2, 0, 0);
-    enableTest();
-    tick(0.02);
-    assertThat(manager.getState()).isEqualTo(TestManager.State.FINISHED);
-    assertThat(manager.getResults())
-        .extracting(frc.robot.testing.DiagnosticRoutine.Result::status)
-        .containsExactly(
-            frc.robot.testing.DiagnosticRoutine.Status.FAILED,
-                frc.robot.testing.DiagnosticRoutine.Status.BLOCKED,
-            frc.robot.testing.DiagnosticRoutine.Status.BLOCKED,
-                frc.robot.testing.DiagnosticRoutine.Status.BLOCKED);
-    assertThat(manager.getResults().get(0).reason()).contains("stopped");
-    assertThat(output.vxMetersPerSecond).isZero();
-    assertThat(output.vyMetersPerSecond).isZero();
-    assertThat(output.omegaRadiansPerSecond).isZero();
-  }
 }

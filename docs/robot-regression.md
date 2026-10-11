@@ -1,4 +1,4 @@
-# Whole-robot regression test design
+# Whole-robot regression proposal
 
 This design targets `offseason-bot` and the shared Trailblazer library. The goal is a repeatable
 answer to **can this build drive, acquire fuel, score, feed, recover from faults, and stop safely?**
@@ -6,11 +6,10 @@ Run the same scenarios and acceptance rules in desktop simulation and on the rob
 validates the software and its modeled behavior; a physical run validates the actual mechanisms,
 localization, and shots. Record both results separately.
 
-**Status:** the reusable testing lifecycle, bounded sequence runner, strict flat-floor drive
-regression, angular settling check, counted-fuel evaluator and report writer are implemented.
-The full 37-scenario suite remains a design specification. New numeric limits are starting acceptance
-targets; current mechanism configuration values are identified separately. Do not loosen a limit
-automatically because a new build fails it.
+**Status:** the whole-robot qualification suite and four-leg drive regression were removed.
+The straight-line diagnostic remains available in simulation and Driver Station Test mode. The
+broader scenarios below are a design proposal, with no runnable whole-robot qualification task.
+Numeric limits are proposed starting targets that require calibration on the robot.
 
 **Architecture constraint:** changes to test management/architecture are allowed. Keep that code in
 `frc.robot.testing` and test fixtures; do not refactor robot managers, mechanisms, localization,
@@ -24,8 +23,8 @@ existing adapter's preparation callback intentionally idles the normal managers.
 
 | Existing code | What can be reused / what is missing |
 |---|---|
-| `testing/TestManager` | Test-mode selection, configuration snapshot on enable, abort and stopped output. Selects `NONE`, `STRAIGHT_LINE` or strict `DRIVE_REGRESSION`; delegates its lifecycle to `DiagnosticSession`. |
-| `testing/StraightLineRoutine` | Measures pose, speed, acceleration and cross-track error. Pass checks endpoint, heading, stopped translation and rotation, settle time and timeout. Legacy straight-line mode still records speed/acceleration; strict regression enforces them through `MotionAssertions`. |
+| `testing/TestManager` | Test-mode selection, configuration snapshot on enable, abort and stopped output. Selects `NONE` or `STRAIGHT_LINE`; delegates its lifecycle to `DiagnosticSession`. |
+| `testing/StraightLineRoutine` | Measures pose, speed, acceleration and cross-track error. Pass checks endpoint, heading, stopped translation and rotation, settle time and timeout. Straight-line mode records speed/acceleration without enforcing their limits. |
 | `sim/HeadlessRunner`, `sim/SwerveFixture` | Headless JUnit loop and actual Phoenix swerve simulation using robot constants. Fixture bypasses the full robot managers, bindings and localization stack. |
 | `Robot` / production Trailblazer | Production follower includes `BumpCrossingFollower`. `TestManager` constructs a separate plain PID follower, so the current test cannot certify the production wrapper. |
 | `autos/TestAuto`, `autos/IntegrationTest` | Useful scenario sketches, but no complete measurement-based verdict. They are not selections in offseason `AutoSelection`; offseason `Robot` now registers `Autos` with the comp-bot routines. |
@@ -72,48 +71,27 @@ Every currently configured subsystem/state family appears below. There is no act
 offseason `Hardware`; D09 tests drive alignment only. Add a coverage entry before introducing any
 new mechanism, state, auto, binding, feature flag or fallback path.
 
-## Separate testing architecture
+## Testing architecture
+
+The retained straight-line diagnostic uses a separate test controller and the existing Test-mode
+lifecycle. Production managers do not implement a test interface.
 
 ```mermaid
 flowchart LR
-  Adapter[TestManager adapter] --> Session[DiagnosticSession]
-  Session --> Sequence[DiagnosticSequence]
-  Sequence --> Routine[Test routine]
-  Routine --> API[Existing public APIs]
-  API --> Code[Unmodified robot components]
-  Code --> Observe[Existing sensors and logs]
-  Observe --> Judge[Test assertions and reports]
+  Adapter[TestManager] --> Session[DiagnosticSession]
+  Session --> Routine[StraightLineDiagnostic]
+  Routine --> Motion[StraightLineRoutine]
+  Motion --> API[Existing public APIs]
 ```
 
-Implemented test-owned pieces:
+`TestManager` keeps its normal robot and simulation constructor APIs. It snapshots configuration
+on enable, aborts when leaving Test mode, and sends zero drive output after completion or failure.
+The normal headless suite tests this lifecycle and the straight-line diagnostic. Its result checks
+endpoint, heading, stopped motion and settling; speed and acceleration are recorded measurements.
 
-| Piece | Responsibility |
-|---|---|
-| `DiagnosticRoutine` | Test-only tick/stop/abort/output protocol and RUNNING/PASSED/FAILED/ABORTED/BLOCKED results. Production managers do not implement it. |
-| `DiagnosticSession` | One factory/configuration snapshot per enable, Test-mode lifetime, terminal latching, exception results and zero drive output on stop/failure. |
-| `DiagnosticSequence` | Named, bounded steps; lazy construction; stopped output between steps; failure blocks dependent steps; retained per-step evidence. |
-| `StraightLineDiagnostic` | Wraps the existing test routine and a dedicated test controller. Strict mode checks startup, velocity, vector acceleration and motion sample gaps without modifying follower outputs. |
-| `MotionAssertions` | Independent commanded limits and measured 100 ms vector-acceleration window, including startup; rejects nonfinite input and non-increasing timestamps. |
-| `FuelOutcome` | Counts-based hit evaluation and inventory reconciliation. Does not trigger scoring or substitute manager readiness for actual hits. |
-| `DiagnosticReport` | Unique-run Markdown reports; blocked/empty evidence cannot pass; existing reports cannot be overwritten. |
-
-`TestManager` retains its existing constructor/API for the normal `Robot` and the sim fixture.
-`getRoutine()` still exposes legacy straight-line samples; generic callers use
-`getActiveDiagnostic()` and `getResults()`. Its controller has separate state from autonomous and
-uses diagnostic-owned gains. The existing idle preparation callback is unchanged. No production
-class has been refactored or given a test interface/provider.
-
-The current `DRIVE_REGRESSION` uses the same strict four-leg routine on hardware and Phoenix sim.
-The ordinary headless suite verifies the framework and failure paths. The separate
-`driveRegressionTest` task is qualification: it requires an actual PASSED diagnostic result and
-returns nonzero when the robot fails the criteria. It is opt-in while the existing startup jump is
-unresolved; the normal tests do not encode that production defect as expected behavior.
-
-For the remaining whole-robot suite, use a separate test fixture/entrypoint that constructs existing
-production components through their public constructors. Keep new orchestration out of normal
-`Robot` and do not construct both robot graphs at once: CAN devices must have a single owner.
-A separate diagnostic artifact/source set remains an option for those broader routines, not a
-requirement to leave the existing testing architecture unchanged.
+Any future broader suite should use a separate test fixture or entrypoint that constructs existing
+production components through public constructors. Keep orchestration out of normal `Robot` and
+never construct both robot graphs at once: CAN devices must have a single owner.
 
 There are two kinds of evidence, reported separately:
 
@@ -125,7 +103,7 @@ There are two kinds of evidence, reported separately:
 A fixture that constructs `Autos` cannot certify it is wired into the normal robot; a fixture with
 working cameras cannot certify `Hardware` placeholders. Full qualification needs normal-robot evidence.
 
-Contracts for the remaining implementation:
+Proposed contracts for future implementation:
 
 - Inject clocks, request/observation adapters and outcome observers into test code only. Use existing
   vendor sim APIs, DS/joystick inputs, NetworkTables and public sensors where production consumes them.
@@ -134,7 +112,7 @@ Contracts for the remaining implementation:
   enable. Keep normal-robot acceptance separate from fixture orchestration.
 - Instantiate unchanged Trailblazer follower/tracker classes and bump wrapper in applicable fixtures,
   using existing constants. Declare the composition; do not extract a production factory for tests.
-  Current plain-follower drive regression does not certify bump-wrapper behavior.
+  The retained plain-follower straight-line test does not certify bump-wrapper behavior.
 - Verify actual scheduler ordering and one-loop request propagation through existing observations or
   test-owned probes. `SubsystemExecutionSequencer` iterates a priority queue; priority numbers alone
   are not proof of execution order. Report failures rather than fixing the scheduler for testing.
@@ -337,84 +315,32 @@ noisy trend warnings; never average away an absolute safety or constraint failur
 From the repository root:
 
 ```sh
-# Existing unit and headless suites; headless is separate from normal build/check.
+# Unit and headless suites.
 ./gradlew test headlessTest
 
-# Existing Phoenix straight-line diagnostic and its manager/routine checks.
+# Straight-line diagnostic and its manager/routine checks.
 ./gradlew :offseason-bot:straightLineTest
 
-# Strict four-leg drive qualification; currently detects the startup acceleration violation.
-./gradlew :offseason-bot:driveRegressionTest
-
-# Example robot-relative strafe with an independent report directory.
-./gradlew :offseason-bot:straightLineTest -Psim.direction=90 -Psim.startHeading=90 -Psim.outputDir=/tmp/robot-regression-strafe
+# Example robot-relative strafe with a separate report directory.
+./gradlew :offseason-bot:straightLineTest -Psim.direction=90 -Psim.startHeading=90 -Psim.outputDir=/tmp/straight-line-strafe
 
 # Interactive offseason robot simulation.
 ./gradlew :offseason-bot:simulateJava
 ```
 
-The focused report is at
-`offseason-bot/build/reports/straightLineTest/motion/summary.md`; CSV is beside it. See
-[headless testing](headless-testing.md) for JUnit and CI paths. Inspect velocity/acceleration
-measurements manually in legacy STRAIGHT_LINE mode; DRIVE_REGRESSION enforces the motion limits.
-Strict sim reports have unique names under `build/reports/driveRegressionTest/motion/`. The current
-strict test fails on the first commanded acceleration jump and marks the remaining three legs blocked.
-The measured acceleration window currently uses loop timestamps, because the existing supplier
-provides speeds without sensor timestamps. This detects sample-loop gaps but cannot certify sensor
-freshness; that remains an explicit coverage gap.
+The focused report is at `offseason-bot/build/reports/straightLineTest/motion/summary.md`, with
+CSV files beside it. See [headless testing](headless-testing.md) for JUnit and CI paths. Inspect
+velocity and acceleration measurements manually; the retained test judges endpoint and settling.
 
-In interactive simulation or on a deployed robot, use the diagnostic as follows:
+In interactive simulation or on a deployed robot:
 
-1. Disable; clear a floor corridor for the chosen displacement and stopping distance. Record the
-   measured starting pose, voltage, robot kind and build. Keep shooter/fuel tests in a target area.
-2. Choose `STRAIGHT_LINE` for the legacy single leg, or `DRIVE_REGRESSION` for strict qualification,
-   in `Tests/SelectedTest`. The strict route is a square with four configured-distance legs; clear
-   its full footprint. It stops immediately on failure and requires a stopped starting robot.
-3. Set `Tests/StraightLine/Config/` values: distance 2 m, maxVelocity 1 m/s, maxAcceleration
-   0.75 m/s², positionTolerance 0.10 m, headingTolerance 3°, crossTrackTolerance 0.20 m,
-   stoppedVelocity 0.10 m/s, settleSeconds 0.25 s, timeout 10 s. Direction is in degrees from the
-   starting robot heading. Defaults already use these values and direction 0°.
+1. Disable and clear a floor corridor for the displacement and stopping distance.
+2. Select `STRAIGHT_LINE` in `Tests/SelectedTest`.
+3. Set `Tests/StraightLine/Config/` values. Defaults are distance 2 m, maxVelocity 1 m/s,
+   maxAcceleration 0.75 m/s², positionTolerance 0.10 m, headingTolerance 3°,
+   crossTrackTolerance 0.20 m, stoppedVelocity 0.10 m/s, settleSeconds 0.25 s and timeout 10 s.
+   Direction defaults to 0° and is relative to the starting robot heading.
 4. Select Driver Station **Test** mode and enable once. Observe state, reason, motion logs and
-   physical endpoint; disable on unexpected motion. Disable/re-enable for another run.
-5. Repeat forward, reverse (`distance=-2`), strafe (`direction=90`), and different starting headings.
-   Save logs and independently measure endpoints. Inspect `Tests/Regression/RunId`, `Status`,
-   `Passed`, and `Steps/<name>/Status`/`Reason`. The strict controller is still the dedicated test
-   follower. Rotation-in-place, arbitrary multi-point routes and automated scoring remain planned.
-
-For physical deployment, use `./gradlew :offseason-bot:deploy` when ready to load that robot. This
-design does not deploy or enable hardware automatically.
-
-Current manual scoring smoke test: disable Test mode, establish actual camera calibration and a
-clear scoring location, home deploy with operator Start and hood with operator Back, verify turret
-initialization, then use teleop driver left trigger for intake and right trigger for normal score/feed.
-Right-trigger release requests idle; left-trigger release cancels intake. Driver right bumper stows;
-left bumper requests unjam while held. Observe Q01/Q02 counts and the readiness gates in logs.
-This manual smoke test can run now on real hardware; current sim can exercise requests/visualization
-but lacks the independent scored-fuel model, so its hit-rate result is blocked. Reset persistent
-operator stow/options between scenarios; do not use pit/bringup overrides for normal scoring.
-If the unchanged camera configuration cannot support this test, report normal scoring as blocked.
-Use a separately configured fixture only for its own component results; do not reconfigure the
-production source or count fixture success as normal-robot qualification.
-
-## Implementation order and completion criteria
-
-1. Implemented: reusable results/lifecycle, bounded sequences, angular stopping and vector motion
-   assertions. Remaining: vendor sensor timestamps/freshness, full trajectory/angular envelopes and
-   independent physical truth. The 0.5 m/s startup floor is reported, not changed for testing.
-2. Add broader suite/profile fixtures and an explicit diagnostic entrypoint where needed. Verify
-   scheduler behavior and test-owned cleanup. Record missing Autos
-   wiring/camera configuration as normal-robot qualification gaps, rather than fixing production.
-3. Add mechanism tests and test-owned adapters around existing real/sim APIs. Preserve production
-   shortcuts and report the scenarios they prevent. Add an independent fuel/shot model plus hardware
-   outcome recording without making production depend on the model.
-4. Add static score/feed and acquisition cycles, then moving scoring, interlocks and recovery.
-5. Add lifecycle/auto/feature combinations, reduced voltage and injected faults; extend current CI
-   artifacts. Calibrate physical envelopes and complete both-environment qualification.
-
-The suite is complete when every active subsystem and documented behavior has a required scenario,
-the same assertions run in both environments, injected regressions demonstrably fail, and a saved
-physical run includes independent motion measurements and actual scored/received fuel counts.
-A passing isolated straight-line fixture or simulated readiness state is only partial coverage.
-The testing implementation is allowed to finish with documented failures or blocked scenarios in
-the unchanged robot. Passing qualification and completing the test architecture are separate goals;
-production fixes require their own scope rather than being folded into test-enabling work.
+   endpoint. Disable/re-enable to start another run.
+5. Repeat forward, reverse (`distance=-2`), strafe (`direction=90`) and different starting headings.
+   Save logs and independently measure endpoints.

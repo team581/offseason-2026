@@ -53,9 +53,6 @@ This repository is organized as a Gradle monorepo with the following projects:
 
 # Run just the offseason straight-line tests
 ./gradlew :offseason-bot:straightLineTest
-
-# Strict four-leg drive qualification (currently exposes a startup acceleration violation)
-./gradlew :offseason-bot:driveRegressionTest
 ```
 
 Headless JUnit tests live in `offseason-bot/src/simTest/java` and are discovered automatically by

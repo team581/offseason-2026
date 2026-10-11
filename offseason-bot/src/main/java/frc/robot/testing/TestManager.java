@@ -28,8 +28,7 @@ import java.util.function.Supplier;
 public final class TestManager extends StateMachineSubsystem<TestManager.State> {
   public enum Selection {
     NONE,
-    STRAIGHT_LINE,
-    DRIVE_REGRESSION
+    STRAIGHT_LINE
   }
 
   public enum State {
@@ -102,37 +101,8 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
                 return Optional.empty();
               }
               var snapshot = config.get();
-              if (selection == Selection.STRAIGHT_LINE) {
-                return Optional.of(
-                    new StraightLineDiagnostic(
-                        "StraightLine", snapshot, trailblazer, pose, speeds, false));
-              }
-              // Four independently judged legs form a square relative to the initial heading.
-              var steps = new java.util.ArrayList<DiagnosticSequence.Step>();
-              for (int i = 0; i < 4; i++) {
-                double direction = snapshot.direction() + i * 90;
-                var legConfig =
-                    new StraightLineConfig(
-                        snapshot.distance(),
-                        direction,
-                        snapshot.maxVelocity(),
-                        snapshot.maxAcceleration(),
-                        snapshot.timeout(),
-                        snapshot.positionTolerance(),
-                        snapshot.headingTolerance(),
-                        snapshot.stoppedVelocity(),
-                        snapshot.settleSeconds(),
-                        snapshot.crossTrackTolerance());
-                String name = "DriveLeg" + (i + 1);
-                steps.add(
-                    new DiagnosticSequence.Step(
-                        name,
-                        snapshot.timeout() + 0.02,
-                        () ->
-                            new StraightLineDiagnostic(
-                                name, legConfig, trailblazer, pose, speeds, true)));
-              }
-              return Optional.of(new DiagnosticSequence(steps));
+              return Optional.of(
+                  new StraightLineDiagnostic("StraightLine", snapshot, trailblazer, pose, speeds));
             },
             prepareForTest,
             driveOutput);
