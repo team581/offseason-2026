@@ -412,11 +412,10 @@ public final class VisionProcessor {
         return Decision.reject(Reason.HISTORY);
       }
     }
-    if (!MathUtil.isNear(0, robot.getZ() - state.zM(), policy.maxZErrorM())
+    if (!MathUtil.isNear(robot.getZ(), state.zM(), policy.maxZErrorM())
+        || !MathUtil.isNear(robot.getRotation().getX(), state.rollRad(), policy.maxTiltErrorRad())
         || !MathUtil.isNear(
-            0, robot.getRotation().getX() - state.rollRad(), policy.maxTiltErrorRad())
-        || !MathUtil.isNear(
-            0, robot.getRotation().getY() - state.pitchRad(), policy.maxTiltErrorRad())) {
+            robot.getRotation().getY(), state.pitchRad(), policy.maxTiltErrorRad())) {
       return Decision.reject(Reason.ROBOT_TILT);
     }
     var candidate = observation.getCandidates(selected);

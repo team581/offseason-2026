@@ -3,6 +3,7 @@ package frc.robot.vision;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -51,7 +52,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       String generation,
       Map<String, CameraStatus> cameras) {
     public Status {
-      cameras = ImmutableMap.copyOf(cameras);
+      cameras = cameras;
     }
   }
 
@@ -212,7 +213,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               previous.rejected() + (accepted ? 0 : 1),
               operational
                   || (previous.usable()
-                      && !ImmutableSet.of(
+                      && !Sets.immutableEnumSet(
                               VisionProcessor.Reason.CONFIGURATION,
                               VisionProcessor.Reason.CALIBRATION,
                               VisionProcessor.Reason.SCHEMA,
