@@ -2,6 +2,7 @@
 package frc.robot.vision;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
@@ -13,7 +14,6 @@ import frc.robot.vision.generated.SpotProtos;
 import frc.robot.vision.results.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
 
@@ -291,7 +291,7 @@ public final class SpotVisionIO implements VisionIO {
             .setRobotSession(manifest.getRobotSession())
             .setEnabled(robotEnabled)
             .setTagSelectionGeneration(selection == null ? 0 : selection.generation())
-            .addAllAllowedTagIds(selection == null ? List.of() : selection.allowedTagIds())
+            .addAllAllowedTagIds(selection == null ? ImmutableList.of() : selection.allowedTagIds())
             .setSequence(++stateSequence)
             .build()
             .toByteArray());

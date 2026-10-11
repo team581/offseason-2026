@@ -1,9 +1,10 @@
 // Move to shared folder after offseason
 package frc.robot.vision;
 
+import static java.util.Comparator.comparingDouble;
+
 import frc.robot.vision.results.VisionMeasurement;
 import java.util.ArrayDeque;
-import java.util.Comparator;
 import java.util.List;
 
 /** Capture-time evidence heuristic in metres, not covariance or probability. */
@@ -44,7 +45,7 @@ public final class TrustFactor {
   /** Caller supplies only measurements actually submitted to the estimator. */
   public void ingest(List<VisionMeasurement> fused) {
     for (var value :
-        fused.stream().sorted(Comparator.comparingDouble(VisionMeasurement::timestamp)).toList()) {
+        fused.stream().sorted(comparingDouble(VisionMeasurement::timestamp)).toList()) {
       if (value.timestamp() < evidenceTimestamp) continue;
       double evidence = value.innovationM() + Math.hypot(value.stdX(), value.stdY());
       if (!Double.isFinite(evidence) || value.innovationM() < 0) continue;
@@ -76,7 +77,7 @@ public final class TrustFactor {
     penalty = 0.;
     time = now;
     history.clear();
-    history.add(new Penalty(now, 0.));
+    history.addLast(new Penalty(now, 0.));
   }
 
   public void updateOdometry(double distanceM, double elapsedS, boolean collision) {

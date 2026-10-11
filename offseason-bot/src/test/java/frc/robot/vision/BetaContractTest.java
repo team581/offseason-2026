@@ -227,7 +227,7 @@ final class BetaContractTest {
   void sourceCountFloorCoversCorrelatedCamerasSplitAcrossReleaseBatches() {
     var value =
         new VisionMeasurement(
-            "front", "one", new Pose2d(), 1, .1, .1, 1e6, ImmutableList.of(1), 0, 0);
+            "front", "one", Pose2d.kZero, 1, .1, .1, 1e6, ImmutableList.of(1), 0, 0);
     var released = VisionProcessor.accountForCorrelation(ImmutableList.of(value), 4);
     assertThat(released.get(0).stdX()).isEqualTo(.2);
     assertThat(value.stdX()).isEqualTo(.1);

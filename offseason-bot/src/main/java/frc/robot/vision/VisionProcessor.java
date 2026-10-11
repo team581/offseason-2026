@@ -93,7 +93,7 @@ public final class VisionProcessor {
           observations.stream()
               .filter(
                   other ->
-                      Math.abs(other.timestamp() - observation.timestamp()) <= .02
+                      MathUtil.isNear(other.timestamp(), observation.timestamp(), .02)
                           && other.tagIds().stream().anyMatch(observation.tagIds()::contains))
               .map(VisionMeasurement::source)
               .distinct()
@@ -139,7 +139,7 @@ public final class VisionProcessor {
             + pose.getQx() * pose.getQx()
             + pose.getQy() * pose.getQy()
             + pose.getQz() * pose.getQz();
-    return Math.abs(norm - 1.0) < 1e-6;
+    return MathUtil.isNear(norm, 1.0, 1e-6);
   }
 
   private final SpotProtos.Profile profile;
@@ -384,7 +384,7 @@ public final class VisionProcessor {
       }
       double a = headingError(alternatives.get(0), captured.orElseThrow().pose());
       double b = headingError(alternatives.get(1), captured.orElseThrow().pose());
-      if (Math.abs(a - b) < policy.candidateHeadingMarginRad()
+      if (MathUtil.isNear(a, b, policy.candidateHeadingMarginRad())
           || Math.min(a, b) > policy.maxHeadingDifferenceRad()) {
         return Decision.reject(Reason.AMBIGUOUS);
       }
@@ -412,9 +412,11 @@ public final class VisionProcessor {
         return Decision.reject(Reason.HISTORY);
       }
     }
-    if (Math.abs(robot.getZ() - state.zM()) > policy.maxZErrorM()
-        || Math.abs(robot.getRotation().getX() - state.rollRad()) > policy.maxTiltErrorRad()
-        || Math.abs(robot.getRotation().getY() - state.pitchRad()) > policy.maxTiltErrorRad()) {
+    if (!MathUtil.isNear(0, robot.getZ() - state.zM(), policy.maxZErrorM())
+        || !MathUtil.isNear(
+            0, robot.getRotation().getX() - state.rollRad(), policy.maxTiltErrorRad())
+        || !MathUtil.isNear(
+            0, robot.getRotation().getY() - state.pitchRad(), policy.maxTiltErrorRad())) {
       return Decision.reject(Reason.ROBOT_TILT);
     }
     var candidate = observation.getCandidates(selected);

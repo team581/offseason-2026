@@ -1,5 +1,8 @@
 package frc.robot.vision;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -48,7 +51,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       String generation,
       Map<String, CameraStatus> cameras) {
     public Status {
-      cameras = Map.copyOf(cameras);
+      cameras = ImmutableMap.copyOf(cameras);
     }
   }
 
@@ -66,7 +69,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private final MeasurementQueue queue;
   private final Map<String, CameraStatus> cameras = new HashMap<>();
   private final Set<String> faults = new HashSet<>();
-  private List<VisionMeasurement> prepared = List.of();
+  private List<VisionMeasurement> prepared = ImmutableList.of();
   private final Map<String, VisionMeasurement> offered = new HashMap<>();
   private VisionIO.TagSelection selection;
   private Optional<Alliance> currentAlliance = Optional.empty();
@@ -79,7 +82,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private boolean hasSeenTag;
   private boolean closed;
   private Status status =
-      new Status(false, "No camera inputs", 0, 0, 0, false, 1, true, 0, 0, "", Map.of());
+      new Status(false, "No camera inputs", 0, 0, 0, false, 1, true, 0, 0, "", ImmutableMap.of());
 
   public Vision(
       VisionIO io,
@@ -110,7 +113,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void close() {
     if (closed) return;
     closed = true;
-    prepared = List.of();
+    prepared = ImmutableList.of();
     offered.clear();
     queue.clearPending();
     for (var fault : faults) DogLog.clearFault(fault);
@@ -122,7 +125,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void collectInputs() {
     if (closed) return;
     now = clock.getAsDouble();
-    prepared = List.of();
+    prepared = ImmutableList.of();
     offered.clear();
     var observedAlliance = alliance.get();
     if (!observedAlliance.equals(currentAlliance)) {
@@ -209,7 +212,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               previous.rejected() + (accepted ? 0 : 1),
               operational
                   || (previous.usable()
-                      && !Set.of(
+                      && !ImmutableSet.of(
                               VisionProcessor.Reason.CONFIGURATION,
                               VisionProcessor.Reason.CALIBRATION,
                               VisionProcessor.Reason.SCHEMA,
@@ -294,7 +297,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
 
   public List<VisionMeasurement> drainMeasurements() {
     var result = prepared;
-    prepared = List.of();
+    prepared = ImmutableList.of();
     result.forEach(value -> offered.put(value.frameId(), value));
     return result;
   }
@@ -341,7 +344,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   public void reset(double timestamp) {
-    prepared = List.of();
+    prepared = ImmutableList.of();
     offered.clear();
     queue.reset(timestamp);
     processor.reset(timestamp);
@@ -410,10 +413,10 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   private Set<Integer> hubTags() {
-    if (currentAlliance.isEmpty()) return Set.of();
+    if (currentAlliance.isEmpty()) return ImmutableSet.of();
     var ids = currentAlliance.orElseThrow() == Alliance.Red ? RED_HUB : BLUE_HUB;
     // An incomplete layout cannot claim alliance-hub support.
-    return broadTags().containsAll(ids) ? ids : Set.of();
+    return broadTags().containsAll(ids) ? ids : ImmutableSet.of();
   }
 
   private void refreshStatus() {
@@ -457,7 +460,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private void select(List<Integer> ids) {
     if (ids.equals(selection.allowedTagIds())) return;
     selection = new VisionIO.TagSelection(selection.generation() + 1, ids);
-    prepared = List.of();
+    prepared = ImmutableList.of();
     offered.clear();
     queue.clearPending();
     double acquired = lastHub;

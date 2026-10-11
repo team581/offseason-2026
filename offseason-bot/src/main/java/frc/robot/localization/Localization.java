@@ -1,6 +1,7 @@
 package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
+import com.google.common.collect.ImmutableList;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -135,7 +136,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
       drivetrain.addVisionMeasurement(
           result.pose(), Utils.fpgaToCurrentTime(result.timestamp()), result.standardDevs());
       vision.measurementFused(result);
-      trustFactor.ingest(List.of(result));
+      trustFactor.ingest(ImmutableList.of(result));
     }
   }
 

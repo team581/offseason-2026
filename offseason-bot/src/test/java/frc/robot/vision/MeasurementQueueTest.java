@@ -2,15 +2,15 @@ package frc.robot.vision;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.vision.results.VisionMeasurement;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 final class MeasurementQueueTest {
   private static VisionMeasurement value(String source, String frame, double timestamp) {
     return new VisionMeasurement(
-        source, frame, Pose2d.kZero, timestamp, .1, .1, 1e6, List.of(1), 0, 0);
+        source, frame, Pose2d.kZero, timestamp, .1, .1, 1e6, ImmutableList.of(1), 0, 0);
   }
 
   @Test

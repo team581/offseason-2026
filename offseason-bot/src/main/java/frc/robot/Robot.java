@@ -5,6 +5,7 @@ import static java.util.UUID.randomUUID;
 import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
 import com.team581.controller.ControllerBindings;
+import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
@@ -69,7 +70,7 @@ public class Robot extends Base581Robot {
               var state = hardware.drivetrain.getState();
               return new CaptureState(
                   state.Pose,
-                  Math.hypot(state.Speeds.vxMetersPerSecond, state.Speeds.vyMetersPerSecond),
+                  MathHelpers.getLinearVelocity(state.Speeds),
                   state.Speeds.omegaRadiansPerSecond,
                   Math.toRadians(imu.getRoll()),
                   Math.toRadians(imu.getPitch()),

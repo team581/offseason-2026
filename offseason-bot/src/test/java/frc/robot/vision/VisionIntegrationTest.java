@@ -446,9 +446,9 @@ final class VisionIntegrationTest {
       assertThat(f.vision.getStatus().allRequiredHealthy()).isTrue();
       assertThat(f.vision.seeingTag()).isFalse();
       f.tick(10.53);
-      assertThat(f.vision.getStatus().usable()).isZero();
+      assertThat(f.vision.getStatus().usable()).isEqualTo(0);
       assertThat(f.vision.getStatus().allRequiredHealthy()).isFalse();
-      assertThat(SpotCameraProfiles.profile().getCamerasCount()).isZero();
+      assertThat(SpotCameraProfiles.profile().getCamerasCount()).isEqualTo(0);
       assertThat(SpotCameraProfiles.FUSION_ENABLED).isFalse();
     }
   }

@@ -19,7 +19,8 @@ public final class SpotCameraProfiles {
   }
 
   public static final boolean FUSION_ENABLED = false;
-  public static final List<String> CAMERA_NAMES = List.of("left", "right", "front", "back");
+  public static final List<String> CAMERA_NAMES =
+      ImmutableList.of("left", "right", "front", "back");
   public static final List<SpotProtos.CameraDefinition> CAMERAS = ImmutableList.of();
   private static final SpotProtos.Profile PROFILE = createProfile();
 

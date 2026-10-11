@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.data.Offset.offset;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.vision.results.VisionMeasurement;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 final class TrustFactorTest {
@@ -19,7 +19,7 @@ final class TrustFactorTest {
         .1,
         .1,
         1e6,
-        List.of(1),
+        ImmutableList.of(1),
         innovation,
         innovation / Math.hypot(.1, .1));
   }
@@ -33,16 +33,16 @@ final class TrustFactorTest {
     var strong = measurement(10.01, .01);
     var weak = measurement(10.02, .2);
     batch.updateOdometry(.1, .04, false);
-    batch.ingest(List.of(strong, weak));
+    batch.ingest(ImmutableList.of(strong, weak));
     split.updateOdometry(.05, .02, false);
-    split.ingest(List.of(strong));
+    split.ingest(ImmutableList.of(strong));
     split.updateOdometry(.05, .02, false);
-    split.ingest(List.of(weak));
+    split.ingest(ImmutableList.of(weak));
     assertThat(split.get()).isCloseTo(batch.get(), offset(1e-12));
     assertThat(batch.get()).isCloseTo(.2 + Math.hypot(.1, .1) + .00405, offset(1e-12));
     assertThat(split.isTrustworthy()).isFalse();
     double before = split.get();
-    split.ingest(List.of(strong));
+    split.ingest(ImmutableList.of(strong));
     assertThat(split.get()).isEqualTo(before); // stale evidence cannot improve confidence
   }
 
