@@ -6,14 +6,18 @@ import com.team581.signals.Signals;
 import com.team581.util.profiling.LoopTiming;
 import com.team581.util.scheduling.RegisteredSubsystem;
 import com.team581.util.scheduling.SubsystemPriorityBase;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 /** Helps ensure that state machines can collect inputs before executing state actions. */
 public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
-  // Sort by lowest priority first
-  private final Queue<StateMachineSubsystem<?>> stateMachineSubsystems =
-      new PriorityQueue<>(comparingInt(stateMachine -> stateMachine.getPriority().getValue()));
+  // Sort by lowest priority first. A PriorityQueue cannot be used here: its iterator traverses
+  // heap order, not sorted order, so inputs would be collected out of priority order.
+  private static final Comparator<StateMachineSubsystem<?>> BY_PRIORITY_ASCENDING =
+      comparingInt(stateMachine -> stateMachine.getPriority().getValue());
+
+  private final List<StateMachineSubsystem<?>> stateMachineSubsystems = new ArrayList<>();
 
   @Override
   public SubsystemPriorityBase getPriority() {
@@ -38,5 +42,7 @@ public class StateMachineSubsystemInputManager extends RegisteredSubsystem {
 
   public void register(StateMachineSubsystem<?> stateMachine) {
     stateMachineSubsystems.add(stateMachine);
+    // Stable sort: equal priorities keep registration order
+    stateMachineSubsystems.sort(BY_PRIORITY_ASCENDING);
   }
 }
