@@ -1,20 +1,21 @@
-package com.team581.vision;
+// Move to shared folder after offseason
+package frc.robot.vision;
 
 import static java.util.Comparator.comparingInt;
 
-import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import frc.robot.vision.generated.SpotProtos;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /** Complete protobuf settings as code; physical selectors and intrinsics live on Spot. */
-public final class VisionProfiles {
+public final class SpotProtocol {
   public static SpotProtos.CameraDefinition.Builder camera(String name, Transform3d measuredMount) {
     return SpotProtos.CameraDefinition.newBuilder()
         .setName(name)
@@ -92,5 +93,5 @@ public final class VisionProfiles {
         .build();
   }
 
-  private VisionProfiles() {}
+  private SpotProtocol() {}
 }

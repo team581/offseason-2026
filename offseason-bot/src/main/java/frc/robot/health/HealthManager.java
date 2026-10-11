@@ -1,40 +1,28 @@
 package frc.robot.health;
 
 import com.team581.config.BlinkingBooleanBox;
-import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.limelight.Limelight;
+import frc.robot.vision.Vision;
 
 public class HealthManager extends StateMachineSubsystem<HealthState> {
-  private final Limelight frontLimelight;
-  private final Limelight leftLimelight;
-  private final Limelight rightLimelight;
-  private final Limelight groundLimelight;
 
-  private boolean localizationHealthy = true;
-  private boolean fuelDetectionHealthy = true;
-  private boolean allCamerasHealthy = true;
+  private boolean localizationHealthy = false;
+  private boolean fuelDetectionHealthy = false;
+  private boolean allCamerasHealthy = false;
 
   private final BlinkingBooleanBox localizationBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/LocalizationHealthyBox", false, true);
   private final BlinkingBooleanBox allCamerasBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
-  public HealthManager(
-      Limelight frontLimelight,
-      Limelight leftLimelight,
-      Limelight rightLimelight,
-      Limelight groundLimelight) {
-    super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
+  private final Vision vision;
 
-    this.frontLimelight = frontLimelight;
-    this.leftLimelight = leftLimelight;
-    this.rightLimelight = rightLimelight;
-    this.groundLimelight = groundLimelight;
+  public HealthManager(Vision vision) {
+    super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
+    this.vision = vision;
   }
 
   /** Returns whether all cameras are healthy. */
@@ -50,25 +38,16 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   /** Returns whether the robot's ability to localize itself is healthy. */
   public boolean isLocalizationHealthy() {
     return localizationHealthy
-        && DSOptions.USE_TAG_LIMELIGHTS.getAsBoolean()
+        && DSOptions.USE_VISION.getAsBoolean()
         && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean();
   }
 
   @Override
   protected void collectInputs() {
-    localizationHealthy =
-        RobotBase.isSimulation()
-            || frontLimelight.getCameraHealth() != CameraHealth.OFFLINE
-            || leftLimelight.getCameraHealth() != CameraHealth.OFFLINE
-            || rightLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    fuelDetectionHealthy =
-        RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    allCamerasHealthy =
-        RobotBase.isSimulation()
-            || (frontLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && leftLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && rightLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && groundLimelight.getCameraHealth() != CameraHealth.OFFLINE);
+    var status = vision.getStatus();
+    localizationHealthy = status.available() && status.usable() > 0;
+    fuelDetectionHealthy = false;
+    allCamerasHealthy = status.allRequiredHealthy();
   }
 
   @Override

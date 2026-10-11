@@ -1,4 +1,5 @@
-package com.team581.vision;
+// Move to shared folder after offseason
+package frc.robot.vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import java.util.ArrayDeque;
@@ -23,6 +24,16 @@ public final class CaptureHistory implements VisionProcessor.History {
 
   public void add(double timestamp, VisionProcessor.CaptureState state) {
     if (!Double.isFinite(timestamp)
+        || state.pose() == null
+        || !Double.isFinite(state.pose().getX())
+        || !Double.isFinite(state.pose().getY())
+        || !Double.isFinite(state.pose().getRotation().getRadians())
+        || !Double.isFinite(state.speedMps())
+        || state.speedMps() < 0
+        || !Double.isFinite(state.angularRateRadPerS())
+        || !Double.isFinite(state.rollRad())
+        || !Double.isFinite(state.pitchRad())
+        || !Double.isFinite(state.zM())
         || (!samples.isEmpty() && timestamp <= samples.getLast().timestamp())) {
       return;
     }

@@ -117,9 +117,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   }
 
   private void ingestTagResult(List<TagResult> results) {
-    if (results.isEmpty()) {
-      return;
-    }
     DogLog.timestamp("Localization/IngestTagResult");
     var averageTimestamp = 0.0;
     for (TagResult result : results) {

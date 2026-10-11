@@ -1,12 +1,14 @@
-package com.team581.vision;
+// Move to shared folder after offseason
+package frc.robot.vision;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.team581.vision.proto.SpotProtos;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import frc.robot.vision.generated.SpotProtos;
+import frc.robot.vision.results.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,7 +75,8 @@ public final class VisionProcessor {
     ROBOT_TILT,
     AMBIGUOUS,
     RESIDUAL,
-    INNOVATION
+    INNOVATION,
+    TAG_POLICY
   }
 
   /** Conservative approximation: do not treat same-tag simultaneous views as independent. */
@@ -92,6 +95,8 @@ public final class VisionProcessor {
                   other ->
                       Math.abs(other.timestamp() - observation.timestamp()) <= .02
                           && other.tagIds().stream().anyMatch(observation.tagIds()::contains))
+              .map(VisionMeasurement::source)
+              .distinct()
               .count();
       double factor = Math.sqrt((double) Math.max(maximumSources, correlated));
       result.add(
@@ -138,7 +143,7 @@ public final class VisionProcessor {
   }
 
   private final SpotProtos.Profile profile;
-  private final Map<String, VisionCamera> cameras;
+  private final Map<String, SpotCameraProfiles.Camera> cameras;
   private final History history;
   private final Policy policy;
   private final Set<Integer> knownTags;
@@ -153,7 +158,10 @@ public final class VisionProcessor {
   private String generation = "";
 
   public VisionProcessor(
-      SpotProtos.Profile profile, List<VisionCamera> cameras, History history, Policy policy) {
+      SpotProtos.Profile profile,
+      List<SpotCameraProfiles.Camera> cameras,
+      History history,
+      Policy policy) {
     this.profile = profile;
     this.cameras = new HashMap<>();
     for (var camera : cameras) {
@@ -184,13 +192,13 @@ public final class VisionProcessor {
     }
     if (!ack.getApplied()
         || ack.getSchemaVersion() != 2
-        || !ack.getManifestHash().equals(VisionProfiles.hash(profile))
+        || !ack.getManifestHash().equals(SpotProtocol.hash(profile))
         || !observation.getRobotId().equals(profile.getRobotId())
         || !observation.getRobotSession().equals(ack.getRobotSession())
         || !observation.getServiceSession().equals(ack.getServiceSession())
         || !observation.getManifestHash().equals(ack.getManifestHash())
         || !observation.getFieldHash().equals(ack.getFieldHash())
-        || !observation.getFieldHash().equals(VisionProfiles.hash(profile.getField()))
+        || !observation.getFieldHash().equals(SpotProtocol.hash(profile.getField()))
         || !observation.getRuntimeGeneration().equals(ack.getRuntimeGeneration())
         || observation.getConnectionEpoch() != ack.getConnectionEpoch()
         || observation.getSyncEpoch() != ack.getSyncEpoch()) {
@@ -285,19 +293,9 @@ public final class VisionProcessor {
         || applied.getCalibrationHash().isEmpty()) {
       return Decision.reject(Reason.CALIBRATION);
     }
-    if (observation.getCandidatesCount() == 0) {
-      return Decision.reject(Reason.NO_TAGS);
-    }
-    var captured = history.at(timestamp);
-    if (captured.isEmpty()) {
-      return Decision.reject(Reason.HISTORY);
-    }
     var camera = cameras.get(observation.getCameraName());
-    if (camera == null) {
-      return Decision.reject(Reason.MOUNT_HISTORY);
-    }
-    // Camera-specific coefficients remain robot-owned Java settings.
-    var policy = camera.qualityPolicy() == null ? this.policy : camera.qualityPolicy();
+    var policy =
+        camera == null || camera.qualityPolicy() == null ? this.policy : camera.qualityPolicy();
     double timeUncertainty = observation.getTimestampUncertaintyS();
     if (!Double.isFinite(timeUncertainty)
         || timeUncertainty <= 0
@@ -309,7 +307,17 @@ public final class VisionProcessor {
             .contains(observation.getTimestampSource())) {
       return Decision.reject(Reason.TIMESTAMP);
     }
-    Optional<Transform3d> mount = camera.mountAt().apply(timestamp);
+    if (observation.getCandidatesCount() == 0) {
+      return Decision.reject(Reason.NO_TAGS);
+    }
+    var captured = history.at(timestamp);
+    if (captured.isEmpty()) {
+      return Decision.reject(Reason.HISTORY);
+    }
+    if (camera == null) {
+      return Decision.reject(Reason.MOUNT_HISTORY);
+    }
+    Optional<Transform3d> mount = Optional.ofNullable(camera.mount());
     if (mount.isEmpty()) {
       return Decision.reject(Reason.MOUNT_HISTORY);
     }
@@ -349,14 +357,14 @@ public final class VisionProcessor {
                       .equals(observation.getCandidates(0).getTagIdsList())))) {
         return Decision.reject(Reason.MALFORMED);
       }
-      var fieldCamera = VisionProfiles.pose(candidate.getFieldToCamera());
+      var fieldCamera = SpotProtocol.pose(candidate.getFieldToCamera());
       for (int tagId : candidate.getTagIdsList()) {
         var tag =
             profile.getField().getTagsList().stream()
                 .filter(value -> value.getId() == tagId)
                 .findFirst()
                 .orElseThrow();
-        var cameraToTag = new Transform3d(fieldCamera, VisionProfiles.pose(tag.getFieldToTag()));
+        var cameraToTag = new Transform3d(fieldCamera, SpotProtocol.pose(tag.getFieldToTag()));
         if (cameraToTag.getX() <= .05) {
           return Decision.reject(Reason.MALFORMED);
         }
@@ -365,7 +373,7 @@ public final class VisionProcessor {
         return Decision.reject(Reason.RESIDUAL);
       }
       alternatives.add(
-          VisionProfiles.pose(candidate.getFieldToCamera())
+          SpotProtocol.pose(candidate.getFieldToCamera())
               .transformBy(mount.orElseThrow().inverse()));
     }
     int selected = 0;
@@ -438,7 +446,17 @@ public final class VisionProcessor {
     var measurement =
         new VisionMeasurement(
             observation.getCameraName(),
-            key + "/" + sequence,
+            key
+                + "/"
+                + observation.getRuntimeGeneration()
+                + "/"
+                + observation.getConnectionEpoch()
+                + "/"
+                + observation.getSyncEpoch()
+                + "/"
+                + observation.getTagSelectionGeneration()
+                + "/"
+                + sequence,
             robot.toPose2d(),
             timestamp,
             sigma,

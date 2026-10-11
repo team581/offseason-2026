@@ -1,11 +1,9 @@
-package com.team581.vision;
+package frc.robot.vision;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 
 import com.google.common.collect.ImmutableList;
-import com.team581.vision.proto.SpotProtos;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,6 +11,8 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.TimestampedRaw;
+import frc.robot.vision.generated.SpotProtos;
+import frc.robot.vision.results.VisionMeasurement;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ final class BetaContractTest {
     var mount = new Transform3d(new Translation3d(.2, 0, .5), new Rotation3d());
     return new VisionProcessor(
         manifest().getProfile(),
-        ImmutableList.of(VisionCamera.fixed("front", mount)),
+        ImmutableList.of(SpotCameraProfiles.Camera.fixed("front", mount)),
         timestamp ->
             Optional.of(
                 new VisionProcessor.CaptureState(
@@ -68,12 +68,31 @@ final class BetaContractTest {
   }
 
   @Test
+  void additivePolicyBytesAgreeWithoutChangingLegacyFixtures() throws IOException {
+    var bytes = fixture("policy-state");
+    assertThat(java.util.HexFormat.of().formatHex(bytes))
+        .isEqualTo("0a07726f626f742d311001180720032a020102");
+    var state = SpotProtos.RobotState.parseFrom(bytes);
+    assertThat(state.getTagSelectionGeneration()).isEqualTo(3);
+    assertThat(state.getAllowedTagIdsList()).containsExactly(1, 2);
+    assertThat(state.toByteArray()).containsExactly(bytes);
+    var ack = SpotProtos.Acknowledgement.parseFrom(fixture("policy-ack"));
+    assertThat(ack.getTagSelectionSupported()).isTrue();
+    assertThat(ack.toBuilder().clearTagSelectionSupported().build().toByteArray())
+        .containsExactly(fixture("ack"));
+    var observation = SpotProtos.Observation.parseFrom(fixture("policy-multi"));
+    assertThat(observation.getTagSelectionGeneration()).isEqualTo(3);
+    assertThat(observation.toBuilder().clearTagSelectionGeneration().build().toByteArray())
+        .containsExactly(fixture("multi"));
+  }
+
+  @Test
   void correlatedMeasurementsInflateUncertaintyAndCannotImproveTrustByCameraCount() {
     var result =
         VisionProcessor.accountForCorrelation(
             ImmutableList.of(measurement("a", 10.), measurement("b", 10.)));
     assertThat(result.get(0).stdX()).isGreaterThan(.1);
-    var trust = new VisionTrust();
+    var trust = new TrustFactor();
     trust.ingest(ImmutableList.of(result.get(0)));
     double before = trust.get();
     trust.ingest(result);
@@ -82,43 +101,6 @@ final class BetaContractTest {
     assertThat(trust.get()).isEqualTo(before);
     trust.updateOdometry(1., .02, false);
     assertThat(trust.get()).isGreaterThan(before);
-  }
-
-  @Test
-  void documentationExampleCreatesIndependentProfilesForTwoRobots() throws Exception {
-    var field =
-        new edu.wpi.first.apriltag.AprilTagFieldLayout(
-            ImmutableList.of(
-                new edu.wpi.first.apriltag.AprilTag(1, new Pose3d(4, 1, 1, new Rotation3d()))),
-            16,
-            8);
-    var mode = manifest().getProfile().getCameras(0).getAllowedModes(0);
-    var mount = new Transform3d(new Translation3d(.2, 0, .5), new Rotation3d());
-    var nt = edu.wpi.first.networktables.NetworkTableInstance.create();
-    try {
-      var first =
-          SpotBetaRobotExample.create(
-              "fixture-offseason", field, .1651, mount, mode, timestamp -> Optional.empty(), nt);
-      var second =
-          SpotBetaRobotExample.create(
-              "fixture-second-robot", field, .1651, mount, mode, timestamp -> Optional.empty(), nt);
-      try {
-        assertThat(first.profile().getRobotId()).isEqualTo("fixture-offseason");
-        assertThat(second.profile().getRobotId()).isEqualTo("fixture-second-robot");
-        assertThat(first.history()).isNotSameAs(second.history());
-        assertThat(first.profile().getCamerasList())
-            .containsExactlyElementsOf(second.profile().getCamerasList());
-        assertThat(first.profile().getFusionEnabled()).isFalse();
-        assertThat(second.profile().getHeadingEnabled()).isFalse();
-        assertThat(VisionProfiles.hash(first.profile()))
-            .isNotEqualTo(VisionProfiles.hash(second.profile()));
-      } finally {
-        first.vision().close();
-        second.vision().close();
-      }
-    } finally {
-      nt.close();
-    }
   }
 
   @CsvSource({".0003125, 4.", ".00125, 4.", ".005, 2.", ".02, 1.", ".08, 1."})
@@ -138,6 +120,19 @@ final class BetaContractTest {
     assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     assertThat(result.measurement().orElseThrow().stdX())
         .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));
+  }
+
+  @Test
+  void immutableMeasurementOwnsTagsAndDeviationVector() {
+    var tags = new java.util.ArrayList<Integer>();
+    tags.add(1);
+    var result =
+        new VisionMeasurement(
+            "front", "one", new Pose2d(2, 3, Rotation2d.kZero), 10., .1, .2, 1e6, tags, 0., 0.);
+    tags.add(2);
+    assertThat(result.tagIds()).containsExactly(1);
+    result.standardDevs().set(0, 0, 55.);
+    assertThat(result.standardDevs().get(0, 0)).isEqualTo(.1);
   }
 
   @Test
@@ -163,26 +158,11 @@ final class BetaContractTest {
     processor =
         new VisionProcessor(
             manifest().getProfile(),
-            ImmutableList.of(new VisionCamera("front", timestamp -> Optional.empty())),
+            ImmutableList.of(new SpotCameraProfiles.Camera("front", null, null)),
             timestamp -> Optional.of(new VisionProcessor.CaptureState(Pose2d.kZero, 0, 0, 0, 0, 0)),
             VisionProcessor.Policy.conservative());
     assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
         .isEqualTo(VisionProcessor.Reason.MOUNT_HISTORY);
-  }
-
-  @Test
-  void mutableLimelightStorageCannotChangeQueuedOwnedMeasurement() {
-    var value = new com.team581.vision.results.OptionalTagResult();
-    var std = VecBuilder.fill(.1, .2, .3);
-    value.update(new Pose2d(2, 3, Rotation2d.kZero), 10., std);
-    var adapter = new LimelightVisionIO("limelight", () -> value);
-    var result = adapter.drain(10.1).get(0);
-    std.set(0, 0, 99.);
-    value.update(Pose2d.kZero, 11., std);
-    assertThat(result.pose().getX()).isEqualTo(2.);
-    assertThat(result.stdX()).isEqualTo(.1);
-    result.standardDevs().set(0, 0, 55.);
-    assertThat(result.standardDevs().get(0, 0)).isEqualTo(.1);
   }
 
   @Test
@@ -204,9 +184,8 @@ final class BetaContractTest {
   void pythonAndJavaAgreeOnPacketsHashesAndCoordinateUnits() throws IOException {
     var manifest = manifest();
     assertThat(manifest.toByteArray()).containsExactly(fixture("manifest"));
-    assertThat(VisionProfiles.hash(manifest.getProfile())).isEqualTo(manifest.getManifestHash());
-    assertThat(VisionProfiles.hash(manifest.getProfile().getField()))
-        .isEqualTo(ack().getFieldHash());
+    assertThat(SpotProtocol.hash(manifest.getProfile())).isEqualTo(manifest.getManifestHash());
+    assertThat(SpotProtocol.hash(manifest.getProfile().getField())).isEqualTo(ack().getFieldHash());
     for (String name : ImmutableList.of("empty", "multi", "ippe", "ambiguous")) {
       assertThat(sample(name).observation().toByteArray()).containsExactly(fixture(name));
     }
@@ -232,6 +211,16 @@ final class BetaContractTest {
     assertThat(queue.lateCount()).isEqualTo(1);
     queue.reset(11.);
     assertThat(queue.add(measurement("pre-reset", 10.99))).isFalse();
+  }
+
+  @Test
+  void repeatedFramesDoNotManufactureAdditionalCameraSources() {
+    var frames = new java.util.ArrayList<VisionMeasurement>();
+    for (int i = 0; i < 8; i++) frames.add(measurement("front", 10. + i * .001));
+    var batch = VisionProcessor.accountForCorrelation(frames, 4);
+    assertThat(batch).allMatch(value -> value.stdX() == .2);
+    assertThat(VisionProcessor.accountForCorrelation(frames.subList(0, 4), 4))
+        .allMatch(value -> value.stdX() == .2);
   }
 
   @Test
@@ -291,8 +280,7 @@ final class BetaContractTest {
     var robot = new Pose3d(2, 3, .1, new Rotation3d(0, 0, Math.PI / 2));
     var mount = new Transform3d(new Translation3d(.2, -.3, .5), new Rotation3d(.1, -.2, .3));
     var recovered =
-        VisionProfiles.pose(VisionProfiles.pose(robot.transformBy(mount)))
-            .transformBy(mount.inverse());
+        SpotProtocol.pose(SpotProtocol.pose(robot.transformBy(mount))).transformBy(mount.inverse());
     assertThat(recovered.getTranslation().getDistance(robot.getTranslation())).isLessThan(1e-12);
     assertThat(recovered.getRotation().minus(robot.getRotation()).getAngle()).isLessThan(1e-12);
   }

@@ -1,4 +1,5 @@
-package com.team581.vision;
+// Move to shared folder after offseason
+package frc.robot.vision.results;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -35,7 +36,11 @@ public record VisionMeasurement(
             && Double.isFinite(stdHeading)
             && stdX > 0
             && stdY > 0
-            && stdHeading > 0,
+            && stdHeading > 0
+            && Double.isFinite(innovationM)
+            && innovationM >= 0
+            && Double.isFinite(normalizedInnovation)
+            && normalizedInnovation >= 0,
         "finite pose/time and positive finite deviations required");
   }
 

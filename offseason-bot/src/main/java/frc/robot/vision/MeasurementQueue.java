@@ -1,8 +1,10 @@
-package com.team581.vision;
+// Move to shared folder after offseason
+package frc.robot.vision;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Comparator.comparingDouble;
 
+import frc.robot.vision.results.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
