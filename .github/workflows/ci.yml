@@ -109,11 +109,18 @@ jobs:
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v7
+      - name: Read Python version from mise
+        id: python
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+          with open("mise.toml", "rb") as config:
+              print(f"version={tomllib.load(config)['tools']['python']}")
+          PY
       - name: Setup uv
         uses: astral-sh/setup-uv@v10.3.0
         with:
-          # cadquery-ocp only provides wheels for Python 3.14.
-          python-version: "3.14"
+          python-version: ${{ steps.python.outputs.version }}
           enable-cache: true
           prune-cache: false
       - name: Install dependencies
