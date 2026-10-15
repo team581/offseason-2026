@@ -1,5 +1,7 @@
 // Keep Gradle and VS Code external simulation metadata independent of app sources.
-def useWpilibGui = providers.gradleProperty('wpilibSimGui').map { it.toBoolean() }.getOrElse(false)
+def useWpilibGui = providers.gradleProperty('wpilibSimGui').map {
+	it.toBoolean()
+}.getOrElse(false)
 if (useWpilibGui) {
 	wpi.sim.addGui().defaultEnabled = true
 	wpi.sim.addDriverstation()
@@ -7,7 +9,9 @@ if (useWpilibGui) {
 	wpi.sim.environment.put('TEAM581_CUSTOM_SIM', 'true')
 	wpi.sim.environment.put('TEAM581_SIM_PROJECT', project.name)
 	// Do not bake an installation path into VS Code metadata: Java resolves it at launch.
-	def override = providers.environmentVariable('TEAM581_SIM_APP').filter { !it.isBlank() }
+	def override = providers.environmentVariable('TEAM581_SIM_APP').filter {
+		!it.isBlank()
+	}
 	if (override.isPresent()) {
 		wpi.sim.environment.put('TEAM581_SIM_APP', override.get())
 	}
@@ -30,8 +34,8 @@ if (useWpilibGui) {
 			}
 			if (!candidates.any { app ->
 						app.name.endsWith('.app')
-								? new File(app, 'Contents/MacOS/simulation-studio').isFile()
-								: app.isFile()
+						? new File(app, 'Contents/MacOS/simulation-studio').isFile()
+						: app.isFile()
 					}) {
 				throw new GradleException('Simulation Studio is not installed. Download: https://github.com/simonstoryparker/simulation-studio/releases/latest . Set TEAM581_SIM_APP for a custom installation. For the WPILib GUI, rerun with -PwpilibSimGui=true.')
 			}
