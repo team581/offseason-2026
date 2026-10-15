@@ -12,7 +12,7 @@ public enum FunnelerState {
   public final DoubleSubscriber tunableVoltage;
 
   private FunnelerState(double voltage) {
-    this.tunableVoltage = DogLog.tunable("Conveyor/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Funneler/" + this, voltage);
   }
 
   public double getVoltage() {

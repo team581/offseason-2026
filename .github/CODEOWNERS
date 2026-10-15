@@ -1,0 +1,11 @@
+/.github/ @jonahsnider
+
+*.gradle @jonahsnider
+*.gradle.kts @jonahsnider
+gradle.properties @jonahsnider
+/gradle/ @jonahsnider
+/gradlew @jonahsnider
+/gradlew.bat @jonahsnider
+
+/tools/cad/ @simonstoryparker
+/refaster-rules/ @jonahsnider

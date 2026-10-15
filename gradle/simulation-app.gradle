@@ -20,8 +20,8 @@ if (override.isPresent()) {
 }
 def studioInstalled = candidates.any { app ->
 	app.name.endsWith('.app')
-	? new File(app, 'Contents/MacOS/simulation-studio').isFile()
-	: app.isFile()
+			? new File(app, 'Contents/MacOS/simulation-studio').isFile()
+			: app.isFile()
 }
 if (useWpilibGui || !studioInstalled) {
 	wpi.sim.addGui().defaultEnabled = true

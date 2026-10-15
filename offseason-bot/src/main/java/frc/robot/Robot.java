@@ -1,12 +1,14 @@
 package frc.robot;
 
 import com.team581.Base581Robot;
+import com.team581.controller.ButtonEvent;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
+import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -44,18 +46,9 @@ public class Robot extends Base581Robot {
               imu.bumpCrossingTracker));
 
   private final HealthManager health =
-      new HealthManager(
-          hardware.shooterLimeLight,
-          hardware.leftLimeLight,
-          hardware.rightLimeLight,
-          hardware.groundLimeLight);
+      new HealthManager(hardware.leftLimeLight, hardware.rightLimeLight, hardware.groundLimeLight);
   private final Vision vision =
-      new Vision(
-          imu,
-          hardware.shooterLimeLight,
-          hardware.leftLimeLight,
-          hardware.rightLimeLight,
-          hardware.groundLimeLight);
+      new Vision(imu, hardware.leftLimeLight, hardware.rightLimeLight, hardware.groundLimeLight);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Localization localization =
@@ -76,12 +69,18 @@ public class Robot extends Base581Robot {
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
-  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
+  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder);
 
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
       new HopperManager(
-          deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
+          deploy,
+          intake,
+          conveyor,
+          feeder,
+          funneler,
+          hardware.hopperCANRange,
+          hardware.towerSensor);
   private final PowerManager powerManager =
       new PowerManager(
           shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);
@@ -99,6 +98,9 @@ public class Robot extends Base581Robot {
           hubActivity,
           hardware,
           powerManager);
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem.
+  private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(
@@ -131,11 +133,12 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreOrFeedRequest)
         .onRelease(robotManager::idleRequest);
 
-    driver.rightBumper().onPress(robotManager::stowDeployRequest);
+    new ButtonEvent(buttonBindingsLoop, driver.rightBumper().or(operator.leftTrigger()))
+        .onPress(robotManager::stowDeployRequest)
+        .onRelease(robotManager::cancelStowDeployRequest);
 
     driver.leftBumper().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
 
-    operator.leftTrigger().onPress(robotManager::stowDeployRequest);
     operator.rightTrigger().onPress(robotManager::prepareScoreRequest);
 
     operator.leftBumper().onPress(powerManager::prioritizeIntakeRequest);
