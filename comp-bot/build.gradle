@@ -198,7 +198,7 @@ tasks.register('loopBenchmarkReport') {
 		def summary = [
 			schema_version: 2,
 			note: 'Laptop results demonstrate relative improvement but do not prove absolute roboRIO timing.',
-			modes: [:]
+			modes: [: ]
 		]
 		['auto', 'teleop'].each { benchmarkMode ->
 			def runs = (1..5).collect {
@@ -216,7 +216,7 @@ tasks.register('loopBenchmarkReport') {
 
 		if (project.hasProperty('loopBenchmarkBaseline')) {
 			def baseline = parser.parse(file(project.property('loopBenchmarkBaseline')))
-			summary.comparison = [:]
+			summary.comparison = [: ]
 			['auto', 'teleop'].each { benchmarkMode ->
 				def oldP99 = baseline.modes[benchmarkMode].median_p99 as double
 				def newP99 = summary.modes[benchmarkMode].median_p99 as double
