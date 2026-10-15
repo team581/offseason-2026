@@ -1,5 +1,6 @@
 package com.team581.simulation;
 
+import com.google.common.collect.ImmutableList;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -25,7 +26,7 @@ public final class SimulationStudioLauncher {
               .filter(SimulationStudioLauncher::isInstalled)
               .findFirst();
       if (found.isPresent()) {
-        return found.get().toString();
+        return found.orElseThrow().toString();
       }
     } catch (RuntimeException exception) {
       System.err.println("Cannot resolve Simulation Studio: " + exception.getMessage());
@@ -36,18 +37,18 @@ public final class SimulationStudioLauncher {
 
   static List<Path> candidates(String override, String os, Path home, String localAppData) {
     if (override != null && !override.isBlank()) {
-      return List.of(Path.of(override).toAbsolutePath());
+      return ImmutableList.of(Path.of(override).toAbsolutePath());
     }
     String normalized = os.toLowerCase(Locale.ROOT);
     if (normalized.contains("mac")) {
-      return List.of(
+      return ImmutableList.of(
           Path.of("/Applications/Simulation Studio.app"),
           home.resolve("Applications/Simulation Studio.app"));
     }
     if (normalized.contains("windows") && localAppData != null) {
-      return List.of(Path.of(localAppData, "Simulation Studio", "simulation-studio.exe"));
+      return ImmutableList.of(Path.of(localAppData, "Simulation Studio", "simulation-studio.exe"));
     }
-    return List.of();
+    return ImmutableList.of();
   }
 
   static boolean isInstalled(Path path) {
