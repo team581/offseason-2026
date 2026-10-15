@@ -1,14 +1,16 @@
 # Standalone Simulation Studio cutover
 
-Install [Simulation Studio](https://github.com/simonstoryparker/simulation-studio/releases/latest), then run `./gradlew offseason-bot:simulateJava` or WPILib: Simulate Robot Code in VS Code. No Node or Rust is needed.
+Run `./gradlew offseason-bot:simulateJava` or WPILib: Simulate Robot Code in VS Code. If [Simulation Studio](https://github.com/simonstoryparker/simulation-studio/releases/latest) is installed, it opens automatically. Otherwise, the launcher suggests installing it and continues with the default WPILib simulation GUI. No Node or Rust is needed.
 
 The Java bridge resolves `/Applications/Simulation Studio.app`, `~/Applications/Simulation Studio.app`, or `%LOCALAPPDATA%\Simulation Studio\simulation-studio.exe` at launch. `TEAM581_SIM_APP` overrides discovery, including for local app development. It must name a bundle or executable, not a command with arguments.
 
-Use `-PwpilibSimGui=true` to restore the WPILib GUI. Regenerate external simulation metadata with that property before using the fallback in VS Code.
+Use `-PwpilibSimGui=true` to explicitly select the WPILib GUI even when Simulation Studio is installed. VS Code external simulation metadata uses the detected installation when generated; regenerate it after installing or removing Simulation Studio.
 
-## Release gate
+## Standalone release
 
-Do not merge this extraction branch or remove the embedded app from `simon-simulation-desktop-app` until the public standalone release is signed, published, and verified on clean macOS and Windows machines. The source branch remains intact while this candidate is reviewed.
+[Simulation Studio v0.1.1](https://github.com/simonstoryparker/simulation-studio/releases/tag/v0.1.1) is published. Native macOS and Windows [installation and updater acceptance](https://github.com/simonstoryparker/simulation-studio/actions/runs/38797334713) passed, including manual replacement, signed automatic updates, obsolete-resource removal, workspace preservation, failed downloads/signatures, and disabled restart. A real macOS 0.1.0 → 0.1.1 update through the public feed also preserved the saved layout and preferences.
+
+Following Dashshund's distribution approach, macOS uses an ad-hoc-signed DMG and Windows uses an NSIS installer without an OS publisher certificate. First installation can require OS approval. Updater signatures are mandatory on both platforms; no login or Node/Rust installation is required. The embedded app is maintained in the public repository rather than this robot branch.
 
 ## Test ownership
 
