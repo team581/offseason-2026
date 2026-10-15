@@ -2,6 +2,7 @@ package com.team581;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.team581.simulation.SimulationControlBridge;
+import com.team581.simulation.SimulationStudioLauncher;
 import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.tuning.ElasticLayoutUtil;
 import dev.doglog.DogLog;
@@ -42,7 +43,7 @@ public abstract class Base581Robot extends TimedRobot {
     if (RobotBase.isSimulation() && "true".equals(System.getenv("TEAM581_CUSTOM_SIM"))) {
       var bridge =
           new SimulationControlBridge(
-              System.getenv("TEAM581_SIM_APP"),
+              SimulationStudioLauncher.installedPath(),
               System.getenv().getOrDefault("TEAM581_SIM_PROJECT", "robot"),
               Integer.parseInt(System.getenv().getOrDefault("TEAM581_SIM_PORT", "5811")));
       bridge.start();

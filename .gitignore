@@ -189,9 +189,3 @@ uv.lock
 **/deploy/pathplanner
 
 .env
-
-# Simulation desktop app
-sim-app/node_modules/
-sim-app/dist/
-sim-app/src-tauri/target/
-sim-app/src-tauri/gen/

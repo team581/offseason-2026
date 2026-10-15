@@ -186,6 +186,23 @@ final class SimulationControlBridgeTest {
     }
   }
 
+  @Test
+  void sharedProtocolVectors() throws Exception {
+    try (var stream = getClass().getResourceAsStream("/simulation/control-v1.json")) {
+      var corpus = JSON.readTree(stream);
+      for (var entry : corpus.get("control")) {
+        if (entry.get("valid").asBoolean()) {
+          JSON.treeToValue(entry.get("frame"), SimControlSnapshot.class).validate();
+        } else {
+          assertThatThrownBy(
+                  () -> JSON.treeToValue(entry.get("frame"), SimControlSnapshot.class).validate())
+              .as(entry.get("name").asText())
+              .isInstanceOf(Exception.class);
+        }
+      }
+    }
+  }
+
   @BeforeEach
   void start() throws Exception {
     assertThat(HAL.initialize(500, 0)).isTrue();
