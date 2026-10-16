@@ -9,13 +9,14 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Assemble
@@ -30,13 +31,14 @@ jobs:
       - test
 
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Build
@@ -50,13 +52,14 @@ jobs:
       - assemble
 
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Run tests
@@ -78,13 +81,14 @@ jobs:
       - assemble
 
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Check formatting
@@ -97,10 +101,15 @@ jobs:
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v7
-      - name: Lint with Ruff
+      - name: Setup Ruff
         uses: astral-sh/ruff-action@v4.1.0
-      - name: Check formatting with Ruff
-        run: ruff format --check
+        with:
+          args: "--version"
+      - parallel:
+          - name: Lint with Ruff
+            run: ruff check
+          - name: Check formatting with Ruff
+            run: ruff format --check
   ty:
     name: Type check Python
 
