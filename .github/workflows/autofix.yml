@@ -10,14 +10,15 @@ jobs:
     name: Autofix
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
 
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -28,15 +29,16 @@ jobs:
         env:
           ERRORPRONE_AUTOFIX: 1
 
-      - name: Format with Spotless
-        run: ./gradlew spotlessApply
-        continue-on-error: true
+      - parallel:
+          - name: Format with Spotless
+            run: ./gradlew spotlessApply
+            continue-on-error: true
 
-      - name: Fix Python lint issues with Ruff
-        uses: astral-sh/ruff-action@v4.1.0
-        with:
-          args: "check --fix --unsafe-fixes"
-        continue-on-error: true
+          - name: Fix Python lint issues with Ruff
+            uses: astral-sh/ruff-action@v4.1.0
+            with:
+              args: "check --fix --unsafe-fixes"
+            continue-on-error: true
 
       - name: Format Python with Ruff
         run: ruff format
