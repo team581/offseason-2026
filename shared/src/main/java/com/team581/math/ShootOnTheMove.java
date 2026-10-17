@@ -37,6 +37,12 @@ public class ShootOnTheMove {
         / DRAG_CONSTANT.getAsDouble();
   }
 
+  public double getPredictedVelocity(double measured, double commanded, String name) {
+    var diff = (measured - commanded) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    DogLog.log("SOTM/SVETof/" + name, diff);
+    return measured - diff;
+  }
+
   public SeparatedVelocityCompensatedGoal getSeparatedVelocityCompensatedGoal(
       Translation2d robot,
       Translation2d goal,
@@ -47,14 +53,12 @@ public class ShootOnTheMove {
     double robotY = robot.getY();
     double goalX = goal.getX();
     double goalY = goal.getY();
-    double vx = robotVelocity.vxMetersPerSecond;
-    double vy = robotVelocity.vyMetersPerSecond;
-    var xDiff = (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    var yDiff = (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    DogLog.log("SOTM/SV/xDiff", xDiff);
-    DogLog.log("SOTM/SV/yDiff", yDiff);
-    vx += xDiff;
-    vy += yDiff;
+    double vx =
+        getPredictedVelocity(
+            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond, "Sep/vx");
+    double vy =
+        getPredictedVelocity(
+            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond, "Sep/vy");
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -117,14 +121,16 @@ public class ShootOnTheMove {
     double turretY = turretTranslation.getY();
     double goalX = goal.getX();
     double goalY = goal.getY();
-    double vx = robotVelocity.vxMetersPerSecond;
-    double vy = robotVelocity.vyMetersPerSecond;
-    var xDiff = (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    var yDiff = (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    DogLog.log("SOTM/SVETof/xDiff", xDiff);
-    DogLog.log("SOTM/SVETof/yDiff", yDiff);
-    vx += xDiff;
-    vy += yDiff;
+    double vx =
+        getPredictedVelocity(
+            robotVelocity.vxMetersPerSecond,
+            driverCommandedVelocity.vxMetersPerSecond,
+            "SepTof/vx");
+    double vy =
+        getPredictedVelocity(
+            robotVelocity.vyMetersPerSecond,
+            driverCommandedVelocity.vyMetersPerSecond,
+            "SepTof/vy");
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -178,13 +184,24 @@ public class ShootOnTheMove {
   }
 
   public Translation2d getVelocityCompensatedGoal(
-      Translation2d robot, Translation2d target, ChassisSpeeds robotVelocity) {
+      Translation2d robot,
+      Translation2d target,
+      ChassisSpeeds robotVelocity,
+      ChassisSpeeds driverCommandedVelocity) {
     double robotX = robot.getX();
     double robotY = robot.getY();
     double targetX = target.getX();
     double targetY = target.getY();
-    double vx = robotVelocity.vxMetersPerSecond;
-    double vy = robotVelocity.vyMetersPerSecond;
+    double vx =
+        getPredictedVelocity(
+            robotVelocity.vxMetersPerSecond,
+            driverCommandedVelocity.vxMetersPerSecond,
+            "Normal/vx");
+    double vy =
+        getPredictedVelocity(
+            robotVelocity.vyMetersPerSecond,
+            driverCommandedVelocity.vyMetersPerSecond,
+            "Normal/vy");
 
     double compGoalX = targetX;
     double compGoalY = targetY;
@@ -210,14 +227,12 @@ public class ShootOnTheMove {
     double robotY = robot.getY();
     double targetX = target.getX();
     double targetY = target.getY();
-    double vx = robotVelocity.vxMetersPerSecond;
-    double vy = robotVelocity.vyMetersPerSecond;
-    var xDiff = (vx - driverCommandedVelocity.vxMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    var yDiff = (vy - driverCommandedVelocity.vyMetersPerSecond) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    DogLog.log("SOTM/VETof/xDiff", xDiff);
-    DogLog.log("SOTM/VETof/yDiff", yDiff);
-    vx += xDiff;
-    vy += yDiff;
+    double vx =
+        getPredictedVelocity(
+            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond, "Tof/vx");
+    double vy =
+        getPredictedVelocity(
+            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond, "Tof/vy");
 
     double compGoalX = targetX;
     double compGoalY = targetY;
