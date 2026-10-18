@@ -1,8 +1,11 @@
 # Vision → robot integration
 
+For camera pixel counts, code examples, every configuration option, and control values,
+start with [Camera configuration](camera-configuration.md).
+
 Spot turns camera images into possible camera positions. The robot checks those results, converts them into robot positions, and uses them to correct its driving estimate. This guide follows startup, then one observation through the system.
 
-**Current state:** `SpotCameraProfiles.CAMERAS` is empty and `FUSION_ENABLED` is `false`. The planned cameras are `left`, `right`, `front`, and `back`, all fixed to the chassis. Measured camera settings and hardware qualification are still needed before vision can correct the robot's pose. Heading correction is also disabled.
+**Current state:** `VisionConfig.CAMERAS` is empty and `FUSION_ENABLED` is `false`. The planned cameras are `left`, `right`, `front`, and `back`, all fixed to the chassis. Measured camera settings and hardware qualification are still needed before vision can correct the robot's pose. Heading correction is also disabled.
 
 ```mermaid
 flowchart LR
@@ -20,7 +23,48 @@ Robot source links below point into `offseason-bot/src/main/java/frc/robot/`.
 
 ## 1. Define what Spot should run
 
-[SpotCameraProfiles.java](../offseason-bot/src/main/java/frc/robot/vision/SpotCameraProfiles.java) owns the robot's camera definitions, measured mounts, field layout, and fusion settings. Keeping these together makes the robot's physical setup explicit.
+[VisionConfig.java](../offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java) owns the robot's camera definitions, measured mounts, field layout, and fusion settings. Keeping these together makes the robot's physical setup explicit.
+
+Students add named camera constants to `VisionConfig.java`, just as they configure
+other subsystems, and register them in `CAMERAS`. Settings compile with robot
+code and publish to Spot automatically; no camera configuration JSON is needed.
+The following values are illustrative and must be replaced with measured geometry
+and verified capture settings/controls before use:
+
+```java
+public static final SpotCameraConfig FRONT = new SpotCameraConfig(
+    "front", true,
+    mount(.10, 0, .30, 0, 0, 0), // x/y/z metres; roll/pitch/yaw degrees
+    0, // image rotation: 0 or 180 degrees
+    new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+    List.of(SpotCameraConfig.Control.pinned("exposure_auto", 1)));
+
+public static final List<SpotCameraConfig> CAMERAS = List.of(FRONT);
+```
+
+Mount axes are NWU: +X forward, +Y left, +Z up; rotations are right-handed.
+Production roles remain `left`, `right`, `front`, `back`, chassis-fixed and
+required, in that order. `Control.pinned(name, value)` requires the robot's value;
+`Control.tunable(name, defaultValue)` permits a saved GUI override. Use the full
+`Control` constructor for optional controls. `CaptureSettings` takes resolution,
+FPS and USB pixel format directly. MJPEG is compressed over USB; YUYV is an
+explicit option for verified uncompressed setups. The protocol's mode ID and
+signature are generated internally from those settings, so students do not
+configure mode names, mode lists or signature strings. Rebuild and deploy after
+changing Java settings. Physical USB binding, intrinsic calibration and timing
+qualification stay on the Jetson.
+
+Capture-setting changes produce new mode identities and require matching
+calibration/timing evidence. Migrating hand-named modes to this API may require
+updating a saved mode selection and recalibrating/requalifying in Spot. Physical
+lens/focus changes still require recalibration even with unchanged capture values.
+
+[SpotCameraConfig.java](../offseason-bot/src/main/java/frc/robot/vision/SpotCameraConfig.java)
+validates settings and converts them into protocol messages. `VisionConfig`
+derives the robot's processing mounts from those same camera definitions, so
+there is only one place to enter each mount. `SpotCameraProfiles.Camera` remains
+the internal processing value type. The configuration defaults remain empty,
+fusion remains disabled, and no placeholder mounts are published.
 
 [SpotProtocol.java](../offseason-bot/src/main/java/frc/robot/vision/SpotProtocol.java) builds the messages, converts pose formats, and hashes the configuration. The hash lets both computers confirm they are using the same settings.
 

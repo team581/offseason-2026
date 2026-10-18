@@ -34,9 +34,9 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
-import frc.robot.vision.SpotCameraProfiles;
 import frc.robot.vision.SpotVisionIO;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionConfig;
 import frc.robot.vision.VisionProcessor.CaptureState;
 import java.util.Optional;
 
@@ -59,11 +59,9 @@ public class Robot extends Base581Robot {
   private final Vision vision =
       new Vision(
           new SpotVisionIO(
-              NetworkTableInstance.getDefault(),
-              SpotCameraProfiles.profile(),
-              randomUUID().toString()),
-          SpotCameraProfiles.profile(),
-          SpotCameraProfiles.mounts(),
+              NetworkTableInstance.getDefault(), VisionConfig.profile(), randomUUID().toString()),
+          VisionConfig.profile(),
+          VisionConfig.mounts(),
           new Vision.CaptureSource() {
             @Override
             public CaptureState current(double now) {

@@ -103,7 +103,7 @@ final class VisionIntegrationTest {
               .setFutureToleranceS(.005)
               .setReorderWindowS(.02);
       int index = 0;
-      for (String name : SpotCameraProfiles.CAMERA_NAMES) {
+      for (String name : VisionConfig.CAMERA_NAMES) {
         double yaw = new double[] {Math.PI / 2, -Math.PI / 2, 0, Math.PI}[index];
         var mount =
             new Transform3d(new Translation3d(.1 * index, .1, .5), new Rotation3d(0, 0, yaw));
@@ -264,7 +264,7 @@ final class VisionIntegrationTest {
       assertThat(f.profile.getCamerasList().stream().map(SpotProtos.CameraDefinition::getName))
           .containsExactly("left", "right", "front", "back");
       for (int i = 0; i < 4; i++)
-        f.frame(SpotCameraProfiles.CAMERA_NAMES.get(i), new int[] {2, 3, 1, 5}[i], 10.01);
+        f.frame(VisionConfig.CAMERA_NAMES.get(i), new int[] {2, 3, 1, 5}[i], 10.01);
       f.tick(10.04);
       var batch = f.vision.drainMeasurements();
       assertThat(batch).hasSize(4);
@@ -440,7 +440,7 @@ final class VisionIntegrationTest {
   @Test
   void zeroTagFramesAreHealthyButPoseTrustIsIndependent() {
     try (var f = new Fixture(false)) {
-      for (var name : SpotCameraProfiles.CAMERA_NAMES) f.frame(name, 0, 10.01);
+      for (var name : VisionConfig.CAMERA_NAMES) f.frame(name, 0, 10.01);
       f.tick(10.04);
       assertThat(f.vision.getStatus().usable()).isEqualTo(4);
       assertThat(f.vision.getStatus().allRequiredHealthy()).isTrue();
@@ -448,8 +448,8 @@ final class VisionIntegrationTest {
       f.tick(10.53);
       assertThat(f.vision.getStatus().usable()).isEqualTo(0);
       assertThat(f.vision.getStatus().allRequiredHealthy()).isFalse();
-      assertThat(SpotCameraProfiles.profile().getCamerasCount()).isEqualTo(0);
-      assertThat(SpotCameraProfiles.FUSION_ENABLED).isFalse();
+      assertThat(VisionConfig.profile().getCamerasCount()).isEqualTo(0);
+      assertThat(VisionConfig.FUSION_ENABLED).isFalse();
     }
   }
 }
