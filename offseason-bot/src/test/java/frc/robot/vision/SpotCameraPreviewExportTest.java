@@ -1,14 +1,15 @@
 package frc.robot.vision;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonParser;
 import java.nio.file.*;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class SpotCameraPreviewExportTest {
+final class SpotCameraPreviewExportTest {
   @TempDir Path directory;
 
   @Test
@@ -25,9 +26,9 @@ class SpotCameraPreviewExportTest {
               mount,
               180,
               new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-              List.of(SpotCameraConfig.Control.tunable("gain", 5)));
+              ImmutableList.of(SpotCameraConfig.Control.tunable("gain", 5)));
       Path output = directory.resolve("profile.json");
-      SpotCameraPreviewExport.write(VisionConfig.profile(List.of(camera)), output);
+      SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of(camera)), output);
       var json = JsonParser.parseString(Files.readString(output)).getAsJsonObject();
       var exported = json.getAsJsonArray("cameras").get(0).getAsJsonObject();
       assertEquals(.3, exported.getAsJsonArray("translation").get(0).getAsDouble(), 1e-12);
@@ -37,20 +38,21 @@ class SpotCameraPreviewExportTest {
         assertEquals(
             expected[i], exported.getAsJsonArray("quaternion").get(i).getAsDouble(), 1e-12);
       assertEquals(180, exported.get("imageRotationDeg").getAsInt());
-      assertTrue(
-          exported
-              .getAsJsonArray("controls")
-              .get(0)
-              .getAsJsonObject()
-              .get("allowOverride")
-              .getAsBoolean());
+      assertThat(
+              exported
+                  .getAsJsonArray("controls")
+                  .get(0)
+                  .getAsJsonObject()
+                  .get("allowOverride")
+                  .getAsBoolean())
+          .isTrue();
     }
   }
 
   @Test
   void exportsEmptyRegisteredList() throws Exception {
     Path output = directory.resolve("empty.json");
-    SpotCameraPreviewExport.write(VisionConfig.profile(List.of()), output);
+    SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of()), output);
     assertEquals(
         0,
         JsonParser.parseString(Files.readString(output))

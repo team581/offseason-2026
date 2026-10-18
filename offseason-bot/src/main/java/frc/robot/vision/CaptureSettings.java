@@ -1,12 +1,13 @@
 package frc.robot.vision;
 
+import static java.util.Objects.requireNonNull;
+
 import frc.robot.vision.generated.SpotProtos;
-import java.util.Objects;
 
 /** One explicit USB capture configuration; protocol mode metadata is generated internally. */
 public record CaptureSettings(int width, int height, int fps, PixelFormat pixelFormat) {
   public CaptureSettings {
-    Objects.requireNonNull(pixelFormat, "pixel format required");
+    requireNonNull(pixelFormat, "pixel format required");
     if (width <= 0
         || width > 4096
         || width % 2 != 0

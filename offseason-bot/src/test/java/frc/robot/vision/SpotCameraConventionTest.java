@@ -1,16 +1,19 @@
 package frc.robot.vision;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.*;
 import edu.wpi.first.math.geometry.Translation3d;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 
 /** Golden poses produced by real WPILib, also consumed by the JavaScript comparison test. */
-class SpotCameraConventionTest {
+final class SpotCameraConventionTest {
   @Test
   void wpilibExportMatchesSharedConventionCases() throws Exception {
     double[][] rotations = {
@@ -40,9 +43,9 @@ class SpotCameraConventionTest {
                 mount,
                 0,
                 new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-                List.of());
+                ImmutableList.of());
         Path output = Path.of("build/spot-camera-preview/convention-export.json");
-        SpotCameraPreviewExport.write(VisionConfig.profile(List.of(camera)), output);
+        SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of(camera)), output);
         var exported =
             JsonParser.parseString(Files.readString(output))
                 .getAsJsonObject()
@@ -50,7 +53,7 @@ class SpotCameraConventionTest {
                 .get(0);
         var axes = new ArrayList<Object>();
         for (var axis :
-            List.of(
+            ImmutableList.of(
                 new Translation3d(1, 0, 0),
                 new Translation3d(0, 1, 0),
                 new Translation3d(0, 0, 1))) {
@@ -58,7 +61,7 @@ class SpotCameraConventionTest {
           axes.add(new double[] {world.getX(), world.getY(), world.getZ()});
         }
         cases.add(
-            Map.of(
+            ImmutableMap.of(
                 "javaRollPitchYawDeg",
                 r,
                 "jetsonYawPitchRollDeg",
@@ -71,9 +74,9 @@ class SpotCameraConventionTest {
     String json = new GsonBuilder().setPrettyPrinting().create().toJson(cases);
     Files.writeString(Path.of("build/spot-camera-preview/convention-cases.json"), json);
     try (var input = getClass().getResourceAsStream("/spot-camera-conventions.json")) {
-      assertNotNull(input, "Shared convention fixture must be present");
+      assertThat(input).withFailMessage("Shared convention fixture must be present").isNotNull();
       assertEquals(
-          JsonParser.parseString(new String(input.readAllBytes(), StandardCharsets.UTF_8)),
+          JsonParser.parseString(new String(input.readAllBytes(), UTF_8)),
           JsonParser.parseString(json),
           "WPILib/exporter changed; review the JS comparison before updating fixture");
     }

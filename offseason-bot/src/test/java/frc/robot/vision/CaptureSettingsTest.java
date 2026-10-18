@@ -3,7 +3,7 @@ package frc.robot.vision;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
+import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
 final class CaptureSettingsTest {
@@ -19,7 +19,7 @@ final class CaptureSettingsTest {
     assertThat(mode.getOpticalSignature()).matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}");
     assertThat(mode).isEqualTo(new CaptureSettings(640, 480, 30, PixelFormat.MJPEG).toProto());
     for (var changed :
-        List.of(
+        ImmutableList.of(
             new CaptureSettings(1280, 480, 30, PixelFormat.MJPEG),
             new CaptureSettings(640, 720, 30, PixelFormat.MJPEG),
             new CaptureSettings(640, 480, 60, PixelFormat.MJPEG),

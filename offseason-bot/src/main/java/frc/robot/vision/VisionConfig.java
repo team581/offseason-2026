@@ -1,5 +1,6 @@
 package frc.robot.vision;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.util.AprilTags;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -17,7 +18,8 @@ public final class VisionConfig {
   public static final double TAG_SIZE_M = .1651;
   public static final AprilTagFieldLayout FIELD_LAYOUT = AprilTags.FIELD_LAYOUT;
 
-  public static final List<String> CAMERA_NAMES = List.of("left", "right", "front", "back");
+  public static final List<String> CAMERA_NAMES =
+      ImmutableList.of("left", "right", "front", "back");
 
   // Keep production cameras chassis-fixed and required, in the CAMERA_NAMES order.
   // Add named constants such as FRONT, LEFT, RIGHT and BACK, then list them in CAMERAS.
@@ -29,7 +31,7 @@ public final class VisionConfig {
   //     new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
   //     List.of(SpotCameraConfig.Control.pinned("exposure_auto", 1)));
   // public static final List<SpotCameraConfig> CAMERAS = List.of(FRONT);
-  public static final List<SpotCameraConfig> CAMERAS = List.of();
+  public static final List<SpotCameraConfig> CAMERAS = ImmutableList.of();
 
   /** NWU: +X forward, +Y left, +Z up; right-handed roll, pitch, yaw in degrees. */
   public static Transform3d mount(

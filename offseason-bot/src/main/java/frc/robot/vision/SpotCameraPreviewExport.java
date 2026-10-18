@@ -1,5 +1,6 @@
 package frc.robot.vision;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import java.nio.file.*;
 import java.util.*;
@@ -26,7 +27,7 @@ public final class SpotCameraPreviewExport {
       var modes = new ArrayList<Object>();
       for (var mode : camera.getAllowedModesList())
         modes.add(
-            Map.of(
+            ImmutableMap.of(
                 "width",
                 mode.getWidth(),
                 "height",
@@ -38,7 +39,7 @@ public final class SpotCameraPreviewExport {
       var controls = new ArrayList<Object>();
       for (var control : camera.getControlsList())
         controls.add(
-            Map.of(
+            ImmutableMap.of(
                 "name",
                 control.getName(),
                 "value",
@@ -74,7 +75,8 @@ public final class SpotCameraPreviewExport {
           temp,
           new Gson()
               .toJson(
-                  Map.of("schemaVersion", 1, "robotId", profile.getRobotId(), "cameras", cameras)));
+                  ImmutableMap.of(
+                      "schemaVersion", 1, "robotId", profile.getRobotId(), "cameras", cameras)));
       Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     } finally {
       Files.deleteIfExists(temp);
