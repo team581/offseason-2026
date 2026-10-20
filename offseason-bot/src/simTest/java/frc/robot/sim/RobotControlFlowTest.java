@@ -68,7 +68,7 @@ final class RobotControlFlowTest {
     DriverStationSim.setDsAttached(true);
     robot = new Robot();
     // Initialize dashboard defaults before tests deliberately override camera availability.
-    assertThat(DSOptions.USE_TAG_LIMELIGHTS.get()).isTrue();
+    assertThat(DSOptions.USE_VISION.get()).isTrue();
     manager = (RobotManager) field(Robot.class, "robotManager").get(robot);
     hopper = manager.hopperManager;
     bindings = (EventLoop) field(Base581Robot.class, "buttonBindingsLoop").get(robot);
@@ -76,10 +76,7 @@ final class RobotControlFlowTest {
 
   @Test
   void fallbackFeedStopsTransportWhenReadinessIsLost() throws ReflectiveOperationException {
-    NetworkTableInstance.getDefault()
-        .getTable("DSOptions")
-        .getEntry("UseTagLimelights")
-        .setBoolean(false);
+    NetworkTableInstance.getDefault().getTable("DSOptions").getEntry("UseVision").setBoolean(false);
     manager.prepareFeedRequest();
     assertThat(manager.getState()).isEqualTo(RobotState.PREPARE_FALLBACK_FEED);
     transition(manager, RobotState.FALLBACK_FEED);
@@ -96,10 +93,7 @@ final class RobotControlFlowTest {
 
   @Test
   void fallbackScoreStopsTransportWhenReadinessIsLost() throws ReflectiveOperationException {
-    NetworkTableInstance.getDefault()
-        .getTable("DSOptions")
-        .getEntry("UseTagLimelights")
-        .setBoolean(false);
+    NetworkTableInstance.getDefault().getTable("DSOptions").getEntry("UseVision").setBoolean(false);
     manager.prepareScoreRequest();
     assertThat(manager.getState()).isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
     transition(manager, RobotState.FALLBACK_SCORE);
@@ -195,10 +189,7 @@ final class RobotControlFlowTest {
     DriverStationSim.setTest(false);
     publishDriverStation();
     bindings.poll();
-    NetworkTableInstance.getDefault()
-        .getTable("DSOptions")
-        .getEntry("UseTagLimelights")
-        .setBoolean(true);
+    NetworkTableInstance.getDefault().getTable("DSOptions").getEntry("UseVision").setBoolean(true);
     manager.idleRequest();
     manager.cancelIntakeRequest();
     manager.cancelStowDeployRequest();

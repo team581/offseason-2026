@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# GUI Git clients may not inherit the Java environment configured for terminals.
+if [ -z "${JAVA_HOME:-}" ] && ! java -version >/dev/null 2>&1; then
+  WPILIB_JAVA_HOME="$HOME/wpilib/2026/jdk"
+  if [ -x "$WPILIB_JAVA_HOME/bin/java" ]; then
+    export JAVA_HOME="$WPILIB_JAVA_HOME"
+  fi
+fi
+
 DIRTY_BEFORE=$(git diff --name-only)
 set -e
 ./gradlew spotlessApply

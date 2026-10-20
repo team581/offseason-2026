@@ -438,11 +438,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     robotPose = localization.getPose();
     feedLocation = FeedLocation.closest(robotPose);
-    double robotRotation = robotPose.getRotation().getDegrees();
-    vision.setEstimatedPoseAngle(robotRotation);
     var speeds = swerve.getFieldRelativeSpeeds();
     var velocity = MathHelpers.getLinearVelocity(speeds);
-    vision.setRobotVelocity(velocity);
 
     isMoving = velocity > 0.2;
 

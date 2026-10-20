@@ -1,5 +1,5 @@
 plugins {
-	id 'com.diffplug.spotless' version '8.10.3'
+	id 'com.diffplug.spotless' version '8.10.4'
 	id 'net.ltgt.errorprone' version '5.1.1'
 	// Declared here with apply false so the plugin is loaded once by the root classloader
 	// This fixes Windows issues with the VS Code language server
@@ -107,7 +107,8 @@ spotless {
 		}
 		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true).sortMembersVisibilityOrderEnabled(true)
 		googleJavaFormat()
-		licenseHeader ''
+		// Preserve the exact extraction marker ahead of local helper packages.
+		licenseHeader '', '(?m)^(?:// Move to shared folder after offseason\\R)?package '
 
 		targetExclude('**/generated/**')
 	}
