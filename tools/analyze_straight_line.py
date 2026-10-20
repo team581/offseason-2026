@@ -24,6 +24,13 @@ def slope(times: list[float], values: list[float]) -> float:
     )
 
 
+def acceleration_limit(summary: str) -> float:
+    match = re.search(r"maxAcceleration=([\d.]+)", summary)
+    if match is None:
+        raise ValueError("Missing maxAcceleration in motion summary")
+    return float(match.group(1))
+
+
 def analyze(directory: Path, window: float) -> dict:
     with (directory / "drive-output.csv").open() as stream:
         rows = [
@@ -31,7 +38,7 @@ def analyze(directory: Path, window: float) -> dict:
             for row in csv.DictReader(stream)
         ]
     summary = (directory / "summary.md").read_text()
-    limit = float(re.search(r"maxAcceleration=([\d.]+)", summary).group(1))
+    limit = acceleration_limit(summary)
     times = [row["time_s"] for row in rows]
     command = [
         math.hypot(row["commanded_vx_mps"], row["commanded_vy_mps"]) for row in rows
@@ -210,11 +217,7 @@ def main() -> None:
             if (path.parent / "summary.md").is_file()
         ),
         key=lambda path: (
-            float(
-                re.search(
-                    r"maxAcceleration=([\d.]+)", (path / "summary.md").read_text()
-                ).group(1)
-            ),
+            acceleration_limit((path / "summary.md").read_text()),
             path.name,
         ),
     )
