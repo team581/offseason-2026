@@ -1,6 +1,7 @@
 package frc.robot.vision;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 
 /** Actual local NT4 client/server handoff, beyond the scripted pipeline tests. */
-class SpotNetworkTest {
+final class SpotNetworkTest {
   private static double now() {
     return NetworkTablesJNI.now() / 1e6;
   }
@@ -52,7 +53,7 @@ class SpotNetworkTest {
           Thread.sleep(10);
           received.addAll(java.util.Arrays.asList(profiles.readQueue()));
         }
-        assertThat(received.size()).isGreaterThanOrEqualTo(3);
+        assertThat(received).size().isGreaterThanOrEqualTo(3);
         assertThat(received.get(received.size() - 1).timestamp)
             .isGreaterThan(received.get(0).timestamp);
         for (var sample : received)
@@ -134,7 +135,7 @@ class SpotNetworkTest {
         assertThat(received.get(1).observation().getSequence())
             .isGreaterThan(received.get(0).observation().getSequence());
         assertThat(received.get(1).captureFpgaSeconds() - received.get(0).captureFpgaSeconds())
-            .isCloseTo(.001, org.assertj.core.data.Offset.offset(1e-6));
+            .isCloseTo(.001, offset(1e-6));
         assertThat(now() - received.get(0).captureFpgaSeconds()).isBetween(0., .5);
         assertThat(io.malformedCount()).isEqualTo(1);
       }
