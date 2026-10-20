@@ -61,6 +61,10 @@ public class BumpCrossingFollower implements PathFollower {
 
   @Override
   public void reset(Pose2d currentPose, ChassisSpeeds currentSpeeds) {
-    follower.reset(currentPose, currentSpeeds);
+    // CTRE consumes angular velocity commands directly, so carrying measured angular velocity into
+    // a new heading profile can briefly command a turn opposite the new segment's heading error.
+    var speedsFromAngularRest =
+        new ChassisSpeeds(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond, 0.0);
+    follower.reset(currentPose, speedsFromAngularRest);
   }
 }

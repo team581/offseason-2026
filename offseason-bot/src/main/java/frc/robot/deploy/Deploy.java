@@ -151,8 +151,9 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
+    } else {
+      setStateFromRequest(DeployState.HOME_OUTWARD);
     }
-    setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
   public void hopperCompactionRequest() {

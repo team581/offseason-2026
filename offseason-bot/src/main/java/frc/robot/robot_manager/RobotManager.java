@@ -367,7 +367,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         smartScoringPowerManagerRequest();
       }
       case PREPARE_FALLBACK_FEED -> {
-        // hoppermanager controlled separately
+        hopperManager.idleRequest();
         vision.tagsRequest();
         shooter.prepareFeedRequest(PRESET_FEED_DISTANCE);
         shooterHood.feedRequest(PRESET_FEED_DISTANCE);
@@ -385,7 +385,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         smartFeedingPowerManagerRequest();
       }
       case PREPARE_FALLBACK_SCORE -> {
-        // hoppermanager controlled separately
+        hopperManager.idleRequest();
         vision.tagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
@@ -680,6 +680,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
       // Fallback states
       case PREPARE_FALLBACK_SCORE -> {
+        hopperManager.idleRequest();
         // Automatically update scoring parameters with preset pose
         shooter.prepareScoreRequest(scoringParameters.distance());
         if (isMoving) {
@@ -699,6 +700,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
       }
       case PREPARE_FALLBACK_FEED -> {
+        hopperManager.idleRequest();
         turret.feedRequest(fallbackFeedingParameters);
         swerve.feedRequest();
         smartFeedingPowerManagerRequest();

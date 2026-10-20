@@ -4,6 +4,7 @@ import static java.util.UUID.randomUUID;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
+import com.team581.controller.ButtonEvent;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
@@ -15,6 +16,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
@@ -110,7 +112,13 @@ public class Robot extends Base581Robot {
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
       new HopperManager(
-          deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
+          deploy,
+          intake,
+          conveyor,
+          feeder,
+          funneler,
+          hardware.hopperCANRange,
+          hardware.towerSensor);
   private final PowerManager powerManager =
       new PowerManager(
           shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);
@@ -128,6 +136,9 @@ public class Robot extends Base581Robot {
           hubActivity,
           hardware,
           powerManager);
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem.
+  private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(
@@ -160,11 +171,12 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreOrFeedRequest)
         .onRelease(robotManager::idleRequest);
 
-    driver.rightBumper().onPress(robotManager::stowDeployRequest);
+    new ButtonEvent(buttonBindingsLoop, driver.rightBumper().or(operator.leftTrigger()))
+        .onPress(robotManager::stowDeployRequest)
+        .onRelease(robotManager::cancelStowDeployRequest);
 
     driver.leftBumper().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
 
-    operator.leftTrigger().onPress(robotManager::stowDeployRequest);
     operator.rightTrigger().onPress(robotManager::prepareScoreRequest);
 
     operator.leftBumper().onPress(powerManager::prioritizeIntakeRequest);

@@ -6,7 +6,7 @@ import java.nio.file.StandardOpenOption
 
 def installPreview = { boolean strict ->
 	if (System.getenv('CI') || System.getenv('SSH_CONNECTION') || System.getenv('SSH_TTY') ||
-	project.hasProperty('skipSpotCameraPreviewInstall')) return
+			project.hasProperty('skipSpotCameraPreviewInstall')) return
 		try {
 			def manifest = new JsonSlurper().parse(file('camera-preview-release.json'))
 			if (!manifest.sha256 || manifest.sha256.size() != 64) {

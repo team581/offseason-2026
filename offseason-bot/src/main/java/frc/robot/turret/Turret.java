@@ -233,7 +233,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     voltage = motor.getMotorVoltage().getValueAsDouble();
     statorCurrent = motor.getStatorCurrent().getValueAsDouble();
 
-    // Predict the turret's current angle to account for sensor latency
+    // Predict the turret's current angle for diagnostics.
     double latencyCompensatedAngle =
         Units.rotationsToDegrees(
             BaseStatusSignal.getLatencyCompensatedValueAsDouble(

@@ -20,6 +20,7 @@ import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
+import frc.robot.funneler.Funneler;
 import frc.robot.intake.Intake;
 import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -38,6 +39,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final Conveyor conveyor;
 
   public final Feeder feeder;
+  public final Funneler funneler;
   public final CANrange hopperCANRange;
 
   public final DigitalInput towerSensor;
@@ -70,6 +72,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       Intake intake,
       Conveyor conveyor,
       Feeder feeder,
+      Funneler funneler,
       CANrange hopperCANRange,
       DigitalInput towerSensor) {
     super(SubsystemPriority.HOPPER_MANAGER, HopperState.IDLE_DEPLOYED);
@@ -77,6 +80,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     this.intake = intake;
     this.conveyor = conveyor;
     this.feeder = feeder;
+    this.funneler = funneler;
     this.hopperCANRange = hopperCANRange;
     this.towerSensor = towerSensor;
 
@@ -242,14 +246,19 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     return intake.hasBeenIntaking();
   }
 
-  /** Sets conveyor and feeder to ball filling if conditions are met, otherwise idles them. */
+  /**
+   * Sets conveyor, feeder, and funneler to ball filling if conditions are met, otherwise idles
+   * them.
+   */
   private void smartBallFillRequest() {
     if (shouldFillBalls()) {
       conveyor.ballFillingRequest();
       feeder.ballFillingRequest();
+      funneler.ballFillingRequest();
     } else {
       conveyor.idleRequest();
       feeder.idleRequest();
+      funneler.idleRequest();
     }
   }
 
@@ -257,13 +266,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     if (shouldFillBalls()) {
       conveyor.ballFillingRequest();
       feeder.ballFillingRequest();
+      funneler.ballFillingRequest();
     } else {
       if (towerSensorDebounced) {
         conveyor.idleRequest();
         feeder.idleRequest();
+        funneler.idleRequest();
       } else {
         conveyor.intakeRequest();
         feeder.intakeRequest();
+        funneler.intakeRequest();
       }
     }
   }
@@ -281,6 +293,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         intake.idleRequest();
         conveyor.idleRequest();
         feeder.idleRequest();
+        funneler.idleRequest();
       }
       case IDLE_SAFE_KICKER_STOW -> {
         deploy.safeKickerStowRequest();
@@ -297,12 +310,14 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         intake.ejectRequest();
         conveyor.ejectRequest();
         feeder.idleRequest();
+        funneler.idleRequest();
       }
       case UNJAMMING -> {
         deploy.intakeRequest();
         intake.ejectRequest();
         conveyor.scoreRequest();
         feeder.scoreRequest();
+        funneler.shootingRequest();
       }
       case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
@@ -314,12 +329,14 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         intake.scoreRequest();
         conveyor.initialShotRequest();
         feeder.scoreRequest();
+        funneler.shootingRequest();
       }
       case SCORE_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.scoreRequest();
         feeder.scoreRequest();
+        funneler.shootingRequest();
       }
 
       case FEED -> {
@@ -330,12 +347,14 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         intake.feeedRequest();
         conveyor.initialShotRequest();
         feeder.feedRequest();
+        funneler.shootingRequest();
       }
       case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.feedRequest();
         feeder.feedRequest();
+        funneler.shootingRequest();
       }
     }
   }

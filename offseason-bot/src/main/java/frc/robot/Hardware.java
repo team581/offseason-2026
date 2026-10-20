@@ -55,8 +55,6 @@ public class Hardware {
   public final TalonFX turretMotor = new TalonFX(28, rio);
   public final CANcoder turretEncoder = new CANcoder(29, rio);
 
-  // TODO: PLaceholder LimeLights
-
   public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
   public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);

@@ -13,8 +13,8 @@ public class Robot extends Base581Robot {
       new Shooter(
           hardware.shooterTopLeftMotor,
           hardware.shooterTopRightMotor,
-          hardware.shooterBottomRightMotor,
-          hardware.shooterBottomLeftMotor);
+          hardware.shooterBottomLeftMotor,
+          hardware.shooterBottomRightMotor);
 
   // 1. Create an Intake instance, we wrote the class but need to actually use it + do something
   // with it
