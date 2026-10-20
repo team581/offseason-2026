@@ -3,7 +3,7 @@ package frc.robot.intake;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -19,6 +19,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   private final StatusSignal<Current> rightSupplyCurrentSignal;
   private double leftCurrent;
   private double rightCurrent;
+  private final NeutralOut neutralRequest = new NeutralOut();
 
   private VoltageOut voltageRequest = new VoltageOut(0.0);
 
@@ -41,13 +42,14 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
 
   @Override
   public void afterTransition(IntakeState state) {
-    if (state == IntakeState.IDLE) {
+    if (state == IntakeState.IDLE) { // Set DOGLOG LIKE IN INTAKING
       setIntakeVoltage(0.0);
     }
-    if (state == IntakeState.EJECT) {
+    if (state == IntakeState.EJECT) { // Set DOGLOG LIKE IN INTAKING
       setIntakeVoltage(-12.0);
     }
     if (state == IntakeState.INTAKING) {
+      DogLog.timestamp("Intake/SettingIntake");
       setIntakeVoltage(12.0);
     }
   }
@@ -72,7 +74,6 @@ public class Intake extends StateMachineSubsystem<IntakeState> {
   }
 
   public void haltIntake() {
-    DutyCycleOut neutralRequest = null;
     leftMotor.setControl(neutralRequest);
     rightMotor.setControl(neutralRequest);
   }
