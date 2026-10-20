@@ -4,6 +4,8 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.generated.CompTunerConstants;
+import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -30,5 +32,11 @@ public class Hardware {
 
   public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
-
+  public TunerSwerveDrivetrain drivetrain =
+      new TunerSwerveDrivetrain(
+          CompTunerConstants.DrivetrainConstants,
+          CompTunerConstants.FrontLeft,
+          CompTunerConstants.FrontRight,
+          CompTunerConstants.BackLeft,
+          CompTunerConstants.BackRight);
 }

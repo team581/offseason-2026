@@ -5,7 +5,10 @@ import com.team581.util.scheduling.SubsystemPriorityBase;
 public enum SubsystemPriority implements SubsystemPriorityBase {
   INTAKE(0),
   SHOOTER(0),
-  FEEDER(0);
+  FEEDER(0),
+  CONVEYOR(0),
+  SWERVE(0),
+  HEALTH(0);
 
   public final int value;
 
