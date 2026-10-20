@@ -26,6 +26,7 @@ final class VisionIntegrationTest {
     TagSelection selection;
     boolean available = true;
     int reads, closed;
+    Runnable duringRead = () -> {};
     final List<Sample> samples = new ArrayList<>();
     final List<VisionMeasurement> fused = new ArrayList<>();
     final List<VisionProcessor.Reason> reasons = new ArrayList<>();
@@ -43,6 +44,7 @@ final class VisionIntegrationTest {
     @Override
     public Inputs readInputs(double now, boolean enabled) {
       reads++;
+      duringRead.run();
       var result = new Inputs(new Health(available, available ? "Ready" : "Offline", ack), samples);
       samples.clear();
       return result;
@@ -318,6 +320,21 @@ final class VisionIntegrationTest {
       f.vision.tagsRequest();
       assertThat(f.vision.getState()).isEqualTo(VisionState.TAGS);
       assertThat(f.vision.drainMeasurements()).isEmpty(); // shadow cannot fuse
+    }
+  }
+
+  @Test
+  void inputCollectionDelayDoesNotMakeArrivingFramesAppearFuture() {
+    try (var f = new Fixture(false)) {
+      f.io.duringRead = () -> f.time += .030;
+      f.frame("front", 0, f.time + .010);
+      f.vision.collectInputs();
+      assertThat(f.io.reasons).containsExactly(VisionProcessor.Reason.NO_TAGS);
+      // A genuinely future timestamp still fails the unchanged tolerance gate.
+      f.frame("front", 0, f.time + .100);
+      f.vision.collectInputs();
+      assertThat(f.io.reasons.get(f.io.reasons.size() - 1))
+          .isEqualTo(VisionProcessor.Reason.FUTURE);
     }
   }
 
