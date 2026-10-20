@@ -1,15 +1,24 @@
 package frc.robot;
 
+import static java.util.UUID.randomUUID;
+
+import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
 import com.team581.controller.ButtonEvent;
 import com.team581.controller.ControllerBindings;
+import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
+import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
@@ -27,7 +36,11 @@ import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.turret.Turret;
+import frc.robot.vision.SpotVisionIO;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionConfig;
+import frc.robot.vision.VisionProcessor.CaptureState;
+import java.util.Optional;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -45,10 +58,35 @@ public class Robot extends Base581Robot {
                       Swerve.ORIGINAL_HEADING_PID.getD())),
               imu.bumpCrossingTracker));
 
-  private final HealthManager health =
-      new HealthManager(hardware.leftLimeLight, hardware.rightLimeLight, hardware.groundLimeLight);
   private final Vision vision =
-      new Vision(imu, hardware.leftLimeLight, hardware.rightLimeLight, hardware.groundLimeLight);
+      new Vision(
+          new SpotVisionIO(
+              NetworkTableInstance.getDefault(), VisionConfig.profile(), randomUUID().toString()),
+          VisionConfig.profile(),
+          VisionConfig.mounts(),
+          new Vision.CaptureSource() {
+            @Override
+            public CaptureState current(double now) {
+              var state = hardware.drivetrain.getState();
+              return new CaptureState(
+                  state.Pose,
+                  MathHelpers.getLinearVelocity(state.Speeds),
+                  state.Speeds.omegaRadiansPerSecond,
+                  Math.toRadians(imu.getRoll()),
+                  Math.toRadians(imu.getPitch()),
+                  0.);
+            }
+
+            @Override
+            public Optional<Pose2d> poseAt(double time) {
+              return hardware.drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(time));
+            }
+          },
+          Timer::getFPGATimestamp,
+          DriverStation::isEnabled,
+          () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean(),
+          DriverStation::getAlliance);
+  private final HealthManager health = new HealthManager(vision);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Localization localization =

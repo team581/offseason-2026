@@ -8,16 +8,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
-import com.team581.config.CameraConfig;
-import com.team581.config.LimelightModel;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.RobotKind;
 import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
-import frc.robot.vision.limelight.Limelight;
-import frc.robot.vision.limelight.LimelightState;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -58,23 +54,6 @@ public class Hardware {
 
   public final TalonFX turretMotor = new TalonFX(28, rio);
   public final CANcoder turretEncoder = new CANcoder(29, rio);
-
-  // TODO: PLaceholder LimeLights
-  public final Limelight leftLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
-  public final Limelight rightLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
-  public final Limelight groundLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
 
   public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
   public final DigitalInput towerSensor = new DigitalInput(9);
