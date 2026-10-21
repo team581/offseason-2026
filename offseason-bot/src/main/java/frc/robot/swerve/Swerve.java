@@ -38,7 +38,6 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
-import frc.robot.testing.TestDriveRequest;
 import frc.robot.util.scheduling.SubsystemPriority;
 import org.jspecify.annotations.Nullable;
 
@@ -77,9 +76,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       new SlewRateLimiter(100.0, -10.0, MAX_LINEAR_RATE);
 
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
+
   public final TunerSwerveDrivetrain drivetrain;
   private final XboxControllerDriveSource teleopDriveSource;
-
   private final TrailblazerDriveSource trailblazerDriveSource;
 
   private DriveSource driveSource;
@@ -113,9 +112,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withRotationalDeadband(0.05)
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
-
-  private final TestDriveRequest testDriveRequest = new TestDriveRequest();
-  private final ChassisSpeeds testDriveSpeeds = new ChassisSpeeds();
 
   /**
    * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
@@ -222,7 +218,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public ChassisSpeeds getRequestedSpeeds() {
-    return DriverStation.isTestEnabled() ? testDriveSpeeds : driveSource.getRequestedSpeeds();
+    return driveSource.getRequestedSpeeds();
   }
 
   public ChassisSpeeds getRobotRelativeSpeeds() {
@@ -263,14 +259,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         };
   }
 
-  /** Accept diagnostic speeds only while enabled in Driver Station Test mode. */
-  public void setTestDriveSpeeds(ChassisSpeeds speeds) {
-    boolean allowed = DriverStation.isTestEnabled();
-    testDriveSpeeds.vxMetersPerSecond = allowed ? speeds.vxMetersPerSecond : 0;
-    testDriveSpeeds.vyMetersPerSecond = allowed ? speeds.vyMetersPerSecond : 0;
-    testDriveSpeeds.omegaRadiansPerSecond = allowed ? speeds.omegaRadiansPerSecond : 0;
-  }
-
   public void warmupFeedRequest() {
     setStateFromRequest(SwerveState.WARMUP_FEED);
   }
@@ -284,51 +272,40 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     drivetrain.setOperatorPerspectiveForward(
         FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
 
-    if (DriverStation.isTestEnabled()) {
-      drivetrain.setControl(
-          testDriveRequest
-              .withVelocityX(testDriveSpeeds.vxMetersPerSecond)
-              .withVelocityY(testDriveSpeeds.vyMetersPerSecond)
-              .withRotationalRate(testDriveSpeeds.omegaRadiansPerSecond));
-    } else {
-      testDriveSpeeds.vxMetersPerSecond = 0;
-      testDriveSpeeds.vyMetersPerSecond = 0;
-      testDriveSpeeds.omegaRadiansPerSecond = 0;
-      switch (currentState) {
-        case MANUAL, WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {
-          var speeds = driveSource.getRequestedSpeeds();
-          if (ableToBumpAssist) {
-            drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                    drivePerspectiveSnaps
-                        .withVelocityX(speeds.vxMetersPerSecond)
-                        .withVelocityY(speeds.vyMetersPerSecond),
-                    SwerveAssist.getRoundedSnapAngle(
-                        drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-          } else {
-            var swerveRequest =
-                switch (driveSource.getDriveSourceType()) {
-                  case DRIVER_PERSPECTIVE_OPEN_LOOP -> driverPerspective;
-                  case FIELD_CENTRIC_CLOSED_LOOP -> fieldCentric;
-                };
-
-            drivetrain.setControl(
-                swerveRequest
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withRotationalRate(speeds.omegaRadiansPerSecond));
-          }
-        }
-        case CLIMB_ASSIST -> {
-          // Always use Trailblazer drive source for climb alignment
-          var speeds = trailblazerDriveSource.getRequestedSpeeds();
+    switch (currentState) {
+      case MANUAL, WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {
+        var speeds = driveSource.getRequestedSpeeds();
+        if (ableToBumpAssist) {
+          drivetrain.setControl(
+              withFieldRelativeTargetDirection(
+                  drivePerspectiveSnaps
+                      .withVelocityX(speeds.vxMetersPerSecond)
+                      .withVelocityY(speeds.vyMetersPerSecond),
+                  SwerveAssist.getRoundedSnapAngle(
+                      drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
+        } else {
+          var swerveRequest =
+              switch (driveSource.getDriveSourceType()) {
+                case DRIVER_PERSPECTIVE_OPEN_LOOP -> driverPerspective;
+                case FIELD_CENTRIC_CLOSED_LOOP -> fieldCentric;
+              };
 
           drivetrain.setControl(
-              fieldCentric
+              swerveRequest
                   .withVelocityX(speeds.vxMetersPerSecond)
                   .withVelocityY(speeds.vyMetersPerSecond)
                   .withRotationalRate(speeds.omegaRadiansPerSecond));
         }
+      }
+      case CLIMB_ASSIST -> {
+        // Always use Trailblazer drive source for climb alignment
+        var speeds = trailblazerDriveSource.getRequestedSpeeds();
+
+        drivetrain.setControl(
+            fieldCentric
+                .withVelocityX(speeds.vxMetersPerSecond)
+                .withVelocityY(speeds.vyMetersPerSecond)
+                .withRotationalRate(speeds.omegaRadiansPerSecond));
       }
     }
 

@@ -65,7 +65,7 @@ dependencies {
 }
 
 test {
-	useJUnitPlatform()
+	useJUnitPlatform { excludeTags 'headless' }
 	systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
@@ -101,35 +101,21 @@ gversion {
 	indent = "  "
 }
 
-// Run desktop simulation tests separately from unit tests.
-sourceSets {
-	simTest {
-		compileClasspath += sourceSets.main.output
-		runtimeClasspath += sourceSets.main.output
-	}
-}
-
-configurations {
-	simTestImplementation.extendsFrom testImplementation
-	simTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
-
+// Run the registered robot tests through the same TestManager without a simulator window.
 [
-	headlessTest: 'Runs all desktop headless tests',
-	straightLineTest: 'Runs straight-line simulation and test manager checks'
+	headlessTest: 'Runs every registered robot test in headless simulation',
+	straightLineTest: 'Runs the registered straight-line test in headless simulation'
 ].each { taskName, taskDescription ->
 	def headlessTask = tasks.register(taskName, Test) {
 		group = 'verification'
 		description = taskDescription
-		testClassesDirs = sourceSets.simTest.output.classesDirs
-		classpath = sourceSets.simTest.runtimeClasspath
-		// headlessTest runs every test in simTest; straightLineTest runs this subset.
+		testClassesDirs = sourceSets.test.output.classesDirs
+		classpath = sourceSets.test.runtimeClasspath
+		useJUnitPlatform { includeTags 'headless' }
 		if (taskName == 'straightLineTest') {
-			include '**/StraightLine*Test.class', '**/TestManagerTest.class'
+			systemProperty 'sim.test', 'STRAIGHT_LINE'
 		}
-		useJUnitPlatform()
 		maxParallelForks = 1
-		forkEvery = 1
 		systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
 		systemProperty 'sim.outputDir', layout.buildDirectory.dir("reports/${taskName}/motion").get().asFile.absolutePath
 		project.properties.findAll { key, value ->
@@ -137,7 +123,6 @@ configurations {
 		}.each { key, value ->
 			systemProperty key, value.toString()
 		}
-		// Rerun the simulation on every invocation.
 		outputs.upToDateWhen { false }
 		outputs.cacheIf { false }
 		testLogging { events 'passed', 'failed', 'skipped' }

@@ -9,8 +9,10 @@ On Windows, use `gradlew.bat` instead of `./gradlew`.
 
 ## Headless sim
 
-Run simulation tests without a simulator window or physical robot. They can cover straight-line
-driving, controller bindings, test manager behavior, etc.
+Run the regular robot application without a simulator window or physical robot. The headless
+runner uses the normal robot lifecycle, scheduler, controller bindings, and subsystem simulations
+to run the same registered tests used in Test mode. Test manager behavior and controlled
+straight-line failure checks also run with the normal unit tests.
 
 ```sh
 ./gradlew headlessTest
@@ -25,10 +27,12 @@ To run only the straight-line tests:
 ./gradlew :offseason-bot:straightLineTest
 ```
 
-To change the straight-line distance (meters) and maximum speed (meters per second):
+Straight-line distances, constraints, and tolerances are constants at the top of
+`StraightLineRoutine.java`. The robot and headless simulation use those same values.
+To change the simulation environment:
 
 ```sh
-./gradlew :offseason-bot:straightLineTest -Psim.distance=3 -Psim.maxVelocity=1.5
+./gradlew :offseason-bot:straightLineTest -Psim.batteryVoltage=10 -Psim.startHeading=90
 ```
 
 After `headlessTest`, open these files:
@@ -54,14 +58,14 @@ Start the offseason robot application with the simulator window:
 To run the straight-line diagnostic:
 
 1. While disabled, select `STRAIGHT_LINE` in the connected dashboard's `Tests/SelectedTest` chooser.
-2. Set values under `Tests/StraightLine/Config/`. Defaults include `distance=2` meters,
-   `maxVelocity=1` meter per second, and `maxAcceleration=0.75` meters per second squared.
-3. Enable **Test** mode in the simulator. The diagnostic runs once per enable.
-4. Watch `Tests/Regression/Status` and `Tests/Reason` in the dashboard or logs for the result.
-   Disable before changing settings or running again. Disabling during a run aborts it.
+2. Enable **Test** mode in the simulator. The selected test runs once per enable.
+3. Watch `Tests/Regression/Status` and `Tests/Reason` in the dashboard or logs for the result.
+   Disable to select another test or run the same test again. Disabling during a run aborts it.
 
-Normal controller bindings are suppressed during Test mode. Configuration is captured when
-Test mode is enabled; edits during a run apply the next time you enable.
+Selection is read while disabled, matching auto selection. Each enable creates a fresh test.
+`TestManager.runRequest()` can also restart the selected test during enabled Test mode.
+Tests command the shared Trailblazer; Swerve uses its normal field-centric drive source.
+Normal controller bindings remain active.
 The interactive diagnostic reports through dashboard/log values rather than the headless HTML report.
 
 ## On robot
@@ -72,8 +76,8 @@ Deploy the offseason application to the intended robot:
 ./gradlew :offseason-bot:deploy
 ```
 
-1. With the robot disabled, allow room for the configured driving distance and keep the path clear.
-2. In the connected dashboard, select `STRAIGHT_LINE` and configure it as described under **Full sim**.
+1. With the robot disabled, allow room for the test’s driving distance and keep the path clear.
+2. In the connected dashboard, select `STRAIGHT_LINE` as described under **Full sim**.
 3. Enable **Test** mode in Driver Station. Watch the robot and disable to abort if needed.
 4. Read `Tests/Regression/Status` and `Tests/Reason`, save the robot log, and measure the final
    position independently. Disable before another attempt; select `NONE` when finished.
@@ -96,3 +100,29 @@ acceleration limits or replace checking the robot's physical motion.
 - **Full sim or on robot:** Check `Tests/Regression/Status` for `PASSED`, `FAILED`, or `ABORTED`,
   and `Tests/Reason` for an explanation. These values are in the dashboard and robot logs;
   interactive runs do not produce the headless HTML report.
+
+## Add a robot test
+
+Implement a state machine extending `TestManager.Test`, then register its factory in
+`TestSelection`, just like `AutoSelection`. That enum is the only registration list: the dashboard
+chooser and parameterized headless runner both enumerate it. No separate simulation test is needed.
+The runner constructs `Robot`, selects through the dashboard chooser, enables Test mode, and
+checks the result returned by the test. Swerve uses its existing simulation thread and normal
+drive requests. Add any new subsystem simulation support to the regular robot simulation so
+interactive and headless runs share it.
+
+```mermaid
+flowchart LR
+    Registry[TestSelection] --> Chooser[Dashboard chooser]
+    Registry --> Runner[Headless runner]
+    Chooser --> Manager[TestManager]
+    Runner --> Robot[Robot lifecycle]
+    Robot --> Chooser
+    Manager --> Test[Test state machine]
+    Test --> Trailblazer
+    Trailblazer --> Drive[Drive source]
+```
+
+The normal `test` task runs the controlled checks. `headlessTest` uses the same test source set,
+selecting the parameterized runner with a JUnit tag. `straightLineTest` filters that runner to
+`STRAIGHT_LINE`.

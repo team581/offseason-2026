@@ -16,7 +16,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.event.BooleanEvent;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.config.DSOptions;
@@ -124,7 +123,7 @@ public class Robot extends Base581Robot {
   private final PowerManager powerManager =
       new PowerManager(
           shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);
-  private final RobotManager robotManager =
+  final RobotManager robotManager =
       new RobotManager(
           hopperManager,
           shooterHood,
@@ -142,17 +141,7 @@ public class Robot extends Base581Robot {
   @SuppressWarnings("unused") // Registers itself as a subsystem.
   private final Autos autos = new Autos(robotManager, trailblazer);
 
-  @SuppressWarnings("unused") // Registers itself as a subsystem.
-  private final TestManager testManager =
-      new TestManager(
-          localization::getPose,
-          swerve::getFieldRelativeSpeeds,
-          swerve::setTestDriveSpeeds,
-          () -> {
-            robotManager.idleRequest();
-            robotManager.cancelIntakeRequest();
-            hopperManager.setDriverWantsEject(false);
-          });
+  final TestManager testManager = new TestManager(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(
@@ -168,13 +157,10 @@ public class Robot extends Base581Robot {
 
   @Override
   protected void configureBindings() {
-    var normalEnabled =
-        new BooleanEvent(
-            buttonBindingsLoop, () -> DriverStation.isEnabled() && !DriverStation.isTest());
     var driver =
-        new ControllerBindings(buttonBindingsLoop, normalEnabled, hardware.driverController);
+        new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
     var operator =
-        new ControllerBindings(buttonBindingsLoop, normalEnabled, hardware.operatorController);
+        new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.operatorController);
 
     driver.back().onPress(localization::zeroGyro);
 

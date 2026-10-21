@@ -66,7 +66,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       selectedAuto.periodic();
       robotManager.swerve.setDriveSourceType(DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP);
       DogLog.log("Autos/ShouldRun", true);
-    } else {
+    } else if (!DriverStation.isTestEnabled()) {
       // Restore teleop drive source
       robotManager.swerve.setDriveSourceType(DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP);
       DogLog.log("Autos/ShouldRun", false);
