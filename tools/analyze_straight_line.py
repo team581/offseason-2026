@@ -1,7 +1,7 @@
-"""Compare straight-line manager commands and measured speeds across saved runs.
+"""Compare drive commands and measured speeds from saved straight-line runs.
 
-Uses the standard library; --plot additionally requires matplotlib. No raw samples
-are changed. Windowed derivatives are analysis only, never controller feedback.
+Reads drive-output.csv and summary.md from each run folder under root.
+Writes acceleration metrics and a Markdown summary; --plot also requires matplotlib.
 """
 
 from __future__ import annotations
@@ -47,8 +47,7 @@ def analyze(directory: Path, window: float) -> dict:
         math.hypot(row["measured_vx_mps"], row["measured_vy_mps"]) for row in rows
     ]
     first = next(i for i, value in enumerate(command) if value > 1e-6)
-    # End the first rising ramp at its first plateau or decrease. Searching for
-    # the global floating-point maximum can accidentally include the cruise.
+    # Stop at the first plateau or decrease; a later speed maximum may be in cruise.
     peak = next(
         (
             i - 1
@@ -65,7 +64,7 @@ def analyze(directory: Path, window: float) -> dict:
         (measured[i] - measured[i - 1]) / (times[i] - times[i - 1])
         for i in range(1, len(rows))
     ]
-    # Exclude startup and the approach to braking from the normal-ramp fit.
+    # Fit the ramp after startup and before braking.
     ramp = [
         i for i, t in enumerate(times) if times[first] + 0.25 <= t <= times[peak] - 0.1
     ]
@@ -124,7 +123,7 @@ def plot(runs: list[dict], output: Path, window: float) -> None:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    # Use original sweep runs; repeats remain in the metrics table.
+    # Omit runs named *-repeat from plots; keep them in the metrics table.
     originals = [run for run in runs if not run["metrics"]["run"].endswith("-repeat")]
     fig, axes = plt.subplots(
         math.ceil(len(originals) / 2), 2, figsize=(12, 10), constrained_layout=True
@@ -153,9 +152,7 @@ def plot(runs: list[dict], output: Path, window: float) -> None:
         )
         axis.grid(alpha=0.2)
         axis.legend(fontsize=8)
-    fig.suptitle(
-        "6 m straight line · 3 m/s speed limit · 12 V\nEndpoint pass does not imply acceleration compliance"
-    )
+    fig.suptitle("Straight-line speed: commanded and measured")
     fig.savefig(output / "velocity-sweep.png", dpi=160)
     plt.close(fig)
 
@@ -194,7 +191,7 @@ def plot(runs: list[dict], output: Path, window: float) -> None:
         axis.grid(alpha=0.2)
         axis.legend(fontsize=8)
     fig.suptitle(
-        "Noise comparison after confirming command-limit violations\nWindowing reduces spikes; it also spreads real startup and stopping transients"
+        "Measured acceleration: raw and smoothed\nSmoothing reduces spikes and spreads startup and braking changes"
     )
     fig.savefig(output / "acceleration-noise.png", dpi=160)
     plt.close(fig)
@@ -202,9 +199,7 @@ def plot(runs: list[dict], output: Path, window: float) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "root", type=Path, help="Directory containing each run's motion-report folder"
-    )
+    parser.add_argument("root", type=Path, help="Parent directory of the run folders")
     parser.add_argument("--window-seconds", type=float, default=0.12)
     parser.add_argument("--plot", action="store_true")
     args = parser.parse_args()
@@ -260,9 +255,9 @@ def main() -> None:
             + " |"
         )
     report = "\n".join(table) + "\n\nUnits: acceleration in m/s²; startup Δv in m/s.\n"
-    report += "Measured ramp fits exclude the first 250 ms and last 100 ms of the rising command, and require at least 250 ms of data. A dash means insufficient ramp duration.\n"
-    report += "Fits retain scheduling stalls: inspect max_sample_interval_seconds in acceleration-metrics.json before interpreting a slow ramp.\n"
-    report += f"Windowed values use a {args.window_seconds * 1000:g} ms local linear fit of measured speed. These do not establish vector-acceleration compliance on curved paths.\n"
+    report += "Ramp fits skip the first 250 ms and last 100 ms of the rising command and need at least 250 ms of data. A dash means the metric could not be calculated.\n"
+    report += "Long sample intervals affect the fit. Check max_sample_interval_seconds in acceleration-metrics.json when a ramp looks slow.\n"
+    report += f"Smoothed acceleration uses a {args.window_seconds * 1000:g} ms linear fit of measured speed. It does not measure changes in travel direction.\n"
     (args.root / "acceleration-summary.md").write_text(report)
     print(report)
     if args.plot:

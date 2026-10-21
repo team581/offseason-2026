@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.List;
 
-/** Test-owned protocol. Production managers and mechanisms do not implement this interface. */
+/** A diagnostic that produces drive commands and a pass/fail result. */
 public interface DiagnosticRoutine {
   record Result(String name, Status status, String reason) {
     public boolean finished() {
@@ -30,9 +30,9 @@ public interface DiagnosticRoutine {
     return ImmutableList.of(result());
   }
 
-  /** Must be safe before the first tick and after any terminal result. */
+  /** Clears drive commands; safe to call before starting or after finishing. */
   void stop();
 
-  /** Called once per enabled Test-mode loop. */
+  /** Advances the diagnostic once per enabled Test-mode loop. */
   void tick();
 }

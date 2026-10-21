@@ -101,7 +101,7 @@ gversion {
 	indent = "  "
 }
 
-// Desktop integration tests have their own suite, separate from unit tests and deployment.
+// Run desktop simulation tests separately from unit tests.
 sourceSets {
 	simTest {
 		compileClasspath += sourceSets.main.output
@@ -116,14 +116,14 @@ configurations {
 
 [
 	headlessTest: 'Runs all desktop headless tests',
-	straightLineTest: 'Runs the straight-line test headlessly through the Test-mode manager'
+	straightLineTest: 'Runs straight-line simulation and test manager checks'
 ].each { taskName, taskDescription ->
 	def headlessTask = tasks.register(taskName, Test) {
 		group = 'verification'
 		description = taskDescription
 		testClassesDirs = sourceSets.simTest.output.classesDirs
 		classpath = sourceSets.simTest.runtimeClasspath
-		// The suite discovers every JUnit test; only the focused command filters classes.
+		// headlessTest runs every test in simTest; straightLineTest runs this subset.
 		if (taskName == 'straightLineTest') {
 			include '**/StraightLine*Test.class', '**/TestManagerTest.class'
 		}
@@ -137,7 +137,7 @@ configurations {
 		}.each { key, value ->
 			systemProperty key, value.toString()
 		}
-		// Every invocation is a new measurement, even when the code did not change.
+		// Rerun the simulation on every invocation.
 		outputs.upToDateWhen { false }
 		outputs.cacheIf { false }
 		testLogging { events 'passed', 'failed', 'skipped' }

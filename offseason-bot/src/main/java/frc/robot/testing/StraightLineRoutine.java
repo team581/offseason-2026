@@ -15,7 +15,7 @@ import edu.wpi.first.wpilibj.Timer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-/** The same small test state machine runs against robot sensors or desktop simulation. */
+/** Drives to a relative goal and checks position, heading, drift, and settling. */
 public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.State> {
   public record Sample(
       double time,
@@ -125,7 +125,7 @@ public final class StraightLineRoutine extends StateMachine<StraightLineRoutine.
               0,
               Math.abs(config.distance()));
       reason = "Running";
-      // Both poses are identical: this robot-relative test must not mirror with alliance.
+      // Use the same goal for both alliances so the test follows the starting robot heading.
       trailblazer.setActiveSegment(
           Trailblazer.segment(AutoPoint.of(new Point(goal, goal)))
               .withLinearConstraints(config.maxVelocity(), config.maxAcceleration())

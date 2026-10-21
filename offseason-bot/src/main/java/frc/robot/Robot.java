@@ -142,7 +142,7 @@ public class Robot extends Base581Robot {
   @SuppressWarnings("unused") // Registers itself as a subsystem.
   private final Autos autos = new Autos(robotManager, trailblazer);
 
-  @SuppressWarnings("unused") // Registers itself with the existing subsystem sequencer.
+  @SuppressWarnings("unused") // Registers itself as a subsystem.
   private final TestManager testManager =
       new TestManager(
           localization::getPose,

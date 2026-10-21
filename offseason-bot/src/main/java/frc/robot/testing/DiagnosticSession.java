@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Enable-edge lifecycle shared by diagnostic adapters, never by production robot managers. */
+/** Starts a diagnostic on Test-mode enable and clears its drive output on exit or failure. */
 public final class DiagnosticSession {
   public enum State {
     INACTIVE,
@@ -79,14 +79,14 @@ public final class DiagnosticSession {
       }
       return;
     }
-    // Default to zero even if preparation, construction or a routine throws.
+    // Keep drive output at zero if setup or the diagnostic throws.
     var requested = new ChassisSpeeds();
     try {
       if (entering) {
         active = Optional.empty();
         failure = Optional.empty();
         try {
-          // Factory construction snapshots selection and configuration once per enable.
+          // Read the selection and configuration once when Test mode is enabled.
           active = requireNonNull(factory.get());
           state = active.isPresent() ? State.RUNNING : State.INACTIVE;
           reason = active.isPresent() ? "Running" : "No diagnostic selected";

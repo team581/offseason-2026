@@ -2,7 +2,7 @@ package frc.robot.testing;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-/** Independent counted outcome. Readiness/state transitions are deliberately not inputs. */
+/** Checks a scoring result from available, launched, scored, and retained fuel counts. */
 public record FuelOutcome(int available, int launched, int hits, int retained) {
   public FuelOutcome {
     checkArgument(

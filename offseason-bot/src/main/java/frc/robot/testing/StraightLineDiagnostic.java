@@ -7,7 +7,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.function.Supplier;
 
-/** Straight-line test adapter, independent of production robot management. */
+/** Runs the straight-line routine and exposes its drive command and result. */
 public final class StraightLineDiagnostic implements DiagnosticRoutine {
   private final String name;
   private final StraightLineRoutine routine;

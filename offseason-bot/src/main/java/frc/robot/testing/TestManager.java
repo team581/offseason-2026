@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Test-mode adapter. Its lifecycle/controllers are separate from production robot management. */
+/** Selects and runs a dashboard diagnostic while Driver Station Test mode is enabled. */
 public final class TestManager extends StateMachineSubsystem<TestManager.State> {
   public enum Selection {
     NONE,
@@ -59,7 +59,7 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
     return () -> requireNonNullElse(chooser.getSelected(), Selection.NONE);
   }
 
-  // Dedicated diagnostic controller; does not share controller state with autonomous.
+  // Keep diagnostic PID state separate from autonomous driving.
   private final Trailblazer trailblazer =
       new Trailblazer(
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
@@ -82,7 +82,7 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
         () -> StraightLineConfig.from(key -> TUNABLES.get(key).get()));
   }
 
-  // Test-owned injection points; no production manager implements a diagnostic interface.
+  // Tests supply selection and configuration directly instead of reading the dashboard.
   public TestManager(
       Supplier<Pose2d> pose,
       Supplier<ChassisSpeeds> speeds,
@@ -116,7 +116,7 @@ public final class TestManager extends StateMachineSubsystem<TestManager.State> 
     return session.results();
   }
 
-  // Existing straight-line callers retain access to their motion samples.
+  // Expose straight-line samples for motion reports.
   public Optional<StraightLineRoutine> getRoutine() {
     return session
         .active()

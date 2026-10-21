@@ -12,7 +12,7 @@ import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.testing.TestDriveRequest;
 
-/** Real Phoenix module simulation and offseason constants; no full Robot construction needed. */
+/** Simulates the Phoenix drivetrain using offseason module constants. */
 final class SwerveFixture implements AutoCloseable {
   final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
@@ -35,7 +35,7 @@ final class SwerveFixture implements AutoCloseable {
               previousTime = now;
             });
     physics.startPeriodic(0.005);
-    // Let the asynchronous vendor odometry become valid before starting the measurement.
+    // Wait for Phoenix odometry before recording motion.
     double deadline = Timer.getFPGATimestamp() + 3.0;
     while (!drivetrain.isOdometryValid() && Timer.getFPGATimestamp() < deadline) {
       Timer.delay(0.020);

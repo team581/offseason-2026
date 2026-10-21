@@ -53,15 +53,14 @@ This repository is organized as a Gradle monorepo with the following projects:
 # Run tests for specific project
 ./gradlew comp-bot:test
 
-# Run all headless tests as one suite
+# Run headless simulation tests
 ./gradlew headlessTest
 
-# Run just the offseason straight-line tests
+# Run offseason straight-line tests
 ./gradlew :offseason-bot:straightLineTest
 ```
 
-See [integration testing](docs/integration-testing.md) for how to run offseason tests in headless sim, full sim,
-and on the robot, and find their results.
+See [integration testing](docs/integration-testing.md) for commands, robot test controls, and results.
 
 ### Code formatting
 

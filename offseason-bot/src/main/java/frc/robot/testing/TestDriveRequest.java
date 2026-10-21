@@ -3,7 +3,7 @@ package frc.robot.testing;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
-/** Closed-loop field-frame control used only by test-mode routines and their desktop fixture. */
+/** Field-relative velocity request for Test mode and simulation tests. */
 public final class TestDriveRequest extends SwerveRequest.FieldCentric {
   public TestDriveRequest() {
     withDeadband(0.07);

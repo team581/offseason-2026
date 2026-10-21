@@ -21,7 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Deterministic failure-path checks, independent of asynchronous vendor physics. */
+/** Checks straight-line tolerances and failures using controlled poses, speeds, and time. */
 final class StraightLineRoutineTest {
   private static void tick(StraightLineRoutine routine, double seconds) {
     SimHooks.stepTimingAsync(seconds);

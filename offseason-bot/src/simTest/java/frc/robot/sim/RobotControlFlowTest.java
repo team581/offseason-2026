@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Exercises production manager transitions and controller bindings with simulated hardware. */
+/** Checks robot manager transitions and controller bindings with simulated hardware. */
 final class RobotControlFlowTest {
   private static Robot robot;
   private static RobotManager manager;
@@ -67,7 +67,7 @@ final class RobotControlFlowTest {
     DriverStationSim.resetData();
     DriverStationSim.setDsAttached(true);
     robot = new Robot();
-    // Initialize dashboard defaults before tests deliberately override camera availability.
+    // Initialize the vision option before tests change it.
     assertThat(DSOptions.USE_VISION.get()).isTrue();
     manager = (RobotManager) field(Robot.class, "robotManager").get(robot);
     hopper = manager.hopperManager;
@@ -101,7 +101,7 @@ final class RobotControlFlowTest {
     assertThat(hopper.feeder.getState()).isEqualTo(FeederState.SCORE);
     assertThat(hopper.funneler.getState()).isEqualTo(FunnelerState.SHOOT);
 
-    // The unhomed mechanisms are not ready, so the real state machine must return to preparation.
+    // Unhomed mechanisms must return the robot to preparation.
     manager.robotPeriodic();
 
     assertThat(manager.getState()).isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
@@ -112,7 +112,7 @@ final class RobotControlFlowTest {
 
   @Test
   void funnelerChangesFromBallFillingToIdleWhenTowerFills() throws ReflectiveOperationException {
-    // Seed the sensor inputs needed for tower filling without running motor physics.
+    // Set tower-filling inputs directly to test the request logic.
     field(Deploy.class, "leftMotorPosition")
         .setDouble(hopper.deploy, DeployState.INTAKE.getLength());
     field(Deploy.class, "rightMotorPosition")

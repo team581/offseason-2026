@@ -95,28 +95,28 @@ final class StraightLineSimTest {
         String.format(
             Locale.ROOT,
             """
-						# Straight-line test
+				# Straight-line test
 
-						Result: **%s** — %s
+				Result: **%s** — %s
 
-						Configuration: `%s`
+				Configuration: `%s`
 
-						Battery: %.2f V; initial heading: %.2f degrees
+				Battery: %.2f V; initial heading: %.2f degrees
 
-						| Measurement | Value |
-						|---|---:|
-						| Duration (s) | %.3f |
-						| Peak speed (m/s) | %.3f |
-						| Peak absolute acceleration (m/s²) | %.3f |
-						| Maximum cross-track error (m) | %.3f |
-						| Final position error (m) | %.3f |
+				| Measurement | Value |
+				|---|---:|
+				| Duration (s) | %.3f |
+				| Peak speed (m/s) | %.3f |
+				| Peak absolute acceleration (m/s²) | %.3f |
+				| Maximum cross-track error (m) | %.3f |
+				| Final position error (m) | %.3f |
 
-						Acceleration is the finite difference of measured velocity and includes vendor timing noise.
+				Acceleration is calculated from changes in measured velocity and includes simulation timing noise.
 
-						This result checks endpoint and settling, not acceleration-limit compliance.
-						`drive-output.csv` records the stopped baseline and each actual manager command alongside
-						the measured field-relative velocity immediately before applying that command.
-						""",
+				Passing requires reaching the goal and settling. Acceleration limits are not checked.
+				`drive-output.csv` includes the initial stopped sample, then each drive command and
+				the field-relative velocity measured before applying it.
+				""",
             routine.getState(),
             routine.reason(),
             config,
@@ -168,7 +168,7 @@ final class StraightLineSimTest {
               fixture::pose,
               fixture::speeds,
               requested -> {
-                // Observe the actual manager output without calling the follower a second time.
+                // Record the command here; calling the follower again would advance its state.
                 driveSamples.add(
                     DriveSample.of(Timer.getFPGATimestamp(), requested, fixture.speeds()));
                 fixture.applyRequest(requested);
@@ -178,7 +178,7 @@ final class StraightLineSimTest {
               () -> config);
       DriverStationSim.setEnabled(true);
       DriverStationSim.notifyNewData();
-      // Preserve the stopped baseline so the first nonzero command remains visible.
+      // Record the stopped speed before the first drive command.
       driveSamples.add(
           DriveSample.of(Timer.getFPGATimestamp(), new ChassisSpeeds(), fixture.speeds()));
       try {

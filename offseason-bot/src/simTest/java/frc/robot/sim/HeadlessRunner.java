@@ -6,7 +6,7 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 
-/** A small real-time loop; the fixture owns physics and the routine owns test behavior. */
+/** Runs a state machine every 20 ms until it finishes or times out. */
 public final class HeadlessRunner {
   public static void run(
       StateMachine<?> routine,

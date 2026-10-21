@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Test report writer. A caller-owned run ID prevents measurements from being overwritten. */
+/** Writes a Markdown report for each run and rejects duplicate run IDs. */
 public final class DiagnosticReport {
   public static Path write(
       Path directory, String runId, String configuration, List<DiagnosticRoutine.Result> results)
@@ -25,7 +25,7 @@ public final class DiagnosticReport {
                 ? "FAILED"
                 : "INCOMPLETE";
     var summary =
-        new StringBuilder("# Robot diagnostic regression\n\nRun: ")
+        new StringBuilder("# Robot test results\n\nRun: ")
             .append(runId)
             .append("\n\nOverall: **")
             .append(overall)
