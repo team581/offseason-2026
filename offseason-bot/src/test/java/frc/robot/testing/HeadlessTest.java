@@ -77,8 +77,8 @@ final class HeadlessTest {
   private static void writeReport(
       double voltage,
       double heading,
-      StraightLineRoutine routine,
-      List<StraightLineRoutine.Sample> samples)
+      StraightLineTest routine,
+      List<StraightLineTest.Sample> samples)
       throws IOException {
     Path output =
         Path.of(System.getProperty("sim.outputDir", "build/reports/straightLineTest/motion"));
@@ -133,11 +133,11 @@ final class HeadlessTest {
             routine.getState(),
             routine.reason(),
             "distance="
-                + StraightLineRoutine.DISTANCE
+                + StraightLineTest.DISTANCE
                 + ", maxVelocity="
-                + StraightLineRoutine.MAX_VELOCITY
+                + StraightLineTest.MAX_VELOCITY
                 + ", maxAcceleration="
-                + StraightLineRoutine.MAX_ACCELERATION,
+                + StraightLineTest.MAX_ACCELERATION,
             voltage,
             heading,
             routine.sample().time(),
@@ -160,11 +160,11 @@ final class HeadlessTest {
   private TestManager manager;
   private Trailblazer trailblazer;
 
-  private StraightLineRoutine routine() {
+  private StraightLineTest routine() {
     DriverStationSim.setTest(true);
     DriverStationSim.setEnabled(true);
     tick(0.02);
-    return (StraightLineRoutine) manager.getActiveTest().orElseThrow();
+    return (StraightLineTest) manager.getActiveTest().orElseThrow();
   }
 
   private void tick(double seconds) {
@@ -181,7 +181,7 @@ final class HeadlessTest {
     pose = new Pose2d(2, 4, Rotation2d.kCCW_90deg);
     tick(0.02);
     tick(0.30);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.PASSED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.PASSED);
   }
 
   @Test
@@ -190,7 +190,7 @@ final class HeadlessTest {
     tick(0.02);
     pose = new Pose2d(4, 2, Rotation2d.fromDegrees(10));
     tick(1.0);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.DRIVING);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.DRIVING);
   }
 
   @BeforeEach
@@ -224,7 +224,7 @@ final class HeadlessTest {
     pose = new Pose2d(Double.NaN, 2, Rotation2d.kZero);
     var routine = routine();
     tick(0.02);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.FAILED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(trailblazer.getFieldRelativeSetpoint(Pose2d.kZero, speeds).vxMetersPerSecond)
         .isZero();
   }
@@ -235,7 +235,7 @@ final class HeadlessTest {
     tick(0.02);
     pose = new Pose2d(3, 2.3, Rotation2d.kZero);
     tick(0.02);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.FAILED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(routine.reason()).contains("cross-track");
   }
 
@@ -246,7 +246,7 @@ final class HeadlessTest {
     pose = new Pose2d(4, 2, Rotation2d.kZero);
     tick(0.02);
     tick(0.20);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.SETTLING);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.SETTLING);
     speeds = new ChassisSpeeds(0.2, 0, 0);
     tick(0.02);
     speeds = new ChassisSpeeds();
@@ -254,7 +254,7 @@ final class HeadlessTest {
     tick(0.20);
     assertThat(routine.finished()).isFalse();
     tick(0.10);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.PASSED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.PASSED);
     assertThat(trailblazer.getFieldRelativeSetpoint(pose, speeds).vxMetersPerSecond).isZero();
   }
 
@@ -262,7 +262,7 @@ final class HeadlessTest {
   void nonfiniteSpeedFailsBeforeCommandingMotion() {
     speeds = new ChassisSpeeds(Double.NaN, 0, 0);
     var routine = routine();
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.FAILED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(trailblazer.getFieldRelativeSetpoint(pose, new ChassisSpeeds()).vxMetersPerSecond)
         .isZero();
   }
@@ -288,7 +288,7 @@ final class HeadlessTest {
     tick(0.20);
     assertThat(routine.finished()).isFalse();
     tick(0.10);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.PASSED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.PASSED);
   }
 
   @Tag("headless")
@@ -320,7 +320,7 @@ final class HeadlessTest {
       throw new IllegalArgumentException(
           "Battery voltage must be positive and start heading finite");
     }
-    List<StraightLineRoutine.Sample> samples = new ArrayList<>();
+    List<StraightLineTest.Sample> samples = new ArrayList<>();
     List<DriveSample> driveSamples = new ArrayList<>();
     RoboRioSim.setVInVoltage(voltage);
     if (robot == null) {
@@ -352,8 +352,8 @@ final class HeadlessTest {
                   DriveSample.of(Timer.getFPGATimestamp(), requested, robot.measuredSpeeds()));
               manager
                   .getActiveTest()
-                  .filter(StraightLineRoutine.class::isInstance)
-                  .map(StraightLineRoutine.class::cast)
+                  .filter(StraightLineTest.class::isInstance)
+                  .map(StraightLineTest.class::cast)
                   .ifPresent(active -> samples.add(active.sample()));
             },
             30.0);
@@ -361,7 +361,7 @@ final class HeadlessTest {
         DriverStationSim.setEnabled(false);
         robot.tick();
         writeDriveSamples(driveSamples);
-        if (manager.getActiveTest().orElse(null) instanceof StraightLineRoutine routine) {
+        if (manager.getActiveTest().orElse(null) instanceof StraightLineTest routine) {
           writeReport(voltage, heading, routine, samples);
         }
         var result = manager.getResult().orElseThrow();
@@ -381,7 +381,7 @@ final class HeadlessTest {
     var routine = routine();
     tick(0.02);
     tick(10.1);
-    assertThat(routine.getState()).isEqualTo(StraightLineRoutine.State.FAILED);
+    assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(routine.reason()).contains("Timed out");
     assertThat(trailblazer.getFieldRelativeSetpoint(pose, speeds).vxMetersPerSecond).isZero();
   }

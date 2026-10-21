@@ -12,7 +12,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 
 /** Drives to a relative goal and checks position, heading, drift, and settling. */
-public final class StraightLineRoutine extends TestManager.Test<StraightLineRoutine.State> {
+public final class StraightLineTest extends TestManager.Test<StraightLineTest.State> {
   public record Sample(
       double time,
       Pose2d pose,
@@ -62,7 +62,7 @@ public final class StraightLineRoutine extends TestManager.Test<StraightLineRout
   private String reason = "Waiting for test mode enable";
   private Sample sample = new Sample(0, Pose2d.kZero, 0, 0, 0, 0, 0, 0);
 
-  public StraightLineRoutine(TestManager manager) {
+  public StraightLineTest(TestManager manager) {
     super(State.WAITING);
     this.manager = manager;
     trailblazer = manager.trailblazer;

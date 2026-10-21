@@ -6,7 +6,7 @@ import java.util.function.Function;
 /** Register tests here; both the dashboard chooser and headless runner use these factories. */
 public enum TestSelection {
   NONE(manager -> Optional.empty()),
-  STRAIGHT_LINE(manager -> Optional.of(new StraightLineRoutine(manager)));
+  STRAIGHT_LINE(manager -> Optional.of(new StraightLineTest(manager)));
 
   public final Function<TestManager, Optional<TestManager.Test<?>>> test;
 
