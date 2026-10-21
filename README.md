@@ -60,9 +60,8 @@ This repository is organized as a Gradle monorepo with the following projects:
 ./gradlew :offseason-bot:straightLineTest
 ```
 
-Headless JUnit tests live in `offseason-bot/src/simTest/java` and are discovered automatically by
-`headlessTest`. CI runs this suite in the **Headless tests** job and uploads one results artifact.
-See [headless testing](docs/headless-testing.md) for outputs and adding another test.
+See [headless testing](docs/headless-testing.md) for how to run the offseason simulation tests
+and find their results.
 See [robot regression design](docs/robot-regression.md) for whole-robot coverage, proposed tolerances,
 and simulation/physical run procedures.
 

@@ -1,88 +1,47 @@
-# Headless tests
+# Headless testing
 
-Run all headless JUnit tests together:
+Headless tests run the offseason bot's simulation checks without a simulator window or a
+physical robot. They cover straight-line driving, controller bindings, and test manager behavior.
+Comp and new member bots do not currently have a headless suite.
+
+## Run the tests
+
+Use Java 21. Open a terminal in the repository's root folder and run:
 
 ```sh
 ./gradlew headlessTest
 ```
 
-This works like the `test` command: Gradle discovers all JUnit tests in the headless source set,
-produces a single suite report per project, and fails the task if any test fails. Currently the
-offseason bot is the only project with a headless suite. The tests share one Gradle task and CI job;
-they run serially with a fresh JVM per test class because HAL and Phoenix use process-wide resources.
-No simulator GUI or physical robot is needed.
+On Windows, use `gradlew.bat` instead of `./gradlew`.
+Gradle prints the test results and ends with `BUILD SUCCESSFUL` if all tests pass.
+A failed test makes the command fail.
 
-For the proposed whole-robot suite, including Trailblazer limits, fuel handling, scoring outcomes,
-and the matching physical test procedure, see [robot regression design](robot-regression.md).
-That design distinguishes the existing runnable tests from the automation still to be implemented.
-
-The runnable motion diagnostic is the straight-line test, available in simulation and Driver Station Test mode.
-
-Keep using the focused command when working on the straight-line test:
+To run only the straight-line tests:
 
 ```sh
 ./gradlew :offseason-bot:straightLineTest
+```
+
+To change the straight-line distance (meters) and maximum speed (meters per second):
+
+```sh
 ./gradlew :offseason-bot:straightLineTest -Psim.distance=3 -Psim.maxVelocity=1.5
 ```
 
-You can also select a class with JUnit's Gradle filtering:
+## Find the results
 
-```sh
-./gradlew :offseason-bot:headlessTest --tests frc.robot.sim.StraightLineSimTest
-```
+After `headlessTest`, open these files:
 
-Both commands use the same native libraries, isolation, defaults and `-Psim.*` overrides.
-The normal `test`, `check`, `build`, and deployment tasks do not start the headless suite.
+- `offseason-bot/build/reports/tests/headlessTest/index.html` — test results and failure details.
+- `offseason-bot/build/reports/headlessTest/motion/summary.md` — straight-line measurements.
+- `offseason-bot/build/reports/headlessTest/motion/` — CSV motion data.
 
-## CI
+For `straightLineTest`, replace `headlessTest` with `straightLineTest` in those paths.
+Reports are overwritten on each run. A passing straight-line test checks reaching the goal and
+settling; it does not verify acceleration limits.
 
-`.github/workflows/ci.yml` runs `./gradlew headlessTest` in the **Headless tests** job on every push.
-The job collects Markdown motion summaries and uploads JUnit reports, motion data, and WPILOG files
-in one **headless-results** artifact, including after a test failure. The existing Build job still
-depends on Assemble and the unit-test job; it does not wait for the headless job.
+CI runs the suite on every push in the **Headless tests** job. Open that job for results or
+download its **headless-results** artifact for reports and logs.
 
-```mermaid
-flowchart LR
-  Assemble --> Units[Unit tests]
-  Units --> Build
-  Assemble --> Headless[All headless tests]
-  Headless --> Reports[Summary and artifact]
-```
-
-## Outputs
-
-For the offseason suite, outputs are under `offseason-bot/build/`:
-
-| Path | Contents |
-|---|---|
-| `reports/tests/headlessTest/index.html` | Combined JUnit pass/fail report |
-| `test-results/headlessTest/*.xml` | Machine-readable JUnit results |
-| `reports/headlessTest/motion/summary.md` | Straight-line settings, result and measurements |
-| `reports/headlessTest/motion/straight-line.csv` | Straight-line pose, velocity, acceleration and errors |
-| `reports/headlessTest/motion/drive-output.csv` | Stopped baseline, actual manager commands and measured field-relative speeds at each output |
-
-The focused command uses the same paths with `straightLineTest` in place of `headlessTest`.
-Each invocation reruns the tests and overwrites its reports. Use `-Psim.outputDir=/absolute/path`
-to save motion reports somewhere else. Ordinary WPILOG files are in `offseason-bot/logs/`.
-
-The straight-line result checks reaching and settling at the endpoint; it does not certify
-acceleration compliance. For the acceleration sweep, startup/braking violations, and analysis
-instructions, see [acceleration investigation](acceleration-investigation.md).
-
-## Add another headless test
-
-1. Add a JUnit test class under `offseason-bot/src/simTest/java`. The suite discovers it without
-   changing Gradle or CI. Use a separate class for each physical scenario to isolate native resources.
-2. Reuse `HeadlessRunner` with a fixture and a state-machine routine. Hardware tests must still run
-   through the Test-mode-only `TestManager`; headless discovery does not add a robot test selection.
-   New diagnostics can implement the test-owned `DiagnosticRoutine` protocol. Keep production
-   managers/mechanisms unchanged; tests consume their existing public APIs. Inaccessible inputs or
-   outcome observations are explicit coverage gaps.
-3. If the test writes motion reports, use `System.getProperty("sim.outputDir")` and unique filenames
-   such as `turn-summary.md` and `turn.csv` so it does not overwrite another test's output. CI collects
-   every Markdown file in that motion directory and uploads the entire directory.
-
-New tests will run in the same suite and appear in the same JUnit report and CI artifact. They do not
-need a separate terminal task unless a focused shortcut is useful. Use the same `headlessTest` task
-name if another robot project adds a headless source set; the root command and CI report globs will
-include it.
+Run this command explicitly: normal `test`, `build`, and deployment commands do not run the
+headless suite.
