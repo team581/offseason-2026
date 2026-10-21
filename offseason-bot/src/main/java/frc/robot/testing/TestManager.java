@@ -1,5 +1,6 @@
 package frc.robot.testing;
 
+import static java.util.Objects.requireNonNullElse;
 import static java.util.UUID.randomUUID;
 
 import com.team581.swerve.DriveSourceType;
@@ -50,7 +51,7 @@ public final class TestManager extends StateMachineSubsystem<TestSelection> {
     }
     chooser.setDefaultOption(TestSelection.NONE.toString(), TestSelection.NONE);
     SmartDashboard.putData("Tests/SelectedTest", chooser);
-    return () -> Optional.ofNullable(chooser.getSelected()).orElse(TestSelection.NONE);
+    return () -> requireNonNullElse(chooser.getSelected(), TestSelection.NONE);
   }
 
   final Trailblazer trailblazer;

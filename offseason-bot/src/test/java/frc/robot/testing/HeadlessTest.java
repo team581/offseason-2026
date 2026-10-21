@@ -1,5 +1,6 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team581.math.PoseErrorTolerance;
@@ -226,7 +227,7 @@ final class HeadlessTest {
     tick(0.02);
     assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(trailblazer.getFieldRelativeSetpoint(Pose2d.kZero, speeds).vxMetersPerSecond)
-        .isZero();
+        .isEqualTo(0);
   }
 
   @Test
@@ -255,7 +256,7 @@ final class HeadlessTest {
     assertThat(routine.finished()).isFalse();
     tick(0.10);
     assertThat(routine.getState()).isEqualTo(StraightLineTest.State.PASSED);
-    assertThat(trailblazer.getFieldRelativeSetpoint(pose, speeds).vxMetersPerSecond).isZero();
+    assertThat(trailblazer.getFieldRelativeSetpoint(pose, speeds).vxMetersPerSecond).isEqualTo(0);
   }
 
   @Test
@@ -264,7 +265,7 @@ final class HeadlessTest {
     var routine = routine();
     assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(trailblazer.getFieldRelativeSetpoint(pose, new ChassisSpeeds()).vxMetersPerSecond)
-        .isZero();
+        .isEqualTo(0);
   }
 
   @AfterEach
@@ -291,9 +292,9 @@ final class HeadlessTest {
     assertThat(routine.getState()).isEqualTo(StraightLineTest.State.PASSED);
   }
 
-  @Tag("headless")
-  @ParameterizedTest
   @EnumSource(value = TestSelection.class, names = "NONE", mode = EnumSource.Mode.EXCLUDE)
+  @ParameterizedTest
+  @Tag("headless")
   @Timeout(120)
   void runsRegisteredTest(TestSelection selection) throws IOException {
     org.junit.jupiter.api.Assumptions.assumeTrue(
@@ -316,10 +317,9 @@ final class HeadlessTest {
     DriverStationSim.notifyNewData();
     double voltage = Double.parseDouble(System.getProperty("sim.batteryVoltage", "12.0"));
     double heading = Double.parseDouble(System.getProperty("sim.startHeading", "0.0"));
-    if (!Double.isFinite(voltage) || voltage <= 0 || !Double.isFinite(heading)) {
-      throw new IllegalArgumentException(
-          "Battery voltage must be positive and start heading finite");
-    }
+    checkArgument(
+        Double.isFinite(voltage) && voltage > 0 && Double.isFinite(heading),
+        "Battery voltage must be positive and start heading finite");
     List<StraightLineTest.Sample> samples = new ArrayList<>();
     List<DriveSample> driveSamples = new ArrayList<>();
     RoboRioSim.setVInVoltage(voltage);
@@ -345,7 +345,7 @@ final class HeadlessTest {
         robot.runUntil(
             () ->
                 !manager.getRunId().equals(previousRun)
-                    && manager.getResult().map(TestManager.Result::finished).orElse(false),
+                    && manager.getResult().filter(TestManager.Result::finished).isPresent(),
             () -> {
               var requested = robot.commandedSpeeds();
               driveSamples.add(
@@ -383,6 +383,6 @@ final class HeadlessTest {
     tick(10.1);
     assertThat(routine.getState()).isEqualTo(StraightLineTest.State.FAILED);
     assertThat(routine.reason()).contains("Timed out");
-    assertThat(trailblazer.getFieldRelativeSetpoint(pose, speeds).vxMetersPerSecond).isZero();
+    assertThat(trailblazer.getFieldRelativeSetpoint(pose, speeds).vxMetersPerSecond).isEqualTo(0);
   }
 }
