@@ -1,23 +1,25 @@
 # Integration testing
 
-The offseason bot has a headless test suite and a straight-line diagnostic you can run in
-simulation or on the robot. This setup is only available in the offseason application.
+Integration tests check how robot code works together. The offseason bot currently supports
+headless simulation checks and a straight-line diagnostic in full simulation or on the robot.
+Comp and new member bots do not currently include this testing setup.
 
 Use Java 21 and run commands from the repository's root folder.
-On Windows PowerShell, use `.\gradlew.bat` instead of `./gradlew`.
+On Windows, use `gradlew.bat` instead of `./gradlew`.
 
 ## Headless sim
 
-Run checks for straight-line driving, controller bindings, and test manager behavior without
-a simulator window or physical robot:
+Run simulation tests without a simulator window or physical robot. They can cover straight-line
+driving, controller bindings, test manager behavior, etc.
 
 ```sh
 ./gradlew headlessTest
 ```
 
 Gradle prints the test results and ends with `BUILD SUCCESSFUL` if all tests pass.
+A failed test makes the command fail.
 
-To run the straight-line and test manager checks:
+To run only the straight-line tests:
 
 ```sh
 ./gradlew :offseason-bot:straightLineTest
@@ -29,7 +31,7 @@ To change the straight-line distance (meters) and maximum speed (meters per seco
 ./gradlew :offseason-bot:straightLineTest -Psim.distance=3 -Psim.maxVelocity=1.5
 ```
 
-After `headlessTest`, find the results here:
+After `headlessTest`, open these files:
 
 - `offseason-bot/build/reports/tests/headlessTest/index.html` — test results and failure details.
 - `offseason-bot/build/reports/headlessTest/motion/summary.md` — straight-line measurements.
@@ -39,8 +41,7 @@ For `straightLineTest`, replace `headlessTest` with `straightLineTest` in those 
 Reports are overwritten on each run.
 
 CI runs the suite on every push in the **Headless tests** job. Download its **headless-results**
-artifact for reports and logs. Run `headlessTest` explicitly; `test`, `build`, and deployment
-commands do not run it.
+artifact for reports and logs. Normal `test`, `build`, and deployment commands do not run this suite.
 
 ## Full sim
 
@@ -52,17 +53,16 @@ Start the offseason robot application with the simulator window:
 
 To run the straight-line diagnostic:
 
-1. Connect a dashboard to the simulator. While disabled, select `STRAIGHT_LINE` in
-   `SmartDashboard/Tests/SelectedTest`.
+1. While disabled, select `STRAIGHT_LINE` in the connected dashboard's `Tests/SelectedTest` chooser.
 2. Set values under `Tests/StraightLine/Config/`. Defaults include `distance=2` meters,
    `maxVelocity=1` meter per second, and `maxAcceleration=0.75` meters per second squared.
-3. Select **Test** mode in the simulator and enable. The diagnostic runs once per enable.
+3. Enable **Test** mode in the simulator. The diagnostic runs once per enable.
 4. Watch `Tests/Regression/Status` and `Tests/Reason` in the dashboard or logs for the result.
    Disable before changing settings or running again. Disabling during a run aborts it.
 
-Normal controller buttons do not issue requests during Test mode. Settings are read when you
-enable; changes made during a run apply on the next enable. Results appear in the dashboard
-and robot logs. Full sim does not create a headless HTML report.
+Normal controller bindings are suppressed during Test mode. Configuration is captured when
+Test mode is enabled; edits during a run apply the next time you enable.
+The interactive diagnostic reports through dashboard/log values rather than the headless HTML report.
 
 ## On robot
 
@@ -72,11 +72,27 @@ Deploy the offseason application to the intended robot:
 ./gradlew :offseason-bot:deploy
 ```
 
-1. With the robot disabled, clear enough space for the configured drive and stopping distance.
+1. With the robot disabled, allow room for the configured driving distance and keep the path clear.
 2. In the connected dashboard, select `STRAIGHT_LINE` and configure it as described under **Full sim**.
 3. Enable **Test** mode in Driver Station. Watch the robot and disable to abort if needed.
 4. Read `Tests/Regression/Status` and `Tests/Reason`, save the robot log, and measure the final
    position independently. Disable before another attempt; select `NONE` when finished.
 
-The straight-line diagnostic passes when the robot reaches the goal and settles within
-tolerance. Acceleration limits are not checked.
+A passing straight-line diagnostic checks reaching the goal and settling. It does not verify
+acceleration limits or replace checking the robot's physical motion.
+
+## Check test results
+
+- **CI:** Open the branch's latest **CI** run in GitHub Actions. Check **Run tests** for unit tests
+  and **Headless tests** for simulation tests. Open a failed job to read its test failures. The run's **Summary** includes straight-line
+  measurements. Under **Artifacts**, download and unzip **headless-results**, then open
+  `index.html` under `reports/tests/headlessTest/` for the test report.
+- **Local headless tests:** Check the terminal for failed test names, then open
+  `offseason-bot/build/reports/tests/headlessTest/index.html` in a browser for details.
+  Read `offseason-bot/build/reports/headlessTest/motion/summary.md` for straight-line measurements.
+  For `straightLineTest`, replace `headlessTest` with `straightLineTest` in these paths.
+- **Local unit tests:** After `./gradlew test`, open `<project>/build/reports/tests/test/index.html`
+  for each project you want to check.
+- **Full sim or on robot:** Check `Tests/Regression/Status` for `PASSED`, `FAILED`, or `ABORTED`,
+  and `Tests/Reason` for an explanation. These values are in the dashboard and robot logs;
+  interactive runs do not produce the headless HTML report.
