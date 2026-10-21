@@ -1,5 +1,6 @@
 package frc.robot.testing;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team581.math.PoseErrorTolerance;
@@ -58,7 +59,7 @@ final class TestManagerTest {
     tick(0.30);
     assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.PASSED);
     tick(1.0);
-    assertThat(manager.getActiveTest().orElseThrow()).isSameAs(first);
+    assertThat(manager.getActiveTest()).containsSame(first);
     manager.runRequest();
     tick(0.02);
     assertThat(manager.getActiveTest().orElseThrow()).isNotSameAs(first);
@@ -77,7 +78,7 @@ final class TestManagerTest {
     tick(0.02);
     assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.ABORTED);
     assertThat(trailblazer.getFieldRelativeSetpoint(pose, new ChassisSpeeds()).vxMetersPerSecond)
-        .isZero();
+        .isEqualTo(0);
     assertThat(source).isEqualTo(DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP);
   }
 
@@ -89,7 +90,7 @@ final class TestManagerTest {
     assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.FAILED);
     assertThat(manager.getResult().orElseThrow().reason()).contains("Preparation failed");
     assertThat(trailblazer.getFieldRelativeSetpoint(pose, new ChassisSpeeds()).vxMetersPerSecond)
-        .isZero();
+        .isEqualTo(0);
     failPreparation = false;
     tick(0.02);
     assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.FAILED);
@@ -118,9 +119,7 @@ final class TestManagerTest {
             ChassisSpeeds::new,
             () -> {
               prepareCalls++;
-              if (failPreparation) {
-                throw new IllegalStateException("Preparation failed");
-              }
+              checkState(!failPreparation, "Preparation failed");
             },
             value -> source = value,
             () -> selection);
@@ -138,7 +137,7 @@ final class TestManagerTest {
     DriverStationSim.setEnabled(false);
     tick(0.02);
     assertThat(manager.getActiveTest()).isEmpty();
-    assertThat(prepareCalls).isZero();
+    assertThat(prepareCalls).isEqualTo(0);
     enable();
     assertThat(source).isEqualTo(DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP);
     assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.RUNNING);
