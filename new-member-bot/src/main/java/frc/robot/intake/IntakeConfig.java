@@ -25,6 +25,6 @@ public class IntakeConfig {
                   .withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(0)
-                  .withSupplyCurrentLimit(0)); // assign currents
+                  .withStatorCurrentLimit(70)
+                  .withSupplyCurrentLimit(70)); // assign currents
 }
