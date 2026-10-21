@@ -60,8 +60,8 @@ This repository is organized as a Gradle monorepo with the following projects:
 ./gradlew :offseason-bot:straightLineTest
 ```
 
-See [headless testing](docs/headless-testing.md) for how to run the offseason simulation tests
-and find their results.
+See [integration testing](docs/integration-testing.md) for how to run offseason tests in headless sim, full sim,
+and on the robot, and find their results.
 See [robot regression design](docs/robot-regression.md) for whole-robot coverage, proposed tolerances,
 and simulation/physical run procedures.
 

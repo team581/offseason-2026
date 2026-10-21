@@ -329,7 +329,7 @@ From the repository root:
 ```
 
 The focused report is at `offseason-bot/build/reports/straightLineTest/motion/summary.md`, with
-CSV files beside it. See [headless testing](headless-testing.md) for JUnit and CI paths. Inspect
+CSV files beside it. See [integration testing](integration-testing.md) for JUnit and CI paths. Inspect
 velocity and acceleration measurements manually; the retained test judges endpoint and settling.
 
 In interactive simulation or on a deployed robot:

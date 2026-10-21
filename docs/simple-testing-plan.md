@@ -104,6 +104,6 @@ problem justifies their maintenance cost. Detailed acceptance criteria are in th
   robot management/localization. Its follower also differs from the production bump wrapper.
   A passing diagnostic cannot certify those unexercised paths.
 
-[Headless testing](headless-testing.md) documents the current commands. The broader
+[Integration testing](integration-testing.md) documents the current commands. The broader
 [whole-robot proposal](robot-regression.md) is a backlog of potential coverage, not the minimum
 implementation scope. Its numeric limits are uncalibrated proposals.
