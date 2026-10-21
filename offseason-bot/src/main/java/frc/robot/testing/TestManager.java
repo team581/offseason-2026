@@ -13,6 +13,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Optional;
@@ -64,6 +65,7 @@ public final class TestManager extends StateMachineSubsystem<TestSelection> {
   private final Supplier<TestSelection> selection;
   private Optional<Test<?>> active = Optional.empty();
   private Optional<Result> result = Optional.empty();
+  private boolean testMode;
   private boolean previouslyEnabled;
   private boolean startRequested;
   private String runId = "NOT_STARTED";
@@ -110,7 +112,9 @@ public final class TestManager extends StateMachineSubsystem<TestSelection> {
     return runId;
   }
 
-  /** Starts another run of the selected test, including without leaving enabled Test mode. */
+  /**
+   * Starts another run of the selected test, including while TestMode remains enabled in teleop.
+   */
   public void runRequest() {
     startRequested = true;
   }
@@ -128,6 +132,7 @@ public final class TestManager extends StateMachineSubsystem<TestSelection> {
 
   @Override
   protected void collectInputs() {
+    testMode = DSOptions.TEST_MODE.getAsBoolean();
     pose = poseSupplier.get();
     speeds = speedsSupplier.get();
   }
@@ -139,7 +144,7 @@ public final class TestManager extends StateMachineSubsystem<TestSelection> {
 
   @Override
   protected void whileInState(TestSelection selected) {
-    boolean enabled = DriverStation.isTestEnabled();
+    boolean enabled = DriverStation.isTeleopEnabled() && testMode;
     try {
       if (enabled) {
         prepare.run();

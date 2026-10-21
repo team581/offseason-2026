@@ -71,7 +71,7 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
   @Override
   public void abort() {
     if (!finished()) {
-      reason = "Test mode disabled or interrupted";
+      reason = "TestMode turned off or robot disabled/interrupted";
       setStateFromRequest(State.ABORTED);
     }
   }

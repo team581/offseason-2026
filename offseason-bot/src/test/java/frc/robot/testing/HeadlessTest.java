@@ -162,7 +162,8 @@ final class HeadlessTest {
   private Trailblazer trailblazer;
 
   private StraightLineTest routine() {
-    DriverStationSim.setTest(true);
+    NetworkTableInstance.getDefault().getTable("DSOptions").getEntry("TestMode").setBoolean(true);
+    DriverStationSim.setTest(false);
     DriverStationSim.setEnabled(true);
     tick(0.02);
     return (StraightLineTest) manager.getActiveTest().orElseThrow();
@@ -270,6 +271,7 @@ final class HeadlessTest {
 
   @AfterEach
   void resumeClock() {
+    NetworkTableInstance.getDefault().getTable("DSOptions").getEntry("TestMode").setBoolean(false);
     DriverStationSim.setEnabled(false);
     DriverStationSim.notifyNewData();
     SimHooks.resumeTiming();
@@ -312,7 +314,7 @@ final class HeadlessTest {
     DriverStationSim.setDsAttached(true);
     DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
     DriverStationSim.setAutonomous(false);
-    DriverStationSim.setTest(true);
+    DriverStationSim.setTest(false);
     DriverStationSim.setEnabled(false);
     DriverStationSim.notifyNewData();
     double voltage = Double.parseDouble(System.getProperty("sim.batteryVoltage", "12.0"));
@@ -328,15 +330,23 @@ final class HeadlessTest {
     }
     // Avoid the auto chooser resetting the test's starting pose while disabled.
     try (var resetPose =
-        NetworkTableInstance.getDefault()
-            .getTable("DSOptions")
-            .getBooleanTopic("ResetPoseForAuto")
-            .publish()) {
+            NetworkTableInstance.getDefault()
+                .getTable("DSOptions")
+                .getBooleanTopic("ResetPoseForAuto")
+                .publish();
+        var testMode =
+            NetworkTableInstance.getDefault()
+                .getTable("DSOptions")
+                .getBooleanTopic("TestMode")
+                .publish()) {
+      testMode.set(false);
       resetPose.set(false);
       robot.select(selection, new Pose2d(2, 2, Rotation2d.fromDegrees(heading)));
       var manager = robot.manager();
       String previousRun = manager.getRunId();
       DriverStationSim.setEnabled(true);
+      robot.tick();
+      testMode.set(true);
       DriverStationSim.notifyNewData();
       // Record the stopped speed before the first drive command.
       driveSamples.add(
@@ -358,6 +368,7 @@ final class HeadlessTest {
             },
             30.0);
       } finally {
+        testMode.set(false);
         DriverStationSim.setEnabled(false);
         robot.tick();
         writeDriveSamples(driveSamples);

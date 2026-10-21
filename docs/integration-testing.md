@@ -11,7 +11,7 @@ On Windows, use `gradlew.bat` instead of `./gradlew`.
 
 Run the regular robot application without a simulator window or physical robot. The headless
 runner uses the normal robot lifecycle, scheduler, controller bindings, and subsystem simulations
-to run the same registered tests used in Test mode. Test manager behavior and controlled
+to run the same registered tests used with the `TestMode` DS option. Test manager behavior and controlled
 straight-line failure checks also run with the normal unit tests.
 
 ```sh
@@ -58,12 +58,13 @@ Start the offseason robot application with the simulator window:
 To run the straight-line diagnostic:
 
 1. While disabled, select `STRAIGHT_LINE` in the connected dashboard's `Tests/SelectedTest` chooser.
-2. Enable **Test** mode in the simulator. The selected test runs once per enable.
+2. Enable **Teleop** in the simulator, then set `/DSOptions/TestMode` to `true`.
+   The option defaults to `false`; the selected test starts when enabled teleop and `TestMode` are both active.
 3. Watch `Tests/Regression/Status` and `Tests/Reason` in the dashboard or logs for the result.
-   Disable to select another test or run the same test again. Disabling during a run aborts it.
+   Disable to select another test or run the same test again. Disabling or turning off `TestMode` during a run aborts it.
 
-Selection is read while disabled, matching auto selection. Each enable creates a fresh test.
-`TestManager.runRequest()` can also restart the selected test during enabled Test mode.
+Selection is read while disabled, matching auto selection. Each activation creates a fresh test. Toggle `TestMode` off and on to rerun while enabled.
+`TestManager.runRequest()` can also restart the selected test while `TestMode` is active in enabled teleop.
 Tests command the shared Trailblazer; Swerve uses its normal field-centric drive source.
 Normal controller bindings remain active.
 The interactive diagnostic reports through dashboard/log values rather than the headless HTML report.
@@ -78,7 +79,8 @@ Deploy the offseason application to the intended robot:
 
 1. With the robot disabled, allow room for the test’s driving distance and keep the path clear.
 2. In the connected dashboard, select `STRAIGHT_LINE` as described under **Full sim**.
-3. Enable **Test** mode in Driver Station. Watch the robot and disable to abort if needed.
+3. Enable **Teleop** in Driver Station, then set `/DSOptions/TestMode` to `true`.
+   Watch the robot and disable or turn off `TestMode` to abort if needed.
 4. Read `Tests/Regression/Status` and `Tests/Reason`, save the robot log, and measure the final
    position independently. Disable before another attempt; select `NONE` when finished.
 
@@ -106,7 +108,7 @@ acceleration limits or replace checking the robot's physical motion.
 Implement a state machine extending `TestManager.Test`, then register its factory in
 `TestSelection`, just like `AutoSelection`. That enum is the only registration list: the dashboard
 chooser and parameterized headless runner both enumerate it. No separate simulation test is needed.
-The runner constructs `Robot`, selects through the dashboard chooser, enables Test mode, and
+The runner constructs `Robot`, selects through the dashboard chooser, enables teleop and `TestMode`, and
 checks the result returned by the test. Swerve uses its existing simulation thread and normal
 drive requests. Add any new subsystem simulation support to the regular robot simulation so
 interactive and headless runs share it.

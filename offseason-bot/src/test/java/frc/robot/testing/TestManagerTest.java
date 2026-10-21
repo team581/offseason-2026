@@ -14,8 +14,10 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
+import frc.robot.config.DSOptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,9 +32,18 @@ final class TestManagerTest {
   private boolean failPreparation;
 
   private void enable() {
-    DriverStationSim.setTest(true);
+    setTestMode(true);
+    DriverStationSim.setAutonomous(false);
+    DriverStationSim.setTest(false);
     DriverStationSim.setEnabled(true);
     tick(0.02);
+  }
+
+  private void setTestMode(boolean enabled) {
+    NetworkTableInstance.getDefault()
+        .getTable("DSOptions")
+        .getEntry("TestMode")
+        .setBoolean(enabled);
   }
 
   private void tick(double seconds) {
@@ -44,6 +55,7 @@ final class TestManagerTest {
 
   @AfterEach
   void cleanup() {
+    setTestMode(false);
     DriverStationSim.setEnabled(false);
     DriverStationSim.notifyNewData();
     SimHooks.resumeTiming();
@@ -105,6 +117,8 @@ final class TestManagerTest {
     assertThat(HAL.initialize(500, 0)).isTrue();
     DogLog.setOptions(
         new DogLogOptions().withLogExtras(false).withUseLogThread(false).withNtPublish(false));
+    assertThat(DSOptions.TEST_MODE.getAsBoolean()).isFalse();
+    setTestMode(false);
     DriverStationSim.resetData();
     DriverStationSim.setDsAttached(true);
     SimHooks.pauseTiming();
@@ -127,18 +141,23 @@ final class TestManagerTest {
   }
 
   @Test
-  void onlyRunsInEnabledTestMode() {
-    DriverStationSim.setAutonomous(true);
+  void onlyRunsInEnabledTeleopWithTestModeOption() {
     DriverStationSim.setEnabled(true);
     tick(0.02);
-    DriverStationSim.setAutonomous(false);
+    assertThat(manager.getActiveTest()).isEmpty();
+    setTestMode(true);
+    DriverStationSim.setAutonomous(true);
     tick(0.02);
+    DriverStationSim.setAutonomous(false);
     DriverStationSim.setTest(true);
+    tick(0.02);
+    DriverStationSim.setTest(false);
     DriverStationSim.setEnabled(false);
     tick(0.02);
     assertThat(manager.getActiveTest()).isEmpty();
     assertThat(prepareCalls).isEqualTo(0);
-    enable();
+    DriverStationSim.setEnabled(true);
+    tick(0.02);
     assertThat(source).isEqualTo(DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP);
     assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.RUNNING);
   }
@@ -160,5 +179,21 @@ final class TestManagerTest {
     tick(0.02);
     enable();
     assertThat(manager.getActiveTest().orElseThrow()).isNotSameAs(first);
+  }
+
+  @Test
+  void togglingTestModeInTeleopAbortsAndStartsAFreshRun() {
+    enable();
+    var first = manager.getActiveTest().orElseThrow();
+    setTestMode(false);
+    tick(0.02);
+    assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.ABORTED);
+    assertThat(trailblazer.getFieldRelativeSetpoint(pose, new ChassisSpeeds()).vxMetersPerSecond)
+        .isEqualTo(0);
+    assertThat(source).isEqualTo(DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP);
+    setTestMode(true);
+    tick(0.02);
+    assertThat(manager.getActiveTest().orElseThrow()).isNotSameAs(first);
+    assertThat(manager.getResult().orElseThrow().status()).isEqualTo(TestManager.Status.RUNNING);
   }
 }
