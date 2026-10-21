@@ -8,8 +8,5 @@ dependencies = ["cadquery-ocp==8.0.1.0.0", "numpy==2.5.3", "scipy==1.18.1", "tri
 [dependency-groups]
 dev = ["ty"]
 
-[tool.ty.environment]
-python-version = "3.14"
-
 [tool.ty.src]
 include = ["**/*.py"]
