@@ -58,7 +58,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
-  public static final double MAX_LINEAR_RATE = 4.75;
+  /**
+   * Maximum requested linear speed. Set to the drivetrain's physical free speed at 12 V ({@code
+   * kSpeedAt12Volts}) so a full-stick request is actually achievable; the previous 4.75 m/s
+   * promised ~18% more than the comp bot can physically do, guaranteeing a request/actual gap.
+   */
+  public static final double MAX_LINEAR_RATE =
+      (RobotKind.IS_COMP_BOT
+              ? CompTunerConstants.kSpeedAt12Volts
+              : PracticeTunerConstants.kSpeedAt12Volts)
+          .in(edu.wpi.first.units.Units.MetersPerSecond);
 
   private static final double LOOSE_TOLERANCE = 45.0;
   // TODO(simonstoryparker): make separate ones for scoring
@@ -98,6 +107,18 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final SwerveRequest.FieldCentric driverPerspective =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
+          .withDeadband(0.07)
+          .withRotationalDeadband(0.05);
+
+  /**
+   * Closed-loop velocity variant of {@link #driverPerspective}, selected by {@link
+   * FeatureFlags#TELEOP_CLOSED_LOOP_DRIVE}. Module-level velocity control compensates battery sag
+   * and load, closing most of the request/actual gap inside the feasible envelope.
+   */
+  private final SwerveRequest.FieldCentric driverPerspectiveClosedLoop =
+      new SwerveRequest.FieldCentric()
+          .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
@@ -426,7 +447,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         } else {
           var swerveRequest =
               switch (driveSource.getDriveSourceType()) {
-                case DRIVER_PERSPECTIVE_OPEN_LOOP -> driverPerspective;
+                case DRIVER_PERSPECTIVE_OPEN_LOOP ->
+                    FeatureFlags.TELEOP_CLOSED_LOOP_DRIVE.getAsBoolean()
+                        ? driverPerspectiveClosedLoop
+                        : driverPerspective;
                 case FIELD_CENTRIC_CLOSED_LOOP -> fieldCentric;
               };
 
