@@ -47,12 +47,20 @@ This repository is organized as a Gradle monorepo with the following projects:
 ### Running tests
 
 ```sh
-# Run all tests
+# Run all unit tests
 ./gradlew test
 
 # Run tests for specific project
 ./gradlew comp-bot:test
+
+# Run headless simulation tests
+./gradlew headlessTest
+
+# Run offseason straight-line tests
+./gradlew :offseason-bot:straightLineTest
 ```
+
+See [integration testing](docs/integration-testing.md) for commands, robot test controls, and results.
 
 ### Code formatting
 

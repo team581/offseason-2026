@@ -65,7 +65,7 @@ dependencies {
 }
 
 test {
-	useJUnitPlatform()
+	useJUnitPlatform { excludeTags 'headless' }
 	systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
@@ -99,6 +99,35 @@ gversion {
 	dateFormat = "yyyy-MM-dd HH:mm:ss z"
 	timeZone = "America/Los_Angeles"
 	indent = "  "
+}
+
+// Run the registered robot tests through the same TestManager without a simulator window.
+[
+	headlessTest: 'Runs every registered robot test in headless simulation',
+	straightLineTest: 'Runs the registered straight-line test in headless simulation'
+].each { taskName, taskDescription ->
+	def headlessTask = tasks.register(taskName, Test) {
+		group = 'verification'
+		description = taskDescription
+		testClassesDirs = sourceSets.test.output.classesDirs
+		classpath = sourceSets.test.runtimeClasspath
+		useJUnitPlatform { includeTags 'headless' }
+		if (taskName == 'straightLineTest') {
+			systemProperty 'sim.test', 'STRAIGHT_LINE'
+		}
+		maxParallelForks = 1
+		systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
+		systemProperty 'sim.outputDir', layout.buildDirectory.dir("reports/${taskName}/motion").get().asFile.absolutePath
+		project.properties.findAll { key, value ->
+			key.startsWith('sim.')
+		}.each { key, value ->
+			systemProperty key, value.toString()
+		}
+		outputs.upToDateWhen { false }
+		outputs.cacheIf { false }
+		testLogging { events 'passed', 'failed', 'skipped' }
+	}
+	wpi.java.configureTestTasks(headlessTask.get())
 }
 
 // Offline camera preview; intentionally independent of build/install tasks.
