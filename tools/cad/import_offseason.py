@@ -18,11 +18,11 @@ import struct
 import tempfile
 from pathlib import Path
 
-import numpy as np  # ty:ignore[unresolved-import]
-import trimesh  # ty:ignore[unresolved-import]
-import trimesh.visual  # ty:ignore[unresolved-import]
-import trimesh.visual.material  # ty:ignore[unresolved-import]
-from scipy.spatial.transform import Rotation  # ty:ignore[unresolved-import]
+import numpy as np
+import trimesh
+import trimesh.visual
+import trimesh.visual.material
+from scipy.spatial.transform import Rotation
 
 ROBOT_FROM_CAD = np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 TURRET_PIVOT = [-0.120650000, 0.203835000, 0.374650000]
@@ -31,18 +31,18 @@ HOOD_PIVOT = [-0.014985981, 0.203835000, 0.457770893]
 
 
 def convert_step(source, output):
-    from OCP.BRepMesh import BRepMesh_IncrementalMesh  # ty:ignore[unresolved-import]
-    from OCP.collections import (  # ty:ignore[unresolved-import]
+    from OCP.BRepMesh import BRepMesh_IncrementalMesh
+    from OCP.collections import (
         IndexedDataMap_TCollection_AsciiString_TCollection_AsciiString,
         Sequence_TDF_Label,
     )
-    from OCP.IFSelect import IFSelect_RetDone  # ty:ignore[unresolved-import]
-    from OCP.Message import Message_ProgressRange  # ty:ignore[unresolved-import]
-    from OCP.RWGltf import RWGltf_CafWriter  # ty:ignore[unresolved-import]
-    from OCP.STEPCAFControl import STEPCAFControl_Reader  # ty:ignore[unresolved-import]
-    from OCP.TCollection import TCollection_AsciiString, TCollection_ExtendedString  # ty:ignore[unresolved-import]
-    from OCP.TDocStd import TDocStd_Document  # ty:ignore[unresolved-import]
-    from OCP.XCAFDoc import XCAFDoc_DocumentTool  # ty:ignore[unresolved-import]
+    from OCP.IFSelect import IFSelect_RetDone
+    from OCP.Message import Message_ProgressRange
+    from OCP.RWGltf import RWGltf_CafWriter
+    from OCP.STEPCAFControl import STEPCAFControl_Reader
+    from OCP.TCollection import TCollection_AsciiString, TCollection_ExtendedString
+    from OCP.TDocStd import TDocStd_Document
+    from OCP.XCAFDoc import XCAFDoc_DocumentTool
 
     document = TDocStd_Document(TCollection_ExtendedString("offseason-cad"))
     reader = STEPCAFControl_Reader()
