@@ -217,9 +217,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return fieldRelativeSpeeds;
   }
 
-  // public ChassisSpeeds getRequestedFieldRelativeSpeeds() {
-  //   return toFieldRelativeSpeeds(getRequestedSpeeds());
-  // }
+  public ChassisSpeeds getRequestedFieldRelativeSpeeds() {
+    // return toFieldRelativeSpeeds(getRequestedSpeeds());
+    return getRequestedSpeeds();
+  }
 
   public ChassisSpeeds getRequestedSpeeds() {
     return driveSource.getRequestedSpeeds();
