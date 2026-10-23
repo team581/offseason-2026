@@ -46,7 +46,7 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   @Override
   protected void collectInputs() {
     var status = vision.getStatus();
-    localizationHealthy = status.available() && status.usable() > 0 || RobotBase.isSimulation();
+    localizationHealthy = (status.available() && status.usable() > 0) || RobotBase.isSimulation();
     fuelDetectionHealthy = false;
     allCamerasHealthy = status.allRequiredHealthy() || RobotBase.isSimulation();
   }
