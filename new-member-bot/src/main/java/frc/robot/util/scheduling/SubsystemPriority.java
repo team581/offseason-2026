@@ -8,7 +8,8 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   FEEDER(0),
   CONVEYOR(0),
   SWERVE(0),
-  HEALTH(0);
+  HEALTH(0),
+  HARDWARE(0);
 
   public final int value;
 

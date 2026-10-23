@@ -193,11 +193,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   private double distanceToFeedingRpm(double distance) {
-    return distance * 3000.0;
+    return ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(3000.0);
   }
 
   private double distanceToScoringRpm(double distance) {
-    return distance * 3000.0;
+    return ShooterConfig.DISTANCE_TO_SCORE_RPM.get(3000.0);
   }
 
   @Override
