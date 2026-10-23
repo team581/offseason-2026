@@ -3,6 +3,7 @@ package frc.robot.health;
 import com.team581.config.BlinkingBooleanBox;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
@@ -45,9 +46,9 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   @Override
   protected void collectInputs() {
     var status = vision.getStatus();
-    localizationHealthy = status.available() && status.usable() > 0;
+    localizationHealthy = status.available() && status.usable() > 0 || RobotBase.isSimulation();
     fuelDetectionHealthy = false;
-    allCamerasHealthy = status.allRequiredHealthy();
+    allCamerasHealthy = status.allRequiredHealthy() || RobotBase.isSimulation();
   }
 
   @Override
