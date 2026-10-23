@@ -21,10 +21,10 @@ public class AimParameterUtil {
       double turretFeedForwardRadians,
       double upcomingTurretAngle) {}
 
-  private static final ShootOnTheMove SCORING_SOTM =
+  public static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF);
 
-  private static final ShootOnTheMove FEEDING_SOTM =
+  public static final ShootOnTheMove FEEDING_SOTM =
       new ShootOnTheMove(ShooterConfig.DISTANCE_TO_FEED_TOF);
 
   private static final double FEEDING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(20);
