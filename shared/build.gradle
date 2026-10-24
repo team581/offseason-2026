@@ -5,6 +5,7 @@ plugins {
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
 dependencies {
+	implementation 'org.java-websocket:Java-WebSocket:1.6.0'
 	annotationProcessor wpi.java.deps.wpilibAnnotations()
 	implementation wpi.java.deps.wpilib()
 	implementation wpi.java.vendor.java()
@@ -35,3 +36,12 @@ ext.wpilibVersion = "2026.+"
 
 // Enable desktop support for shared library
 wpi.java.configureTestTasks(test)
+
+// Fixture uses the same HAL/NT server as a robot, without CAN devices or deployment.
+tasks.register('simulationAppFixture', JavaExec) {
+	dependsOn testClasses, 'extractReleaseNative'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.team581.simulation.SimulationAppFixture'
+	systemProperty 'java.library.path', layout.buildDirectory.dir('jni/release').get().asFile.absolutePath
+	systemProperty 'fixture.topics', providers.gradleProperty('fixtureTopics').getOrElse('100')
+}
