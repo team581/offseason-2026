@@ -102,7 +102,7 @@ gversion {
 }
 
 // Offline camera preview; intentionally independent of build/install tasks.
-dependencies { implementation 'com.google.code.gson:gson:2.11.0' }
+dependencies { implementation 'com.google.code.gson:gson:2.15.0' }
 tasks.register('exportSpotCameraPreview', JavaExec) {
 	dependsOn tasks.named('classes')
 	classpath = sourceSets.main.runtimeClasspath
