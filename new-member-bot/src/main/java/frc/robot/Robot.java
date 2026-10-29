@@ -72,7 +72,7 @@ public class Robot extends Base581Robot {
     driver.x().onPress(intake::haltIntakeRequest);
 
     // Y = Spin to Score
-    // driver.y().onPress(() -> shooter.hubscoreRequest(14.0));
+    driver.y().onPress(() -> shooter.hubscoreRequest(14.0));
 
     // Left Bumper = Spin to Feed
     driver.leftBumper().onPress(() -> shooter.feedRequest(14.0));
