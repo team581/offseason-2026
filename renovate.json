@@ -13,13 +13,27 @@
     "matchStrings": ["jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }"]
   }],
   "timezone": "America/Los_Angeles",
-  "packageRules": [{
-    "groupName": "error-prone",
-    "matchSourceUrls": [
-      "https://github.com/google/error-prone",
-      "https://github.com/PicnicSupermarket/error-prone-support"
-    ]
-  }],
+  "packageRules": [
+    {
+      "groupName": "error-prone",
+      "matchSourceUrls": [
+        "https://github.com/google/error-prone",
+        "https://github.com/PicnicSupermarket/error-prone-support"
+      ]
+    },
+    {
+      "groupName": "profiling Python dependencies",
+      "matchFileNames": ["shared/src/main/python/profiling/pyproject.toml"],
+      "matchManagers": ["pep621"],
+      "separateMajorMinor": true
+    },
+    {
+      "groupName": "CAD Python dependencies",
+      "matchFileNames": ["tools/cad/pyproject.toml"],
+      "matchManagers": ["pep621"],
+      "separateMajorMinor": true
+    }
+  ],
   "semanticCommits": "disabled",
   "gitIgnoredAuthors": ["114827586+autofix-ci[bot]@users.noreply.github.com"],
   "labels": ["dependencies"],
