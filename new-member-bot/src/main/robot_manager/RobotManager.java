@@ -95,6 +95,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void logFeedTransition() {
+    DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/ShooterAtGoalDebounced", shooter.atGoalDebounced());
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
@@ -103,5 +104,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
     DogLog.log("RobotManager/Feeding/ScoreTransition/NotNearTrench", !nearTrench);
     DogLog.log("RobotManager/Feeding/FeedTransition/IsMoving", isMoving);
+  }
+
+  private void logScoringTransition() {
+    DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/ShooterAtGoalDebounced", shooter.atGoalDebounced());
+    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
+    DogLog.log("RobotManager/Scoring/ScoreTransition/NotNearTrench", !nearTrench);
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/SwerveSafeSpeed", !swerve.isMovingPastSafeSpeed());
   }
 }

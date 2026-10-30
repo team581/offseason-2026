@@ -19,6 +19,7 @@ public class Robot extends Base581Robot {
 
   private final Hardware hardware = new Hardware();
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
+  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
   private final Shooter shooter =
       new Shooter(
           hardware.shooterTopLeftMotor,
@@ -67,6 +68,13 @@ public class Robot extends Base581Robot {
 
     // B = Eject
     driver.b().onPress(intake::ejectRequest);
+
+    operator
+        .leftTrigger()
+        .onPress(robotManager::stowDeployRequest)
+        .onRelease(robotManager::cancelStowDeployRequest);
+
+    operator.b().onPress(deploy::fixAlignmentRequest).onRelease(deploy::intakeRequest);
 
     // X = Halt Intake
     driver.x().onPress(intake::haltIntakeRequest);
