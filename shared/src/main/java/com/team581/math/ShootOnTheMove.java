@@ -38,10 +38,10 @@ public class ShootOnTheMove {
   }
 
   public double getPredictedVelocity(double measured, double commanded, String name) {
-    // var diff = (measured - commanded) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    // DogLog.log("SOTM/SVETof/" + name, diff);
-    // return measured - diff;
-    return measured;
+    var diff = (measured - commanded) * COMMANDED_VELOCITY_USAGE_PERCENT;
+    DogLog.log("SOTM/SVETof/" + name, diff);
+    return measured - diff;
+    // return measured;
   }
 
   public SeparatedVelocityCompensatedGoal getSeparatedVelocityCompensatedGoal(

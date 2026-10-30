@@ -17,8 +17,8 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.config.RobotKind;
 
 public class TurretConfig {
-  public static final double MIN_ANGLE = RobotKind.IS_COMP_BOT ? -390.0 : -355.0;
-  public static final double MAX_ANGLE = RobotKind.IS_COMP_BOT ? 40.0 : 5.0;
+  public static final double MIN_ANGLE = -270.0;
+  public static final double MAX_ANGLE = -90.0;
   public static final double FAUX_DUMPER_ANGLE = -180;
 
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
@@ -49,12 +49,7 @@ public class TurretConfig {
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withSlot0(
-              new Slot0Configs()
-                  .withKP(200)
-                  .withKV(RobotKind.IS_COMP_BOT ? 5.0 : 6.0)
-                  .withKG(0.0)
-                  .withKD(1.7)
-                  .withKS(RobotKind.IS_COMP_BOT ? 0.35 : 0.2))
+              new Slot0Configs().withKP(200).withKV(5.0).withKG(0.0).withKD(1.7).withKS(0.35))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(Units.radiansToRotations(MAX_VELOCITY_RAD_PER_SEC))
