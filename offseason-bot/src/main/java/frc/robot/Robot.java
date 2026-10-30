@@ -35,6 +35,7 @@ import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.testing.TestManager;
 import frc.robot.turret.Turret;
 import frc.robot.vision.SpotVisionIO;
 import frc.robot.vision.Vision;
@@ -122,7 +123,7 @@ public class Robot extends Base581Robot {
   private final PowerManager powerManager =
       new PowerManager(
           shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);
-  private final RobotManager robotManager =
+  final RobotManager robotManager =
       new RobotManager(
           hopperManager,
           shooterHood,
@@ -139,6 +140,8 @@ public class Robot extends Base581Robot {
 
   @SuppressWarnings("unused") // Registers itself as a subsystem.
   private final Autos autos = new Autos(robotManager, trailblazer);
+
+  final TestManager testManager = new TestManager(robotManager, trailblazer);
 
   public Robot() {
     logMetadata(
