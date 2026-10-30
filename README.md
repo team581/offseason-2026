@@ -84,7 +84,3 @@ These instructions describe how to install JDK 21 and set it up in WPILib VS Cod
    - `java.jdt.ls.java.home`
    - `java.configuration.runtimes`
    - `terminal.integrated.env.osx` -> `JAVA_HOME`
-
-## Simulation Studio
-
-See [standalone app installation and simulation integration](docs/simulation-studio.md).

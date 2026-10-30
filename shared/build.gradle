@@ -41,7 +41,7 @@ wpi.java.configureTestTasks(test)
 tasks.register('simulationAppFixture', JavaExec) {
 	dependsOn testClasses, 'extractReleaseNative'
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = 'com.team581.simulation.SimulationAppFixture'
+	mainClass = 'com.team581.simulation_studio.SimulationControlBridgeTest'
 	systemProperty 'java.library.path', layout.buildDirectory.dir('jni/release').get().asFile.absolutePath
 	systemProperty 'fixture.topics', providers.gradleProperty('fixtureTopics').getOrElse('100')
 }

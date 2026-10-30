@@ -1,4 +1,4 @@
-package com.team581.simulation;
+package com.team581.simulation_studio;
 
 import static java.util.Comparator.naturalOrder;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -7,9 +7,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.networktables.DoubleEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -18,6 +23,30 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+final class FrameValidationTest {
+  @Test
+  void rejectsInvalidAxes() {
+    var invalid =
+        new SimulationControlBridge.Frame(
+            1,
+            0,
+            false,
+            false,
+            "teleop",
+            "Unknown",
+            -1,
+            Collections.nCopies(
+                6,
+                new SimulationControlBridge.Frame.Joystick(
+                    "x",
+                    true,
+                    ImmutableList.of(Double.NaN),
+                    ImmutableList.of(),
+                    ImmutableList.of())));
+    assertThatThrownBy(invalid::validate).isInstanceOf(IllegalArgumentException.class);
+  }
+}
 
 final class SimulationControlBridgeTest {
   private static final class Client extends WebSocketClient {
@@ -49,8 +78,61 @@ final class SimulationControlBridgeTest {
   }
 
   private static final ObjectMapper JSON = new ObjectMapper();
+
   // Allow cold WebSocket startup on busy CI workers without changing the control watchdog.
   private static final long CONNECT_TIMEOUT_SECONDS = 10;
+
+  public static void main(String[] args) throws Exception {
+    HAL.initialize(500, 0);
+    var nt = NetworkTableInstance.getDefault();
+    nt.startServer("", "127.0.0.1", 1735, 5810);
+    var bridge = new SimulationControlBridge(System.getenv("TEAM581_SIM_APP"), "fixture", 5811);
+    bridge.start();
+    var chooser = new SendableChooser<String>();
+    chooser.setDefaultOption("Do nothing", "idle");
+    chooser.addOption("Drive", "drive");
+    SmartDashboard.putData("Fixture/Auto", chooser);
+    nt.getBooleanTopic("/Fixture/FeatureFlags/Example").getEntry(false).set(false);
+    nt.getIntegerTopic("/Fixture/Int64").getEntry(0).set(9007199254740993L);
+    nt.getStringTopic("/Fixture/Text").getEntry("").set("Hello simulation");
+    nt.getDoubleArrayTopic("/Fixture/Array").getEntry(new double[] {}).set(new double[] {1, 2, 3});
+    var entries = new ArrayList<DoubleEntry>();
+    int count = Integer.parseInt(System.getProperty("fixture.topics", "100"));
+    for (int i = 0; i < count; i++) {
+      var entry =
+          nt.getDoubleTopic((i < 500 ? "/Fixture/Values/Value" : "/Fixture/Metadata/Value") + i)
+              .getEntry(0);
+      entry.set(i);
+      entries.add(entry);
+      if (i % 100 == 99) {
+        nt.flushLocal();
+        Thread.sleep(50);
+      }
+    }
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    bridge.stop(1000);
+                  } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                  }
+                  nt.stopServer();
+                }));
+    long tick = 0;
+    while (!Thread.currentThread().isInterrupted()) {
+      bridge.applyLatest();
+      SmartDashboard.updateValues();
+      for (int i = 0; i < Math.min(count, 500); i++) {
+        entries.get(i).set(Math.sin(tick * 0.01 + i));
+      }
+      nt.flush();
+      tick++;
+      Thread.sleep(20);
+    }
+  }
+
   private SimulationControlBridge bridge;
   private Client client;
 
@@ -59,7 +141,7 @@ final class SimulationControlBridgeTest {
   private long send(boolean enabled, boolean estop) throws Exception {
     long sentSequence = sequence++;
     var stick =
-        new SimControlSnapshot.Joystick(
+        new SimulationControlBridge.Frame.Joystick(
             "Fixture",
             true,
             ImmutableList.of(0.25, -0.5),
@@ -67,7 +149,7 @@ final class SimulationControlBridgeTest {
             ImmutableList.of(90));
     client.send(
         JSON.writeValueAsString(
-            new SimControlSnapshot(
+            new SimulationControlBridge.Frame(
                 1,
                 sentSequence,
                 enabled,
@@ -168,14 +250,16 @@ final class SimulationControlBridgeTest {
 
   @Test
   void sharedProtocolVectors() throws Exception {
-    try (var stream = getClass().getResourceAsStream("/simulation/control-v1.json")) {
+    try (var stream = getClass().getResourceAsStream("/simulation-studio/control-v1.json")) {
       var corpus = JSON.readTree(stream);
       for (var entry : corpus.get("control")) {
         if (entry.get("valid").asBoolean()) {
-          JSON.treeToValue(entry.get("frame"), SimControlSnapshot.class).validate();
+          JSON.treeToValue(entry.get("frame"), SimulationControlBridge.Frame.class).validate();
         } else {
           assertThatThrownBy(
-                  () -> JSON.treeToValue(entry.get("frame"), SimControlSnapshot.class).validate())
+                  () ->
+                      JSON.treeToValue(entry.get("frame"), SimulationControlBridge.Frame.class)
+                          .validate())
               .as(entry.get("name").asText())
               .isInstanceOf(Exception.class);
         }

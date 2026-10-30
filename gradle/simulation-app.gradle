@@ -18,12 +18,12 @@ if (override.isPresent()) {
 		candidates.add(new File(local, 'Simulation Studio/simulation-studio.exe'))
 	}
 }
-def studioInstalled = candidates.any { app ->
+def studio = candidates.find { app ->
 	app.name.endsWith('.app')
 			? new File(app, 'Contents/MacOS/simulation-studio').isFile()
 			: app.isFile()
 }
-if (useWpilibGui || !studioInstalled) {
+if (useWpilibGui || studio == null) {
 	wpi.sim.addGui().defaultEnabled = true
 	wpi.sim.addDriverstation()
 	if (!useWpilibGui) {
@@ -41,8 +41,5 @@ if (useWpilibGui || !studioInstalled) {
 } else {
 	wpi.sim.environment.put('TEAM581_CUSTOM_SIM', 'true')
 	wpi.sim.environment.put('TEAM581_SIM_PROJECT', project.name)
-	// Do not bake an installation path into VS Code metadata: Java resolves it at launch.
-	if (override.isPresent()) {
-		wpi.sim.environment.put('TEAM581_SIM_APP', override.get())
-	}
+	wpi.sim.environment.put('TEAM581_SIM_APP', studio.absolutePath)
 }

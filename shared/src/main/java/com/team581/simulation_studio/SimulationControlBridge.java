@@ -1,4 +1,4 @@
-package com.team581.simulation;
+package com.team581.simulation_studio;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,7 +15,6 @@ import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import org.java_websocket.WebSocket;
@@ -23,10 +24,79 @@ import org.java_websocket.server.WebSocketServer;
 
 /** Loopback-only input service. Decode on the socket thread; apply on the robot thread. */
 public final class SimulationControlBridge extends WebSocketServer {
-  private record Received(SimControlSnapshot frame, long receivedAt, WebSocket owner) {}
+  public record Frame(
+      int version,
+      long sequence,
+      boolean enabled,
+      boolean estop,
+      String mode,
+      String alliance,
+      double matchTime,
+      List<Joystick> joysticks) {
+    public record Joystick(
+        String name, boolean xbox, List<Double> axes, List<Boolean> buttons, List<Integer> povs) {}
+
+    public void validate() {
+      checkArgument(
+          version == 1
+              && sequence >= 0
+              && mode != null
+              && alliance != null
+              && ImmutableList.of("teleop", "auto", "test").contains(mode)
+              && List.of("Unknown", "Red1", "Red2", "Red3", "Blue1", "Blue2", "Blue3")
+                  .contains(alliance)
+              && Double.isFinite(matchTime)
+              && matchTime >= -1
+              && matchTime <= 3600
+              && joysticks != null
+              && joysticks.size() == 6,
+          "Invalid control frame");
+      for (var stick : joysticks) {
+        checkArgument(
+            stick != null
+                && stick.name() != null
+                && stick.name().length() <= 128
+                && stick.axes() != null
+                && stick.axes().size() <= 12
+                && stick.buttons() != null
+                && stick.buttons().size() <= 32
+                && stick.povs() != null
+                && stick.povs().size() <= 12,
+            "Invalid joystick description");
+        for (var axis : stick.axes()) {
+          checkArgument(
+              axis != null && Double.isFinite(axis) && Math.abs(axis) <= 1,
+              "Invalid joystick axis");
+        }
+        for (var button : stick.buttons()) {
+          checkArgument(button != null, "Invalid joystick button");
+        }
+        for (var pov : stick.povs()) {
+          checkArgument(pov != null && pov >= -1 && pov < 360, "Invalid joystick POV");
+        }
+      }
+    }
+  }
+
+  private record Acknowledgement(
+      int version, long sequence, boolean enabled, boolean estop, boolean attached, String mode) {}
+
+  private record Received(Frame frame, long receivedAt, WebSocket owner) {}
 
   private static final ObjectMapper JSON = new ObjectMapper();
   private static final long TIMEOUT_NANOS = 250_000_000L;
+
+  public static void attachTo(TimedRobot robot) {
+    if (RobotBase.isSimulation() && "true".equals(System.getenv("TEAM581_CUSTOM_SIM"))) {
+      var bridge =
+          new SimulationControlBridge(
+              System.getenv("TEAM581_SIM_APP"),
+              System.getenv().getOrDefault("TEAM581_SIM_PROJECT", "robot"),
+              Integer.parseInt(System.getenv().getOrDefault("TEAM581_SIM_PORT", "5811")));
+      bridge.start();
+      robot.addPeriodic(bridge::applyLatest, 0.02, 0.005);
+    }
+  }
 
   private static void clearJoysticks() {
     for (int port = 0; port < 6; port++) {
@@ -123,18 +193,12 @@ public final class SimulationControlBridge extends WebSocketServer {
             .owner()
             .send(
                 JSON.writeValueAsString(
-                    Map.of(
-                        "version",
+                    new Acknowledgement(
                         1,
-                        "sequence",
                         frame.sequence(),
-                        "enabled",
                         DriverStationSim.getEnabled(),
-                        "estop",
                         estopped,
-                        "attached",
                         true,
-                        "mode",
                         frame.mode())));
       } catch (IOException | WebsocketNotConnectedException exception) {
         onError(received.owner(), exception);
@@ -163,7 +227,7 @@ public final class SimulationControlBridge extends WebSocketServer {
     }
     try {
       checkArgument(message.length() <= 16_384, "Frame too large");
-      var frame = JSON.readValue(message, SimControlSnapshot.class);
+      var frame = JSON.readValue(message, Frame.class);
       frame.validate();
       checkArgument(frame.sequence() > lastSequence, "Out of order control frame");
       checkArgument(armed || !frame.enabled(), "Send a disabled frame before enabling");
