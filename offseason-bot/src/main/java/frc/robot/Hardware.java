@@ -10,7 +10,6 @@ import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.config.RobotKind;
 import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
@@ -55,7 +54,7 @@ public class Hardware {
   public final TalonFX turretMotor = new TalonFX(28, rio);
   public final CANcoder turretEncoder = new CANcoder(29, rio);
 
-  public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
+  public final CANrange hopperCANRange = new CANrange(31, rio);
   public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
 
