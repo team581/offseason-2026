@@ -111,15 +111,14 @@ final class SimulationControlBridgeTest {
     }
     Runtime.getRuntime()
         .addShutdownHook(
-            new Thread(
-                () -> {
-                  try {
-                    bridge.stop(1000);
-                  } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                  }
-                  nt.stopServer();
-                }));
+            new Thread(() -> {
+              try {
+                bridge.stop(1000);
+              } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+              }
+              nt.stopServer();
+            }));
     long tick = 0;
     while (!Thread.currentThread().isInterrupted()) {
       bridge.applyLatest();
@@ -256,10 +255,9 @@ final class SimulationControlBridgeTest {
         if (entry.get("valid").asBoolean()) {
           JSON.treeToValue(entry.get("frame"), SimulationControlBridge.Frame.class).validate();
         } else {
-          assertThatThrownBy(
-                  () ->
-                      JSON.treeToValue(entry.get("frame"), SimulationControlBridge.Frame.class)
-                          .validate())
+          assertThatThrownBy(() ->
+                  JSON.treeToValue(entry.get("frame"), SimulationControlBridge.Frame.class)
+                      .validate())
               .as(entry.get("name").asText())
               .isInstanceOf(Exception.class);
         }
