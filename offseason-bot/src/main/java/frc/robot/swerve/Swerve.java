@@ -46,7 +46,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
       DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
-  ;
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
@@ -357,15 +356,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     /* Run simulation at a faster rate so PID gains behave more reasonably */
     simNotifier =
-        new Notifier(
-            () -> {
-              double currentTime = Utils.getCurrentTimeSeconds();
-              double deltaTime = currentTime - lastSimTime;
-              lastSimTime = currentTime;
+        new Notifier(() -> {
+          double currentTime = Utils.getCurrentTimeSeconds();
+          double deltaTime = currentTime - lastSimTime;
+          lastSimTime = currentTime;
 
-              /* use the measured time delta, get battery voltage from WPILib */
-              drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
-            });
+          /* use the measured time delta, get battery voltage from WPILib */
+          drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
+        });
     simNotifier.startPeriodic(SIM_LOOP_PERIOD);
   }
 

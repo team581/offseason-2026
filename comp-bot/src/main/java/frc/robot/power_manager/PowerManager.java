@@ -81,15 +81,14 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   @Override
   protected void afterTransition(PowerManagerState newState) {
     DogLog.timestamp("PowerManager/UpdatedCurrentsAt");
-    executor.execute(
-        () -> {
-          shooter.applyCurrentLimits(newState.shooterSupplyCurrent);
-          intake.applyCurrentLimits(newState.intakeSupplyCurrent);
-          deploy.applyCurrentLimits(newState.deploySupplyCurrent);
-          shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
-          feeder.applyCurrentLimits(newState.feederSupplyCurrent);
-          conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
-          swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
-        });
+    executor.execute(() -> {
+      shooter.applyCurrentLimits(newState.shooterSupplyCurrent);
+      intake.applyCurrentLimits(newState.intakeSupplyCurrent);
+      deploy.applyCurrentLimits(newState.deploySupplyCurrent);
+      shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
+      feeder.applyCurrentLimits(newState.feederSupplyCurrent);
+      conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
+      swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
+    });
   }
 }

@@ -147,7 +147,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     var shooterSimulation =
         SimKit.velocityMechanism(
             "shooter",
-            (mechanism) ->
+            mechanism ->
                 mechanism
                     .addMotor(topleftMotor)
                     .addMotor(toprightMotor)
@@ -221,6 +221,5 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     bottomrightMotorRpm = bottomrightMotor.getVelocity().getValueAsDouble() * 60.0;
 
     AtGoal = MathUtil.isNear(toprightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-    ;
   }
 }

@@ -89,17 +89,16 @@ public class PowerManager extends StateMachineSubsystem<PowerManagerState> {
   @Override
   protected void afterTransition(PowerManagerState newState) {
     DogLog.timestamp("PowerManager/UpdatedCurrentsAt");
-    executor.execute(
-        () -> {
-          shooter.applyCurrentLimits(newState.shooterSupplyCurrent);
-          intake.applyCurrentLimits(newState.intakeSupplyCurrent);
-          deploy.applyCurrentLimits(newState.deploySupplyCurrent);
-          shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
-          feeder.applyCurrentLimits(newState.feederSupplyCurrent);
-          conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
-          funneler.applyCurrentLimits(newState.funnelerSupplyCurrent);
-          swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
-          turret.applyCurrentLimits(newState.turretSupplyCurrent);
-        });
+    executor.execute(() -> {
+      shooter.applyCurrentLimits(newState.shooterSupplyCurrent);
+      intake.applyCurrentLimits(newState.intakeSupplyCurrent);
+      deploy.applyCurrentLimits(newState.deploySupplyCurrent);
+      shooterHood.applyCurrentLimits(newState.shooterHoodSupplyCurrent);
+      feeder.applyCurrentLimits(newState.feederSupplyCurrent);
+      conveyor.applyCurrentLimits(newState.conveyorSupplyCurrent);
+      funneler.applyCurrentLimits(newState.funnelerSupplyCurrent);
+      swerve.applyCurrentLimits(newState.swerveSupplyCurrent);
+      turret.applyCurrentLimits(newState.turretSupplyCurrent);
+    });
   }
 }

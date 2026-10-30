@@ -239,7 +239,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     var shooterSimulation =
         SimKit.velocityMechanism(
             "shooter",
-            (mechanism) ->
+            mechanism ->
                 mechanism
                     .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
                     .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)

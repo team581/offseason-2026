@@ -52,34 +52,28 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                       new Pose2d(
                           10.489, FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY(), Rotation2d.kCW_90deg))
                   .withTransitionTolerance(new PoseErrorTolerance(0.75, 100)),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.744, 6.049, Rotation2d.fromDegrees(-115)))))
+              AutoPoint.of(() ->
+                      getCollisionPoint(
+                          Point.ofRed(new Pose2d(8.744, 6.049, Rotation2d.fromDegrees(-115)))))
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 100)),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.316, 4.945, Rotation2d.fromDegrees(-115)))))
+              AutoPoint.of(() ->
+                      getCollisionPoint(
+                          Point.ofRed(new Pose2d(8.316, 4.945, Rotation2d.fromDegrees(-115)))))
                   .withMarker(Markers.PRIORITIZE_INTAKE)
                   .withTransitionTolerance(new PoseErrorTolerance(0.35, 100))
                   .withLinearConstraints(2.5, 3.0),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(8.856, 4.445, Rotation2d.fromDegrees(-40.0)))))
+              AutoPoint.of(() ->
+                      getCollisionPoint(
+                          Point.ofRed(new Pose2d(8.856, 4.445, Rotation2d.fromDegrees(-40.0)))))
                   .withAngularConstraints(2.75, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.356, 4.245, Rotation2d.kZero))))
+              AutoPoint.of(() ->
+                      getCollisionPoint(Point.ofRed(new Pose2d(9.356, 4.245, Rotation2d.kZero))))
                   .withAngularConstraints(2.75, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.of(
-                      () ->
-                          getCollisionPoint(
-                              Point.ofRed(new Pose2d(9.756, 4.545, Rotation2d.fromDegrees(35.0)))))
+              AutoPoint.of(() ->
+                      getCollisionPoint(
+                          Point.ofRed(new Pose2d(9.756, 4.545, Rotation2d.fromDegrees(35.0)))))
                   .withLinearConstraints(2.0, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 55)),
               AutoPoint.ofRed(

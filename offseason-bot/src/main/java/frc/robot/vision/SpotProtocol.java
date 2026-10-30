@@ -69,13 +69,12 @@ public final class SpotProtocol {
     // Stable ascending IDs produce the same profile hash across restarts.
     layout.getTags().stream()
         .sorted(comparingInt(tag -> tag.ID))
-        .forEach(
-            tag ->
-                field.addTags(
-                    SpotProtos.FieldTag.newBuilder()
-                        .setId(tag.ID)
-                        .setFieldToTag(pose(tag.pose))
-                        .setSizeM(tagSizeM)));
+        .forEach(tag ->
+            field.addTags(
+                SpotProtos.FieldTag.newBuilder()
+                    .setId(tag.ID)
+                    .setFieldToTag(pose(tag.pose))
+                    .setSizeM(tagSizeM)));
     return SpotProtos.Profile.newBuilder()
         .setSchemaVersion(2)
         .setRobotId(robotId)

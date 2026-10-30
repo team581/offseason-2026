@@ -91,10 +91,9 @@ public final class VisionProcessor {
     for (var observation : observations) {
       long correlated =
           observations.stream()
-              .filter(
-                  other ->
-                      MathUtil.isNear(other.timestamp(), observation.timestamp(), .02)
-                          && other.tagIds().stream().anyMatch(observation.tagIds()::contains))
+              .filter(other ->
+                  MathUtil.isNear(other.timestamp(), observation.timestamp(), .02)
+                      && other.tagIds().stream().anyMatch(observation.tagIds()::contains))
               .map(VisionMeasurement::source)
               .distinct()
               .count();
@@ -224,10 +223,9 @@ public final class VisionProcessor {
         || !observation.getModeId().equals(applied.getModeId())
         || !observation.getOpticalSignature().equals(applied.getOpticalSignature())
         || definition.orElseThrow().getAllowedModesList().stream()
-            .noneMatch(
-                mode ->
-                    mode.getId().equals(observation.getModeId())
-                        && mode.getOpticalSignature().equals(observation.getOpticalSignature()))) {
+            .noneMatch(mode ->
+                mode.getId().equals(observation.getModeId())
+                    && mode.getOpticalSignature().equals(observation.getOpticalSignature()))) {
       return Decision.reject(Reason.CONFIGURATION);
     }
     if (!Double.isFinite(now) || !Double.isFinite(timestamp) || timestamp <= 0) {
