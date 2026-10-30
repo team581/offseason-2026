@@ -335,7 +335,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.1, 0.47, Rotation2d.kCCW_90deg));
+    return Point.ofRed(new Pose2d(12.1, 0.47, Rotation2d.k180deg));
   }
 
   private Point getCollisionPoint(Point point) {
