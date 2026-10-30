@@ -33,7 +33,7 @@ def includeDesktopSupport = false
 
 dependencies {
 	implementation project(':shared')
-	implementation 'com.google.protobuf:protobuf-java:4.33.2'
+	implementation 'com.google.protobuf:protobuf-java:4.36.2'
 
 	annotationProcessor wpi.java.deps.wpilibAnnotations()
 	implementation wpi.java.deps.wpilib()
