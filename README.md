@@ -4,6 +4,10 @@
 
 [Team 581](https://github.com/team581)'s 2026 robot code monorepo.
 
+## Robot specs
+
+- [2026 offseason bot specs](docs/offseason_bot/README.md)
+
 ## Spot vision documentation
 
 - [Camera configuration](docs/camera-configuration.md): SWYFT/Arducam pixels and capture capabilities, Java settings, controls and value meanings.
