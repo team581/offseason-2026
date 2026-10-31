@@ -147,7 +147,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     var shooterSimulation =
         SimKit.velocityMechanism(
             "shooter",
-            (mechanism) ->
+            mechanism ->
                 mechanism
                     .addMotor(topleftMotor)
                     .addMotor(toprightMotor)
@@ -193,11 +193,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
   }
 
   private double distanceToFeedingRpm(double distance) {
-    return distance * 3000.0;
+    return ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(3000.0);
   }
 
   private double distanceToScoringRpm(double distance) {
-    return distance * 3000.0;
+    return ShooterConfig.DISTANCE_TO_SCORE_RPM.get(3000.0);
   }
 
   @Override
@@ -221,6 +221,5 @@ public class Shooter extends StateMachineSubsystem<ShooterState> {
     bottomrightMotorRpm = bottomrightMotor.getVelocity().getValueAsDouble() * 60.0;
 
     AtGoal = MathUtil.isNear(toprightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-    ;
   }
 }

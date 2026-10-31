@@ -4,11 +4,6 @@
 
 [Team 581](https://github.com/team581)'s 2026 robot code monorepo.
 
-## Spot vision documentation
-
-- [Camera configuration](docs/camera-configuration.md): SWYFT/Arducam pixels and capture capabilities, Java settings, controls and value meanings.
-- [Vision and localization integration](docs/spot-robot-integration.md): transport, validation, ordering and estimator ingestion.
-
 ## Project Structure
 
 This repository is organized as a Gradle monorepo with the following projects:

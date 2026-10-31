@@ -182,7 +182,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     var turretSimulation =
         SimKit.positionMechanism(
             "turret",
-            (mechanism) ->
+            mechanism ->
                 mechanism
                     .addMotor(motor)
                     .withMinPosition(Units.degreesToRotations(TurretConfig.MIN_ANGLE))

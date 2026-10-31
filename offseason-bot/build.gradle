@@ -33,7 +33,7 @@ def includeDesktopSupport = false
 
 dependencies {
 	implementation project(':shared')
-	implementation 'com.google.protobuf:protobuf-java:4.33.2'
+	implementation 'com.google.protobuf:protobuf-java:4.36.2'
 
 	annotationProcessor wpi.java.deps.wpilibAnnotations()
 	implementation wpi.java.deps.wpilib()
@@ -131,7 +131,7 @@ gversion {
 }
 
 // Offline camera preview; intentionally independent of build/install tasks.
-dependencies { implementation 'com.google.code.gson:gson:2.11.0' }
+dependencies { implementation 'com.google.code.gson:gson:2.15.0' }
 tasks.register('exportSpotCameraPreview', JavaExec) {
 	dependsOn tasks.named('classes')
 	classpath = sourceSets.main.runtimeClasspath

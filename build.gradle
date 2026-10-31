@@ -106,7 +106,7 @@ spotless {
 			}
 		}
 		eclipse().configFile('eclipse-formatter.properties').sortMembersEnabled(true).sortMembersVisibilityOrderEnabled(true)
-		googleJavaFormat()
+		googleJavaFormat("2.0.0")
 		// Preserve the exact extraction marker ahead of local helper packages.
 		licenseHeader '', '(?m)^(?:// Move to shared folder after offseason\\R)?package '
 

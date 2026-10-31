@@ -28,15 +28,14 @@ final class VisionConfigTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> Control.pinned("gain", Double.NaN))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(
-            () ->
-                new SpotCameraConfig(
-                    "front",
-                    true,
-                    VisionConfig.mount(0, 0, .3, 0, 0, 0),
-                    90,
-                    new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-                    ImmutableList.of()))
+    assertThatThrownBy(() ->
+            new SpotCameraConfig(
+                "front",
+                true,
+                VisionConfig.mount(0, 0, .3, 0, 0, 0),
+                90,
+                new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+                ImmutableList.of()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 

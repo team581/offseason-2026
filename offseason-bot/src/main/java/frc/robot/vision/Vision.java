@@ -166,9 +166,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       boolean matchingPolicy =
           observation.getTagSelectionGeneration() == selection.generation()
               && observation.getCandidatesList().stream()
-                  .allMatch(
-                      candidate ->
-                          selection.allowedTagIds().containsAll(candidate.getTagIdsList()));
+                  .allMatch(candidate ->
+                      selection.allowedTagIds().containsAll(candidate.getTagIdsList()));
       var decision =
           !available
               ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CONFIGURATION)
@@ -446,16 +445,15 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   private void retireObservations() {
-    cameras.replaceAll(
-        (name, old) ->
-            new CameraStatus(
-                Double.NEGATIVE_INFINITY,
-                Double.NEGATIVE_INFINITY,
-                Double.NEGATIVE_INFINITY,
-                old.accepted(),
-                old.rejected(),
-                false,
-                "Retired generation"));
+    cameras.replaceAll((name, old) ->
+        new CameraStatus(
+            Double.NEGATIVE_INFINITY,
+            Double.NEGATIVE_INFINITY,
+            Double.NEGATIVE_INFINITY,
+            old.accepted(),
+            old.rejected(),
+            false,
+            "Retired generation"));
     lastHub = lastTag = Double.NEGATIVE_INFINITY;
   }
 

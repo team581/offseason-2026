@@ -192,16 +192,14 @@ public class Robot extends Base581Robot {
 
     operator
         .y()
-        .onPress(
-            () -> {
-              powerManager.turboRequest();
-              shooter.setTurboMode(true);
-            })
-        .onRelease(
-            () -> {
-              powerManager.idleRequest();
-              shooter.setTurboMode(false);
-            });
+        .onPress(() -> {
+          powerManager.turboRequest();
+          shooter.setTurboMode(true);
+        })
+        .onRelease(() -> {
+          powerManager.idleRequest();
+          shooter.setTurboMode(false);
+        });
 
     // operator.b().onPress(robotManager::prepareFeedRequest).onRelease(robotManager::idleRequest);
 

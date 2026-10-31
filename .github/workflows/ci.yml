@@ -2,11 +2,14 @@ name: CI
 
 on: [push]
 
-jobs:
-  assemble:
-    name: Assemble
+permissions:
+  contents: read
 
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+jobs:
+  build:
+    name: Build and test
+
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
       - parallel:
@@ -21,61 +24,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Assemble
         run: ./gradlew assemble
-  build:
-    name: Build
-
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    needs:
-      - assemble
-      - test
-
-    steps:
-      - parallel:
-          - name: Checkout Git repository
-            uses: actions/checkout@v7
-          - name: Setup Java
-            uses: actions/setup-java@v6
-            with:
-              distribution: "temurin"
-              java-version: 21
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: Build
-        run: ./gradlew build
-  test:
-    name: Run tests
-
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    needs:
-      - assemble
-
-    steps:
-      - parallel:
-          - name: Checkout Git repository
-            uses: actions/checkout@v7
-          - name: Setup Java
-            uses: actions/setup-java@v6
-            with:
-              distribution: "temurin"
-              java-version: 21
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
       - name: Run tests
+        id: tests
         run: ./gradlew test
-      - name: Notify Slack if tests fail
-        if: failure() && github.ref == 'refs/heads/main'
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,author,message
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   sim:
     name: Headless tests
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: assemble
+    runs-on: blacksmith-2vcpu-ubuntu-2604
     timeout-minutes: 10
 
     steps:
@@ -105,10 +59,7 @@ jobs:
   style:
     name: Check formatting
 
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    needs:
-      - assemble
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
       - parallel:
@@ -126,7 +77,7 @@ jobs:
   ruff:
     name: Lint Python
 
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
       - name: Checkout Git repository
@@ -143,23 +94,14 @@ jobs:
   ty:
     name: Type check Python
 
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v7
-      - name: Read Python version from mise
-        id: python
-        run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import tomllib
-          with open("mise.toml", "rb") as config:
-              print(f"version={tomllib.load(config)['tools']['python']}")
-          PY
       - name: Setup uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version: ${{ steps.python.outputs.version }}
           enable-cache: true
           prune-cache: false
       - name: Install dependencies

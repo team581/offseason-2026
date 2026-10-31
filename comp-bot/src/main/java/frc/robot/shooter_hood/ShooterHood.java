@@ -129,7 +129,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     var shooterHoodSimulation =
         SimKit.positionMechanism(
             "ShooterHood",
-            (mechanism) ->
+            mechanism ->
                 mechanism
                     .addMotor(motor, ChassisReference.Clockwise_Positive)
                     .withMaxPosition(Units.degreesToRotations(ShooterHoodConfig.MAX_ANGLE))

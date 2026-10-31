@@ -46,12 +46,11 @@ public final class PositionMechanism {
     // Collect configs for averaging
     List<TalonFXConfiguration> configs =
         devices.stream()
-            .map(
-                motor -> {
-                  var config = new TalonFXConfiguration();
-                  motor.motor().getConfigurator().refresh(config);
-                  return config;
-                })
+            .map(motor -> {
+              var config = new TalonFXConfiguration();
+              motor.motor().getConfigurator().refresh(config);
+              return config;
+            })
             .toList();
 
     var cruiseVelocity =
@@ -165,15 +164,14 @@ public final class PositionMechanism {
     // Dynamic motion magic requests specify constraints per-request, so read them each update
     var constraints =
         getDynamicConstraints(devices)
-            .orElseGet(
-                () -> {
-                  // Fall back to config-based constraints, cached after first read
-                  if (!hasRefreshedConfigConstraints) {
-                    hasRefreshedConfigConstraints = true;
-                    configConstraints = getConfigConstraints(devices);
-                  }
-                  return configConstraints;
-                });
+            .orElseGet(() -> {
+              // Fall back to config-based constraints, cached after first read
+              if (!hasRefreshedConfigConstraints) {
+                hasRefreshedConfigConstraints = true;
+                configConstraints = getConfigConstraints(devices);
+              }
+              return configConstraints;
+            });
 
     var currentState = currentMechanismState(devices);
 
