@@ -24,13 +24,11 @@
     {
       "groupName": "profiling Python dependencies",
       "matchFileNames": ["shared/src/main/python/profiling/pyproject.toml"],
-      "matchManagers": ["pep621"],
       "separateMajorMinor": true
     },
     {
       "groupName": "CAD Python dependencies",
       "matchFileNames": ["tools/cad/pyproject.toml"],
-      "matchManagers": ["pep621"],
       "separateMajorMinor": true
     }
   ],
