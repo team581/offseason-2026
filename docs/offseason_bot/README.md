@@ -28,10 +28,12 @@ Specifics:
 - Shooter
 - Shooter Hood
 - Turret
-- Tag Cameras - TBD Static/Turret
+- Tag Cameras: Static chassis-fixed cameras with Spot vision coprocessor
 - Swerve
 
 ## Documents
+
+[BB581 2026 Offseason Bot Subsystems Specs](https://docs.google.com/spreadsheets/d/1mDvdYTsRMR2ZFJCAtvY2HhmHgne9vuBPMxt81vQo0jg/edit?gid=0#gid=0)
 
 [BB581 2026 Comp Devices](https://docs.google.com/spreadsheets/d/1YYtONOdg2YZQRPSNLiy-PlFT4Bk8vO7IyIyxR8BQ8LU/edit?usp=sharing)
 
