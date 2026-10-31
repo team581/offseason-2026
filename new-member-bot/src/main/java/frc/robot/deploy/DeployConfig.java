@@ -11,7 +11,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import frc.robot.config.RobotKind;
 
 public class DeployConfig {
   public static final double MAX_LENGTH = 11.8;
@@ -31,8 +30,7 @@ public class DeployConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(RATIO))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(
-                      RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
+                  .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))
@@ -53,8 +51,7 @@ public class DeployConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(RATIO))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withNeutralMode(
-                      RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
+                  .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))

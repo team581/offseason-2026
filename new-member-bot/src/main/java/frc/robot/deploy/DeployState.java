@@ -11,7 +11,7 @@ public enum DeployState {
   SCORE_COMPACTION(0.0), // TBD
   FEED_COMPACTION(0.0), // TBD
 
-  FIX_ALIGHNMENT(DeployConfig.MAX_LENGTH),
+  FIX_ALIGNMENT(DeployConfig.MAX_LENGTH),
 
   // Homing States
   HOME_INWARD(0.0),

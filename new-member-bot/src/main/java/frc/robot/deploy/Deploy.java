@@ -52,28 +52,34 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   private final StatusSignal<Current> rightSupplyCurrentSignal;
 
-  public Deploy(
-      DifferentialMechanism<TalonFX> differentialMechanism, TalonFX leftMotor, TalonFX rightMotor) {
+  public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
     this.differentialMechanism = differentialMechanism;
-    this.leftMotor = leftMotor;
-    this.rightMotor = rightMotor;
+    this.leftMotor = differentialMechanism.getLeader();
+    this.rightMotor = differentialMechanism.getFollower();
     TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
     differentialMechanism.setControl(
         torqueCurrentFOCAverageRequest.withPosition(0),
         positionDifferentialRequest.withPosition(0.0));
-    differentialMechanism.setControl(positionDifferentialRequest.withPosition(0.0));
+    differentialMechanism.setControl(
+        motionMagicTorqueCurrentFOCAverageRequest.withPosition(0),
+        positionDifferentialRequest.withPosition(0.0));
     differentialMechanism.setNeutralOut();
 
     leftPositionSignal = leftMotor.getPosition(false);
     rightPositionSignal = rightMotor.getPosition(false);
+    differentialAveragePositionSignal = differentialMechanism.getAveragePosition(false);
     leftStatorCurrentSignal = leftMotor.getStatorCurrent(false);
     rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
     Signals.forDevice(leftMotor)
-        .addSignals(leftPositionSignal, leftStatorCurrentSignal, leftSupplyCurrentSignal);
+        .addSignals(
+            leftPositionSignal,
+            differentialAveragePositionSignal,
+            leftStatorCurrentSignal,
+            leftSupplyCurrentSignal);
     Signals.forDevice(rightMotor)
         .addSignals(rightPositionSignal, rightStatorCurrentSignal, rightSupplyCurrentSignal);
   }

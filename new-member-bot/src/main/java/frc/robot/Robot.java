@@ -7,6 +7,7 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import edu.wpi.first.math.controller.PIDController;
+import frc.robot.deploy.Deploy;
 import frc.robot.generated.BuildConstants;
 import frc.robot.health.HealthManager;
 import frc.robot.imu.Imu;
@@ -80,16 +81,15 @@ public class Robot extends Base581Robot {
   protected void configureBindings() {
     var driver =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
+    var operator =
+        new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.operatorController);
     // A = Intake
     driver.a().onPress(intake::intakeRequest);
 
     // B = Eject
     driver.b().onPress(intake::ejectRequest);
 
-    operator
-        .leftTrigger()
-        .onPress(robotManager::stowDeployRequest)
-        .onRelease(robotManager::cancelStowDeployRequest);
+    operator.leftTrigger().onPress(deploy::stowRequest).onRelease(deploy::intakeRequest);
 
     operator.b().onPress(deploy::fixAlignmentRequest).onRelease(deploy::intakeRequest);
 

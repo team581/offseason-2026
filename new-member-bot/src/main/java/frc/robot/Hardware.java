@@ -1,9 +1,14 @@
 package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
+import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.CompTunerConstants;
 import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
 
@@ -13,6 +18,18 @@ public class Hardware {
 
   private final CANBus canivore = new CANBus("581CANivore");
   private final CANBus rio = CANBus.roboRIO();
+
+  public final DifferentialMechanism<TalonFX> deployDifferentialMechanism =
+      new DifferentialMechanism<>(
+          TalonFX::new,
+          new DifferentialMotorConstants<TalonFXConfiguration>()
+              .withCANBusName(canivore.getName())
+              .withLeaderId(15)
+              .withFollowerId(30)
+              .withAlignment(MotorAlignmentValue.Opposed)
+              .withLeaderInitialConfigs(DeployConfig.LEFT_MOTOR_CONFIG)
+              .withFollowerInitialConfigs(DeployConfig.RIGHT_MOTOR_CONFIG)
+              .withFollowerUsesCommonLeaderConfigs(true));
 
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
   public final TalonFX intakeRightMotor = new TalonFX(17, rio);
