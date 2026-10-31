@@ -4,6 +4,7 @@ import com.team581.config.DSOption;
 import edu.wpi.first.networktables.BooleanSubscriber;
 
 public final class DSOptions {
+  public static final BooleanSubscriber TEST_MODE = DSOption.of("TestMode", false);
   public static final BooleanSubscriber USE_VISION = DSOption.of("UseVision", true);
   public static final BooleanSubscriber USE_HUB_STATE = DSOption.of("UseHubState", true);
   public static final BooleanSubscriber USE_BUMP_ASSIST = DSOption.of("UseBumpAssist", false);
