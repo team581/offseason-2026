@@ -45,10 +45,13 @@
 
 ## Driver Station
 
-- Toggles:
-  - Limelights Online/Offline (preset shots)
-  - Force logic for always active hub
-  - Disable for any sensor
-- Blinking red for faults
+- Toggles (`DSOptions`):
+  - `UseVision`: Vision Online/Offline (toggles Spot vision localization; falls back to preset shots when offline)
+  - `UseHubState`: Force logic for always active hub
+  - `UseCANRange` / `UseTowerSensor`: Toggle hopper ball detection sensors
+  - `UseBumpAssist`: Gyro-assisted bump crossing
+  - `SmartWarmup`: Pre-rev flywheels before shooting
+  - `PitFunctionality`: Low-speed test mode for pit verification
+- Blinking red for faults (Localization & Camera Health indicators via `HealthManager`)
 - Alerts
 - Auto selection
