@@ -2,21 +2,20 @@
 
 ## Goal
 
-- Be able to last whole match without browning out or experiencing RPM dippage
-- Prioritize shooting fast
-  - (AKA don’t lower BPS if there’s other things that will save battery)
-- Still be able to drive fast in auto/against a defender if absolutely necessary
+- Last the whole match without browning out or dropping flywheel RPM
+- Prioritize shooting fast (avoid lowering BPS if other mechanisms can save power instead)
+- Preserve high drive speed in auto or when pushing through defense
 
 ## Power Manager
 
 - State machine
-- Runs on separate thread
-- Configures stator current limits to all subsystems on state change
-- States
-  - Idle (prioritizes swerve/intaking to last whole match)
-  - Scoring (prioritizes scoring fast without dropping RPM)
-  - Scoring far (prioritizes shooter)
-  - Feeding (prioritizes fast throughput)
-  - Prioritize intake (prioritizes intaking)
-  - Turbo Mode (prioritizes swerve)
-  - First auto segment (prioritizes swerve/intake)
+- Run on separate thread
+- Configure stator current limits across all subsystems on state change
+- States:
+  - Idle (prioritize swerve/intaking to last whole match)
+  - Scoring (prioritize scoring fast without dropping RPM)
+  - Scoring far (prioritize shooter)
+  - Feeding (prioritize fast throughput)
+  - Prioritize intake (prioritize intaking)
+  - Turbo Mode (prioritize swerve)
+  - First auto segment (prioritize swerve/intake)
