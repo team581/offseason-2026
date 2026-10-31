@@ -1,16 +1,17 @@
 package frc.robot.testing;
 
-import java.util.Optional;
-import java.util.function.Function;
+import com.team581.trailblazer.Trailblazer;
+import frc.robot.robot_manager.RobotManager;
 
-/** Register tests here; both the dashboard chooser and headless runner use these factories. */
+/** Register tests here; both the dashboard chooser and headless runner use this list. */
 public enum TestSelection {
-  NONE(manager -> Optional.empty()),
-  STRAIGHT_LINE(manager -> Optional.of(new StraightLineTest(manager)));
+  NONE,
+  STRAIGHT_LINE;
 
-  public final Function<TestManager, Optional<TestManager.Test<?>>> test;
-
-  TestSelection(Function<TestManager, Optional<TestManager.Test<?>>> test) {
-    this.test = test;
+  public RobotTest<?> create(RobotManager robotManager, Trailblazer trailblazer) {
+    return switch (this) {
+      case STRAIGHT_LINE -> new StraightLineTest(robotManager, trailblazer);
+      case NONE -> throw new IllegalStateException("NONE has no test to create");
+    };
   }
 }

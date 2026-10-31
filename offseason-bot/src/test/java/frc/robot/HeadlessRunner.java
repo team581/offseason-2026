@@ -1,7 +1,6 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
@@ -24,23 +23,11 @@ public final class HeadlessRunner extends Robot {
     super.close();
   }
 
-  /** Observe the applied module targets without advancing the Trailblazer follower again. */
-  public ChassisSpeeds commandedSpeeds() {
-    var drivetrain = robotManager.swerve.drivetrain;
-    var state = drivetrain.getState();
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        drivetrain.getKinematics().toChassisSpeeds(state.ModuleTargets), state.Pose.getRotation());
-  }
-
   public TestManager manager() {
     return testManager;
   }
 
-  public ChassisSpeeds measuredSpeeds() {
-    return robotManager.swerve.getFieldRelativeSpeeds();
-  }
-
-  public void runUntil(BooleanSupplier finished, Runnable recordSample, double timeoutSeconds) {
+  public void runUntil(BooleanSupplier finished, double timeoutSeconds) {
     double deadline = Timer.getFPGATimestamp() + timeoutSeconds;
     while (!finished.getAsBoolean()) {
       if (Timer.getFPGATimestamp() >= deadline) {
@@ -50,7 +37,6 @@ public final class HeadlessRunner extends Robot {
         throw new AssertionError("Headless robot interrupted");
       }
       tick();
-      recordSample.run();
     }
   }
 
@@ -64,7 +50,6 @@ public final class HeadlessRunner extends Robot {
     runUntil(
         () ->
             testManager.getState() == selection && robotManager.swerve.drivetrain.isOdometryValid(),
-        () -> {},
         5.0);
     robotManager.localization.resetPose(start);
     tick();

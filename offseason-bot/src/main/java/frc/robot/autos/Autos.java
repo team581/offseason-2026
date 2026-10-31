@@ -9,22 +9,25 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
+import frc.robot.testing.TestManager;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Autos extends StateMachineSubsystem<AutoSelection> {
   private final AutoChooser<AutoSelection> autoChooser;
   private final RobotManager robotManager;
   private final Trailblazer trailblazer;
+  private final TestManager testManager;
 
   private boolean hasEnabledAuto = false;
   private BaseImperativeAuto<?> selectedAuto;
 
-  public Autos(RobotManager robotManager, Trailblazer trailblazer) {
+  public Autos(RobotManager robotManager, Trailblazer trailblazer, TestManager testManager) {
     super(SubsystemPriority.AUTOS, AutoSelection.DO_NOTHING);
 
     autoChooser = new AutoChooser<>(AutoSelection.values(), AutoSelection.DO_NOTHING);
     this.robotManager = robotManager;
     this.trailblazer = trailblazer;
+    this.testManager = testManager;
 
     selectedAuto = AutoSelection.DO_NOTHING.auto.apply(robotManager, trailblazer);
   }
@@ -66,7 +69,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       selectedAuto.periodic();
       robotManager.swerve.setDriveSourceType(DriveSourceType.FIELD_CENTRIC_CLOSED_LOOP);
       DogLog.log("Autos/ShouldRun", true);
-    } else if (!(DriverStation.isTeleopEnabled() && DSOptions.TEST_MODE.getAsBoolean())) {
+    } else if (!testManager.isActive()) {
       // Restore teleop drive source
       robotManager.swerve.setDriveSourceType(DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP);
       DogLog.log("Autos/ShouldRun", false);

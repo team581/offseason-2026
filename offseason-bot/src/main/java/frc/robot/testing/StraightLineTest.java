@@ -1,6 +1,7 @@
 package frc.robot.testing;
 
 import com.team581.autos.Point;
+import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
@@ -9,10 +10,14 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.robot_manager.RobotManager;
+import java.util.function.Supplier;
 
 /** Drives to a relative goal and checks position, heading, drift, and settling. */
-public final class StraightLineTest extends TestManager.Test<StraightLineTest.State> {
+public final class StraightLineTest extends RobotTest<StraightLineTest.State> {
   public record Sample(
       double time,
       Pose2d pose,
@@ -44,7 +49,11 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
   private static final double CROSS_TRACK_TOLERANCE = 0.20;
   private final PoseErrorTolerance tolerance =
       new PoseErrorTolerance(POSITION_TOLERANCE, HEADING_TOLERANCE);
-  private final TestManager manager;
+  private final Supplier<Pose2d> poseSupplier;
+  private final Supplier<ChassisSpeeds> speedsSupplier;
+  private final Supplier<ChassisSpeeds> commandedSpeeds;
+  private final Runnable prepare;
+  private ChassisSpeeds speeds = new ChassisSpeeds();
   private final Trailblazer trailblazer;
   private Pose2d pose = Pose2d.kZero;
   private Pose2d start = Pose2d.kZero;
@@ -62,10 +71,42 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
   private String reason = "Waiting for test mode enable";
   private Sample sample = new Sample(0, Pose2d.kZero, 0, 0, 0, 0, 0, 0);
 
-  public StraightLineTest(TestManager manager) {
+  public StraightLineTest(RobotManager robotManager, Trailblazer trailblazer) {
+    this(
+        trailblazer,
+        robotManager.localization::getPose,
+        robotManager.swerve::getFieldRelativeSpeeds,
+        () -> {
+          var drivetrain = robotManager.swerve.drivetrain;
+          var state = drivetrain.getState();
+          return ChassisSpeeds.fromRobotRelativeSpeeds(
+              drivetrain.getKinematics().toChassisSpeeds(state.ModuleTargets),
+              state.Pose.getRotation());
+        },
+        () -> {
+          robotManager.idleRequest();
+          robotManager.cancelIntakeRequest();
+          robotManager.hopperManager.setDriverWantsEject(false);
+        });
+  }
+
+  StraightLineTest(
+      Trailblazer trailblazer,
+      Supplier<Pose2d> pose,
+      Supplier<ChassisSpeeds> speeds,
+      Supplier<ChassisSpeeds> commandedSpeeds,
+      Runnable prepare) {
     super(State.WAITING);
-    this.manager = manager;
-    trailblazer = manager.trailblazer;
+    this.trailblazer = trailblazer;
+    poseSupplier = pose;
+    speedsSupplier = speeds;
+    this.commandedSpeeds = commandedSpeeds;
+    this.prepare = prepare;
+    DogLog.log(LOG + "RunId", getRunId());
+    DogLog.log(LOG + "DistanceMeters", DISTANCE);
+    DogLog.log(LOG + "MaxVelocity", MAX_VELOCITY);
+    DogLog.log(LOG + "MaxAcceleration", MAX_ACCELERATION);
+    DogLog.log(LOG + "BatteryVolts", RobotController.getBatteryVoltage());
   }
 
   @Override
@@ -80,36 +121,20 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
     return getState() == State.PASSED || getState() == State.FAILED || getState() == State.ABORTED;
   }
 
-  public double maxCrossTrackError() {
-    return maxCrossTrackError;
-  }
-
-  public double peakAcceleration() {
-    return peakAcceleration;
-  }
-
-  public double peakVelocity() {
-    return peakVelocity;
-  }
-
   public String reason() {
     return reason;
   }
 
   @Override
-  public TestManager.Result result() {
+  public TestResult result() {
     var status =
         switch (getState()) {
-          case PASSED -> TestManager.Status.PASSED;
-          case FAILED -> TestManager.Status.FAILED;
-          case ABORTED -> TestManager.Status.ABORTED;
-          default -> TestManager.Status.RUNNING;
+          case PASSED -> TestStatus.PASSED;
+          case FAILED -> TestStatus.FAILED;
+          case ABORTED -> TestStatus.ABORTED;
+          default -> TestStatus.RUNNING;
         };
-    return new TestManager.Result("StraightLine", status, reason);
-  }
-
-  public Sample sample() {
-    return sample;
+    return new TestResult("StraightLine", status, reason);
   }
 
   @Override
@@ -124,7 +149,6 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
               start.getRotation());
       startTime = Timer.getFPGATimestamp();
       previousTime = startTime;
-      var speeds = manager.speeds;
       previousVelocity =
           speeds.vxMetersPerSecond * direction.getCos()
               + speeds.vyMetersPerSecond * direction.getSin();
@@ -144,23 +168,24 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
           Trailblazer.segment(AutoPoint.of(new Point(goal, goal)))
               .withLinearConstraints(MAX_VELOCITY, MAX_ACCELERATION)
               .untilFinished(tolerance));
-      DogLog.log(LOG + "MaxVelocity", MAX_VELOCITY);
-      DogLog.log(LOG + "MaxAcceleration", MAX_ACCELERATION);
+      DogLog.log(LOG + "InitialHeadingDegrees", start.getRotation().getDegrees());
       DogLog.log(LOG + "StartPose", start);
       DogLog.log(LOG + "GoalPose", goal);
     }
     if (finished()) {
       trailblazer.clearActiveSegment();
     }
+    DogLog.log(LOG + "Status", result().status().name());
+    DogLog.log(LOG + "Reason", reason);
   }
 
   @Override
   protected void collectInputs() {
-    pose = manager.pose;
+    pose = poseSupplier.get();
+    speeds = speedsSupplier.get();
     if (getState() == State.WAITING || finished()) {
       return;
     }
-    var speeds = manager.speeds;
     angularVelocity = speeds.omegaRadiansPerSecond;
     double now = Timer.getFPGATimestamp();
     double velocity =
@@ -197,9 +222,9 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
     if (!Double.isFinite(pose.getX())
         || !Double.isFinite(pose.getY())
         || !Double.isFinite(pose.getRotation().getRadians())
-        || !Double.isFinite(manager.speeds.vxMetersPerSecond)
-        || !Double.isFinite(manager.speeds.vyMetersPerSecond)
-        || !Double.isFinite(manager.speeds.omegaRadiansPerSecond)) {
+        || !Double.isFinite(speeds.vxMetersPerSecond)
+        || !Double.isFinite(speeds.vyMetersPerSecond)
+        || !Double.isFinite(speeds.omegaRadiansPerSecond)) {
       reason = "Nonfinite sensor data";
       return State.FAILED;
     }
@@ -246,9 +271,11 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
 
   @Override
   protected void whileInState(State state) {
+    if (!finished()) {
+      prepare.run();
+    }
     DogLog.log(LOG + "State", state.toString());
     DogLog.log(LOG + "Reason", reason);
-    DogLog.log(LOG + "ElapsedSeconds", sample.time());
     DogLog.log(LOG + "Pose", pose);
     DogLog.log(LOG + "VelocityMetersPerSecond", sample.velocity());
     DogLog.log(LOG + "AccelerationMetersPerSecondSquared", sample.acceleration());
@@ -258,5 +285,10 @@ public final class StraightLineTest extends TestManager.Test<StraightLineTest.St
     DogLog.log(LOG + "PeakAccelerationMetersPerSecondSquared", peakAcceleration);
     DogLog.log(LOG + "MaxCrossTrackErrorMeters", maxCrossTrackError);
     DogLog.log(LOG + "Passed", state == State.PASSED);
+    var commanded = commandedSpeeds.get();
+    DogLog.log(LOG + "CommandedSpeedMetersPerSecond", MathHelpers.getLinearVelocity(commanded));
+    DogLog.log(LOG + "MeasuredSpeedMetersPerSecond", Math.hypot(sample.vx(), sample.vy()));
+    // End each sample with its time so analysis can align DogLog entries from the same loop.
+    DogLog.log(LOG + "ElapsedSeconds", sample.time());
   }
 }

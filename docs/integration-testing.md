@@ -18,9 +18,6 @@ straight-line failure checks also run with the normal unit tests.
 ./gradlew headlessTest
 ```
 
-Gradle prints the test results and ends with `BUILD SUCCESSFUL` if all tests pass.
-A failed test makes the command fail.
-
 To run only the straight-line tests:
 
 ```sh
@@ -28,7 +25,7 @@ To run only the straight-line tests:
 ```
 
 Straight-line distances, constraints, and tolerances are constants at the top of
-`StraightLineRoutine.java`. The robot and headless simulation use those same values.
+`StraightLineTest.java`. The robot and headless simulation use those same values.
 To change the simulation environment:
 
 ```sh
@@ -38,11 +35,21 @@ To change the simulation environment:
 After `headlessTest`, open these files:
 
 - `offseason-bot/build/reports/tests/headlessTest/index.html` — test results and failure details.
-- `offseason-bot/build/reports/headlessTest/motion/summary.md` — straight-line measurements.
-- `offseason-bot/build/reports/headlessTest/motion/` — CSV motion data.
+- `offseason-bot/build/reports/headlessTest/logs/FRC_*.wpilog` — the normal robot log, including
+  test configuration, motion samples, and results recorded by DogLog in the test itself.
+  Open it in AdvantageScope or generate a summary and plots:
+
+```sh
+uv run tools/analyze_straight_line.py offseason-bot/build/reports/headlessTest/logs
+```
+
+The optional analysis script writes `acceleration-summary.md`, `acceleration-metrics.json`, and a PNG per
+straight-line test run beside each log. It accepts a normal robot WPILOG or a directory of logs.
+`Tests/StraightLine/RunId` separates repeated tests within the same log. All test telemetry uses
+regular `DogLog.log` calls under `Tests/`; there is no separate test log writer.
 
 For `straightLineTest`, replace `headlessTest` with `straightLineTest` in those paths.
-Reports are overwritten on each run.
+The HTML report is overwritten on each run; robot logs use the normal timestamped filenames.
 
 CI runs the suite on every push in the **Headless tests** job. Download its **headless-results**
 artifact for reports and logs. Normal `test`, `build`, and deployment commands do not run this suite.
@@ -63,8 +70,10 @@ To run the straight-line diagnostic:
 3. Watch `Tests/Regression/Status` and `Tests/Reason` in the dashboard or logs for the result.
    Disable to select another test or run the same test again. Disabling or turning off `TestMode` during a run aborts it.
 
-Selection is read while disabled, matching auto selection. Each activation creates a fresh test. Toggle `TestMode` off and on to rerun while enabled.
-`TestManager.runRequest()` can also restart the selected test while `TestMode` is active in enabled teleop.
+Like `AutoChooser`, the test chooser uses WPILib’s `SendableChooser`, published through
+`SmartDashboard.putData`. Auto selection is at `Autos/SelectedAuto`; test selection is at
+`Tests/SelectedTest`. Selection is read while disabled, matching `Autos.getNextState()`. Each activation creates a fresh test. Toggle `TestMode` off and on to rerun while enabled.
+Completed results remain visible until the next run. Selecting `NONE` leaves normal teleop operation active.
 Tests command the shared Trailblazer; Swerve uses its normal field-centric drive source.
 Normal controller bindings remain active.
 The interactive diagnostic reports through dashboard/log values rather than the headless HTML report.
@@ -84,18 +93,26 @@ Deploy the offseason application to the intended robot:
 4. Read `Tests/Regression/Status` and `Tests/Reason`, save the robot log, and measure the final
    position independently. Disable before another attempt; select `NONE` when finished.
 
+The diagnostic writes to the normal robot WPILOG through DogLog, including its configuration,
+motion samples, and result. The same analysis command accepts a downloaded robot log:
+
+```sh
+uv run tools/analyze_straight_line.py /path/to/FRC_robot_log.wpilog
+```
+
 A passing straight-line diagnostic checks reaching the goal and settling. It does not verify
 acceleration limits or replace checking the robot's physical motion.
 
 ## Check test results
 
 - **CI:** Open the branch's latest **CI** run in GitHub Actions. Check **Run tests** for unit tests
-  and **Headless tests** for simulation tests. Open a failed job to read its test failures. The run's **Summary** includes straight-line
-  measurements. Under **Artifacts**, download and unzip **headless-results**, then open
+  and **Headless tests** for simulation tests. Open a failed job to read its test failures.
+  Under **Artifacts**, download and unzip **headless-results**, then open
   `index.html` under `reports/tests/headlessTest/` for the test report.
 - **Local headless tests:** Check the terminal for failed test names, then open
   `offseason-bot/build/reports/tests/headlessTest/index.html` in a browser for details.
-  Read `offseason-bot/build/reports/headlessTest/motion/summary.md` for straight-line measurements.
+  Run the analysis command above and read
+  `offseason-bot/build/reports/headlessTest/logs/acceleration-summary.md` for measurements.
   For `straightLineTest`, replace `headlessTest` with `straightLineTest` in these paths.
 - **Local unit tests:** After `./gradlew test`, open `<project>/build/reports/tests/test/index.html`
   for each project you want to check.
@@ -105,8 +122,14 @@ acceleration limits or replace checking the robot's physical motion.
 
 ## Add a robot test
 
-Implement a state machine extending `TestManager.Test`, then register its factory in
-`TestSelection`, just like `AutoSelection`. That enum is the only registration list: the dashboard
+Implement a state machine extending `RobotTest` in the `frc.robot.testing` package. Like the existing
+autos, its public constructor takes `RobotManager` and `Trailblazer`. The test owns its mechanism
+requests, sensor reads, DogLog telemetry, outcome checks, and abort cleanup. Return a `TestResult`
+with `RUNNING`, `PASSED`, `FAILED`, or `ABORTED` and a reason. Checks belong in the test so the
+robot and headless simulation evaluate the same outcome; the optional analysis script only reports
+measurements and plots.
+
+Add the test's selection and construction case in `TestSelection`. That enum is the only registration list: the dashboard
 chooser and parameterized headless runner both enumerate it. No separate simulation test is needed.
 The runner constructs `Robot`, selects through the dashboard chooser, enables teleop and `TestMode`, and
 checks the result returned by the test. Swerve uses its existing simulation thread and normal
@@ -125,6 +148,7 @@ flowchart LR
     Trailblazer --> Drive[Drive source]
 ```
 
-The normal `test` task runs the controlled checks. `headlessTest` uses the same test source set,
+The normal `test` task runs `TestManagerTest` for lifecycle behavior and `StraightLineTestTest`
+for controlled sensor and outcome checks. `headlessTest` uses the same test source set,
 selecting the parameterized runner with a JUnit tag. `straightLineTest` filters that runner to
 `STRAIGHT_LINE`.

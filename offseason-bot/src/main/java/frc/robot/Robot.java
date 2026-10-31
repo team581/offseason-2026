@@ -138,10 +138,10 @@ public class Robot extends Base581Robot {
           hardware,
           powerManager);
 
-  @SuppressWarnings("unused") // Registers itself as a subsystem.
-  private final Autos autos = new Autos(robotManager, trailblazer);
-
   final TestManager testManager = new TestManager(robotManager, trailblazer);
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem.
+  private final Autos autos = new Autos(robotManager, trailblazer, testManager);
 
   public Robot() {
     logMetadata(

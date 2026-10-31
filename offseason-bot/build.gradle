@@ -117,7 +117,7 @@ gversion {
 		}
 		maxParallelForks = 1
 		systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
-		systemProperty 'sim.outputDir', layout.buildDirectory.dir("reports/${taskName}/motion").get().asFile.absolutePath
+		systemProperty 'sim.logDir', layout.buildDirectory.dir("reports/${taskName}/logs").get().asFile.absolutePath
 		project.properties.findAll { key, value ->
 			key.startsWith('sim.')
 		}.each { key, value ->
