@@ -39,6 +39,10 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
     setStateFromRequest(FunnelerState.BALL_FILLING);
   }
 
+  public void feedingRequest() {
+    setStateFromRequest(FunnelerState.FEEDING);
+  }
+
   public void idleRequest() {
     setStateFromRequest(FunnelerState.IDLE);
   }
@@ -47,8 +51,8 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
     setStateFromRequest(FunnelerState.INTAKE);
   }
 
-  public void shootingRequest() {
-    setStateFromRequest(FunnelerState.SHOOT);
+  public void scoreRequest() {
+    setStateFromRequest(FunnelerState.SCORE);
   }
 
   @Override
