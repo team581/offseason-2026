@@ -2,14 +2,13 @@
 
 ## Shot Verification
 
-- Before running, record the measured test locations, number of balls and attempts, path distances/speeds, and acceptable scoring/aiming results using the [behavior verification procedure](verification.md).
-- Drive to the agreed locations and shoot the recorded number of balls.
+- Drive to known locations and shoot X number of balls
 - Have constrained shoot on the move patterns
   - Centered on goal, move straight back
-  - Side to side at the recorded distance from the goal
+  - Side to side Y feet from goal
   - Circular path to the left/right of the goal
 
-Compare logged aiming/localization behavior with independently observed shot results. Record failures and evidence in the existing task; passing a shot sequence alone does not establish complete vision-system qualification.
+This should validate vision
 
 ## Quick Shot Retuning
 
