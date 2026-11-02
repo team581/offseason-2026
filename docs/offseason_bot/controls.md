@@ -48,7 +48,6 @@
 - Toggles (`DSOptions`):
   - `UseVision`: Vision Online/Offline (toggles Spot vision localization; falls back to preset shots when offline)
   - `UseHubState`: Force logic for always active hub
-  - `UseCANRange` / `UseTowerSensor`: Toggle hopper ball detection sensors
   - `UseBumpAssist`: Gyro-assisted bump crossing
   - `SmartWarmup`: Pre-rev flywheels before shooting
   - `PitFunctionality`: Low-speed test mode for pit verification
