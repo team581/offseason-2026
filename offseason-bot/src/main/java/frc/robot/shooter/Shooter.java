@@ -35,18 +35,42 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
   }
 
+  static boolean isAtGoal(
+      ShooterState state, double currentRpm, double shootingRpm, double feedingRpm) {
+    return switch (state) {
+      case IDLE -> false;
+      case PREPARE_SCORE -> MathUtil.isNear(currentRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
+      case SCORE ->
+          MathUtil.isNear(currentRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
+      case PREPARE_FEED, FEED ->
+          MathUtil.isNear(currentRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
+    };
+  }
+
+  static boolean isAtGoal(
+      ShooterState state,
+      ShooterState expectedState,
+      double currentRpm,
+      double shootingRpm,
+      double feedingRpm) {
+    if (state != expectedState) {
+      return false;
+    }
+    return isAtGoal(state, currentRpm, shootingRpm, feedingRpm);
+  }
+
   // Top left motor is the leader
   private final TalonFX topLeftMotor;
   private final TalonFX topRightMotor;
+
   public final TalonFX bottomLeftMotor;
   public final TalonFX bottomRightMotor;
-
   private final Follower topLeftFollower;
+
   private final Follower bottomLeftFollower;
+
   private final Follower bottomRightFollower;
-
   private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
-
   private final StatusSignal<AngularVelocity> topLeftVelocitySignal;
   private final StatusSignal<AngularVelocity> topRightVelocitySignal;
   private final StatusSignal<AngularVelocity> bottomLeftVelocitySignal;
@@ -59,9 +83,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private final StatusSignal<Current> topLeftSupplyCurrentSignal;
   private final StatusSignal<Current> topRightSupplyCurrentSignal;
   private final StatusSignal<Current> bottomLeftSupplyCurrentSignal;
+
   private final StatusSignal<Current> bottomRightSupplyCurrentSignal;
   private final StatusSignal<Current> topRightTorqueCurrentSignal;
-
   private double topLeftVoltage = 0;
   private double topRightVoltage = 0;
   private double bottomLeftVoltage = 0;
@@ -70,12 +94,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double topLeftSupplyCurrent = 0;
   private double topRightSupplyCurrent = 0;
   private double bottomLeftSupplyCurrent = 0;
+
   private double bottomRightSupplyCurrent = 0;
   private double topRightTorqueCurrent = 0;
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
-
   private double shootingRpm = 0;
   private double feedingRpm = 0;
   private double topLeftMotorRpm = 0;
@@ -83,16 +107,18 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double bottomLeftMotorRpm = 0;
   private double bottomRightMotorRpm = 0;
   private double feederCurrent = 0.0;
+
   private double feederBasedFeedForward = 0.0;
   private boolean hopperFull = false;
 
   private boolean atGoal = false;
+
   private boolean atGoalDebounced = false;
 
   private boolean turboMode = false;
 
   // Debounce for delay between shots at 15 bps
-  private final Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
+  private Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
 
   public Shooter(
       TalonFX topLeftMotor,
@@ -188,8 +214,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return atGoal;
   }
 
+  public boolean atGoal(ShooterState expectedState) {
+    return getState() == expectedState && atGoal;
+  }
+
   public boolean atGoalDebounced() {
     return atGoalDebounced;
+  }
+
+  public boolean atGoalDebounced(ShooterState expectedState) {
+    return getState() == expectedState && atGoalDebounced;
   }
 
   public void feedRequest(double distance) {
@@ -215,7 +249,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void prepareFeedRequest(double distance) {
     this.feedDistance = distance;
-    setStateFromRequest(ShooterState.PREPARE_FEED);
+    if (getState() != ShooterState.FEED) {
+      setStateFromRequest(ShooterState.PREPARE_FEED);
+    }
   }
 
   public void prepareScoreRequest(double distance) {
@@ -251,21 +287,18 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void updateHopperState(double feederCurrent, boolean hopperFull) {
     this.feederCurrent = feederCurrent;
-    this.hopperFull = hopperFull || !DSOptions.USE_CANRANGE.getAsBoolean();
+    this.hopperFull = hopperFull;
   }
 
   private boolean calculateAtGoal() {
-    return switch (getState()) {
-      case IDLE -> false;
-      case PREPARE_SCORE ->
-          MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-      case SCORE ->
-          MathUtil.isNear(
-              topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
-      case PREPARE_FEED, FEED ->
-          MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
-      default -> true;
-    };
+    return isAtGoal(getState(), topRightMotorRpm, shootingRpm, feedingRpm);
+  }
+
+  @Override
+  protected void afterTransition(ShooterState newState) {
+    atGoal = false;
+    atGoalDebounced = false;
+    atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
   }
 
   @Override
