@@ -66,7 +66,7 @@
 - 2" Fairlane wheels
 - Open-loop voltage control with FOC
 - Move balls sideways from hopper into tunnel
-- States: `IDLE`, `SHOOT`, `INTAKE`, `BALL_FILLING`
+- States: `IDLE`, `SCORE`, `FEEDING`, `INTAKE`, `BALL_FILLING`
 
 ## Feeder
 
