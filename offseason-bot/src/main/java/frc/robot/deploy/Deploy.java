@@ -176,15 +176,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     return atGoal(DeployState.INTAKE);
   }
 
-  public void safeKickerStowRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
-      }
-      default -> setStateFromRequest(DeployState.SAFE_KICKER_STOW);
-    }
-  }
-
   @Override
   public void simulationPeriodic() {
     var deploySimulation =
