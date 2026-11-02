@@ -171,11 +171,17 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::stowDeployRequest)
         .onRelease(robotManager::cancelStowDeployRequest);
 
-    driver.leftBumper().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
+    driver
+        .leftBumper()
+        .onPress(robotManager::ejectRequest)
+        .onRelease(robotManager::cancelEjectRequest);
 
     operator.rightTrigger().onPress(robotManager::prepareScoreRequest);
 
-    operator.leftBumper().onPress(powerManager::prioritizeIntakeRequest);
+    operator
+        .leftBumper()
+        .onPress(powerManager::prioritizeIntakeRequest)
+        .onRelease(powerManager::idleRequest);
     operator
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
@@ -184,5 +190,20 @@ public class Robot extends Base581Robot {
     operator.start().onPress(() -> hopperManager.deploy.homingRequest());
 
     operator.back().onPress(robotManager::homeShooterHoodRequest);
+
+    operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
+
+    operator
+        .y()
+        .onPress(() -> {
+          powerManager.turboRequest();
+          shooter.setTurboMode(true);
+        })
+        .onRelease(() -> {
+          powerManager.idleRequest();
+          shooter.setTurboMode(false);
+        });
+
+    operator.b().onPress(deploy::fixDifferentialDesyncRequest).onRelease(deploy::intakeRequest);
   }
 }
