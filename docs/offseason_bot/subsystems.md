@@ -82,6 +82,23 @@
   - `INTAKING`: -1V
   - `EJECT`: -6V
 
+## Hopper Manager
+
+- Coordinator subsystem managing intake deploy, intake rollers, floor & tunnel conveyors, funneler, and tower feeder
+- Sensors:
+  - DigitalInput tower beam-break sensor (Rio DIO 9) to detect fuel presence at tower entrance
+  - CANrange removed (ball presence in hopper inferred from intake run duration: >3s intaking indicates full hopper)
+- States:
+  - `IDLE_DEPLOYED`: Deploy extended, intake idle; fills ball into tower if intake has been running and tower is empty
+  - `IDLE_STOWED`: Deploy stowed; all transport mechanisms idle
+  - `INTAKING`: Deploy extended, intake spinning forward (12V); runs conveyor and funneler into tower, backs feeder slightly (-1V) until filling conditions met
+  - `EJECTING`: Deploy extended, intake (-12V), conveyor (-12V), and feeder (-6V) reversed to dump balls out the front; funneler idle
+  - `UNJAMMING`: Deploy extended, intake reversed (-12V) while conveyor (10V), feeder (10V), funneler, and shooter run forward to clear jams
+  - `SCORE`: Deploy extended; intake scores (5V); conveyor runs initial shot (10V) then score (10V); feeder (10V) and funneler run forward. Compaction runs after 0.25s delay with 0.25s shuffle interval, unless beast mode is active
+  - `SCORE_AND_INTAKE`: Simultaneous scoring and intaking; compaction disabled while intaking
+  - `FEED`: Deploy extended; intake feeds (5V); conveyor runs initial shot (10V) then feed (10V); feeder (10V) and funneler run forward. Feed compaction activates after 0.25s delay
+  - `FEED_AND_INTAKE`: Simultaneous feeding and intaking
+
 ## Shooter Hood
 
 - CANivore Bus (`581CANivore`), 1 Talon FX (ID 22)
