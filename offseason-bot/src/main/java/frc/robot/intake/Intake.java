@@ -106,8 +106,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
         rightMotor.setControl(neutralRequest);
       }
       default -> {
-        leftMotor.setControl(voltageRequest.withOutput(newState.voltage));
-        rightMotor.setControl(voltageRequest.withOutput(newState.voltage));
+        leftMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        rightMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
   }
