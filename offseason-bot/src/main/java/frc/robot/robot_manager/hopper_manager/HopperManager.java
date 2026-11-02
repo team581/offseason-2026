@@ -83,6 +83,17 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     };
   }
 
+  public boolean hasFinishedShooting() {
+    if (getState() != HopperState.SCORE
+        && getState() != HopperState.SCORE_AND_INTAKE
+        && getState() != HopperState.FEED
+        && getState() != HopperState.FEED_AND_INTAKE) {
+      return false;
+    }
+
+    return !isShootingStrict();
+  }
+
   public void idleRequest() {
     setState(resolveIdleState());
   }
@@ -99,12 +110,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public boolean isShooting() {
-    // You need to actually be in a shooting state
     if (getState() != HopperState.SCORE
         && getState() != HopperState.SCORE_AND_INTAKE
         && getState() != HopperState.FEED
         && getState() != HopperState.FEED_AND_INTAKE) {
-      return true;
+      return false;
     }
 
     return isShootingStrict();
