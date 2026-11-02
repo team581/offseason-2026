@@ -273,10 +273,35 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  private void smartHoodPrepareFeedRequest() {
+  private void smartHoodPrepareFallbackFeedRequest() {
+    // In fallback feeding, stow if near trench
     if (nearTrench) {
       shooterHood.idleRequest();
+      DogLog.log("RobotManager/FallbackFeeding/HoodStatus", "NearTrench");
     } else {
+      DogLog.log("RobotManager/FallbackFeeding/HoodStatus", "Clear");
+      shooterHood.feedRequest(fallbackFeedingParameters.distance());
+    }
+  }
+
+  private void smartHoodPrepareFallbackScoreRequest() {
+    // In fallback scoring, stow if near trench or moving
+    if (nearTrench || isMoving) {
+      shooterHood.idleRequest();
+      DogLog.log("RobotManager/FallbackScoring/HoodStatus", "NearTrenchOrMoving");
+    } else {
+      DogLog.log("RobotManager/FallbackScoring/HoodStatus", "Clear");
+      shooterHood.scoreRequest(scoringParameters.distance());
+    }
+  }
+
+  private void smartHoodPrepareFeedRequest() {
+    // If cameras are offline or we are near a trench, always be idle
+    if (!health.isLocalizationHealthy() || nearTrench) {
+      shooterHood.idleRequest();
+      DogLog.log("RobotManager/Feeding/SmartPrepareFeed/HoodStatus", "NearTrenchOrUnhealthy");
+    } else {
+      DogLog.log("RobotManager/Feeding/SmartPrepareFeed/HoodStatus", "Clear");
       shooterHood.feedRequest(feedingParameters.distance());
     }
   }
