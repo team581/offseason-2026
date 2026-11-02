@@ -15,7 +15,6 @@
   - `HOME_OUTWARD`: Current-based outward homing (teleop)
   - `STOW`
   - `INTAKE`
-  - `SAFE_KICKER_STOW`
   - `SCORE_COMPACTION_WAITING`
   - `SCORE_COMPACTION`
   - `FEED_COMPACTION`
