@@ -371,12 +371,10 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case DEFAULT_INTAKE_SECOND_CYCLE -> {
         storedStuckOnBallAutoSegment = defaultIntakeSecondCycle;
         robotManager.idleRequest();
-        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case INTAKE_THIRD_CYCLE -> {
         storedStuckOnBallAutoSegment = intakeThirdCycle;
         robotManager.idleRequest();
-        robotManager.hopperManager.setWantsSafeStow(true);
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
         storedStuckOnBallAutoSegment = crossBumpToShootTwo;
