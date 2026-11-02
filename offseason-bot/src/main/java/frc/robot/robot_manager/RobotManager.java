@@ -227,11 +227,15 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private void logFeedTransition() {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
     DogLog.log(
-        "RobotManager/Feeding/FeedTransition/TurretAtGoal", turret.atGoal(feedingParameters));
+        "RobotManager/Feeding/FeedTransition/TurretAtGoal",
+        turret.atGoal(TurretState.FEED, feedingParameters));
     DogLog.log(
-        "RobotManager/Feeding/FeedTransition/ShooterAtGoalDebounced", shooter.atGoalDebounced());
+        "RobotManager/Feeding/FeedTransition/ShooterAtGoalDebounced",
+        shooter.atGoalDebounced(ShooterState.PREPARE_FEED));
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
-    DogLog.log("RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal", shooterHood.atGoal());
+    DogLog.log(
+        "RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal",
+        shooterHood.atGoal(ShooterHoodState.FEEDING));
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
     DogLog.log("RobotManager/Feeding/ScoreTransition/NotNearTrench", !nearTrench);
@@ -241,10 +245,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private void logScoringTransition() {
     DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
     DogLog.log(
-        "RobotManager/Scoring/ScoreTransition/TurretAtGoal", turret.atGoal(scoringParameters));
+        "RobotManager/Scoring/ScoreTransition/TurretAtGoal",
+        turret.atGoal(TurretState.SCORE, scoringParameters));
     DogLog.log(
-        "RobotManager/Scoring/ScoreTransition/ShooterAtGoalDebounced", shooter.atGoalDebounced());
-    DogLog.log("RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal", shooterHood.atGoal());
+        "RobotManager/Scoring/ScoreTransition/ShooterAtGoalDebounced",
+        shooter.atGoalDebounced(ShooterState.PREPARE_SCORE));
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal",
+        shooterHood.atGoal(ShooterHoodState.SCORING));
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
         localization.isTrustworthy());
