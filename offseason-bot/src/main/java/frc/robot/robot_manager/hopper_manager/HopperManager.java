@@ -46,8 +46,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
 
-  private boolean wantsSafeStow = false;
-
   private boolean towerSensorRaw = false;
 
   private boolean shouldBeastMode = false;
@@ -134,16 +132,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public void setDriverWantsIntake(boolean wantsIntake) {
-    wantsSafeStow = false;
     driverWantsIntake = wantsIntake;
   }
 
   public void setOperatorWantsStow(boolean wantsStow) {
     operatorWantsStow = wantsStow;
-  }
-
-  public void setWantsSafeStow(boolean wantsSafeStow) {
-    this.wantsSafeStow = wantsSafeStow;
   }
 
   public void unjamRequest() {
@@ -192,10 +185,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
     if (operatorWantsStow) {
       return HopperState.IDLE_STOWED;
-    }
-
-    if (wantsSafeStow) {
-      return HopperState.IDLE_SAFE_KICKER_STOW;
     }
 
     return HopperState.IDLE_DEPLOYED;
@@ -277,11 +266,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.idleRequest();
         feeder.idleRequest();
         funneler.idleRequest();
-      }
-      case IDLE_SAFE_KICKER_STOW -> {
-        deploy.safeKickerStowRequest();
-        intake.idleRequest();
-        smartBallFillRequest();
       }
       case INTAKING -> {
         deploy.intakeRequest();
