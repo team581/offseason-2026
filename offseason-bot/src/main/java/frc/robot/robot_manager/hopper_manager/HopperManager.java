@@ -1,16 +1,9 @@
 package frc.robot.robot_manager.hopper_manager;
 
-import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.hardware.CANrange;
-import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -276,7 +269,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.intakeRequest();
         intake.ejectRequest();
         conveyor.ejectRequest();
-        feeder.idleRequest();
+        feeder.ejectRequest();
         funneler.idleRequest();
       }
       case UNJAMMING -> {
@@ -284,7 +277,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         intake.ejectRequest();
         conveyor.scoreRequest();
         feeder.scoreRequest();
-        funneler.shootingRequest();
+        funneler.scoreRequest();
       }
       case SCORE -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
@@ -293,35 +286,39 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
             && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
           deploy.intakeRequest();
         }
-        intake.scoreRequest();
+        if (operatorWantsStow) {
+          intake.idleRequest();
+        } else {
+          intake.scoreRequest();
+        }
         conveyor.initialShotRequest();
         feeder.scoreRequest();
-        funneler.shootingRequest();
+        funneler.scoreRequest();
       }
       case SCORE_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.scoreRequest();
         feeder.scoreRequest();
-        funneler.shootingRequest();
+        funneler.scoreRequest();
       }
 
       case FEED -> {
         // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (deploy.getState() != DeployState.FEED_COMPACTION) {
+        if (!operatorWantsStow && deploy.getState() != DeployState.FEED_COMPACTION) {
           deploy.intakeRequest();
         }
-        intake.feeedRequest();
+        intake.feedRequest();
         conveyor.initialShotRequest();
         feeder.feedRequest();
-        funneler.shootingRequest();
+        funneler.feedingRequest();
       }
       case FEED_AND_INTAKE -> {
         deploy.intakeRequest();
         intake.intakeRequest();
         conveyor.feedRequest();
         feeder.feedRequest();
-        funneler.shootingRequest();
+        funneler.feedingRequest();
       }
     }
   }
@@ -360,7 +357,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       if (state == HopperState.INTAKING) {
         smartIntakeBallFillRequest();
       } else {
-
         smartBallFillRequest();
       }
     }
@@ -445,7 +441,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         if (operatorWantsStow) {
           deploy.stowRequest();
           intake.idleRequest();
-        if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+          if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
             conveyor.feedRequest();
           } else {
             conveyor.initialShotRequest();
@@ -468,11 +464,14 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         conveyor.feedRequest();
         feeder.feedRequest();
         funneler.feedingRequest();
+      }
     }
+
     DogLog.log("HopperManager/DriverWantsEject", driverWantsEject);
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
     DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
     DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
+    DogLog.log("HopperManager/IsShooting", isShooting());
   }
 }
