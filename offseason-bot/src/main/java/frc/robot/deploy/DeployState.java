@@ -6,7 +6,6 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 public enum DeployState {
   INTAKE(DeployConfig.MAX_LENGTH),
   STOW(5.0),
-  SAFE_KICKER_STOW(7.915),
   // placeholder values
   SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 2.5),
   SCORE_COMPACTION(1.0),
