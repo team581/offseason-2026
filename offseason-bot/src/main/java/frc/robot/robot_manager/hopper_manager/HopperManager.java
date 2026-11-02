@@ -366,14 +366,54 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     }
 
     switch (state) {
-      default -> {}
+      case IDLE_DEPLOYED -> {
+        // Conveyor, feeder, and funneler are updated above via smartBallFillRequest()
+        deploy.intakeRequest();
+        intake.idleRequest();
+      }
+      case IDLE_STOWED -> {
+        deploy.stowRequest();
+        intake.idleRequest();
+        conveyor.idleRequest();
+        feeder.idleRequest();
+        funneler.idleRequest();
+      }
+      case INTAKING -> {
+        // Conveyor, feeder, and funneler are updated above via smartIntakeBallFillRequest()
+        deploy.intakeRequest();
+        intake.intakeRequest();
+      }
+      case EJECTING -> {
+        deploy.intakeRequest();
+        intake.ejectRequest();
+        conveyor.ejectRequest();
+        feeder.idleRequest();
+        funneler.idleRequest();
+      }
+      case UNJAMMING -> {
+        deploy.intakeRequest();
+        intake.ejectRequest();
+        conveyor.scoreRequest();
+        feeder.scoreRequest();
+        funneler.scoreRequest();
+      }
       case SCORE -> {
         if (operatorWantsStow) {
           deploy.stowRequest();
+          intake.idleRequest();
+          if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+            conveyor.scoreRequest();
+          } else {
+            conveyor.initialShotRequest();
+          }
+          feeder.scoreRequest();
+          funneler.scoreRequest();
         } else if (shouldBeastMode) {
           deploy.beastModeRequest();
           intake.scoreRequest();
           conveyor.scoreRequest();
+          feeder.scoreRequest();
+          funneler.scoreRequest();
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           double shuffleInterval =
               HopperManagerConfig.HOPPER_COMPACTION_SHUFFLE_INTERVAL.getAsDouble();
@@ -384,18 +424,33 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           }
           intake.idleRequest();
           conveyor.scoreRequest();
+          feeder.scoreRequest();
+          funneler.scoreRequest();
         } else {
           deploy.waitHopperCompactionRequest();
+          intake.scoreRequest();
+          conveyor.initialShotRequest();
+          feeder.scoreRequest();
+          funneler.scoreRequest();
         }
       }
-      case IDLE_STOWED -> {
-        deploy.stowRequest();
-        intake.idleRequest();
-        conveyor.idleRequest();
-        feeder.idleRequest();
+      case SCORE_AND_INTAKE -> {
+        deploy.intakeRequest();
+        intake.intakeRequest();
+        conveyor.scoreRequest();
+        feeder.scoreRequest();
+        funneler.scoreRequest();
       }
       case FEED -> {
+        if (operatorWantsStow) {
+          deploy.stowRequest();
+          intake.idleRequest();
         if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
+            conveyor.feedRequest();
+          } else {
+            conveyor.initialShotRequest();
+          }
+        } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.feedCompactionRequest();
           intake.idleRequest();
           conveyor.feedRequest();
