@@ -61,7 +61,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.EJECT);
   }
 
-  public void feeedRequest() {
+  public void feedRequest() {
     setStateFromRequest(IntakeState.FEED);
   }
 
@@ -84,9 +84,23 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.SCORE);
   }
 
+  public void stopEjectingRequest() {
+    switch (getState()) {
+      case EJECT -> setStateFromRequest(IntakeState.IDLE);
+      default -> {}
+    }
+  }
+
   public void stopFeedingRequest() {
     switch (getState()) {
       case FEED -> setStateFromRequest(IntakeState.IDLE);
+      default -> {}
+    }
+  }
+
+  public void stopIntakingRequest() {
+    switch (getState()) {
+      case INTAKE -> setStateFromRequest(IntakeState.IDLE);
       default -> {}
     }
   }
