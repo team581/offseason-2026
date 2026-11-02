@@ -3,7 +3,6 @@ package frc.robot;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
@@ -54,7 +53,6 @@ public class Hardware {
   public final TalonFX turretMotor = new TalonFX(28, rio);
   public final CANcoder turretEncoder = new CANcoder(29, rio);
 
-  public final CANrange hopperCANRange = new CANrange(31, rio);
   public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
 
