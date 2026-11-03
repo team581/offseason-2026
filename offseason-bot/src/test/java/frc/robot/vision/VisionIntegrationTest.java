@@ -3,6 +3,7 @@ package frc.robot.vision;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -256,7 +257,7 @@ final class VisionIntegrationTest {
   }
 
   private static final List<String> SYNTHETIC_CAMERA_NAMES =
-      List.of("left", "right", "front", "back");
+      ImmutableList.of("left", "right", "front", "back");
 
   @BeforeAll
   static void hal() {
