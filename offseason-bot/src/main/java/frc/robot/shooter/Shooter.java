@@ -249,16 +249,12 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void prepareFeedRequest(double distance) {
     this.feedDistance = distance;
-    if (getState() != ShooterState.FEED) {
-      setStateFromRequest(ShooterState.PREPARE_FEED);
-    }
+    setStateFromRequest(ShooterState.PREPARE_FEED);
   }
 
   public void prepareScoreRequest(double distance) {
     this.scoreDistance = distance;
-    if (getState() != ShooterState.SCORE) {
-      setStateFromRequest(ShooterState.PREPARE_SCORE);
-    }
+    setStateFromRequest(ShooterState.PREPARE_SCORE);
   }
 
   public void scoreRequest(double distance) {
@@ -303,8 +299,10 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   @Override
   protected void collectInputs() {
-    shootingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToScoringRpm(scoreDistance));
-    feedingRpm = Math.min(ShooterConfig.MAX_SAFE_RPM, distanceToFeedingRpm(feedDistance));
+    shootingRpm =
+        MathUtil.clamp(distanceToScoringRpm(scoreDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
+    feedingRpm =
+        MathUtil.clamp(distanceToFeedingRpm(feedDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
 
     if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
       shootingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;

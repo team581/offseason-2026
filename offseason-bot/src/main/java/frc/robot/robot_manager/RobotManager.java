@@ -575,9 +575,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
+        // Once shooting, validate the active request with its shooting RPM tolerance.
+        var expectedShooterState =
+            currentState == RobotState.FALLBACK_SCORE
+                ? ShooterState.SCORE
+                : ShooterState.PREPARE_SCORE;
         // In pit functionality, we don't care about anything other than raw mechanism states.
         if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
-          yield shooter.atGoalDebounced(ShooterState.PREPARE_SCORE)
+          yield shooter.atGoalDebounced(expectedShooterState)
                   && shooterHood.atGoal(ShooterHoodState.SCORING)
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
@@ -585,21 +590,26 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         yield !isMoving
                 && (turret.atGoal(TurretState.SCORE, scoringParameters)
-                    && shooter.atGoalDebounced(ShooterState.PREPARE_SCORE)
+                    && shooter.atGoalDebounced(expectedShooterState)
                     && shooterHood.atGoal(ShooterHoodState.SCORING)
                     && !isScorePathObstructed
                     && !nearTrench)
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
-      case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
-          turret.atGoal(TurretState.FEED, fallbackFeedingParameters)
-                  && shooter.atGoalDebounced(ShooterState.PREPARE_FEED)
-                  && shooterHood.atGoal(ShooterHoodState.FEEDING)
-                  && isInSafeFeedingLocation
-                  && !nearTrench
-              ? RobotState.FALLBACK_FEED
-              : RobotState.PREPARE_FALLBACK_FEED;
+      case PREPARE_FALLBACK_FEED, FALLBACK_FEED -> {
+        var expectedShooterState =
+            currentState == RobotState.FALLBACK_FEED
+                ? ShooterState.FEED
+                : ShooterState.PREPARE_FEED;
+        yield turret.atGoal(TurretState.FEED, fallbackFeedingParameters)
+                && shooter.atGoalDebounced(expectedShooterState)
+                && shooterHood.atGoal(ShooterHoodState.FEEDING)
+                && isInSafeFeedingLocation
+                && !nearTrench
+            ? RobotState.FALLBACK_FEED
+            : RobotState.PREPARE_FALLBACK_FEED;
+      }
       case PREPARE_SCORE -> {
         logScoringTransition();
 
