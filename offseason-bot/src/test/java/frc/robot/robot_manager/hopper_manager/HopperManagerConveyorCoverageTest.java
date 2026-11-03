@@ -93,18 +93,25 @@ final class HopperManagerConveyorCoverageTest {
   }
 
   @Test
-  void ejectingCommandsConveyorEject() {
+  void ejectingKeepsConveyorAndFeederEjectingUntilCancelled() {
     hopperManager.setDriverWantsEject(true);
     hopperManager.idleRequest();
+    assertThat(feeder.getState()).isEqualTo(FeederState.EJECT);
     hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.EJECTING);
     assertThat(conveyor.getState()).isEqualTo(ConveyorState.EJECT);
+    assertThat(feeder.getState()).isEqualTo(FeederState.EJECT);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
 
     // Verify whileInState maintains eject
     hopperManager.periodic();
     assertThat(conveyor.getState()).isEqualTo(ConveyorState.EJECT);
+    assertThat(feeder.getState()).isEqualTo(FeederState.EJECT);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+    hopperManager.setDriverWantsEject(false);
+    hopperManager.periodic();
+    assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
+    assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
   }
 
   @Test

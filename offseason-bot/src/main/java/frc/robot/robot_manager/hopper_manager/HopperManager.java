@@ -325,7 +325,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         deploy.intakeRequest();
         intake.ejectRequest();
         conveyor.ejectRequest();
-        feeder.idleRequest();
+        feeder.ejectRequest();
         funneler.idleRequest();
       }
       case UNJAMMING -> {
