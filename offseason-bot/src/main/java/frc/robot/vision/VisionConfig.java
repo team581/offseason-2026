@@ -6,6 +6,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import frc.robot.vision.generated.SpotProtos;
 import java.util.HashSet;
 import java.util.List;
@@ -18,16 +19,54 @@ public final class VisionConfig {
   public static final double TAG_SIZE_M = .1651;
   public static final AprilTagFieldLayout FIELD_LAYOUT = AprilTags.FIELD_LAYOUT;
 
-  public static final List<String> CAMERA_NAMES =
-      ImmutableList.of("left", "right", "front", "back");
+  public static final List<String> CAMERA_NAMES = ImmutableList.of("left", "right", "back");
 
   // PLACEHOLDERS: cameras at the robot origin, facing the named cardinal direction.
   // These are NOT measured mounts. Verify capture mode and image rotation on each camera.
-  public static final SpotCameraConfig LEFT = placeholderCamera("left", 90);
-  public static final SpotCameraConfig RIGHT = placeholderCamera("right", -90);
-  public static final SpotCameraConfig FRONT = placeholderCamera("front", 0);
-  public static final SpotCameraConfig BACK = placeholderCamera("back", 180);
-  public static final List<SpotCameraConfig> CAMERAS = ImmutableList.of(LEFT, RIGHT, FRONT, BACK);
+  public static final SpotCameraConfig LEFT =
+      new SpotCameraConfig(
+          "left",
+          true,
+          mount(
+              Units.inchesToMeters(-2.703),
+              Units.inchesToMeters(14.972421),
+              Units.inchesToMeters(13.369593),
+              0,
+              -20,
+              90),
+          0,
+          new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+          List.of());
+
+  public static final SpotCameraConfig RIGHT =
+      new SpotCameraConfig(
+          "right",
+          true,
+          mount(
+              Units.inchesToMeters(-6.75),
+              Units.inchesToMeters(-14.91),
+              Units.inchesToMeters(12.483),
+              0,
+              -20,
+              -90),
+          0,
+          new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+          List.of());
+  public static final SpotCameraConfig BACK =
+      new SpotCameraConfig(
+          "back",
+          true,
+          mount(
+              Units.inchesToMeters(-12.535),
+              Units.inchesToMeters(3.250),
+              Units.inchesToMeters(13.483),
+              0,
+              -20,
+              180),
+          0,
+          new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+          List.of());
+  public static final List<SpotCameraConfig> CAMERAS = ImmutableList.of(LEFT, RIGHT, BACK);
 
   /** NWU: +X forward, +Y left, +Z up; right-handed roll, pitch, yaw in degrees. */
   public static Transform3d mount(
