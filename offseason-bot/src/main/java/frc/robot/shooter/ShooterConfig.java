@@ -18,11 +18,12 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.Map;
 
 public class ShooterConfig {
-  public static final double ROLLER_DIAMETER_METERS = 1.0;
+  public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(4.0);
   public static final double MOTOR_TO_ROLLER_RATIO = 1.0;
 
   public static final double RPM_TOLERANCE = 50.0;
