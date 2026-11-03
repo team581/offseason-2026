@@ -107,9 +107,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double topRightMotorRpm = 0;
   private double bottomLeftMotorRpm = 0;
   private double bottomRightMotorRpm = 0;
-  private double feederCurrent = 0.0;
 
-  private double feederBasedFeedForward = 0.0;
+  private double initialFeedForward = 0.0;
   private boolean hopperFull = false;
 
   private boolean atGoal = false;
@@ -284,8 +283,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     shooterSimulation.update();
   }
 
-  public void updateHopperState(double feederCurrent, boolean hopperFull) {
-    this.feederCurrent = feederCurrent;
+  public void updateHopperState(boolean hopperFull) {
     this.hopperFull = hopperFull;
   }
 
@@ -337,23 +335,15 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     switch (getState()) {
       case SCORE, FEED -> {
         if (!timeout(0.7) && hopperFull) {
-          feederBasedFeedForward =
-              Math.max(
-                  ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent),
-                  ShooterConfig.FULL_HOPPER_INITIAL_FF.getAsDouble());
+          initialFeedForward = ShooterConfig.FULL_HOPPER_INITIAL_FF.getAsDouble();
         } else if (!timeout(0.1)) {
-          feederBasedFeedForward =
-              Math.max(
-                  ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent),
-                  ShooterConfig.LOW_HOPPER_INITIAL_FFF.getAsDouble());
+          initialFeedForward = ShooterConfig.LOW_HOPPER_INITIAL_FFF.getAsDouble();
         } else {
-          feederBasedFeedForward =
-              ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent);
+          initialFeedForward = 0.0;
         }
       }
       default -> {
-        feederBasedFeedForward =
-            ShooterConfig.FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD.get(feederCurrent);
+        initialFeedForward = 0.0;
       }
     }
   }
@@ -399,7 +389,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
             ShooterConfig.MOTOR_TO_ROLLER_RATIO));
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
-    DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
+    DogLog.log("Shooter/InitialFeedForward", initialFeedForward);
     DogLog.log("Shooter/AtGoal", atGoal);
 
     DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
@@ -416,25 +406,25 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
       case PREPARE_SCORE -> {
         var setpoint = shootingRpm / 60.0;
         topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case SCORE -> {
         var setpoint = shootingRpm / 60.0;
         topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case PREPARE_FEED -> {
         var setpoint = feedingRpm / 60.0;
         topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
       case FEED -> {
         var setpoint = feedingRpm / 60.0;
         topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(feederBasedFeedForward));
+            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
     }

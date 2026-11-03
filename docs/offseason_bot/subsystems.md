@@ -130,7 +130,7 @@ flowchart LR
 
 - CANivore Bus (`581CANivore`), 4 Talon FXs (IDs 23–26; flywheel motors TBD)
 - Velocity Torque Current FOC control loop
-- Boost torque current using feeder current feedforward to prevent RPM dips on ball contact
+- Apply a timed initial feedforward boost when scoring or feeding (0.7 seconds with a full hopper, 0.1 seconds otherwise)
 - States:
   - `IDLE`: ~750 RPM
   - `PREPARE_SCORE` / `SCORE`: Distance-based RPM setpoint

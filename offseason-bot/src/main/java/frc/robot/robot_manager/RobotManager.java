@@ -557,7 +557,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "ShootOnTheMove/CompensatedGoalScoring",
         new Pose2d(fullyCompensatedHubGoal, Rotation2d.kZero));
-    shooter.updateHopperState(hopperManager.feeder.getAverageCurrent(), hopperManager.isFull());
+    shooter.updateHopperState(hopperManager.isFull());
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
   }
 

@@ -43,14 +43,6 @@ public class ShooterConfig {
 
   public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(0.0, 0.0, Rotation2d.k180deg);
 
-  public static final InterpolatingDoubleTreeMap FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD =
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/FeederCurrentToShooterFeedForward",
-          Map.entry(0.0, 0.0),
-          Map.entry(50.0, 22.0),
-          Map.entry(20.0, 0.0),
-          Map.entry(30.0, 15.0));
-
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
