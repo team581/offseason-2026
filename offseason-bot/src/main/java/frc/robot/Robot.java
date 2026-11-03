@@ -176,7 +176,10 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::ejectRequest)
         .onRelease(robotManager::cancelEjectRequest);
 
-    operator.rightTrigger().onPress(robotManager::prepareScoreRequest);
+    operator
+        .rightTrigger()
+        .onPress(robotManager::prepareScoreRequest)
+        .onRelease(robotManager::idleRequest);
 
     operator
         .leftBumper()
