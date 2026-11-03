@@ -410,7 +410,7 @@ final class VisionIntegrationTest {
     try (var shadow = new Fixture(false)) {
       shadow.frame("front", 1, 10.01);
       shadow.tick(10.04);
-      assertThat(shadow.vision.getStatus().usable()).isGreaterThan(0);
+      assertThat(shadow.vision.getStatus().usable()).isPositive();
       assertThat(shadow.vision.isFusionEnabled()).isFalse();
       assertThat(shadow.vision.hasRecentFusedMeasurement()).isFalse();
     }

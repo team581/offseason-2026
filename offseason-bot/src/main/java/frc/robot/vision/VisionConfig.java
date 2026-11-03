@@ -54,7 +54,7 @@ public final class VisionConfig {
         mount(0, 0, 0, 0, 0, yawDegrees),
         0,
         new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-        List.of());
+        ImmutableList.of());
   }
 
   static SpotProtos.Profile profile(List<SpotCameraConfig> cameras) {
