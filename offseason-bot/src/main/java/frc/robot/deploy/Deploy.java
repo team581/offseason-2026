@@ -330,8 +330,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         if (!timeout(DeployConfig.RECOVERY_DELAY_SECONDS)) {
           yield currentState;
         }
-        yield Math.abs(leftMotorPosition - rightMotorPosition)
-                > DeployConfig.MAX_RECOVERY_DESYNC_DEGREES
+        yield !MathUtil.isNear(
+                0, leftMotorPosition - rightMotorPosition, DeployConfig.MAX_RECOVERY_DESYNC_DEGREES)
             ? DeployState.INTAKE_RECOVERY_FAILED
             : DeployState.INTAKE_RECOVERING;
       }
@@ -340,8 +340,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           yield DeployState.INTAKE_COAST;
         }
         if (timeout(DeployConfig.RECOVERY_TIMEOUT_SECONDS)
-            || Math.abs(leftMotorPosition - rightMotorPosition)
-                > DeployConfig.MAX_RECOVERY_DESYNC_DEGREES) {
+            || !MathUtil.isNear(
+                0,
+                leftMotorPosition - rightMotorPosition,
+                DeployConfig.MAX_RECOVERY_DESYNC_DEGREES)) {
           yield DeployState.INTAKE_RECOVERY_FAILED;
         }
         yield currentState;
