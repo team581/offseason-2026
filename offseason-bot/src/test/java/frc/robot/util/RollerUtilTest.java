@@ -59,7 +59,7 @@ final class RollerUtilTest {
 
   @Test
   void preservesStoppedAndReverseMotion() {
-    assertThat(RollerUtil.surfaceSpeedMetersPerSecond(0.0, 0.1, 2.0)).isZero();
+    assertThat(RollerUtil.surfaceSpeedMetersPerSecond(0.0, 0.1, 2.0)).isEqualTo(0);
     assertThat(RollerUtil.surfaceSpeedMetersPerSecond(-20.0, 0.1, 2.0))
         .isCloseTo(-Math.PI, within(1e-12));
   }
