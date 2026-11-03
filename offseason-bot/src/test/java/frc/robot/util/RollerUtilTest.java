@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 import edu.wpi.first.math.util.Units;
+import frc.robot.conveyor.ConveyorConfig;
 import frc.robot.feeder.FeederConfig;
 import frc.robot.funneler.FunnelerConfig;
 import frc.robot.intake.IntakeConfig;
@@ -14,6 +15,32 @@ final class RollerUtilTest {
   void convertsOneRollerRevolutionPerSecondToCircumference() {
     assertThat(RollerUtil.surfaceSpeedMetersPerSecond(1.0, 0.1, 1.0))
         .isCloseTo(Math.PI * 0.1, within(1e-12));
+  }
+
+  @Test
+  void conveyorUsesFloorGearTrainAndInchDiameterFromSpec() {
+    // At 60 motor RPS, independently apply every non-unity stage from the sheet.
+    double expectedSpeed =
+        60.0
+            * (14.0 / 60.0)
+            * (16.0 / 18.0)
+            * (16.0 / 20.0)
+            * (17.0 / 20.0)
+            * (17.0 / 20.0)
+            * Math.PI
+            * 0.0381;
+    assertThat(
+            RollerUtil.surfaceSpeedMetersPerSecond(
+                60.0,
+                ConveyorConfig.TOP_ROLLER_DIAMETER_METERS,
+                ConveyorConfig.TOP_MOTOR_TO_ROLLER_RATIO))
+        .isCloseTo(expectedSpeed, within(1e-12));
+    assertThat(
+            RollerUtil.surfaceSpeedMetersPerSecond(
+                60.0,
+                ConveyorConfig.BOTTOM_ROLLER_DIAMETER_METERS,
+                ConveyorConfig.BOTTOM_MOTOR_TO_ROLLER_RATIO))
+        .isCloseTo(expectedSpeed, within(1e-12));
   }
 
   @Test
