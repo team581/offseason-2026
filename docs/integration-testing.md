@@ -24,6 +24,18 @@ To run only the straight-line tests:
 ./gradlew :offseason-bot:straightLineTest
 ```
 
+To run only the deploy collapse headless check:
+
+```sh
+./gradlew :offseason-bot:headlessTest -Psim.test=DEPLOY_COLLAPSE
+```
+
+This check runs the robot scheduler and injects collisions through simulated motor encoders.
+It verifies indefinite coast while down, timer reset after a brief bump, the three-second
+continuous raised delay, PID recovery, and return to coast. It also runs with the full
+`headlessTest` suite. The kinematic simulator predicts movement independently of motor gains;
+this verifies control sequencing, not physical performance with the zero bringup gains.
+
 Straight-line distances, constraints, and tolerances are constants at the top of
 `StraightLineTest.java`. The robot and headless simulation use those same values.
 To change the simulation environment:
