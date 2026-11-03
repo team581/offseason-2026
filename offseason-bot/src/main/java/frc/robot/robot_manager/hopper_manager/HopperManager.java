@@ -275,7 +275,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case UNJAMMING -> {
         deploy.intakeRequest();
         intake.ejectRequest();
-        conveyor.scoreRequest();
+        conveyor.ejectRequest();
         feeder.scoreRequest();
         funneler.scoreRequest();
       }
@@ -389,7 +389,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case UNJAMMING -> {
         deploy.intakeRequest();
         intake.ejectRequest();
-        conveyor.scoreRequest();
+        conveyor.ejectRequest();
         feeder.scoreRequest();
         funneler.scoreRequest();
       }

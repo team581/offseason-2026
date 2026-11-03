@@ -11,6 +11,7 @@ import frc.robot.power_manager.PowerManager;
 import frc.robot.power_manager.PowerManagerState;
 import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.robot_manager.hopper_manager.HopperState;
+import frc.robot.shooter.ShooterState;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,6 +109,10 @@ final class RobotManagerRequestCoverageTest {
     robotManager.unjamRequest();
     assertThat(robotManager.getState()).isEqualTo(RobotState.UNJAM);
     assertThat(hopperManager.getState()).isEqualTo(HopperState.UNJAMMING);
+    assertThat(robotManager.shooter.getState()).isEqualTo(ShooterState.SCORE);
+
+    // A stale subsystem request must be replaced while unjam remains held.
+    robotManager.shooter.idleRequest();
 
     // Verify whileInState continues commanding unjam on hopperManager and idle on powerManager
     robotManager.beforePeriodic();
@@ -115,6 +120,11 @@ final class RobotManagerRequestCoverageTest {
     assertThat(robotManager.getState()).isEqualTo(RobotState.UNJAM);
     assertThat(hopperManager.getState()).isEqualTo(HopperState.UNJAMMING);
     assertThat(powerManager.getState()).isEqualTo(PowerManagerState.IDLE);
+    assertThat(robotManager.shooter.getState()).isEqualTo(ShooterState.SCORE);
+
+    robotManager.idleRequest();
+    assertThat(robotManager.shooter.getState()).isEqualTo(ShooterState.IDLE);
+    assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
   }
 
   @Test

@@ -66,7 +66,7 @@
 - 2" Fairlane wheels
 - Open-loop voltage control with FOC
 - Move balls sideways from hopper into tunnel
-- States: `IDLE`, `SCORE`, `FEEDING`, `INTAKE`, `BALL_FILLING`
+- States: `IDLE`, `SCORE` (10V), `FEEDING`, `INTAKE`, `BALL_FILLING`
 
 ## Feeder
 
@@ -93,7 +93,7 @@
   - `IDLE_STOWED`: Deploy stowed; all transport mechanisms idle
   - `INTAKING`: Deploy extended, intake spinning forward (12V); runs conveyor and funneler into tower, backs feeder slightly (-1V) until filling conditions met
   - `EJECTING`: Deploy extended, intake (-12V), conveyor (-12V), and feeder (-6V) reversed to dump balls out the front; funneler idle
-  - `UNJAMMING`: Deploy extended, intake reversed (-12V) while conveyor (10V), feeder (10V), funneler, and shooter run forward to clear jams
+  - `UNJAMMING`: Deploy extended; intake and conveyor reverse using their outtake requests (-12V). Feeder and funneler use their shooting requests (10V); shooter uses its normal scoring request at a fixed 3m distance, with the normal RPM limit and pit-mode override. These requests stay active until unjam is released, then normal idle/intake requests resume. The tunnel belts are part of Conveyor/Floor and have no separate control in the current code.
   - `SCORE`: Deploy extended; intake scores (5V); conveyor runs initial shot (10V) then score (10V); feeder (10V) and funneler run forward. Compaction runs after 0.25s delay with 0.25s shuffle interval, unless beast mode is active
   - `SCORE_AND_INTAKE`: Simultaneous scoring and intaking; compaction disabled while intaking
   - `FEED`: Deploy extended; intake feeds (5V); conveyor runs initial shot (10V) then feed (10V); feeder (10V) and funneler run forward. Feed compaction activates after 0.25s delay

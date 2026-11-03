@@ -8,9 +8,11 @@ import frc.robot.conveyor.Conveyor;
 import frc.robot.conveyor.ConveyorState;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
+import frc.robot.feeder.FeederState;
 import frc.robot.funneler.Funneler;
 import frc.robot.funneler.FunnelerState;
 import frc.robot.intake.Intake;
+import frc.robot.intake.IntakeState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -214,16 +216,43 @@ final class HopperManagerConveyorCoverageTest {
   }
 
   @Test
-  void unjammingCommandsConveyorScore() {
+  void unjammingEjectsIntakeAndConveyorWhileShootingThroughFeederAndFunneler() {
     hopperManager.unjamRequest();
-    hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.UNJAMMING);
-    assertThat(conveyor.getState()).isEqualTo(ConveyorState.SCORE);
+    assertThat(intake.getState()).isEqualTo(IntakeState.EJECT);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.EJECT);
+    assertThat(feeder.getState()).isEqualTo(FeederState.SCORE);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.SCORE);
+    assertThat(FunnelerState.SCORE.getVoltage()).isPositive();
 
-    // Verify whileInState maintains score request
-    hopperManager.periodic();
-    assertThat(conveyor.getState()).isEqualTo(ConveyorState.SCORE);
-    assertThat(funneler.getState()).isEqualTo(FunnelerState.SCORE);
+    // Unjam must restore every transport request on subsequent cycles.
+    intake.idleRequest();
+    conveyor.idleRequest();
+    feeder.idleRequest();
+    funneler.idleRequest();
+    for (int i = 0; i < 3; i++) {
+      hopperManager.periodic();
+      assertThat(hopperManager.getState()).isEqualTo(HopperState.UNJAMMING);
+      assertThat(intake.getState()).isEqualTo(IntakeState.EJECT);
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.EJECT);
+      assertThat(feeder.getState()).isEqualTo(FeederState.SCORE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.SCORE);
+    }
+
+    hopperManager.idleRequest();
+    assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
+    assertThat(intake.getState()).isEqualTo(IntakeState.IDLE);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+    assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+
+    hopperManager.setDriverWantsIntake(true);
+    hopperManager.unjamRequest();
+    hopperManager.idleRequest();
+    assertThat(hopperManager.getState()).isEqualTo(HopperState.INTAKING);
+    assertThat(intake.getState()).isEqualTo(IntakeState.INTAKE);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.INTAKE);
+    assertThat(feeder.getState()).isEqualTo(FeederState.INTAKING);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.INTAKE);
   }
 }
