@@ -837,6 +837,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
 
     MechanismVisualizer.log(
-        getState(), turret.getAngle(), shooterHood.getAngle(), hopperManager.deploy.getPosition());
+        getState(),
+        turret.getAngle(),
+        shooterHood.getAngle(),
+        hopperManager.deploy.getAngleDegrees());
   }
 }

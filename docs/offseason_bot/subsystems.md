@@ -5,10 +5,38 @@
 - 2 Kraken X44 motors on CANivore (`581CANivore`) using differential mechanism (Leader 15, Follower 30)
 - Gear Ratio: `36.57:1`
 - Control loops:
-  - Extension: Motion Magic Torque Current FOC
+  - Arm angle: Motion Magic Torque Current FOC
   - Differential sync: Position Torque Current FOC
   - Desync fix: High differential kP to resync sides
-- Parallel-linkage motion (calibrated travel 5.0" to 11.8", ~88.4° arc)
+- Parallel-linkage arm with an 88.4° CAD sweep. Control/public positions are degrees above fully down (0°); CTRE requests and feedback use mechanism rotations with the documented
+  36.57:1 ratio. Intermediate setpoints are initial degree targets for bringup. All PID and feedforward
+  gains, including the desync override, start at zero and must be tuned on the robot.
+- In `INTAKE`, both sides within 5° of the down target switches both motors to explicit coast.
+  Coast persists indefinitely while down. Either side more than 10° above the target for three
+  continuous enabled seconds starts recovery; falling below that threshold resets the timer.
+- Collapse behavior uses `DeployState` directly: `INTAKE` powers down to the target,
+  `INTAKE_COAST` releases both motors, `INTAKE_COLLAPSED` waits for the three-second
+  continuous raised delay, and `INTAKE_RECOVERING` resumes the normal Motion Magic PID.
+  Reaching the 5° band coasts again. A five-second recovery timeout or more than 15° of
+  side-to-side error enters `INTAKE_RECOVERY_FAILED` and coasts until a different command.
+
+```mermaid
+flowchart LR
+    INTAKE -->|Down| INTAKE_COAST
+    INTAKE_COAST -->|Raised| INTAKE_COLLAPSED
+    INTAKE_COLLAPSED -->|Falls back| INTAKE_COAST
+    INTAKE_COLLAPSED -->|3 seconds raised| INTAKE_RECOVERING
+    INTAKE_RECOVERING -->|Down| INTAKE_COAST
+    INTAKE_RECOVERING -->|Timeout or desync| INTAKE_RECOVERY_FAILED
+```
+
+- Stow, compaction, homing, and the desync override bypass the collapse delay. Disabling resets
+  the raised timer; an interrupted recovery waits again after enable.
+- Normal motion starts at 90°/s and 180°/s². Arm-cosine gravity compensation is configured but
+  `kG` remains zero until measured. Check homing angles, target positions, gains, torque limits,
+  and mechanical backdrivability on the robot before relying on collapse behavior.
+- `Deploy/*AngleDegrees` and `Deploy/State` provide position/control telemetry.
+  The kinematic simulator does not model gravity, impact forces, or blocked motion.
 - States:
   - `UNHOMED`
   - `HOME_INWARD`: Current-based inward homing (auto)

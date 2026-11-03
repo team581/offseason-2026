@@ -47,24 +47,26 @@ points throughout the motion. `MechanismVisualizer` publishes all three poses.
 
 ```mermaid
 flowchart LR
-    Travel[Motor travel] --> Angle[Link angle]
+    Encoder[Motor rotations] --> Angle[Arm angle]
     Angle --> Arms[Upper and lower arms]
     Angle --> Carriage[Level carriage on arc]
     Arms --> View[3D component poses]
     Carriage --> View
 ```
 
-The deploy controller's existing calibrated inches represent motor/sprocket travel,
-not straight-line intake displacement. Hardware ratios, operating targets, and
-homing calibration are retained. The simulation bounds now cover both homing
-endpoints, 0 to 11.9 inches, rather than clipping inward home to the 5-inch
-operating minimum. A new `Deploy/LinkageAngleDegrees` log exposes the derived angle.
+The deploy controller now uses arm degrees above fully down (0°), with
+CTRE feedback and requests in mechanism rotations using the documented **36.57:1**
+motor-to-arm ratio. The fully inward reference starts at 88.4 degrees for bringup; the
+outward reference is zero. Tune `DeployConfig.COLLAPSED_ANGLE_DEGREES` on the robot. `DeployKinematics` consumes the arm
+angle directly and subtracts the arm angle from the CAD sweep to rotate the exported meshes.
+Simulation bounds cover both homing endpoints.
 
-**Approximation:** link angle is proportional to the existing calibrated motor
-travel between the two home positions. The geometry and end angle come from CAD;
-the relationship between motor travel and intermediate link angle still needs
-verification on the physical robot. The STOW target of 5 inches is an intermediate
-angle, not the fully inward CAD pose.
+Intermediate targets are explicit degree values for bringup. All deploy PID and
+feedforward gains start at zero, including the differential and desync slots.
+`STOW` remains an intermediate pose rather than the fully inward
+CAD pose. Gravity compensation is configured as arm/cosine, with zero `kG` until
+measured. See `docs/offseason_bot/subsystems.md` for coast/recovery behavior and
+its hardware validation requirements.
 
 ## Regenerate
 
