@@ -92,7 +92,7 @@ public class ShooterConfig {
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(14.0).withKS(6.4).withKV(0.13));
+          .withSlot0(new Slot0Configs().withKP(0).withKS(0).withKV(0));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
@@ -104,12 +104,12 @@ public class ShooterConfig {
           .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 20.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
-      DogLog.tunable("Shooter/LowHopperInitialFF", 15.0);
+      DogLog.tunable("Shooter/LowHopperInitialFF", 0.0);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
-      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
+      DogLog.tunable("Shooter/TurboShotFFCurrent", 0.0);
   // Calculated from average of CAPIN logs
   public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
       DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.25);

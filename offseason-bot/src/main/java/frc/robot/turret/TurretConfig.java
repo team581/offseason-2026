@@ -47,9 +47,8 @@ public class TurretConfig {
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
-          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
-          .withSlot0(
-              new Slot0Configs().withKP(200).withKV(5.0).withKG(0.0).withKD(1.7).withKS(0.35))
+          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(0).withPeakReverseVoltage(0))
+          .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0.0).withKD(0).withKS(0))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(Units.radiansToRotations(MAX_VELOCITY_RAD_PER_SEC))

@@ -44,7 +44,7 @@ public class ShooterHoodConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(300.0).withKV(0).withKS(0));
+          .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKS(0));
 
   // TODO: Update interpolating map numbers later
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =
