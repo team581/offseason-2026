@@ -2,12 +2,14 @@ package frc.robot.testing;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.datalog.DataLogReader;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -17,6 +19,9 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.HeadlessRunner;
 import frc.robot.deploy.DeployState;
+import frc.robot.turret.TurretCalculator;
+import frc.robot.turret.TurretConfig;
+import frc.robot.util.AimParameterUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -182,6 +187,50 @@ final class HeadlessTest {
       }
       var result = manager.getResult().orElseThrow();
       assertThat(result.status()).as(result.reason()).isEqualTo(TestStatus.PASSED);
+    }
+  }
+
+  @Test
+  @Timeout(60)
+  void turretTracksSimulatedPoseWithoutCameraFrames() throws IOException {
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        System.getProperty("sim.test", "TURRET_AIM").equals("TURRET_AIM"));
+    initializeRobot();
+    try (var resetPose =
+            NetworkTableInstance.getDefault()
+                .getTable("DSOptions")
+                .getBooleanTopic("ResetPoseForAuto")
+                .publish();
+        var testMode =
+            NetworkTableInstance.getDefault()
+                .getTable("DSOptions")
+                .getBooleanTopic("TestMode")
+                .publish()) {
+      resetPose.set(false);
+      testMode.set(false);
+      // Face away from the hub so both targets are inside the physical rear-facing travel.
+      for (double y : new double[] {2.0, 6.0}) {
+        DriverStationSim.setEnabled(false);
+        robot.tick();
+        robot.robotManager.localization.resetPose(new Pose2d(2.0, y, Rotation2d.k180deg));
+        DriverStationSim.setEnabled(true);
+        robot.robotManager.warmupScoreRequest();
+        double until = Timer.getFPGATimestamp() + 2.0;
+        robot.runUntil(() -> Timer.getFPGATimestamp() >= until, 3.0);
+        var pose = robot.robotManager.localization.getPose();
+        var parameters =
+            AimParameterUtil.getStaticScoringParameters(
+                pose, new ChassisSpeeds(), new ChassisSpeeds());
+        double expected = TurretCalculator.getOptimalAngle(parameters.turretAngle(), -180.0);
+        assertThat(expected).isStrictlyBetween(TurretConfig.MIN_ANGLE, TurretConfig.MAX_ANGLE);
+        assertThat(robot.turret.getAngle())
+            .as("Turret aims from the simulated robot pose at y=%s", y)
+            .isCloseTo(expected, offset(1.0));
+      }
+    } finally {
+      robot.robotManager.idleRequest();
+      DriverStationSim.setEnabled(false);
+      robot.tick();
     }
   }
 }

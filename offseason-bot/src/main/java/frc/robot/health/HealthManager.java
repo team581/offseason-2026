@@ -3,6 +3,7 @@ package frc.robot.health;
 import com.team581.config.BlinkingBooleanBox;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
@@ -20,11 +21,18 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
   private final Vision vision;
+  private final boolean simulation;
   private BooleanSupplier poseTrustworthy = () -> false;
 
   public HealthManager(Vision vision) {
+    this(vision, RobotBase.isSimulation());
+  }
+
+  /** Allows desktop tests to exercise the real robot's vision requirements. */
+  public HealthManager(Vision vision, boolean simulation) {
     super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
     this.vision = vision;
+    this.simulation = simulation;
   }
 
   /** Returns whether all cameras are healthy. */
@@ -51,7 +59,10 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   @Override
   protected void collectInputs() {
     var status = vision.getStatus();
-    localizationHealthy = vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean();
+    // Desktop simulation has odometry but no camera frames. Use its pose for aiming rather
+    // than forcing RobotManager to aim from the fixed real-robot fallback location.
+    localizationHealthy =
+        simulation || (vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean());
     fuelDetectionHealthy = false;
     allCamerasHealthy = status.allRequiredHealthy();
   }

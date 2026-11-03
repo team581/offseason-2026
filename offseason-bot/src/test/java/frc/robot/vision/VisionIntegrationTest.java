@@ -364,7 +364,7 @@ final class VisionIntegrationTest {
   @Test
   void requiredFailureOptionalFailureAndOperatorOverridesAreHonest() {
     try (var f = new Fixture(true)) {
-      var health = new frc.robot.health.HealthManager(f.vision);
+      var health = new frc.robot.health.HealthManager(f.vision, false);
       health.setPoseTrustworthySupplier(() -> true);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
