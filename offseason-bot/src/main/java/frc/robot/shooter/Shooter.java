@@ -118,6 +118,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   private boolean turboMode = false;
 
+  private boolean hasReachedGoal = false;
+
   // Debounce for delay between shots at 15 bps
   private Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
 
@@ -295,6 +297,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   protected void afterTransition(ShooterState newState) {
     atGoal = false;
     atGoalDebounced = false;
+    hasReachedGoal = false;
     atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
   }
 
@@ -327,7 +330,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     topRightTorqueCurrent = topRightTorqueCurrentSignal.getValueAsDouble();
 
     atGoal = calculateAtGoal();
-    atGoalDebounced = atGoalDebouncer.calculate(atGoal);
+    hasReachedGoal |= atGoal;
+    // A falling-edge debouncer starts true; it cannot grant readiness before spin-up.
+    atGoalDebounced = atGoalDebouncer.calculate(atGoal) && hasReachedGoal;
 
     switch (getState()) {
       case SCORE, FEED -> {

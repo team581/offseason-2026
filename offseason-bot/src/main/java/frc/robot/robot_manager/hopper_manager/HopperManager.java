@@ -263,8 +263,32 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   @Override
+  protected void beforeTransition(HopperState oldState, HopperState newState) {
+    boolean wasShooting =
+        switch (oldState) {
+          case SCORE, SCORE_AND_INTAKE, FEED, FEED_AND_INTAKE -> true;
+          default -> false;
+        };
+    boolean willShoot =
+        switch (newState) {
+          case SCORE, SCORE_AND_INTAKE, FEED, FEED_AND_INTAKE -> true;
+          default -> false;
+        };
+    // With no fuel sensor, retire the estimate after a shooting burst or an eject request.
+    if ((wasShooting && !willShoot)
+        || newState == HopperState.EJECTING
+        || newState == HopperState.UNJAMMING) {
+      hopperCapacity = HopperCapacity.LOW;
+    }
+  }
+
+  @Override
   protected void collectInputs() {
-    hopperCapacity = intake.hasBeenIntaking() ? HopperCapacity.HIGH : HopperCapacity.LOW;
+    // Intake stopping does not empty the hopper. Retain the estimate through idle and
+    // the next shooting burst so the shooter receives its full-hopper starting boost.
+    if (intake.hasBeenIntaking()) {
+      hopperCapacity = HopperCapacity.HIGH;
+    }
   }
 
   @Override

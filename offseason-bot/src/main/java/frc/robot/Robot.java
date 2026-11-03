@@ -204,6 +204,9 @@ public class Robot extends Base581Robot {
           shooter.setTurboMode(false);
         });
 
-    operator.b().onPress(deploy::fixDifferentialDesyncRequest).onRelease(deploy::intakeRequest);
+    operator
+        .b()
+        .onPress(deploy::fixDifferentialDesyncRequest)
+        .onRelease(deploy::stopFixDifferentialDesyncRequest);
   }
 }

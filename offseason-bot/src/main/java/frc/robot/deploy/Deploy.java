@@ -120,14 +120,14 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void beastModeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
     }
   }
 
   public void feedCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.FEED_COMPACTION);
     }
   }
@@ -158,15 +158,15 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void hopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
     }
   }
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {
+        // Homing and the operator desync override take priority over hopper requests.
       }
       default -> setStateFromRequest(DeployState.INTAKE);
     }
@@ -201,10 +201,17 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     deploySimulation.update(clamp(getState().getLength()));
   }
 
+  /** Release the operator override so normal hopper requests can resume. */
+  public void stopFixDifferentialDesyncRequest() {
+    if (getState() == DeployState.FIX_DIFFERENTIAL_DESYNC) {
+      setStateFromRequest(DeployState.INTAKE);
+    }
+  }
+
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {
+        // Homing and the operator desync override take priority over hopper requests.
       }
       default -> setStateFromRequest(DeployState.STOW);
     }
@@ -212,7 +219,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void waitHopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
     }
   }

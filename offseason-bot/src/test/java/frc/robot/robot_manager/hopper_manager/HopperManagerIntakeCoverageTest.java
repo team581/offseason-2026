@@ -3,9 +3,11 @@ package frc.robot.robot_manager.hopper_manager;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.Hardware;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
+import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
 import frc.robot.funneler.Funneler;
 import frc.robot.intake.Intake;
@@ -81,6 +83,50 @@ final class HopperManagerIntakeCoverageTest {
   }
 
   @Test
+  void fullEstimateSurvivesIntakeReleaseAndShootingEntry() throws Exception {
+    SimHooks.pauseTiming();
+    try {
+      intake.periodic();
+      hopperManager.periodic();
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.beforePeriodic();
+      var capacity = HopperManager.class.getDeclaredField("hopperCapacity");
+      capacity.setAccessible(true);
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.HIGH);
+
+      hopperManager.setDriverWantsIntake(false);
+      hopperManager.idleRequest();
+      hopperManager.beforePeriodic();
+      hopperManager.periodic();
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.HIGH);
+      hopperManager.scoreRequest();
+      hopperManager.beforePeriodic();
+      hopperManager.periodic();
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.HIGH);
+      hopperManager.feedRequest();
+      hopperManager.beforePeriodic();
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.HIGH);
+      hopperManager.idleRequest();
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.LOW);
+
+      // Ejecting also retires an estimate even if no shooting burst occurred.
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.beforePeriodic();
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.HIGH);
+      hopperManager.setDriverWantsIntake(false);
+      hopperManager.setDriverWantsEject(true);
+      hopperManager.idleRequest();
+      assertThat(capacity.get(hopperManager)).isEqualTo(HopperCapacity.LOW);
+    } finally {
+      SimHooks.resumeTiming();
+    }
+  }
+
+  @Test
   void idleDeployedCommandsIntakeIdle() {
     hopperManager.idleRequest();
     hopperManager.periodic();
@@ -112,6 +158,27 @@ final class HopperManagerIntakeCoverageTest {
     // Verify whileInState maintains intake request
     hopperManager.periodic();
     assertThat(intake.getState()).isEqualTo(IntakeState.INTAKE);
+  }
+
+  @Test
+  void operatorRecoverySurvivesHopperRequestsUntilReleased() {
+    deploy.homeInAutoRequest();
+    deploy.simulationPeriodic();
+    assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
+    deploy.fixDifferentialDesyncRequest();
+    for (var state : HopperState.values()) {
+      hopperManager.afterTransition(state);
+      hopperManager.whileInState(state);
+      assertThat(deploy.getState())
+          .as("hopper state %s", state)
+          .isEqualTo(DeployState.FIX_DIFFERENTIAL_DESYNC);
+    }
+    deploy.stopFixDifferentialDesyncRequest();
+    assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
+    hopperManager.afterTransition(HopperState.IDLE_STOWED);
+    assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
+    deploy.stopFixDifferentialDesyncRequest();
+    assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
   }
 
   @Test
