@@ -28,34 +28,34 @@ final class PowerManagerTest {
 
   @Test
   void beastModeProvidesMaxHopperThroughput() {
-    assertThat(PowerManagerState.BEAST_MODE.feederSupplyCurrent).isEqualTo(30.0);
-    assertThat(PowerManagerState.BEAST_MODE.conveyorSupplyCurrent).isEqualTo(30.0);
-    assertThat(PowerManagerState.BEAST_MODE.funnelerSupplyCurrent).isEqualTo(30.0);
+    assertThat(PowerManagerState.BEAST_MODE.feederSupplyCurrent.get()).isEqualTo(30.0);
+    assertThat(PowerManagerState.BEAST_MODE.conveyorSupplyCurrent.get()).isEqualTo(30.0);
+    assertThat(PowerManagerState.BEAST_MODE.funnelerSupplyCurrent.get()).isEqualTo(30.0);
   }
 
   @Test
   void currentLimitsArePositiveForAllStates() {
     for (PowerManagerState state : PowerManagerState.values()) {
-      assertThat(state.shooterSupplyCurrent).isPositive();
-      assertThat(state.intakeSupplyCurrent).isPositive();
-      assertThat(state.deploySupplyCurrent).isPositive();
-      assertThat(state.shooterHoodSupplyCurrent).isPositive();
-      assertThat(state.feederSupplyCurrent).isPositive();
-      assertThat(state.conveyorSupplyCurrent).isPositive();
-      assertThat(state.funnelerSupplyCurrent).isPositive();
-      assertThat(state.swerveSupplyCurrent).isPositive();
-      assertThat(state.turretSupplyCurrent).isPositive();
+      assertThat(state.shooterSupplyCurrent.get()).isPositive();
+      assertThat(state.intakeSupplyCurrent.get()).isPositive();
+      assertThat(state.deploySupplyCurrent.get()).isPositive();
+      assertThat(state.shooterHoodSupplyCurrent.get()).isPositive();
+      assertThat(state.feederSupplyCurrent.get()).isPositive();
+      assertThat(state.conveyorSupplyCurrent.get()).isPositive();
+      assertThat(state.funnelerSupplyCurrent.get()).isPositive();
+      assertThat(state.swerveSupplyCurrent.get()).isPositive();
+      assertThat(state.turretSupplyCurrent.get()).isPositive();
     }
   }
 
   @Test
   void feedingLimitsPreserveSwerveAndHopperThroughput() {
     // Issue #111 raised swerve supply current to 30A in FEEDING
-    assertThat(PowerManagerState.FEEDING.swerveSupplyCurrent).isEqualTo(30.0);
+    assertThat(PowerManagerState.FEEDING.swerveSupplyCurrent.get()).isEqualTo(30.0);
     // Hopper feeder, conveyor, and funneler should be 30A for high throughput
-    assertThat(PowerManagerState.FEEDING.feederSupplyCurrent).isEqualTo(30.0);
-    assertThat(PowerManagerState.FEEDING.conveyorSupplyCurrent).isEqualTo(30.0);
-    assertThat(PowerManagerState.FEEDING.funnelerSupplyCurrent).isEqualTo(30.0);
+    assertThat(PowerManagerState.FEEDING.feederSupplyCurrent.get()).isEqualTo(30.0);
+    assertThat(PowerManagerState.FEEDING.conveyorSupplyCurrent.get()).isEqualTo(30.0);
+    assertThat(PowerManagerState.FEEDING.funnelerSupplyCurrent.get()).isEqualTo(30.0);
   }
 
   @Test
@@ -95,6 +95,6 @@ final class PowerManagerTest {
 
   @Test
   void turboModePrioritizesSwerve() {
-    assertThat(PowerManagerState.TURBO_MODE.swerveSupplyCurrent).isEqualTo(70.0);
+    assertThat(PowerManagerState.TURBO_MODE.swerveSupplyCurrent.get()).isEqualTo(70.0);
   }
 }

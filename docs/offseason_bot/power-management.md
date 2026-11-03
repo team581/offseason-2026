@@ -11,6 +11,7 @@
 - State machine
 - Run on separate thread
 - Configure stator current limits across all subsystems on state change
+- All power manager state limits are tunable in AdvantageScope.
 - States:
   - Idle (prioritize swerve/intaking to last whole match)
   - Scoring (prioritize scoring fast without dropping RPM)
