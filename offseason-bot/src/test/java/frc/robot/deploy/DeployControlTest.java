@@ -89,18 +89,18 @@ final class DeployControlTest {
     for (int i = 0; i < 2; i++) {
       var request =
           (Diff_PositionTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-      assertThat(request.AverageRequest.Slot).isZero();
+      assertThat(request.AverageRequest.Slot).isEqualTo(0);
       assertThat(request.AverageRequest.Position)
           .isEqualTo(-DeployState.FIX_DIFFERENTIAL_DESYNC.getAngleDegrees() / 360.0);
       assertThat(request.DifferentialRequest.Slot).isEqualTo(2);
-      assertThat(request.DifferentialRequest.Position).isZero();
+      assertThat(request.DifferentialRequest.Position).isEqualTo(0);
       deploy.robotPeriodic();
     }
 
     deploy.stopFixDifferentialDesyncRequest();
     var request =
         (Diff_MotionMagicTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-    assertThat(request.AverageRequest.Slot).isZero();
+    assertThat(request.AverageRequest.Slot).isEqualTo(0);
     assertThat(request.DifferentialRequest.Slot).isEqualTo(1);
   }
 

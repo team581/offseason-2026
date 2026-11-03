@@ -218,7 +218,7 @@ final class RobotManagerShooterCoverageTest {
 
   @EnumSource(
       value = RobotState.class,
-      names = {"PREPARE_SCORE", "SCORE", "PREPARE_FEED", "FEED"})
+      names = {"FEED", "PREPARE_FEED", "PREPARE_SCORE", "SCORE"})
   @ParameterizedTest
   void normalShotsRequireCurrentShooterReadinessAndSafeDriveSpeed(RobotState state)
       throws Exception {
