@@ -11,20 +11,6 @@ import org.junit.jupiter.api.Test;
 
 final class VisionConfigTest {
   @Test
-  void fourPlaceholderCamerasAreRegisteredWithFusionEnabled() {
-    var profile = VisionConfig.profile();
-    assertThat(profile.getCamerasList())
-        .extracting(camera -> camera.getName())
-        .containsExactly("left", "right", "front", "back");
-    assertThat(profile.getCamerasList())
-        .allMatch(camera -> camera.getEnabled() && camera.getRequired());
-    assertThat(VisionConfig.mounts()).hasSize(4);
-    assertThat(profile.getFusionEnabled()).isTrue();
-    assertThat(profile.getHeadingEnabled()).isFalse();
-    assertThat(profile.getField().getTagsCount()).isEqualTo(32);
-  }
-
-  @Test
   void invalidCaptureSettingsAndControlsFailBeforePublication() {
     assertThatThrownBy(() -> new CaptureSettings(641, 480, 30, PixelFormat.MJPEG))
         .isInstanceOf(IllegalArgumentException.class);
@@ -71,5 +57,19 @@ final class VisionConfigTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(SpotProtocol.hash(profile))
         .isEqualTo(SpotProtocol.hash(VisionConfig.profile(ImmutableList.of(camera))));
+  }
+
+  @Test
+  void threeCamerasAreRegisteredWithFusionEnabled() {
+    var profile = VisionConfig.profile();
+    assertThat(profile.getCamerasList())
+        .extracting(camera -> camera.getName())
+        .containsExactly("left", "right", "back");
+    assertThat(profile.getCamerasList())
+        .allMatch(camera -> camera.getEnabled() && camera.getRequired());
+    assertThat(VisionConfig.mounts()).hasSize(3);
+    assertThat(profile.getFusionEnabled()).isTrue();
+    assertThat(profile.getHeadingEnabled()).isFalse();
+    assertThat(profile.getField().getTagsCount()).isEqualTo(32);
   }
 }

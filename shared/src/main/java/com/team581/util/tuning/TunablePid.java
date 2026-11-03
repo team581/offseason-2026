@@ -1,11 +1,51 @@
 package com.team581.util.tuning;
 
+import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.GlobalConfig;
 import dev.doglog.DogLog;
 
 public class TunablePid {
+  /** Registers gains for slot 1 without changing another slot. */
+  public static void register(String key, TalonFX motor, Slot1Configs config) {
+    if (!GlobalConfig.IS_DEVELOPMENT) return;
+    DogLog.tunable(
+        key + "/kP", config.kP, value -> motor.getConfigurator().apply(config.withKP(value)));
+    DogLog.tunable(
+        key + "/kI", config.kI, value -> motor.getConfigurator().apply(config.withKI(value)));
+    DogLog.tunable(
+        key + "/kD", config.kD, value -> motor.getConfigurator().apply(config.withKD(value)));
+    DogLog.tunable(
+        key + "/kS", config.kS, value -> motor.getConfigurator().apply(config.withKS(value)));
+    DogLog.tunable(
+        key + "/kV", config.kV, value -> motor.getConfigurator().apply(config.withKV(value)));
+    DogLog.tunable(
+        key + "/kA", config.kA, value -> motor.getConfigurator().apply(config.withKA(value)));
+    DogLog.tunable(
+        key + "/kG", config.kG, value -> motor.getConfigurator().apply(config.withKG(value)));
+  }
+
+  /** Registers gains for slot 2 without changing another slot. */
+  public static void register(String key, TalonFX motor, Slot2Configs config) {
+    if (!GlobalConfig.IS_DEVELOPMENT) return;
+    DogLog.tunable(
+        key + "/kP", config.kP, value -> motor.getConfigurator().apply(config.withKP(value)));
+    DogLog.tunable(
+        key + "/kI", config.kI, value -> motor.getConfigurator().apply(config.withKI(value)));
+    DogLog.tunable(
+        key + "/kD", config.kD, value -> motor.getConfigurator().apply(config.withKD(value)));
+    DogLog.tunable(
+        key + "/kS", config.kS, value -> motor.getConfigurator().apply(config.withKS(value)));
+    DogLog.tunable(
+        key + "/kV", config.kV, value -> motor.getConfigurator().apply(config.withKV(value)));
+    DogLog.tunable(
+        key + "/kA", config.kA, value -> motor.getConfigurator().apply(config.withKA(value)));
+    DogLog.tunable(
+        key + "/kG", config.kG, value -> motor.getConfigurator().apply(config.withKG(value)));
+  }
+
   public static void register(String key, TalonFX motor, TalonFXConfiguration defaultConfig) {
     if (!GlobalConfig.IS_DEVELOPMENT) {
       return;

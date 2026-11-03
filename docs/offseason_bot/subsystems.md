@@ -225,3 +225,11 @@ stateDiagram-v2
 - Driver Station:
   - Toggle vision on/off (forces fallback shots when off)
   - Fault indicators for camera and localization health
+
+
+## Bringup tuning
+
+Deploy average gains remain under `Deploy/Left` and `Deploy/Right`. Difference
+axis gains are exposed under `Deploy/Left/Slot1`, `Deploy/Right/Slot1` (normal
+synchronization) and `Deploy/Left/Slot2`, `Deploy/Right/Slot2` (desync override).
+Each exposes kP, kI, kD, kS, kV, kA, and kG; tune both motors consistently.
