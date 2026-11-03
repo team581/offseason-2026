@@ -20,6 +20,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
+import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Shooter extends StateMachineSubsystem<ShooterState> implements PowerManaged {
@@ -358,6 +359,39 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/TopRight/RPM", topRightMotorRpm);
     DogLog.log("Shooter/BottomLeft/RPM", bottomLeftMotorRpm);
     DogLog.log("Shooter/BottomRight/RPM", bottomRightMotorRpm);
+    // Undo Phoenix feedback scaling to recover motor RPS before applying physical gearing.
+    DogLog.log(
+        "Shooter/TopLeft/SurfaceSpeedMetersPerSecond",
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            topLeftMotorRpm
+                / 60.0
+                * ShooterConfig.TOP_LEFT_MOTOR_CONFIGS.Feedback.SensorToMechanismRatio,
+            ShooterConfig.ROLLER_DIAMETER_METERS,
+            ShooterConfig.MOTOR_TO_ROLLER_RATIO));
+    DogLog.log(
+        "Shooter/TopRight/SurfaceSpeedMetersPerSecond",
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            topRightMotorRpm
+                / 60.0
+                * ShooterConfig.TOP_RIGHT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
+            ShooterConfig.ROLLER_DIAMETER_METERS,
+            ShooterConfig.MOTOR_TO_ROLLER_RATIO));
+    DogLog.log(
+        "Shooter/BottomLeft/SurfaceSpeedMetersPerSecond",
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            bottomLeftMotorRpm
+                / 60.0
+                * ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
+            ShooterConfig.ROLLER_DIAMETER_METERS,
+            ShooterConfig.MOTOR_TO_ROLLER_RATIO));
+    DogLog.log(
+        "Shooter/BottomRight/SurfaceSpeedMetersPerSecond",
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            bottomRightMotorRpm
+                / 60.0
+                * ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
+            ShooterConfig.ROLLER_DIAMETER_METERS,
+            ShooterConfig.MOTOR_TO_ROLLER_RATIO));
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);

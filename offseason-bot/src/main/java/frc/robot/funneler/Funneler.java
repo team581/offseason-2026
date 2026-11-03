@@ -9,6 +9,7 @@ import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
+import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Funneler extends StateMachineSubsystem<FunnelerState> implements PowerManaged {
@@ -23,7 +24,7 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
     super(SubsystemPriority.FUNNELER, FunnelerState.IDLE);
     motor.getConfigurator().apply(FunnelerConfig.MOTOR_CONFIG);
     this.motor = motor;
-    velocitySignal = motor.getVelocity(false);
+    velocitySignal = motor.getRotorVelocity(false);
     Signals.forDevice(motor).addSignals(velocitySignal);
   }
 
@@ -65,9 +66,13 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
 
   @Override
   protected void collectInputs() {
-    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double velocityRps = velocitySignal.getValueAsDouble();
-    surfaceSpeedMetersPerSecond = velocityRps * Math.PI * FunnelerConfig.ROLLER_DIAMETER_METERS;
+    surfaceSpeedMetersPerSecond =
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            velocityRps,
+            FunnelerConfig.ROLLER_DIAMETER_METERS,
+            FunnelerConfig.MOTOR_TO_ROLLER_RATIO);
 
     DogLog.log("Funneler/VelocityRPM", velocityRps * 60.0);
     DogLog.log("Funneler/SurfaceSpeedMetersPerSecond", surfaceSpeedMetersPerSecond);

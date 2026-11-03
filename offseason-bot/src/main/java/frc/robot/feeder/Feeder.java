@@ -11,6 +11,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Feeder extends StateMachineSubsystem<FeederState> implements PowerManaged {
@@ -37,8 +38,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     this.topMotor = topMotor;
     this.bottomMotor = bottomMotor;
 
-    topVelocitySignal = topMotor.getVelocity(false);
-    bottomVelocitySignal = bottomMotor.getVelocity(false);
+    topVelocitySignal = topMotor.getRotorVelocity(false);
+    bottomVelocitySignal = bottomMotor.getRotorVelocity(false);
     topStatorCurrentSignal = topMotor.getStatorCurrent(false);
     bottomStatorCurrentSignal = bottomMotor.getStatorCurrent(false);
     Signals.forDevice(topMotor).addSignals(topVelocitySignal, topStatorCurrentSignal);
@@ -102,13 +103,19 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double topVelocityRps = topVelocitySignal.getValueAsDouble();
     topSurfaceSpeedMetersPerSecond =
-        topVelocityRps * Math.PI * FeederConfig.TOP_ROLLER_DIAMETER_METERS;
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            topVelocityRps,
+            FeederConfig.TOP_ROLLER_DIAMETER_METERS,
+            FeederConfig.MOTOR_TO_ROLLER_RATIO);
     double bottomVelocityRps = bottomVelocitySignal.getValueAsDouble();
     bottomSurfaceSpeedMetersPerSecond =
-        bottomVelocityRps * Math.PI * FeederConfig.BOTTOM_ROLLER_DIAMETER_METERS;
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            bottomVelocityRps,
+            FeederConfig.BOTTOM_ROLLER_DIAMETER_METERS,
+            FeederConfig.MOTOR_TO_ROLLER_RATIO);
 
     DogLog.log("Feeder/Top/VelocityRPM", topVelocityRps * 60.0);
     DogLog.log("Feeder/Top/SurfaceSpeedMetersPerSecond", topSurfaceSpeedMetersPerSecond);

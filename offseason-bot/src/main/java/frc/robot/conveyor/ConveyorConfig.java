@@ -6,13 +6,16 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.math.util.Units;
 
 public class ConveyorConfig {
-  // TODO: need to update
-  public static final double TOP_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.0);
-  // TODO: need to update
-  public static final double BOTTOM_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.0);
+  // TODO: map motors 18/19 to the floor/tunnel before entering motor rotations per roller rotation.
+  public static final double TOP_MOTOR_TO_ROLLER_RATIO = Double.NaN;
+  public static final double BOTTOM_MOTOR_TO_ROLLER_RATIO = Double.NaN;
+
+  // TODO: confirm which mechanism this motor drives and its roller/pulley diameter.
+  public static final double TOP_ROLLER_DIAMETER_METERS = Double.NaN;
+  // TODO: confirm which mechanism this motor drives and its roller/pulley diameter.
+  public static final double BOTTOM_ROLLER_DIAMETER_METERS = Double.NaN;
 
   public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
       new TalonFXConfiguration()
