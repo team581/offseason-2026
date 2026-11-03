@@ -359,16 +359,25 @@ final class VisionIntegrationTest {
 
   @Test
   void requiredFailureOptionalFailureAndOperatorOverridesAreHonest() {
-    try (var f = new Fixture(false)) {
+    try (var f = new Fixture(true)) {
       var health = new frc.robot.health.HealthManager(f.vision);
+      health.setPoseTrustworthySupplier(() -> true);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
-      f.frame("front", 0, 10.01);
+      f.frame("front", 1, 10.01);
       f.tick(10.04);
+      health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isFalse(); // accepted is not fused
+      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isTrue();
       assertThat(health.isAllCamerasHealthy()).isFalse();
       assertThat(health.isFuelDetectionHealthy()).isFalse();
+      health.setPoseTrustworthySupplier(() -> false);
+      health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isFalse();
+      health.setPoseTrustworthySupplier(() -> true);
+      health.beforePeriodic();
       try (var use =
               edu.wpi.first.networktables.NetworkTableInstance.getDefault()
                   .getBooleanTopic("/DSOptions/UseVision")
@@ -388,10 +397,30 @@ final class VisionIntegrationTest {
       f.tick(10.6);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
-      f.frame("back", 0, 10.61);
+      f.frame("back", 5, 10.61);
       f.tick(10.64);
+      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isTrue();
+    }
+  }
+
+  @Test
+  void shadowFusionAndResetCannotClaimLocalizationReadiness() {
+    try (var shadow = new Fixture(false)) {
+      shadow.frame("front", 1, 10.01);
+      shadow.tick(10.04);
+      assertThat(shadow.vision.getStatus().usable()).isGreaterThan(0);
+      assertThat(shadow.vision.isFusionEnabled()).isFalse();
+      assertThat(shadow.vision.hasRecentFusedMeasurement()).isFalse();
+    }
+    try (var active = new Fixture(true)) {
+      active.frame("front", 1, 10.01);
+      active.tick(10.04);
+      active.vision.drainMeasurements().forEach(active.vision::measurementFused);
+      assertThat(active.vision.hasRecentFusedMeasurement()).isTrue();
+      active.vision.reset(10.04);
+      assertThat(active.vision.hasRecentFusedMeasurement()).isFalse();
     }
   }
 
@@ -465,8 +494,7 @@ final class VisionIntegrationTest {
       f.tick(10.53);
       assertThat(f.vision.getStatus().usable()).isEqualTo(0);
       assertThat(f.vision.getStatus().allRequiredHealthy()).isFalse();
-      assertThat(VisionConfig.profile().getCamerasCount()).isEqualTo(0);
-      assertThat(VisionConfig.FUSION_ENABLED).isFalse();
+      assertThat(f.vision.hasRecentFusedMeasurement()).isFalse();
     }
   }
 }

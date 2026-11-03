@@ -6,6 +6,7 @@ import static java.util.Comparator.comparingDouble;
 import frc.robot.vision.results.VisionMeasurement;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.function.DoubleSupplier;
 
 /** Capture-time evidence heuristic in metres, not covariance or probability. */
 public final class TrustFactor {
@@ -24,7 +25,10 @@ public final class TrustFactor {
   private record Penalty(double time, double value) {}
 
   private final Policy policy = Policy.provisional();
+  private final DoubleSupplier trustworthyMeters;
+
   private final ArrayDeque<Penalty> history = new ArrayDeque<>();
+
   private double score = Double.POSITIVE_INFINITY;
   private double evidenceTimestamp = Double.NEGATIVE_INFINITY;
   private double groupStart = Double.NEGATIVE_INFINITY;
@@ -33,6 +37,14 @@ public final class TrustFactor {
   private double penalty;
   private double time;
   private boolean collisionActive;
+
+  public TrustFactor() {
+    this(() -> Policy.provisional().trustworthyM());
+  }
+
+  public TrustFactor(DoubleSupplier trustworthyMeters) {
+    this.trustworthyMeters = trustworthyMeters;
+  }
 
   public double evidenceAge(double now) {
     return now - evidenceTimestamp;
@@ -66,12 +78,12 @@ public final class TrustFactor {
   }
 
   public boolean isTrustworthy() {
-    return score <= policy.trustworthyM();
+    return score <= trustworthyMeters.getAsDouble();
   }
 
   public void reset(double now, boolean explicitlySeeded) {
     if (!Double.isFinite(now)) throw new IllegalArgumentException("finite reset time required");
-    score = explicitlySeeded ? policy.trustworthyM() : Double.POSITIVE_INFINITY;
+    score = explicitlySeeded ? trustworthyMeters.getAsDouble() : Double.POSITIVE_INFINITY;
     evidenceTimestamp = groupStart = Double.NEGATIVE_INFINITY;
     collisionActive = false;
     penalty = 0.;

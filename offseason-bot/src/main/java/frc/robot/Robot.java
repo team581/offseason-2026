@@ -145,6 +145,7 @@ public class Robot extends Base581Robot {
         BuildConstants.GIT_BRANCH,
         BuildConstants.DIRTY);
 
+    health.setPoseTrustworthySupplier(localization::isTrustworthy);
     finalizeInit();
   }
 

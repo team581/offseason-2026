@@ -4,6 +4,7 @@ package frc.robot.vision;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
+import dev.doglog.DogLog;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.RawPublisher;
@@ -65,8 +66,11 @@ public final class SpotVisionIO implements VisionIO {
   private long stateSequence;
 
   private long malformed;
+  private long droppedObservations;
+  private String lastTransportRejection = "None";
 
   private String generation = "";
+
   private TagSelection selection;
   private boolean effectiveFusion;
   private boolean closed;
@@ -139,6 +143,16 @@ public final class SpotVisionIO implements VisionIO {
       return;
     }
     lastDecisionPublish = now;
+    DogLog.log("Vision/Spot/Transport/DroppedObservations", droppedObservations);
+    DogLog.log("Vision/Spot/Transport/MalformedPackets", malformed);
+    DogLog.log("Vision/Spot/Transport/LastRejection", lastTransportRejection);
+    DogLog.log("Vision/Spot/Transport/HealthReason", health(now).reason());
+    DogLog.log("Vision/Spot/Transport/HeartbeatAgeSeconds", now - lastHealthTimestamp);
+    for (var camera : acknowledgement.getCamerasList()) {
+      DogLog.log(
+          "Vision/Spot/" + camera.getCameraName() + "/CalibrationValid",
+          camera.getCalibrationValid());
+    }
     try {
       var fresh = new HashMap<String, Map<String, Object>>();
       if (health(now).available()) {
@@ -184,23 +198,34 @@ public final class SpotVisionIO implements VisionIO {
     for (var camera : cameras.entrySet()) {
       for (var sample : camera.getValue().readQueue()) {
         if (!health.available() || sample.value.length > 65536) {
+          rejectTransport(
+              !health.available() ? health.reason() : "Observation exceeds packet size limit");
           continue;
         }
         try {
           var observation = SpotProtos.Observation.parseFrom(sample.value);
           var timestamp = captureTimestamp(sample, serverMode());
-          if (timestamp.isEmpty()
-              || timestamp.getAsDouble() <= resetTimestamp
+          if (timestamp.isEmpty()) {
+            rejectTransport("Invalid NetworkTables timestamp domain");
+            continue;
+          }
+          DogLog.log(
+              "Vision/Spot/" + camera.getKey() + "/CaptureAgeSeconds",
+              now - timestamp.getAsDouble());
+          if (timestamp.getAsDouble() <= resetTimestamp
               || !observation.getCameraName().equals(camera.getKey())
               || !observation.getServiceSession().equals(acknowledgement.getServiceSession())
               || !observation.getRuntimeGeneration().equals(acknowledgement.getRuntimeGeneration())
               || observation.getConnectionEpoch() != acknowledgement.getConnectionEpoch()
               || observation.getSyncEpoch() != acknowledgement.getSyncEpoch()) {
+            rejectTransport(
+                "Observation predates reset or has mismatched camera/session/generation");
             continue;
           }
           result.add(new Sample(observation, timestamp.getAsDouble()));
         } catch (InvalidProtocolBufferException exception) {
           malformed++;
+          rejectTransport("Malformed observation protobuf");
         }
       }
     }
@@ -266,6 +291,11 @@ public final class SpotVisionIO implements VisionIO {
       reason = "Waiting for synchronized current session";
     }
     return new Health(reason.isEmpty(), reason, acknowledgement, lastHealth);
+  }
+
+  private void rejectTransport(String reason) {
+    droppedObservations++;
+    lastTransportRejection = reason;
   }
 
   private boolean serverMode() {

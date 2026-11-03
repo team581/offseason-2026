@@ -11,11 +11,15 @@ import org.junit.jupiter.api.Test;
 
 final class VisionConfigTest {
   @Test
-  void defaultsRemainShadowWithoutInventedCameras() {
+  void fourPlaceholderCamerasAreRegisteredWithFusionEnabled() {
     var profile = VisionConfig.profile();
-    assertThat(profile.getCamerasCount()).isEqualTo(0);
-    assertThat(VisionConfig.mounts()).isEmpty();
-    assertThat(profile.getFusionEnabled()).isFalse();
+    assertThat(profile.getCamerasList())
+        .extracting(camera -> camera.getName())
+        .containsExactly("left", "right", "front", "back");
+    assertThat(profile.getCamerasList())
+        .allMatch(camera -> camera.getEnabled() && camera.getRequired());
+    assertThat(VisionConfig.mounts()).hasSize(4);
+    assertThat(profile.getFusionEnabled()).isTrue();
     assertThat(profile.getHeadingEnabled()).isFalse();
     assertThat(profile.getField().getTagsCount()).isEqualTo(32);
   }

@@ -78,6 +78,24 @@ final class RobotManagerRequestCoverageTest {
     assertThat(powerManager.getState()).isEqualTo(PowerManagerState.PRIORITIZE_INTAKE);
   }
 
+  @Test
+  void losingLocalizationMovesNormalShotsBackToFallbackPreparation() throws Exception {
+    var healthField = Robot.class.getDeclaredField("health");
+    healthField.setAccessible(true);
+    Object health = healthField.get(robot);
+    var readyField = frc.robot.health.HealthManager.class.getDeclaredField("localizationHealthy");
+    readyField.setAccessible(true);
+    readyField.set(health, false);
+    assertThat(robotManager.getNextState(RobotState.PREPARE_SCORE))
+        .isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
+    assertThat(robotManager.getNextState(RobotState.SCORE))
+        .isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
+    assertThat(robotManager.getNextState(RobotState.PREPARE_FEED))
+        .isEqualTo(RobotState.PREPARE_FALLBACK_FEED);
+    assertThat(robotManager.getNextState(RobotState.FEED))
+        .isEqualTo(RobotState.PREPARE_FALLBACK_FEED);
+  }
+
   @BeforeEach
   void setUp() throws Exception {
     robotManager = robot.robotManager;

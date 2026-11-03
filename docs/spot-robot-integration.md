@@ -5,7 +5,7 @@ start with [Camera configuration](camera-configuration.md).
 
 Spot turns camera images into possible camera positions. The robot checks those results, converts them into robot positions, and uses them to correct its driving estimate. This guide follows startup, then one observation through the system.
 
-**Current state:** `VisionConfig.CAMERAS` is empty and `FUSION_ENABLED` is `false`. The planned cameras are `left`, `right`, `front`, and `back`, all fixed to the chassis. Measured camera settings and hardware qualification are still needed before vision can correct the robot's pose. Heading correction is also disabled.
+**Current state:** Four required chassis-fixed cameras (`left`, `right`, `front`, `back`) are registered and fusion is enabled. Their mounts and capture settings are explicitly **placeholders**, not measured hardware configuration: translation and roll/pitch are zero; yaw is +90°, −90°, 0°, 180° respectively; capture is MJPEG 640×480 at 30 FPS, image rotation 0°, with no pinned controls. Replace these in `VisionConfig.java` and bind/calibrate the matching modes in Spot before trusting pose corrections. Heading fusion remains disabled.
 
 ```mermaid
 flowchart LR
@@ -63,8 +63,7 @@ lens/focus changes still require recalibration even with unchanged capture value
 validates settings and converts them into protocol messages. `VisionConfig`
 derives the robot's processing mounts from those same camera definitions, so
 there is only one place to enter each mount. `SpotCameraProfiles.Camera` remains
-the internal processing value type. The configuration defaults remain empty,
-fusion remains disabled, and no placeholder mounts are published.
+the internal processing value type. The current bringup configuration publishes the four placeholder mounts described above with fusion enabled.
 
 [SpotProtocol.java](../offseason-bot/src/main/java/frc/robot/vision/SpotProtocol.java) builds the messages, converts pose formats, and hashes the configuration. The hash lets both computers confirm they are using the same settings.
 
@@ -131,3 +130,34 @@ Pose or gyro resets also clear pending vision and history, preventing older fram
 [VisionState.java](../offseason-bot/src/main/java/frc/robot/vision/VisionState.java) names the three selection states: `TAGS`, `WAITING_FOR_HUB_TAGS`, and `HUB_TAGS`. `Vision.java` acquires broadly, narrows after fresh accepted alliance-hub evidence, and returns to broad acquisition after 0.5 seconds without it. Selection changes discard pending results from the previous policy.
 
 Finally, `Vision.java` logs status and asks `SpotVisionIO.java` to publish decision feedback, including whether a result was actually fused. That makes the full path from observation to pose correction visible during debugging.
+
+
+## Bringup initialization and readiness
+
+Initialize the robot's field pose and heading through the existing
+`Localization.resetPose(...)` path (for example, the autonomous starting pose).
+Automatic camera-based relocalization is not implemented. Normal innovation and
+single-tag heading checks remain active, so an incorrect starting pose can
+prevent acquisition.
+
+Camera health and localization readiness are separate. Localization requires
+fusion enabled, a fused frame no older than the profile's 250 ms age limit, and
+acceptable pose trust. Normal scoring/feeding falls back if readiness is lost.
+A fallback request remains fallback until a new normal request is made.
+
+Live `Vision/Tuning` entries expose `TrustworthyMeters` (provisional default
+0.5 m, capped at 0.99 m below the 1 m lost threshold), `TranslationFloorMeters`
+(0.04), `RangeSquaredCoefficient` (0.015), `MaxResidualPixels` (2), and
+`InnovationSigma` (5). Nonfinite/nonpositive values use their defaults. These
+are engineering starting points, not calibrated accuracy claims. The existing
+conservative correlation penalty is retained. The ideal 4 m / three-tag /
+four-camera case yields about 0.392 m evidence error, below the 0.5 m threshold;
+real reprojection error, motion, or pose disagreement can still block shooting.
+
+Inspect `Vision/Spot/FusionEnabled`, `RecentFusedEvidence`, `PoseTrustworthy`,
+`LocalizationReady`, and `TrustworthyThresholdMeters`. Per-camera logs expose
+`Reason`, `Usable`, `CaptureAgeSeconds`, `ObservationAgeSeconds`, `FusedAgeSeconds`,
+`CalibrationValid`, and accepted/rejected counts. Transport logs expose dropped
+observations, malformed packets, last rejection, heartbeat age, and health reason.
+The deployed Spot service, camera intrinsics/modes, measured mounts, field layout,
+and real roboRIO/Jetson timestamp agreement still require hardware verification.

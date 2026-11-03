@@ -101,8 +101,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     this.operatorVision = operatorVision;
     this.alliance = alliance;
     history = new CaptureHistory(capture::poseAt);
-    processor =
-        new VisionProcessor(profile, mounts, history, VisionProcessor.Policy.conservative());
+    processor = new VisionProcessor(profile, mounts, history, VisionTuning::policy);
     queue = new MeasurementQueue(profile.getReorderWindowS(), 128);
     selection = new VisionIO.TagSelection(1, broadTags());
     io.setTagSelection(selection);
@@ -317,12 +316,23 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     return status;
   }
 
+  public boolean hasRecentFusedMeasurement() {
+    return isFusionEnabled()
+        && cameras.values().stream()
+            .anyMatch(camera ->
+                now - camera.lastFused() >= 0 && now - camera.lastFused() <= profile.getMaxAgeS());
+  }
+
   public boolean hasSeenTag() {
     return hasSeenTag;
   }
 
   public void hubTagsRequest() {
     if (getState() == VisionState.TAGS) setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
+  }
+
+  public boolean isFusionEnabled() {
+    return status.available() && profile.getFusionEnabled() && operatorVision.getAsBoolean();
   }
 
   public void measurementFused(VisionMeasurement value) {
@@ -390,6 +400,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         DogLog.clearFault(fault);
         faults.remove(fault);
       }
+    DogLog.log("Vision/Spot/FusionEnabled", isFusionEnabled());
+    DogLog.log("Vision/Spot/RecentFusedEvidence", hasRecentFusedMeasurement());
     DogLog.log("Vision/Spot/Available", status.available());
     DogLog.log("Vision/Spot/Reason", status.reason());
     DogLog.log("Vision/Spot/UsableCameras", status.usable());
@@ -398,6 +410,10 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     for (var entry : cameras.entrySet()) {
       String path = "Vision/Spot/" + entry.getKey();
       var value = entry.getValue();
+      DogLog.log(path + "/Reason", value.reason());
+      DogLog.log(path + "/Usable", value.usable());
+      DogLog.log(path + "/ObservationAgeSeconds", now - value.lastObservation());
+      DogLog.log(path + "/FusedAgeSeconds", now - value.lastFused());
       DogLog.log(path + "/Accepted", value.accepted());
       DogLog.log(path + "/Rejected", value.rejected());
       DogLog.log(path + "/LastFusedFpgaS", value.lastFused());

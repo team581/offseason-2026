@@ -31,7 +31,7 @@ public static final SpotCameraConfig FRONT = new SpotCameraConfig(
 public static final List<SpotCameraConfig> CAMERAS = List.of(FRONT);
 ```
 
-Use the exact exposure-mode name your camera reports: `auto_exposure` and `exposure_auto` are alternative spellings, not two controls to add indiscriminately. Verify that menu value `1` is Manual Mode. Keep the actual robot's roles `left`, `right`, `front`, `back` chassis-fixed and required, in that order. Add each named constant to `CAMERAS`; a constant alone does not register a camera. Defaults remain empty until measurements are available.
+Use the exact exposure-mode name your camera reports: `auto_exposure` and `exposure_auto` are alternative spellings, not two controls to add indiscriminately. Verify that menu value `1` is Manual Mode. Keep the actual robot's roles `left`, `right`, `front`, `back` chassis-fixed and required, in that order. Add each named constant to `CAMERAS`; a constant alone does not register a camera. The current bringup defaults register all four cameras with fusion enabled and explicitly marked placeholder mounts/capture settings; replace them with measurements before trusting localization.
 
 ```mermaid
 flowchart LR

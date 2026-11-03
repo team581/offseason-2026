@@ -6,6 +6,7 @@ import dev.doglog.DogLog;
 import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import java.util.function.BooleanSupplier;
 
 public class HealthManager extends StateMachineSubsystem<HealthState> {
 
@@ -19,6 +20,7 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
   private final Vision vision;
+  private BooleanSupplier poseTrustworthy = () -> false;
 
   public HealthManager(Vision vision) {
     super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
@@ -42,10 +44,14 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
         && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean();
   }
 
+  public void setPoseTrustworthySupplier(BooleanSupplier supplier) {
+    poseTrustworthy = supplier;
+  }
+
   @Override
   protected void collectInputs() {
     var status = vision.getStatus();
-    localizationHealthy = status.available() && status.usable() > 0;
+    localizationHealthy = vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean();
     fuelDetectionHealthy = false;
     allCamerasHealthy = status.allRequiredHealthy();
   }

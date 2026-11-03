@@ -20,6 +20,7 @@ import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.TrustFactor;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionTuning;
 import frc.robot.vision.results.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,8 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
-  private final TrustFactor trustFactor = new TrustFactor();
+
+  private final TrustFactor trustFactor = new TrustFactor(VisionTuning::trustworthyMeters);
 
   private Pose2d robotPose = Pose2d.kZero;
 
@@ -87,6 +89,10 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor.isTrustworthy();
   }
 
+  public boolean isVisionReady() {
+    return vision.hasRecentFusedMeasurement() && isTrustworthy();
+  }
+
   public void resetPose(Pose2d estimatedPose) {
     drivetrain.resetPose(estimatedPose);
     resetVisionHistory(true);
@@ -96,6 +102,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
+    DogLog.log("Vision/Spot/PoseTrustworthy", isTrustworthy());
+    DogLog.log("Vision/Spot/LocalizationReady", isVisionReady());
+    DogLog.log("Vision/Spot/TrustworthyThresholdMeters", VisionTuning.trustworthyMeters());
 
     if (DriverStation.isAutonomous()
         && (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()

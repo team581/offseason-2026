@@ -47,6 +47,30 @@ final class TrustFactorTest {
   }
 
   @Test
+  void fourCameraLongRangeEvidenceCanMeetBringupThresholdWithoutRemovingCorrelationPenalty() {
+    var trust = new TrustFactor(() -> .5);
+    trust.reset(10., false);
+    double sigma = .015 * 4. * 4. / Math.sqrt(3.);
+    var observation =
+        new VisionMeasurement(
+            "front",
+            "frame",
+            Pose2d.kZero,
+            10.01,
+            sigma,
+            sigma,
+            1e6,
+            ImmutableList.of(1, 2, 3),
+            0.,
+            0.);
+    trust.ingest(VisionProcessor.accountForCorrelation(ImmutableList.of(observation), 4));
+    assertThat(trust.get()).isCloseTo(.3919183588453085, offset(1e-12));
+    assertThat(trust.isTrustworthy()).isTrue();
+    trust.updateOdometry(0., 0., true);
+    assertThat(trust.isTrustworthy()).isFalse();
+  }
+
+  @Test
   void seedingIsNotCameraEvidenceAndOdometryUsesPhysicalDistance() {
     var trust = new TrustFactor();
     trust.reset(10., false);

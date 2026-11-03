@@ -565,6 +565,17 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
+    if (!health.isLocalizationHealthy()) {
+      switch (currentState) {
+        case PREPARE_SCORE, SCORE -> {
+          return RobotState.PREPARE_FALLBACK_SCORE;
+        }
+        case PREPARE_FEED, FEED -> {
+          return RobotState.PREPARE_FALLBACK_FEED;
+        }
+        default -> {}
+      }
+    }
     return switch (currentState) {
       // No auto transitions for these states
       case UNJAM, FORCE_SCORE, WARMUP_FEED, WARMUP_SCORE, IDLE -> currentState;

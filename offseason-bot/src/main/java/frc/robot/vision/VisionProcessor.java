@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /** Robot-owned geometry, candidate selection and conservative quality model. */
 public final class VisionProcessor {
@@ -144,7 +145,7 @@ public final class VisionProcessor {
   private final SpotProtos.Profile profile;
   private final Map<String, SpotCameraProfiles.Camera> cameras;
   private final History history;
-  private final Policy policy;
+  private final Supplier<Policy> policy;
   private final Set<Integer> knownTags;
   private final Map<String, Long> lastSequence = new HashMap<>();
 
@@ -161,6 +162,14 @@ public final class VisionProcessor {
       List<SpotCameraProfiles.Camera> cameras,
       History history,
       Policy policy) {
+    this(profile, cameras, history, () -> policy);
+  }
+
+  public VisionProcessor(
+      SpotProtos.Profile profile,
+      List<SpotCameraProfiles.Camera> cameras,
+      History history,
+      Supplier<Policy> policy) {
     this.profile = profile;
     this.cameras = new HashMap<>();
     for (var camera : cameras) {
@@ -293,7 +302,9 @@ public final class VisionProcessor {
     }
     var camera = cameras.get(observation.getCameraName());
     var policy =
-        camera == null || camera.qualityPolicy() == null ? this.policy : camera.qualityPolicy();
+        camera == null || camera.qualityPolicy() == null
+            ? this.policy.get()
+            : camera.qualityPolicy();
     double timeUncertainty = observation.getTimestampUncertaintyS();
     if (!Double.isFinite(timeUncertainty)
         || timeUncertainty <= 0

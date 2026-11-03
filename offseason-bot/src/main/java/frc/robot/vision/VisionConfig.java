@@ -13,25 +13,21 @@ import java.util.List;
 /** Student-editable vision settings, following the other subsystem Config classes. */
 public final class VisionConfig {
   public static final String ROBOT_ID = "offseason-2026";
-  // Commissioning gate: enable only after measured mounts and hardware qualification.
-  public static final boolean FUSION_ENABLED = false;
+  // Fusion is enabled for bringup. Replace ALL placeholder geometry and capture settings first.
+  public static final boolean FUSION_ENABLED = true;
   public static final double TAG_SIZE_M = .1651;
   public static final AprilTagFieldLayout FIELD_LAYOUT = AprilTags.FIELD_LAYOUT;
 
   public static final List<String> CAMERA_NAMES =
       ImmutableList.of("left", "right", "front", "back");
 
-  // Keep production cameras chassis-fixed and required, in the CAMERA_NAMES order.
-  // Add named constants such as FRONT, LEFT, RIGHT and BACK, then list them in CAMERAS.
-  // Example shape only: replace the example geometry/capture/control values before enabling.
-  // public static final SpotCameraConfig FRONT = new SpotCameraConfig(
-  //     "front", true,
-  //     mount(.10, 0, .30, 0, 0, 0), // metres, then roll/pitch/yaw in degrees
-  //     0, // image rotation: 0 or 180 degrees
-  //     new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-  //     List.of(SpotCameraConfig.Control.pinned("exposure_auto", 1)));
-  // public static final List<SpotCameraConfig> CAMERAS = List.of(FRONT);
-  public static final List<SpotCameraConfig> CAMERAS = ImmutableList.of();
+  // PLACEHOLDERS: cameras at the robot origin, facing the named cardinal direction.
+  // These are NOT measured mounts. Verify capture mode and image rotation on each camera.
+  public static final SpotCameraConfig LEFT = placeholderCamera("left", 90);
+  public static final SpotCameraConfig RIGHT = placeholderCamera("right", -90);
+  public static final SpotCameraConfig FRONT = placeholderCamera("front", 0);
+  public static final SpotCameraConfig BACK = placeholderCamera("back", 180);
+  public static final List<SpotCameraConfig> CAMERAS = ImmutableList.of(LEFT, RIGHT, FRONT, BACK);
 
   /** NWU: +X forward, +Y left, +Z up; right-handed roll, pitch, yaw in degrees. */
   public static Transform3d mount(
@@ -49,6 +45,16 @@ public final class VisionConfig {
 
   public static SpotProtos.Profile profile() {
     return profile(CAMERAS);
+  }
+
+  private static SpotCameraConfig placeholderCamera(String name, double yawDegrees) {
+    return new SpotCameraConfig(
+        name,
+        true,
+        mount(0, 0, 0, 0, 0, yawDegrees),
+        0,
+        new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+        List.of());
   }
 
   static SpotProtos.Profile profile(List<SpotCameraConfig> cameras) {
