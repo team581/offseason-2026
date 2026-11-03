@@ -267,16 +267,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         differentialMechanism.setControl(
             torqueCurrentFOCAverageRequest
                 .withPosition(-clamp(newState.getAngleDegrees()) / 360.0)
-                .withSlot(2),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
-      }
-      case STOW -> {
-        differentialMechanism.setControl(
-            // Don't clamp
-            motionMagicTorqueCurrentFOCAverageRequest
-                .withPosition(-newState.getAngleDegrees() / 360.0)
                 .withSlot(0),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
+            positionDifferentialRequest.withPosition(0.0).withSlot(2));
       }
       default ->
           differentialMechanism.setControl(

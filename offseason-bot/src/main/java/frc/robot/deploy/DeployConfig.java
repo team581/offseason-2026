@@ -59,7 +59,8 @@ public class DeployConfig {
   private static final Slot1Configs DIFFERENCE_GAINS =
       new Slot1Configs().withKP(0.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
-  // Separate gains for the operator desync override; tune during bringup.
+  // Difference axis slot 2 for the operator desync override; average stays on slot 0.
+  // Tune during bringup.
   private static final Slot2Configs DIFFERENCE_GAINS_FIX_DESYNC =
       new Slot2Configs().withKP(0.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
