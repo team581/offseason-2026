@@ -52,7 +52,7 @@ public class Robot extends Base581Robot {
           new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
           new BumpCrossingFollower(
               new PidPathFollower(
-                  new PIDController(0, 0, 0),
+                  new PIDController(3.5, 0, 0),
                   new PIDController(
                       Swerve.ORIGINAL_HEADING_PID.getP(),
                       Swerve.ORIGINAL_HEADING_PID.getI(),
