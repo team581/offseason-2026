@@ -36,7 +36,7 @@ public final class VisionConfig {
               90),
           0,
           new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-          List.of());
+          ImmutableList.of());
 
   public static final SpotCameraConfig RIGHT =
       new SpotCameraConfig(
@@ -51,7 +51,7 @@ public final class VisionConfig {
               -90),
           0,
           new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-          List.of());
+          ImmutableList.of());
   public static final SpotCameraConfig BACK =
       new SpotCameraConfig(
           "back",
@@ -65,7 +65,7 @@ public final class VisionConfig {
               180),
           0,
           new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-          List.of());
+          ImmutableList.of());
   public static final List<SpotCameraConfig> CAMERAS = ImmutableList.of(LEFT, RIGHT, BACK);
 
   /** NWU: +X forward, +Y left, +Z up; right-handed roll, pitch, yaw in degrees. */
