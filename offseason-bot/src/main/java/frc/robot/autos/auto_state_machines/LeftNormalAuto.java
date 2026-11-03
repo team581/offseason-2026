@@ -50,8 +50,9 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       Trailblazer.segment(
               AutoPoint.ofRed(
                       new Pose2d(
-                          10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.kCCW_90deg))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.75, 100)),
+                          10.489, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg))
+                  // Clear the trench before turning toward the neutral-zone fuel.
+                  .withTransitionTolerance(new PoseErrorTolerance(0.1, 10)),
               AutoPoint.of(() ->
                       getCollisionPoint(
                           Point.ofRed(new Pose2d(8.744, 2.021, Rotation2d.fromDegrees(115)))))
@@ -329,7 +330,8 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   @Override
   public Point getStartingPoint() {
-    return Point.ofRed(new Pose2d(12.1, 0.47, Rotation2d.k180deg));
+    return Point.ofRed(
+        new Pose2d(12.1, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.k180deg));
   }
 
   private Point getCollisionPoint(Point point) {
@@ -631,7 +633,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
-        trailblazer.setActiveSegment(crossBumpToShootTwo);
+        trailblazer.setActiveSegment(crossBumpToShootThree);
         robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
 
         if (RobotBase.isSimulation()) {

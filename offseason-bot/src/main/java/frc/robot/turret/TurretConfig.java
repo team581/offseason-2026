@@ -14,6 +14,7 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.RobotKind;
 
 public class TurretConfig {
@@ -41,14 +42,23 @@ public class TurretConfig {
   public static final Transform2d TURRET_TO_ROBOT =
       new Transform2d(Units.inchesToMeters(-4.750), Units.inchesToMeters(8.025), Rotation2d.kZero);
 
+  // Voltage output per turret rotation; SimKit has no gravity or friction model.
+  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(60.0).withKD(2.0);
+
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(MOTOR_TO_TURRET))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
-          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(0).withPeakReverseVoltage(0))
-          .withSlot0(new Slot0Configs().withKP(0).withKV(0).withKG(0.0).withKD(0).withKS(0))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(RobotBase.isSimulation() ? 12.0 : 0.0)
+                  .withPeakReverseVoltage(RobotBase.isSimulation() ? -12.0 : 0.0))
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0).withKV(0).withKG(0.0).withKD(0).withKS(0))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(Units.radiansToRotations(MAX_VELOCITY_RAD_PER_SEC))

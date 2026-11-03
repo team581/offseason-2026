@@ -20,6 +20,7 @@ import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.RobotBase;
 import java.util.Map;
 
 public class ShooterConfig {
@@ -84,24 +85,39 @@ public class ShooterConfig {
       PolynomialRegression.quadratic("Shooter/ScoringToFRegression", DISTANCE_TO_SCORE_TOF);
   public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
+  // Torque-current output: A per motor RPS. SimKit has no friction/load to feed forward.
+  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(5.0);
+
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0.0).withKV(0.0));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0).withKS(0).withKV(0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0).withKS(0).withKV(0));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0.0).withKV(0.0));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
       DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);

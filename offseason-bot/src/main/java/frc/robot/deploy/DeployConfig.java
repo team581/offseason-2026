@@ -12,6 +12,7 @@ import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.RobotKind;
 
 public class DeployConfig {
@@ -41,6 +42,15 @@ public class DeployConfig {
   public static final double HOMING_CURRENT = 20.0;
   public static final double HOMING_CURRENT_OUTWARD = 35.0;
   public static final double POSITION_TOLERANCE = 2.0;
+
+  // Torque-current output: A/arm rotation and A/(arm rotation/s).
+  // No simulated gravity/friction load, so kG/kS/kV remain zero.
+  private static final Slot0Configs SIM_AVERAGE_GAINS =
+      new Slot0Configs().withKP(400.0).withKD(20.0);
+  private static final Slot1Configs SIM_DIFFERENCE_GAINS =
+      new Slot1Configs().withKP(200.0).withKD(10.0);
+  private static final Slot2Configs SIM_DIFFERENCE_GAINS_FIX_DESYNC =
+      new Slot2Configs().withKP(100.0).withKD(5.0);
 
   private static final Slot0Configs AVERAGE_GAINS =
       new Slot0Configs()
@@ -82,9 +92,12 @@ public class DeployConfig {
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(90.0 / 360.0)
                   .withMotionMagicAcceleration(180.0 / 360.0))
-          .withSlot0(AVERAGE_GAINS)
-          .withSlot1(DIFFERENCE_GAINS)
-          .withSlot2(DIFFERENCE_GAINS_FIX_DESYNC);
+          .withSlot0(RobotBase.isSimulation() ? SIM_AVERAGE_GAINS.clone() : AVERAGE_GAINS)
+          .withSlot1(RobotBase.isSimulation() ? SIM_DIFFERENCE_GAINS.clone() : DIFFERENCE_GAINS)
+          .withSlot2(
+              RobotBase.isSimulation()
+                  ? SIM_DIFFERENCE_GAINS_FIX_DESYNC.clone()
+                  : DIFFERENCE_GAINS_FIX_DESYNC);
 
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -104,9 +117,12 @@ public class DeployConfig {
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(90.0 / 360.0)
                   .withMotionMagicAcceleration(180.0 / 360.0))
-          .withSlot0(AVERAGE_GAINS)
-          .withSlot1(DIFFERENCE_GAINS)
-          .withSlot2(DIFFERENCE_GAINS_FIX_DESYNC);
+          .withSlot0(RobotBase.isSimulation() ? SIM_AVERAGE_GAINS.clone() : AVERAGE_GAINS)
+          .withSlot1(RobotBase.isSimulation() ? SIM_DIFFERENCE_GAINS.clone() : DIFFERENCE_GAINS)
+          .withSlot2(
+              RobotBase.isSimulation()
+                  ? SIM_DIFFERENCE_GAINS_FIX_DESYNC.clone()
+                  : DIFFERENCE_GAINS_FIX_DESYNC);
 
   private DeployConfig() {}
 }
