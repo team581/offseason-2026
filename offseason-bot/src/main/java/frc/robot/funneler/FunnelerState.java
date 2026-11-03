@@ -5,7 +5,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum FunnelerState {
   SCORE(10.0),
-  BALL_FILLING(0.0),
+  BALL_FILLING(2.0),
   IDLE(123.456),
   INTAKE(581.581),
   FEEDING(300.0);

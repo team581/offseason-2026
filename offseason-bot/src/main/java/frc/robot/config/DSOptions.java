@@ -9,8 +9,6 @@ public final class DSOptions {
   public static final BooleanSubscriber USE_HUB_STATE = DSOption.of("UseHubState", true);
   public static final BooleanSubscriber USE_BUMP_ASSIST = DSOption.of("UseBumpAssist", false);
   public static final BooleanSubscriber SMART_WARMUP = DSOption.of("SmartWarmup", true);
-  public static final BooleanSubscriber USE_TOWER_SENSOR =
-      DSOption.of("UseTowerSensor", RobotKind.IS_COMP_BOT);
 
   public static final BooleanSubscriber DEFAULT_WON_AUTO = DSOption.of("DefaultWonAuto", true);
   public static final BooleanSubscriber RESET_POSE_FOR_AUTO = DSOption.of("ResetPoseForAuto", true);

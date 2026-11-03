@@ -30,11 +30,6 @@ final class RobotManagerTurretCoverageTest {
     robot = new Robot();
   }
 
-  @org.junit.jupiter.api.AfterAll
-  static void tearDownHal() {
-    robot.robotManager.hardware.towerSensor.close();
-  }
-
   private RobotManager robotManager;
   private Turret turret;
 

@@ -2,13 +2,8 @@ package frc.robot.robot_manager.hopper_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.config.DSOptions;
-import frc.robot.config.RobotKind;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
@@ -19,11 +14,8 @@ import frc.robot.intake.IntakeState;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class HopperManager extends StateMachineSubsystem<HopperState> {
-  public enum HopperBallPosition {
-    CLOSE_TO_SHOOTER,
-    AT_SENSOR,
-    BELOW_SENSOR,
-  }
+  private static final double BALL_FILL_DURATION_SECONDS = 2.0;
+  private final Timer ballFillTimer = new Timer();
 
   public final Deploy deploy;
   public final Intake intake;
@@ -32,46 +24,26 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   public final Feeder feeder;
   public final Funneler funneler;
 
-  public final DigitalInput towerSensor;
-  private final Debouncer towerSensorDebouncer = new Debouncer(0.25, DebounceType.kFalling);
-  private boolean towerSensorDebounced = false;
   private boolean driverWantsIntake = false;
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
-
-  private boolean towerSensorRaw = false;
 
   private boolean shouldBeastMode = false;
 
   private HopperCapacity hopperCapacity = HopperCapacity.LOW;
 
   public HopperManager(
-      Deploy deploy,
-      Intake intake,
-      Conveyor conveyor,
-      Feeder feeder,
-      Funneler funneler,
-      DigitalInput towerSensor) {
+      Deploy deploy, Intake intake, Conveyor conveyor, Feeder feeder, Funneler funneler) {
     super(SubsystemPriority.HOPPER_MANAGER, HopperState.IDLE_DEPLOYED);
     this.deploy = deploy;
     this.intake = intake;
     this.conveyor = conveyor;
     this.feeder = feeder;
     this.funneler = funneler;
-    this.towerSensor = towerSensor;
   }
 
   public void feedRequest() {
     setState(resolveFeedState());
-  }
-
-  public double getFeederToShooterTime() {
-    return switch (getShotPosition()) {
-      // TODO: Validate this
-      case CLOSE_TO_SHOOTER -> 0.25;
-      case AT_SENSOR -> 0.2;
-      case BELOW_SENSOR -> 0.3;
-    };
   }
 
   public boolean hasFinishedShooting() {
@@ -136,23 +108,34 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setState(HopperState.UNJAMMING);
   }
 
-  private HopperBallPosition getShotPosition() {
-    if (towerSensorDebounced) {
-      return HopperBallPosition.AT_SENSOR;
+  private void idleTransportSubsystems() {
+    conveyor.idleRequest();
+    feeder.idleRequest();
+    funneler.idleRequest();
+  }
+
+  private void intakeBallFillRequest() {
+    boolean readyToFill = deploy.isFullyExtended() && intake.hasBeenIntaking();
+    if (readyToFill) {
+      ballFillTimer.start();
     }
 
-    if (shouldFillBalls()) {
-      return HopperBallPosition.CLOSE_TO_SHOOTER;
+    if (readyToFill && !ballFillTimer.hasElapsed(BALL_FILL_DURATION_SECONDS)) {
+      conveyor.ballFillingRequest();
+      funneler.ballFillingRequest();
+    } else {
+      conveyor.idleRequest();
+      funneler.idleRequest();
     }
-
-    return HopperBallPosition.BELOW_SENSOR;
+    feeder.idleRequest();
   }
 
   private boolean isShootingStrict() {
     if (RobotBase.isSimulation()) {
       return !timeout(1.5);
     }
-    return towerSensorDebounced;
+    // Without fuel detection, keep shooting until the caller stops or times out.
+    return true;
   }
 
   private HopperState resolveFeedState() {
@@ -199,59 +182,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setStateFromRequest(newState);
   }
 
-  private boolean shouldFillBalls() {
-    if (towerSensorDebounced) {
-      // The sensor in the tower shows we are holding fuel, so we can't fill anymore
-      return false;
-    }
-    if (!deploy.isFullyExtended()) {
-      return false;
-    }
-
-    return intake.hasBeenIntaking();
-  }
-
-  /**
-   * Sets conveyor, feeder, and funneler to ball filling if conditions are met, otherwise idles
-   * them.
-   */
-  private void smartBallFillRequest() {
-    if (shouldFillBalls()) {
-      conveyor.ballFillingRequest();
-      feeder.ballFillingRequest();
-      funneler.ballFillingRequest();
-    } else {
-      conveyor.idleRequest();
-      feeder.idleRequest();
-      funneler.idleRequest();
-    }
-  }
-
-  private void smartIntakeBallFillRequest() {
-    if (shouldFillBalls()) {
-      conveyor.ballFillingRequest();
-      feeder.ballFillingRequest();
-      funneler.ballFillingRequest();
-    } else {
-      if (towerSensorDebounced) {
-        conveyor.idleRequest();
-        feeder.idleRequest();
-        funneler.idleRequest();
-      } else {
-        conveyor.intakeRequest();
-        feeder.intakeRequest();
-        funneler.intakeRequest();
-      }
-    }
-  }
-
   @Override
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case IDLE_DEPLOYED -> {
         intake.idleRequest();
         deploy.intakeRequest();
-        smartBallFillRequest();
+        idleTransportSubsystems();
       }
       case IDLE_STOWED -> {
         deploy.stowRequest();
@@ -261,9 +198,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         funneler.idleRequest();
       }
       case INTAKING -> {
+        ballFillTimer.stop();
+        ballFillTimer.reset();
         deploy.intakeRequest();
         intake.intakeRequest();
-        smartIntakeBallFillRequest();
+        intakeBallFillRequest();
       }
       case EJECTING -> {
         deploy.intakeRequest();
@@ -325,19 +264,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void collectInputs() {
-    if (RobotBase.isSimulation()) {
-      towerSensorRaw =
-          switch (getState()) {
-            case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> timeout(5);
-            default -> false;
-          };
-    } else if (DSOptions.USE_TOWER_SENSOR.getAsBoolean()) {
-      towerSensorRaw = (RobotKind.IS_COMP_BOT != towerSensor.get());
-    } else {
-      towerSensorRaw = true;
-    }
-    towerSensorDebounced = towerSensorDebouncer.calculate(towerSensorRaw);
-
     hopperCapacity = intake.hasBeenIntaking() ? HopperCapacity.HIGH : HopperCapacity.LOW;
   }
 
@@ -353,17 +279,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void whileInState(HopperState state) {
-    if (state.canBallFill) {
-      if (state == HopperState.INTAKING) {
-        smartIntakeBallFillRequest();
-      } else {
-        smartBallFillRequest();
-      }
-    }
-
     switch (state) {
       case IDLE_DEPLOYED -> {
-        // Conveyor, feeder, and funneler are updated above via smartBallFillRequest()
+        idleTransportSubsystems();
         deploy.intakeRequest();
         intake.idleRequest();
       }
@@ -375,9 +293,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         funneler.idleRequest();
       }
       case INTAKING -> {
-        // Conveyor, feeder, and funneler are updated above via smartIntakeBallFillRequest()
         deploy.intakeRequest();
         intake.intakeRequest();
+        intakeBallFillRequest();
       }
       case EJECTING -> {
         deploy.intakeRequest();
@@ -471,7 +389,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     DogLog.log("HopperManager/DriverWantsIntake", driverWantsIntake);
     DogLog.log("HopperManager/OperatorWantsStow", operatorWantsStow);
     DogLog.log("HopperManager/HopperCapacity", hopperCapacity);
-    DogLog.forceNt.log("HopperManager/TowerSensor", towerSensorRaw);
     DogLog.log("HopperManager/IsShooting", isShooting());
   }
 }

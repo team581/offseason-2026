@@ -12,7 +12,6 @@ import frc.robot.power_manager.PowerManagerState;
 import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.robot_manager.hopper_manager.HopperState;
 import frc.robot.shooter.ShooterState;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,11 +27,6 @@ final class RobotManagerRequestCoverageTest {
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
     robot = new Robot();
-  }
-
-  @AfterAll
-  static void tearDownHal() {
-    robot.robotManager.hardware.towerSensor.close();
   }
 
   private RobotManager robotManager;

@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.Robot;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,11 +22,6 @@ final class PowerManagerTest {
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
     robot = new Robot();
-  }
-
-  @AfterAll
-  static void tearDownHal() {
-    robot.robotManager.hardware.towerSensor.close();
   }
 
   private PowerManager powerManager;

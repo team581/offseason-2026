@@ -23,11 +23,6 @@ final class HopperManagerIntakeCoverageTest {
     hardware = new Hardware();
   }
 
-  @org.junit.jupiter.api.AfterAll
-  static void tearDownHal() {
-    hardware.towerSensor.close();
-  }
-
   private Deploy deploy;
   private Intake intake;
   private Conveyor conveyor;
@@ -163,8 +158,7 @@ final class HopperManagerIntakeCoverageTest {
     feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
     funneler = new Funneler(hardware.funnelerMotor);
 
-    hopperManager =
-        new HopperManager(deploy, intake, conveyor, feeder, funneler, hardware.towerSensor);
+    hopperManager = new HopperManager(deploy, intake, conveyor, feeder, funneler);
   }
 
   @Test

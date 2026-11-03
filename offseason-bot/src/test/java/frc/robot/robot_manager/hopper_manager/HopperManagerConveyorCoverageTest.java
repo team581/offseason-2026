@@ -3,6 +3,7 @@ package frc.robot.robot_manager.hopper_manager;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.Hardware;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.conveyor.ConveyorState;
@@ -26,18 +27,70 @@ final class HopperManagerConveyorCoverageTest {
     hardware = new Hardware();
   }
 
-  @org.junit.jupiter.api.AfterAll
-  static void tearDownHal() {
-    hardware.towerSensor.close();
-  }
-
   private Deploy deploy;
+  private boolean deployFullyExtended;
   private Intake intake;
   private Conveyor conveyor;
   private Feeder feeder;
   private Funneler funneler;
 
   private HopperManager hopperManager;
+
+  @Test
+  void ballFillRunsConveyorAndFunnelerForTwoSecondsOncePerIntakeCycle() {
+    SimHooks.pauseTiming();
+    try {
+      intake.periodic();
+      hopperManager.periodic();
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+
+      // The two-second window starts when the deploy is ready, not at intake entry.
+      deployFullyExtended = true;
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+      assertThat(FunnelerState.BALL_FILLING.getVoltage()).isPositive();
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+
+      SimHooks.stepTimingAsync(1.99);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+
+      SimHooks.stepTimingAsync(0.02);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+      assertThat(intake.getState()).isEqualTo(IntakeState.INTAKE);
+
+      SimHooks.stepTimingAsync(10.0);
+      hopperManager.idleRequest();
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+
+      hopperManager.setDriverWantsIntake(false);
+      hopperManager.idleRequest();
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    } finally {
+      SimHooks.resumeTiming();
+    }
+  }
 
   @Test
   void ejectingCommandsConveyorEject() {
@@ -83,17 +136,16 @@ final class HopperManagerConveyorCoverageTest {
   }
 
   @Test
-  void idleDeployedCommandsConveyor() {
+  void idleDeployedKeepsTransportIdle() {
     hopperManager.idleRequest();
     hopperManager.periodic();
-    // In IDLE_DEPLOYED without balls, conveyor should be IDLE
-    assertThat(conveyor.getState()).isIn(ConveyorState.IDLE, ConveyorState.BALL_FILLING);
-    assertThat(funneler.getState()).isIn(FunnelerState.IDLE, FunnelerState.BALL_FILLING);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
 
     // Verify whileInState continues commanding
     hopperManager.periodic();
-    assertThat(conveyor.getState()).isIn(ConveyorState.IDLE, ConveyorState.BALL_FILLING);
-    assertThat(funneler.getState()).isIn(FunnelerState.IDLE, FunnelerState.BALL_FILLING);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
   }
 
   @Test
@@ -112,23 +164,23 @@ final class HopperManagerConveyorCoverageTest {
   }
 
   @Test
-  void intakingCommandsConveyor() {
+  void intakingKeepsTransportIdle() {
     hopperManager.setDriverWantsIntake(true);
     hopperManager.idleRequest();
     hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.INTAKING);
-    // In INTAKING, conveyor is either INTAKE, BALL_FILLING, or IDLE (if tower debounced)
-    assertThat(conveyor.getState())
-        .isIn(ConveyorState.INTAKE, ConveyorState.BALL_FILLING, ConveyorState.IDLE);
-    assertThat(funneler.getState())
-        .isIn(FunnelerState.INTAKE, FunnelerState.BALL_FILLING, FunnelerState.IDLE);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+    assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
 
-    // Verify whileInState continues updating
+    // Restore idle even if a previous request left the transport running.
+    conveyor.scoreRequest();
+    feeder.scoreRequest();
+    funneler.scoreRequest();
     hopperManager.periodic();
-    assertThat(conveyor.getState())
-        .isIn(ConveyorState.INTAKE, ConveyorState.BALL_FILLING, ConveyorState.IDLE);
-    assertThat(funneler.getState())
-        .isIn(FunnelerState.INTAKE, FunnelerState.BALL_FILLING, FunnelerState.IDLE);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+    assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
   }
 
   @Test
@@ -172,14 +224,49 @@ final class HopperManagerConveyorCoverageTest {
 
   @BeforeEach
   void setUp() {
-    deploy = new Deploy(hardware.deployDifferentialMechanism);
+    deployFullyExtended = false;
+    deploy =
+        new Deploy(hardware.deployDifferentialMechanism) {
+          @Override
+          public boolean isFullyExtended() {
+            return deployFullyExtended;
+          }
+        };
     intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
     conveyor = new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
     feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
     funneler = new Funneler(hardware.funnelerMotor);
 
-    hopperManager =
-        new HopperManager(deploy, intake, conveyor, feeder, funneler, hardware.towerSensor);
+    hopperManager = new HopperManager(deploy, intake, conveyor, feeder, funneler);
+  }
+
+  @Test
+  void stowingImmediatelyStopsBallFilling() {
+    SimHooks.pauseTiming();
+    try {
+      intake.periodic();
+      hopperManager.periodic();
+      deployFullyExtended = true;
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      SimHooks.stepTimingAsync(2.9);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+      SimHooks.stepTimingAsync(0.2);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+
+      hopperManager.setDriverWantsIntake(false);
+      hopperManager.setOperatorWantsStow(true);
+      hopperManager.idleRequest();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    } finally {
+      SimHooks.resumeTiming();
+    }
   }
 
   @Test
@@ -201,11 +288,11 @@ final class HopperManagerConveyorCoverageTest {
     assertThat(hopperManager.getState()).isEqualTo(HopperState.FEED);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.FEEDING);
 
-    // Transition FEED -> IDLE: funneler updates to IDLE (or BALL_FILLING), not stuck in FEEDING
+    // Transition FEED -> IDLE: funneler updates to IDLE
     hopperManager.idleRequest();
     hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
-    assertThat(funneler.getState()).isIn(FunnelerState.IDLE, FunnelerState.BALL_FILLING);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
 
     // Transition IDLE -> STOW: funneler updates to IDLE
     hopperManager.setOperatorWantsStow(true);
@@ -251,8 +338,8 @@ final class HopperManagerConveyorCoverageTest {
     hopperManager.idleRequest();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.INTAKING);
     assertThat(intake.getState()).isEqualTo(IntakeState.INTAKE);
-    assertThat(conveyor.getState()).isEqualTo(ConveyorState.INTAKE);
-    assertThat(feeder.getState()).isEqualTo(FeederState.INTAKING);
-    assertThat(funneler.getState()).isEqualTo(FunnelerState.INTAKE);
+    assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+    assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
   }
 }
