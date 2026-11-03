@@ -25,7 +25,7 @@ public class TurretConfig {
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
   public static final double HOMING_END_POSITION = MIN_ANGLE;
 
-  public static final double MOTOR_TO_TURRET = ((220.0 / 14.0) * (36.0 / 10.0));
+  public static final double MOTOR_TO_TURRET = 60.0;
 
   // CAL NUMBER
   public static final double ENCODER_CAL_OFFSET =
