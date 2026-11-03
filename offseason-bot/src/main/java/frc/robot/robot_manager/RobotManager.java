@@ -234,32 +234,34 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
-  private void logFeedTransition() {
+  private void logFeedTransition(RobotState currentState) {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/TurretAtGoal",
         turret.atGoal(TurretState.FEED, feedingParameters));
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/ShooterAtGoalDebounced",
-        shooter.atGoalDebounced(ShooterState.PREPARE_FEED));
+        shooter.atGoalDebounced(
+            currentState == RobotState.FEED ? ShooterState.FEED : ShooterState.PREPARE_FEED));
     DogLog.log("RobotManager/Feeding/FeedTransition/SafeFeedLocation", isInSafeFeedingLocation);
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal",
         shooterHood.atGoal(ShooterHoodState.FEEDING));
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
-    DogLog.log("RobotManager/Feeding/ScoreTransition/NotNearTrench", !nearTrench);
+    DogLog.log("RobotManager/Feeding/FeedTransition/NotNearTrench", !nearTrench);
     DogLog.log("RobotManager/Feeding/FeedTransition/IsMoving", isMoving);
   }
 
-  private void logScoringTransition() {
+  private void logScoringTransition(RobotState currentState) {
     DogLog.log("RobotManager/Scoring/ScoreTransition/InAllianceZone", isInAllianceZone);
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/TurretAtGoal",
         turret.atGoal(TurretState.SCORE, scoringParameters));
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/ShooterAtGoalDebounced",
-        shooter.atGoalDebounced(ShooterState.PREPARE_SCORE));
+        shooter.atGoalDebounced(
+            currentState == RobotState.SCORE ? ShooterState.SCORE : ShooterState.PREPARE_SCORE));
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal",
         shooterHood.atGoal(ShooterHoodState.SCORING));
@@ -567,6 +569,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       // No auto transitions for these states
       case UNJAM, FORCE_SCORE, WARMUP_FEED, WARMUP_SCORE, IDLE -> currentState;
       case PREPARE_FORCE_SCORE -> {
+        // Tuning mode intentionally bypasses swerve motion gates; wait for mechanisms only.
         if (turret.atGoal(TurretState.SCORE, scoringParameters)
             && shooter.atGoalDebounced(ShooterState.PREPARE_SCORE)
             && shooterHood.atGoal(ShooterHoodState.SCORING)) {
@@ -575,6 +578,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
+        // Fallback scoring requires a stationary robot instead of normal SOTM speed gates.
         // Once shooting, validate the active request with its shooting RPM tolerance.
         var expectedShooterState =
             currentState == RobotState.FALLBACK_SCORE
@@ -598,6 +602,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED -> {
+        // Fallback feeding uses fixed aiming parameters and intentionally allows driving.
         var expectedShooterState =
             currentState == RobotState.FALLBACK_FEED
                 ? ShooterState.FEED
@@ -611,7 +616,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             : RobotState.PREPARE_FALLBACK_FEED;
       }
       case PREPARE_SCORE -> {
-        logScoringTransition();
+        logScoringTransition(currentState);
 
         if (!isInAllianceZone) {
           if (DriverStation.isTeleop()) {
@@ -635,7 +640,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case SCORE -> {
-        logScoringTransition();
+        logScoringTransition(currentState);
 
         if (!isInAllianceZone) {
           if (DriverStation.isTeleop()) {
@@ -661,7 +666,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield RobotState.PREPARE_SCORE;
       }
       case PREPARE_FEED -> {
-        logFeedTransition();
+        logFeedTransition(currentState);
 
         if (isInAllianceZone) {
           yield RobotState.PREPARE_SCORE;
@@ -685,7 +690,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
           yield RobotState.PREPARE_SCORE;
         }
 
-        logFeedTransition();
+        logFeedTransition(currentState);
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
             || (shooter.atGoalDebounced(ShooterState.FEED)
                 && !swerve.isMovingBeyondSafeSpeed()

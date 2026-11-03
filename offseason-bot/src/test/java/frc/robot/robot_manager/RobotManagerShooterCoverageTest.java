@@ -2,7 +2,10 @@ package frc.robot.robot_manager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.team581.swerve.DriveSource;
+import com.team581.swerve.DriveSourceType;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import frc.robot.Robot;
@@ -12,7 +15,9 @@ import frc.robot.shooter.ShooterConfig;
 import frc.robot.shooter.ShooterState;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.shooter_hood.ShooterHoodState;
+import frc.robot.swerve.SwerveState;
 import frc.robot.util.AimParameterUtil.AimingParameters;
+import frc.robot.vision.TrustFactor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,6 +53,55 @@ final class RobotManagerShooterCoverageTest {
   static void initializeHal() {
     HAL.initialize(500, 0);
     robot = new Robot();
+  }
+
+  @EnumSource(RobotState.class)
+  @ParameterizedTest
+  void entryAndHeldStateReplaceEveryStaleDriveRequest(RobotState state) throws Exception {
+    var manager = robot.robotManager;
+    var swerve = manager.swerve;
+    var expected =
+        switch (state) {
+          case IDLE, UNJAM -> SwerveState.MANUAL;
+          case WARMUP_SCORE -> SwerveState.WARMUP_SCORE;
+          case WARMUP_FEED -> SwerveState.WARMUP_FEED;
+          case PREPARE_SCORE,
+              SCORE,
+              PREPARE_FORCE_SCORE,
+              FORCE_SCORE,
+              PREPARE_FALLBACK_SCORE,
+              FALLBACK_SCORE ->
+              SwerveState.SCORE;
+          case PREPARE_FEED, FEED, PREPARE_FALLBACK_FEED, FALLBACK_FEED -> SwerveState.FEED;
+        };
+    for (var source : DriveSourceType.values()) {
+      swerve.setDriveSourceType(source);
+      for (boolean entry : new boolean[] {true, false}) {
+        for (var stale : SwerveState.values()) {
+          switch (stale) {
+            case MANUAL -> swerve.normalDriveRequest();
+            case WARMUP_SCORE -> swerve.warmupScoreRequest();
+            case SCORE -> swerve.scoreRequest();
+            case WARMUP_FEED -> swerve.warmupFeedRequest();
+            case FEED -> swerve.feedRequest();
+            case CLIMB_ASSIST -> swerve.climbAssistDriveRequest();
+          }
+          if (entry) {
+            manager.afterTransition(state);
+          } else {
+            manager.whileInState(state);
+          }
+          assertThat(swerve.getState())
+              .as("%s entry=%s stale=%s source=%s", state, entry, stale, source)
+              .isEqualTo(expected);
+          // Manager requests select behavior; autos retain control of the drive source.
+          assertThat(((DriveSource) get(swerve, "driveSource")).getDriveSourceType())
+              .isEqualTo(source);
+        }
+      }
+    }
+    swerve.setDriveSourceType(DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP);
+    manager.afterTransition(RobotState.IDLE);
   }
 
   @EnumSource(RobotState.class)
@@ -163,6 +217,88 @@ final class RobotManagerShooterCoverageTest {
   }
 
   @EnumSource(
+      value = RobotState.class,
+      names = {"PREPARE_SCORE", "SCORE", "PREPARE_FEED", "FEED"})
+  @ParameterizedTest
+  void normalShotsRequireCurrentShooterReadinessAndSafeDriveSpeed(RobotState state)
+      throws Exception {
+    var manager = robot.robotManager;
+    var shooter = manager.shooter;
+    var swerve = manager.swerve;
+    var hood = (ShooterHood) get(manager, "shooterHood");
+    var health = get(manager, "health");
+    var pit = (BooleanEntry) DSOptions.PIT_FUNCTIONALITY;
+    var vision = (BooleanEntry) DSOptions.USE_VISION;
+    var cancelSubscriber = (BooleanSubscriber) FeatureFlags.CANCEL_IN_PROGRESS_SHOT;
+    var cancel = cancelSubscriber.getTopic().getEntry(false);
+    boolean previousPit = pit.get();
+    boolean previousVision = vision.get();
+    boolean previousCancel = cancelSubscriber.get();
+    var previousSpeeds = get(swerve, "fieldRelativeSpeeds");
+    var previousLimit = get(swerve, "currentMaxLinearRate");
+    var previousHealthy = get(health, "localizationHealthy");
+    try {
+      pit.set(false);
+      vision.set(true);
+      cancel.set(true);
+      set(health, "localizationHealthy", true);
+      set(manager, "isInAllianceZone", state.isScoring());
+      set(manager, "nearTrench", false);
+      set(manager, "isScorePathObstructed", false);
+      set(manager, "isInSafeFeedingLocation", true);
+      set(manager, "scoringParameters", new AimingParameters(-180, 2.79, 5, 0, -180));
+      set(manager, "feedingParameters", new AimingParameters(-180, 8.0, 5, 0, -180));
+      ((TrustFactor) get(manager.localization, "trustFactor")).reset(0, true);
+      set(manager.localization.imu, "accel", 0.0);
+      set(swerve, "driverStillDecidingSotm", false);
+      set(swerve, "currentMaxLinearRate", 4.0);
+      set(swerve, "fieldRelativeSpeeds", new ChassisSpeeds());
+      hood.homingRequest();
+      hood.simulationPeriodic();
+      manager.afterTransition(state);
+      set(robot.turret, "setpoint", -180.0);
+      set(robot.turret, "currentAngle", -180.0);
+      var goalAngle = ShooterHood.class.getDeclaredMethod("getGoalAngle");
+      goalAngle.setAccessible(true);
+      set(hood, "currentAngle", goalAngle.invoke(hood));
+      set(shooter, "atGoalDebounced", true);
+      var active = state.isScoring() ? RobotState.SCORE : RobotState.FEED;
+      var preparing = state.isScoring() ? RobotState.PREPARE_SCORE : RobotState.PREPARE_FEED;
+      assertThat(manager.getNextState(state)).isEqualTo(active);
+      set(swerve, "fieldRelativeSpeeds", new ChassisSpeeds(-5, 0, 0));
+      assertThat(manager.getNextState(state)).isEqualTo(preparing);
+      set(swerve, "fieldRelativeSpeeds", new ChassisSpeeds());
+      if (state.isScoring()) {
+        set(swerve, "driverStillDecidingSotm", true);
+        assertThat(manager.getNextState(state)).isEqualTo(preparing);
+        set(swerve, "driverStillDecidingSotm", false);
+        set(manager.localization.imu, "accel", 10.0);
+        assertThat(manager.getNextState(state)).isEqualTo(preparing);
+        set(manager.localization.imu, "accel", 0.0);
+      }
+      set(shooter, "atGoalDebounced", false);
+      assertThat(manager.getNextState(state)).isEqualTo(preparing);
+      // Readiness for a different shooter request cannot satisfy this manager state.
+      if (state.isScoring()) {
+        shooter.feedRequest(8.0);
+      } else {
+        shooter.scoreRequest(2.79);
+      }
+      set(shooter, "atGoalDebounced", true);
+      assertThat(manager.getNextState(state)).isEqualTo(preparing);
+    } finally {
+      pit.set(previousPit);
+      vision.set(previousVision);
+      cancel.set(previousCancel);
+      cancel.close();
+      set(health, "localizationHealthy", previousHealthy);
+      set(swerve, "fieldRelativeSpeeds", previousSpeeds);
+      set(swerve, "currentMaxLinearRate", previousLimit);
+      manager.afterTransition(RobotState.IDLE);
+    }
+  }
+
+  @EnumSource(
       value = ShooterState.class,
       names = {"FEED", "SCORE"})
   @ParameterizedTest
@@ -211,6 +347,33 @@ final class RobotManagerShooterCoverageTest {
       regression.set(previousRegression);
       regression.close();
       shooter.idleRequest();
+    }
+  }
+
+  @Test
+  void safeSpeedUsesMeasuredTranslationInEveryDirection() throws Exception {
+    var swerve = robot.robotManager.swerve;
+    var previousSpeeds = get(swerve, "fieldRelativeSpeeds");
+    var previousLimit = get(swerve, "currentMaxLinearRate");
+    try {
+      set(swerve, "currentMaxLinearRate", 4.0);
+      for (var speeds :
+          new ChassisSpeeds[] {
+            new ChassisSpeeds(4.01, 0, 0),
+            new ChassisSpeeds(-4.01, 0, 0),
+            new ChassisSpeeds(0, -4.01, 0),
+            new ChassisSpeeds(3, 3, 0)
+          }) {
+        set(swerve, "fieldRelativeSpeeds", speeds);
+        assertThat(swerve.isMovingBeyondSafeSpeed()).isTrue();
+      }
+      set(swerve, "fieldRelativeSpeeds", new ChassisSpeeds(4, 0, 0));
+      assertThat(swerve.isMovingBeyondSafeSpeed()).isFalse();
+      set(swerve, "fieldRelativeSpeeds", new ChassisSpeeds());
+      assertThat(swerve.isMovingBeyondSafeSpeed()).isFalse();
+    } finally {
+      set(swerve, "fieldRelativeSpeeds", previousSpeeds);
+      set(swerve, "currentMaxLinearRate", previousLimit);
     }
   }
 }
