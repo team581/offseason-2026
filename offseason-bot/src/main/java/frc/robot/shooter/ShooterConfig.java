@@ -22,10 +22,8 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.Map;
 
 public class ShooterConfig {
-  // TODO: measure shooter wheel diameter and motor rotations per wheel rotation.
-  // NaN keeps uncalibrated telemetry distinct from a stopped wheel.
-  public static final double ROLLER_DIAMETER_METERS = Double.NaN;
-  public static final double MOTOR_TO_ROLLER_RATIO = Double.NaN;
+  public static final double ROLLER_DIAMETER_METERS = 1.0;
+  public static final double MOTOR_TO_ROLLER_RATIO = 1.0;
 
   public static final double RPM_TOLERANCE = 50.0;
   public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;

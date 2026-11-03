@@ -9,13 +9,13 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public class ConveyorConfig {
   // TODO: map motors 18/19 to the floor/tunnel before entering motor rotations per roller rotation.
-  public static final double TOP_MOTOR_TO_ROLLER_RATIO = Double.NaN;
-  public static final double BOTTOM_MOTOR_TO_ROLLER_RATIO = Double.NaN;
+  public static final double TOP_MOTOR_TO_ROLLER_RATIO = 1.0;
+  public static final double BOTTOM_MOTOR_TO_ROLLER_RATIO = 1.0;
 
   // TODO: confirm which mechanism this motor drives and its roller/pulley diameter.
-  public static final double TOP_ROLLER_DIAMETER_METERS = Double.NaN;
+  public static final double TOP_ROLLER_DIAMETER_METERS = 1.0;
   // TODO: confirm which mechanism this motor drives and its roller/pulley diameter.
-  public static final double BOTTOM_ROLLER_DIAMETER_METERS = Double.NaN;
+  public static final double BOTTOM_ROLLER_DIAMETER_METERS = 1.0;
 
   public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
       new TalonFXConfiguration()
