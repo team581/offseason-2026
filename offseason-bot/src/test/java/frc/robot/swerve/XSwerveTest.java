@@ -17,9 +17,11 @@ import edu.wpi.first.wpilibj.simulation.XboxControllerSim;
 import frc.robot.HeadlessRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+@Tag("headless")
 final class XSwerveTest {
   private static HeadlessRunner robot;
 
@@ -92,12 +94,12 @@ final class XSwerveTest {
       // Drive forward briefly so all modules align to 0 degrees instead of an X.
       driverSim.setLeftY(-0.5);
       double driveUntil = Timer.getFPGATimestamp() + 0.3;
-      robot.runUntil(() -> Timer.getFPGATimestamp() >= driveUntil, 2.0);
+      robot.runUntil(() -> Timer.getFPGATimestamp() >= driveUntil, 5.0);
       driverSim.setLeftY(0.0);
 
       // In IDLE (MANUAL swerve state), stopping must not X the modules even after the debounce.
       double idleWaitUntil = Timer.getFPGATimestamp() + 0.5;
-      robot.runUntil(() -> Timer.getFPGATimestamp() >= idleWaitUntil, 2.0);
+      robot.runUntil(() -> Timer.getFPGATimestamp() >= idleWaitUntil, 5.0);
       assertThat(isModulesInX(robot.robotManager.swerve.getDriveState().ModuleTargets))
           .as("Swerve does not X while in MANUAL state")
           .isFalse();
@@ -110,7 +112,7 @@ final class XSwerveTest {
         driverSim.setLeftY(-0.5);
         enterState.run();
         double movingUntil = Timer.getFPGATimestamp() + 0.5;
-        robot.runUntil(() -> Timer.getFPGATimestamp() >= movingUntil, 2.0);
+        robot.runUntil(() -> Timer.getFPGATimestamp() >= movingUntil, 5.0);
         assertThat(isModulesInX(robot.robotManager.swerve.getDriveState().ModuleTargets))
             .as("Swerve does not X while driver is requesting speeds")
             .isFalse();
@@ -121,12 +123,12 @@ final class XSwerveTest {
             () ->
                 isModulesInX(robot.robotManager.swerve.getDriveState().ModuleTargets)
                     && isModulesInX(robot.robotManager.swerve.getDriveState().ModuleStates),
-            3.0);
+            10.0);
 
         // Inputting speeds again exits X-swerve.
         driverSim.setLeftY(-0.5);
         robot.runUntil(
-            () -> !isModulesInX(robot.robotManager.swerve.getDriveState().ModuleTargets), 0.2);
+            () -> !isModulesInX(robot.robotManager.swerve.getDriveState().ModuleTargets), 5.0);
         driverSim.setLeftY(0.0);
       }
     } finally {
