@@ -87,13 +87,13 @@ public class Robot extends Base581Robot {
           DriverStation::isEnabled,
           () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean(),
           DriverStation::getAlliance);
-  private final HealthManager health = new HealthManager(vision);
+  final HealthManager health = new HealthManager(vision);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
 
-  private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
+  final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
   private final Shooter shooter =
       new Shooter(
           hardware.shooterTopLeftMotor,

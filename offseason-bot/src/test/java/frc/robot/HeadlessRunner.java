@@ -6,6 +6,8 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.deploy.Deploy;
+import frc.robot.health.HealthManager;
+import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.testing.TestManager;
 import frc.robot.testing.TestSelection;
 import java.util.concurrent.locks.LockSupport;
@@ -27,6 +29,10 @@ public final class HeadlessRunner extends Robot {
 
   public Deploy deploy() {
     return robotManager.hopperManager.deploy;
+  }
+
+  public HealthManager health() {
+    return health;
   }
 
   public TestManager manager() {
@@ -72,6 +78,10 @@ public final class HeadlessRunner extends Robot {
         5.0);
     robotManager.localization.resetPose(start);
     tick();
+  }
+
+  public ShooterHood shooterHood() {
+    return shooterHood;
   }
 
   public void tick() {
