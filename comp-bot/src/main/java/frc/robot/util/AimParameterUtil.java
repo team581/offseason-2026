@@ -90,7 +90,10 @@ public class AimParameterUtil {
 
     var separatedVelocityCompensatedGoal =
         sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            shooterTranslation, goalTranslation, shooterFieldRelativeSpeeds);
+            shooterTranslation,
+            goalTranslation,
+            shooterFieldRelativeSpeeds,
+            shooterFieldRelativeSpeeds);
 
     var compensatedGoal = separatedVelocityCompensatedGoal.fullyCompensatedGoal();
     double distance = shooterTranslation.getDistance(compensatedGoal);
@@ -119,7 +122,10 @@ public class AimParameterUtil {
 
     var separatedVelocityCompensatedGoal =
         sotm.getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-            shooterTranslation, goalTranslation, shooterFieldRelativeSpeeds);
+            shooterTranslation,
+            goalTranslation,
+            shooterFieldRelativeSpeeds,
+            shooterFieldRelativeSpeeds);
 
     double distance = shooterTranslation.getDistance(goalTranslation);
     double swerveAngle =

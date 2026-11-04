@@ -10,6 +10,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Intake extends StateMachineSubsystem<IntakeState> implements PowerManaged {
@@ -35,9 +36,9 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;
 
-    leftVelocitySignal = leftMotor.getVelocity(false);
+    leftVelocitySignal = leftMotor.getRotorVelocity(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
-    rightVelocitySignal = rightMotor.getVelocity(false);
+    rightVelocitySignal = rightMotor.getRotorVelocity(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
     Signals.forDevice(leftMotor).addSignals(leftVelocitySignal, leftSupplyCurrentSignal);
     Signals.forDevice(rightMotor).addSignals(rightVelocitySignal, rightSupplyCurrentSignal);
@@ -61,7 +62,7 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.EJECT);
   }
 
-  public void feeedRequest() {
+  public void feedRequest() {
     setStateFromRequest(IntakeState.FEED);
   }
 
@@ -84,9 +85,23 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     setStateFromRequest(IntakeState.SCORE);
   }
 
+  public void stopEjectingRequest() {
+    switch (getState()) {
+      case EJECT -> setStateFromRequest(IntakeState.IDLE);
+      default -> {}
+    }
+  }
+
   public void stopFeedingRequest() {
     switch (getState()) {
       case FEED -> setStateFromRequest(IntakeState.IDLE);
+      default -> {}
+    }
+  }
+
+  public void stopIntakingRequest() {
+    switch (getState()) {
+      case INTAKE -> setStateFromRequest(IntakeState.IDLE);
       default -> {}
     }
   }
@@ -106,21 +121,27 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
         rightMotor.setControl(neutralRequest);
       }
       default -> {
-        leftMotor.setControl(voltageRequest.withOutput(newState.voltage));
-        rightMotor.setControl(voltageRequest.withOutput(newState.voltage));
+        leftMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        rightMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
   }
 
   @Override
   protected void collectInputs() {
-    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double leftVelocityRps = leftVelocitySignal.getValueAsDouble();
     leftSurfaceSpeedMetersPerSecond =
-        leftVelocityRps * Math.PI * IntakeConfig.LEFT_ROLLER_DIAMETER_METERS;
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            leftVelocityRps,
+            IntakeConfig.LEFT_ROLLER_DIAMETER_METERS,
+            IntakeConfig.MOTOR_TO_ROLLER_RATIO);
     double rightVelocityRps = rightVelocitySignal.getValueAsDouble();
     rightSurfaceSpeedMetersPerSecond =
-        rightVelocityRps * Math.PI * IntakeConfig.RIGHT_ROLLER_DIAMETER_METERS;
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            rightVelocityRps,
+            IntakeConfig.RIGHT_ROLLER_DIAMETER_METERS,
+            IntakeConfig.MOTOR_TO_ROLLER_RATIO);
 
     DogLog.log("Intake/Left/VelocityRPM", leftVelocityRps * 60.0);
     DogLog.log("Intake/Left/SurfaceSpeedMetersPerSecond", leftSurfaceSpeedMetersPerSecond);

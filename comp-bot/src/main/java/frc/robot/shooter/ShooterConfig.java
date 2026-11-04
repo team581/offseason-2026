@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class ShooterConfig {
   public static final double RPM_TOLERANCE = 50.0;
-  public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;
+  public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 100.0;
 
   public static final double RPM_TOLERANCE_FEEDING = 500.0;
 

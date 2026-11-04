@@ -2,6 +2,7 @@ package frc.robot.shooter_hood;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -11,6 +12,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.team581.math.PolynomialRegression;
 import com.team581.util.tuning.TunableInterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.RobotBase;
 import java.util.Map;
 
 public class ShooterHoodConfig {
@@ -33,6 +35,9 @@ public class ShooterHoodConfig {
   public static final double TOLERANCE = 3;
   public static final double FEEDING_TOLERANCE = 5;
 
+  // Voltage output, measured in mechanism rotations: V/rotation and V/(rotation/s).
+  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(100.0).withKD(2.0);
+
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(
@@ -44,7 +49,17 @@ public class ShooterHoodConfig {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(300.0).withKV(0).withKS(0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0).withKV(0).withKS(0))
+          // SimKit uses these limits even for PositionVoltage; hardware keeps its defaults.
+          .withMotionMagic(
+              RobotBase.isSimulation()
+                  ? new MotionMagicConfigs()
+                      .withMotionMagicCruiseVelocity(60.0 / 360.0)
+                      .withMotionMagicAcceleration(180.0 / 360.0)
+                  : new MotionMagicConfigs());
 
   // TODO: Update interpolating map numbers later
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE =

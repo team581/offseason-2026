@@ -34,24 +34,23 @@ public class StuckOnBallRecovery {
   public static AutoSegment getRecoverySegment(
       Supplier<Pose2d> robotPose, Supplier<Rotation2d> pitch, Supplier<Rotation2d> roll) {
     return Trailblazer.segment(
-            AutoPoint.of(
-                () -> {
-                  var headingToGetUnstuck =
-                      Rotation2d.fromRadians(
-                          Math.atan2(pitch.get().getRadians(), roll.get().getRadians()));
-                  var recoveryPoint =
-                      new Pose2d(
-                          robotPose
-                              .get()
-                              .transformBy(
-                                  new Transform2d(
-                                      0.0, -RECOVERY_POINT_DISTANCE.get(), Rotation2d.kZero))
-                              .rotateAround(robotPose.get().getTranslation(), headingToGetUnstuck)
-                              .getTranslation(),
-                          robotPose.get().getRotation());
+            AutoPoint.of(() -> {
+              var headingToGetUnstuck =
+                  Rotation2d.fromRadians(
+                      Math.atan2(pitch.get().getRadians(), roll.get().getRadians()));
+              var recoveryPoint =
+                  new Pose2d(
+                      robotPose
+                          .get()
+                          .transformBy(
+                              new Transform2d(
+                                  0.0, -RECOVERY_POINT_DISTANCE.get(), Rotation2d.kZero))
+                          .rotateAround(robotPose.get().getTranslation(), headingToGetUnstuck)
+                          .getTranslation(),
+                      robotPose.get().getRotation());
 
-                  return new Point(recoveryPoint, recoveryPoint);
-                }))
+              return new Point(recoveryPoint, recoveryPoint);
+            }))
         .forever();
   }
 

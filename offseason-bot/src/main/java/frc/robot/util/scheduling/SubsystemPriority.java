@@ -4,6 +4,7 @@ import com.team581.util.scheduling.SubsystemPriorityBase;
 
 public enum SubsystemPriority implements SubsystemPriorityBase {
   // 20-30 is for manager subsystems
+  TEST_MANAGER(31),
   AUTOS(30),
   ROBOT_MANAGER(29),
   HOPPER_MANAGER(29),
@@ -11,10 +12,10 @@ public enum SubsystemPriority implements SubsystemPriorityBase {
   POWER_MANAGER(28),
 
   // 10-19 is for sensor subsystems
-  LOCALIZATION(11),
+  LOCALIZATION(12),
   IMU(10),
   // Vision inputs run before localization so that it has fresh vision data for pose estimator
-  VISION(10),
+  VISION(11),
   HUB_ACTIVITY(10),
 
   // 0-9 is for actuator subsystems

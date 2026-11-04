@@ -22,11 +22,18 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
-  private static double clamp(double deployLength) {
-    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
+  private static double clamp(double angleDegrees) {
+    return MathUtil.clamp(angleDegrees, DeployConfig.MIN_ANGLE, DeployConfig.MAX_ANGLE);
+  }
+
+  private static double goalTolerance(DeployState state) {
+    return state.isIntaking()
+        ? DeployConfig.COAST_THRESHOLD_DEGREES
+        : DeployConfig.POSITION_TOLERANCE;
   }
 
   private final TalonFX leftMotor;
+
   private final TalonFX rightMotor;
 
   private final DifferentialMechanism<TalonFX> differentialMechanism;
@@ -36,23 +43,23 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   private final MotionMagicTorqueCurrentFOC motionMagicTorqueCurrentFOCAverageRequest =
       new MotionMagicTorqueCurrentFOC(0).withSlot(0);
-
   private final PositionTorqueCurrentFOC positionDifferentialRequest =
       new PositionTorqueCurrentFOC(0).withSlot(1);
-  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
 
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
   private final VoltageOut voltageDifferentialRequest = new VoltageOut(0).withEnableFOC(false);
   private double differentialMechanismPosition = 0.0;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
-  private double leftStatorCurrent = 0.0;
 
+  private double leftStatorCurrent = 0.0;
   private double rightStatorCurrent = 0.0;
   private final StatusSignal<Angle> leftPositionSignal;
   private final StatusSignal<Angle> rightPositionSignal;
   private final StatusSignal<Angle> differentialAveragePositionSignal;
   private final StatusSignal<Current> leftStatorCurrentSignal;
   private final StatusSignal<Current> rightStatorCurrentSignal;
+
   private final StatusSignal<Current> leftSupplyCurrentSignal;
 
   private final StatusSignal<Current> rightSupplyCurrentSignal;
@@ -63,14 +70,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     this.leftMotor = differentialMechanism.getLeader();
     this.rightMotor = differentialMechanism.getFollower();
     TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
+    TunablePid.register("Deploy/Left/Slot1", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG.Slot1);
+    TunablePid.register("Deploy/Left/Slot2", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG.Slot2);
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
+    TunablePid.register("Deploy/Right/Slot1", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG.Slot1);
+    TunablePid.register("Deploy/Right/Slot2", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG.Slot2);
 
-    differentialMechanism.setControl(
-        torqueCurrentFOCAverageRequest.withPosition(0),
-        positionDifferentialRequest.withPosition(0.0));
-    differentialMechanism.setControl(
-        motionMagicTorqueCurrentFOCAverageRequest.withPosition(0),
-        positionDifferentialRequest.withPosition(0.0));
     differentialMechanism.setNeutralOut();
 
     leftPositionSignal = leftMotor.getPosition(false);
@@ -112,22 +117,22 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     return switch (state) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
       default ->
-          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+          MathUtil.isNear(clamp(state.getAngleDegrees()), leftMotorPosition, goalTolerance(state))
               && MathUtil.isNear(
-                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+                  clamp(state.getAngleDegrees()), rightMotorPosition, goalTolerance(state));
     };
   }
 
   public void beastModeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
     }
   }
 
   public void feedCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.FEED_COMPACTION);
     }
   }
@@ -139,8 +144,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
-  /** Calibrated motor/sprocket travel in inches, not the intake's Cartesian displacement. */
-  public double getPosition() {
+  /** Arm angle in degrees: zero is fully down, positive is raised. */
+  public double getAngleDegrees() {
     return differentialMechanismPosition;
   }
 
@@ -158,15 +163,23 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void hopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
     }
   }
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
+      case UNHOMED,
+          HOME_INWARD,
+          HOME_OUTWARD,
+          FIX_DIFFERENTIAL_DESYNC,
+          INTAKE,
+          INTAKE_COAST,
+          INTAKE_COLLAPSED,
+          INTAKE_RECOVERING,
+          INTAKE_RECOVERY_FAILED -> {
+        // Preserve collapse state/timers when the hopper repeats its intake request.
       }
       default -> setStateFromRequest(DeployState.INTAKE);
     }
@@ -174,15 +187,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
-  }
-
-  public void safeKickerStowRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
-      }
-      default -> setStateFromRequest(DeployState.SAFE_KICKER_STOW);
-    }
   }
 
   @Override
@@ -194,26 +198,39 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
                     .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(DeployConfig.HOMING_END_POSITION_INWARD)
-                    .withMaxPosition(DeployConfig.HOMING_END_POSITION_OUTWARD));
+                    .withMinPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0)
+                    .withMaxPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0));
 
     if (getState() == DeployState.HOME_INWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+      deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0);
       setStateFromRequest(DeployState.INTAKE);
     }
 
     if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+      deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0);
       setStateFromRequest(DeployState.INTAKE);
     }
 
-    deploySimulation.update(clamp(getState().getLength()));
+    // The kinematic sim has no gravity/contact model. In coast, retain the measured position
+    // rather than inventing powered recovery; externally injected collapse remains observable.
+    double target = clamp(getState().getAngleDegrees());
+    if (getState() == DeployState.UNHOMED || getState().isCoasting()) {
+      target = getAngleDegrees();
+    }
+    deploySimulation.update(-target / 360.0);
+  }
+
+  /** Release the operator override so normal hopper requests can resume. */
+  public void stopFixDifferentialDesyncRequest() {
+    if (getState() == DeployState.FIX_DIFFERENTIAL_DESYNC) {
+      setStateFromRequest(DeployState.INTAKE);
+    }
   }
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {
+        // Homing and the operator desync override take priority over hopper requests.
       }
       default -> setStateFromRequest(DeployState.STOW);
     }
@@ -221,15 +238,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void waitHopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
     }
   }
 
-  @Override
-  protected void afterTransition(DeployState newState) {
+  private void applyOutputs(DeployState newState) {
+    if (DriverStation.isDisabled()) {
+      differentialMechanism.setNeutralOut();
+      return;
+    }
     switch (newState) {
       case UNHOMED -> differentialMechanism.setNeutralOut();
+      case INTAKE_COAST, INTAKE_COLLAPSED, INTAKE_RECOVERY_FAILED ->
+          differentialMechanism.setCoastOut();
       case HOME_INWARD ->
           differentialMechanism.setControl(
               voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD),
@@ -241,38 +263,41 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case SCORE_COMPACTION_WAITING -> {
         differentialMechanism.setControl(
             motionMagicTorqueCurrentFOCAverageRequest
-                .withPosition(clamp(newState.getLength()))
+                .withPosition(-clamp(newState.getAngleDegrees()) / 360.0)
                 .withSlot(0),
             positionDifferentialRequest.withPosition(0.0).withSlot(1));
       }
       case FIX_DIFFERENTIAL_DESYNC -> {
         differentialMechanism.setControl(
-            torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(2),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
-      }
-      case STOW -> {
-        differentialMechanism.setControl(
-            // Don't clamp
-            torqueCurrentFOCAverageRequest.withPosition(newState.getLength()).withSlot(0),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
+            torqueCurrentFOCAverageRequest
+                .withPosition(-clamp(newState.getAngleDegrees()) / 360.0)
+                .withSlot(0),
+            positionDifferentialRequest.withPosition(0.0).withSlot(2));
       }
       default ->
           differentialMechanism.setControl(
-              torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(0),
+              motionMagicTorqueCurrentFOCAverageRequest
+                  .withPosition(-clamp(newState.getAngleDegrees()) / 360.0)
+                  .withSlot(0),
               positionDifferentialRequest.withPosition(0.0).withSlot(1));
     }
   }
 
   @Override
+  protected void afterTransition(DeployState newState) {
+    applyOutputs(newState);
+  }
+
+  @Override
   protected void collectInputs() {
-    leftMotorPosition = leftPositionSignal.getValueAsDouble();
-    rightMotorPosition = rightPositionSignal.getValueAsDouble();
+    leftMotorPosition = leftPositionSignal.getValueAsDouble() * -360.0;
+    rightMotorPosition = rightPositionSignal.getValueAsDouble() * -360.0;
     if (RobotBase.isSimulation()) {
       // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
       // so derive it from individual motor positions instead.
       differentialMechanismPosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
     } else {
-      differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble();
+      differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble() * -360.0;
     }
     leftStatorCurrent = leftStatorCurrentSignal.getValueAsDouble();
     rightStatorCurrent = rightStatorCurrentSignal.getValueAsDouble();
@@ -280,13 +305,48 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   @Override
   protected DeployState getNextState(DeployState currentState) {
+    if (DriverStation.isDisabled()) {
+      // Disabled time must not count toward the continuous raised delay.
+      return switch (currentState) {
+        case INTAKE_COLLAPSED, INTAKE_RECOVERING -> DeployState.INTAKE_COAST;
+        default -> currentState;
+      };
+    }
+    boolean down = atGoal(DeployState.INTAKE);
+    boolean raised =
+        Math.max(leftMotorPosition, rightMotorPosition)
+            > DeployState.INTAKE.getAngleDegrees() + DeployConfig.RAISED_THRESHOLD_DEGREES;
     return switch (currentState) {
-      case UNHOMED, INTAKE, STOW -> currentState;
+      case INTAKE -> down ? DeployState.INTAKE_COAST : currentState;
+      case INTAKE_COAST -> raised ? DeployState.INTAKE_COLLAPSED : currentState;
+      case INTAKE_COLLAPSED -> {
+        if (!raised) {
+          yield DeployState.INTAKE_COAST;
+        }
+        if (!timeout(DeployConfig.RECOVERY_DELAY_SECONDS)) {
+          yield currentState;
+        }
+        yield !MathUtil.isNear(
+                leftMotorPosition, rightMotorPosition, DeployConfig.MAX_RECOVERY_DESYNC_DEGREES)
+            ? DeployState.INTAKE_RECOVERY_FAILED
+            : DeployState.INTAKE_RECOVERING;
+      }
+      case INTAKE_RECOVERING -> {
+        if (down) {
+          yield DeployState.INTAKE_COAST;
+        }
+        if (timeout(DeployConfig.RECOVERY_TIMEOUT_SECONDS)
+            || !MathUtil.isNear(
+                leftMotorPosition, rightMotorPosition, DeployConfig.MAX_RECOVERY_DESYNC_DEGREES)) {
+          yield DeployState.INTAKE_RECOVERY_FAILED;
+        }
+        yield currentState;
+      }
 
       case HOME_INWARD -> {
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+          differentialMechanism.setPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0);
           yield DeployState.INTAKE;
         } else {
           yield currentState;
@@ -296,7 +356,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case HOME_OUTWARD -> {
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+          differentialMechanism.setPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0);
           yield DeployState.INTAKE;
         } else {
           yield currentState;
@@ -308,10 +368,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   @Override
   protected void whileInState(DeployState state) {
-    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
-    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
-    DogLog.log("Deploy/GoalPosition", getState().getLength());
-    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
-    DogLog.log("Deploy/LinkageAngleDegrees", DeployKinematics.angleDegrees(getPosition()));
+    applyOutputs(state);
+    DogLog.log("Deploy/LeftMotor/AngleDegrees", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/AngleDegrees", rightMotorPosition);
+    DogLog.log("Deploy/GoalAngleDegrees", getState().getAngleDegrees());
+    DogLog.log("Deploy/AngleDegrees", differentialMechanismPosition);
   }
 }

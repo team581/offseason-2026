@@ -9,11 +9,11 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 
 public class IntakeConfig {
-  // Verify SensorToMechanismRatio below is motor rotations per roller rotation.
-  // TODO: need to update
-  public static final double LEFT_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.0);
-  // TODO: need to update
-  public static final double RIGHT_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.0);
+  // Motor rotations per roller rotation, from the offseason subsystem hardware specs.
+  public static final double MOTOR_TO_ROLLER_RATIO = 20.0 / 12.0;
+
+  public static final double LEFT_ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
+  public static final double RIGHT_ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -21,7 +21,6 @@ public class IntakeConfig {
               new MotorOutputConfigs()
                   .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
-          // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(75).withSupplyCurrentLimit(50));
@@ -31,7 +30,6 @@ public class IntakeConfig {
               new MotorOutputConfigs()
                   .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
-          // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(75).withSupplyCurrentLimit(50));

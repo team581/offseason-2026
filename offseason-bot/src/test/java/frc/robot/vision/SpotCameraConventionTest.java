@@ -1,0 +1,84 @@
+package frc.robot.vision;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.gson.*;
+import edu.wpi.first.math.geometry.Translation3d;
+import java.nio.file.*;
+import java.util.*;
+import org.junit.jupiter.api.Test;
+
+/** Golden poses produced by real WPILib, also consumed by the JavaScript comparison test. */
+final class SpotCameraConventionTest {
+  @Test
+  void wpilibExportMatchesSharedConventionCases() throws Exception {
+    double[][] rotations = {
+      {0, 0, 0},
+      {30, 0, 0},
+      {-30, 0, 0},
+      {0, 30, 0},
+      {0, -30, 0},
+      {0, 0, 90},
+      {0, 0, -90},
+      {20, 30, 45},
+      {-20, -30, -45},
+      {15, 30, 180},
+      {-15, -30, -180},
+      {0, 90, 0},
+      {0, -90, 0}
+    };
+    var cases = new ArrayList<Object>();
+    int index = 0;
+    for (double sign : new double[] {1, -1})
+      for (double[] r : rotations) {
+        var mount = VisionConfig.mount(sign * .3, sign * .4, sign * .5, r[0], r[1], r[2]);
+        var camera =
+            new SpotCameraConfig(
+                "case-" + index++,
+                true,
+                mount,
+                0,
+                new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
+                ImmutableList.of());
+        Path output = Path.of("build/spot-camera-preview/convention-export.json");
+        SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of(camera)), output);
+        var exported =
+            JsonParser.parseString(Files.readString(output))
+                .getAsJsonObject()
+                .getAsJsonArray("cameras")
+                .get(0);
+        var axes = new ArrayList<Object>();
+        for (var axis :
+            ImmutableList.of(
+                new Translation3d(1, 0, 0),
+                new Translation3d(0, 1, 0),
+                new Translation3d(0, 0, 1))) {
+          var world = axis.rotateBy(mount.getRotation());
+          axes.add(new double[] {world.getX(), world.getY(), world.getZ()});
+        }
+        cases.add(
+            ImmutableMap.of(
+                "javaRollPitchYawDeg",
+                r,
+                "jetsonYawPitchRollDeg",
+                new double[] {r[2], r[1], r[0]},
+                "exported",
+                exported,
+                "worldAxes",
+                axes));
+      }
+    String json = new GsonBuilder().setPrettyPrinting().create().toJson(cases);
+    Files.writeString(Path.of("build/spot-camera-preview/convention-cases.json"), json);
+    try (var input = getClass().getResourceAsStream("/spot-camera-conventions.json")) {
+      assertThat(input).withFailMessage("Shared convention fixture must be present").isNotNull();
+      assertEquals(
+          JsonParser.parseString(new String(input.readAllBytes(), UTF_8)),
+          JsonParser.parseString(json),
+          "WPILib/exporter changed; review the JS comparison before updating fixture");
+    }
+  }
+}

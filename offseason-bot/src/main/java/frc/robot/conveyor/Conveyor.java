@@ -10,6 +10,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Conveyor extends StateMachineSubsystem<ConveyorState> implements PowerManaged {
@@ -36,9 +37,9 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     this.topMotor = topMotor;
     this.bottomMotor = bottomMotor;
 
-    topVelocitySignal = topMotor.getVelocity(false);
+    topVelocitySignal = topMotor.getRotorVelocity(false);
     topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
-    bottomVelocitySignal = bottomMotor.getVelocity(false);
+    bottomVelocitySignal = bottomMotor.getRotorVelocity(false);
     bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
     Signals.forDevice(topMotor).addSignals(topVelocitySignal, topSupplyCurrentSignal);
     Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomSupplyCurrentSignal);
@@ -102,13 +103,19 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   @Override
   protected void collectInputs() {
-    // Phoenix velocity is roller rotations/sec after SensorToMechanismRatio.
+    // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double topVelocityRps = topVelocitySignal.getValueAsDouble();
     topSurfaceSpeedMetersPerSecond =
-        topVelocityRps * Math.PI * ConveyorConfig.TOP_ROLLER_DIAMETER_METERS;
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            topVelocityRps,
+            ConveyorConfig.TOP_ROLLER_DIAMETER_METERS,
+            ConveyorConfig.TOP_MOTOR_TO_ROLLER_RATIO);
     double bottomVelocityRps = bottomVelocitySignal.getValueAsDouble();
     bottomSurfaceSpeedMetersPerSecond =
-        bottomVelocityRps * Math.PI * ConveyorConfig.BOTTOM_ROLLER_DIAMETER_METERS;
+        RollerUtil.surfaceSpeedMetersPerSecond(
+            bottomVelocityRps,
+            ConveyorConfig.BOTTOM_ROLLER_DIAMETER_METERS,
+            ConveyorConfig.BOTTOM_MOTOR_TO_ROLLER_RATIO);
 
     DogLog.log("Conveyor/Top/VelocityRPM", topVelocityRps * 60.0);
     DogLog.log("Conveyor/Top/SurfaceSpeedMetersPerSecond", topSurfaceSpeedMetersPerSecond);

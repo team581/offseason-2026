@@ -9,10 +9,11 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 
 public class FeederConfig {
-  // TODO: need to update
-  public static final double TOP_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.0);
-  // TODO: need to update
-  public static final double BOTTOM_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.0);
+  // Motor rotations per roller rotation, from the offseason subsystem hardware specs.
+  public static final double MOTOR_TO_ROLLER_RATIO = 28.0 / 18.0;
+
+  public static final double TOP_ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
+  public static final double BOTTOM_ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
 
   public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
       new TalonFXConfiguration()

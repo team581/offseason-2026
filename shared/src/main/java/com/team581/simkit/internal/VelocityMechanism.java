@@ -15,18 +15,17 @@ import java.util.OptionalDouble;
 public final class VelocityMechanism {
   private static double desiredMechanismVelocity(List<SimMotor> devices) {
     return devices.stream()
-        .mapToDouble(
-            device -> {
-              return switch (device.motor().getControlMode().getValue()) {
-                case CoastOut, DisabledOutput, MusicTone, NeutralOut, StaticBrake -> 0;
-                case Follower ->
-                    getLeader(device.motor().getAppliedControl(), devices)
-                        .motor()
-                        .getClosedLoopReference()
-                        .getValueAsDouble();
-                default -> device.motor().getClosedLoopReference().getValueAsDouble();
-              };
-            })
+        .mapToDouble(device -> {
+          return switch (device.motor().getControlMode().getValue()) {
+            case CoastOut, DisabledOutput, MusicTone, NeutralOut, StaticBrake -> 0;
+            case Follower ->
+                getLeader(device.motor().getAppliedControl(), devices)
+                    .motor()
+                    .getClosedLoopReference()
+                    .getValueAsDouble();
+            default -> device.motor().getClosedLoopReference().getValueAsDouble();
+          };
+        })
         .average()
         .orElse(0.0);
   }
@@ -51,12 +50,11 @@ public final class VelocityMechanism {
     // Collect configs for averaging
     var configs =
         devices.stream()
-            .map(
-                motor -> {
-                  var config = new TalonFXConfiguration();
-                  motor.motor().getConfigurator().refresh(config);
-                  return config;
-                })
+            .map(motor -> {
+              var config = new TalonFXConfiguration();
+              motor.motor().getConfigurator().refresh(config);
+              return config;
+            })
             .toList();
 
     return configs.stream()

@@ -1,0 +1,314 @@
+package frc.robot.deploy;
+
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.team581.math.MathHelpers;
+import com.team581.mechanisms.PowerManaged;
+import com.team581.signals.Signals;
+import com.team581.simkit.SimKit;
+import com.team581.util.state_machines.StateMachineSubsystem;
+import com.team581.util.tuning.TunablePid;
+import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.util.scheduling.SubsystemPriority;
+
+public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
+  private static double clamp(double deployLength) {
+    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
+  }
+
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
+
+  private final DifferentialMechanism<TalonFX> differentialMechanism;
+
+  private final PositionTorqueCurrentFOC torqueCurrentFOCAverageRequest =
+      new PositionTorqueCurrentFOC(0).withSlot(0);
+
+  private final MotionMagicTorqueCurrentFOC motionMagicTorqueCurrentFOCAverageRequest =
+      new MotionMagicTorqueCurrentFOC(0).withSlot(0);
+
+  private final PositionTorqueCurrentFOC positionDifferentialRequest =
+      new PositionTorqueCurrentFOC(0).withSlot(1);
+  private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
+
+  private final VoltageOut voltageDifferentialRequest = new VoltageOut(0).withEnableFOC(false);
+  private double differentialMechanismPosition = 0.0;
+  private double leftMotorPosition = 0.0;
+  private double rightMotorPosition = 0.0;
+  private double leftStatorCurrent = 0.0;
+
+  private double rightStatorCurrent = 0.0;
+  private final StatusSignal<Angle> leftPositionSignal;
+  private final StatusSignal<Angle> rightPositionSignal;
+  private final StatusSignal<Angle> differentialAveragePositionSignal;
+  private final StatusSignal<Current> leftStatorCurrentSignal;
+  private final StatusSignal<Current> rightStatorCurrentSignal;
+  private final StatusSignal<Current> leftSupplyCurrentSignal;
+
+  private final StatusSignal<Current> rightSupplyCurrentSignal;
+
+  public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
+    super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
+    this.differentialMechanism = differentialMechanism;
+    this.leftMotor = differentialMechanism.getLeader();
+    this.rightMotor = differentialMechanism.getFollower();
+    TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
+    TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
+
+    differentialMechanism.setControl(
+        torqueCurrentFOCAverageRequest.withPosition(0),
+        positionDifferentialRequest.withPosition(0.0));
+    differentialMechanism.setControl(
+        motionMagicTorqueCurrentFOCAverageRequest.withPosition(0),
+        positionDifferentialRequest.withPosition(0.0));
+    differentialMechanism.setNeutralOut();
+
+    leftPositionSignal = leftMotor.getPosition(false);
+    rightPositionSignal = rightMotor.getPosition(false);
+    differentialAveragePositionSignal = differentialMechanism.getAveragePosition(false);
+    leftStatorCurrentSignal = leftMotor.getStatorCurrent(false);
+    rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
+    leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
+    rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
+    Signals.forDevice(leftMotor)
+        .addSignals(
+            leftPositionSignal,
+            differentialAveragePositionSignal,
+            leftStatorCurrentSignal,
+            leftSupplyCurrentSignal);
+    Signals.forDevice(rightMotor)
+        .addSignals(rightPositionSignal, rightStatorCurrentSignal, rightSupplyCurrentSignal);
+  }
+
+  @Override
+  public void applyCurrentLimits(double supplyCurrentLimit) {
+    leftMotor
+        .getConfigurator()
+        .apply(
+            DeployConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+    rightMotor
+        .getConfigurator()
+        .apply(
+            DeployConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+                supplyCurrentLimit));
+  }
+
+  public boolean atGoal() {
+    return atGoal(getState());
+  }
+
+  public boolean atGoal(DeployState state) {
+    return switch (state) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
+      default ->
+          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+              && MathUtil.isNear(
+                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+    };
+  }
+
+  public void beastModeRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
+    }
+  }
+
+  public void feedCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.FEED_COMPACTION);
+    }
+  }
+
+  public void fixDifferentialDesyncRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.FIX_DIFFERENTIAL_DESYNC);
+    }
+  }
+
+  public double getPosition() {
+    return differentialMechanismPosition;
+  }
+
+  public void homeInAutoRequest() {
+    setStateFromRequest(DeployState.HOME_INWARD);
+  }
+
+  public void homingRequest() {
+    if (DriverStation.isAutonomous()) {
+      setStateFromRequest(DeployState.HOME_INWARD);
+    }
+    setStateFromRequest(DeployState.HOME_OUTWARD);
+  }
+
+  public void hopperCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
+    }
+  }
+
+  public void intakeRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
+        // Do nothing, we aren't homed
+      }
+      default -> setStateFromRequest(DeployState.INTAKE);
+    }
+  }
+
+  public boolean isFullyExtended() {
+    return atGoal(DeployState.INTAKE);
+  }
+
+  public void safeKickerStowRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
+        // Do nothing, we aren't homed
+      }
+      default -> setStateFromRequest(DeployState.SAFE_KICKER_STOW);
+    }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    var deploySimulation =
+        SimKit.positionMechanism(
+            "Deploy",
+            mechanism ->
+                mechanism
+                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
+                    .withMinPosition(DeployConfig.MIN_LENGTH)
+                    .withMaxPosition(DeployConfig.MAX_LENGTH));
+
+    if (getState() == DeployState.HOME_INWARD) {
+      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+      setStateFromRequest(DeployState.INTAKE);
+    }
+
+    if (getState() == DeployState.HOME_OUTWARD) {
+      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+      setStateFromRequest(DeployState.INTAKE);
+    }
+
+    deploySimulation.update(clamp(getState().getLength()));
+  }
+
+  public void stowRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
+        // Do nothing, we aren't homed
+      }
+      default -> setStateFromRequest(DeployState.STOW);
+    }
+  }
+
+  public void waitHopperCompactionRequest() {
+    switch (getState()) {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
+    }
+  }
+
+  @Override
+  protected void afterTransition(DeployState newState) {
+    switch (newState) {
+      case UNHOMED -> differentialMechanism.setNeutralOut();
+      case HOME_INWARD ->
+          differentialMechanism.setControl(
+              voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD),
+              voltageDifferentialRequest.withOutput(0));
+      case HOME_OUTWARD ->
+          differentialMechanism.setControl(
+              voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD),
+              voltageDifferentialRequest.withOutput(0));
+      case SCORE_COMPACTION_WAITING -> {
+        differentialMechanism.setControl(
+            motionMagicTorqueCurrentFOCAverageRequest
+                .withPosition(clamp(newState.getLength()))
+                .withSlot(0),
+            positionDifferentialRequest.withPosition(0.0).withSlot(1));
+      }
+      case FIX_DIFFERENTIAL_DESYNC -> {
+        differentialMechanism.setControl(
+            torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(2),
+            positionDifferentialRequest.withPosition(0.0).withSlot(1));
+      }
+      case STOW -> {
+        differentialMechanism.setControl(
+            // Don't clamp
+            torqueCurrentFOCAverageRequest.withPosition(newState.getLength()).withSlot(0),
+            positionDifferentialRequest.withPosition(0.0).withSlot(1));
+      }
+      default ->
+          differentialMechanism.setControl(
+              torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(0),
+              positionDifferentialRequest.withPosition(0.0).withSlot(1));
+    }
+  }
+
+  @Override
+  protected void collectInputs() {
+    leftMotorPosition = leftPositionSignal.getValueAsDouble();
+    rightMotorPosition = rightPositionSignal.getValueAsDouble();
+    if (RobotBase.isSimulation()) {
+      // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
+      // so derive it from individual motor positions instead.
+      differentialMechanismPosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
+    } else {
+      differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble();
+    }
+    leftStatorCurrent = leftStatorCurrentSignal.getValueAsDouble();
+    rightStatorCurrent = rightStatorCurrentSignal.getValueAsDouble();
+  }
+
+  @Override
+  protected DeployState getNextState(DeployState currentState) {
+    return switch (currentState) {
+      case UNHOMED, INTAKE, STOW -> currentState;
+
+      case HOME_INWARD -> {
+        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
+            && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+          yield DeployState.INTAKE;
+        } else {
+          yield currentState;
+        }
+      }
+
+      case HOME_OUTWARD -> {
+        if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
+            && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
+          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+          yield DeployState.INTAKE;
+        } else {
+          yield currentState;
+        }
+      }
+      default -> currentState;
+    };
+  }
+
+  @Override
+  protected void whileInState(DeployState state) {
+    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
+    DogLog.log("Deploy/GoalPosition", getState().getLength());
+    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
+  }
+}

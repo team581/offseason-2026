@@ -4,13 +4,13 @@
   "java.format.settings.google.extra": "--skip-reflowing-long-strings",
   "wpilib.skipSelectSimulateExtension": true,
   "java.test.config": [{
-    "workingDirectory": "${workspaceFolder}/build/jni/release",
+    "workingDirectory": "${workspaceFolder}/shared/build/jni/release",
     "name": "WPIlibUnitTests",
     "env": {
-      "DYLD_LIBRARY_PATH": "${workspaceFolder}/build/jni/release",
-      "LD_LIBRARY_PATH": "${workspaceFolder}/build/jni/release"
+      "DYLD_LIBRARY_PATH": "${workspaceFolder}/shared/build/jni/release",
+      "LD_LIBRARY_PATH": "${workspaceFolder}/shared/build/jni/release"
     },
-    "vmargs": ["-Djava.library.path=${workspaceFolder}/build/jni/release"]
+    "vmArgs": ["-Djava.library.path=${workspaceFolder}/shared/build/jni/release"]
   }],
   "java.import.gradle.annotationProcessing.enabled": false,
   "java.server.launchMode": "Standard",

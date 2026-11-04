@@ -24,11 +24,11 @@ public final class MechanismVisualizer {
       RobotState robotState,
       double turretAngleDegrees,
       double shooterHoodAngleDegrees,
-      double deployLengthInches) {
+      double deployAngleDegrees) {
     DogLog.log(
         "SuperstructureVisualization/Components",
         buildComponentPoses(
-            robotState, turretAngleDegrees, shooterHoodAngleDegrees, deployLengthInches));
+            robotState, turretAngleDegrees, shooterHoodAngleDegrees, deployAngleDegrees));
   }
 
   /**
@@ -39,7 +39,7 @@ public final class MechanismVisualizer {
       RobotState robotState,
       double turretAngleDegrees,
       double shooterHoodAngleDegrees,
-      double deployLengthInches) {
+      double deployAngleDegrees) {
     var turretTranslation =
         new Translation3d(
             TurretConfig.TURRET_TO_ROBOT.getX(),
@@ -57,7 +57,7 @@ public final class MechanismVisualizer {
                     Math.toRadians(
                         shooterHoodAngleDegrees - ShooterHoodConfig.ANGLE_FROM_HORIZONTAL),
                     0)));
-    var deployPoses = DeployKinematics.componentPoses(deployLengthInches);
+    var deployPoses = DeployKinematics.componentPoses(deployAngleDegrees);
     var active = robotState == RobotState.SCORE || robotState == RobotState.FEED;
     return active
         ? new Pose3d[] {

@@ -1,35 +1,38 @@
 package frc.robot.health;
 
 import com.team581.config.BlinkingBooleanBox;
-import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.limelight.Limelight;
+import frc.robot.vision.Vision;
+import java.util.function.BooleanSupplier;
 
 public class HealthManager extends StateMachineSubsystem<HealthState> {
-  private final Limelight leftLimelight;
-  private final Limelight rightLimelight;
-  private final Limelight groundLimelight;
 
-  private boolean localizationHealthy = true;
-  private boolean fuelDetectionHealthy = true;
-  private boolean allCamerasHealthy = true;
+  private boolean localizationHealthy = false;
+  private boolean fuelDetectionHealthy = false;
+  private boolean allCamerasHealthy = false;
 
   private final BlinkingBooleanBox localizationBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/LocalizationHealthyBox", false, true);
   private final BlinkingBooleanBox allCamerasBlinkingBooleanBox =
       new BlinkingBooleanBox("Health/AllCamerasHealthyBox", false, true);
 
-  public HealthManager(
-      Limelight leftLimelight, Limelight rightLimelight, Limelight groundLimelight) {
-    super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
+  private final Vision vision;
+  private final boolean simulation;
+  private BooleanSupplier poseTrustworthy = () -> false;
 
-    this.leftLimelight = leftLimelight;
-    this.rightLimelight = rightLimelight;
-    this.groundLimelight = groundLimelight;
+  public HealthManager(Vision vision) {
+    this(vision, RobotBase.isSimulation());
+  }
+
+  /** Allows desktop tests to exercise the real robot's vision requirements. */
+  public HealthManager(Vision vision, boolean simulation) {
+    super(SubsystemPriority.HEALTH, HealthState.DEFAULT_STATE);
+    this.vision = vision;
+    this.simulation = simulation;
   }
 
   /** Returns whether all cameras are healthy. */
@@ -45,23 +48,23 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   /** Returns whether the robot's ability to localize itself is healthy. */
   public boolean isLocalizationHealthy() {
     return localizationHealthy
-        && DSOptions.USE_TAG_LIMELIGHTS.getAsBoolean()
+        && DSOptions.USE_VISION.getAsBoolean()
         && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean();
+  }
+
+  public void setPoseTrustworthySupplier(BooleanSupplier supplier) {
+    poseTrustworthy = supplier;
   }
 
   @Override
   protected void collectInputs() {
+    var status = vision.getStatus();
+    // Desktop simulation has odometry but no camera frames. Use its pose for aiming rather
+    // than forcing RobotManager to aim from the fixed real-robot fallback location.
     localizationHealthy =
-        RobotBase.isSimulation()
-            || leftLimelight.getCameraHealth() != CameraHealth.OFFLINE
-            || rightLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    fuelDetectionHealthy =
-        RobotBase.isSimulation() || groundLimelight.getCameraHealth() != CameraHealth.OFFLINE;
-    allCamerasHealthy =
-        RobotBase.isSimulation()
-            || (leftLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && rightLimelight.getCameraHealth() != CameraHealth.OFFLINE
-                && groundLimelight.getCameraHealth() != CameraHealth.OFFLINE);
+        simulation || (vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean());
+    fuelDetectionHealthy = false;
+    allCamerasHealthy = status.allRequiredHealthy();
   }
 
   @Override

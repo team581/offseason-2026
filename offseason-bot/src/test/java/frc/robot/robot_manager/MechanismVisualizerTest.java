@@ -25,8 +25,8 @@ final class MechanismVisualizerTest {
 
   @Test
   void deployArmsRemainVisibleAndFollowTheSameMotionAcrossRobotStates() {
-    var score = MechanismVisualizer.buildComponentPoses(RobotState.SCORE, 0, 11, 5.95);
-    var stow = MechanismVisualizer.buildComponentPoses(RobotState.IDLE, 0, 11, 5.95);
+    var score = MechanismVisualizer.buildComponentPoses(RobotState.SCORE, 0, 11, 44.2);
+    var stow = MechanismVisualizer.buildComponentPoses(RobotState.IDLE, 0, 11, 44.2);
     for (var index : new int[] {2, 5, 6}) {
       assertEquals(score[index], stow[index]);
       assertEquals(true, isVisible(score[index]));

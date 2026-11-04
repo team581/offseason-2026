@@ -26,9 +26,8 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   static boolean isAtGoal(
       TurretState state, double setpoint, double currentAngle, double tolerance) {
     return switch (state) {
-      case UNHOMED -> false;
-      case STUCK -> false;
-      default -> MathUtil.isNear(setpoint, currentAngle, tolerance);
+      case SCORE, FEED -> MathUtil.isNear(setpoint, currentAngle, tolerance);
+      default -> false;
     };
   }
 
@@ -39,16 +38,64 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
       double tolerance,
       double upcomingAngle) {
     return switch (state) {
-      case UNHOMED -> false;
-      case STUCK -> false;
-      default -> {
+      case SCORE, FEED -> {
         var potentialSetpoint = TurretCalculator.getOptimalAngle(upcomingAngle, currentAngle);
         if (!MathUtil.isNear(potentialSetpoint, setpoint, 90)) {
           yield false;
         }
         yield MathUtil.isNear(setpoint, currentAngle, tolerance, -180, 180);
       }
+      default -> false;
     };
+  }
+
+  static boolean isAtGoal(
+      TurretState state,
+      TurretState expectedState,
+      double currentAngle,
+      AimingParameters aimingParameters) {
+    if (!aimingParameters.solutionValid() || state != expectedState) {
+      return false;
+    }
+    var targetSetpoint =
+        clamp(TurretCalculator.getOptimalAngle(aimingParameters.turretAngle(), currentAngle));
+    return MathUtil.isNear(
+            aimingParameters.turretAngle(),
+            currentAngle,
+            aimingParameters.turretTolerance(),
+            -180.0,
+            180.0)
+        && isAtGoal(
+            state,
+            targetSetpoint,
+            currentAngle,
+            aimingParameters.turretTolerance(),
+            aimingParameters.upcomingTurretAngle());
+  }
+
+  static boolean isAtGoal(
+      TurretState state,
+      TurretState expectedState,
+      double setpoint,
+      double currentAngle,
+      double tolerance) {
+    if (state != expectedState) {
+      return false;
+    }
+    return isAtGoal(state, setpoint, currentAngle, tolerance);
+  }
+
+  static boolean isAtGoal(
+      TurretState state,
+      TurretState expectedState,
+      double setpoint,
+      double currentAngle,
+      double tolerance,
+      double upcomingAngle) {
+    if (state != expectedState) {
+      return false;
+    }
+    return isAtGoal(state, setpoint, currentAngle, tolerance, upcomingAngle);
   }
 
   private final TalonFX motor;
@@ -87,7 +134,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(AimingParameters aimingParameters) {
-    return atGoal(aimingParameters.turretTolerance(), aimingParameters.upcomingTurretAngle());
+    return isAtGoal(getState(), getState(), currentAngle, aimingParameters);
   }
 
   public boolean atGoal(double tolerance) {
@@ -96,6 +143,18 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
 
   public boolean atGoal(double tolerance, double upcomingAngle) {
     return isAtGoal(getState(), setpoint, currentAngle, tolerance, upcomingAngle);
+  }
+
+  public boolean atGoal(TurretState expectedState, AimingParameters aimingParameters) {
+    return isAtGoal(getState(), expectedState, currentAngle, aimingParameters);
+  }
+
+  public boolean atGoal(TurretState expectedState, double tolerance) {
+    return isAtGoal(getState(), expectedState, setpoint, currentAngle, tolerance);
+  }
+
+  public boolean atGoal(TurretState expectedState, double tolerance, double upcomingAngle) {
+    return isAtGoal(getState(), expectedState, setpoint, currentAngle, tolerance, upcomingAngle);
   }
 
   public void feedRequest(AimingParameters parameters) {
@@ -172,7 +231,11 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
 
   public void setState(TurretState newState) {
     switch (getState()) {
-      case UNHOMED -> {}
+      case UNHOMED -> {
+        if (RobotBase.isSimulation()) {
+          setStateFromRequest(newState);
+        }
+      }
       default -> setStateFromRequest(newState);
     }
   }
@@ -182,7 +245,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     var turretSimulation =
         SimKit.positionMechanism(
             "turret",
-            (mechanism) ->
+            mechanism ->
                 mechanism
                     .addMotor(motor)
                     .withMinPosition(Units.degreesToRotations(TurretConfig.MIN_ANGLE))

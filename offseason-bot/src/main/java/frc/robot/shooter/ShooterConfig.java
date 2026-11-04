@@ -18,10 +18,16 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.config.FeatureFlags;
 import java.util.Map;
 
 public class ShooterConfig {
+  public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(4.0);
+  public static final double MOTOR_TO_ROLLER_RATIO = 1.0;
+
   public static final double RPM_TOLERANCE = 50.0;
   public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;
 
@@ -38,14 +44,6 @@ public class ShooterConfig {
   public static final double MAX_SAFE_RPM = 6000;
 
   public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(0.0, 0.0, Rotation2d.k180deg);
-
-  public static final InterpolatingDoubleTreeMap FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD =
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/FeederCurrentToShooterFeedForward",
-          Map.entry(0.0, 0.0),
-          Map.entry(50.0, 22.0),
-          Map.entry(20.0, 0.0),
-          Map.entry(30.0, 15.0));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
@@ -88,32 +86,47 @@ public class ShooterConfig {
       PolynomialRegression.quadratic("Shooter/ScoringToFRegression", DISTANCE_TO_SCORE_TOF);
   public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
+  // Torque-current output: A per motor RPS. SimKit has no friction/load to feed forward.
+  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(5.0);
+
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0.0).withKV(0.0));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(14.0).withKS(6.4).withKV(0.13));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0).withKS(0).withKV(0));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0.0).withKV(0.0));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withSlot0(
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(0.0).withKV(0.0));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 20.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
-      DogLog.tunable("Shooter/LowHopperInitialFF", 15.0);
+      DogLog.tunable("Shooter/LowHopperInitialFF", 0.0);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
-      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
+      DogLog.tunable("Shooter/TurboShotFFCurrent", 0.0);
   // Calculated from average of CAPIN logs
   public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
       DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.25);
@@ -124,11 +137,23 @@ public class ShooterConfig {
         .plus(SHOOTER_TO_ROBOT.getRotation());
   }
 
+  public static double getFeedTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
+        : DISTANCE_TO_FEED_TOF.get(distance);
+  }
+
   public static double getGoalCentricTolerance(
       Translation2d goalTranslation, Pose2d shooterPose, double goalCentricToleranceMeters) {
 
     double distanceToGoal = shooterPose.getTranslation().getDistance(goalTranslation);
     return Math.toDegrees(Math.atan2(goalCentricToleranceMeters, distanceToGoal));
+  }
+
+  public static double getScoreTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? SCORING_TOF_REGRESSION_MODEL.calculate(distance)
+        : DISTANCE_TO_SCORE_TOF.get(distance);
   }
 
   public static Pose2d getShooterPose(Pose2d robot) {
