@@ -1,5 +1,7 @@
 package frc.robot.power_manager;
 
+import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
+
 public enum PowerManagerState {
   AUTO_FIRST_SEGMENT(50, 80, 15, 40, 10, 10, 70),
   PRIORITIZE_INTAKE(50, 85, 15, 40, 10, 10, 30),
@@ -28,12 +30,12 @@ public enum PowerManagerState {
       double feederSupplyCurrent,
       double conveyorSupplyCurrent,
       double swerveSupplyCurrent) {
-    this.shooterSupplyCurrent = shooterSupplyCurrent;
-    this.intakeSupplyCurrent = intakeSupplyCurrent;
-    this.deploySupplyCurrent = deploySupplyCurrent;
-    this.shooterHoodSupplyCurrent = shooterHoodSupplyCurrent;
-    this.feederSupplyCurrent = feederSupplyCurrent;
-    this.conveyorSupplyCurrent = conveyorSupplyCurrent;
-    this.swerveSupplyCurrent = swerveSupplyCurrent;
+    this.shooterSupplyCurrent = shooterSupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
+    this.intakeSupplyCurrent = intakeSupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
+    this.deploySupplyCurrent = deploySupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
+    this.shooterHoodSupplyCurrent = shooterHoodSupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
+    this.feederSupplyCurrent = feederSupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
+    this.conveyorSupplyCurrent = conveyorSupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
+    this.swerveSupplyCurrent = swerveSupplyCurrent * SUPPLY_CURRENT_LIMIT_SCALE;
   }
 }

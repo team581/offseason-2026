@@ -1,5 +1,7 @@
 package frc.robot.shooter_hood;
 
+import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -38,7 +40,10 @@ public class ShooterHoodConfig {
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio(1 / ((8.0 / 62.0) * (10.0 / 154.0))))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(40))
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
+                  .withStatorCurrentLimit(40)
+                  .withSupplyCurrentLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withMotorOutput(
               new MotorOutputConfigs()

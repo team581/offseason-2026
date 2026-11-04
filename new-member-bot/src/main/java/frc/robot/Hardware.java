@@ -14,6 +14,8 @@ import frc.robot.generated.PracticeTunerConstants;
 import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 
 public class Hardware {
+  public static final double SUPPLY_CURRENT_LIMIT_SCALE = 0.75;
+
   public final XboxController driverController = new XboxController(0);
   public final XboxController operatorController = new XboxController(1);
 
