@@ -2,15 +2,18 @@ package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.config.RobotKind;
 import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.CompTunerConstants;
-import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
+import frc.robot.generated.PracticeTunerConstants;
+import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -47,13 +50,17 @@ public class Hardware {
   public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
   public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
 
+  public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
   public final DigitalInput towerSensor = new DigitalInput(9);
   // public final TalonFX extender = new TalonFX(28);
-  public TunerSwerveDrivetrain drivetrain =
+
+  public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
-          CompTunerConstants.DrivetrainConstants,
-          CompTunerConstants.FrontLeft,
-          CompTunerConstants.FrontRight,
-          CompTunerConstants.BackLeft,
-          CompTunerConstants.BackRight);
+          RobotKind.IS_COMP_BOT
+              ? CompTunerConstants.DrivetrainConstants
+              : PracticeTunerConstants.DrivetrainConstants,
+          RobotKind.IS_COMP_BOT ? CompTunerConstants.FrontLeft : PracticeTunerConstants.FrontLeft,
+          RobotKind.IS_COMP_BOT ? CompTunerConstants.FrontRight : PracticeTunerConstants.FrontRight,
+          RobotKind.IS_COMP_BOT ? CompTunerConstants.BackLeft : PracticeTunerConstants.BackLeft,
+          RobotKind.IS_COMP_BOT ? CompTunerConstants.BackRight : PracticeTunerConstants.BackRight);
 }

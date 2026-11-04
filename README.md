@@ -13,6 +13,7 @@ This repository is organized as a Gradle monorepo with the following projects:
 - **`dumper-bot/`** - Triple barrel shooter alpha bot
 - **`beta-bot/`** - CA District Silicon Valley Event bot (dye rotor + turret)
 - **`comp-bot/`** - Competition dumper bot
+- **`new-member-bot/`** - Tweaked version of comp-bot for the new member Rubble v2 clone
 
 ## Building and running
 

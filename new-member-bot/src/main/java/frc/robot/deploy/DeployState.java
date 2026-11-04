@@ -5,23 +5,26 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DeployState {
   INTAKE(DeployConfig.MAX_LENGTH),
-  STOW(0.0), // For The stow state Set to 0.0 because (fully retracted)
-  //  Compaction & Scoring States
-  SCORE_READY(DeployConfig.MAX_LENGTH - 2.5), // Move Back 2.5 INCHES
-  SCORE_COMPACTION(0.0), // TBD
-  FEED_COMPACTION(0.0), // TBD
+  STOW(5.0),
+  SAFE_KICKER_STOW(7.915),
+  // placeholder values
+  SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 2.5),
+  SCORE_COMPACTION(1.0),
+  FEED_COMPACTION(6.915),
 
-  FIX_ALIGNMENT(DeployConfig.MAX_LENGTH),
+  BEAST_MODE_COMPACTION(5.0),
 
-  // Homing States
-  HOME_INWARD(0.0),
-  HOME_OUTWARD(DeployConfig.MAX_LENGTH), // Hardstop target is physical maximum (12.75")
-  UNHOMED(0.0);
+  FIX_DIFFERENTIAL_DESYNC(DeployConfig.MAX_LENGTH),
+
+  HOME_INWARD(5.0),
+  HOME_OUTWARD(DeployConfig.MAX_LENGTH),
+  UNHOMED(0);
 
   private final DoubleSubscriber tunableLength;
 
-  DeployState(double defaultLength) {
-    this.tunableLength = DogLog.tunable("Deploy/State/" + name(), defaultLength);
+  DeployState(double length) {
+
+    this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
   }
 
   public double getLength() {
