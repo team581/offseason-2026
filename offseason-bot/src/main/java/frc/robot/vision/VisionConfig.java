@@ -2,12 +2,17 @@ package frc.robot.vision;
 
 import com.google.common.collect.ImmutableList;
 import com.team581.util.AprilTags;
+import com.team581.vision.spot.CaptureSettings;
+import com.team581.vision.spot.PixelFormat;
+import com.team581.vision.spot.SpotCameraConfig;
+import com.team581.vision.spot.SpotCameraProfiles;
+import com.team581.vision.spot.SpotProtocol;
+import com.team581.vision.spot.data.*;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import frc.robot.vision.data.*;
 import java.util.HashSet;
 import java.util.List;
 

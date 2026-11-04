@@ -5,7 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.data.Offset.offset;
 
 import com.google.common.collect.ImmutableList;
-import frc.robot.vision.SpotCameraConfig.Control;
+import com.team581.vision.spot.CaptureSettings;
+import com.team581.vision.spot.PixelFormat;
+import com.team581.vision.spot.SpotCameraConfig;
+import com.team581.vision.spot.SpotCameraConfig.Control;
+import com.team581.vision.spot.SpotProtocol;
 import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 

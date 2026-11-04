@@ -2,7 +2,7 @@ package frc.robot.vision;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
-import frc.robot.vision.data.Profile;
+import com.team581.vision.spot.data.Profile;
 import java.nio.file.*;
 import java.util.*;
 

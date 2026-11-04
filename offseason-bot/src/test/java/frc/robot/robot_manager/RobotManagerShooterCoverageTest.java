@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
+import com.team581.vision.spot.TrustFactor;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.BooleanEntry;
@@ -17,7 +18,6 @@ import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.shooter_hood.ShooterHoodState;
 import frc.robot.swerve.SwerveState;
 import frc.robot.util.AimParameterUtil.AimingParameters;
-import frc.robot.vision.TrustFactor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

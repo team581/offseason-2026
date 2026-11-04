@@ -1,5 +1,6 @@
 package frc.robot.vision;
 
+import com.team581.vision.spot.VisionProcessor;
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 

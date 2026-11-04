@@ -14,7 +14,7 @@ This reference was checked on October 18, 2026. The Jetson was unreachable durin
 
 Edit `offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java` in offseason-2026, or `src/main/java/frc/robot/vision/VisionConfig.java` in basic-robot-tester. Settings compile with robot code and are sent to Spot automatically. USB-to-name bindings and intrinsic calibration remain on the Jetson.
 
-The example below is a template: replace the mount and verify the capture request and control names against the real device. Exposure and gain values are starting examples, not a calibrated preset. Import `SpotCameraConfig.Control` and `java.util.List` when using the short names below.
+The example below is a template: replace the mount and verify the capture request and control names against the real device. Exposure and gain values are starting examples, not a calibrated preset. The camera types live in the shared `com.team581.vision.spot` package. Import `com.team581.vision.spot.SpotCameraConfig.Control` and `java.util.List` when using the short names below.
 
 ```java
 public static final SpotCameraConfig FRONT = new SpotCameraConfig(
