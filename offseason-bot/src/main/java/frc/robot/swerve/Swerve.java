@@ -3,6 +3,7 @@ package frc.robot.swerve;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
@@ -22,6 +23,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -132,10 +134,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
-  /**
-   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
-   * overrides the angular velocity to instead snap to an angle.
-   */
+  private final SwerveRequest.SwerveDriveBrake xRequest =
+      new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
+
   private final HealthManager health;
 
   private double lastSimTime;
@@ -151,6 +152,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
   private boolean ableToBumpAssist = false;
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
+
+  private boolean ableToXSwerve = false;
 
   private boolean driverWantsSotm = false;
 
@@ -300,7 +304,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     switch (currentState) {
       case MANUAL, WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {
         var speeds = driveSource.getRequestedSpeeds();
-        if (ableToBumpAssist) {
+        if (ableToXSwerve) {
+          DogLog.timestamp("Swerve/XSwerveActive");
+          drivetrain.setControl(xRequest);
+        } else if (ableToBumpAssist) {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                   drivePerspectiveSnaps
@@ -367,6 +374,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
     DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
@@ -421,13 +429,22 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/StateTimestampSeconds", drivetrainState.Timestamp);
     DogLog.log("Swerve/StateAgeSeconds", Utils.getCurrentTimeSeconds() - drivetrainState.Timestamp);
 
+    var requestedSpeeds = driveSource.getRequestedSpeeds();
+    ableToXSwerve =
+        switch (getState()) {
+          case SCORE, FEED ->
+              X_SWERVE_DEBOUNCER.calculate(
+                  MathHelpers.getLinearVelocity(requestedSpeeds) < 1e-5
+                      && MathUtil.isNear(0, requestedSpeeds.omegaRadiansPerSecond, 1e-5));
+          default -> X_SWERVE_DEBOUNCER.calculate(false);
+        };
+
     ableToBumpAssist =
         DSOptions.USE_BUMP_ASSIST.get()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
 
-    var requestedSpeeds = driveSource.getRequestedSpeeds();
     var movingInScoreOrFeed =
         isMovingForSotm(requestedSpeeds, fieldRelativeSpeeds)
             && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
