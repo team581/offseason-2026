@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.team581.swerve.DriveSource;
 import com.team581.swerve.DriveSourceType;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.BooleanSubscriber;
@@ -16,6 +19,7 @@ import frc.robot.shooter.ShooterState;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.shooter_hood.ShooterHoodState;
 import frc.robot.swerve.SwerveState;
+import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.vision.TrustFactor;
 import org.junit.jupiter.api.BeforeAll;
@@ -537,6 +541,109 @@ final class RobotManagerShooterCoverageTest {
       set(swerve, "fieldRelativeSpeeds", previousSpeeds);
       set(swerve, "currentMaxLinearRate", previousLimit);
       manager.afterTransition(RobotState.IDLE);
+    }
+  }
+
+  @EnumSource(
+      value = RobotState.class,
+      names = {"FALLBACK_SCORE", "PREPARE_FALLBACK_SCORE"})
+  @ParameterizedTest
+  void towerFallbackPoseSurvivesLocalizationRecovery(RobotState state) throws Exception {
+    var manager = robot.robotManager;
+    var health = get(manager, "health");
+    var pit = (BooleanEntry) DSOptions.PIT_FUNCTIONALITY;
+    var vision = (BooleanEntry) DSOptions.USE_VISION;
+    boolean previousPit = pit.get();
+    boolean previousVision = vision.get();
+    var previousHealthy = get(health, "localizationHealthy");
+    var previousState = manager.getState();
+    var stateField = com.team581.util.state_machines.StateMachine.class.getDeclaredField("state");
+    stateField.setAccessible(true);
+    var previousPose = manager.localization.getPose();
+    var previousSotm = get(manager.swerve, "driverWantsSotm");
+    try {
+      pit.set(false);
+      vision.set(true);
+      set(manager.swerve, "driverWantsSotm", false);
+      stateField.set(manager, state);
+      var heading = Rotation2d.fromDegrees(25);
+      var towerPose = new Pose2d(FieldUtil.getTowerFallbackScorePoint().getTranslation(), heading);
+      var expected =
+          AimParameterUtil.getStaticScoringParameters(
+              towerPose,
+              manager.swerve.getFieldRelativeSpeeds(),
+              manager.swerve.getAppliedFieldRelativeSpeeds());
+
+      // Vision recovery must not replace the tower shot with an unrelated estimated location.
+      for (boolean healthy : new boolean[] {false, true, false, true}) {
+        set(health, "localizationHealthy", healthy);
+        set(manager.localization, "robotPose", new Pose2d(8.0, 1.0, heading));
+        manager.collectInputs();
+        assertThat(get(manager, "scoringParameters")).isEqualTo(expected);
+      }
+
+      // Leaving fallback restores normal aiming from the healthy localization pose.
+      stateField.set(manager, RobotState.PREPARE_SCORE);
+      manager.collectInputs();
+      assertThat(get(manager, "scoringParameters"))
+          .isEqualTo(
+              AimParameterUtil.getStaticScoringParameters(
+                  manager.localization.getPose(),
+                  manager.swerve.getFieldRelativeSpeeds(),
+                  manager.swerve.getAppliedFieldRelativeSpeeds()));
+    } finally {
+      pit.set(previousPit);
+      vision.set(previousVision);
+      set(health, "localizationHealthy", previousHealthy);
+      set(manager.localization, "robotPose", previousPose);
+      set(manager.swerve, "driverWantsSotm", previousSotm);
+      stateField.set(manager, previousState);
+    }
+  }
+
+  @EnumSource(
+      value = RobotState.class,
+      names = {"FALLBACK_SCORE", "FORCE_SCORE", "IDLE", "PREPARE_FALLBACK_SCORE", "WARMUP_SCORE"})
+  @ParameterizedTest
+  void visionDisabledTowerShotIgnoresSotmAndDriveVelocity(RobotState state) throws Exception {
+    var manager = robot.robotManager;
+    var vision = (BooleanEntry) DSOptions.USE_VISION;
+    boolean previousVision = vision.get();
+    var previousState = manager.getState();
+    var stateField = com.team581.util.state_machines.StateMachine.class.getDeclaredField("state");
+    stateField.setAccessible(true);
+    var previousPose = manager.localization.getPose();
+    var previousSotm = get(manager.swerve, "driverWantsSotm");
+    var previousSpeeds = get(manager.swerve, "fieldRelativeSpeeds");
+    var previousCommand = get(manager.swerve, "commandedFieldRelativeSpeeds");
+    try {
+      vision.set(false);
+      stateField.set(manager, state);
+      for (double headingDegrees : new double[] {25, 70}) {
+        var heading = Rotation2d.fromDegrees(headingDegrees);
+        set(manager.localization, "robotPose", new Pose2d(8.0, 1.0, heading));
+        var towerPose =
+            new Pose2d(FieldUtil.getTowerFallbackScorePoint().getTranslation(), heading);
+        var expected =
+            AimParameterUtil.getStaticScoringParameters(
+                towerPose, new ChassisSpeeds(), new ChassisSpeeds());
+        for (boolean sotm : new boolean[] {false, true}) {
+          set(manager.swerve, "driverWantsSotm", sotm);
+          set(manager.swerve, "fieldRelativeSpeeds", new ChassisSpeeds(0.1, -0.1, 0.05));
+          set(manager.swerve, "commandedFieldRelativeSpeeds", new ChassisSpeeds(1, 2, 0.3));
+          manager.collectInputs();
+          assertThat(get(manager, "scoringParameters"))
+              .as("%s heading=%s SOTM=%s with vision off", state, headingDegrees, sotm)
+              .isEqualTo(expected);
+        }
+      }
+    } finally {
+      vision.set(previousVision);
+      set(manager.localization, "robotPose", previousPose);
+      set(manager.swerve, "driverWantsSotm", previousSotm);
+      set(manager.swerve, "fieldRelativeSpeeds", previousSpeeds);
+      set(manager.swerve, "commandedFieldRelativeSpeeds", previousCommand);
+      stateField.set(manager, previousState);
     }
   }
 }
