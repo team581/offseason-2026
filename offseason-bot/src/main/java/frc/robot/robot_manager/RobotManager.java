@@ -501,7 +501,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         health.isLocalizationHealthy()
             ? robotPose
             : new Pose2d(
-                FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
+                FieldUtil.getTowerFallbackScorePoint().getTranslation(), robotPose.getRotation());
     scoringParameters =
         getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
             ? AimParameterUtil.getStaticScoringParameters(
