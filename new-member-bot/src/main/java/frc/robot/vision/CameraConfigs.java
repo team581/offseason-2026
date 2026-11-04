@@ -26,7 +26,7 @@ public class CameraConfigs {
 
   public static final CameraConfig LEFT =
       new CameraConfig(
-          LimelightModel.THREEG,
+          LimelightModel.FOUR,
           true,
           false,
           // Forward
@@ -44,7 +44,7 @@ public class CameraConfigs {
 
   public static final CameraConfig RIGHT =
       new CameraConfig(
-          LimelightModel.THREEG,
+          LimelightModel.FOUR,
           true,
           false,
           // Forward

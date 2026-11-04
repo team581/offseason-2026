@@ -2,7 +2,8 @@ package frc.robot.shooter;
 
 public enum ShooterState {
   IDLE,
-  HUB_SCORING,
-  FEEDING;
+  PREPARE_SCORE,
+  SCORE,
+  PREPARE_FEED,
+  FEED
 }
-// consists of 3 states

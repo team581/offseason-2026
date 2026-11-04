@@ -16,6 +16,7 @@ import com.team581.swerve.SwerveAssist;
 import com.team581.swerve.TrailblazerDriveSource;
 import com.team581.swerve.XboxControllerDriveSource;
 import com.team581.trailblazer.Trailblazer;
+import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -26,6 +27,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
@@ -34,12 +36,14 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
-// import frc.robot.config.RobotKind;
+import frc.robot.config.DSOptions;
+import frc.robot.config.FeatureFlags;
+import frc.robot.config.RobotKind;
 import frc.robot.generated.CompTunerConstants;
-import frc.robot.generated.CompTunerConstants.TunerSwerveDrivetrain;
-import frc.robot.generated.Config.DSOptions;
+import frc.robot.generated.PracticeTunerConstants;
+import frc.robot.generated.PracticeTunerConstants.TunerSwerveDrivetrain;
 import frc.robot.health.HealthManager;
-// import frc.robot.util.AimParameterUtil.AimingParameters;
+import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
@@ -89,6 +93,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private DriveSource driveSource;
 
+  /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
   private final SwerveRequest.FieldCentric driverPerspective =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
@@ -96,6 +101,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
 
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
   private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnaps =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
@@ -106,6 +115,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
+  /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
   private final SwerveRequest.FieldCentric fieldCentric =
       new SwerveRequest.FieldCentric()
           .withDeadband(0.07)
@@ -113,6 +123,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
+  /**
+   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
+   * overrides the angular velocity to instead snap to an angle.
+   */
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnaps =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
@@ -190,7 +204,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits.clone()
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
                 .withSupplyCurrentLimit(supplyCurrentLimit)
                 .withSupplyCurrentLimitEnable(true));
     drivetrain
@@ -198,7 +215,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits.clone()
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.FrontRight.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
                 .withSupplyCurrentLimit(supplyCurrentLimit)
                 .withSupplyCurrentLimitEnable(true));
     drivetrain
@@ -206,7 +226,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits.clone()
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.BackLeft.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
                 .withSupplyCurrentLimit(supplyCurrentLimit)
                 .withSupplyCurrentLimitEnable(true));
 
@@ -215,7 +238,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         .getDriveMotor()
         .getConfigurator()
         .apply(
-            CompTunerConstants.FrontLeft.DriveMotorInitialConfigs.CurrentLimits.clone()
+            (RobotKind.IS_COMP_BOT
+                    ? CompTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits
+                    : PracticeTunerConstants.BackRight.DriveMotorInitialConfigs.CurrentLimits)
+                .clone()
                 .withSupplyCurrentLimit(supplyCurrentLimit)
                 .withSupplyCurrentLimitEnable(true));
   }
@@ -294,14 +320,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return driverWantsSotm;
   }
 
-  // public void feedRequest(AimingParameters feedingParameters) {
-  //   setFeedingAngle(feedingParameters.goalAngle());
-  //   feedingTolerance =
-  //       MathUtil.clamp(
-  //           feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-  //   feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
-  //   setStateFromRequest(SwerveState.FEED);
-  // }
+  public void feedRequest(AimingParameters feedingParameters) {
+    setFeedingAngle(feedingParameters.goalAngle());
+    feedingTolerance =
+        MathUtil.clamp(
+            feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.FEED);
+  }
 
   public SwerveDriveState getDriveState() {
     return drivetrainState;
@@ -334,14 +360,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.MANUAL);
   }
 
-  // public void scoreRequest(AimingParameters scoringParameters) {
-  //   setScoringAngle(scoringParameters.goalAngle());
-  //   scoringTolerance =
-  //       MathUtil.clamp(
-  //           scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-  //   scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
-  //   setStateFromRequest(SwerveState.SCORE);
-  // }
+  public void scoreRequest(AimingParameters scoringParameters) {
+    setScoringAngle(scoringParameters.goalAngle());
+    scoringTolerance =
+        MathUtil.clamp(
+            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.SCORE);
+  }
 
   /**
    * Set the {@link DriveSource} to use. For some states, this might be ignored (ex. a state where
@@ -362,23 +388,23 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     useLooseTolerance = value;
   }
 
-  // public void warmupFeedRequest(AimingParameters feedingParameters) {
-  //   setFeedingAngle(feedingParameters.goalAngle());
-  //   feedingTolerance =
-  //       MathUtil.clamp(
-  //           feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-  //   feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
-  //   setStateFromRequest(SwerveState.WARMUP_FEED);
-  // }
+  public void warmupFeedRequest(AimingParameters feedingParameters) {
+    setFeedingAngle(feedingParameters.goalAngle());
+    feedingTolerance =
+        MathUtil.clamp(
+            feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.WARMUP_FEED);
+  }
 
-  // public void warmupScoreRequest(AimingParameters scoringParameters) {
-  //   setScoringAngle(scoringParameters.goalAngle());
-  //   scoringTolerance =
-  //       MathUtil.clamp(
-  //           scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-  //   scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
-  //   setStateFromRequest(SwerveState.WARMUP_SCORE);
-  // }
+  public void warmupScoreRequest(AimingParameters scoringParameters) {
+    setScoringAngle(scoringParameters.goalAngle());
+    scoringTolerance =
+        MathUtil.clamp(
+            scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
+    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
+    setStateFromRequest(SwerveState.WARMUP_SCORE);
+  }
 
   @Override
   public void whileInState(SwerveState currentState) {
@@ -706,27 +732,27 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       default -> {}
     }
 
-    // Optional<Translation2d> closestObstacle =
-    //     FieldUtil.SNAPPING_OBSTACLES.closestPoint(drivetrainState.Pose.getTranslation());
-    // Translation2d centerOfRotation = Translation2d.kZero;
-    // if (FeatureFlag.DYNAMIC_CENTER_OF_ROTATION.getAsBoolean()
-    //     && closestObstacle.isPresent()
-    //     && targetRotation.isPresent()) {
-    //   if (drivetrainState.Pose.getTranslation().getDistance(closestObstacle.orElseThrow())
-    //       <= Units.feetToMeters(1.0) + 0.4) {
-    //     if (MathUtil.isNear(
-    //         0,
-    //         drivetrainState.Pose.getRotation().minus(targetRotation.orElseThrow()).getDegrees(),
-    //         DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES)) {
-    //       centerOfRotation =
-    //           closestObstacle
-    //               .orElseThrow()
-    //               .minus(drivetrainState.Pose.getTranslation())
-    //               .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
-    //     }
-    //   }
-    // }
-    // drivePerspectiveSnaps.withCenterOfRotation(centerOfRotation);
-    // fieldCentricSnaps.withCenterOfRotation(centerOfRotation);
+    Optional<Translation2d> closestObstacle =
+        FieldUtil.SNAPPING_OBSTACLES.closestPoint(drivetrainState.Pose.getTranslation());
+    Translation2d centerOfRotation = Translation2d.kZero;
+    if (FeatureFlags.DYNAMIC_CENTER_OF_ROTATION.getAsBoolean()
+        && closestObstacle.isPresent()
+        && targetRotation.isPresent()) {
+      if (drivetrainState.Pose.getTranslation().getDistance(closestObstacle.orElseThrow())
+          <= Units.feetToMeters(1.0) + 0.4) {
+        if (MathUtil.isNear(
+            0,
+            drivetrainState.Pose.getRotation().minus(targetRotation.orElseThrow()).getDegrees(),
+            DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES)) {
+          centerOfRotation =
+              closestObstacle
+                  .orElseThrow()
+                  .minus(drivetrainState.Pose.getTranslation())
+                  .rotateBy(drivetrainState.Pose.getRotation().unaryMinus());
+        }
+      }
+    }
+    drivePerspectiveSnaps.withCenterOfRotation(centerOfRotation);
+    fieldCentricSnaps.withCenterOfRotation(centerOfRotation);
   }
 }
