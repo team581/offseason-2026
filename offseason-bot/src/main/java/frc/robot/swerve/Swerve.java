@@ -84,9 +84,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   static boolean isMovingForSotm(ChassisSpeeds requested, ChassisSpeeds measured) {
     return MathHelpers.getLinearVelocity(requested) > 1e-6
-        || Math.abs(requested.omegaRadiansPerSecond) > 1e-6
+        || !MathUtil.isNear(0, requested.omegaRadiansPerSecond, 1e-6)
         || MathHelpers.getLinearVelocity(measured) > 0.05
-        || Math.abs(measured.omegaRadiansPerSecond) > 0.05;
+        || !MathUtil.isNear(0, measured.omegaRadiansPerSecond, 0.05);
   }
 
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(1);
