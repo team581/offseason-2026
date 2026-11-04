@@ -172,9 +172,9 @@ final class AimParameterUtilTest {
     var rotatingTurretSpeeds =
         TurretCalculator.getTurretChassisSpeeds(
             rotatingSpeeds, robotPose.getRotation().getDegrees());
-    var predictedTurretLateralVelocity =
-        AimParameterUtil.SCORING_SOTM.getPredictedVelocity(
-            rotatingTurretSpeeds.vyMetersPerSecond, rotatingSpeeds.vyMetersPerSecond);
+    // var predictedTurretLateralVelocity =
+    //     AimParameterUtil.SCORING_SOTM.getPredictedVelocity(
+    //         rotatingTurretSpeeds.vyMetersPerSecond, rotatingSpeeds.vyMetersPerSecond);
     assertThat(lateral.turretFeedForwardRadians()).isNegative();
     assertThat(rotating.turretFeedForwardRadians()).isNegative();
 
