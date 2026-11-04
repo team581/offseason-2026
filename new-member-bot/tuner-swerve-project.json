@@ -12,7 +12,7 @@
       "CANbus": "01BC92D93353385320202034131203FF",
       "SelectedMotorType": null,
       "Name": "Pigeon 2.0",
-      "CANbusFriendly": "9981CANivore"
+      "CANbusFriendly": "581CANivore"
     },
     "SwerveModuleConfiguration": {
       "DriveRatio": 7.673684210526316,
@@ -48,7 +48,7 @@
           "Name": "WCP Kraken x60"
         },
         "Name": "FrontLeftDrive",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
       "EncoderOffset": -0.220458984375,
@@ -67,7 +67,7 @@
           "Name": "WCP Kraken x44"
         },
         "Name": "FrontLeftSteer",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "Encoder": {
         "Model": "CANCoder vers. H",
@@ -75,7 +75,7 @@
         "CANbus": "01BC92D93353385320202034131203FF",
         "SelectedMotorType": null,
         "Name": "FrontLeft CANcoder",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "SteerMotorSelectionState": 1,
       "ValidatedDriveId": 3
@@ -97,7 +97,7 @@
           "Name": "WCP Kraken x60"
         },
         "Name": "FrontRightDrive",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
       "EncoderOffset": 0.112060546875,
@@ -116,7 +116,7 @@
           "Name": "WCP Kraken x44"
         },
         "Name": "FrontRightSteer",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "Encoder": {
         "Model": "CANCoder vers. H",
@@ -124,7 +124,7 @@
         "CANbus": "01BC92D93353385320202034131203FF",
         "SelectedMotorType": null,
         "Name": "FrontRight CANcoder",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "SteerMotorSelectionState": 1,
       "ValidatedDriveId": 5
@@ -146,7 +146,7 @@
           "Name": "WCP Kraken x60"
         },
         "Name": "BackLeftDrive",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
       "EncoderOffset": -0.376220703125,
@@ -165,7 +165,7 @@
           "Name": "WCP Kraken x44"
         },
         "Name": "BackLeftSteer",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "Encoder": {
         "Model": "CANCoder",
@@ -173,7 +173,7 @@
         "CANbus": "01BC92D93353385320202034131203FF",
         "SelectedMotorType": null,
         "Name": "BackLeft CANcoder",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "SteerMotorSelectionState": 1,
       "ValidatedDriveId": 7
@@ -195,7 +195,7 @@
           "Name": "WCP Kraken x44"
         },
         "Name": "BackRightDrive",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "IsModuleValidationComplete": true,
       "EncoderOffset": -0.474853515625,
@@ -214,7 +214,7 @@
           "Name": "WCP Kraken x60"
         },
         "Name": "BackRightSteer",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "Encoder": {
         "Model": "CANCoder vers. H",
@@ -222,7 +222,7 @@
         "CANbus": "01BC92D93353385320202034131203FF",
         "SelectedMotorType": null,
         "Name": "BackRight CANcoder",
-        "CANbusFriendly": "9981CANivore"
+        "CANbusFriendly": "581CANivore"
       },
       "SteerMotorSelectionState": 1,
       "ValidatedDriveId": 9
