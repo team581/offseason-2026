@@ -5,7 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.data.Offset.offset;
 
 import com.google.common.collect.ImmutableList;
-import frc.robot.vision.SpotCameraConfig.Control;
+import com.team581.vision.spot.CaptureSettings;
+import com.team581.vision.spot.PixelFormat;
+import com.team581.vision.spot.SpotCameraConfig;
+import com.team581.vision.spot.SpotCameraConfig.Control;
+import com.team581.vision.spot.SpotProtocol;
 import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 
@@ -44,14 +48,14 @@ final class VisionConfigTest {
             controls);
     controls.clear();
     var profile = VisionConfig.profile(ImmutableList.of(camera));
-    var definition = profile.getCameras(0);
-    assertThat(definition.getName()).isEqualTo("front");
-    assertThat(definition.getRequired()).isTrue();
-    assertThat(definition.getImageRotationDeg()).isEqualTo(180);
-    assertThat(definition.getAllowedModesCount()).isEqualTo(1);
-    assertThat(definition.getControls(0).getAllowOverride()).isFalse();
-    assertThat(definition.getControls(1).getAllowOverride()).isTrue();
-    assertThat(SpotProtocol.pose(definition.getRobotToCamera()).getRotation().getZ())
+    var definition = profile.cameras().get(0);
+    assertThat(definition.name()).isEqualTo("front");
+    assertThat(definition.required()).isTrue();
+    assertThat(definition.imageRotationDeg()).isEqualTo(180);
+    assertThat(definition.allowedModes()).hasSize(1);
+    assertThat(definition.controls().get(0).allowOverride()).isFalse();
+    assertThat(definition.controls().get(1).allowOverride()).isTrue();
+    assertThat(SpotProtocol.pose(definition.robotToCamera()).getRotation().getZ())
         .isCloseTo(Math.PI / 2, offset(1e-12));
     assertThatThrownBy(() -> VisionConfig.profile(ImmutableList.of(camera, camera)))
         .isInstanceOf(IllegalArgumentException.class);
@@ -62,14 +66,13 @@ final class VisionConfigTest {
   @Test
   void threeCamerasAreRegisteredWithFusionEnabled() {
     var profile = VisionConfig.profile();
-    assertThat(profile.getCamerasList())
-        .extracting(camera -> camera.getName())
+    assertThat(profile.cameras())
+        .extracting(camera -> camera.name())
         .containsExactly("left", "right", "back");
-    assertThat(profile.getCamerasList())
-        .allMatch(camera -> camera.getEnabled() && camera.getRequired());
+    assertThat(profile.cameras()).allMatch(camera -> camera.enabled() && camera.required());
     assertThat(VisionConfig.mounts()).hasSize(3);
-    assertThat(profile.getFusionEnabled()).isTrue();
-    assertThat(profile.getHeadingEnabled()).isFalse();
-    assertThat(profile.getField().getTagsCount()).isEqualTo(32);
+    assertThat(profile.fusionEnabled()).isTrue();
+    assertThat(profile.headingEnabled()).isFalse();
+    assertThat(profile.field().tags()).hasSize(32);
   }
 }

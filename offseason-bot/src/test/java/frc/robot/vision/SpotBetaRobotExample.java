@@ -1,8 +1,10 @@
 package frc.robot.vision;
 
+import com.team581.vision.spot.SpotCameraProfiles;
+import com.team581.vision.spot.SpotVisionIO;
+import com.team581.vision.spot.data.*;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import frc.robot.vision.generated.SpotProtos;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -14,7 +16,7 @@ final class SpotBetaRobotExample {
   static Vision create(
       NetworkTableInstance nt,
       String session,
-      SpotProtos.Profile profile,
+      Profile profile,
       List<SpotCameraProfiles.Camera> mounts,
       Vision.CaptureSource capture,
       DoubleSupplier clock,

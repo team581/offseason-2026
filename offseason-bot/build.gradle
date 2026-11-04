@@ -33,7 +33,6 @@ def includeDesktopSupport = false
 
 dependencies {
 	implementation project(':shared')
-	implementation 'com.google.protobuf:protobuf-java:4.36.2'
 
 	annotationProcessor wpi.java.deps.wpilibAnnotations()
 	implementation wpi.java.deps.wpilib()
@@ -132,7 +131,7 @@ gversion {
 	wpi.java.configureTestTasks(headlessTask.get())
 }
 
-// Offline camera preview; intentionally independent of build/install tasks.
+// Export compiled camera geometry for the VS Code preview.
 dependencies { implementation 'com.google.code.gson:gson:2.15.0' }
 tasks.register('exportSpotCameraPreview', JavaExec) {
 	dependsOn tasks.named('classes')
@@ -140,4 +139,3 @@ tasks.register('exportSpotCameraPreview', JavaExec) {
 	mainClass = 'frc.robot.vision.SpotCameraPreviewExport'
 	args layout.buildDirectory.file('spot-camera-preview/profile.json').get().asFile.absolutePath
 }
-apply from: file('camera-preview.gradle')

@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonParser;
+import com.team581.vision.spot.CaptureSettings;
+import com.team581.vision.spot.PixelFormat;
+import com.team581.vision.spot.SpotCameraConfig;
 import java.nio.file.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

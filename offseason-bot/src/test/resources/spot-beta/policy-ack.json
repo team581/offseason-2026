@@ -1,0 +1,22 @@
+{
+  "cameras": [{
+    "optical_signature": "fixed-lens-1",
+    "mode_id": "640x480",
+    "calibration_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "camera_name": "front",
+    "calibration_valid": true,
+    "binding_generation": 1,
+    "binding_id": "usb-a"
+  }],
+  "tag_selection_supported": true,
+  "sync_epoch": 2,
+  "applied": true,
+  "robot_id": "test-robot",
+  "robot_session": "robot-1",
+  "manifest_hash": "bced017966159f365a78d64c19f625b6e166021029025f5c728ff55b79f71bcd",
+  "service_session": "service-1",
+  "error": "",
+  "connection_epoch": 1,
+  "runtime_generation": "generation-1",
+  "field_hash": "3ada2326f1d7282a845d4e3dc23f77ea1d2385fadcab10ec01e651d6fcaa30e3"
+}

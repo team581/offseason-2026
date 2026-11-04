@@ -11,6 +11,8 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+import com.team581.vision.spot.SpotVisionIO;
+import com.team581.vision.spot.VisionProcessor.CaptureState;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -37,10 +39,8 @@ import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
 import frc.robot.testing.TestManager;
 import frc.robot.turret.Turret;
-import frc.robot.vision.SpotVisionIO;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionConfig;
-import frc.robot.vision.VisionProcessor.CaptureState;
 import java.util.Optional;
 
 public class Robot extends Base581Robot {
