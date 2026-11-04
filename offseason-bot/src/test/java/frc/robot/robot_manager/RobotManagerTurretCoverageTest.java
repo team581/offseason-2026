@@ -15,9 +15,27 @@ import frc.robot.turret.TurretState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 final class RobotManagerTurretCoverageTest {
   private static Robot robot;
+
+  private static TurretState expectedTurretState(RobotState state) {
+    return switch (state) {
+      case IDLE, UNJAM -> TurretState.IDLE_SCORE;
+      case PREPARE_SCORE,
+          SCORE,
+          PREPARE_FORCE_SCORE,
+          FORCE_SCORE,
+          PREPARE_FALLBACK_SCORE,
+          FALLBACK_SCORE,
+          WARMUP_SCORE ->
+          TurretState.SCORE;
+      case PREPARE_FEED, FEED, PREPARE_FALLBACK_FEED, FALLBACK_FEED, WARMUP_FEED ->
+          TurretState.FEED;
+    };
+  }
 
   @BeforeAll
   static void initializeHal() {
@@ -31,7 +49,29 @@ final class RobotManagerTurretCoverageTest {
   }
 
   private RobotManager robotManager;
+
   private Turret turret;
+
+  @EnumSource(RobotState.class)
+  @ParameterizedTest
+  void entryAndHeldStateReplaceStaleTurretRequest(RobotState state) {
+    robotManager.localization.resetPose(new Pose2d(2.0, 4.0, Rotation2d.kZero));
+    robotManager.beforePeriodic();
+    var expected = expectedTurretState(state);
+    for (boolean entry : new boolean[] {true, false}) {
+      for (var stale : TurretState.values()) {
+        turret.setState(stale);
+        if (entry) {
+          robotManager.afterTransition(state);
+        } else {
+          robotManager.whileInState(state);
+        }
+        assertThat(turret.getState())
+            .as("%s entry=%s stale=%s", state, entry, stale)
+            .isEqualTo(expected);
+      }
+    }
+  }
 
   @Test
   void feedingStatesCommandTurretFeed() {

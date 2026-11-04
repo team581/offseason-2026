@@ -439,7 +439,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         smartHoodPrepareFallbackScoreRequest();
         turret.scoreRequest(scoringParameters);
         swerve.scoreRequest();
-        powerManager.scoringRequest();
+        smartScoringPowerManagerRequest();
       }
       case FALLBACK_SCORE -> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
@@ -448,7 +448,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
         swerve.scoreRequest();
-        powerManager.scoringRequest();
+        smartScoringPowerManagerRequest();
       }
       case UNJAM -> {
         hopperManager.unjamRequest();

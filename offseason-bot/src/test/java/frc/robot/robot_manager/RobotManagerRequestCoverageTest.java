@@ -2,11 +2,15 @@ package frc.robot.robot_manager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.team581.util.FieldUtil;
+import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.Robot;
+import frc.robot.hub_activity.HubActivity;
 import frc.robot.power_manager.PowerManager;
 import frc.robot.power_manager.PowerManagerState;
 import frc.robot.robot_manager.hopper_manager.HopperManager;
@@ -15,9 +19,40 @@ import frc.robot.shooter.ShooterState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 final class RobotManagerRequestCoverageTest {
   private static Robot robot;
+
+  private static void assertExpectedPowerManagerState(RobotState state, PowerManagerState actual) {
+    switch (state) {
+      case IDLE, UNJAM -> assertThat(actual).isEqualTo(PowerManagerState.IDLE);
+      case PREPARE_SCORE, SCORE, PREPARE_FALLBACK_SCORE, FALLBACK_SCORE, WARMUP_SCORE ->
+          assertThat(actual).isEqualTo(PowerManagerState.SCORING);
+      case PREPARE_FORCE_SCORE, FORCE_SCORE ->
+          assertThat(actual).isEqualTo(PowerManagerState.SCORING);
+      case PREPARE_FEED, FEED, PREPARE_FALLBACK_FEED, FALLBACK_FEED, WARMUP_FEED ->
+          assertThat(actual).isIn(PowerManagerState.FEEDING, PowerManagerState.FEEDING_FAR);
+    }
+  }
+
+  private static HopperState expectedHopperState(RobotState state) {
+    return switch (state) {
+      case IDLE,
+          WARMUP_SCORE,
+          WARMUP_FEED,
+          PREPARE_SCORE,
+          PREPARE_FORCE_SCORE,
+          PREPARE_FALLBACK_SCORE,
+          PREPARE_FEED,
+          PREPARE_FALLBACK_FEED ->
+          HopperState.IDLE_DEPLOYED;
+      case SCORE, FORCE_SCORE, FALLBACK_SCORE -> HopperState.SCORE;
+      case FEED, FALLBACK_FEED -> HopperState.FEED;
+      case UNJAM -> HopperState.UNJAMMING;
+    };
+  }
 
   @BeforeAll
   static void initializeHal() {
@@ -30,8 +65,12 @@ final class RobotManagerRequestCoverageTest {
   }
 
   private RobotManager robotManager;
+
   private HopperManager hopperManager;
+
   private PowerManager powerManager;
+
+  private HubActivity hubActivity;
 
   @Test
   void afterTransitionImmediatelyCommandsHopperManager() {
@@ -59,6 +98,44 @@ final class RobotManagerRequestCoverageTest {
     robotManager.warmupFeedRequest();
     assertThat(robotManager.getState()).isEqualTo(RobotState.WARMUP_FEED);
     assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
+  }
+
+  @EnumSource(RobotState.class)
+  @ParameterizedTest
+  void entryAndHeldStateReplaceStaleHopperManagerRequest(RobotState state) {
+    var expected = expectedHopperState(state);
+    for (boolean entry : new boolean[] {true, false}) {
+      // Set a stale state on hopper
+      if (expected == HopperState.IDLE_DEPLOYED) {
+        hopperManager.unjamRequest();
+      } else {
+        hopperManager.idleRequest();
+      }
+      if (entry) {
+        robotManager.afterTransition(state);
+      } else {
+        robotManager.whileInState(state);
+      }
+      assertThat(hopperManager.getState()).as("%s entry=%s", state, entry).isEqualTo(expected);
+    }
+  }
+
+  @EnumSource(RobotState.class)
+  @ParameterizedTest
+  void entryAndHeldStateReplaceStalePowerManagerRequest(RobotState state) {
+    for (boolean entry : new boolean[] {true, false}) {
+      // In IDLE whileInState, powerManager is intentionally excluded to preserve overrides
+      if (!entry && state == RobotState.IDLE) {
+        continue;
+      }
+      powerManager.prioritizeIntakeRequest();
+      if (entry) {
+        robotManager.afterTransition(state);
+      } else {
+        robotManager.whileInState(state);
+      }
+      assertExpectedPowerManagerState(state, powerManager.getState());
+    }
   }
 
   @Test
@@ -96,11 +173,64 @@ final class RobotManagerRequestCoverageTest {
         .isEqualTo(RobotState.PREPARE_FALLBACK_FEED);
   }
 
+  @EnumSource(
+      value = RobotState.class,
+      names = {
+        "PREPARE_SCORE",
+        "SCORE",
+        "PREPARE_FALLBACK_SCORE",
+        "FALLBACK_SCORE",
+        "WARMUP_SCORE"
+      })
+  @ParameterizedTest
+  void scoringStatesSelectExactPowerModeOnEntryAndWhileHeld(RobotState state) throws Exception {
+    var beastModeField = HubActivity.class.getDeclaredField("shouldBeastMode");
+    beastModeField.setAccessible(true);
+    try {
+      for (var expected :
+          new PowerManagerState[] {
+            PowerManagerState.SCORING, PowerManagerState.SCORING_FAR, PowerManagerState.BEAST_MODE
+          }) {
+        // Beast mode must take priority even when the shot also qualifies as far.
+        double distance = expected == PowerManagerState.SCORING ? 2.0 : 6.0;
+        robotManager.localization.resetPose(
+            new Pose2d(
+                FieldUtil.HUB_POSE.getTranslation().plus(new Translation2d(distance, 0.0)),
+                Rotation2d.kZero));
+        robotManager.beforePeriodic();
+        beastModeField.setBoolean(hubActivity, expected == PowerManagerState.BEAST_MODE);
+
+        for (boolean entry : new boolean[] {true, false}) {
+          powerManager.prioritizeIntakeRequest();
+          if (entry) {
+            robotManager.afterTransition(state);
+          } else {
+            robotManager.whileInState(state);
+          }
+          assertThat(powerManager.getState())
+              .as("%s entry=%s expected=%s", state, entry, expected)
+              .isEqualTo(expected);
+        }
+      }
+    } finally {
+      beastModeField.setBoolean(hubActivity, false);
+    }
+  }
+
   @BeforeEach
   void setUp() throws Exception {
+    DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
+    DriverStationSim.notifyNewData();
     robotManager = robot.robotManager;
     hopperManager = robotManager.hopperManager;
     powerManager = robotManager.powerManager;
+
+    var hubActivityField = RobotManager.class.getDeclaredField("hubActivity");
+    hubActivityField.setAccessible(true);
+    hubActivity = (HubActivity) hubActivityField.get(robotManager);
+    var beastModeField = HubActivity.class.getDeclaredField("shouldBeastMode");
+    beastModeField.setAccessible(true);
+    beastModeField.setBoolean(hubActivity, false);
 
     // Mark localization healthy so robot states resolve consistently
     var healthField = Robot.class.getDeclaredField("health");
