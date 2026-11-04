@@ -130,10 +130,17 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   }
 
   public void log() {
+    log(true);
+  }
+
+  public void log(boolean logVisualization) {
     DogLog.log("Imu/BumpCrossing/State", getState());
     DogLog.log("Imu/BumpCrossing/CrossingDirection", crossingDirection);
-    DogLog.log(
-        "Imu/BumpCrossing/RobotRelativeImuState", new Pose3d(0.0, 0.0, 0.0, robotRelativeImuState));
+    if (logVisualization) {
+      DogLog.log(
+          "Imu/BumpCrossing/RobotRelativeImuState",
+          new Pose3d(0.0, 0.0, 0.0, robotRelativeImuState));
+    }
     DogLog.log("Imu/BumpCrossing/DirectionalTilt", directionalTilt);
     DogLog.log("Imu/BumpCrossing/IsFlat", isFlat);
     DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);

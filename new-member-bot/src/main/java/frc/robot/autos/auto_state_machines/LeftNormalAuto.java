@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.NormalAutoState;
 import frc.robot.config.FeatureFlags;
@@ -317,10 +316,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
   private int storedStuckOnBallIndex = 0;
   private boolean returningFromStuckOnBall = false;
 
-  // FOR SIM ONLY!!!
-  private boolean firstStuckOnBall = false;
-  private boolean secondStuckOnBall = false;
-
   public LeftNormalAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(NormalAutoState.INTAKE_FIRST_CYCLE, robotManager, trailblazer);
 
@@ -429,8 +424,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   @Override
   protected NormalAutoState getNextState(NormalAutoState currentState) {
-    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
-        || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
+    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()) {
       switch (currentState) {
         case INTAKE_FIRST_CYCLE, INTAKE_THIRD_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
@@ -538,13 +532,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
     switch (newState) {
       case STUCK_ON_BALL_RECOVERY -> {
         trailblazer.setActiveSegment(stuckOnBall);
-
-        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
-            && timeout(1.0)
-            && RobotBase.isSimulation()) {
-          robotManager.localization.imu.setPitch(0.0);
-          robotManager.localization.imu.setRoll(0.0);
-        }
       }
       case INTAKE_FIRST_CYCLE -> {
         trailblazer.setActiveSegment(intakeFirstCycle);
@@ -554,37 +541,11 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         } else {
           robotManager.powerManager.firstAutoSegmentRequest();
         }
-
-        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
-            && timeout(1.5)
-            && RobotBase.isSimulation()
-            && !firstStuckOnBall) {
-          firstStuckOnBall = true;
-          robotManager.localization.imu.setPitch(-30.0);
-        }
       }
       case CROSS_BUMP_TO_SHOOT_1 -> {
         trailblazer.setActiveSegment(crossBumpToShootOne);
         robotManager.cancelIntakeRequest();
         robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
-        if (RobotBase.isSimulation()) {
-          if (timeout(0.2)) {
-            robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
-          }
-          if (timeout(0.4)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-          if (timeout(0.6)) {
-            robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
-          }
-          if (timeout(.7)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-        }
       }
       case SHOOT_1 -> {
         trailblazer.setActiveSegment(shootOne);
@@ -600,25 +561,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case CROSS_BUMP_TO_SHOOT_2 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
         robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
-
-        if (RobotBase.isSimulation()) {
-          if (timeout(0.2)) {
-            robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
-          }
-          if (timeout(0.4)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-          if (timeout(0.6)) {
-            robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
-          }
-          if (timeout(.7)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-        }
       }
 
       case SHOOT_2 -> {
@@ -635,25 +577,6 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       case CROSS_BUMP_TO_SHOOT_3 -> {
         trailblazer.setActiveSegment(crossBumpToShootTwo);
         robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
-
-        if (RobotBase.isSimulation()) {
-          if (timeout(0.2)) {
-            robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
-          }
-          if (timeout(0.4)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-          if (timeout(0.6)) {
-            robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
-          }
-          if (timeout(.7)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-        }
       }
       case SHOOT_3 -> {
         trailblazer.setActiveSegment(shootThree);

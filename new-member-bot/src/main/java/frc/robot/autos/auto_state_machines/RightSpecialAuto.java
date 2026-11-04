@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.SpecialAutoState;
@@ -139,9 +138,6 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
   private int storedStuckOnBallIndex = 0;
   private boolean returningFromStuckOnBall = false;
 
-  // FOR SIM ONLY!!!
-  private boolean firstStuckOnBall = false;
-
   public RightSpecialAuto(RobotManager robotManager, Trailblazer trailblazer) {
     super(SpecialAutoState.STARTING_WITH_DELAY, robotManager, trailblazer);
 
@@ -220,8 +216,7 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
 
   @Override
   protected SpecialAutoState getNextState(SpecialAutoState currentState) {
-    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
-        || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
+    if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()) {
       switch (currentState) {
         case STARTING_WITH_DELAY, INTAKE_ACROSS_MIDLINE, DEFAULT_SECOND_INTAKE_SEGMENT -> {
           if (StuckOnBallRecovery.stuckOnBall(
@@ -301,45 +296,16 @@ public class RightSpecialAuto extends BaseImperativeAuto<SpecialAutoState> {
     switch (newState) {
       case STUCK_ON_BALL_RECOVERY -> {
         trailblazer.setActiveSegment(stuckOnBall);
-
-        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
-            && timeout(1.0)
-            && RobotBase.isSimulation()) {
-          robotManager.localization.imu.setPitch(0.0);
-          robotManager.localization.imu.setRoll(0.0);
-        }
       }
       case STARTING_WITH_DELAY -> {}
       case INTAKE_ACROSS_MIDLINE -> {
         trailblazer.setActiveSegment(intakeAcrossMidline);
         robotManager.intakeAutoRequest();
         robotManager.powerManager.firstAutoSegmentRequest();
-
-        if (FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()
-            && timeout(1.5)
-            && RobotBase.isSimulation()
-            && !firstStuckOnBall) {
-          firstStuckOnBall = true;
-          robotManager.localization.imu.setPitch(-30.0);
-        }
       }
       case DRIVE_BACK_1 -> {
         trailblazer.setActiveSegment(driveBackAndShootOne);
         robotManager.cancelIntakeRequest();
-        if (RobotBase.isSimulation()) {
-          if (timeout(0.5)) {
-            robotManager.localization.imu.setPitch(-7.5);
-            robotManager.localization.imu.setRoll(-7.5);
-          }
-          if (timeout(0.7)) {
-            robotManager.localization.imu.setPitch(7.5);
-            robotManager.localization.imu.setRoll(7.5);
-          }
-          if (timeout(1.0)) {
-            robotManager.localization.imu.setPitch(0.0);
-            robotManager.localization.imu.setRoll(0.0);
-          }
-        }
       }
       case SHOOT_1 -> robotManager.prepareScoreRequest();
       case DEFAULT_SECOND_INTAKE_SEGMENT -> {

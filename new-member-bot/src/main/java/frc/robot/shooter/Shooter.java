@@ -4,10 +4,8 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
-import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -229,21 +227,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void setTurboMode(boolean useTurboMode) {
     turboMode = useTurboMode;
-  }
-
-  @Override
-  public void simulationPeriodic() {
-    var shooterSimulation =
-        SimKit.velocityMechanism(
-            "shooter",
-            mechanism ->
-                mechanism
-                    .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)
-                    .addMotor(bottomLeftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(bottomRightMotor, ChassisReference.CounterClockwise_Positive));
-
-    shooterSimulation.update();
   }
 
   public void updateHopperState(double feederCurrent, boolean ballsInTower) {

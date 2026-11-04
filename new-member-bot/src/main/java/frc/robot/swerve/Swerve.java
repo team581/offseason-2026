@@ -1,6 +1,5 @@
 package frc.robot.swerve;
 
-import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
@@ -33,8 +32,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
@@ -46,7 +43,6 @@ import frc.robot.health.HealthManager;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Optional;
-import org.jspecify.annotations.Nullable;
 
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
@@ -73,7 +69,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
-  private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
   public static final PhoenixPIDController ORIGINAL_HEADING_PID =
       new PhoenixPIDController(15, 0, 0);
@@ -142,9 +137,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
 
   private final HealthManager health;
-  private double lastSimTime;
 
-  private @Nullable Notifier simNotifier = null;
   private SwerveDriveState drivetrainState = new SwerveDriveState();
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
 
@@ -180,10 +173,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     super(SubsystemPriority.SWERVE, SwerveState.MANUAL);
     this.drivetrain = drivetrain;
     this.health = health;
-
-    if (Utils.isSimulation()) {
-      startSimThread();
-    }
 
     drivetrain.setStateStdDevs(
         new Matrix<>(VecBuilder.fill(TRANSLATION_STD_DEV, TRANSLATION_STD_DEV, 0.002)));
@@ -610,22 +599,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       scoringAngle = angleDegrees;
       scoringAngleRotation = Rotation2d.fromDegrees(angleDegrees);
     }
-  }
-
-  private void startSimThread() {
-    lastSimTime = Utils.getCurrentTimeSeconds();
-
-    /* Run simulation at a faster rate so PID gains behave more reasonably */
-    simNotifier =
-        new Notifier(() -> {
-          double currentTime = Utils.getCurrentTimeSeconds();
-          double deltaTime = currentTime - lastSimTime;
-          lastSimTime = currentTime;
-
-          /* use the measured time delta, get battery voltage from WPILib */
-          drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
-        });
-    simNotifier.startPeriodic(SIM_LOOP_PERIOD);
   }
 
   private SwerveRequest.FieldCentricFacingAngle withFieldRelativeTargetDirection(

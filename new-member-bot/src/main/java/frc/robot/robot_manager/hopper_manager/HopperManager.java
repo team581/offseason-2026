@@ -2,7 +2,6 @@ package frc.robot.robot_manager.hopper_manager;
 
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -62,15 +61,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   public boolean isShooting() {
-    // You need to actually be in a shooting state
-    if (getState() != HopperState.SCORE
-        && getState() != HopperState.SCORE_AND_INTAKE
-        && getState() != HopperState.FEED
-        && getState() != HopperState.FEED_AND_INTAKE) {
-      return true;
-    }
-
-    return isShootingStrict();
+    return true;
   }
 
   public void scoreRequest() {
@@ -101,13 +92,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   public void unjamRequest() {
     setState(HopperState.UNJAMMING);
-  }
-
-  private boolean isShootingStrict() {
-    if (RobotBase.isSimulation()) {
-      return !timeout(1.5);
-    }
-    return true;
   }
 
   private HopperState resolveFeedState() {

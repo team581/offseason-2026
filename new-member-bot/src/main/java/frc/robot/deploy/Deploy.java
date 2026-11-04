@@ -6,11 +6,8 @@ import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
-import com.ctre.phoenix6.sim.ChassisReference;
-import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
-import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -18,7 +15,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
@@ -183,31 +179,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
-  @Override
-  public void simulationPeriodic() {
-    var deploySimulation =
-        SimKit.positionMechanism(
-            "Deploy",
-            mechanism ->
-                mechanism
-                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(DeployConfig.MIN_LENGTH)
-                    .withMaxPosition(DeployConfig.MAX_LENGTH));
-
-    if (getState() == DeployState.HOME_INWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
-      setStateFromRequest(DeployState.INTAKE);
-    }
-
-    if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
-      setStateFromRequest(DeployState.INTAKE);
-    }
-
-    deploySimulation.update(clamp(getState().getLength()));
-  }
-
   public void stowRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
@@ -265,13 +236,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   protected void collectInputs() {
     leftMotorPosition = leftPositionSignal.getValueAsDouble();
     rightMotorPosition = rightPositionSignal.getValueAsDouble();
-    if (RobotBase.isSimulation()) {
-      // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
-      // so derive it from individual motor positions instead.
-      differentialMechanismPosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
-    } else {
-      differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble();
-    }
+    differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble();
     leftStatorCurrent = leftStatorCurrentSignal.getValueAsDouble();
     rightStatorCurrent = rightStatorCurrentSignal.getValueAsDouble();
   }

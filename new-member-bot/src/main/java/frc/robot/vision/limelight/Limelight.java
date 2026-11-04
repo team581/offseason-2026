@@ -21,7 +21,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.Locale;
@@ -118,9 +117,6 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   }
 
   public OptionalDouble getLimelightRotation() {
-    if (RobotBase.isSimulation()) {
-      return OptionalDouble.of(90 - (Math.random() * 5));
-    }
     var maybeResult = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
     if (poseEstimateValidator.shouldTrust(maybeResult, angularVelocity, robotHeading)) {
       return OptionalDouble.of(maybeResult.pose.getRotation().getDegrees());
@@ -323,7 +319,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     }
     limelightHeartbeat = newHeartbeat;
 
-    if (limelightTimer.hasElapsed(IS_OFFLINE_TIMEOUT) && RobotBase.isReal()) {
+    if (limelightTimer.hasElapsed(IS_OFFLINE_TIMEOUT)) {
       cameraHealth = CameraHealth.OFFLINE;
       DogLog.logFault(offlineFault, AlertType.kError);
       return;

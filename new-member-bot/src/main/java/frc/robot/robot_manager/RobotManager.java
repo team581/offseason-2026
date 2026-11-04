@@ -677,8 +677,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     if (DiagnosticCadence.shouldLogHeavy()) {
       DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
       DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
-      MechanismVisualizer.log(
-          robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
     }
   }
 }
