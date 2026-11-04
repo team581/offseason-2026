@@ -9,6 +9,7 @@ import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import frc.robot.util.RollerUtil;
@@ -27,6 +28,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   private final StatusSignal<Current> bottomStatorCurrentSignal;
 
   private double averageCurrent = 0.0;
+  private final Debouncer emptyDebouncer = new Debouncer(0.5);
+  private boolean hasFinishedShooting = false;
 
   private double topSurfaceSpeedMetersPerSecond = 0.0;
   private double bottomSurfaceSpeedMetersPerSecond = 0.0;
@@ -75,6 +78,10 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     return averageCurrent;
   }
 
+  public boolean hasFinishedShooting() {
+    return hasFinishedShooting;
+  }
+
   public void idleRequest() {
     setStateFromRequest(FeederState.IDLE);
   }
@@ -89,6 +96,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   @Override
   protected void afterTransition(FeederState newState) {
+    emptyDebouncer.calculate(false);
+    hasFinishedShooting = false;
     switch (newState) {
       case IDLE -> {
         topMotor.setControl(neutralRequest);
@@ -126,5 +135,12 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
         MathHelpers.average(
             topStatorCurrentSignal.getValueAsDouble(),
             bottomStatorCurrentSignal.getValueAsDouble());
+    emptyDebouncer.setDebounceTime(FeederConfig.EMPTY_DEBOUNCE_SECONDS.get());
+    hasFinishedShooting =
+        emptyDebouncer.calculate(
+            (getState() == FeederState.SCORE || getState() == FeederState.FEED)
+                && averageCurrent < FeederConfig.FUEL_CURRENT_THRESHOLD_AMPS.get());
+    DogLog.log("Feeder/AverageCurrentAmps", averageCurrent);
+    DogLog.log("Feeder/HasFinishedShooting", hasFinishedShooting);
   }
 }

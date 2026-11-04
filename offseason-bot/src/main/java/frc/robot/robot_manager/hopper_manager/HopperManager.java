@@ -134,8 +134,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     if (RobotBase.isSimulation()) {
       return !timeout(1.5);
     }
-    // Without fuel detection, keep shooting until the caller stops or times out.
-    return true;
+    return !feeder.hasFinishedShooting();
   }
 
   private HopperState resolveFeedState() {
