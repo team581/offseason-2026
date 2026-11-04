@@ -145,4 +145,4 @@ Bind devices, confirm actual capture/readback, calibrate with independent valida
 
 ## Offline camera preview
 
-See the [Spot VS Code preview guide](https://github.com/team581/spot-2026/blob/main/docs/operator/13-vscode-camera-preview.md). Normal `:offseason-bot:build` installs or updates the private extension after the approved release is pinned. Open VisionConfig.java for a split preview; saved changes refresh geometry.
+See the [Spot VS Code preview guide](https://github.com/team581/spot-2026/blob/main/apps/docs/src/content/docs/operator/vscode-camera-preview.md). Download the extension VSIX from Spot releases and install it with VS Code's **Extensions → … → Install from VSIX…**. Repeat to update it. Open VisionConfig.java for a split preview; saved changes refresh geometry.
