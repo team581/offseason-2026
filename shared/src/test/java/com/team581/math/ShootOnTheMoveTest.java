@@ -1,7 +1,7 @@
 package com.team581.math;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -21,7 +21,7 @@ final class ShootOnTheMoveTest {
       for (double vx : new double[] {-4.0, 0.0, 4.0}) {
         for (double vy : new double[] {-3.0, 0.0, 3.0}) {
           var solution = solver.solve(origin, goal, new ChassisSpeeds(vx, vy, 0.0), drag);
-          assertTrue(solution.valid());
+          assertThat(solution.valid()).isTrue();
           var landed =
               solution
                   .goal()
@@ -38,7 +38,7 @@ final class ShootOnTheMoveTest {
     double first = ShootOnTheMove.predictVelocity(0.0, 3.0, 0.02, 0.15);
     double second = ShootOnTheMove.predictVelocity(first, 3.0, 0.024, 0.15);
     assertEquals(ShootOnTheMove.predictVelocity(0.0, 3.0, 0.044, 0.15), second, EPSILON);
-    assertTrue(ShootOnTheMove.predictVelocity(0.0, 3.0, 0.024, 0.15) > first);
+    assertThat(ShootOnTheMove.predictVelocity(0.0, 3.0, 0.024, 0.15) > first).isTrue();
     assertEquals(3.0, ShootOnTheMove.predictVelocity(3.0, 3.0, 0.024, 0.15), EPSILON);
   }
 
@@ -51,7 +51,7 @@ final class ShootOnTheMoveTest {
             new Translation2d(5.0, 0.0),
             new ChassisSpeeds(2.0, 0.0, 0.0),
             0.0);
-    assertTrue(solution.valid());
+    assertThat(solution.valid()).isTrue();
     assertEquals((5.0 - 2.0 * 0.5) / (1 + 2.0 * 0.1), solution.goal().getX(), 1e-9);
     assertEquals(0.5 + 0.1 * solution.goal().getNorm(), solution.timeOfFlight(), 1e-9);
   }
@@ -66,30 +66,33 @@ final class ShootOnTheMoveTest {
       integral += Math.exp(-0.465 * (i + 0.5) * dt) * dt;
     }
     assertEquals(integral, ShootOnTheMove.effectiveTimeOfFlight(1.3, 0.465), 1e-9);
-    assertTrue(Double.isNaN(ShootOnTheMove.effectiveTimeOfFlight(1.0, -1.0)));
+    assertThat(Double.isNaN(ShootOnTheMove.effectiveTimeOfFlight(1.0, -1.0))).isTrue();
   }
 
   @Test
   void invalidAndNonConvergingTablesAreRejected() {
     var empty = new ShootOnTheMove(new InterpolatingDoubleTreeMap());
-    assertTrue(
-        !empty
-            .solve(Translation2d.kZero, new Translation2d(4.0, 0.0), new ChassisSpeeds(), 0.0)
-            .valid());
+    assertThat(
+            !empty
+                .solve(Translation2d.kZero, new Translation2d(4.0, 0.0), new ChassisSpeeds(), 0.0)
+                .valid())
+        .isTrue();
     var negative = new ShootOnTheMove(distance -> -1.0, "Test");
-    assertTrue(
-        !negative
-            .solve(Translation2d.kZero, new Translation2d(4.0, 0.0), new ChassisSpeeds(), 0.0)
-            .valid());
+    assertThat(
+            !negative
+                .solve(Translation2d.kZero, new Translation2d(4.0, 0.0), new ChassisSpeeds(), 0.0)
+                .valid())
+        .isTrue();
     var oscillating = new ShootOnTheMove(distance -> distance, "Test");
-    assertTrue(
-        !oscillating
-            .solve(
-                Translation2d.kZero,
-                new Translation2d(4.0, 0.0),
-                new ChassisSpeeds(1.0, 0.0, 0.0),
-                0.0)
-            .valid());
+    assertThat(
+            !oscillating
+                .solve(
+                    Translation2d.kZero,
+                    new Translation2d(4.0, 0.0),
+                    new ChassisSpeeds(1.0, 0.0, 0.0),
+                    0.0)
+                .valid())
+        .isTrue();
   }
 
   @Test
@@ -103,9 +106,9 @@ final class ShootOnTheMoveTest {
 
   @Test
   void reversalBrakesBeforeCrossingZero() {
-    assertTrue(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.02, 0.15) > 0.0);
+    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.02, 0.15) > 0.0).isTrue();
     assertEquals(0.0, ShootOnTheMove.predictVelocity(2.0, -2.0, 0.15 * Math.log(2), 0.15), EPSILON);
-    assertTrue(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.2, 0.15) < 0.0);
+    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.2, 0.15) < 0.0).isTrue();
     assertEquals(-2.0, ShootOnTheMove.predictVelocity(2.0, -2.0, 100.0, 0.15), EPSILON);
   }
 
@@ -126,7 +129,7 @@ final class ShootOnTheMoveTest {
             goal.rotateBy(rotation).plus(offset),
             new ChassisSpeeds(rotatedVelocity.getX(), rotatedVelocity.getY(), 0.0),
             0.465);
-    assertTrue(first.valid() && second.valid());
+    assertThat(first.valid() && second.valid()).isTrue();
     assertEquals(
         0.0, first.goal().rotateBy(rotation).plus(offset).getDistance(second.goal()), 1e-9);
     assertEquals(first.timeOfFlight(), second.timeOfFlight(), 1e-9);

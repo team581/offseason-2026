@@ -1,8 +1,7 @@
 package frc.robot.swerve;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -58,9 +57,13 @@ final class SwerveSotmTest {
 
   @Test
   void rotationAndCoastingRetainMotionCompensation() {
-    assertTrue(Swerve.isMovingForSotm(new ChassisSpeeds(0.0, 0.0, 1.0), new ChassisSpeeds()));
-    assertTrue(Swerve.isMovingForSotm(new ChassisSpeeds(), new ChassisSpeeds(1.0, 0.0, 0.0)));
-    assertTrue(Swerve.isMovingForSotm(new ChassisSpeeds(), new ChassisSpeeds(0.0, 0.0, 1.0)));
-    assertFalse(Swerve.isMovingForSotm(new ChassisSpeeds(), new ChassisSpeeds(0.01, 0.01, 0.01)));
+    assertThat(Swerve.isMovingForSotm(new ChassisSpeeds(0.0, 0.0, 1.0), new ChassisSpeeds()))
+        .isTrue();
+    assertThat(Swerve.isMovingForSotm(new ChassisSpeeds(), new ChassisSpeeds(1.0, 0.0, 0.0)))
+        .isTrue();
+    assertThat(Swerve.isMovingForSotm(new ChassisSpeeds(), new ChassisSpeeds(0.0, 0.0, 1.0)))
+        .isTrue();
+    assertThat(Swerve.isMovingForSotm(new ChassisSpeeds(), new ChassisSpeeds(0.01, 0.01, 0.01)))
+        .isFalse();
   }
 }
