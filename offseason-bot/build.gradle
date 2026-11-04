@@ -115,6 +115,8 @@ gversion {
 			systemProperty 'sim.test', 'STRAIGHT_LINE'
 		}
 		maxParallelForks = 1
+		// Each robot fixture owns process-global HAL, Phoenix, and logging resources.
+		forkEvery = 1
 		systemProperty 'junit.jupiter.execution.parallel.enabled', 'false'
 		systemProperty 'sim.logDir', layout.buildDirectory.dir("reports/${taskName}/logs").get().asFile.absolutePath
 		project.properties.findAll { key, value ->

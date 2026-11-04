@@ -1,5 +1,7 @@
 package frc.robot.shooter;
 
+import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -155,10 +157,11 @@ public class ShooterConfig {
                 .withMotionMagicAcceleration(4000.0 / 60.0))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
+                .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimitEnable(true)
                 .withStatorCurrentLimit(150)
-                .withSupplyCurrentLimit(25))
+                .withSupplyCurrentLimit(25 * SUPPLY_CURRENT_LIMIT_SCALE))
         .withTorqueCurrent(
             new TorqueCurrentConfigs()
                 .withPeakForwardTorqueCurrent(200)

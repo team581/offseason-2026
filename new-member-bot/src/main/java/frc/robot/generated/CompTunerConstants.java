@@ -1,6 +1,7 @@
 package frc.robot.generated;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.*;
@@ -55,26 +56,29 @@ public class CompTunerConstants {
 
     // Initial configs for the drive and steer motors and the azimuth encoder; these cannot be null.
     // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
-    private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration()
-        .withCurrentLimits(
-            new CurrentLimitsConfigs()
-                // Default supply current limit is 70 A, but it can be lowered to avoid brownouts.
-                // Supply current limits can be larger than the breaker current rating.
-                .withSupplyCurrentLimit(Amps.of(40))
-                .withSupplyCurrentLimitEnable(true)
-        );
-    private static final TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
-        .withCurrentLimits(
-            new CurrentLimitsConfigs()
-                // Swerve azimuth does not require much torque output, so we can set a relatively low
-                // stator current limit to help avoid brownouts without impacting performance.
-                .withStatorCurrentLimit(Amps.of(60))
-                .withStatorCurrentLimitEnable(true)
-        )
-        // Cruise velocity is only used when MotionMagicExpo SteerRequestType is active (X
-        // swerve). Normal driving uses Position SteerRequestType and is unaffected.
-        .withMotionMagic(
-            new MotionMagicConfigs().withMotionMagicCruiseVelocity(0.5));
+  private static final TalonFXConfiguration driveInitialConfigs =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
+                  // Default supply current limit is 70 A, but it can be lowered to avoid brownouts.
+                  // Supply current limits can be larger than the breaker current rating.
+                  .withSupplyCurrentLimit(Amps.of(40 * SUPPLY_CURRENT_LIMIT_SCALE))
+                  .withSupplyCurrentLimitEnable(true));
+  private static final TalonFXConfiguration steerInitialConfigs =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
+                  // Swerve azimuth does not require much torque output, so we can set a relatively
+                  // low
+                  // stator current limit to help avoid brownouts without impacting performance.
+                  .withSupplyCurrentLimit(Amps.of(70 * SUPPLY_CURRENT_LIMIT_SCALE))
+                  .withStatorCurrentLimit(Amps.of(60))
+                  .withStatorCurrentLimitEnable(true))
+          // Cruise velocity is only used when MotionMagicExpo SteerRequestType is active (X
+          // swerve). Normal driving uses Position SteerRequestType and is unaffected.
+          .withMotionMagic(new MotionMagicConfigs().withMotionMagicCruiseVelocity(0.5));
     private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
     // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
     private static final Pigeon2Configuration pigeonConfigs = new Pigeon2Configuration().withMountPose(new MountPoseConfigs().withMountPosePitch(0).withMountPoseRoll(0).withMountPoseYaw(-90));
@@ -102,12 +106,6 @@ public class CompTunerConstants {
 
     private static final int kPigeonId = 2;
 
-    // These are only used for simulation
-    private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.01);
-    private static final MomentOfInertia kDriveInertia = KilogramSquareMeters.of(0.035);
-    // Simulated voltage necessary to overcome friction
-    private static final Voltage kSteerFrictionVoltage = Volts.of(0.2);
-    private static final Voltage kDriveFrictionVoltage = Volts.of(0.2);
 
     public static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
             .withCANBusName(kCANBus.getName())
@@ -131,11 +129,7 @@ public class CompTunerConstants {
             .withFeedbackSource(kSteerFeedbackType)
             .withDriveMotorInitialConfigs(driveInitialConfigs)
             .withSteerMotorInitialConfigs(steerInitialConfigs)
-            .withEncoderInitialConfigs(encoderInitialConfigs)
-            .withSteerInertia(kSteerInertia)
-            .withDriveInertia(kDriveInertia)
-            .withSteerFrictionVoltage(kSteerFrictionVoltage)
-            .withDriveFrictionVoltage(kDriveFrictionVoltage);
+            .withEncoderInitialConfigs(encoderInitialConfigs);
 
 
     // Front Left

@@ -7,10 +7,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.TagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -87,24 +84,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
-
-    if (DriverStation.isAutonomous()
-        && (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
-            || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean())) {
-      DogLog.log(
-          "Imu/RobotPoseWithTilt",
-          new Pose3d(
-              new Translation3d(robotPose.getX(), robotPose.getY(), 0.0),
-              new Rotation3d(
-                  Math.toRadians(imu.getRoll()),
-                  Math.toRadians(imu.getPitch()),
-                  robotPose.getRotation().getRadians())));
-      DogLog.log(
-          "Imu/BeachedRecovery/RecoveryPose",
-          StuckOnBallRecovery.getRecoveryPose(
-              robotPose,
-              Rotation2d.fromDegrees(imu.getPitch()),
-              Rotation2d.fromDegrees(imu.getRoll())));
+    if (DriverStation.isAutonomous() && FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()) {
       DogLog.log(
           "Imu/BeachedRecovery/StuckOnBall",
           StuckOnBallRecovery.stuckOnBall(imu.getPitch(), imu.getRoll()));

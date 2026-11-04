@@ -1,6 +1,7 @@
 package frc.robot.generated;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.*;
@@ -61,14 +62,19 @@ public class PracticeTunerConstants {
   // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
   private static final TalonFXConfiguration driveInitialConfigs =
       new TalonFXConfiguration()
-          .withCurrentLimits(new CurrentLimitsConfigs().withSupplyCurrentLimit(Amps.of(40)));
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
+                  .withSupplyCurrentLimit(Amps.of(40 * SUPPLY_CURRENT_LIMIT_SCALE)));
   private static final TalonFXConfiguration steerInitialConfigs =
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
                   // Swerve azimuth does not require much torque output, so we can set a relatively
                   // low
                   // stator current limit to help avoid brownouts without impacting performance.
+                  .withSupplyCurrentLimit(Amps.of(70 * SUPPLY_CURRENT_LIMIT_SCALE))
                   .withStatorCurrentLimit(Amps.of(60))
                   .withStatorCurrentLimitEnable(true))
           // Cruise velocity is only used when MotionMagicExpo SteerRequestType is active (X
@@ -105,12 +111,6 @@ public class PracticeTunerConstants {
 
   private static final int kPigeonId = 2;
 
-  // These are only used for simulation
-  private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.0005);
-  private static final MomentOfInertia kDriveInertia = KilogramSquareMeters.of(0.001);
-  // Simulated voltage necessary to overcome friction
-  private static final Voltage kSteerFrictionVoltage = Volts.of(0.3);
-  private static final Voltage kDriveFrictionVoltage = Volts.of(0.2);
 
   public static final SwerveDrivetrainConstants DrivetrainConstants =
       new SwerveDrivetrainConstants()
@@ -138,11 +138,7 @@ public class PracticeTunerConstants {
               .withFeedbackSource(kSteerFeedbackType)
               .withDriveMotorInitialConfigs(driveInitialConfigs)
               .withSteerMotorInitialConfigs(steerInitialConfigs)
-              .withEncoderInitialConfigs(encoderInitialConfigs)
-              .withSteerInertia(kSteerInertia)
-              .withDriveInertia(kDriveInertia)
-              .withSteerFrictionVoltage(kSteerFrictionVoltage)
-              .withDriveFrictionVoltage(kDriveFrictionVoltage);
+              .withEncoderInitialConfigs(encoderInitialConfigs);
 
   // Front Left
   private static final int kFrontLeftDriveMotorId = 3;

@@ -169,7 +169,9 @@ final class AimParameterUtilTest {
     var staticRotating =
         AimParameterUtil.getStaticScoringParameters(robotPose, rotatingSpeeds, rotatingSpeeds);
     assertEquals(-1.0 / 4.0, staticLateral.turretFeedForwardRadians(), 1e-4);
-    var rotatingTurretSpeeds = TurretCalculator.getTurretChassisSpeeds(rotatingSpeeds, 0.0);
+    var rotatingTurretSpeeds =
+        TurretCalculator.getTurretChassisSpeeds(
+            rotatingSpeeds, robotPose.getRotation().getDegrees());
     assertEquals(
         -(1.0 + rotatingTurretSpeeds.vyMetersPerSecond / 4.0),
         staticRotating.turretFeedForwardRadians(),

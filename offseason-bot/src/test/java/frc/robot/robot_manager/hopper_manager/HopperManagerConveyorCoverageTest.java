@@ -8,6 +8,7 @@ import frc.robot.Hardware;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.conveyor.ConveyorState;
 import frc.robot.deploy.Deploy;
+import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
 import frc.robot.feeder.FeederState;
 import frc.robot.funneler.Funneler;
@@ -17,9 +18,28 @@ import frc.robot.intake.IntakeState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 final class HopperManagerConveyorCoverageTest {
   private static Hardware hardware;
+
+  private static FeederState expectedFeederState(HopperState state) {
+    return switch (state) {
+      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING -> FeederState.IDLE;
+      case EJECTING -> FeederState.EJECT;
+      case UNJAMMING, SCORE, SCORE_AND_INTAKE -> FeederState.SCORE;
+      case FEED, FEED_AND_INTAKE -> FeederState.FEED;
+    };
+  }
+
+  private static FunnelerState expectedFunnelerState(HopperState state) {
+    return switch (state) {
+      case IDLE_DEPLOYED, IDLE_STOWED, INTAKING, EJECTING -> FunnelerState.IDLE;
+      case UNJAMMING, SCORE, SCORE_AND_INTAKE -> FunnelerState.SCORE;
+      case FEED, FEED_AND_INTAKE -> FunnelerState.FEEDING;
+    };
+  }
 
   @BeforeAll
   static void initializeHal() {
@@ -31,7 +51,9 @@ final class HopperManagerConveyorCoverageTest {
   private boolean deployFullyExtended;
   private Intake intake;
   private Conveyor conveyor;
+
   private Feeder feeder;
+
   private Funneler funneler;
 
   private HopperManager hopperManager;
@@ -112,6 +134,32 @@ final class HopperManagerConveyorCoverageTest {
     hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
     assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+  }
+
+  @EnumSource(HopperState.class)
+  @ParameterizedTest
+  void entryAndHeldStateReplaceStaleFeederAndFunnelerRequests(HopperState state) {
+    var expectedFeeder = expectedFeederState(state);
+    var expectedFunneler = expectedFunnelerState(state);
+    for (boolean entry : new boolean[] {true, false}) {
+      if (expectedFeeder == FeederState.IDLE) {
+        feeder.scoreRequest();
+      } else {
+        feeder.idleRequest();
+      }
+      if (expectedFunneler == FunnelerState.IDLE) {
+        funneler.scoreRequest();
+      } else {
+        funneler.idleRequest();
+      }
+      if (entry) {
+        hopperManager.afterTransition(state);
+      } else {
+        hopperManager.whileInState(state);
+      }
+      assertThat(feeder.getState()).as("%s entry=%s", state, entry).isEqualTo(expectedFeeder);
+      assertThat(funneler.getState()).as("%s entry=%s", state, entry).isEqualTo(expectedFunneler);
+    }
   }
 
   @Test
@@ -273,6 +321,35 @@ final class HopperManagerConveyorCoverageTest {
       assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
     } finally {
       SimHooks.resumeTiming();
+    }
+  }
+
+  @Test
+  void stowOperatorCommandsDeployStowAndIntakeIdleInScoreAndFeed() {
+    deploy.homeInAutoRequest();
+    deploy.simulationPeriodic();
+    hopperManager.setOperatorWantsStow(true);
+
+    for (boolean entry : new boolean[] {true, false}) {
+      deploy.intakeRequest();
+      intake.scoreRequest();
+      if (entry) {
+        hopperManager.afterTransition(HopperState.SCORE);
+      } else {
+        hopperManager.whileInState(HopperState.SCORE);
+      }
+      assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
+      assertThat(intake.getState()).isEqualTo(IntakeState.IDLE);
+
+      deploy.intakeRequest();
+      intake.feedRequest();
+      if (entry) {
+        hopperManager.afterTransition(HopperState.FEED);
+      } else {
+        hopperManager.whileInState(HopperState.FEED);
+      }
+      assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
+      assertThat(intake.getState()).isEqualTo(IntakeState.IDLE);
     }
   }
 

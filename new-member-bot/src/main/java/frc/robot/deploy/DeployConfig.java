@@ -1,5 +1,7 @@
 package frc.robot.deploy;
 
+import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -55,7 +57,10 @@ public class DeployConfig {
                       RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
+                  .withStatorCurrentLimit(50)
+                  .withSupplyCurrentLimit(18 * SUPPLY_CURRENT_LIMIT_SCALE))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(100)
@@ -79,7 +84,10 @@ public class DeployConfig {
                       RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
+                  .withStatorCurrentLimit(50)
+                  .withSupplyCurrentLimit(18 * SUPPLY_CURRENT_LIMIT_SCALE))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(100)
