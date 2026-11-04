@@ -19,7 +19,7 @@ public class Hardware {
   public final XboxController driverController = new XboxController(0);
   public final XboxController operatorController = new XboxController(1);
 
-  private final CANBus canivore = new CANBus("581CANivore");
+  private final CANBus canivore = new CANBus("9981CANivore");
   private final CANBus rio = CANBus.roboRIO();
 
   public final DifferentialMechanism<TalonFX> deployDifferentialMechanism =
