@@ -38,7 +38,7 @@ final class ShootOnTheMoveTest {
     double first = ShootOnTheMove.predictVelocity(0.0, 3.0, 0.02, 0.15);
     double second = ShootOnTheMove.predictVelocity(first, 3.0, 0.024, 0.15);
     assertEquals(ShootOnTheMove.predictVelocity(0.0, 3.0, 0.044, 0.15), second, EPSILON);
-    assertThat(ShootOnTheMove.predictVelocity(0.0, 3.0, 0.024, 0.15) > first).isTrue();
+    assertThat(ShootOnTheMove.predictVelocity(0.0, 3.0, 0.024, 0.15)).isGreaterThan(first);
     assertEquals(3.0, ShootOnTheMove.predictVelocity(3.0, 3.0, 0.024, 0.15), EPSILON);
   }
 
@@ -73,26 +73,26 @@ final class ShootOnTheMoveTest {
   void invalidAndNonConvergingTablesAreRejected() {
     var empty = new ShootOnTheMove(new InterpolatingDoubleTreeMap());
     assertThat(
-            !empty
+            empty
                 .solve(Translation2d.kZero, new Translation2d(4.0, 0.0), new ChassisSpeeds(), 0.0)
                 .valid())
-        .isTrue();
+        .isFalse();
     var negative = new ShootOnTheMove(distance -> -1.0, "Test");
     assertThat(
-            !negative
+            negative
                 .solve(Translation2d.kZero, new Translation2d(4.0, 0.0), new ChassisSpeeds(), 0.0)
                 .valid())
-        .isTrue();
+        .isFalse();
     var oscillating = new ShootOnTheMove(distance -> distance, "Test");
     assertThat(
-            !oscillating
+            oscillating
                 .solve(
                     Translation2d.kZero,
                     new Translation2d(4.0, 0.0),
                     new ChassisSpeeds(1.0, 0.0, 0.0),
                     0.0)
                 .valid())
-        .isTrue();
+        .isFalse();
   }
 
   @Test
@@ -106,9 +106,9 @@ final class ShootOnTheMoveTest {
 
   @Test
   void reversalBrakesBeforeCrossingZero() {
-    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.02, 0.15) > 0.0).isTrue();
+    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.02, 0.15)).isGreaterThan(0.0);
     assertEquals(0.0, ShootOnTheMove.predictVelocity(2.0, -2.0, 0.15 * Math.log(2), 0.15), EPSILON);
-    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.2, 0.15) < 0.0).isTrue();
+    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.2, 0.15)).isLessThan(0.0);
     assertEquals(-2.0, ShootOnTheMove.predictVelocity(2.0, -2.0, 100.0, 0.15), EPSILON);
   }
 
