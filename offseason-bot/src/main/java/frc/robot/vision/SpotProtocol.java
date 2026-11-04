@@ -1,13 +1,16 @@
 // Move to shared folder after offseason
 package frc.robot.vision;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Comparator.comparingInt;
+
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.*;
 import frc.robot.vision.data.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
@@ -29,7 +32,7 @@ public final class SpotProtocol {
     try {
       var digest = MessageDigest.getInstance("SHA-256");
       update(digest, ack);
-      digest.update(camera.getBytes(StandardCharsets.UTF_8));
+      digest.update(camera.getBytes(UTF_8));
       var buffer = ByteBuffer.wrap(digest.digest()).order(ByteOrder.LITTLE_ENDIAN);
       return new long[] {buffer.getLong(), buffer.getLong()};
     } catch (NoSuchAlgorithmException exception) {
@@ -56,12 +59,12 @@ public final class SpotProtocol {
   public static Profile profile(String robotId, AprilTagFieldLayout layout, double tagSizeM) {
     var tags =
         layout.getTags().stream()
-            .sorted(java.util.Comparator.comparingInt(t -> t.ID))
+            .sorted(comparingInt(t -> t.ID))
             .map(t -> new FieldTag(t.ID, pose(t.pose), tagSizeM))
             .toList();
     return new Profile(
         robotId,
-        List.of(),
+        ImmutableList.of(),
         new FieldLayout("blue-wall-right", layout.getFieldLength(), layout.getFieldWidth(), tags),
         false,
         false,
@@ -99,8 +102,7 @@ public final class SpotProtocol {
 
   public static long[] token(String text) {
     try {
-      var bytes =
-          MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+      var bytes = MessageDigest.getInstance("SHA-256").digest(text.getBytes(UTF_8));
       var buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
       return new long[] {buffer.getLong(), buffer.getLong()};
     } catch (NoSuchAlgorithmException exception) {
@@ -129,7 +131,7 @@ public final class SpotProtocol {
           ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(values.size()).array());
       for (var item : values) update(digest, item);
     } else if (value instanceof String text) {
-      var bytes = text.getBytes(StandardCharsets.UTF_8);
+      var bytes = text.getBytes(UTF_8);
       digest.update(
           ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(bytes.length).array());
       digest.update(bytes);

@@ -2,6 +2,7 @@
 package frc.robot.vision;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -70,10 +71,10 @@ public final class SpotVisionIO implements VisionIO {
   private double lastDecisionPublish = Double.NEGATIVE_INFINITY;
   private final Map<String, RawSubscriber> cameras = new HashMap<>();
   private Acknowledgement acknowledgement =
-      new Acknowledgement("", "", "", "", 0L, 0L, "", "", java.util.List.of(), false, "", false);
+      new Acknowledgement("", "", "", "", 0L, 0L, "", "", ImmutableList.of(), false, "", false);
   private frc.robot.vision.data.Health lastHealth =
       new frc.robot.vision.data.Health(
-          "", 0L, 0.0, "", 0L, 0.0, 0L, 0L, 0L, "", "", "", java.util.List.of());
+          "", 0L, 0.0, "", 0L, 0.0, 0L, 0L, 0L, "", "", "", ImmutableList.of());
   private double lastHealthTimestamp = Double.NEGATIVE_INFINITY;
   private double lastPublish = Double.NEGATIVE_INFINITY;
   private double resetTimestamp = Double.NEGATIVE_INFINITY;
@@ -379,7 +380,7 @@ public final class SpotVisionIO implements VisionIO {
           } else {
             acknowledgement =
                 new Acknowledgement(
-                    "", "", "", "", 0L, 0L, "", "", java.util.List.of(), false, "", false);
+                    "", "", "", "", 0L, 0L, "", "", ImmutableList.of(), false, "", false);
             frameContexts.clear();
           }
         });

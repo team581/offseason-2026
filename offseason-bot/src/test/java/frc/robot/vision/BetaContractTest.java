@@ -114,7 +114,7 @@ final class BetaContractTest {
         TestRecords.with(
             observation,
             "candidates",
-            java.util.List.of(
+            ImmutableList.of(
                 TestRecords.with(observation.candidates().get(0), "imageAreaFraction", .02)));
     var baseline =
         processor()
@@ -125,7 +125,7 @@ final class BetaContractTest {
         TestRecords.with(
             observation,
             "candidates",
-            java.util.List.of(
+            ImmutableList.of(
                 TestRecords.with(
                     observation.candidates().get(0), "imageAreaFraction", imageAreaFraction)));
     var result = processor().process(new VisionIO.Sample(observation, 10.05), ack(), 10.1, false);

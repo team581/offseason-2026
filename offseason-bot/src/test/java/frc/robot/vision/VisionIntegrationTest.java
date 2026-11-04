@@ -76,7 +76,7 @@ final class VisionIntegrationTest {
 
     Fixture(boolean fusion) {
       var fieldTags = new ArrayList<FieldTag>();
-      var field = new FieldLayout("blue-wall-right", 16, 8, java.util.List.of());
+      var field = new FieldLayout("blue-wall-right", 16, 8, ImmutableList.of());
       for (int id : Set.of(1, 2, 3, 4, 5, 8, 9, 10, 11, 18, 19, 20, 21, 24, 25, 26, 27)) {
         int direction =
             switch (id) {
@@ -91,7 +91,7 @@ final class VisionIntegrationTest {
       field = TestRecords.with(field, "tags", fieldTags);
       var cameraDefinitions = new ArrayList<CameraDefinition>();
       var builder =
-          new Profile("synthetic", java.util.List.of(), field, fusion, false, true, .25, .005, .02);
+          new Profile("synthetic", ImmutableList.of(), field, fusion, false, true, .25, .005, .02);
       int index = 0;
       for (String name : SYNTHETIC_CAMERA_NAMES) {
         double yaw = new double[] {Math.PI / 2, -Math.PI / 2, 0, Math.PI}[index];
@@ -106,8 +106,9 @@ final class VisionIntegrationTest {
                 true,
                 SpotProtocol.pose(new Pose3d().transformBy(mount)),
                 0,
-                List.of(new OpticalMode("synthetic-mode", 640, 480, "YUYV", 30, "synthetic-lens")),
-                List.of(),
+                ImmutableList.of(
+                    new OpticalMode("synthetic-mode", 640, 480, "YUYV", 30, "synthetic-lens")),
+                ImmutableList.of(),
                 false,
                 ""));
       }
@@ -123,7 +124,7 @@ final class VisionIntegrationTest {
               1,
               "runtime",
               SpotProtocol.hash(profile.field()),
-              java.util.List.of(),
+              ImmutableList.of(),
               true,
               "",
               true);
@@ -201,8 +202,8 @@ final class VisionIntegrationTest {
               0L,
               "read-completion-local-nt",
               .001,
-              java.util.List.of(),
-              java.util.List.of(),
+              ImmutableList.of(),
+              ImmutableList.of(),
               new ProcessingTiming(0.0, 0.0, 0.0, 0.0),
               selectionGeneration);
       if (tag > 0) {
@@ -229,7 +230,7 @@ final class VisionIntegrationTest {
             new PoseCandidate(
                 SpotProtocol.pose(new Pose3d(robot).transformBy(mount)),
                 PoseMethod.MULTI_TAG_SQPNP,
-                java.util.List.of(tag, companion),
+                ImmutableList.of(tag, companion),
                 .1,
                 2,
                 .02,

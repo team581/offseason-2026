@@ -48,7 +48,7 @@ final class VisionConfigTest {
     assertThat(definition.name()).isEqualTo("front");
     assertThat(definition.required()).isTrue();
     assertThat(definition.imageRotationDeg()).isEqualTo(180);
-    assertThat(definition.allowedModes().size()).isEqualTo(1);
+    assertThat(definition.allowedModes()).size().isEqualTo(1);
     assertThat(definition.controls().get(0).allowOverride()).isFalse();
     assertThat(definition.controls().get(1).allowOverride()).isTrue();
     assertThat(SpotProtocol.pose(definition.robotToCamera()).getRotation().getZ())
@@ -69,6 +69,6 @@ final class VisionConfigTest {
     assertThat(VisionConfig.mounts()).hasSize(3);
     assertThat(profile.fusionEnabled()).isTrue();
     assertThat(profile.headingEnabled()).isFalse();
-    assertThat(profile.field().tags().size()).isEqualTo(32);
+    assertThat(profile.field().tags()).size().isEqualTo(32);
   }
 }

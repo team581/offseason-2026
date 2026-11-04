@@ -297,7 +297,7 @@ public final class VisionProcessor {
             .contains(observation.timestampSource())) {
       return Decision.reject(Reason.TIMESTAMP);
     }
-    if (observation.candidates().size() == 0) {
+    if (observation.candidates().isEmpty()) {
       return Decision.reject(Reason.NO_TAGS);
     }
     var captured = history.at(timestamp);
@@ -314,7 +314,7 @@ public final class VisionProcessor {
     var alternatives = new ArrayList<Pose3d>();
     for (var candidate : observation.candidates()) {
       if (!validPose(candidate.fieldToCamera())
-          || candidate.tagIds().size() == 0
+          || candidate.tagIds().isEmpty()
           || candidate.tagIds().size() > 64
           || new HashSet<>(candidate.tagIds()).size() != candidate.tagIds().size()
           || !Double.isFinite(candidate.averageTagDistanceM())

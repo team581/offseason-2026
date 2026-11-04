@@ -1,5 +1,6 @@
 package frc.robot.vision;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.vision.data.*;
 import java.util.HashSet;
@@ -64,7 +65,7 @@ public record SpotCameraConfig(
         true,
         SpotProtocol.pose(new edu.wpi.first.math.geometry.Pose3d().transformBy(robotToCamera)),
         imageRotationDeg,
-        java.util.List.of(capture.toData()),
+        ImmutableList.of(capture.toData()),
         controls.stream().map(Control::toData).toList(),
         false,
         "");

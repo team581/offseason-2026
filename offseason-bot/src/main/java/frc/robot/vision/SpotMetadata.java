@@ -21,6 +21,7 @@ final class SpotMetadata implements AutoCloseable {
     this.root = root;
   }
 
+  @Override
   public void close() {
     for (var sub : subscribers.values()) sub.close();
     for (var resource : resources) {

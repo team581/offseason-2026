@@ -68,6 +68,7 @@ final class TestPeer implements AutoCloseable {
     this.nt = nt;
   }
 
+  @Override
   public void close() throws Exception {
     for (var resource : resources) resource.close();
   }

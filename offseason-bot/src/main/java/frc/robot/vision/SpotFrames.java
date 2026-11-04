@@ -1,6 +1,7 @@
 // Move to shared folder after offseason
 package frc.robot.vision;
 
+import com.google.common.collect.ImmutableList;
 import frc.robot.vision.data.*;
 import frc.robot.vision.structs.*;
 import java.nio.ByteBuffer;
@@ -37,7 +38,7 @@ final class SpotFrames {
         ack.runtimeGeneration(),
         "",
         "",
-        List.of());
+        ImmutableList.of());
   }
 
   static Observation observation(
@@ -68,8 +69,8 @@ final class SpotFrames {
     }
     var tags = new ArrayList<TagObservation>();
     for (var id : SpotProtocol.tagIds(frame.observedTags(), profile.field())) {
-      boolean used = (SpotProtocol.tagMask(List.of(id), profile.field()) & usedTags) != 0;
-      tags.add(new TagObservation(id, List.of(), 0, 0., used, "", null));
+      boolean used = (SpotProtocol.tagMask(ImmutableList.of(id), profile.field()) & usedTags) != 0;
+      tags.add(new TagObservation(id, ImmutableList.of(), 0, 0., used, "", null));
     }
     String epoch =
         HexFormat.of()

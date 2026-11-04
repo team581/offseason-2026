@@ -1,6 +1,7 @@
 // Move to shared folder after offseason
 package frc.robot.vision;
 
+import com.google.common.collect.ImmutableList;
 import frc.robot.vision.data.*;
 import frc.robot.vision.results.VisionMeasurement;
 import java.util.List;
@@ -18,7 +19,7 @@ public interface VisionIO extends AutoCloseable {
           reason,
           acknowledgement,
           new frc.robot.vision.data.Health(
-              "", 0L, 0.0, "", 0L, 0.0, 0L, 0L, 0L, "", "", "", java.util.List.of()));
+              "", 0L, 0.0, "", 0L, 0.0, 0L, 0L, 0L, "", "", "", ImmutableList.of()));
     }
   }
 
