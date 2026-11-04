@@ -111,6 +111,6 @@ public class Imu extends BaseImuSubsystem {
       bumpCrossingTracker.periodic();
     }
 
-    bumpCrossingTracker.log();
+    bumpCrossingTracker.log(false);
   }
 }

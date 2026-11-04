@@ -6,7 +6,6 @@ import com.team581.vision.results.OptionalTagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
@@ -67,7 +66,7 @@ public class Vision extends StateMachineSubsystem<VisionState> {
   }
 
   public boolean seeingTag() {
-    return seeingTag || RobotBase.isSimulation();
+    return seeingTag;
   }
 
   public void setEstimatedPoseAngle(double robotHeading) {

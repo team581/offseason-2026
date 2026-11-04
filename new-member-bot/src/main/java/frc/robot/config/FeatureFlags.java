@@ -18,8 +18,6 @@ public class FeatureFlags {
       FeatureFlag.of("CancelInProgressShot", true);
 
   public static final BooleanSupplier UNBEACH_AUTO_IRL = FeatureFlag.of("UnbeachAutoIRL", true);
-  public static final BooleanSupplier UNBEACH_AUTO_SIM_ONLY =
-      FeatureFlag.of("UnbeachAutoSimOnly", false);
 
   public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 

@@ -33,13 +33,19 @@ public class Trailblazer {
 
   private final PathTracker pathTracker;
   private final PathFollower pathFollower;
+  private final boolean logVisualization;
   private int currentIndex = -1;
   private Optional<AutoSegment> currentSegment = Optional.empty();
   private boolean needsFollowerReset = false;
 
   public Trailblazer(PathTracker pathTracker, PathFollower pathFollower) {
+    this(pathTracker, pathFollower, true);
+  }
+
+  public Trailblazer(PathTracker pathTracker, PathFollower pathFollower, boolean logVisualization) {
     this.pathTracker = pathTracker;
     this.pathFollower = pathFollower;
+    this.logVisualization = logVisualization;
   }
 
   public boolean atGoal(Pose2d currentPose) {
@@ -96,7 +102,9 @@ public class Trailblazer {
     }
 
     var targetPose = pathTracker.getTargetPose(trackerRotationOverride);
-    DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
+    if (logVisualization) {
+      DogLog.log("Trailblazer/Tracker/TargetPose", targetPose);
+    }
 
     // Calculate speeds using follower
     return pathFollower.calculateSpeeds(
@@ -134,9 +142,11 @@ public class Trailblazer {
     currentIndex = pathTracker.getCurrentPointIndex();
     needsFollowerReset = true;
 
-    DogLog.log(
-        "Trailblazer/Tracker/InitialSegmentPoints",
-        segment.points.stream().map(point -> point.getPose()).toArray(Pose2d[]::new));
+    if (logVisualization) {
+      DogLog.log(
+          "Trailblazer/Tracker/InitialSegmentPoints",
+          segment.points.stream().map(point -> point.getPose()).toArray(Pose2d[]::new));
+    }
   }
 
   public void setActiveSegment(AutoSegment segment, int index) {

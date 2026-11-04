@@ -5,10 +5,8 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.signals.Signals;
-import com.team581.simkit.SimKit;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
@@ -141,26 +139,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
       }
       default -> setStateFromRequest(ShooterHoodState.SCORING);
     }
-  }
-
-  @Override
-  public void simulationPeriodic() {
-    var shooterHoodSimulation =
-        SimKit.positionMechanism(
-            "ShooterHood",
-            mechanism ->
-                mechanism
-                    .addMotor(motor, ChassisReference.Clockwise_Positive)
-                    .withMaxPosition(Units.degreesToRotations(ShooterHoodConfig.MAX_ANGLE))
-                    .withMinPosition(
-                        Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION)));
-
-    if (getState() == ShooterHoodState.HOMING) {
-      motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
-      setStateFromRequest(ShooterHoodState.IDLE);
-    }
-
-    shooterHoodSimulation.update();
   }
 
   private double getGoalAngle() {
