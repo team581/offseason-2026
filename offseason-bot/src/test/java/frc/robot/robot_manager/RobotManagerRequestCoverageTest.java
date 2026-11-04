@@ -176,10 +176,10 @@ final class RobotManagerRequestCoverageTest {
   @EnumSource(
       value = RobotState.class,
       names = {
+        "FALLBACK_SCORE",
+        "PREPARE_FALLBACK_SCORE",
         "PREPARE_SCORE",
         "SCORE",
-        "PREPARE_FALLBACK_SCORE",
-        "FALLBACK_SCORE",
         "WARMUP_SCORE"
       })
   @ParameterizedTest
