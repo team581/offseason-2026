@@ -156,7 +156,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
                         Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION)));
 
     if (getState() == ShooterHoodState.HOMING) {
-      motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
+      shooterHoodSimulation.seedPosition(
+          Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
       setStateFromRequest(ShooterHoodState.IDLE);
     }
 

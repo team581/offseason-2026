@@ -24,6 +24,7 @@ import frc.robot.deploy.DeployState;
 import frc.robot.robot_manager.RobotState;
 import frc.robot.robot_manager.hopper_manager.HopperState;
 import frc.robot.shooter.ShooterState;
+import frc.robot.shooter_hood.ShooterHoodConfig;
 import frc.robot.shooter_hood.ShooterHoodState;
 import frc.robot.turret.TurretCalculator;
 import frc.robot.turret.TurretConfig;
@@ -215,6 +216,41 @@ final class HeadlessTest {
     } finally {
       useVision.set(previousVision);
       robot.robotManager.idleRequest();
+      DriverStationSim.setEnabled(false);
+      robot.tick();
+    }
+  }
+
+  @Test
+  @Timeout(30)
+  void repeatedHoodHomingSettlesAtIdleThroughOperatorButton() throws IOException {
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        System.getProperty("sim.test", "HOOD_HOMING").equals("HOOD_HOMING"));
+    initializeRobot();
+    try (var testMode =
+        NetworkTableInstance.getDefault()
+            .getTable("DSOptions")
+            .getBooleanTopic("TestMode")
+            .publish()) {
+      testMode.set(false);
+      DriverStationSim.setJoystickButtonCount(1, 10);
+      DriverStationSim.setJoystickButtons(1, 0);
+      DriverStationSim.setEnabled(true);
+      robot.tick();
+      for (int press = 1; press <= 3; press++) {
+        DriverStationSim.setJoystickButtons(1, 1 << 6);
+        robot.tick();
+        DriverStationSim.setJoystickButtons(1, 0);
+        robot.tick();
+        double settleUntil = Timer.getFPGATimestamp() + 1.0;
+        robot.runUntil(() -> Timer.getFPGATimestamp() >= settleUntil, 2.0);
+        assertThat(robot.shooterHood().getState()).isEqualTo(ShooterHoodState.IDLE);
+        assertThat(robot.shooterHood().getAngle())
+            .as("Hood settles at idle after operator homing press %s", press)
+            .isCloseTo(ShooterHoodConfig.IDLE_ANGLE, offset(0.5));
+      }
+    } finally {
+      DriverStationSim.setJoystickButtons(1, 0);
       DriverStationSim.setEnabled(false);
       robot.tick();
     }
