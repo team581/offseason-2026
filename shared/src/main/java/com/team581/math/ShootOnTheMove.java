@@ -37,9 +37,8 @@ public class ShootOnTheMove {
         / DRAG_CONSTANT.getAsDouble();
   }
 
-  public double getPredictedVelocity(double measured, double commanded, String name) {
+  public double getPredictedVelocity(double measured, double commanded) {
     var diff = (measured - commanded) * COMMANDED_VELOCITY_USAGE_PERCENT;
-    DogLog.log("SOTM/SVETof/" + name, diff);
     return measured - diff;
     // return measured;
   }
@@ -56,10 +55,10 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx =
         getPredictedVelocity(
-            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond, "Sep/vx");
+            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond);
     double vy =
         getPredictedVelocity(
-            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond, "Sep/vy");
+            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond);
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -124,14 +123,10 @@ public class ShootOnTheMove {
     double goalY = goal.getY();
     double vx =
         getPredictedVelocity(
-            robotVelocity.vxMetersPerSecond,
-            driverCommandedVelocity.vxMetersPerSecond,
-            "SepTof/vx");
+            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond);
     double vy =
         getPredictedVelocity(
-            robotVelocity.vyMetersPerSecond,
-            driverCommandedVelocity.vyMetersPerSecond,
-            "SepTof/vy");
+            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond);
 
     // Rotate the robot velocity vector toward the goal, placing the radial velocity on the x-axis
     // and the tangential velocity on y-axis
@@ -195,14 +190,10 @@ public class ShootOnTheMove {
     double targetY = target.getY();
     double vx =
         getPredictedVelocity(
-            robotVelocity.vxMetersPerSecond,
-            driverCommandedVelocity.vxMetersPerSecond,
-            "Normal/vx");
+            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond);
     double vy =
         getPredictedVelocity(
-            robotVelocity.vyMetersPerSecond,
-            driverCommandedVelocity.vyMetersPerSecond,
-            "Normal/vy");
+            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond);
 
     double compGoalX = targetX;
     double compGoalY = targetY;
@@ -230,10 +221,10 @@ public class ShootOnTheMove {
     double targetY = target.getY();
     double vx =
         getPredictedVelocity(
-            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond, "Tof/vx");
+            robotVelocity.vxMetersPerSecond, driverCommandedVelocity.vxMetersPerSecond);
     double vy =
         getPredictedVelocity(
-            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond, "Tof/vy");
+            robotVelocity.vyMetersPerSecond, driverCommandedVelocity.vyMetersPerSecond);
 
     double compGoalX = targetX;
     double compGoalY = targetY;
