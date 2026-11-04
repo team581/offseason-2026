@@ -2,9 +2,28 @@ package frc.robot.turret;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import frc.robot.util.AimParameterUtil.AimingParameters;
 import org.junit.jupiter.api.Test;
 
 final class TurretTest {
+  @Test
+  void aimingParametersValidateCurrentTargetInvalidSolutionsAndSoftLimits() {
+    var onTarget = new AimingParameters(175.0, 4.0, 2.0, -1.0, 170.0, true);
+    assertThat(Turret.isAtGoal(TurretState.SCORE, TurretState.SCORE, -185.0, onTarget)).isTrue();
+    assertThat(Turret.isAtGoal(TurretState.SCORE, TurretState.SCORE, -180.0, onTarget)).isFalse();
+
+    var invalid = new AimingParameters(-180.0, 4.0, 2.0, 0.0, -180.0, false);
+    assertThat(Turret.isAtGoal(TurretState.SCORE, TurretState.SCORE, -180.0, invalid)).isFalse();
+
+    // Pinned at MAX_ANGLE (-90 deg) when the compensated target is out of travel (0 deg) is not
+    // ready.
+    var unreachable = new AimingParameters(0.0, 4.0, 2.0, 0.0, 0.0, true);
+    assertThat(
+            Turret.isAtGoal(
+                TurretState.SCORE, TurretState.SCORE, TurretConfig.MAX_ANGLE, unreachable))
+        .isFalse();
+  }
+
   @Test
   void expectedStateValidatesAgainstStaleRequests() {
     double angle = -100.0;

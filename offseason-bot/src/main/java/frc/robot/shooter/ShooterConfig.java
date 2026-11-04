@@ -21,6 +21,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.config.FeatureFlags;
 import java.util.Map;
 
 public class ShooterConfig {
@@ -136,11 +137,23 @@ public class ShooterConfig {
         .plus(SHOOTER_TO_ROBOT.getRotation());
   }
 
+  public static double getFeedTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
+        : DISTANCE_TO_FEED_TOF.get(distance);
+  }
+
   public static double getGoalCentricTolerance(
       Translation2d goalTranslation, Pose2d shooterPose, double goalCentricToleranceMeters) {
 
     double distanceToGoal = shooterPose.getTranslation().getDistance(goalTranslation);
     return Math.toDegrees(Math.atan2(goalCentricToleranceMeters, distanceToGoal));
+  }
+
+  public static double getScoreTimeOfFlight(double distance) {
+    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
+        ? SCORING_TOF_REGRESSION_MODEL.calculate(distance)
+        : DISTANCE_TO_SCORE_TOF.get(distance);
   }
 
   public static Pose2d getShooterPose(Pose2d robot) {

@@ -234,15 +234,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   }
 
   public double getFeedTimeOfFlight(double distance) {
-    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
-        : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
+    return ShooterConfig.getFeedTimeOfFlight(distance);
   }
 
   public double getScoreTimeOfFlight(double distance) {
-    return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
-        ? ShooterConfig.SCORING_TOF_REGRESSION_MODEL.calculate(distance)
-        : ShooterConfig.DISTANCE_TO_SCORE_TOF.get(distance);
+    return ShooterConfig.getScoreTimeOfFlight(distance);
   }
 
   public void idleRequest() {
@@ -291,6 +287,18 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return isAtGoal(getState(), topRightMotorRpm, shootingRpm, feedingRpm);
   }
 
+  private void updateRpmTargets() {
+    shootingRpm =
+        MathUtil.clamp(distanceToScoringRpm(scoreDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
+    feedingRpm =
+        MathUtil.clamp(distanceToFeedingRpm(feedDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
+
+    if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
+      shootingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
+      feedingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
+    }
+  }
+
   @Override
   protected void afterTransition(ShooterState newState) {
     atGoal = false;
@@ -301,15 +309,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   @Override
   protected void collectInputs() {
-    shootingRpm =
-        MathUtil.clamp(distanceToScoringRpm(scoreDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
-    feedingRpm =
-        MathUtil.clamp(distanceToFeedingRpm(feedDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
-
-    if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
-      shootingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
-      feedingRpm = ShooterConfig.PIT_FUNCTIONALITY_RPM;
-    }
+    updateRpmTargets();
 
     topLeftMotorRpm = topLeftVelocitySignal.getValueAsDouble() * 60.0;
     topRightMotorRpm = topRightVelocitySignal.getValueAsDouble() * 60.0;
@@ -350,6 +350,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   @Override
   protected void whileInState(ShooterState state) {
+    // RobotManager has now supplied this loop's compensated distance.
+    updateRpmTargets();
     DogLog.log("Shooter/TopLeft/RPM", topLeftMotorRpm);
     DogLog.log("Shooter/TopRight/RPM", topRightMotorRpm);
     DogLog.log("Shooter/BottomLeft/RPM", bottomLeftMotorRpm);

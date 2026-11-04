@@ -188,7 +188,7 @@ stateDiagram-v2
   - Auto-select closest unblocked feeding spot (`LEFT`, `RIGHT`, `BACKUP_LEFT`, `BACKUP_RIGHT`)
   - Switch to backup corner target if Hub blocks shot path
 - Shoot-on-the-Move:
-  - Lead shots using robot pose, swerve velocity, and ball time-of-flight
+  - Lead shots using robot pose, swerve velocity, and ball time-of-flight (see [SOTM math audit and log-based calibration](../sotm-tuning.md))
   - Gate firing on turret angle, shooter RPM, hood angle, trench safety, and localization health
 - Fallbacks:
   - Default to hardcoded trench shots based on Driver Station position if vision fails

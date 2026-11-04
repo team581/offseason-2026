@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
-import frc.robot.shooter.ShooterConfig;
 import frc.robot.turret.TurretCalculator;
 import frc.robot.turret.TurretConfig;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +29,62 @@ final class AimParameterUtilTest {
   }
 
   @Test
+  void accelerationFeedforwardIncludesMotionOfCompensatedGoal() {
+    var solver = new ShootOnTheMove(distance -> 1.0, "AccelerationTest");
+    var goal = new Translation2d(5.0, 2.0);
+    var pose =
+        new Pose2d(
+            goal.minus(TurretConfig.TURRET_TO_ROBOT.getTranslation())
+                .minus(new Translation2d(4.0, 0.0)),
+            Rotation2d.kZero);
+    double tau = ShootOnTheMove.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
+    double h = ShootOnTheMove.PREDICTION_HORIZON_SECONDS.getAsDouble();
+    double effectiveTof =
+        ShootOnTheMove.effectiveTimeOfFlight(1.0, ShootOnTheMove.DRAG_CONSTANT.getAsDouble());
+    for (double measured : new double[] {0.0, 0.5, 2.0}) {
+      for (double commanded : new double[] {-2.0, 0.0, 3.0}) {
+        var result =
+            AimParameterUtil.calculateParameters(
+                solver,
+                goal,
+                0.1,
+                pose,
+                new ChassisSpeeds(0.0, measured, 0.0),
+                new ChassisSpeeds(0.0, commanded, 0.0),
+                true);
+        double v = commanded + (measured - commanded) * Math.exp(-h / tau);
+        double a = (commanded - measured) / tau * Math.exp(-h / tau);
+        double expected =
+            4.0 * (-measured - a * effectiveTof) / (16.0 + v * v * effectiveTof * effectiveTof);
+        assertEquals(expected, result.turretFeedForwardRadians(), 0.002);
+      }
+    }
+  }
+
+  @Test
+  void constantTofFeedforwardMatchesAnalyticCompensatedBearingDerivative() {
+    var solver = new ShootOnTheMove(distance -> 1.0, "AnalyticTest");
+    var goal = new Translation2d(5.0, 2.0);
+    var offset = TurretConfig.TURRET_TO_ROBOT.getTranslation();
+    var pose = new Pose2d(goal.minus(offset).minus(new Translation2d(4.0, 0.0)), Rotation2d.kZero);
+    double effectiveTof =
+        ShootOnTheMove.effectiveTimeOfFlight(1.0, ShootOnTheMove.DRAG_CONSTANT.getAsDouble());
+    for (double omega : new double[] {-1.0, 0.0, 1.0}) {
+      var speeds = new ChassisSpeeds(0.0, 1.0, omega);
+      var result =
+          AimParameterUtil.calculateParameters(solver, goal, 0.1, pose, speeds, speeds, true);
+      var vt = new Translation2d(-omega * offset.getY(), 1.0 + omega * offset.getX());
+      var acceleration = offset.times(-omega * omega);
+      var q = new Translation2d(4.0, 0.0).minus(vt.times(effectiveTof));
+      var qDot = vt.unaryMinus().minus(acceleration.times(effectiveTof));
+      double expected =
+          (q.getX() * qDot.getY() - q.getY() * qDot.getX()) / (q.getNorm() * q.getNorm()) - omega;
+      assertThat(result.solutionValid()).isTrue();
+      assertEquals(expected, result.turretFeedForwardRadians(), 1e-4);
+    }
+  }
+
+  @Test
   void dynamicSolutionAndLookaheadUseProjectedRobotPose() {
     var robotPose = new Pose2d(3.0, 2.0, Rotation2d.fromDegrees(25.0));
     var speeds = new ChassisSpeeds(0.7, -0.4, 0.6);
@@ -40,17 +95,6 @@ final class AimParameterUtilTest {
 
     assertNotEquals(stationary.turretAngle(), dynamic.turretAngle(), 1e-5);
 
-    var turretPose = TurretCalculator.getTurretPose(robotPose);
-    var turretSpeeds =
-        TurretCalculator.getTurretChassisSpeeds(speeds, robotPose.getRotation().getDegrees());
-    var compensatedGoal =
-        new ShootOnTheMove(ShooterConfig.DISTANCE_TO_SCORE_TOF)
-            .getSeparatedVelocityCompensatedGoalWithEffectiveTof(
-                turretPose.getTranslation(),
-                FieldUtil.HUB_POSE.getTranslation(),
-                turretSpeeds,
-                commandedSpeeds)
-            .fullyCompensatedGoal();
     var futureRobotPose =
         new Pose2d(
             robotPose
@@ -62,10 +106,8 @@ final class AimParameterUtilTest {
                 .getRotation()
                 .plus(Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * 0.5)));
 
-    assertEquals(
-        TurretCalculator.calculateTurretAimingAngle(futureRobotPose, compensatedGoal),
-        dynamic.upcomingTurretAngle(),
-        DELTA);
+    var future = AimParameterUtil.getScoringParameters(futureRobotPose, speeds, speeds);
+    assertEquals(future.turretAngle(), dynamic.upcomingTurretAngle(), DELTA);
   }
 
   @Test
@@ -84,6 +126,31 @@ final class AimParameterUtilTest {
   }
 
   @Test
+  void invalidFlightTableCannotProduceReadySolution() {
+    var solver = new ShootOnTheMove(distance -> Double.NaN, "InvalidTest");
+    var parameters =
+        AimParameterUtil.calculateParameters(
+            solver,
+            new Translation2d(5.0, 0.0),
+            0.1,
+            Pose2d.kZero,
+            new ChassisSpeeds(),
+            new ChassisSpeeds(),
+            true);
+    assertThat(parameters.solutionValid()).isFalse();
+    assertEquals(0.0, parameters.turretFeedForwardRadians());
+
+    var nonFiniteCommand =
+        AimParameterUtil.getScoringParameters(
+            new Pose2d(2.0, 3.0, Rotation2d.k180deg),
+            new ChassisSpeeds(1.0, -0.5, 0.2),
+            new ChassisSpeeds(Double.NaN, Double.POSITIVE_INFINITY, Double.NaN));
+    assertThat(nonFiniteCommand.solutionValid()).isTrue();
+    assertThat(Double.isFinite(nonFiniteCommand.turretFeedForwardRadians())).isTrue();
+    assertThat(Double.isFinite(nonFiniteCommand.upcomingTurretAngle())).isTrue();
+  }
+
+  @Test
   void lateralAndRotationalMotionProduceNegativeTurretFeedforward() {
     var offset = TurretConfig.TURRET_TO_ROBOT.getTranslation();
     var goal = FieldUtil.HUB_POSE.getTranslation();
@@ -94,24 +161,40 @@ final class AimParameterUtilTest {
     var rotatingSpeeds = new ChassisSpeeds(0.0, 0.0, 1.0);
     var rotating = AimParameterUtil.getScoringParameters(robotPose, rotatingSpeeds, rotatingSpeeds);
 
-    // var lateral =
-    //     AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 1.0, 0.0));
-    // var rotating =
-    //     AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
+    assertThat(lateral.turretFeedForwardRadians()).isNegative();
+    assertThat(rotating.turretFeedForwardRadians()).isNegative();
 
-    assertEquals(-1.0 / 4.0, lateral.turretFeedForwardRadians(), DELTA);
-    // The turret is behind the chassis center: positive yaw moves its axis in -Y,
-    // reducing the relative tracking rate below the chassis's 1 rad/s yaw rate.
-    var rotatingTurretSpeeds =
-        TurretCalculator.getTurretChassisSpeeds(
-            rotatingSpeeds, robotPose.getRotation().getDegrees());
-    var predictedTurretLateralVelocity =
-        AimParameterUtil.SCORING_SOTM.getPredictedVelocity(
-            rotatingTurretSpeeds.vyMetersPerSecond,
-            rotatingSpeeds.vyMetersPerSecond,
-            "Test/rotating");
+    var staticLateral =
+        AimParameterUtil.getStaticScoringParameters(robotPose, lateralSpeeds, lateralSpeeds);
+    var staticRotating =
+        AimParameterUtil.getStaticScoringParameters(robotPose, rotatingSpeeds, rotatingSpeeds);
+    assertEquals(-1.0 / 4.0, staticLateral.turretFeedForwardRadians(), 1e-4);
+    var rotatingTurretSpeeds = TurretCalculator.getTurretChassisSpeeds(rotatingSpeeds, 0.0);
     assertEquals(
-        -(1.0 + predictedTurretLateralVelocity / 4.0), rotating.turretFeedForwardRadians(), DELTA);
+        -(1.0 + rotatingTurretSpeeds.vyMetersPerSecond / 4.0),
+        staticRotating.turretFeedForwardRadians(),
+        1e-4);
+  }
+
+  @Test
+  void realTofTablesConvergeAcrossOperatingVelocities() {
+    for (var solver :
+        new ShootOnTheMove[] {AimParameterUtil.SCORING_SOTM, AimParameterUtil.FEEDING_SOTM}) {
+      for (double distance : new double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 9.0, 13.0}) {
+        for (double vx : new double[] {-4.75, 0.0, 4.75}) {
+          for (double vy : new double[] {-4.75, 0.0, 4.75}) {
+            var result =
+                solver.solve(
+                    Translation2d.kZero,
+                    new Translation2d(distance, 0.0),
+                    new ChassisSpeeds(vx, vy, 0.0),
+                    ShootOnTheMove.DRAG_CONSTANT.getAsDouble());
+            assertThat(result.valid()).as("distance=%s, vx=%s, vy=%s", distance, vx, vy).isTrue();
+            assertThat(result.residualMeters()).isLessThanOrEqualTo(1e-10);
+          }
+        }
+      }
+    }
   }
 
   @Test

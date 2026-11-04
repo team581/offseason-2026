@@ -8,8 +8,6 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
@@ -484,8 +482,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected void collectInputs() {
-    hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
-
     robotPose = localization.getPose();
     feedLocation = FeedLocation.closest(robotPose);
     var speeds = swerve.getFieldRelativeSpeeds();
@@ -509,16 +505,18 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     scoringParameters =
         getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
             ? AimParameterUtil.getStaticScoringParameters(
-                robotPoseUsedForScoring, speeds, swerve.getRequestedFieldRelativeSpeeds())
+                robotPoseUsedForScoring, speeds, swerve.getAppliedFieldRelativeSpeeds())
             : AimParameterUtil.getScoringParameters(
-                robotPoseUsedForScoring, speeds, swerve.getRequestedFieldRelativeSpeeds());
+                robotPoseUsedForScoring, speeds, swerve.getAppliedFieldRelativeSpeeds());
 
     feedingParameters =
         getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()
             ? AimParameterUtil.getStaticFeedingParameters(
-                feedLocation, robotPose, speeds, swerve.getRequestedFieldRelativeSpeeds())
+                feedLocation, robotPose, speeds, swerve.getAppliedFieldRelativeSpeeds())
             : AimParameterUtil.getFeedingParameters(
-                feedLocation, robotPose, speeds, swerve.getRequestedFieldRelativeSpeeds());
+                feedLocation, robotPose, speeds, swerve.getAppliedFieldRelativeSpeeds());
+
+    hubActivity.updateShooterScoringTOF(shooter.getScoreTimeOfFlight(scoringParameters.distance()));
 
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
@@ -537,28 +535,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && FieldUtil.isScorePathObstructed(
                 TurretCalculator.getTurretPose(robotPose).getTranslation());
 
-    Translation2d fullyCompensatedHubGoal =
-        AimParameterUtil.FEEDING_SOTM
-            .getSeparatedVelocityCompensatedGoal(
-                robotPose.getTranslation(),
-                FieldUtil.HUB_POSE.getTranslation(),
-                speeds,
-                swerve.getRequestedFieldRelativeSpeeds())
-            .fullyCompensatedGoal();
-    Translation2d fullyCompensatedFeedGoal =
-        AimParameterUtil.FEEDING_SOTM
-            .getSeparatedVelocityCompensatedGoal(
-                robotPose.getTranslation(),
-                feedLocation.getTranslation(),
-                speeds,
-                swerve.getRequestedFieldRelativeSpeeds())
-            .fullyCompensatedGoal();
-    DogLog.log(
-        "ShootOnTheMove/CompensatedGoalFeeding",
-        new Pose2d(fullyCompensatedFeedGoal, Rotation2d.kZero));
-    DogLog.log(
-        "ShootOnTheMove/CompensatedGoalScoring",
-        new Pose2d(fullyCompensatedHubGoal, Rotation2d.kZero));
     shooter.updateHopperState(hopperManager.isFull());
     DogLog.log("RobotManager/Feeding/IsInSafeFeedingLocation", isInSafeFeedingLocation);
   }

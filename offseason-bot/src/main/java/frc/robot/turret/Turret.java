@@ -52,6 +52,30 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   static boolean isAtGoal(
       TurretState state,
       TurretState expectedState,
+      double currentAngle,
+      AimingParameters aimingParameters) {
+    if (!aimingParameters.solutionValid() || state != expectedState) {
+      return false;
+    }
+    var targetSetpoint =
+        clamp(TurretCalculator.getOptimalAngle(aimingParameters.turretAngle(), currentAngle));
+    return MathUtil.isNear(
+            aimingParameters.turretAngle(),
+            currentAngle,
+            aimingParameters.turretTolerance(),
+            -180.0,
+            180.0)
+        && isAtGoal(
+            state,
+            targetSetpoint,
+            currentAngle,
+            aimingParameters.turretTolerance(),
+            aimingParameters.upcomingTurretAngle());
+  }
+
+  static boolean isAtGoal(
+      TurretState state,
+      TurretState expectedState,
       double setpoint,
       double currentAngle,
       double tolerance) {
@@ -110,7 +134,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(AimingParameters aimingParameters) {
-    return atGoal(aimingParameters.turretTolerance(), aimingParameters.upcomingTurretAngle());
+    return isAtGoal(getState(), getState(), currentAngle, aimingParameters);
   }
 
   public boolean atGoal(double tolerance) {
@@ -122,13 +146,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public boolean atGoal(TurretState expectedState, AimingParameters aimingParameters) {
-    return isAtGoal(
-        getState(),
-        expectedState,
-        setpoint,
-        currentAngle,
-        aimingParameters.turretTolerance(),
-        aimingParameters.upcomingTurretAngle());
+    return isAtGoal(getState(), expectedState, currentAngle, aimingParameters);
   }
 
   public boolean atGoal(TurretState expectedState, double tolerance) {
