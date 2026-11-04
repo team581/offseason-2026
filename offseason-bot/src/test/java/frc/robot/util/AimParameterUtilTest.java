@@ -161,20 +161,6 @@ final class AimParameterUtilTest {
     var rotatingSpeeds = new ChassisSpeeds(0.0, 0.0, 1.0);
     var rotating = AimParameterUtil.getScoringParameters(robotPose, rotatingSpeeds, rotatingSpeeds);
 
-    // var lateral =
-    //     AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 1.0, 0.0));
-    // var rotating =
-    //     AimParameterUtil.getScoringParameters(robotPose, new ChassisSpeeds(0.0, 0.0, 1.0));
-
-    assertEquals(-1.0 / 4.0, lateral.turretFeedForwardRadians(), DELTA);
-    // The turret is behind the chassis center: positive yaw moves its axis in -Y,
-    // reducing the relative tracking rate below the chassis's 1 rad/s yaw rate.
-    var rotatingTurretSpeeds =
-        TurretCalculator.getTurretChassisSpeeds(
-            rotatingSpeeds, robotPose.getRotation().getDegrees());
-    // var predictedTurretLateralVelocity =
-    //     AimParameterUtil.SCORING_SOTM.getPredictedVelocity(
-    //         rotatingTurretSpeeds.vyMetersPerSecond, rotatingSpeeds.vyMetersPerSecond);
     assertThat(lateral.turretFeedForwardRadians()).isNegative();
     assertThat(rotating.turretFeedForwardRadians()).isNegative();
 
@@ -183,6 +169,9 @@ final class AimParameterUtilTest {
     var staticRotating =
         AimParameterUtil.getStaticScoringParameters(robotPose, rotatingSpeeds, rotatingSpeeds);
     assertEquals(-1.0 / 4.0, staticLateral.turretFeedForwardRadians(), 1e-4);
+    var rotatingTurretSpeeds =
+        TurretCalculator.getTurretChassisSpeeds(
+            rotatingSpeeds, robotPose.getRotation().getDegrees());
     assertEquals(
         -(1.0 + rotatingTurretSpeeds.vyMetersPerSecond / 4.0),
         staticRotating.turretFeedForwardRadians(),
