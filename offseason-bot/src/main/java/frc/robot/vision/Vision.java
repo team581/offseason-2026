@@ -9,7 +9,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.generated.SpotProtos;
+import frc.robot.vision.data.*;
 import frc.robot.vision.results.VisionMeasurement;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +57,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private static final Set<Integer> RED_HUB = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
   private static final Set<Integer> BLUE_HUB = Set.of(18, 19, 20, 21, 24, 25, 26, 27);
   private final VisionIO io;
-  private final SpotProtos.Profile profile;
+  private final Profile profile;
   private final CaptureSource capture;
   private final DoubleSupplier clock;
   private final BooleanSupplier enabled;
@@ -85,7 +85,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
 
   public Vision(
       VisionIO io,
-      SpotProtos.Profile profile,
+      Profile profile,
       List<SpotCameraProfiles.Camera> mounts,
       CaptureSource capture,
       DoubleSupplier clock,
@@ -102,7 +102,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     this.alliance = alliance;
     history = new CaptureHistory(capture::poseAt);
     processor = new VisionProcessor(profile, mounts, history, VisionTuning::policy);
-    queue = new MeasurementQueue(profile.getReorderWindowS(), 128);
+    queue = new MeasurementQueue(profile.reorderWindowS(), 128);
     selection = new VisionIO.TagSelection(1, broadTags());
     io.setTagSelection(selection);
   }
@@ -140,33 +140,32 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     var health = inputs.health();
     var ack = health.acknowledgement();
     String epoch =
-        ack.getServiceSession()
+        ack.serviceSession()
             + "/"
-            + ack.getRuntimeGeneration()
+            + ack.runtimeGeneration()
             + "/"
-            + ack.getConnectionEpoch()
+            + ack.connectionEpoch()
             + "/"
-            + ack.getSyncEpoch();
+            + ack.syncEpoch();
     if (!epoch.equals(generation)) {
       generation = epoch;
       queue.clearPending();
       processor.newGeneration(epoch);
       retireObservations();
     }
-    boolean available = health.available() && ack.getTagSelectionSupported();
-    boolean fusion = available && profile.getFusionEnabled() && operatorVision.getAsBoolean();
+    boolean available = health.available() && ack.tagSelectionSupported();
+    boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
     io.setFusionEnabled(fusion);
     if (!fusion) queue.clearPending();
     boolean pending = true;
     for (var sample : inputs.samples()) {
-      if (profile.getCamerasList().stream()
-          .noneMatch(c -> c.getName().equals(sample.observation().getCameraName()))) continue;
+      if (profile.cameras().stream()
+          .noneMatch(c -> c.name().equals(sample.observation().cameraName()))) continue;
       var observation = sample.observation();
       boolean matchingPolicy =
-          observation.getTagSelectionGeneration() == selection.generation()
-              && observation.getCandidatesList().stream()
-                  .allMatch(candidate ->
-                      selection.allowedTagIds().containsAll(candidate.getTagIdsList()));
+          observation.tagSelectionGeneration() == selection.generation()
+              && observation.candidates().stream()
+                  .allMatch(candidate -> selection.allowedTagIds().containsAll(candidate.tagIds()));
       var decision =
           !available
               ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CONFIGURATION)
@@ -193,7 +192,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       }
       var previous =
           cameras.getOrDefault(
-              observation.getCameraName(),
+              observation.cameraName(),
               new CameraStatus(
                   Double.NEGATIVE_INFINITY,
                   Double.NEGATIVE_INFINITY,
@@ -203,7 +202,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                   false,
                   "Waiting"));
       cameras.put(
-          observation.getCameraName(),
+          observation.cameraName(),
           new CameraStatus(
               operational ? sample.captureFpgaSeconds() : previous.lastObservation(),
               accepted ? sample.captureFpgaSeconds() : previous.lastAccepted(),
@@ -215,7 +214,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                       && !Sets.immutableEnumSet(
                               VisionProcessor.Reason.CONFIGURATION,
                               VisionProcessor.Reason.CALIBRATION,
-                              VisionProcessor.Reason.SCHEMA,
                               VisionProcessor.Reason.MALFORMED,
                               VisionProcessor.Reason.TIMESTAMP)
                           .contains(decision.reason())),
@@ -234,13 +232,13 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     }
     int configured = 0, usable = 0, required = 0;
     boolean all = true;
-    for (var camera : profile.getCamerasList()) {
-      if (!camera.getEnabled()) continue;
+    for (var camera : profile.cameras()) {
+      if (!camera.enabled()) continue;
       configured++;
-      if (camera.getRequired()) required++;
+      if (camera.required()) required++;
       var previous =
           cameras.getOrDefault(
-              camera.getName(),
+              camera.name(),
               new CameraStatus(
                   Double.NEGATIVE_INFINITY,
                   Double.NEGATIVE_INFINITY,
@@ -254,9 +252,9 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         usable++;
         pending = false;
       }
-      if (camera.getRequired() && !valid) all = false;
+      if (camera.required() && !valid) all = false;
       cameras.put(
-          camera.getName(),
+          camera.name(),
           new CameraStatus(
               previous.lastObservation(),
               previous.lastAccepted(),
@@ -272,7 +270,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     String reason =
         configured == 0
             ? "No measured camera configuration"
-            : !ack.getTagSelectionSupported() && ack.getApplied()
+            : !ack.tagSelectionSupported() && ack.applied()
                 ? "Spot service does not support tag selection"
                 : !available
                     ? health.reason()
@@ -306,8 +304,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public boolean eligible(VisionMeasurement value, double timestamp) {
     return value.equals(offered.get(value.frameId()))
         && value.timestamp() > resetTime
-        && timestamp - value.timestamp() <= profile.getMaxAgeS()
-        && value.timestamp() <= timestamp + profile.getFutureToleranceS()
+        && timestamp - value.timestamp() <= profile.maxAgeS()
+        && value.timestamp() <= timestamp + profile.futureToleranceS()
         && status.available()
         && value.tagIds().stream().allMatch(selection.allowedTagIds()::contains);
   }
@@ -320,7 +318,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     return isFusionEnabled()
         && cameras.values().stream()
             .anyMatch(camera ->
-                now - camera.lastFused() >= 0 && now - camera.lastFused() <= profile.getMaxAgeS());
+                now - camera.lastFused() >= 0 && now - camera.lastFused() <= profile.maxAgeS());
   }
 
   public boolean hasSeenTag() {
@@ -332,7 +330,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   public boolean isFusionEnabled() {
-    return status.available() && profile.getFusionEnabled() && operatorVision.getAsBoolean();
+    return status.available() && profile.fusionEnabled() && operatorVision.getAsBoolean();
   }
 
   public void measurementFused(VisionMeasurement value) {
@@ -373,7 +371,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   public boolean seeingTag() {
-    return now - lastTag <= profile.getMaxAgeS();
+    return now - lastTag <= profile.maxAgeS();
   }
 
   public void tagsRequest() {
@@ -389,10 +387,10 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     if (closed) return;
     var desired = new HashSet<String>();
     if (!status.available()) desired.add("Spot: " + status.reason());
-    for (var camera : profile.getCamerasList()) {
-      var observed = cameras.get(camera.getName());
-      if (camera.getEnabled() && camera.getRequired() && (observed == null || !observed.usable()))
-        desired.add("Spot required camera unavailable: " + camera.getName());
+    for (var camera : profile.cameras()) {
+      var observed = cameras.get(camera.name());
+      if (camera.enabled() && camera.required() && (observed == null || !observed.usable()))
+        desired.add("Spot required camera unavailable: " + camera.name());
     }
     for (var fault : desired) if (faults.add(fault)) DogLog.logFault(fault);
     for (var fault : Set.copyOf(faults))
@@ -423,10 +421,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   private List<Integer> broadTags() {
-    return profile.getField().getTagsList().stream()
-        .map(SpotProtos.FieldTag::getId)
-        .sorted()
-        .toList();
+    return profile.field().tags().stream().map(FieldTag::id).sorted().toList();
   }
 
   private Set<Integer> hubTags() {
@@ -439,9 +434,9 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private void refreshStatus() {
     int usable = (int) cameras.values().stream().filter(CameraStatus::usable).count();
     boolean all =
-        profile.getCamerasList().stream()
-            .filter(c -> c.getEnabled() && c.getRequired())
-            .allMatch(c -> cameras.containsKey(c.getName()) && cameras.get(c.getName()).usable());
+        profile.cameras().stream()
+            .filter(c -> c.enabled() && c.required())
+            .allMatch(c -> cameras.containsKey(c.name()) && cameras.get(c.name()).usable());
     status =
         new Status(
             status.available(),

@@ -85,7 +85,7 @@ the internal processing value type. The current bringup configuration publishes 
 
 ## 4. Send the request and let Spot solve
 
-[SpotVisionIO.java](../offseason-bot/src/main/java/frc/robot/vision/SpotVisionIO.java) publishes the configuration and robot state, including the requested tag IDs, under `/Spot/v2` using NetworkTables.
+[SpotVisionIO.java](../offseason-bot/src/main/java/frc/robot/vision/SpotVisionIO.java) publishes configuration through native NetworkTables topics and robot state through a WPILib struct under `/Spot`. Spot publishes atomic frame-result structs; Java subscribes to them.
 
 On the Jetson, these files in `spot-2026/src/spot_vision/` produce the response:
 

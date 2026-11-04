@@ -7,7 +7,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import frc.robot.vision.generated.SpotProtos;
+import frc.robot.vision.data.*;
 import java.util.HashSet;
 import java.util.List;
 
@@ -82,7 +82,7 @@ public final class VisionConfig {
         .toList();
   }
 
-  public static SpotProtos.Profile profile() {
+  public static Profile profile() {
     return profile(CAMERAS);
   }
 
@@ -96,7 +96,7 @@ public final class VisionConfig {
         ImmutableList.of());
   }
 
-  static SpotProtos.Profile profile(List<SpotCameraConfig> cameras) {
+  static Profile profile(List<SpotCameraConfig> cameras) {
     SpotCameraConfig.identifier(ROBOT_ID);
     if (!Double.isFinite(TAG_SIZE_M) || TAG_SIZE_M <= 0 || TAG_SIZE_M > 1 || cameras.size() > 32)
       throw new IllegalArgumentException("invalid vision configuration");
@@ -104,12 +104,17 @@ public final class VisionConfig {
     for (var camera : cameras) {
       if (!names.add(camera.name())) throw new IllegalArgumentException("duplicate camera name");
     }
-    return SpotProtocol.profile(ROBOT_ID, FIELD_LAYOUT, TAG_SIZE_M)
-        .addAllCameras(cameras.stream().map(SpotCameraConfig::definition).toList())
-        .setFusionEnabled(FUSION_ENABLED)
-        .setHeadingEnabled(false)
-        .setRevisedTrustEnabled(true)
-        .build();
+    var defaults = SpotProtocol.profile(ROBOT_ID, FIELD_LAYOUT, TAG_SIZE_M);
+    return new Profile(
+        ROBOT_ID,
+        cameras.stream().map(SpotCameraConfig::definition).toList(),
+        defaults.field(),
+        FUSION_ENABLED,
+        false,
+        true,
+        defaults.maxAgeS(),
+        defaults.futureToleranceS(),
+        defaults.reorderWindowS());
   }
 
   private VisionConfig() {}

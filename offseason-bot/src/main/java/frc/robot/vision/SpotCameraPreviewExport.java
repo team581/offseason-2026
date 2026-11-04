@@ -2,6 +2,7 @@ package frc.robot.vision;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import frc.robot.vision.data.Profile;
 import java.nio.file.*;
 import java.util.*;
 
@@ -11,57 +12,54 @@ public final class SpotCameraPreviewExport {
     write(VisionConfig.profile(), Path.of(args[0]));
   }
 
-  static void write(frc.robot.vision.generated.SpotProtos.Profile profile, Path output)
-      throws Exception {
+  static void write(Profile profile, Path output) throws Exception {
     var cameras = new ArrayList<Object>();
-    for (var camera : profile.getCamerasList()) {
-      var pose = camera.getRobotToCamera();
+    for (var camera : profile.cameras()) {
+      var pose = camera.robotToCamera();
       double norm =
           Math.sqrt(
-              pose.getQw() * pose.getQw()
-                  + pose.getQx() * pose.getQx()
-                  + pose.getQy() * pose.getQy()
-                  + pose.getQz() * pose.getQz());
+              pose.qw() * pose.qw()
+                  + pose.qx() * pose.qx()
+                  + pose.qy() * pose.qy()
+                  + pose.qz() * pose.qz());
       if (!Double.isFinite(norm) || norm == 0)
         throw new IllegalArgumentException("Invalid quaternion");
       var modes = new ArrayList<Object>();
-      for (var mode : camera.getAllowedModesList())
+      for (var mode : camera.allowedModes())
         modes.add(
             ImmutableMap.of(
                 "width",
-                mode.getWidth(),
+                mode.width(),
                 "height",
-                mode.getHeight(),
+                mode.height(),
                 "fps",
-                mode.getFps(),
+                mode.fps(),
                 "pixelFormat",
-                mode.getPixelFormat()));
+                mode.pixelFormat()));
       var controls = new ArrayList<Object>();
-      for (var control : camera.getControlsList())
+      for (var control : camera.controls())
         controls.add(
             ImmutableMap.of(
                 "name",
-                control.getName(),
+                control.name(),
                 "value",
-                control.getDefaultValue(),
+                control.defaultValue(),
                 "required",
-                control.getRequired(),
+                control.required(),
                 "allowOverride",
-                control.getAllowOverride()));
+                control.allowOverride()));
       cameras.add(
           Map.of(
               "name",
-              camera.getName(),
+              camera.name(),
               "required",
-              camera.getRequired(),
+              camera.required(),
               "translation",
-              new double[] {pose.getXM(), pose.getYM(), pose.getZM()},
+              new double[] {pose.xM(), pose.yM(), pose.zM()},
               "quaternion",
-              new double[] {
-                pose.getQw() / norm, pose.getQx() / norm, pose.getQy() / norm, pose.getQz() / norm
-              },
+              new double[] {pose.qw() / norm, pose.qx() / norm, pose.qy() / norm, pose.qz() / norm},
               "imageRotationDeg",
-              camera.getImageRotationDeg(),
+              camera.imageRotationDeg(),
               "capture",
               modes,
               "controls",
@@ -76,7 +74,7 @@ public final class SpotCameraPreviewExport {
           new Gson()
               .toJson(
                   ImmutableMap.of(
-                      "schemaVersion", 1, "robotId", profile.getRobotId(), "cameras", cameras)));
+                      "schemaVersion", 1, "robotId", profile.robotId(), "cameras", cameras)));
       Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     } finally {
       Files.deleteIfExists(temp);
