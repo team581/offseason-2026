@@ -106,9 +106,9 @@ final class ShootOnTheMoveTest {
 
   @Test
   void reversalBrakesBeforeCrossingZero() {
-    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.02, 0.15)).isGreaterThan(0.0);
+    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.02, 0.15)).isPositive();
     assertEquals(0.0, ShootOnTheMove.predictVelocity(2.0, -2.0, 0.15 * Math.log(2), 0.15), EPSILON);
-    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.2, 0.15)).isLessThan(0.0);
+    assertThat(ShootOnTheMove.predictVelocity(2.0, -2.0, 0.2, 0.15)).isNegative();
     assertEquals(-2.0, ShootOnTheMove.predictVelocity(2.0, -2.0, 100.0, 0.15), EPSILON);
   }
 
