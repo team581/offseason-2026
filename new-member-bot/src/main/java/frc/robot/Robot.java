@@ -88,8 +88,7 @@ public class Robot extends Base581Robot {
   private final PowerManager powerManager =
       new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
 
-  private final HopperManager hopperManager =
-      new HopperManager(deploy, intake, conveyor, feeder, hardware.towerSensor);
+  private final HopperManager hopperManager = new HopperManager(deploy, intake, conveyor, feeder);
 
   private final RobotManager robotManager =
       new RobotManager(

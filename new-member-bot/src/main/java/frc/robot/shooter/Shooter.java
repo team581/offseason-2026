@@ -248,7 +248,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   public void updateHopperState(double feederCurrent, boolean ballsInTower) {
     this.feederCurrent = feederCurrent;
-    this.ballsInTower = ballsInTower || !DSOptions.USE_TOWER_SENSOR.getAsBoolean();
+    this.ballsInTower = ballsInTower;
   }
 
   private boolean calculateAtGoal() {
