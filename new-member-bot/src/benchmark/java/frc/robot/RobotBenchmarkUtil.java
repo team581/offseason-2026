@@ -130,9 +130,6 @@ final class RobotBenchmarkUtil {
         seedMotor(invoke(device, "getFollower"), rotorVelocity);
       }
     }
-    Object range = field(hardware, "hopperCANRange");
-    invoke(invoke(range, "getSimState"), "setSupplyVoltage", 12.0);
-    invoke(invoke(range, "getSimState"), "setDistance", 0.20 + 0.04 * Math.sin(elapsedSeconds));
   }
 
   private RobotBenchmarkUtil() {}

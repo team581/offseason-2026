@@ -4,7 +4,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.team581.signals.Signals;
 import edu.wpi.first.hal.HAL;
-import edu.wpi.first.wpilibj.simulation.DIOSim;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import java.io.IOException;
@@ -47,8 +46,7 @@ public final class LoopBenchmark {
     // values below, and benchmark the CPU-controlled part of the loop without native timeout noise.
     Signals.setRefreshEnabledForBenchmark(false);
     RobotBenchmarkUtil.initializeSimulation(robot);
-    DIOSim towerSensor = new DIOSim(9);
-    runLoops(robot, towerSensor, WARMUP_LOOPS, null, null);
+    runLoops(robot, WARMUP_LOOPS, null, null);
 
     boolean autonomous =
         switch (mode) {
@@ -72,7 +70,7 @@ public final class LoopBenchmark {
     List<Long> durations = new ArrayList<>(measurementSeconds * 50);
     MessageDigest behaviorDigest = MessageDigest.getInstance("SHA-256");
     long heapBefore = usedHeapBytes();
-    runLoops(robot, towerSensor, measurementSeconds * 50, durations, behaviorDigest);
+    runLoops(robot, measurementSeconds * 50, durations, behaviorDigest);
     long heapAfter = usedHeapBytes();
 
     durations.sort(Long::compare);
@@ -139,11 +137,7 @@ public final class LoopBenchmark {
   }
 
   private static void runLoops(
-      Robot robot,
-      DIOSim towerSensor,
-      int loopCount,
-      List<Long> durations,
-      MessageDigest behaviorDigest) {
+      Robot robot, int loopCount, List<Long> durations, MessageDigest behaviorDigest) {
     long deadline = System.nanoTime();
     for (int loop = 0; loop < loopCount; loop++) {
       deadline += LOOP_PERIOD_NANOS;
@@ -152,7 +146,6 @@ public final class LoopBenchmark {
       SimHooks.stepTimingAsync(LOOP_PERIOD_SECONDS);
       double elapsedSeconds = loop * LOOP_PERIOD_SECONDS;
       RobotBenchmarkUtil.simulationStep(robot, elapsedSeconds);
-      towerSensor.setValue((loop / 50) % 2 == 0);
       DriverStationSim.notifyNewData();
       long start = System.nanoTime();
       robot.robotPeriodic();

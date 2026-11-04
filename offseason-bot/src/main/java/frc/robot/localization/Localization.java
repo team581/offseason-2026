@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
@@ -82,10 +83,18 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   }
 
   public boolean isLost() {
+    // Bypass trust factor checks in simulation, since we don't have simulated cameras
+    if (RobotBase.isSimulation()) {
+      return false;
+    }
     return trustFactor.isLost();
   }
 
   public boolean isTrustworthy() {
+    // Bypass trust factor checks in simulation, since we don't have simulated cameras
+    if (RobotBase.isSimulation()) {
+      return true;
+    }
     return trustFactor.isTrustworthy();
   }
 

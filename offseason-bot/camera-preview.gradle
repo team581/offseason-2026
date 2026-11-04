@@ -115,6 +115,14 @@ def installPreview = { boolean strict ->
 			logger.warn(message)
 		}
 }
-tasks.register('installSpotCameraPreview') { doLast { installPreview(true) } }
-tasks.register('ensureSpotCameraPreview') { doLast { installPreview(false) } }
+tasks.register('installSpotCameraPreview') {
+	doLast {
+		installPreview(true)
+	}
+}
+tasks.register('ensureSpotCameraPreview') {
+	doLast {
+		installPreview(false)
+	}
+}
 tasks.named('build') { dependsOn tasks.named('ensureSpotCameraPreview') }
