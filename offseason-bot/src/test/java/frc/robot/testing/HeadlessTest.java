@@ -10,6 +10,7 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.networktables.BooleanEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.datalog.DataLogReader;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -18,9 +19,16 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.HeadlessRunner;
+import frc.robot.config.DSOptions;
 import frc.robot.deploy.DeployState;
+import frc.robot.robot_manager.RobotState;
+import frc.robot.robot_manager.hopper_manager.HopperState;
+import frc.robot.shooter.ShooterState;
+import frc.robot.shooter_hood.ShooterHoodConfig;
+import frc.robot.shooter_hood.ShooterHoodState;
 import frc.robot.turret.TurretCalculator;
 import frc.robot.turret.TurretConfig;
+import frc.robot.turret.TurretState;
 import frc.robot.util.AimParameterUtil;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -144,6 +152,105 @@ final class HeadlessTest {
       assertThat(robot.deploy().getAngleDegrees()).isBetween(-5.0, 5.0);
       holdDeploy(0, 0.3, DeployState.INTAKE_COAST);
     } finally {
+      DriverStationSim.setEnabled(false);
+      robot.tick();
+    }
+  }
+
+  @Test
+  @Timeout(60)
+  void presetFeedShotTransitionsToFallbackFeedAndRunsFeeder() throws IOException {
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        System.getProperty("sim.test", "PRESET_FEED").equals("PRESET_FEED"));
+    initializeRobot();
+    var useVision = (BooleanEntry) DSOptions.USE_VISION;
+    boolean previousVision = useVision.get();
+    try (var resetPose =
+            NetworkTableInstance.getDefault()
+                .getTable("DSOptions")
+                .getBooleanTopic("ResetPoseForAuto")
+                .publish();
+        var testMode =
+            NetworkTableInstance.getDefault()
+                .getTable("DSOptions")
+                .getBooleanTopic("TestMode")
+                .publish()) {
+      resetPose.set(false);
+      testMode.set(false);
+      useVision.set(false);
+
+      DriverStationSim.setEnabled(false);
+      robot.tick();
+      // Set pose away from trenches, heading 0 degrees
+      robot.robotManager.localization.resetPose(new Pose2d(2.0, 4.0, Rotation2d.kZero));
+      DriverStationSim.setEnabled(true);
+      robot.tick();
+
+      // Home the hood so it can accept feed requests
+      robot.robotManager.homeShooterHoodRequest();
+      robot.runUntil(() -> robot.shooterHood().getState() == ShooterHoodState.IDLE, 2.0);
+
+      // Verify localization is reported unhealthy because UseVision is disabled
+      assertThat(robot.health().isLocalizationHealthy()).isFalse();
+
+      // Request feed; should enter PREPARE_FALLBACK_FEED
+      robot.robotManager.prepareFeedRequest();
+      robot.tick();
+      assertThat(robot.robotManager.getState()).isEqualTo(RobotState.PREPARE_FALLBACK_FEED);
+      assertThat(robot.robotManager.shooter.getState()).isEqualTo(ShooterState.PREPARE_FEED);
+      assertThat(robot.shooterHood().getState()).isEqualTo(ShooterHoodState.FEEDING);
+      assertThat(robot.turret.getState()).isEqualTo(TurretState.FEED);
+      assertThat(robot.robotManager.hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
+
+      // Run until turret, shooter, and hood reach their setpoints and it transitions to
+      // FALLBACK_FEED
+      robot.runUntil(() -> robot.robotManager.getState() == RobotState.FALLBACK_FEED, 5.0);
+      assertThat(robot.robotManager.getState()).isEqualTo(RobotState.FALLBACK_FEED);
+      assertThat(robot.robotManager.shooter.getState()).isEqualTo(ShooterState.FEED);
+      assertThat(robot.robotManager.hopperManager.getState()).isEqualTo(HopperState.FEED);
+
+      // Release feed and return to idle
+      robot.robotManager.idleRequest();
+      robot.runUntil(() -> robot.robotManager.getState() == RobotState.IDLE, 1.0);
+      assertThat(robot.robotManager.getState()).isEqualTo(RobotState.IDLE);
+    } finally {
+      useVision.set(previousVision);
+      robot.robotManager.idleRequest();
+      DriverStationSim.setEnabled(false);
+      robot.tick();
+    }
+  }
+
+  @Test
+  @Timeout(30)
+  void repeatedHoodHomingSettlesAtIdleThroughOperatorButton() throws IOException {
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        System.getProperty("sim.test", "HOOD_HOMING").equals("HOOD_HOMING"));
+    initializeRobot();
+    try (var testMode =
+        NetworkTableInstance.getDefault()
+            .getTable("DSOptions")
+            .getBooleanTopic("TestMode")
+            .publish()) {
+      testMode.set(false);
+      DriverStationSim.setJoystickButtonCount(1, 10);
+      DriverStationSim.setJoystickButtons(1, 0);
+      DriverStationSim.setEnabled(true);
+      robot.tick();
+      for (int press = 1; press <= 3; press++) {
+        DriverStationSim.setJoystickButtons(1, 1 << 6);
+        robot.tick();
+        DriverStationSim.setJoystickButtons(1, 0);
+        robot.tick();
+        double settleUntil = Timer.getFPGATimestamp() + 1.0;
+        robot.runUntil(() -> Timer.getFPGATimestamp() >= settleUntil, 2.0);
+        assertThat(robot.shooterHood().getState()).isEqualTo(ShooterHoodState.IDLE);
+        assertThat(robot.shooterHood().getAngle())
+            .as("Hood settles at idle after operator homing press %s", press)
+            .isCloseTo(ShooterHoodConfig.IDLE_ANGLE, offset(0.5));
+      }
+    } finally {
+      DriverStationSim.setJoystickButtons(1, 0);
       DriverStationSim.setEnabled(false);
       robot.tick();
     }

@@ -441,7 +441,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case SHOOT_1 -> {
-        if ((timeout(2.0) && robotManager.hopperManager.hasFinishedShooting()) || timeout(4.0)) {
+        if ((timeout(2.0) && robotManager.hopperManager.hasFinishedShooting()) || timeout(5.0)) {
           yield NormalAutoState.DEFAULT_INTAKE_SECOND_CYCLE;
         } else {
           yield currentState;
@@ -470,7 +470,7 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         }
       }
       case SHOOT_2 -> {
-        if ((timeout(2.0) && robotManager.hopperManager.hasFinishedShooting()) || timeout(4.0)) {
+        if ((timeout(2.0) && robotManager.hopperManager.hasFinishedShooting()) || timeout(5.0)) {
           yield NormalAutoState.INTAKE_THIRD_CYCLE;
         } else {
           yield currentState;
@@ -487,6 +487,13 @@ public class RightNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         if (trailblazer.passedMarker(Markers.START_SHOOT_RQ)
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
           yield NormalAutoState.SHOOT_3;
+        } else {
+          yield currentState;
+        }
+      }
+      case SHOOT_3 -> {
+        if ((timeout(2.0) && robotManager.hopperManager.hasFinishedShooting()) || timeout(5.0)) {
+          yield NormalAutoState.DONE;
         } else {
           yield currentState;
         }

@@ -8,6 +8,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
@@ -439,7 +440,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         smartHoodPrepareFallbackScoreRequest();
         turret.scoreRequest(scoringParameters);
         swerve.scoreRequest();
-        powerManager.scoringRequest();
+        smartScoringPowerManagerRequest();
       }
       case FALLBACK_SCORE -> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
@@ -448,7 +449,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
         swerve.scoreRequest();
-        powerManager.scoringRequest();
+        smartScoringPowerManagerRequest();
       }
       case UNJAM -> {
         hopperManager.unjamRequest();
@@ -497,17 +498,33 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     : FieldUtil.inTrench(robotPose.getTranslation()))
                 || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
+    // Fallback states remain active until the driver ends the shot. Keep their fixed tower
+    // location even if vision recovers, rather than changing the aim in the middle of a shot.
+    boolean useTowerFallback =
+        !health.isLocalizationHealthy()
+            || getState() == RobotState.PREPARE_FALLBACK_SCORE
+            || getState() == RobotState.FALLBACK_SCORE;
     Pose2d robotPoseUsedForScoring =
-        health.isLocalizationHealthy()
-            ? robotPose
-            : new Pose2d(
-                FieldUtil.getFallbackScorePoint().getTranslation(), robotPose.getRotation());
-    scoringParameters =
-        getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
-            ? AimParameterUtil.getStaticScoringParameters(
-                robotPoseUsedForScoring, speeds, swerve.getAppliedFieldRelativeSpeeds())
-            : AimParameterUtil.getScoringParameters(
-                robotPoseUsedForScoring, speeds, swerve.getAppliedFieldRelativeSpeeds());
+        useTowerFallback
+            ? new Pose2d(
+                FieldUtil.getTowerFallbackScorePoint().getTranslation(), robotPose.getRotation())
+            : robotPose;
+    DogLog.log("RobotManager/ScorePoint", robotPoseUsedForScoring);
+
+    if (useTowerFallback) {
+      // The tower preset is a stationary shot. Drive velocity must not move its target or
+      // introduce feedforward, including when the delayed SOTM request becomes active.
+      scoringParameters =
+          AimParameterUtil.getStaticScoringParameters(
+              robotPoseUsedForScoring, new ChassisSpeeds(), new ChassisSpeeds());
+    } else {
+      scoringParameters =
+          getState() == RobotState.WARMUP_SCORE || !swerve.driverWantsSotm()
+              ? AimParameterUtil.getStaticScoringParameters(
+                  robotPoseUsedForScoring, speeds, swerve.getAppliedFieldRelativeSpeeds())
+              : AimParameterUtil.getScoringParameters(
+                  robotPoseUsedForScoring, speeds, swerve.getAppliedFieldRelativeSpeeds());
+    }
 
     feedingParameters =
         getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()

@@ -134,8 +134,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     if (RobotBase.isSimulation()) {
       return !timeout(1.5);
     }
-    // Without fuel detection, keep shooting until the caller stops or times out.
-    return true;
+    return !feeder.hasFinishedShooting();
   }
 
   private HopperState resolveFeedState() {
@@ -219,15 +218,15 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         funneler.scoreRequest();
       }
       case SCORE -> {
-        // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (!operatorWantsStow
-            && deploy.getState() != DeployState.SCORE_COMPACTION
-            && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
-          deploy.intakeRequest();
-        }
         if (operatorWantsStow) {
+          deploy.stowRequest();
           intake.idleRequest();
         } else {
+          // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
+          if (deploy.getState() != DeployState.SCORE_COMPACTION
+              && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
+            deploy.intakeRequest();
+          }
           intake.scoreRequest();
         }
         conveyor.initialShotRequest();
@@ -243,11 +242,16 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       }
 
       case FEED -> {
-        // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
-        if (!operatorWantsStow && deploy.getState() != DeployState.FEED_COMPACTION) {
-          deploy.intakeRequest();
+        if (operatorWantsStow) {
+          deploy.stowRequest();
+          intake.idleRequest();
+        } else {
+          // Don't move deploy back to intake if it's already compacting from a previous SHOOT cycle
+          if (deploy.getState() != DeployState.FEED_COMPACTION) {
+            deploy.intakeRequest();
+          }
+          intake.feedRequest();
         }
-        intake.feedRequest();
         conveyor.initialShotRequest();
         feeder.feedRequest();
         funneler.feedingRequest();
