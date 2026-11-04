@@ -384,15 +384,15 @@ public class FieldUtil {
   private static final double ROBOT_WIDTH_WITH_BUMPERS = Units.inchesToMeters(29.0 + 6.0);
   private static final double ROBOT_HALF_WIDTH_WITH_BUMPERS = ROBOT_WIDTH_WITH_BUMPERS / 2.0;
 
-  // Preset scoring shots placed on either side of the climb tower against the driver station wall
+  // Preset scoring shots on either side of the climb tower, 0.5 m off the driver station wall
   private static final Pose2d RED_LEFT_TOWER_FALLBACK =
       new Pose2d(
-          FIELD_LENGTH_X - ROBOT_HALF_WIDTH_WITH_BUMPERS,
+          FIELD_LENGTH_X - ROBOT_HALF_WIDTH_WITH_BUMPERS - 0.5,
           CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getY() - ROBOT_HALF_WIDTH_WITH_BUMPERS,
           Rotation2d.kZero);
   private static final Pose2d RED_RIGHT_TOWER_FALLBACK =
       new Pose2d(
-          FIELD_LENGTH_X - ROBOT_HALF_WIDTH_WITH_BUMPERS,
+          FIELD_LENGTH_X - ROBOT_HALF_WIDTH_WITH_BUMPERS - 0.5,
           CLIMB_BACK_CORNER_DEPOT_SIDE.redPose().getY() + ROBOT_HALF_WIDTH_WITH_BUMPERS,
           Rotation2d.kZero);
   private static final Pose2d BLUE_LEFT_TOWER_FALLBACK = pathflip(RED_LEFT_TOWER_FALLBACK);

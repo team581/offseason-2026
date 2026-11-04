@@ -110,7 +110,7 @@ final class FieldUtilTest {
   void towerFallbackScorePointBlueAlliance() {
     setAlliance(AllianceStationID.Blue1);
     var blueStation1Pose = FieldUtil.getTowerFallbackScorePoint();
-    assertThat(blueStation1Pose.getX()).isCloseTo(Units.inchesToMeters(17.5), offset(1e-4));
+    assertThat(blueStation1Pose.getX()).isCloseTo(Units.inchesToMeters(17.5) + 0.5, offset(1e-4));
     assertThat(blueStation1Pose.getY())
         .isCloseTo(FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(146.718750 - 17.5), offset(1e-4));
     assertThat(blueStation1Pose.getRotation()).isEqualTo(Rotation2d.k180deg);
@@ -118,7 +118,7 @@ final class FieldUtilTest {
 
     setAlliance(AllianceStationID.Blue3);
     var blueStation3Pose = FieldUtil.getTowerFallbackScorePoint();
-    assertThat(blueStation3Pose.getX()).isCloseTo(Units.inchesToMeters(17.5), offset(1e-4));
+    assertThat(blueStation3Pose.getX()).isCloseTo(Units.inchesToMeters(17.5) + 0.5, offset(1e-4));
     assertThat(blueStation3Pose.getY())
         .isCloseTo(FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(193.718750 + 17.5), offset(1e-4));
     assertThat(blueStation3Pose.getRotation()).isEqualTo(Rotation2d.k180deg);
@@ -130,7 +130,7 @@ final class FieldUtilTest {
     setAlliance(AllianceStationID.Red1);
     var redStation1Pose = FieldUtil.getTowerFallbackScorePoint();
     assertThat(redStation1Pose.getX())
-        .isCloseTo(FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(17.5), offset(1e-4));
+        .isCloseTo(FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(17.5) - 0.5, offset(1e-4));
     assertThat(redStation1Pose.getY())
         .isCloseTo(Units.inchesToMeters(146.718750 - 17.5), offset(1e-4));
     assertThat(redStation1Pose.getRotation()).isEqualTo(Rotation2d.kZero);
@@ -139,7 +139,7 @@ final class FieldUtilTest {
     setAlliance(AllianceStationID.Red3);
     var redStation3Pose = FieldUtil.getTowerFallbackScorePoint();
     assertThat(redStation3Pose.getX())
-        .isCloseTo(FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(17.5), offset(1e-4));
+        .isCloseTo(FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(17.5) - 0.5, offset(1e-4));
     assertThat(redStation3Pose.getY())
         .isCloseTo(Units.inchesToMeters(193.718750 + 17.5), offset(1e-4));
     assertThat(redStation3Pose.getRotation()).isEqualTo(Rotation2d.kZero);
