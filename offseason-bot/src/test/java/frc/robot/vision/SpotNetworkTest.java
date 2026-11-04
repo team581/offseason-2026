@@ -53,7 +53,7 @@ final class SpotNetworkTest {
           Thread.sleep(10);
           received.addAll(java.util.Arrays.asList(profiles.readQueue()));
         }
-        assertThat(received).size().isGreaterThanOrEqualTo(3);
+        assertThat(received).hasSizeGreaterThanOrEqualTo(3);
         assertThat(received.get(received.size() - 1).timestamp)
             .isGreaterThan(received.get(0).timestamp);
         for (var sample : received)
