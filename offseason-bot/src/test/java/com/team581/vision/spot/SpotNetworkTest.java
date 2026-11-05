@@ -3,6 +3,7 @@ package com.team581.vision.spot;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.structs.Heartbeat;
 import edu.wpi.first.hal.HAL;
@@ -40,7 +41,7 @@ final class SpotNetworkTest {
       try (var io =
               new SpotVisionIO(
                   server,
-                  TestRecords.with(fixture.profile, "cameras", java.util.List.of()),
+                  TestRecords.with(fixture.profile, "cameras", ImmutableList.of()),
                   "robot");
           var peer = new TestPeer(client);
           var health =
@@ -108,7 +109,7 @@ final class SpotNetworkTest {
       try (var io =
               new SpotVisionIO(
                   server,
-                  TestRecords.with(fixture.profile, "cameras", java.util.List.of()),
+                  TestRecords.with(fixture.profile, "cameras", ImmutableList.of()),
                   defaults);
           var config = client.getStringTopic("/Spot/Config/cameraConfig").subscribe("")) {
         client.setServer("127.0.0.1", port);
