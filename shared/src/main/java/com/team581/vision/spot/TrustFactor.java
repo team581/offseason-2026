@@ -1,10 +1,7 @@
 package com.team581.vision.spot;
 
-import static java.util.Comparator.comparingDouble;
-
 import com.team581.vision.spot.results.VisionMeasurement;
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.function.DoubleSupplier;
 
 /** Capture-time evidence heuristic in metres, not covariance or probability. */
@@ -54,22 +51,19 @@ public final class TrustFactor {
   }
 
   /** Caller supplies only measurements actually submitted to the estimator. */
-  public void ingest(List<VisionMeasurement> fused) {
-    for (var value :
-        fused.stream().sorted(comparingDouble(VisionMeasurement::timestamp)).toList()) {
-      if (value.timestamp() < evidenceTimestamp) continue;
-      double evidence = value.innovationM() + Math.hypot(value.stdX(), value.stdY());
-      if (!Double.isFinite(evidence) || value.innovationM() < 0) continue;
-      if (value.timestamp() - groupStart > policy.correlationS()) {
-        groupStart = value.timestamp();
-        groupWorst = evidence;
-        groupPenalty = penaltyAt(groupStart);
-      } else {
-        groupWorst = Math.max(groupWorst, evidence);
-      }
-      score = groupWorst + Math.max(0., penalty - groupPenalty);
-      evidenceTimestamp = value.timestamp();
+  public void ingest(VisionMeasurement value) {
+    if (value.timestamp() < evidenceTimestamp) return;
+    double evidence = value.innovationM() + Math.hypot(value.stdX(), value.stdY());
+    if (!Double.isFinite(evidence) || value.innovationM() < 0) return;
+    if (value.timestamp() - groupStart > policy.correlationS()) {
+      groupStart = value.timestamp();
+      groupWorst = evidence;
+      groupPenalty = penaltyAt(groupStart);
+    } else {
+      groupWorst = Math.max(groupWorst, evidence);
     }
+    score = groupWorst + Math.max(0., penalty - groupPenalty);
+    evidenceTimestamp = value.timestamp();
   }
 
   public boolean isLost() {

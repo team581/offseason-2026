@@ -92,11 +92,9 @@ final class RobotContractTest {
             ImmutableList.of(measurement("a", 10.), measurement("b", 10.)), 2);
     assertThat(result.get(0).stdX()).isGreaterThan(.1);
     var trust = new TrustFactor();
-    trust.ingest(ImmutableList.of(result.get(0)));
+    trust.ingest(result.get(0));
     double before = trust.get();
-    trust.ingest(result);
-    assertThat(trust.get()).isEqualTo(before);
-    trust.ingest(ImmutableList.of());
+    result.forEach(trust::ingest);
     assertThat(trust.get()).isEqualTo(before);
     trust.updateOdometry(1., .02, false);
     assertThat(trust.get()).isGreaterThan(before);

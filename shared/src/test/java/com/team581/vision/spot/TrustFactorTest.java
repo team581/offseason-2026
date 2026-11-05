@@ -33,16 +33,17 @@ final class TrustFactorTest {
     var strong = measurement(10.01, .01);
     var weak = measurement(10.02, .2);
     batch.updateOdometry(.1, .04, false);
-    batch.ingest(ImmutableList.of(strong, weak));
+    batch.ingest(strong);
+    batch.ingest(weak);
     split.updateOdometry(.05, .02, false);
-    split.ingest(ImmutableList.of(strong));
+    split.ingest(strong);
     split.updateOdometry(.05, .02, false);
-    split.ingest(ImmutableList.of(weak));
+    split.ingest(weak);
     assertThat(split.get()).isCloseTo(batch.get(), offset(1e-12));
     assertThat(batch.get()).isCloseTo(.2 + Math.hypot(.1, .1) + .00405, offset(1e-12));
     assertThat(split.isTrustworthy()).isFalse();
     double before = split.get();
-    split.ingest(ImmutableList.of(strong));
+    split.ingest(strong);
     assertThat(split.get()).isEqualTo(before); // stale evidence cannot improve confidence
   }
 
@@ -63,7 +64,7 @@ final class TrustFactorTest {
             ImmutableList.of(1, 2, 3),
             0.,
             0.);
-    trust.ingest(VisionProcessor.accountForCorrelation(ImmutableList.of(observation), 4));
+    trust.ingest(VisionProcessor.accountForCorrelation(ImmutableList.of(observation), 4).get(0));
     assertThat(trust.get()).isCloseTo(.3919183588453085, offset(1e-12));
     assertThat(trust.isTrustworthy()).isTrue();
     trust.updateOdometry(0., 0., true);
