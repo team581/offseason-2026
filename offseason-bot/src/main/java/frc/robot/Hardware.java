@@ -46,9 +46,7 @@ public class Hardware {
 
   public final TalonFX funnelerMotor = new TalonFX(27, canivore);
 
-  public final TalonFX turretMotor = new TalonFX(28, rio);
-
-  // public final TalonFX extender = new TalonFX(28);
+  public final TalonFX turretMotor = new TalonFX(28, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(
