@@ -1,7 +1,6 @@
 package frc.robot.vision;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -309,7 +308,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         queue.size(),
         queue.lateCount() + queue.overloadCount(),
         generation,
-        ImmutableMap.copyOf(cameras));
+        cameras);
   }
 
   public boolean hasRecentFusedMeasurement() {
