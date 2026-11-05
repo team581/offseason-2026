@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 
+import com.team581.util.FieldUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
@@ -21,6 +22,8 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.HeadlessRunner;
 import frc.robot.config.DSOptions;
 import frc.robot.deploy.DeployState;
+import frc.robot.feeder.FeederState;
+import frc.robot.funneler.FunnelerState;
 import frc.robot.robot_manager.RobotState;
 import frc.robot.robot_manager.hopper_manager.HopperState;
 import frc.robot.shooter.ShooterState;
@@ -153,6 +156,83 @@ final class HeadlessTest {
       holdDeploy(0, 0.3, DeployState.INTAKE_COAST);
     } finally {
       DriverStationSim.setEnabled(false);
+      robot.tick();
+    }
+  }
+
+  @Test
+  @Timeout(60)
+  void hubScoringRunsThroughDriverTriggerOnBothAlliances() throws IOException {
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        System.getProperty("sim.test", "HUB_SCORING").equals("HUB_SCORING"));
+    initializeRobot();
+    var useVision = (BooleanEntry) DSOptions.USE_VISION;
+    var useHub = (BooleanEntry) DSOptions.USE_HUB_STATE;
+    var pit = (BooleanEntry) DSOptions.PIT_FUNCTIONALITY;
+    var testMode = (BooleanEntry) DSOptions.TEST_MODE;
+    var resetPose = (BooleanEntry) DSOptions.RESET_POSE_FOR_AUTO;
+    boolean previousVision = useVision.get();
+    boolean previousHub = useHub.get();
+    boolean previousPit = pit.get();
+    boolean previousTest = testMode.get();
+    boolean previousReset = resetPose.get();
+    try {
+      useHub.set(true);
+      pit.set(false);
+      testMode.set(false);
+      resetPose.set(false);
+      DriverStationSim.setJoystickAxisCount(0, 6);
+      DriverStationSim.setJoystickAxis(0, 3, 0.0);
+      for (var alliance :
+          new AllianceStationID[] {AllianceStationID.Blue1, AllianceStationID.Red1}) {
+        for (boolean visionEnabled : new boolean[] {true, false}) {
+          DriverStationSim.setEnabled(false);
+          DriverStationSim.setAllianceStationId(alliance);
+          useVision.set(visionEnabled);
+          robot.tick();
+          boolean red = alliance == AllianceStationID.Red1;
+          robot.robotManager.localization.resetPose(
+              new Pose2d(
+                  red ? FieldUtil.FIELD_LENGTH_X - 2.0 : 2.0,
+                  red ? FieldUtil.FIELD_WIDTH_Y - 2.0 : 2.0,
+                  red ? Rotation2d.kZero : Rotation2d.k180deg));
+          DriverStationSim.setEnabled(true);
+          robot.tick();
+          robot.robotManager.homeShooterHoodRequest();
+          robot.runUntil(() -> robot.shooterHood().getState() == ShooterHoodState.IDLE, 2.0);
+
+          DriverStationSim.setJoystickAxis(0, 3, 1.0);
+          var expected = visionEnabled ? RobotState.SCORE : RobotState.FALLBACK_SCORE;
+          robot.runUntil(() -> robot.robotManager.getState() == expected, 5.0);
+          double holdUntil = Timer.getFPGATimestamp() + 0.5;
+          while (Timer.getFPGATimestamp() < holdUntil) {
+            robot.tick();
+            assertThat(robot.robotManager.getState()).isEqualTo(expected);
+            assertThat(robot.robotManager.hopperManager.getState()).isEqualTo(HopperState.SCORE);
+            assertThat(robot.robotManager.hopperManager.feeder.getState())
+                .isEqualTo(FeederState.SCORE);
+            assertThat(robot.robotManager.hopperManager.funneler.getState())
+                .isEqualTo(FunnelerState.SCORE);
+          }
+
+          DriverStationSim.setJoystickAxis(0, 3, 0.0);
+          robot.tick();
+          assertThat(robot.robotManager.getState()).isEqualTo(RobotState.IDLE);
+          assertThat(robot.robotManager.hopperManager.feeder.getState())
+              .isEqualTo(FeederState.IDLE);
+          assertThat(robot.robotManager.hopperManager.conveyor.getState())
+              .isEqualTo(frc.robot.conveyor.ConveyorState.IDLE);
+        }
+      }
+    } finally {
+      DriverStationSim.setJoystickAxis(0, 3, 0.0);
+      robot.robotManager.idleRequest();
+      DriverStationSim.setEnabled(false);
+      useVision.set(previousVision);
+      useHub.set(previousHub);
+      pit.set(previousPit);
+      testMode.set(previousTest);
+      resetPose.set(previousReset);
       robot.tick();
     }
   }
