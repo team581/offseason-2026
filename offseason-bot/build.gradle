@@ -64,7 +64,7 @@ dependencies {
 }
 
 test {
-	useJUnitPlatform { excludeTags 'headless' }
+	useJUnitPlatform { excludeTags 'headless', 'spot-transport' }
 	systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
@@ -85,6 +85,24 @@ jar {
 deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
+
+// Cross-language smoke test against a sibling Spot checkout; no cameras or GUI.
+def spotTransportTest = tasks.register('spotTransportTest', Test) {
+	group = 'verification'
+	description = 'Checks real Spot Python estimates reach the offseason Java reader over local NT4'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform { includeTags 'spot-transport' }
+	def spotRepo = rootProject.file(providers.gradleProperty('spot.repo').getOrElse('../spot-2026')).absoluteFile
+	systemProperty 'spot.repo', spotRepo.path
+	def pythonPath = System.getProperty('os.name').toLowerCase().contains('windows') ? '.venv/Scripts/python.exe' : '.venv/bin/python'
+	systemProperty 'spot.python', providers.gradleProperty('spot.python').getOrElse(new File(spotRepo, pythonPath).path)
+	maxParallelForks = 1
+	outputs.upToDateWhen { false }
+	outputs.cacheIf { false }
+	testLogging { events 'passed', 'failed'; showStandardStreams = true }
+}
+wpi.java.configureTestTasks(spotTransportTest.get())
 
 tasks.withType(JavaCompile) {
 	options.compilerArgs.add '-XDstringConcat=inline'
