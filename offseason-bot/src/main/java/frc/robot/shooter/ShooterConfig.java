@@ -89,14 +89,14 @@ public class ShooterConfig {
   // Torque-current output: A per motor RPS. SimKit has no friction/load to feed forward.
   private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(5.0);
 
-  public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
+  public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               RobotBase.isSimulation()
                   ? SIM_GAINS.clone()
                   : new Slot0Configs().withKP(0.0).withKV(0.0));
-  public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
+  public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
@@ -104,22 +104,6 @@ public class ShooterConfig {
               RobotBase.isSimulation()
                   ? SIM_GAINS.clone()
                   : new Slot0Configs().withKP(0).withKS(0).withKV(0));
-  public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
-      createMotorConfig()
-          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              RobotBase.isSimulation()
-                  ? SIM_GAINS.clone()
-                  : new Slot0Configs().withKP(0.0).withKV(0.0));
-  public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
-      createMotorConfig()
-          .withMotorOutput(
-              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(
-              RobotBase.isSimulation()
-                  ? SIM_GAINS.clone()
-                  : new Slot0Configs().withKP(0.0).withKV(0.0));
-
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
       DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =

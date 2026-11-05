@@ -17,7 +17,6 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.RollerUtil;
@@ -60,53 +59,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return isAtGoal(state, currentRpm, shootingRpm, feedingRpm);
   }
 
-  // Top left motor is the leader
-  private final TalonFX topLeftMotor;
-  private final TalonFX topRightMotor;
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
 
-  public final TalonFX bottomLeftMotor;
-  public final TalonFX bottomRightMotor;
-  private final Follower topLeftFollower;
-
-  private final Follower bottomLeftFollower;
-
-  private final Follower bottomRightFollower;
   private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
-  private final StatusSignal<AngularVelocity> topLeftVelocitySignal;
-  private final StatusSignal<AngularVelocity> topRightVelocitySignal;
-  private final StatusSignal<AngularVelocity> bottomLeftVelocitySignal;
-  private final StatusSignal<AngularVelocity> bottomRightVelocitySignal;
-  private final StatusSignal<Voltage> topLeftVoltageSignal;
-  private final StatusSignal<Voltage> topRightVoltageSignal;
-  private final StatusSignal<Voltage> bottomLeftVoltageSignal;
-  private final StatusSignal<Voltage> bottomRightVoltageSignal;
-  private final StatusSignal<Voltage> topRightSupplyVoltageSignal;
-  private final StatusSignal<Current> topLeftSupplyCurrentSignal;
-  private final StatusSignal<Current> topRightSupplyCurrentSignal;
-  private final StatusSignal<Current> bottomLeftSupplyCurrentSignal;
+  private final StatusSignal<AngularVelocity> leftVelocitySignal;
+  private final StatusSignal<AngularVelocity> rightVelocitySignal;
+  private final StatusSignal<Current> leftSupplyCurrentSignal;
+  private final StatusSignal<Current> rightSupplyCurrentSignal;
 
-  private final StatusSignal<Current> bottomRightSupplyCurrentSignal;
-  private final StatusSignal<Current> topRightTorqueCurrentSignal;
-  private double topLeftVoltage = 0;
-  private double topRightVoltage = 0;
-  private double bottomLeftVoltage = 0;
-  private double bottomRightVoltage = 0;
-  private double topRightSupplyVoltage = 0;
-  private double topLeftSupplyCurrent = 0;
-  private double topRightSupplyCurrent = 0;
-  private double bottomLeftSupplyCurrent = 0;
-
-  private double bottomRightSupplyCurrent = 0;
-  private double topRightTorqueCurrent = 0;
+  private double leftSupplyCurrent = 0;
+  private double rightSupplyCurrent = 0;
 
   private double scoreDistance = 0;
   private double feedDistance = 0;
   private double shootingRpm = 0;
   private double feedingRpm = 0;
-  private double topLeftMotorRpm = 0;
-  private double topRightMotorRpm = 0;
-  private double bottomLeftMotorRpm = 0;
-  private double bottomRightMotorRpm = 0;
+  private double leftMotorRpm = 0;
+  private double rightMotorRpm = 0;
 
   private double initialFeedForward = 0.0;
   private boolean hopperFull = false;
@@ -122,93 +92,40 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   // Debounce for delay between shots at 15 bps
   private Debouncer atGoalDebouncer = new Debouncer(1.0 / 15.0, DebounceType.kFalling);
 
-  public Shooter(
-      TalonFX topLeftMotor,
-      TalonFX topRightMotor,
-      TalonFX bottomLeftMotor,
-      TalonFX bottomRightMotor) {
+  public Shooter(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
 
-    topLeftMotor.getConfigurator().apply(ShooterConfig.TOP_LEFT_MOTOR_CONFIGS);
-    topRightMotor.getConfigurator().apply(ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
-    bottomLeftMotor.getConfigurator().apply(ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
-    bottomRightMotor.getConfigurator().apply(ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
+    leftMotor.getConfigurator().apply(ShooterConfig.LEFT_MOTOR_CONFIG);
+    rightMotor.getConfigurator().apply(ShooterConfig.RIGHT_MOTOR_CONFIG);
 
-    TunablePid.register("Shooter/TopLeft", topLeftMotor, ShooterConfig.TOP_LEFT_MOTOR_CONFIGS);
-    TunablePid.register("Shooter/TopRight", topRightMotor, ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
-    TunablePid.register(
-        "Shooter/BottomLeft", bottomLeftMotor, ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
-    TunablePid.register(
-        "Shooter/BottomRight", bottomRightMotor, ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
+    TunablePid.register("Shooter/Left", leftMotor, ShooterConfig.LEFT_MOTOR_CONFIG);
+    TunablePid.register("Shooter/Right", rightMotor, ShooterConfig.RIGHT_MOTOR_CONFIG);
 
-    this.topLeftMotor = topLeftMotor;
-    this.topRightMotor = topRightMotor;
-    this.bottomLeftMotor = bottomLeftMotor;
-    this.bottomRightMotor = bottomRightMotor;
+    this.leftMotor = leftMotor;
+    this.rightMotor = rightMotor;
 
-    this.topLeftFollower = new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Opposed);
-    this.bottomLeftFollower =
-        new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Opposed);
-    this.bottomRightFollower =
-        new Follower(topRightMotor.getDeviceID(), MotorAlignmentValue.Aligned);
+    leftMotor.setControl(new Follower(rightMotor.getDeviceID(), MotorAlignmentValue.Opposed));
 
-    topLeftMotor.setControl(topLeftFollower);
-    bottomLeftMotor.setControl(bottomLeftFollower);
-    bottomRightMotor.setControl(bottomRightFollower);
+    leftVelocitySignal = leftMotor.getVelocity(false);
+    rightVelocitySignal = rightMotor.getVelocity(false);
+    leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
+    rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
 
-    topLeftVelocitySignal = topLeftMotor.getVelocity(false);
-    topRightVelocitySignal = topRightMotor.getVelocity(false);
-    bottomLeftVelocitySignal = bottomLeftMotor.getVelocity(false);
-    bottomRightVelocitySignal = bottomRightMotor.getVelocity(false);
-    topLeftVoltageSignal = topLeftMotor.getMotorVoltage(false);
-    topRightVoltageSignal = topRightMotor.getMotorVoltage(false);
-    bottomLeftVoltageSignal = bottomLeftMotor.getMotorVoltage(false);
-    bottomRightVoltageSignal = bottomRightMotor.getMotorVoltage(false);
-    topRightSupplyVoltageSignal = topRightMotor.getSupplyVoltage(false);
-    topLeftSupplyCurrentSignal = topLeftMotor.getSupplyCurrent(false);
-    topRightSupplyCurrentSignal = topRightMotor.getSupplyCurrent(false);
-    bottomLeftSupplyCurrentSignal = bottomLeftMotor.getSupplyCurrent(false);
-    bottomRightSupplyCurrentSignal = bottomRightMotor.getSupplyCurrent(false);
-    topRightTorqueCurrentSignal = topRightMotor.getTorqueCurrent(false);
-
-    Signals.forDevice(topLeftMotor)
-        .addSignals(topLeftVelocitySignal, topLeftVoltageSignal, topLeftSupplyCurrentSignal);
-    Signals.forDevice(topRightMotor)
-        .addSignals(
-            topRightVelocitySignal,
-            topRightVoltageSignal,
-            topRightSupplyVoltageSignal,
-            topRightSupplyCurrentSignal,
-            topRightTorqueCurrentSignal);
-    Signals.forDevice(bottomLeftMotor)
-        .addSignals(
-            bottomLeftVelocitySignal, bottomLeftVoltageSignal, bottomLeftSupplyCurrentSignal);
-    Signals.forDevice(bottomRightMotor)
-        .addSignals(
-            bottomRightVelocitySignal, bottomRightVoltageSignal, bottomRightSupplyCurrentSignal);
+    Signals.forDevice(leftMotor).addSignals(leftVelocitySignal, leftSupplyCurrentSignal);
+    Signals.forDevice(rightMotor).addSignals(rightVelocitySignal, rightSupplyCurrentSignal);
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    topLeftMotor
+    leftMotor
         .getConfigurator()
         .apply(
-            ShooterConfig.TOP_LEFT_MOTOR_CONFIGS.CurrentLimits.withSupplyCurrentLimit(
+            ShooterConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
-    topRightMotor
+    rightMotor
         .getConfigurator()
         .apply(
-            ShooterConfig.TOP_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    bottomLeftMotor
-        .getConfigurator()
-        .apply(
-            ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    bottomRightMotor
-        .getConfigurator()
-        .apply(
-            ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            ShooterConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
                 supplyCurrentLimit));
   }
 
@@ -271,10 +188,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
             "shooter",
             mechanism ->
                 mechanism
-                    .addMotor(topLeftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(topRightMotor, ChassisReference.CounterClockwise_Positive)
-                    .addMotor(bottomLeftMotor, ChassisReference.Clockwise_Positive)
-                    .addMotor(bottomRightMotor, ChassisReference.CounterClockwise_Positive));
+                    .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
+                    .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive));
 
     shooterSimulation.update();
   }
@@ -284,7 +199,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   }
 
   private boolean calculateAtGoal() {
-    return isAtGoal(getState(), topRightMotorRpm, shootingRpm, feedingRpm);
+    return isAtGoal(getState(), rightMotorRpm, shootingRpm, feedingRpm);
   }
 
   private void updateRpmTargets() {
@@ -311,21 +226,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   protected void collectInputs() {
     updateRpmTargets();
 
-    topLeftMotorRpm = topLeftVelocitySignal.getValueAsDouble() * 60.0;
-    topRightMotorRpm = topRightVelocitySignal.getValueAsDouble() * 60.0;
-    bottomLeftMotorRpm = bottomLeftVelocitySignal.getValueAsDouble() * 60.0;
-    bottomRightMotorRpm = bottomRightVelocitySignal.getValueAsDouble() * 60.0;
+    leftMotorRpm = leftVelocitySignal.getValueAsDouble() * 60.0;
+    rightMotorRpm = rightVelocitySignal.getValueAsDouble() * 60.0;
 
-    topLeftVoltage = topLeftVoltageSignal.getValueAsDouble();
-    topRightVoltage = topRightVoltageSignal.getValueAsDouble();
-    bottomLeftVoltage = bottomLeftVoltageSignal.getValueAsDouble();
-    bottomRightVoltage = bottomRightVoltageSignal.getValueAsDouble();
-    topRightSupplyVoltage = topRightSupplyVoltageSignal.getValueAsDouble();
-    topLeftSupplyCurrent = topLeftSupplyCurrentSignal.getValueAsDouble();
-    topRightSupplyCurrent = topRightSupplyCurrentSignal.getValueAsDouble();
-    bottomLeftSupplyCurrent = bottomLeftSupplyCurrentSignal.getValueAsDouble();
-    bottomRightSupplyCurrent = bottomRightSupplyCurrentSignal.getValueAsDouble();
-    topRightTorqueCurrent = topRightTorqueCurrentSignal.getValueAsDouble();
+    leftSupplyCurrent = leftSupplyCurrentSignal.getValueAsDouble();
+    rightSupplyCurrent = rightSupplyCurrentSignal.getValueAsDouble();
 
     atGoal = calculateAtGoal();
     hasReachedGoal |= atGoal;
@@ -352,41 +257,19 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   protected void whileInState(ShooterState state) {
     // RobotManager has now supplied this loop's compensated distance.
     updateRpmTargets();
-    DogLog.log("Shooter/TopLeft/RPM", topLeftMotorRpm);
-    DogLog.log("Shooter/TopRight/RPM", topRightMotorRpm);
-    DogLog.log("Shooter/BottomLeft/RPM", bottomLeftMotorRpm);
-    DogLog.log("Shooter/BottomRight/RPM", bottomRightMotorRpm);
+    DogLog.log("Shooter/Left/RPM", leftMotorRpm);
+    DogLog.log("Shooter/Right/RPM", rightMotorRpm);
     // Undo Phoenix feedback scaling to recover motor RPS before applying physical gearing.
     DogLog.log(
-        "Shooter/TopLeft/SurfaceSpeedMetersPerSecond",
+        "Shooter/Left/SurfaceSpeedMetersPerSecond",
         RollerUtil.surfaceSpeedMetersPerSecond(
-            topLeftMotorRpm
-                / 60.0
-                * ShooterConfig.TOP_LEFT_MOTOR_CONFIGS.Feedback.SensorToMechanismRatio,
+            leftMotorRpm / 60.0 * ShooterConfig.LEFT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
             ShooterConfig.ROLLER_DIAMETER_METERS,
             ShooterConfig.MOTOR_TO_ROLLER_RATIO));
     DogLog.log(
-        "Shooter/TopRight/SurfaceSpeedMetersPerSecond",
+        "Shooter/Right/SurfaceSpeedMetersPerSecond",
         RollerUtil.surfaceSpeedMetersPerSecond(
-            topRightMotorRpm
-                / 60.0
-                * ShooterConfig.TOP_RIGHT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
-            ShooterConfig.ROLLER_DIAMETER_METERS,
-            ShooterConfig.MOTOR_TO_ROLLER_RATIO));
-    DogLog.log(
-        "Shooter/BottomLeft/SurfaceSpeedMetersPerSecond",
-        RollerUtil.surfaceSpeedMetersPerSecond(
-            bottomLeftMotorRpm
-                / 60.0
-                * ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
-            ShooterConfig.ROLLER_DIAMETER_METERS,
-            ShooterConfig.MOTOR_TO_ROLLER_RATIO));
-    DogLog.log(
-        "Shooter/BottomRight/SurfaceSpeedMetersPerSecond",
-        RollerUtil.surfaceSpeedMetersPerSecond(
-            bottomRightMotorRpm
-                / 60.0
-                * ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
+            rightMotorRpm / 60.0 * ShooterConfig.RIGHT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
             ShooterConfig.ROLLER_DIAMETER_METERS,
             ShooterConfig.MOTOR_TO_ROLLER_RATIO));
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
@@ -394,38 +277,24 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/InitialFeedForward", initialFeedForward);
     DogLog.log("Shooter/AtGoal", atGoal);
 
-    DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
-    DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);
-    DogLog.log("Shooter/BottomLeft/SupplyCurrent", bottomLeftSupplyCurrent);
-    DogLog.log("Shooter/BottomRight/SupplyCurrent", bottomRightSupplyCurrent);
+    DogLog.log("Shooter/Left/SupplyCurrent", leftSupplyCurrent);
+    DogLog.log("Shooter/Right/SupplyCurrent", rightSupplyCurrent);
 
     switch (state) {
       case IDLE -> {
         var setpoint = ShooterConfig.IDLE_RPM / 60.0;
-        topRightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        rightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
         DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
       }
-      case PREPARE_SCORE -> {
+      case PREPARE_SCORE, SCORE -> {
         var setpoint = shootingRpm / 60.0;
-        topRightMotor.setControl(
+        rightMotor.setControl(
             velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
-      case SCORE -> {
-        var setpoint = shootingRpm / 60.0;
-        topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
-        DogLog.log("Shooter/RpmSetpoint", shootingRpm);
-      }
-      case PREPARE_FEED -> {
+      case PREPARE_FEED, FEED -> {
         var setpoint = feedingRpm / 60.0;
-        topRightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
-        DogLog.log("Shooter/RpmSetpoint", feedingRpm);
-      }
-      case FEED -> {
-        var setpoint = feedingRpm / 60.0;
-        topRightMotor.setControl(
+        rightMotor.setControl(
             velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }

@@ -2,7 +2,9 @@ package frc.robot.shooter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.Hardware;
@@ -15,7 +17,7 @@ final class ShooterReadinessTest {
   private static void assertFeedForward(Shooter shooter, double expected) {
     shooter.beforePeriodic();
     shooter.robotPeriodic();
-    var request = (VelocityTorqueCurrentFOC) hardware.shooterTopRightMotor.getAppliedControl();
+    var request = (VelocityTorqueCurrentFOC) hardware.shooterRightMotor.getAppliedControl();
     assertThat(request.FeedForward).isEqualTo(expected);
   }
 
@@ -29,12 +31,7 @@ final class ShooterReadinessTest {
   void initialFeedForwardExpiresAndClearsOutsideShootingStates() {
     SimHooks.pauseTiming();
     try {
-      var shooter =
-          new Shooter(
-              hardware.shooterTopLeftMotor,
-              hardware.shooterTopRightMotor,
-              hardware.shooterBottomLeftMotor,
-              hardware.shooterBottomRightMotor);
+      var shooter = new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
       shooter.robotPeriodic();
       for (boolean full : new boolean[] {false, true}) {
         shooter.updateHopperState(full);
@@ -71,15 +68,29 @@ final class ShooterReadinessTest {
   }
 
   @Test
+  void leftMotorFollowsRightMotorOpposedThroughScoringAndIdle() {
+    var shooter = new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
+    shooter.robotPeriodic();
+    shooter.scoreRequest(3.0);
+    shooter.robotPeriodic();
+    assertThat(hardware.shooterRightMotor.getAppliedControl())
+        .isInstanceOf(VelocityTorqueCurrentFOC.class);
+    var follower = (Follower) hardware.shooterLeftMotor.getAppliedControl();
+    assertThat(follower.LeaderID).isEqualTo(hardware.shooterRightMotor.getDeviceID());
+    assertThat(follower.MotorAlignment).isEqualTo(MotorAlignmentValue.Opposed);
+
+    shooter.idleRequest();
+    shooter.robotPeriodic();
+    assertThat(((VelocityTorqueCurrentFOC) hardware.shooterRightMotor.getAppliedControl()).Velocity)
+        .isEqualTo(ShooterConfig.IDLE_RPM / 60.0);
+    assertThat(hardware.shooterLeftMotor.getAppliedControl()).isInstanceOf(Follower.class);
+  }
+
+  @Test
   void startupAndEveryTransitionRequireActualReadiness() {
     SimHooks.pauseTiming();
     try {
-      var shooter =
-          new Shooter(
-              hardware.shooterTopLeftMotor,
-              hardware.shooterTopRightMotor,
-              hardware.shooterBottomLeftMotor,
-              hardware.shooterBottomRightMotor);
+      var shooter = new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
       for (var state : ShooterState.values()) {
         switch (state) {
           case IDLE -> shooter.idleRequest();

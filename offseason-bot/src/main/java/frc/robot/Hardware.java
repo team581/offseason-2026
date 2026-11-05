@@ -41,10 +41,8 @@ public class Hardware {
 
   public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
 
-  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, canivore);
-  public final TalonFX shooterBottomRightMotor = new TalonFX(24, canivore);
-  public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
-  public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
+  public final TalonFX shooterLeftMotor = new TalonFX(23, canivore);
+  public final TalonFX shooterRightMotor = new TalonFX(24, canivore);
 
   public final TalonFX funnelerMotor = new TalonFX(27, canivore);
 
