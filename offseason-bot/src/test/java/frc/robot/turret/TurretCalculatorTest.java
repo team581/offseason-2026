@@ -12,7 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 final class TurretCalculatorTest {
-  @CsvSource({"0, -4.750, 8.025", "90, -8.025, -4.750", "180, 4.750, -8.025", "270, 8.025, 4.750"})
+  @CsvSource({"0, -4.750, 8.025", "180, 4.750, -8.025", "270, 8.025, 4.750", "90, -8.025, -4.750"})
   @ParameterizedTest
   void cornerPositionVelocityAimAndToleranceUseRotatedOffset(
       double heading, double xInches, double yInches) {

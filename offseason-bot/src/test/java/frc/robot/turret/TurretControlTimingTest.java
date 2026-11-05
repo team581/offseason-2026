@@ -60,7 +60,7 @@ final class TurretControlTimingTest {
       var request = (PositionVoltage) motor.getAppliedControl();
       assertThat(request.Position).isCloseTo(Units.degreesToRotations(target[0]), within(1e-9));
       assertThat(request.Velocity).isCloseTo(target[1] / (2.0 * Math.PI), within(1e-9));
-      assertThat(request.UpdateFreqHz).isZero();
+      assertThat(request.UpdateFreqHz).isEqualTo(0);
     }
 
     stuck[0] = true;
@@ -68,6 +68,6 @@ final class TurretControlTimingTest {
     var request = (PositionVoltage) motor.getAppliedControl();
     assertThat(request.Position)
         .isEqualTo(Units.degreesToRotations(TurretConfig.FAUX_DUMPER_ANGLE));
-    assertThat(request.Velocity).isZero();
+    assertThat(request.Velocity).isEqualTo(0);
   }
 }
