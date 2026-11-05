@@ -37,14 +37,7 @@
     "calibration": null,
     "detector": {
       "max_hamming": 2,
-      "min_contrast": 3,
-      "refine_edges": true,
-      "decimate": 2,
-      "blur": 0,
-      "threads": 1,
-      "backend": "cpu",
-      "min_tag_px": 16,
-      "family": "tag36h11"
+      "backend": "cpu"
     },
     "required": true,
     "enabled": true,
