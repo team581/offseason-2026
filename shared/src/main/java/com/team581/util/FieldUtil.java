@@ -46,8 +46,11 @@ public class FieldUtil {
   private static final double TRENCH_LENGTH_X = Units.inchesToMeters(47.0);
   private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(48.94);
 
-  private static final double TRENCH_ZONE_LENGTH_X = TRENCH_LENGTH_X + Units.inchesToMeters(27.0);
-  private static final double TRENCH_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
+  private static final double TRENCH_HOOD_ZONE_SCALE = 0.7;
+  private static final double TRENCH_ZONE_LENGTH_X =
+      (TRENCH_LENGTH_X + Units.inchesToMeters(27.0)) * TRENCH_HOOD_ZONE_SCALE;
+  private static final double TRENCH_ZONE_LENGTH_Y =
+      Units.inchesToMeters(68.0) * TRENCH_HOOD_ZONE_SCALE;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 5;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(85.0);
 
@@ -265,7 +268,10 @@ public class FieldUtil {
           Rotation2d.kZero);
 
   private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ZONE =
-      new Rectangle2d(HOME_FIELD_RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+      new Rectangle2d(
+          HOME_FIELD_RED_DEPOT_TRENCH_CENTER,
+          TRENCH_LENGTH_X * TRENCH_HOOD_ZONE_SCALE,
+          TRENCH_LENGTH_Y * TRENCH_HOOD_ZONE_SCALE);
   private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE =
       new Rectangle2d(
           HOME_FIELD_RED_DEPOT_TRENCH_CENTER,
