@@ -35,6 +35,6 @@ Specifics:
 
 [BB581 2026 Offseason Bot Subsystems Specs](https://docs.google.com/spreadsheets/d/1mDvdYTsRMR2ZFJCAtvY2HhmHgne9vuBPMxt81vQo0jg/edit?gid=0#gid=0)
 
-[BB581 2026 Comp Devices](https://docs.google.com/spreadsheets/d/1YYtONOdg2YZQRPSNLiy-PlFT4Bk8vO7IyIyxR8BQ8LU/edit?usp=sharing)
+[BB581 2026 Devices — Off tab](https://docs.google.com/spreadsheets/d/1YYtONOdg2YZQRPSNLiy-PlFT4Bk8vO7IyIyxR8BQ8LU/edit#gid=1024098510) is authoritative for offseason device IDs and CAN buses.
 
 [BB581 2026 Rubble Pre Competition Checklist](https://docs.google.com/document/d/17c28Ujc5-gHSSO-p2sDA1KkdIzcMywqky476sp9STn4/edit?tab=t.0)

@@ -50,7 +50,7 @@ flowchart LR
 
 ## Conveyor/Floor
 
-- CANivore Bus (`581CANivore`), IDs 18 & 19
+- CANivore Bus (`581CANivore`): conveyor ID 18, tunnel top ID 20, tunnel bottom ID 21
 - Open-loop voltage control with FOC
 - Mechanically pivot upward when deploy retracts
 - Mechanisms:
@@ -74,7 +74,7 @@ flowchart LR
 
 ## Feeder
 
-- CANivore Bus (`581CANivore`), 2 Kraken X60s (IDs 20 & 21)
+- CANivore Bus (`581CANivore`), 1 Kraken X60 (ID 19)
 - Gear Ratio: `18:28` (1.556:1)
 - 2" flex wheels
 - Open-loop voltage control with FOC
@@ -116,7 +116,7 @@ flowchart LR
 
 ## Turret
 
-- Rio CAN Bus, 1 Kraken X44 (ID 28)
+- CANivore Bus (`581CANivore`), 1 Kraken X44 (ID 28)
 - Gear Ratio: `60:1`
 - Position Voltage control loop with velocity feedforward
 - Travel range: -270° to -90° (offset 4.75" back, 8.025" left)
@@ -132,7 +132,7 @@ flowchart LR
 
 ## Shooter
 
-- CANivore Bus (`581CANivore`), 4 Talon FXs (IDs 23–26; flywheel motors TBD)
+- CANivore Bus (`581CANivore`), 2 Talon FXs (left 23, right 24); right leads, left follows opposed. IDs 25 and 26 are unassigned.
 - Velocity Torque Current FOC control loop
 - Apply a timed initial feedforward boost when scoring or feeding (0.7 seconds with a full hopper, 0.1 seconds otherwise)
 - States:
