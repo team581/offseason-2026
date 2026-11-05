@@ -9,12 +9,17 @@ import com.team581.signals.Signals;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Funneler extends StateMachineSubsystem<FunnelerState> implements PowerManaged {
   private final TalonFX motor;
+  private final StatusSignal<Voltage> supplyVoltageSignal;
+  private final StatusSignal<Current> supplyCurrentSignal;
   private final StatusSignal<AngularVelocity> velocitySignal;
+
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
@@ -26,14 +31,19 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
     this.motor = motor;
     velocitySignal = motor.getRotorVelocity(false);
     Signals.forDevice(motor).addSignals(velocitySignal);
+    supplyVoltageSignal = motor.getSupplyVoltage(false);
+    Signals.forDevice(motor).addSignals(supplyVoltageSignal);
+    supplyCurrentSignal = motor.getSupplyCurrent(false);
+    Signals.forDevice(motor).addSignals(supplyCurrentSignal);
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    motor
-        .getConfigurator()
-        .apply(
-            FunnelerConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
+    var motorLimits =
+        FunnelerConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    motor.getConfigurator().apply(motorLimits);
+    DogLog.log("Funneler/SupplyLimitAmps", motorLimits.SupplyCurrentLimit);
+    DogLog.log("Funneler/StatorLimitAmps", motorLimits.StatorCurrentLimit);
   }
 
   public void ballFillingRequest() {
@@ -66,6 +76,9 @@ public class Funneler extends StateMachineSubsystem<FunnelerState> implements Po
 
   @Override
   protected void collectInputs() {
+    DogLog.log("Funneler/SupplyVoltage", supplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Funneler/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
+
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double velocityRps = velocitySignal.getValueAsDouble();
     surfaceSpeedMetersPerSecond =

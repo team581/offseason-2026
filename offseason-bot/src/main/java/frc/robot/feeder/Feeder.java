@@ -12,6 +12,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -19,9 +20,14 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   private final TalonFX topMotor;
   private final TalonFX bottomMotor;
+
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
+  private final StatusSignal<Voltage> topSupplyVoltageSignal;
+  private final StatusSignal<Current> topSupplyCurrentSignal;
+  private final StatusSignal<Voltage> bottomSupplyVoltageSignal;
+  private final StatusSignal<Current> bottomSupplyCurrentSignal;
   private final StatusSignal<AngularVelocity> topVelocitySignal;
   private final StatusSignal<AngularVelocity> bottomVelocitySignal;
   private final StatusSignal<Current> topStatorCurrentSignal;
@@ -47,19 +53,28 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
     bottomStatorCurrentSignal = bottomMotor.getStatorCurrent(false);
     Signals.forDevice(topMotor).addSignals(topVelocitySignal, topStatorCurrentSignal);
     Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomStatorCurrentSignal);
+    topSupplyVoltageSignal = topMotor.getSupplyVoltage(false);
+    Signals.forDevice(topMotor).addSignals(topSupplyVoltageSignal);
+    topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
+    Signals.forDevice(topMotor).addSignals(topSupplyCurrentSignal);
+    bottomSupplyVoltageSignal = bottomMotor.getSupplyVoltage(false);
+    Signals.forDevice(bottomMotor).addSignals(bottomSupplyVoltageSignal);
+    bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
+    Signals.forDevice(bottomMotor).addSignals(bottomSupplyCurrentSignal);
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    topMotor
-        .getConfigurator()
-        .apply(
-            FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit));
-    bottomMotor
-        .getConfigurator()
-        .apply(
-            FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+    var topLimits =
+        FeederConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    topMotor.getConfigurator().apply(topLimits);
+    DogLog.log("Feeder/Top/SupplyLimitAmps", topLimits.SupplyCurrentLimit);
+    DogLog.log("Feeder/Top/StatorLimitAmps", topLimits.StatorCurrentLimit);
+    var bottomLimits =
+        FeederConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    bottomMotor.getConfigurator().apply(bottomLimits);
+    DogLog.log("Feeder/Bottom/SupplyLimitAmps", bottomLimits.SupplyCurrentLimit);
+    DogLog.log("Feeder/Bottom/StatorLimitAmps", bottomLimits.StatorCurrentLimit);
   }
 
   public void ballFillingRequest() {
@@ -112,6 +127,11 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   @Override
   protected void collectInputs() {
+    DogLog.log("Feeder/Top/SupplyVoltage", topSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Feeder/Top/SupplyCurrent", topSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Feeder/Bottom/SupplyVoltage", bottomSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Feeder/Bottom/SupplyCurrent", bottomSupplyCurrentSignal.getValueAsDouble());
+
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double topVelocityRps = topVelocitySignal.getValueAsDouble();
     topSurfaceSpeedMetersPerSecond =

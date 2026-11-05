@@ -10,6 +10,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -17,9 +18,12 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   private final TalonFX topMotor;
   private final TalonFX bottomMotor;
+
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
+  private final StatusSignal<Voltage> topSupplyVoltageSignal;
+  private final StatusSignal<Voltage> bottomSupplyVoltageSignal;
   private final StatusSignal<AngularVelocity> topVelocitySignal;
   private final StatusSignal<AngularVelocity> bottomVelocitySignal;
 
@@ -43,20 +47,24 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
     Signals.forDevice(topMotor).addSignals(topVelocitySignal, topSupplyCurrentSignal);
     Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomSupplyCurrentSignal);
+    topSupplyVoltageSignal = topMotor.getSupplyVoltage(false);
+    Signals.forDevice(topMotor).addSignals(topSupplyVoltageSignal);
+    bottomSupplyVoltageSignal = bottomMotor.getSupplyVoltage(false);
+    Signals.forDevice(bottomMotor).addSignals(bottomSupplyVoltageSignal);
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    topMotor
-        .getConfigurator()
-        .apply(
-            ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    bottomMotor
-        .getConfigurator()
-        .apply(
-            ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+    var topLimits =
+        ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    topMotor.getConfigurator().apply(topLimits);
+    DogLog.log("Conveyor/Top/SupplyLimitAmps", topLimits.SupplyCurrentLimit);
+    DogLog.log("Conveyor/Top/StatorLimitAmps", topLimits.StatorCurrentLimit);
+    var bottomLimits =
+        ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    bottomMotor.getConfigurator().apply(bottomLimits);
+    DogLog.log("Conveyor/Bottom/SupplyLimitAmps", bottomLimits.SupplyCurrentLimit);
+    DogLog.log("Conveyor/Bottom/StatorLimitAmps", bottomLimits.StatorCurrentLimit);
   }
 
   public void ballFillingRequest() {
@@ -103,6 +111,11 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   @Override
   protected void collectInputs() {
+    DogLog.log("Conveyor/Top/SupplyVoltage", topSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Conveyor/Top/SupplyCurrent", topSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Conveyor/Bottom/SupplyVoltage", bottomSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomSupplyCurrentSignal.getValueAsDouble());
+
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double topVelocityRps = topVelocitySignal.getValueAsDouble();
     topSurfaceSpeedMetersPerSecond =

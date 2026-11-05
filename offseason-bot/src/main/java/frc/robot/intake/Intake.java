@@ -10,15 +10,19 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.util.RollerUtil;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Intake extends StateMachineSubsystem<IntakeState> implements PowerManaged {
   private final TalonFX leftMotor;
   private final TalonFX rightMotor;
+
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
+  private final StatusSignal<Voltage> leftSupplyVoltageSignal;
+  private final StatusSignal<Voltage> rightSupplyVoltageSignal;
   private final StatusSignal<AngularVelocity> leftVelocitySignal;
   private final StatusSignal<AngularVelocity> rightVelocitySignal;
 
@@ -42,20 +46,24 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
     Signals.forDevice(leftMotor).addSignals(leftVelocitySignal, leftSupplyCurrentSignal);
     Signals.forDevice(rightMotor).addSignals(rightVelocitySignal, rightSupplyCurrentSignal);
+    leftSupplyVoltageSignal = leftMotor.getSupplyVoltage(false);
+    Signals.forDevice(leftMotor).addSignals(leftSupplyVoltageSignal);
+    rightSupplyVoltageSignal = rightMotor.getSupplyVoltage(false);
+    Signals.forDevice(rightMotor).addSignals(rightSupplyVoltageSignal);
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    leftMotor
-        .getConfigurator()
-        .apply(
-            IntakeConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
-    rightMotor
-        .getConfigurator()
-        .apply(
-            IntakeConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
-                supplyCurrentLimit));
+    var leftLimits =
+        IntakeConfig.LEFT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    leftMotor.getConfigurator().apply(leftLimits);
+    DogLog.log("Intake/Left/SupplyLimitAmps", leftLimits.SupplyCurrentLimit);
+    DogLog.log("Intake/Left/StatorLimitAmps", leftLimits.StatorCurrentLimit);
+    var rightLimits =
+        IntakeConfig.RIGHT_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    rightMotor.getConfigurator().apply(rightLimits);
+    DogLog.log("Intake/Right/SupplyLimitAmps", rightLimits.SupplyCurrentLimit);
+    DogLog.log("Intake/Right/StatorLimitAmps", rightLimits.StatorCurrentLimit);
   }
 
   public void ejectRequest() {
@@ -129,6 +137,9 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
   @Override
   protected void collectInputs() {
+    DogLog.log("Intake/Left/SupplyVoltage", leftSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Intake/Right/SupplyVoltage", rightSupplyVoltageSignal.getValueAsDouble());
+
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double leftVelocityRps = leftVelocitySignal.getValueAsDouble();
     leftSurfaceSpeedMetersPerSecond =
