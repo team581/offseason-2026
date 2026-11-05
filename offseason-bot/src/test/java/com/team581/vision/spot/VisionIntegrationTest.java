@@ -27,7 +27,8 @@ import org.junit.jupiter.api.Test;
 
 final class VisionIntegrationTest {
   static final class FakeIO implements VisionIO {
-    Acknowledgement ack;
+    String generation = "initial";
+    Profile profile;
     TagSelection selection;
     boolean available = true;
     int reads, closed;
@@ -42,15 +43,21 @@ final class VisionIntegrationTest {
     }
 
     @Override
+    public Optional<Profile> configuration() {
+      return Optional.ofNullable(profile);
+    }
+
+    @Override
     public void measurementFused(VisionMeasurement value) {
       fused.add(value);
     }
 
     @Override
-    public Inputs readInputs(double now, boolean enabled) {
+    public Inputs readInputs(double now) {
       reads++;
       duringRead.run();
-      var result = new Inputs(new Health(available, available ? "Ready" : "Offline", ack), samples);
+      var result =
+          new Inputs(new Health(available, available ? "Ready" : "Offline", generation), samples);
       samples.clear();
       return result;
     }
@@ -76,6 +83,7 @@ final class VisionIntegrationTest {
     final Profile profile;
     final Vision vision;
     long sequence;
+    final java.util.Map<String, Transform3d> mounts = new java.util.HashMap<>();
 
     Fixture(boolean fusion) {
       var fieldTags = new ArrayList<FieldTag>();
@@ -92,53 +100,19 @@ final class VisionIntegrationTest {
         fieldTags.add(new FieldTag(id, new Pose(x, y, 1, 1, 0.0, 0.0, 0.0), .1651));
       }
       field = TestRecords.with(field, "tags", fieldTags);
-      var cameraDefinitions = new ArrayList<CameraDefinition>();
-      var builder =
-          new Profile("synthetic", ImmutableList.of(), field, fusion, false, .25, .005, .02);
+      var cameraDefinitions = new ArrayList<CameraPolicy>();
+      var builder = new Profile(ImmutableList.of(), field, fusion, false, .25, .005, .02);
       int index = 0;
       for (String name : SYNTHETIC_CAMERA_NAMES) {
         double yaw = new double[] {Math.PI / 2, -Math.PI / 2, 0, Math.PI}[index];
         var mount =
             new Transform3d(new Translation3d(.1 * index, .1, .5), new Rotation3d(0, 0, yaw));
         index++;
-        cameraDefinitions.add(
-            new CameraDefinition(
-                name,
-                true,
-                true,
-                SpotProtocol.pose(new Pose3d().transformBy(mount)),
-                0,
-                ImmutableList.of(
-                    new OpticalMode("synthetic-mode", 640, 480, "YUYV", 30, "synthetic-lens")),
-                ImmutableList.of()));
+        mounts.put(name, mount);
+        cameraDefinitions.add(new CameraPolicy(name, true, true));
       }
       profile = TestRecords.with(builder, "cameras", cameraDefinitions);
-      var cameraGenerations = new ArrayList<CameraGeneration>();
-      var ack =
-          new Acknowledgement(
-              "synthetic",
-              "robot",
-              SpotProtocol.hash(profile),
-              "service",
-              1,
-              1,
-              "runtime",
-              SpotProtocol.hash(profile.field()),
-              ImmutableList.of(),
-              true,
-              "",
-              true);
-      for (var camera : profile.cameras())
-        cameraGenerations.add(
-            new CameraGeneration(
-                camera.name(),
-                camera.name(),
-                1,
-                "calibration",
-                "synthetic-mode",
-                "synthetic-lens",
-                true));
-      io.ack = TestRecords.with(ack, "cameras", cameraGenerations);
+      io.profile = profile;
       vision =
           new Vision(
               io,
@@ -155,7 +129,6 @@ final class VisionIntegrationTest {
                 }
               },
               () -> time,
-              () -> true,
               () -> operator,
               () -> alliance);
       vision.collectInputs();
@@ -171,12 +144,7 @@ final class VisionIntegrationTest {
     }
 
     void frame(String camera, int tag, double capture, long selectionGeneration) {
-      var definition =
-          profile.cameras().stream()
-              .filter(item -> item.name().equals(camera))
-              .findFirst()
-              .orElseThrow();
-      var mount = new Transform3d(Pose3d.kZero, SpotProtocol.pose(definition.robotToCamera()));
+      var mount = mounts.get(camera);
       var empty = new PoseEstimate(Pose3d.kZero, 0, 0, 0, 0, 0, 0, 0);
       var primary = empty;
       if (tag > 0) {
@@ -204,14 +172,12 @@ final class VisionIntegrationTest {
                 .1,
                 0.);
       }
-      var context = SpotProtocol.frameContext(io.ack, camera);
-      var captureToken = SpotProtocol.token("capture");
       var frame =
           new FrameResult(
-              context[0],
-              context[1],
-              captureToken[0],
-              captureToken[1],
+              1L,
+              2L,
+              3L,
+              4L,
               ++sequence,
               selectionGeneration,
               0L,
@@ -219,6 +185,8 @@ final class VisionIntegrationTest {
               .001,
               primary.tagMask(),
               tag > 0 ? 1 : 0,
+              mount,
+              true,
               primary,
               empty,
               0.,
@@ -244,9 +212,26 @@ final class VisionIntegrationTest {
   }
 
   @Test
+  void disabledCameraCannotContributeWhileOtherCamerasRemainAvailable() {
+    try (var f = new Fixture(true)) {
+      var policies =
+          f.profile.cameras().stream()
+              .map(c -> new CameraPolicy(c.name(), c.required(), !c.name().equals("front")))
+              .toList();
+      f.io.profile = TestRecords.with(f.profile, "cameras", policies);
+      f.frame("front", 1, 10.01);
+      f.frame("left", 2, 10.01);
+      f.tick(10.04);
+      assertThat(f.vision.drainMeasurements())
+          .extracting(VisionMeasurement::source)
+          .containsExactly("left");
+    }
+  }
+
+  @Test
   void fourStaticCamerasRecoverSamePoseAndDrainOnce() {
     try (var f = new Fixture(true)) {
-      assertThat(f.profile.cameras().stream().map(CameraDefinition::name))
+      assertThat(f.profile.cameras().stream().map(CameraPolicy::name))
           .containsExactly("left", "right", "front", "back");
       for (int i = 0; i < 4; i++)
         f.frame(SYNTHETIC_CAMERA_NAMES.get(i), new int[] {2, 3, 1, 5}[i], 10.01);
@@ -453,7 +438,7 @@ final class VisionIntegrationTest {
       f.io.available = true;
       f.frame("front", 1, 10.09);
       f.tick(10.10);
-      f.io.ack = TestRecords.with(f.io.ack, "runtimeGeneration", "new-runtime");
+      f.io.generation = "new-runtime";
       f.tick(10.12);
       assertThat(f.vision.drainMeasurements()).isEmpty();
       f.frame("front", 1, 10.13);
@@ -467,9 +452,6 @@ final class VisionIntegrationTest {
       f.tick(10.18);
       assertThat(f.vision.drainMeasurements()).isEmpty();
       assertThat(f.io.reasons).contains(VisionProcessor.Reason.RESET);
-      f.io.ack = TestRecords.with(f.io.ack, "tagSelectionSupported", false);
-      f.tick(10.2);
-      assertThat(f.vision.getStatus().available()).isFalse();
     }
   }
 

@@ -164,7 +164,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     if (!fusion) queue.clearPending();
     long allowedTags = SpotProtocol.tagMask(selection.allowedTagIds(), profile.field());
     for (var sample : inputs.samples()) {
-      if (profile.cameras().stream().noneMatch(c -> c.name().equals(sample.cameraName()))) continue;
+      if (profile.cameras().stream()
+          .noneMatch(c -> c.enabled() && c.name().equals(sample.cameraName()))) continue;
       var frame = sample.frame();
       long usedTags = frame.candidateCount() > 0 ? frame.primary().tagMask() : 0;
       if (frame.candidateCount() > 1) usedTags |= frame.alternate().tagMask();

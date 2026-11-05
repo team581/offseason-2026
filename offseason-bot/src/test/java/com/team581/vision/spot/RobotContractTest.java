@@ -26,23 +26,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 final class RobotContractTest {
-  private static Acknowledgement ack() throws IOException {
-    return model("ack", Acknowledgement.class);
-  }
-
   private static byte[] fixture(String name) throws IOException {
-    String extension = name.endsWith("ack") || name.equals("manifest") ? ".json" : ".bin";
+    String extension = name.equals("manifest") ? ".json" : ".bin";
     try (var input =
         RobotContractTest.class.getResourceAsStream("/spot-robot/" + name + extension)) {
-      if (input == null) {
-        throw new IOException("fixture missing: " + name);
-      }
+      if (input == null) throw new IOException("fixture missing: " + name);
       return input.readAllBytes();
     }
-  }
-
-  private static Manifest manifest() throws IOException {
-    return model("manifest", Manifest.class);
   }
 
   private static VisionMeasurement measurement(String source, double timestamp) {
@@ -59,15 +49,9 @@ final class RobotContractTest {
         1.);
   }
 
-  private static <T> T model(String name, Class<T> type) throws IOException {
-    return new ObjectMapper()
-        .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-        .readValue(fixture(name), type);
-  }
-
   private static VisionProcessor processor() throws IOException {
     return new VisionProcessor(
-        manifest().profile(),
+        profile(),
         timestamp ->
             Optional.of(
                 new VisionProcessor.CaptureState(
@@ -75,30 +59,19 @@ final class RobotContractTest {
         VisionProcessor.Policy.conservative());
   }
 
+  private static Profile profile() throws IOException {
+    var json =
+        new ObjectMapper()
+            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .disable(
+                com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    return json.treeToValue(json.readTree(fixture("manifest")).get("profile"), Profile.class);
+  }
+
   private static VisionIO.Sample sample(String name) throws IOException {
     var frame =
         FrameResult.struct.unpack(ByteBuffer.wrap(fixture(name)).order(ByteOrder.LITTLE_ENDIAN));
     return new VisionIO.Sample("front", frame, 10.05);
-  }
-
-  @Test
-  void changedAcknowledgementRetiresPreviouslyValidFrameContext() throws IOException {
-    var sample = sample("multi");
-    var ack = ack();
-    var changed =
-        TestRecords.with(
-            ack,
-            "cameras",
-            ImmutableList.of(TestRecords.with(ack.cameras().get(0), "bindingGeneration", 2L)));
-    var processor = processor();
-    assertThat(processor.process(sample, changed, 10.1).reason())
-        .isEqualTo(VisionProcessor.Reason.CONFIGURATION);
-    var context = SpotProtocol.frameContext(changed, "front");
-    var current =
-        TestRecords.with(sample.frame(), "contextHigh", context[0], "contextLow", context[1]);
-    assertThat(
-            processor.process(new VisionIO.Sample("front", current, 10.05), changed, 10.1).reason())
-        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
   }
 
   @Test
@@ -123,13 +96,13 @@ final class RobotContractTest {
     var frame = TestRecords.with(sample("multi").frame(), "timestampUncertainty", 1e-12);
     var baseline =
         processor()
-            .process(new VisionIO.Sample("front", frame, 10.05), ack(), 10.1)
+            .process(new VisionIO.Sample("front", frame, 10.05), 10.1)
             .measurement()
             .orElseThrow();
     var adjusted =
         TestRecords.with(
             frame, "primary", TestRecords.with(frame.primary(), "imageArea", imageAreaFraction));
-    var result = processor().process(new VisionIO.Sample("front", adjusted, 10.05), ack(), 10.1);
+    var result = processor().process(new VisionIO.Sample("front", adjusted, 10.05), 10.1);
     assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     assertThat(result.measurement().orElseThrow().stdX())
         .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));
@@ -150,11 +123,11 @@ final class RobotContractTest {
 
   @Test
   void ippeSelectionUsesCaptureHeadingAndRejectsUndecidableTranslation() throws IOException {
-    assertThat(processor().process(sample("ippe"), ack(), 10.1).reason())
+    assertThat(processor().process(sample("ippe"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    assertThat(processor().process(sample("ambiguous"), ack(), 10.1).reason())
+    assertThat(processor().process(sample("ambiguous"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.AMBIGUOUS);
-    assertThat(processor().process(sample("empty"), ack(), 10.1).reason())
+    assertThat(processor().process(sample("empty"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.NO_TAGS);
   }
 
@@ -170,18 +143,12 @@ final class RobotContractTest {
             TestRecords.with(frame, "primary", TestRecords.with(frame.primary(), "method", 9)),
             TestRecords.with(
                 frame, "primary", TestRecords.with(frame.primary(), "imageArea", Double.NaN)))) {
-      assertThat(
-              processor()
-                  .process(new VisionIO.Sample("front", invalid, 10.05), ack(), 10.1)
-                  .reason())
+      assertThat(processor().process(new VisionIO.Sample("front", invalid, 10.05), 10.1).reason())
           .isEqualTo(VisionProcessor.Reason.MALFORMED);
     }
     for (int source : new int[] {0, 4}) {
       var invalid = TestRecords.with(frame, "timestampSource", source);
-      assertThat(
-              processor()
-                  .process(new VisionIO.Sample("front", invalid, 10.05), ack(), 10.1)
-                  .reason())
+      assertThat(processor().process(new VisionIO.Sample("front", invalid, 10.05), 10.1).reason())
           .isEqualTo(VisionProcessor.Reason.TIMESTAMP);
     }
   }
@@ -190,52 +157,32 @@ final class RobotContractTest {
   void missingCaptureHistoryNeverSubstitutesCurrentPose() throws IOException {
     var processor =
         new VisionProcessor(
-            manifest().profile(),
-            timestamp -> Optional.empty(),
-            VisionProcessor.Policy.conservative());
-    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
+            profile(), timestamp -> Optional.empty(), VisionProcessor.Policy.conservative());
+    assertThat(processor.process(sample("multi"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.HISTORY);
   }
 
   @Test
-  void olderQueuedFusionCannotMarkANewerRejectedFrameAsFused() throws IOException {
-    var latest =
-        new SpotVisionIO.DecisionStatus(
-            "ACCEPTED",
-            false,
-            "capture",
-            1,
-            10.05,
-            "service",
-            "runtime",
-            1,
-            1,
-            1,
-            "new-accepted-frame");
-    assertThat(latest.markFused("old-accepted-frame").fused()).isFalse();
-    latest = TestRecords.with(latest, "frameId", "");
-    assertThat(latest.markFused("old-accepted-frame").fused()).isFalse();
-    latest = TestRecords.with(latest, "frameId", "current-accepted-frame");
-    latest = latest.markFused("current-accepted-frame");
-    assertThat(latest.fused()).isTrue();
-    var json = new ObjectMapper().valueToTree(latest);
-    assertThat(json.get("capture_fpga_s").asDouble()).isEqualTo(10.05);
-    assertThat(json.get("tag_selection_generation").asLong()).isEqualTo(1);
-    assertThat(json.get("frame_id").asText()).isEqualTo("current-accepted-frame");
-    assertThat(json.get("fused").asBoolean()).isTrue();
-    assertThat(json.size()).isEqualTo(11);
+  void olderCaptureIsRejectedEvenWithAHigherSequence() throws IOException {
+    var sample = sample("multi");
+    var processor = processor();
+    assertThat(processor.process(sample, 10.1).reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    var replacement =
+        TestRecords.with(sample.frame(), "captureHigh", sample.frame().captureHigh() ^ 1L);
+    assertThat(processor.process(new VisionIO.Sample("front", replacement, 10.06), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    var retired = TestRecords.with(sample.frame(), "sequence", 2L);
+    assertThat(processor.process(new VisionIO.Sample("front", retired, 10.05), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.DUPLICATE);
   }
 
   @Test
-  void pythonAndJavaAgreeOnPacketsHashesAndCoordinateUnits() throws IOException {
-    var manifest = manifest();
-    assertThat(SpotProtocol.hash(manifest.profile())).isEqualTo(manifest.manifestHash());
-    assertThat(SpotProtocol.hash(manifest.profile().field())).isEqualTo(ack().fieldHash());
+  void pythonAndJavaAgreeOnPacketsAndCoordinateUnits() throws IOException {
     for (String name : ImmutableList.of("empty", "multi", "ippe", "ambiguous")) {
-      assertThat(fixture(name)).hasSize(328);
+      assertThat(fixture(name)).hasSize(FrameResult.struct.getSize());
       assertThat(sample(name).frame().sequence()).isEqualTo(1);
     }
-    var accepted = processor().process(sample("multi"), ack(), 10.1);
+    var accepted = processor().process(sample("multi"), 10.1);
     assertThat(accepted.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     var measurement = accepted.measurement().orElseThrow();
     assertThat(measurement.pose().getX()).isCloseTo(2., offset(1e-12));
@@ -252,21 +199,11 @@ final class RobotContractTest {
     var state = RobotStatus.struct.unpack(ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN));
     assertThat(state.selectionGeneration()).isEqualTo(3);
     assertThat(state.allowedTags()).isEqualTo(3);
-    assertThat(state.enabled()).isTrue();
-    assertThat(state.sequence()).isEqualTo(7);
-    var session = SpotProtocol.token("robot-1");
-    assertThat(state.sessionHigh()).isEqualTo(session[0]);
-    assertThat(state.sessionLow()).isEqualTo(session[1]);
-    var ack = model("policy-ack", Acknowledgement.class);
-    assertThat(ack.tagSelectionSupported()).isTrue();
     var frame =
         FrameResult.struct.unpack(
             ByteBuffer.wrap(fixture("policy-multi")).order(ByteOrder.LITTLE_ENDIAN));
     assertThat(frame.tagSelectionGeneration()).isEqualTo(3);
     assertThat(frame.primary().tagMask()).isEqualTo(3);
-    var context = SpotProtocol.frameContext(ack, "front");
-    assertThat(frame.contextHigh()).isEqualTo(context[0]);
-    assertThat(frame.contextLow()).isEqualTo(context[1]);
   }
 
   @Test
@@ -294,25 +231,6 @@ final class RobotContractTest {
   }
 
   @Test
-  void retiredCaptureEpochCannotReturnWithAHigherSequence() throws IOException {
-    var sample = sample("multi");
-    var processor = processor();
-    assertThat(processor.process(sample, ack(), 10.1).reason())
-        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    var replacement =
-        TestRecords.with(sample.frame(), "captureHigh", sample.frame().captureHigh() ^ 1L);
-    assertThat(
-            processor
-                .process(new VisionIO.Sample("front", replacement, 10.05), ack(), 10.1)
-                .reason())
-        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    var retired = TestRecords.with(sample.frame(), "sequence", 2L);
-    assertThat(
-            processor.process(new VisionIO.Sample("front", retired, 10.05), ack(), 10.1).reason())
-        .isEqualTo(VisionProcessor.Reason.OLD_EPOCH);
-  }
-
-  @Test
   void sourceCountFloorCoversCorrelatedCamerasSplitAcrossReleaseBatches() {
     var value =
         new VisionMeasurement(
@@ -325,23 +243,16 @@ final class RobotContractTest {
   @Test
   void staleFutureMalformedGenerationDuplicateAndResetPacketsFailClosed() throws IOException {
     var processor = processor();
-    assertThat(processor.process(sample("multi"), ack(), 10.4).reason())
+    assertThat(processor.process(sample("multi"), 10.4).reason())
         .isEqualTo(VisionProcessor.Reason.STALE);
-    assertThat(processor.process(sample("multi"), ack(), 10.).reason())
+    assertThat(processor.process(sample("multi"), 10.).reason())
         .isEqualTo(VisionProcessor.Reason.FUTURE);
-    var frame = sample("multi").frame();
-    var mismatched = TestRecords.with(frame, "contextHigh", frame.contextHigh() ^ 1L);
-    assertThat(
-            processor
-                .process(new VisionIO.Sample("front", mismatched, 10.05), ack(), 10.1)
-                .reason())
-        .isEqualTo(VisionProcessor.Reason.CONFIGURATION);
-    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
+    assertThat(processor.process(sample("multi"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
+    assertThat(processor.process(sample("multi"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.DUPLICATE);
     processor.reset(10.06);
-    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
+    assertThat(processor.process(sample("multi"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.RESET);
   }
 
@@ -359,8 +270,9 @@ final class RobotContractTest {
     assertThat(SpotVisionIO.captureTimestamp(remote, false)).isEmpty();
     assertThat(
             SpotVisionIO.captureTimestamp(
-                new TimestampedRaw(10_050_000, 99_000_000, new byte[0]), true))
-        .isEmpty();
+                    new TimestampedRaw(10_050_000, 99_000_000, new byte[0]), true)
+                .orElseThrow())
+        .isEqualTo(99.);
   }
 
   @Test

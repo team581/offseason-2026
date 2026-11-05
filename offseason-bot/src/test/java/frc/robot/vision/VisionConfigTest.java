@@ -15,6 +15,15 @@ import org.junit.jupiter.api.Test;
 
 final class VisionConfigTest {
   @Test
+  void fieldAndFusionPolicyDoNotRequireSpotCameraDefaults() {
+    var profile = VisionConfig.profile();
+    assertThat(profile.cameras()).isEmpty();
+    assertThat(profile.fusionEnabled()).isTrue();
+    assertThat(profile.headingEnabled()).isFalse();
+    assertThat(profile.field().tags()).hasSize(32);
+  }
+
+  @Test
   void invalidCaptureSettingsAndControlsFailBeforePublication() {
     assertThatThrownBy(() -> new CaptureSettings(641, 480, 30, PixelFormat.MJPEG))
         .isInstanceOf(IllegalArgumentException.class);
@@ -47,8 +56,7 @@ final class VisionConfigTest {
             new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
             controls);
     controls.clear();
-    var profile = VisionConfig.profile(ImmutableList.of(camera));
-    var definition = profile.cameras().get(0);
+    var definition = camera.definition();
     assertThat(definition.name()).isEqualTo("front");
     assertThat(definition.required()).isTrue();
     assertThat(definition.imageRotationDeg()).isEqualTo(180);
@@ -57,21 +65,5 @@ final class VisionConfigTest {
     assertThat(definition.controls().get(1).allowOverride()).isTrue();
     assertThat(SpotProtocol.pose(definition.robotToCamera()).getRotation().getZ())
         .isCloseTo(Math.PI / 2, offset(1e-12));
-    assertThatThrownBy(() -> VisionConfig.profile(ImmutableList.of(camera, camera)))
-        .isInstanceOf(IllegalArgumentException.class);
-    assertThat(SpotProtocol.hash(profile))
-        .isEqualTo(SpotProtocol.hash(VisionConfig.profile(ImmutableList.of(camera))));
-  }
-
-  @Test
-  void threeCamerasAreRegisteredWithFusionEnabled() {
-    var profile = VisionConfig.profile();
-    assertThat(profile.cameras())
-        .extracting(camera -> camera.name())
-        .containsExactly("left", "right", "back");
-    assertThat(profile.cameras()).allMatch(camera -> camera.enabled() && camera.required());
-    assertThat(profile.fusionEnabled()).isTrue();
-    assertThat(profile.headingEnabled()).isFalse();
-    assertThat(profile.field().tags()).hasSize(32);
   }
 }

@@ -48,7 +48,7 @@ final class SpotCameraConventionTest {
                 new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
                 ImmutableList.of());
         Path output = Path.of("build/spot-camera-preview/convention-export.json");
-        SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of(camera)), output);
+        SpotCameraPreviewExport.write(ImmutableList.of(camera.definition()), output);
         var exported =
             JsonParser.parseString(Files.readString(output))
                 .getAsJsonObject()

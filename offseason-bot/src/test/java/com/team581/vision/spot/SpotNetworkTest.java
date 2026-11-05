@@ -20,49 +20,6 @@ final class SpotNetworkTest {
   }
 
   @Test
-  void freshManifestRepeatsWithinAReconnectRecoveryWindow() throws Exception {
-    HAL.initialize(500, 0);
-    int port;
-    try (var socket = new ServerSocket(0)) {
-      port = socket.getLocalPort();
-    }
-    try (var fixture = new VisionIntegrationTest.Fixture(false);
-        var server = NetworkTableInstance.create();
-        var client = NetworkTableInstance.create()) {
-      server.startServer("", "127.0.0.1", 0, port);
-      client.setServer("127.0.0.1", port);
-      client.startClient4("manifest-recovery-test");
-      long deadline = System.nanoTime() + 5_000_000_000L;
-      while (!client.isConnected() && System.nanoTime() < deadline) Thread.sleep(10);
-      assertThat(client.isConnected()).isTrue();
-      try (var io = new SpotVisionIO(server, fixture.profile, "robot");
-          var profiles =
-              client
-                  .getStringTopic(SpotVisionIO.ROOT + "/robot/manifest")
-                  .subscribe(
-                      "",
-                      PubSubOption.keepDuplicates(true),
-                      PubSubOption.sendAll(true),
-                      PubSubOption.periodic(.005),
-                      PubSubOption.pollStorage(16))) {
-        var received = new ArrayList<edu.wpi.first.networktables.TimestampedString>();
-        long start = System.nanoTime();
-        while (System.nanoTime() - start < 600_000_000L) {
-          io.readInputs(now(), false);
-          server.flush();
-          Thread.sleep(10);
-          received.addAll(java.util.Arrays.asList(profiles.readQueue()));
-        }
-        assertThat(received).hasSizeGreaterThanOrEqualTo(3);
-        assertThat(received.get(received.size() - 1).timestamp)
-            .isGreaterThan(received.get(0).timestamp);
-        for (var sample : received)
-          assertThat(sample.value).isEqualTo(io.manifest().manifestHash());
-      }
-    }
-  }
-
-  @Test
   void queuedRemoteObservationsRetainCaptureTimesAndMalformedBytesAreCounted() throws Exception {
     HAL.initialize(500, 0);
     int port;
@@ -80,7 +37,11 @@ final class SpotNetworkTest {
           && System.nanoTime() < deadline) Thread.sleep(10);
       assertThat(client.isConnected()).isTrue();
       assertThat(client.getServerTimeOffset()).isPresent();
-      try (var io = new SpotVisionIO(server, fixture.profile, "robot");
+      try (var io =
+              new SpotVisionIO(
+                  server,
+                  TestRecords.with(fixture.profile, "cameras", java.util.List.of()),
+                  "robot");
           var peer = new TestPeer(client);
           var health =
               client
@@ -94,35 +55,19 @@ final class SpotNetworkTest {
                       PubSubOption.sendAll(true),
                       PubSubOption.keepDuplicates(true))) {
         io.setTagSelection(fixture.io.selection);
-        io.readInputs(now(), false);
-        peer.acknowledgement(fixture.io.ack);
-        var service = SpotProtocol.token("service");
-        var runtime = SpotProtocol.token("runtime");
-        health.set(
-            new Heartbeat(service[0], service[1], runtime[0], runtime[1], 1, 0, 1, 0, 0, 1, 1, 0));
+        io.readInputs(now());
+        peer.ready(fixture.profile);
         client.flush();
         deadline = System.nanoTime() + 2_000_000_000L;
         VisionIO.Inputs inputs;
-        long heartbeatSequence = 1;
         do {
-          health.set(
-              new Heartbeat(
-                  service[0],
-                  service[1],
-                  runtime[0],
-                  runtime[1],
-                  ++heartbeatSequence,
-                  0,
-                  1,
-                  0,
-                  0,
-                  1,
-                  1,
-                  0));
           client.flush();
           Thread.sleep(5);
-          inputs = io.readInputs(now(), false);
-        } while (!inputs.health().available() && System.nanoTime() < deadline);
+          inputs = io.readInputs(now());
+        } while ((!inputs.health().available()
+                || io.configuration().orElseThrow().cameras().stream()
+                    .noneMatch(c -> c.name().equals("front") && c.enabled()))
+            && System.nanoTime() < deadline);
         assertThat(inputs.health().available()).as(inputs.health().reason()).isTrue();
         fixture.frame("front", 1, 10.01);
         fixture.frame("front", 1, 10.02);
@@ -135,7 +80,7 @@ final class SpotNetworkTest {
         deadline = System.nanoTime() + 300_000_000L;
         do {
           Thread.sleep(5);
-          received.addAll(io.readInputs(now(), false).samples());
+          received.addAll(io.readInputs(now()).samples());
         } while ((received.size() < 2 || io.malformedCount() == 0) && System.nanoTime() < deadline);
         assertThat(received).hasSize(2);
         assertThat(received.get(1).frame().sequence())
@@ -144,6 +89,41 @@ final class SpotNetworkTest {
             .isCloseTo(.001, offset(1e-6));
         assertThat(now() - received.get(0).captureFpgaSeconds()).isBetween(0., .5);
         assertThat(io.malformedCount()).isEqualTo(1);
+      }
+    }
+  }
+
+  @Test
+  void rawConfigurationIsAvailableToLateAndReconnectingClients() throws Exception {
+    HAL.initialize(500, 0);
+    int port;
+    try (var socket = new ServerSocket(0)) {
+      port = socket.getLocalPort();
+    }
+    String defaults = "{\n  \"cameras\": [], \"processing\": {}\n}\n";
+    try (var fixture = new VisionIntegrationTest.Fixture(false);
+        var server = NetworkTableInstance.create();
+        var client = NetworkTableInstance.create()) {
+      server.startServer("", "127.0.0.1", 0, port);
+      try (var io =
+              new SpotVisionIO(
+                  server,
+                  TestRecords.with(fixture.profile, "cameras", java.util.List.of()),
+                  defaults);
+          var config = client.getStringTopic("/Spot/Config/cameraConfig").subscribe("")) {
+        client.setServer("127.0.0.1", port);
+        for (int connection = 0; connection < 2; connection++) {
+          client.startClient4("config-reader");
+          long deadline = System.nanoTime() + 3_000_000_000L;
+          while ((!client.isConnected() || !config.get().equals(defaults))
+              && System.nanoTime() < deadline) {
+            server.flush();
+            Thread.sleep(5);
+          }
+          assertThat(client.isConnected()).isTrue();
+          assertThat(config.get()).isEqualTo(defaults);
+          client.stopClient();
+        }
       }
     }
   }

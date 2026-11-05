@@ -1,18 +1,15 @@
 package com.team581.vision.spot;
 
-import com.team581.vision.spot.data.*;
+import com.team581.vision.spot.data.Profile;
 import com.team581.vision.spot.structs.*;
 import edu.wpi.first.networktables.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Desktop test peer standing in for Spot; production Java only subscribes to results. */
+/** Desktop peer publishing Spot's camera metadata and readiness. */
 final class TestPeer implements AutoCloseable {
-  private static String snake(String name) {
-    return name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
-  }
-
   static byte[] frame(FrameResult value) {
     var bytes = ByteBuffer.allocate(FrameResult.struct.getSize()).order(ByteOrder.LITTLE_ENDIAN);
     FrameResult.struct.pack(bytes, value);
@@ -32,40 +29,21 @@ final class TestPeer implements AutoCloseable {
     for (var resource : resources) resource.close();
   }
 
-  private void put(String path, Object value) {
-    String key = "/Spot/config/acknowledgement/" + path;
-    if (value instanceof String s) {
-      var p = nt.getStringTopic(key).publish();
-      p.set(s);
-      resources.add(p);
-    } else if (value instanceof Boolean b) {
-      var p = nt.getBooleanTopic(key).publish();
-      p.set(b);
-      resources.add(p);
-    } else {
-      var p = nt.getIntegerTopic(key).publish();
-      p.set(((Number) value).longValue());
-      resources.add(p);
+  void ready(Profile profile) {
+    for (var camera : profile.cameras()) {
+      var settings =
+          nt.getStructTopic("/Spot/" + camera.name() + "/settings", CameraSettings.struct)
+              .publish();
+      settings.set(new CameraSettings(camera.enabled(), camera.required()));
+      resources.add(settings);
     }
-  }
-
-  void acknowledgement(Acknowledgement ack) throws ReflectiveOperationException {
-    for (var field : Acknowledgement.class.getRecordComponents()) {
-      if (!field.getName().equals("cameras"))
-        put(snake(field.getName()), field.getAccessor().invoke(ack));
-    }
-    for (var camera : ack.cameras()) {
-      for (var field : CameraGeneration.class.getRecordComponents()) {
-        put(
-            "cameras/" + camera.cameraName() + "/" + snake(field.getName()),
-            field.getAccessor().invoke(camera));
-      }
-    }
-    var names = nt.getStringArrayTopic("/Spot/config/acknowledgement/camera_names").publish();
-    names.set(ack.cameras().stream().map(CameraGeneration::cameraName).toArray(String[]::new));
+    var names = nt.getStringArrayTopic("/Spot/cameras").publish();
+    names.set(profile.cameras().stream().map(c -> c.name()).toArray(String[]::new));
     resources.add(names);
-    var header = nt.getStringTopic("/Spot/config/ack").publish();
-    header.set(SpotProtocol.hash(ack));
-    resources.add(header);
+    var health =
+        nt.getStructTopic("/Spot/health", Heartbeat.struct)
+            .publish(PubSubOption.keepDuplicates(true));
+    health.set(new Heartbeat(1, 2, true));
+    resources.add(health);
   }
 }
