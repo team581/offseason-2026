@@ -97,7 +97,6 @@ public final class VisionConfig {
         defaults.field(),
         FUSION_ENABLED,
         false,
-        true,
         defaults.maxAgeS(),
         defaults.futureToleranceS(),
         defaults.reorderWindowS());

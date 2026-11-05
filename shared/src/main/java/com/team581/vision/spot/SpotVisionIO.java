@@ -233,8 +233,6 @@ public final class SpotVisionIO implements VisionIO {
                   effectiveFusion,
                   "heading_enabled",
                   manifest.profile().headingEnabled(),
-                  "revised_trust_enabled",
-                  manifest.profile().revisedTrustEnabled(),
                   "cameras",
                   fresh)));
     } catch (java.io.IOException exception) {

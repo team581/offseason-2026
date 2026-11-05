@@ -94,7 +94,7 @@ final class VisionIntegrationTest {
       field = TestRecords.with(field, "tags", fieldTags);
       var cameraDefinitions = new ArrayList<CameraDefinition>();
       var builder =
-          new Profile("synthetic", ImmutableList.of(), field, fusion, false, true, .25, .005, .02);
+          new Profile("synthetic", ImmutableList.of(), field, fusion, false, .25, .005, .02);
       int index = 0;
       for (String name : SYNTHETIC_CAMERA_NAMES) {
         double yaw = new double[] {Math.PI / 2, -Math.PI / 2, 0, Math.PI}[index];
@@ -110,9 +110,7 @@ final class VisionIntegrationTest {
                 0,
                 ImmutableList.of(
                     new OpticalMode("synthetic-mode", 640, 480, "YUYV", 30, "synthetic-lens")),
-                ImmutableList.of(),
-                false,
-                ""));
+                ImmutableList.of()));
       }
       profile = TestRecords.with(builder, "cameras", cameraDefinitions);
       var cameraGenerations = new ArrayList<CameraGeneration>();

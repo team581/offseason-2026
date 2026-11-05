@@ -8,7 +8,6 @@ public record Profile(
     FieldLayout field,
     boolean fusionEnabled,
     boolean headingEnabled,
-    boolean revisedTrustEnabled,
     double maxAgeS,
     double futureToleranceS,
     double reorderWindowS) {

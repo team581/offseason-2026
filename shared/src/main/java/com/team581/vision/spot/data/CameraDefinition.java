@@ -9,9 +9,7 @@ public record CameraDefinition(
     Pose robotToCamera,
     int imageRotationDeg,
     List<OpticalMode> allowedModes,
-    List<ControlPolicy> controls,
-    boolean movingMount,
-    String jointName) {
+    List<ControlPolicy> controls) {
   public CameraDefinition {
     allowedModes = List.copyOf(allowedModes);
     controls = List.copyOf(controls);

@@ -67,7 +67,6 @@ public final class SpotProtocol {
         new FieldLayout("blue-wall-right", layout.getFieldLength(), layout.getFieldWidth(), tags),
         false,
         false,
-        false,
         .25,
         .005,
         .02);

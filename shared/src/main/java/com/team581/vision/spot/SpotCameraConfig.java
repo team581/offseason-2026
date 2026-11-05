@@ -66,9 +66,7 @@ public record SpotCameraConfig(
         SpotProtocol.pose(new edu.wpi.first.math.geometry.Pose3d().transformBy(robotToCamera)),
         imageRotationDeg,
         ImmutableList.of(capture.toData()),
-        controls.stream().map(Control::toData).toList(),
-        false,
-        "");
+        controls.stream().map(Control::toData).toList());
   }
 
   public static void identifier(String value) {

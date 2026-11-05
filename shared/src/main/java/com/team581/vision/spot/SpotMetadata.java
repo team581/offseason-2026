@@ -129,7 +129,6 @@ final class SpotMetadata implements AutoCloseable {
     put("robot_id", profile.robotId());
     put("fusion_enabled", profile.fusionEnabled());
     put("heading_enabled", profile.headingEnabled());
-    put("revised_trust_enabled", profile.revisedTrustEnabled());
     put("max_age_s", profile.maxAgeS());
     put("future_tolerance_s", profile.futureToleranceS());
     put("reorder_window_s", profile.reorderWindowS());
@@ -149,8 +148,6 @@ final class SpotMetadata implements AutoCloseable {
       put(p + "required", camera.required());
       put(p + "enabled", camera.enabled());
       put(p + "image_rotation_deg", camera.imageRotationDeg());
-      put(p + "moving_mount", camera.movingMount());
-      put(p + "joint_name", camera.jointName());
       var pose =
           nt.getStructTopic(root + "/robot/profile/" + p + "robot_to_camera", Transform3d.struct)
               .publish();
