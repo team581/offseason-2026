@@ -185,7 +185,7 @@ final class RobotContractTest {
     latest = TestRecords.with(latest, "frameId", "current-accepted-frame");
     latest = latest.markFused("current-accepted-frame");
     assertThat(latest.fused()).isTrue();
-    var json = new ObjectMapper().readTree(new ObjectMapper().writeValueAsBytes(latest));
+    var json = new ObjectMapper().valueToTree(latest);
     assertThat(json.get("capture_fpga_s").asDouble()).isEqualTo(10.05);
     assertThat(json.get("tag_selection_generation").asLong()).isEqualTo(1);
     assertThat(json.get("frame_id").asText()).isEqualTo("current-accepted-frame");

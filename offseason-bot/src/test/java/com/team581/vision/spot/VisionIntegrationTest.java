@@ -426,7 +426,7 @@ final class VisionIntegrationTest {
       var waiting = f.vision.getStatus();
       assertThat(waiting.configured()).isEqualTo(4);
       assertThat(waiting.required()).isEqualTo(4);
-      assertThat(waiting.usable()).isZero();
+      assertThat(waiting.usable()).isEqualTo(0);
       f.frame("front", 1, 10.01);
       f.tick(10.04);
       var ready = f.vision.getStatus();
@@ -439,10 +439,10 @@ final class VisionIntegrationTest {
       assertThat(ready.cameras().get("front").lastFused()).isNegative().isInfinite();
       f.vision.reset(10.04);
       var reset = f.vision.getStatus();
-      assertThat(reset.usable()).isZero();
+      assertThat(reset.usable()).isEqualTo(0);
       assertThat(reset.selectionPending()).isTrue();
       assertThat(reset.allRequiredHealthy()).isFalse();
-      assertThat(reset.queueDepth()).isZero();
+      assertThat(reset.queueDepth()).isEqualTo(0);
       assertThat(ready.cameras().get("front").usable()).isTrue();
       assertThat(f.io.reads).isEqualTo(reads);
     }
