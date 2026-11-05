@@ -17,12 +17,14 @@ flowchart LR
 
 ## Configuration and ownership
 
-The robot supplies camera and processing defaults in
-`offseason-bot/src/main/deploy/spot-config.json`; field geometry and fusion policy
-live in [VisionConfig.java](../offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java).
-Saved dashboard overrides take priority until explicitly cleared, including across
-robot deployments. See the [camera configuration guide](camera-configuration.md)
-for editing, exporting, and clearing settings.
+Settings live with whoever reads them. Settings only Spot reads (cameras, mounts,
+processing) are in `offseason-bot/src/main/deploy/spot-config.json`, which robot code
+forwards without parsing. Settings both sides read (field layout, tag size, observation
+age limits) are typed values in
+[VisionConfig.java](../offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java)
+published over NetworkTables. Robot-only policy such as fusion stays in robot code.
+Spot dashboard edits take priority until the deployed file matches them; see the
+[camera configuration guide](camera-configuration.md).
 
 Reusable robot-side support lives in
 [`com.team581.vision.spot`](../shared/src/main/java/com/team581/vision/spot/):

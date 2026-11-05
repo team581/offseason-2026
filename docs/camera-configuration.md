@@ -10,19 +10,21 @@ Advertised/requested FPS is not measured delivered FPS or detection FPS. Test al
 
 This reference was checked on October 18, 2026. The Jetson was unreachable during this documentation update, so current per-device firmware ranges and menu subsets have not been re-enumerated. Product specifications, historical observations, and generic control meanings below are deliberately distinguished.
 
-## Robot defaults and dashboard overrides
+## Robot defaults and Spot changes
 
-Edit `offseason-bot/src/main/deploy/spot-config.json` for camera and processing
-defaults. Use the checked-in file as the format reference; exposure values are in
-microseconds and mount translations are in metres using WPILib axes (+X forward,
-+Y left, +Z up). Field layout, tag size, and fusion policy remain in
-`offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java`.
+Edit `offseason-bot/src/main/deploy/spot-config.json` for everything Spot reads
+about cameras and processing. Its `$schema` gives VS Code completion and checks;
+exposure values are in microseconds, and mounts are metres plus roll/pitch/yaw
+degrees in WPILib axes. [VisionConfig.java](../offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java)
+holds what robot code also uses (field layout, tag size, observation age limits) and
+robot-only policy such as fusion. See Spot's
+[robot configuration guide](https://spot.frc581.com/robot-config/) for which
+settings belong where.
 
-Dashboard edits override the deployed defaults and persist across reconnects,
-restarts, and deployments until explicitly cleared. Use **System → Robot
-configuration** to clear overrides or download the effective `spot-config.json`
-to adopt tuned values in robot code. After deploying, clear the corresponding
-overrides to use the deployed values again.
+Dashboard edits take priority over the deployed file across reconnects, restarts,
+and deployments. Spot's **Changes** page lists them; copy `spot-config.json` from
+there into the robot project and deploy, and each change clears once the deployed
+file matches it.
 
 See Spot's [camera setup guide](https://spot.frc581.com/operator/cameras/) for
 binding, tuning, calibration, and export steps. Set every control the camera
@@ -33,7 +35,7 @@ depends on explicitly; omitted controls have no robot-owned default.
 The standard V4L2 exposure-mode menu has the meanings below. A camera may expose only some entries; select only values printed by its own menu. See the [Linux camera-control reference](https://docs.kernel.org/userspace-api/media/v4l/ext-ctrls-camera.html).
 
 - **`auto_exposure` or `exposure_auto`:** `0` = automatic exposure and iris; `1` = manual exposure and iris; `2` = manual exposure with automatic iris; `3` = automatic exposure with manual iris. Fixed-lens USB cameras commonly expose only `1` (manual) and `3` (automatic). Do not use OpenCV's unrelated fractional auto-exposure values such as 0.25/0.75 here.
-- **`exposure_time_absolute` or `exposure_absolute`:** integration duration. In Java/Spot use µs: `1000` = 1 ms; `5000` = 5 ms. Raw V4L2 uses 100 µs ticks, so those become native `10` and `50`. Set manual exposure mode first; Spot orders automatic-control writes ahead of dependent manual writes.
+- **`exposure_time_absolute` or `exposure_absolute`:** integration duration. In `spot-config.json` and Spot use µs: `1000` = 1 ms; `5000` = 5 ms. Raw V4L2 uses 100 µs ticks, so those become native `10` and `50`. Set manual exposure mode first; Spot orders automatic-control writes ahead of dependent manual writes.
 - **`autogain`:** `0` = manual gain; `1` = automatic gain. If supported, disable it before pinning `gain`.
 - **`white_balance_automatic` or `white_balance_temperature_auto`:** `0` = manual white balance; `1` = automatic. Disable it before writing a temperature. A monochrome camera may advertise these controls without useful color effects.
 - **`power_line_frequency`:** `0` = disabled; `1` = 50 Hz; `2` = 60 Hz; `3` = automatic. Only advertised entries are legal. This is an anti-flicker lighting setting, not capture FPS. See the [Linux user-control reference](https://docs.kernel.org/userspace-api/media/v4l/control.html).
@@ -62,11 +64,11 @@ The following list covers every name/alias in Spot's current image-control descr
 
 ## Other controls, limits and unsupported options
 
-The Java policy accepts other valid control names, and Spot discovery reads advertised scalar `int`, `bool`, `menu`, and `intmenu` controls. There is no fixed universal list across all UVC cameras. A boolean normally uses 0/1; a menu uses the exact listed integer, which can have gaps. Device flags such as inactive, read-only, disabled and grabbed can prevent changes. Button, string, array and write-only action controls are not supported by this policy path.
+`spot-config.json` accepts other valid control names, and Spot discovery reads advertised scalar `int`, `bool`, `menu`, and `intmenu` controls. There is no fixed universal list across all UVC cameras. A boolean normally uses 0/1; a menu uses the exact listed integer, which can have gaps. Device flags such as inactive, read-only, disabled and grabbed can prevent changes. Button, string, array and write-only action controls are not supported by this policy path.
 
 Examples you might see on other devices include `exposure_dynamic_framerate`/`exposure_auto_priority` (0 keeps auto exposure from varying FPS; 1 permits it), `focus_automatic_continuous`/`focus_auto` (0 manual, 1 autofocus), `focus_absolute` (driver-specific position), `zoom_absolute` (driver-specific zoom), and pan/tilt/iris controls. Treat those spellings as examples: use your device's actual enumeration. Do not infer unsupported motorized focus, zoom or iris from the presence of an M12 lens. SWYFT's manufacturer lists focus/zoom/pan/tilt/iris as unsupported. Focus/zoom/crop/flip changes can invalidate calibration; change them only with a matching optical configuration and fresh validation.
 
-`convert_rgb`/`CAP_PROP_CONVERT_RGB` is a host OpenCV property, not a portable UVC camera policy. It is not an extra `PixelFormat` or a control to add unless the device actually advertises an applicable scalar control. Detector backend, decimation, camera preview encoding and detector FPS are also not `Control` entries.
+`convert_rgb`/`CAP_PROP_CONVERT_RGB` is a host OpenCV property, not a portable UVC camera policy. It is not an extra `pixel_format` or a control to add unless the device actually advertises an applicable scalar control. Detector backend, decimation, camera preview encoding and detector FPS are also not `Control` entries.
 
 ## Get the exact options for your physical camera
 
