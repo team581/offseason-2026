@@ -6,7 +6,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import java.util.HashSet;
 import java.util.List;
 
-/** Robot-owned settings. USB bindings and calibration stay on the Jetson. */
+/** Camera defaults for Java configuration builders. */
 public record SpotCameraConfig(
     String name,
     boolean required,
@@ -48,7 +48,7 @@ public record SpotCameraConfig(
       return new Control(name, value, true, false);
     }
 
-    /** Required control with a robot default and an allowed saved GUI override. */
+    /** Required control with a robot default and a saved dashboard override. */
     public static Control tunable(String name, double defaultValue) {
       return new Control(name, defaultValue, true, true);
     }
@@ -66,7 +66,11 @@ public record SpotCameraConfig(
         SpotProtocol.pose(new edu.wpi.first.math.geometry.Pose3d().transformBy(robotToCamera)),
         imageRotationDeg,
         ImmutableList.of(capture.toData()),
-        controls.stream().map(Control::toData).toList());
+        controls.stream().map(Control::toData).toList(),
+        "",
+        null,
+        null,
+        DetectorSettings.defaults());
   }
 
   public static void identifier(String value) {

@@ -1,7 +1,5 @@
 package frc.robot;
 
-import static java.util.UUID.randomUUID;
-
 import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
 import com.team581.controller.ButtonEvent;
@@ -64,7 +62,7 @@ public class Robot extends Base581Robot {
   private final Vision vision =
       new Vision(
           new SpotVisionIO(
-              NetworkTableInstance.getDefault(), visionProfile, randomUUID().toString()),
+              NetworkTableInstance.getDefault(), visionProfile, VisionConfig.cameraConfig()),
           visionProfile,
           new Vision.CaptureSource() {
             @Override
@@ -85,7 +83,6 @@ public class Robot extends Base581Robot {
             }
           },
           Timer::getFPGATimestamp,
-          DriverStation::isEnabled,
           () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean(),
           DriverStation::getAlliance);
   final HealthManager health = new HealthManager(vision);

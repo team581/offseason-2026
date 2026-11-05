@@ -1,4 +1,4 @@
-# Configure cameras in Java
+# Configure Spot cameras
 
 ## Quick hardware reference
 
@@ -10,72 +10,23 @@ Advertised/requested FPS is not measured delivered FPS or detection FPS. Test al
 
 This reference was checked on October 18, 2026. The Jetson was unreachable during this documentation update, so current per-device firmware ranges and menu subsets have not been re-enumerated. Product specifications, historical observations, and generic control meanings below are deliberately distinguished.
 
-## Define a camera in VisionConfig.java
+## Robot defaults and dashboard overrides
 
-Edit `offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java` in offseason-2026, or `src/main/java/frc/robot/vision/VisionConfig.java` in basic-robot-tester. Settings compile with robot code and are sent to Spot automatically. USB-to-name bindings and intrinsic calibration remain on the Jetson.
+Edit `offseason-bot/src/main/deploy/spot-config.json` for camera and processing
+defaults. Use the checked-in file as the format reference; exposure values are in
+microseconds and mount translations are in metres using WPILib axes (+X forward,
++Y left, +Z up). Field layout, tag size, and fusion policy remain in
+`offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java`.
 
-The example below is a template: replace the mount and verify the capture request and control names against the real device. Exposure and gain values are starting examples, not a calibrated preset. The camera types live in the shared `com.team581.vision.spot` package. Import `com.team581.vision.spot.SpotCameraConfig.Control` and `java.util.List` when using the short names below.
+Dashboard edits override the deployed defaults and persist across reconnects,
+restarts, and deployments until explicitly cleared. Use **System → Robot
+configuration** to clear overrides or download the effective `spot-config.json`
+to adopt tuned values in robot code. After deploying, clear the corresponding
+overrides to use the deployed values again.
 
-```java
-public static final SpotCameraConfig FRONT = new SpotCameraConfig(
-    "front",
-    true, // required for all-required-cameras health
-    mount(.10, 0, .30, 0, 0, 0), // x/y/z metres; roll/pitch/yaw degrees
-    0, // image rotation: 0 or 180 degrees
-    new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-    List.of(
-        Control.pinned("auto_exposure", 1),
-        Control.pinned("exposure_time_absolute", 5000), // 5000 µs = 5 ms
-        Control.tunable("gain", 20)));
-
-public static final List<SpotCameraConfig> CAMERAS = List.of(FRONT);
-```
-
-Use the exact exposure-mode name your camera reports: `auto_exposure` and `exposure_auto` are alternative spellings, not two controls to add indiscriminately. Verify that menu value `1` is Manual Mode. Keep the actual robot's roles `left`, `right`, `front`, `back` chassis-fixed and required, in that order. Add each named constant to `CAMERAS`; a constant alone does not register a camera. The current bringup defaults register all four cameras with fusion enabled and explicitly marked placeholder mounts/capture settings; replace them with measurements before trusting localization.
-
-```mermaid
-flowchart LR
-  Config[VisionConfig.java] --> Profile[Robot profile]
-  Profile --> Spot[Jetson applies and verifies]
-  Spot --> Calibration[Matching calibration and timing]
-  Calibration --> Observations[Robot observations]
-```
-
-## Every SpotCameraConfig option
-
-- **`name` — String:** logical role, for example `front`. Must be unique in the profile and match `[A-Za-z0-9][A-Za-z0-9_.-]{0,63}`. Bind the physical USB device to this name in Spot. Changing the string is not a USB-device selector.
-- **`required` — boolean:** `true` makes a missing/unusable camera fail the all-required-cameras health check. Other valid cameras can continue contributing; this does not turn a partial outage into a global fusion switch. `false` marks an optional camera. The actual offseason commissioning configuration calls for all four required.
-- **`robotToCamera` — Transform3d:** measured camera origin/orientation in the robot frame. All six values must be finite. `mount(xM, yM, zM, rollDeg, pitchDeg, yawDeg)` converts degrees to WPILib radians. +X is forward, +Y left, +Z up. Positive rotations follow the right-hand rule; rotations compose as yaw × pitch × roll. There are no moving-mount/joint-history settings in this fixed-camera helper.
-- **`imageRotationDeg` — int:** exactly `0` or `180`. Rotates the delivered image; it is separate from the physical mount rotation. Changing it requires matching calibration and changes image orientation for detection and previews.
-- **`capture` — CaptureSettings:** exactly one explicit camera capture request; cannot be null. See the next section. Students do not enter a protocol mode ID, mode list, or optical-signature string.
-- **`controls` — List of Control:** zero to 64 policies; `List.of()` declares no control policies. Names must be unique. Omitted controls are not pinned to a robot-code value, so a device's existing/default behavior may remain active. Explicitly declare automatic/manual settings when you need repeatable behavior.
-
-## Every CaptureSettings option
-
-The constructor is `new CaptureSettings(width, height, fps, pixelFormat)`.
-
-- **`width` — int pixels:** greater than zero, at most 4096, and even. The actual camera must advertise that width together with the selected height/format/FPS.
-- **`height` — int pixels:** greater than zero and at most 4096; must be part of an advertised combination.
-- **`fps` — int frames/second:** 1–240. This is requested acquisition cadence, not detector throughput. Do not assume that every lower integer FPS is supported: a device advertising 120 FPS may reject a 30 FPS request at the same resolution.
-- **`PixelFormat.MJPEG`:** compressed camera-to-Jetson USB stream. Use for the SWYFT camera and verified compressed Arducam configurations. The service normalizes the UVC spelling to MJPG internally.
-- **`PixelFormat.YUYV`:** uncompressed, two bytes/pixel over USB; also called YUY2 by some camera documentation. Requires a supported mode and enough shared USB bandwidth. It is not a way to obtain SWYFT raw output, and it is not selected merely because the detector uses YUYV internally.
-
-Those are the two enum values currently supported by the Java helper. RGB, GRAY8 and H.264 are not options in this helper. Dimension/FPS validation expresses software bounds, not a claim that a camera can deliver every combination. Pixel count is width × height: 640×480 is 307,200 pixels; 1280×720 is 921,600; 1280×800 is 1,024,000.
-
-The implementation generates stable mode IDs and signatures from capture settings. Changing any capture field changes that identity. Saved mode selections from the previous hand-named mode API may need updating, and calibration/timing evidence must match the resulting mode. Changing physical optics/focus still requires recalibration even when capture values stay the same.
-
-## Every Control policy option
-
-The full constructor is `new Control(name, value, required, allowOverride)`.
-
-- **`name` — String:** exact V4L2 control name reported by the device; same bounded identifier syntax as camera names. Labels such as Exposure or Auto exposure are not necessarily the driver key. No `CAP_PROP_` prefix is used.
-- **`value` — double:** robot-code default. Must be finite. Exposure-time values use **microseconds**; other controls use driver units/menu indices. A Java double does not permit fractional hardware steps: Spot converts units and rejects values outside the driver range, step or menu.
-- **`required` — boolean:** `true` blocks that camera's ready configuration when the control is absent. `false` allows an absent control to be skipped. Optional does not mean an invalid value is accepted when the control exists.
-- **`allowOverride` — boolean:** `false` enforces the robot default; `true` allows a saved Spot GUI override while edits are eligible. A saved override can remain effective across restart; changing a Java default does not necessarily replace it. Use Reset to code defaults when you want that default restored.
-- **`Control.pinned(name, value)`:** shorthand for `required=true, allowOverride=false`.
-- **`Control.tunable(name, value)`:** shorthand for `required=true, allowOverride=true`.
-
-For an optional tunable control use, for example, `new Control("sharpness", 0, false, true)`. This is useful only if zero is in the actual device's advertised range. Configuration changes/tuning require the current disabled robot or explicitly authorized disconnected standalone setup. Writes are checked by readback; unsupported, clipped or rejected settings do not count as applied.
+See Spot's [camera setup guide](https://spot.frc581.com/operator/cameras/) for
+binding, tuning, calibration, and export steps. Set every control the camera
+depends on explicitly; omitted controls have no robot-owned default.
 
 ## Exposure and automatic-control values
 
@@ -131,18 +82,8 @@ v4l2-ctl --device=/dev/video0 --list-ctrls-menus
 
 A hypothetical line `min=50 max=10000 step=1 default=166 value=50` for `exposure_time_absolute` means native ticks: 5,000–1,000,000 µs, 100 µs increments, 16,600 µs device default, 5,000 µs current. The capture interval can impose a lower usable maximum. For non-exposure integer controls use the listed units directly. Legal values satisfy min ≤ value ≤ max and `(value - min) % step == 0`; menu values must also appear in the menu. Raw `default` is the device default, not necessarily the robot-code default or saved GUI override.
 
-## Profile settings and commissioning
+## Commissioning
 
-- **`ROBOT_ID`:** bounded identifier for the robot profile; offseason uses `offseason-2026`, the tester uses `basic-robot-tester`. Keep bench and robot identities distinct.
-- **`CAMERAS`:** registered camera constants; at most 32 is the protocol/software bound, not a Jetson capacity claim. An empty list intentionally gives no camera-based localization.
-- **`CAMERA_NAMES`:** offseason's planned role names/order (`left`, `right`, `front`, `back`); this list does not register cameras by itself.
-- **`FIELD_LAYOUT`:** WPILib AprilTag layout, defaulting to the team's 2026 welded layout. For home prints, supply surveyed tag poses in a consistent blue-wall-right field frame instead of assuming the official positions. A layout asset may be JSON; camera settings remain Java.
-- **`TAG_SIZE_M`:** finite, greater than zero and at most one metre; default 0.1651 m. Measure the printed tag's black square, excluding surrounding white margin.
-- **`FUSION_ENABLED`:** defaults false. True allows eligible measurements to reach the estimator, still subject to validation and DS suppression. In the tester this is only its stationary bench estimator. Production robot fusion requires qualification; heading fusion remains disabled by the current builder.
-- **Bench-only `BenchConfig.STATIONARY_POSE`:** initial/reset pose for a stationary test rig. The actual robot instead supplies drivetrain pose/IMU history.
-
-Bind devices, confirm actual capture/readback, calibrate with independent validation, and qualify measured timing before enabling robot fusion. Mode/orientation/optical-control changes can invalidate calibration; timing also depends on control readback. Rebuild/redeploy robot code after configuration edits. The docs and examples do not commission or deploy any camera.
-
-## Offline camera preview
-
-See the [Spot VS Code preview guide](https://github.com/team581/spot-2026/blob/main/apps/docs/src/content/docs/operator/vscode-camera-preview.md). Download the extension VSIX from Spot releases and install it with VS Code's **Extensions → … → Install from VSIX…**. Repeat to update it. Open VisionConfig.java for a split preview; saved changes refresh geometry.
+Verify measured geometry, supported capture modes and actual readback, calibration,
+capture timing, multi-camera load, and reconnect/reset behavior on the robot before
+relying on vision fusion. Software compilation does not establish hardware accuracy.

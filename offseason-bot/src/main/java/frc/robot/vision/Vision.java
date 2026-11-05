@@ -60,16 +60,15 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private static final Set<Integer> RED_HUB = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
   private static final Set<Integer> BLUE_HUB = Set.of(18, 19, 20, 21, 24, 25, 26, 27);
   private final VisionIO io;
-  private final Profile profile;
-  private final int configured;
-  private final int required;
+  private Profile profile;
+  private int configured;
+  private int required;
   private final CaptureSource capture;
   private final DoubleSupplier clock;
-  private final BooleanSupplier enabled;
   private final BooleanSupplier operatorVision;
   private final Supplier<Optional<Alliance>> alliance;
   private final CaptureHistory history;
-  private final VisionProcessor processor;
+  private VisionProcessor processor;
   private final MeasurementQueue queue;
   private final Map<String, CameraStatus> cameras = new HashMap<>();
   private final Set<String> faults = new HashSet<>();
@@ -93,17 +92,15 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       Profile profile,
       CaptureSource capture,
       DoubleSupplier clock,
-      BooleanSupplier enabled,
       BooleanSupplier operatorVision,
       Supplier<Optional<Alliance>> alliance) {
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.io = io;
     this.profile = profile;
-    configured = (int) profile.cameras().stream().filter(CameraDefinition::enabled).count();
+    configured = (int) profile.cameras().stream().filter(CameraPolicy::enabled).count();
     required = (int) profile.cameras().stream().filter(c -> c.enabled() && c.required()).count();
     this.capture = capture;
     this.clock = clock;
-    this.enabled = enabled;
     this.operatorVision = operatorVision;
     this.alliance = alliance;
     history = new CaptureHistory(capture::poseAt);
@@ -138,32 +135,30 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       select(broadTags());
       if (getState() == VisionState.HUB_TAGS) setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
     }
-    var inputs = io.readInputs(now, enabled.getAsBoolean());
+    var inputs = io.readInputs(now);
+    var effective = io.configuration().orElse(profile);
+    if (!effective.equals(profile)) {
+      profile = effective;
+      configured = (int) profile.cameras().stream().filter(CameraPolicy::enabled).count();
+      required = (int) profile.cameras().stream().filter(c -> c.enabled() && c.required()).count();
+      processor = new VisionProcessor(profile, history, VisionTuning::policy);
+      queue.clearPending();
+      retireObservations();
+    }
     // Input collection can take long enough for newer exposures to arrive.
     // Validate age against the clock after collection, not its earlier start.
     now = clock.getAsDouble();
     history.add(now, capture.current(now));
     var health = inputs.health();
-    var ack = health.acknowledgement();
-    String epoch =
-        ack.serviceSession()
-            + "/"
-            + ack.runtimeGeneration()
-            + "/"
-            + ack.connectionEpoch()
-            + "/"
-            + ack.syncEpoch();
+    String epoch = health.generation();
     if (!epoch.equals(generation)) {
       generation = epoch;
       queue.clearPending();
       processor.newGeneration(epoch);
       retireObservations();
     }
-    available = health.available() && ack.tagSelectionSupported() && configured > 0;
-    unavailableReason =
-        !ack.tagSelectionSupported() && ack.applied()
-            ? "Spot service does not support tag selection"
-            : health.reason();
+    available = health.available() && configured > 0;
+    unavailableReason = health.reason();
     boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
     io.setFusionEnabled(fusion);
     if (!fusion) queue.clearPending();
@@ -181,7 +176,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CONFIGURATION)
               : !matchingPolicy
                   ? VisionProcessor.Decision.reject(VisionProcessor.Reason.TAG_POLICY)
-                  : processor.process(sample, ack, now);
+                  : processor.process(sample, now);
       io.reportDecision(sample, decision);
       boolean accepted = decision.reason() == VisionProcessor.Reason.ACCEPTED;
       boolean operational =

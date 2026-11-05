@@ -1,14 +1,14 @@
 package com.team581.vision.spot.structs;
 
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructGenerator.SchemaBuilder;
 import edu.wpi.first.util.struct.StructSerializable;
 import java.nio.ByteBuffer;
 
-/** Atomic vision result, published by Spot and subscribed to by the robot. */
 public record FrameResult(
-    long contextHigh,
-    long contextLow,
+    long revisionHigh,
+    long revisionLow,
     long captureHigh,
     long captureLow,
     long sequence,
@@ -18,6 +18,8 @@ public record FrameResult(
     double timestampUncertainty,
     long observedTags,
     int candidateCount,
+    Transform3d robotToCamera,
+    boolean calibrationValid,
     PoseEstimate primary,
     PoseEstimate alternate,
     double captureToDetectMs,
@@ -27,8 +29,8 @@ public record FrameResult(
     implements StructSerializable {
   private static final String SCHEMA =
       new SchemaBuilder()
-          .addField("contextHigh", "int64")
-          .addField("contextLow", "int64")
+          .addField("revisionHigh", "int64")
+          .addField("revisionLow", "int64")
           .addField("captureHigh", "int64")
           .addField("captureLow", "int64")
           .addField("sequence", "int64")
@@ -38,20 +40,22 @@ public record FrameResult(
           .addField("timestampUncertainty", "double")
           .addField("observedTags", "int64")
           .addField("candidateCount", "int32")
-          .addField("primary", PoseEstimate.struct.getTypeName())
-          .addField("alternate", PoseEstimate.struct.getTypeName())
+          .addField("robotToCamera", "Transform3d")
+          .addField("calibrationValid", "bool")
+          .addField("primary", "SpotPoseEstimate")
+          .addField("alternate", "SpotPoseEstimate")
           .addField("captureToDetectMs", "double")
           .addField("detectMs", "double")
           .addField("solveMs", "double")
           .addField("totalMs", "double")
           .build();
 
-  @SuppressWarnings("ConstantNaming") // WPILib discovers this field by its conventional name.
+  @SuppressWarnings("ConstantNaming") // WPILib discovers this field by name.
   public static final Struct<FrameResult> struct =
       new Struct<>() {
         @Override
         public Struct<?>[] getNested() {
-          return new Struct<?>[] {PoseEstimate.struct};
+          return new Struct<?>[] {Transform3d.struct, PoseEstimate.struct};
         }
 
         @Override
@@ -61,7 +65,7 @@ public record FrameResult(
 
         @Override
         public int getSize() {
-          return 328;
+          return 385;
         }
 
         @Override
@@ -81,8 +85,8 @@ public record FrameResult(
 
         @Override
         public void pack(ByteBuffer buffer, FrameResult value) {
-          buffer.putLong(value.contextHigh());
-          buffer.putLong(value.contextLow());
+          buffer.putLong(value.revisionHigh());
+          buffer.putLong(value.revisionLow());
           buffer.putLong(value.captureHigh());
           buffer.putLong(value.captureLow());
           buffer.putLong(value.sequence());
@@ -92,6 +96,8 @@ public record FrameResult(
           buffer.putDouble(value.timestampUncertainty());
           buffer.putLong(value.observedTags());
           buffer.putInt(value.candidateCount());
+          Transform3d.struct.pack(buffer, value.robotToCamera());
+          buffer.put((byte) (value.calibrationValid() ? 1 : 0));
           PoseEstimate.struct.pack(buffer, value.primary());
           PoseEstimate.struct.pack(buffer, value.alternate());
           buffer.putDouble(value.captureToDetectMs());
@@ -114,6 +120,8 @@ public record FrameResult(
               buffer.getDouble(),
               buffer.getLong(),
               buffer.getInt(),
+              Transform3d.struct.unpack(buffer),
+              buffer.get() != 0,
               PoseEstimate.struct.unpack(buffer),
               PoseEstimate.struct.unpack(buffer),
               buffer.getDouble(),

@@ -1,20 +1,30 @@
 package frc.robot.vision;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
-import com.team581.vision.spot.data.Profile;
+import com.team581.vision.spot.data.CameraDefinition;
 import java.nio.file.*;
 import java.util.*;
 
 /** Desktop-only export. Never initializes Robot or hardware. */
 public final class SpotCameraPreviewExport {
+  private record Configuration(List<CameraDefinition> cameras) {}
+
   public static void main(String[] args) throws Exception {
-    write(VisionConfig.profile(), Path.of(args[0]));
+    var config =
+        new ObjectMapper()
+            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .readValue(Path.of(args[1]).toFile(), Configuration.class);
+    write(config.cameras(), Path.of(args[0]));
   }
 
-  static void write(Profile profile, Path output) throws Exception {
+  static void write(List<CameraDefinition> definitions, Path output) throws Exception {
     var cameras = new ArrayList<Object>();
-    for (var camera : profile.cameras()) {
+    for (var camera : definitions) {
       var pose = camera.robotToCamera();
       double norm =
           Math.sqrt(
@@ -70,11 +80,7 @@ public final class SpotCameraPreviewExport {
     Path temp = Files.createTempFile(target.getParent(), "preview-", ".json");
     try {
       Files.writeString(
-          temp,
-          new Gson()
-              .toJson(
-                  ImmutableMap.of(
-                      "schemaVersion", 1, "robotId", profile.robotId(), "cameras", cameras)));
+          temp, new Gson().toJson(ImmutableMap.of("schemaVersion", 1, "cameras", cameras)));
       Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     } finally {
       Files.deleteIfExists(temp);
