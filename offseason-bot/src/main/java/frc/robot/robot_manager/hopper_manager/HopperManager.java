@@ -16,6 +16,8 @@ import frc.robot.util.scheduling.SubsystemPriority;
 public class HopperManager extends StateMachineSubsystem<HopperState> {
   private static final double BALL_FILL_DURATION_SECONDS = 2.0;
   private final Timer ballFillTimer = new Timer();
+  private boolean ballFillAvailable = true;
+  private boolean ballFillActive = false;
 
   public final Deploy deploy;
   public final Intake intake;
@@ -108,28 +110,6 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setState(HopperState.UNJAMMING);
   }
 
-  private void idleTransportSubsystems() {
-    conveyor.idleRequest();
-    feeder.idleRequest();
-    funneler.idleRequest();
-  }
-
-  private void intakeBallFillRequest() {
-    boolean readyToFill = deploy.isFullyExtended() && intake.hasBeenIntaking();
-    if (readyToFill) {
-      ballFillTimer.start();
-    }
-
-    if (readyToFill && !ballFillTimer.hasElapsed(BALL_FILL_DURATION_SECONDS)) {
-      conveyor.ballFillingRequest();
-      funneler.ballFillingRequest();
-    } else {
-      conveyor.idleRequest();
-      funneler.idleRequest();
-    }
-    feeder.idleRequest();
-  }
-
   private boolean isShootingStrict() {
     if (RobotBase.isSimulation()) {
       return !timeout(1.5);
@@ -181,13 +161,38 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setStateFromRequest(newState);
   }
 
+  private void updateBallFill() {
+    if (ballFillAvailable
+        && getState() == HopperState.INTAKING
+        && deploy.isFullyExtended()
+        && intake.hasBeenIntaking()) {
+      ballFillAvailable = false;
+      ballFillActive = true;
+      ballFillTimer.restart();
+    }
+
+    if (ballFillActive && ballFillTimer.hasElapsed(BALL_FILL_DURATION_SECONDS)) {
+      ballFillActive = false;
+      ballFillTimer.stop();
+    }
+
+    if (ballFillActive) {
+      conveyor.ballFillingRequest();
+      funneler.ballFillingRequest();
+    } else {
+      conveyor.idleRequest();
+      funneler.idleRequest();
+    }
+    feeder.idleRequest();
+  }
+
   @Override
   protected void afterTransition(HopperState newState) {
     switch (newState) {
       case IDLE_DEPLOYED -> {
         intake.idleRequest();
         deploy.intakeRequest();
-        idleTransportSubsystems();
+        updateBallFill();
       }
       case IDLE_STOWED -> {
         deploy.stowRequest();
@@ -197,11 +202,9 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         funneler.idleRequest();
       }
       case INTAKING -> {
-        ballFillTimer.stop();
-        ballFillTimer.reset();
         deploy.intakeRequest();
         intake.intakeRequest();
-        intakeBallFillRequest();
+        updateBallFill();
       }
       case EJECTING -> {
         deploy.intakeRequest();
@@ -268,6 +271,12 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
 
   @Override
   protected void beforeTransition(HopperState oldState, HopperState newState) {
+    // A released intake lets the current fill finish. Explicit stow, shooting, eject,
+    // and unjam take control immediately and must not leave a fill pending.
+    if (newState != HopperState.INTAKING && newState != HopperState.IDLE_DEPLOYED) {
+      ballFillActive = false;
+      ballFillTimer.stop();
+    }
     boolean wasShooting =
         switch (oldState) {
           case SCORE, SCORE_AND_INTAKE, FEED, FEED_AND_INTAKE -> true;
@@ -283,6 +292,8 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
         || newState == HopperState.EJECTING
         || newState == HopperState.UNJAMMING) {
       hopperCapacity = HopperCapacity.LOW;
+      // Intake releases do not empty the hopper or rearm filling.
+      ballFillAvailable = true;
     }
   }
 
@@ -309,7 +320,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   protected void whileInState(HopperState state) {
     switch (state) {
       case IDLE_DEPLOYED -> {
-        idleTransportSubsystems();
+        updateBallFill();
         deploy.intakeRequest();
         intake.idleRequest();
       }
@@ -323,7 +334,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
       case INTAKING -> {
         deploy.intakeRequest();
         intake.intakeRequest();
-        intakeBallFillRequest();
+        updateBallFill();
       }
       case EJECTING -> {
         deploy.intakeRequest();

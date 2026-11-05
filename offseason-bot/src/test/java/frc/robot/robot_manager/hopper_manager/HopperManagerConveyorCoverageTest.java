@@ -62,7 +62,7 @@ final class HopperManagerConveyorCoverageTest {
   private HopperManager hopperManager;
 
   @Test
-  void ballFillRunsConveyorAndFunnelerForTwoSecondsOncePerIntakeCycle() {
+  void ballFillRunsOnceAcrossIntakeCyclesUntilShooting() {
     SimHooks.pauseTiming();
     try {
       intake.periodic();
@@ -108,6 +108,12 @@ final class HopperManagerConveyorCoverageTest {
       hopperManager.periodic();
       assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
       SimHooks.stepTimingAsync(3.1);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+
+      hopperManager.scoreRequest();
+      hopperManager.idleRequest();
       hopperManager.periodic();
       assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
       assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
@@ -241,6 +247,48 @@ final class HopperManagerConveyorCoverageTest {
     assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
   }
 
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  @ParameterizedTest
+  void releaseDuringFillFinishesOriginalWindow(boolean pressAgain) {
+    SimHooks.pauseTiming();
+    try {
+      intake.periodic();
+      hopperManager.periodic();
+      deployFullyExtended = true;
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.periodic();
+      SimHooks.stepTimingAsync(0.5);
+      hopperManager.setDriverWantsIntake(false);
+      hopperManager.periodic();
+      assertThat(intake.getState()).isEqualTo(IntakeState.IDLE);
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+
+      if (pressAgain) {
+        hopperManager.setDriverWantsIntake(true);
+        hopperManager.periodic();
+      }
+      SimHooks.stepTimingAsync(1.49);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+      SimHooks.stepTimingAsync(0.02);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+      SimHooks.stepTimingAsync(10);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+    } finally {
+      SimHooks.resumeTiming();
+    }
+  }
+
   @Test
   void scoreAndIntakeCommandsConveyorScore() {
     hopperManager.setDriverWantsIntake(true);
@@ -297,6 +345,50 @@ final class HopperManagerConveyorCoverageTest {
     funneler = new Funneler(hardware.funnelerMotor);
 
     hopperManager = new HopperManager(deploy, intake, conveyor, feeder, funneler);
+  }
+
+  @EnumSource(
+      value = HopperState.class,
+      names = {"SCORE", "SCORE_AND_INTAKE", "FEED", "FEED_AND_INTAKE"})
+  @ParameterizedTest
+  void shootingInterruptsFillAndRearmsNextIntake(HopperState shootingState) {
+    SimHooks.pauseTiming();
+    try {
+      intake.periodic();
+      hopperManager.periodic();
+      deployFullyExtended = true;
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+
+      hopperManager.setDriverWantsIntake(
+          shootingState == HopperState.SCORE_AND_INTAKE
+              || shootingState == HopperState.FEED_AND_INTAKE);
+      if (shootingState == HopperState.SCORE || shootingState == HopperState.SCORE_AND_INTAKE) {
+        hopperManager.scoreRequest();
+      } else {
+        hopperManager.feedRequest();
+      }
+      assertThat(hopperManager.getState()).isEqualTo(shootingState);
+      assertThat(conveyor.getState()).isNotEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isNotEqualTo(FunnelerState.BALL_FILLING);
+
+      hopperManager.setDriverWantsIntake(false);
+      hopperManager.idleRequest();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      hopperManager.setDriverWantsIntake(true);
+      hopperManager.idleRequest();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
+      SimHooks.stepTimingAsync(3.1);
+      hopperManager.periodic();
+      assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
+      assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
+      assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
+    } finally {
+      SimHooks.resumeTiming();
+    }
   }
 
   @Test
