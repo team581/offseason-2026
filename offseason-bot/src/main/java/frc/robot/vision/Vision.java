@@ -310,7 +310,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         queue.size(),
         queue.lateCount() + queue.overloadCount(),
         generation,
-        cameras);
+        Map.copyOf(cameras));
   }
 
   public boolean hasRecentFusedMeasurement() {
