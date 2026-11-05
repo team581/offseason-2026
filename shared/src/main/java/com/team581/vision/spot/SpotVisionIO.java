@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.results.VisionMeasurement;
 import com.team581.vision.spot.structs.*;
@@ -224,7 +225,7 @@ public final class SpotVisionIO implements VisionIO {
       }
       decisionsPublisher.set(
           JSON.writeValueAsString(
-              Map.of(
+              ImmutableMap.of(
                   "robot_session",
                   manifest.robotSession(),
                   "manifest_hash",
