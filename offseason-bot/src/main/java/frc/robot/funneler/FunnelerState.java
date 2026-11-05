@@ -4,11 +4,12 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum FunnelerState {
-  SCORE(0.0),
-  BALL_FILLING(0.0),
+  // Start with the competition conveyor voltages for the corresponding ball-handling states.
+  SCORE(10.0),
+  BALL_FILLING(1.0),
   IDLE(0.0),
-  INTAKE(0.0),
-  FEEDING(0.0);
+  INTAKE(2.0),
+  FEEDING(10.0);
 
   public final DoubleSubscriber tunableVoltage;
 

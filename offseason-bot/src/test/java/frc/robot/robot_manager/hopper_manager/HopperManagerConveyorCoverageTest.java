@@ -79,7 +79,7 @@ final class HopperManagerConveyorCoverageTest {
       hopperManager.periodic();
       assertThat(conveyor.getState()).isEqualTo(ConveyorState.BALL_FILLING);
       assertThat(funneler.getState()).isEqualTo(FunnelerState.BALL_FILLING);
-      assertThat(FunnelerState.BALL_FILLING.getVoltage()).isEqualTo(0);
+      assertThat(FunnelerState.BALL_FILLING.getVoltage()).isEqualTo(1);
       assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
 
       SimHooks.stepTimingAsync(1.99);
@@ -398,7 +398,7 @@ final class HopperManagerConveyorCoverageTest {
     assertThat(conveyor.getState()).isEqualTo(ConveyorState.EJECT);
     assertThat(feeder.getState()).isEqualTo(FeederState.SCORE);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.SCORE);
-    assertThat(FunnelerState.SCORE.getVoltage()).isEqualTo(0);
+    assertThat(FunnelerState.SCORE.getVoltage()).isEqualTo(10);
 
     // Unjam must restore every transport request on subsequent cycles.
     intake.idleRequest();
