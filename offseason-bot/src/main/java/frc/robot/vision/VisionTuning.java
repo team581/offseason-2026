@@ -15,7 +15,7 @@ public final class VisionTuning {
   private static final DoubleSubscriber RESIDUAL =
       DogLog.tunable("Vision/Tuning/MaxResidualPixels", 2.);
   private static final DoubleSubscriber INNOVATION =
-      DogLog.tunable("Vision/Tuning/InnovationSigma", 5.);
+      DogLog.tunable("Vision/Tuning/InnovationSigma", 10.);
 
   public static VisionProcessor.Policy policy() {
     return new VisionProcessor.Policy(
@@ -24,7 +24,7 @@ public final class VisionTuning {
         positive(RESIDUAL.get(), 2.),
         Math.toRadians(15),
         Math.toRadians(35),
-        positive(INNOVATION.get(), 5.),
+        positive(INNOVATION.get(), 10.),
         .5,
         Math.toRadians(30),
         .02);

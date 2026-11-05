@@ -68,6 +68,12 @@ final class RobotContractTest {
     return json.treeToValue(json.readTree(fixture("manifest")).get("profile"), Profile.class);
   }
 
+  private static VisionIO.Sample recoverySample(String name, int sequence, double time)
+      throws IOException {
+    return new VisionIO.Sample(
+        "front", TestRecords.with(sample(name).frame(), "sequence", (long) sequence), time);
+  }
+
   private static VisionIO.Sample sample(String name) throws IOException {
     var frame =
         FrameResult.struct.unpack(ByteBuffer.wrap(fixture(name)).order(ByteOrder.LITTLE_ENDIAN));
@@ -206,6 +212,83 @@ final class RobotContractTest {
     assertThat(frame.primary().tagMask()).isEqualTo(3);
   }
 
+  @CsvSource({"false, 0, multi", "true, 0, ippe", "true, 1, multi"})
+  @ParameterizedTest
+  void recoveryDoesNotBypassFreshEvidenceMotionOrSingleTagSafeguards(
+      boolean recoveryAllowed, double speed, String name) throws IOException {
+    var processor =
+        new VisionProcessor(
+            profile(),
+            time ->
+                Optional.of(
+                    new VisionProcessor.CaptureState(
+                        new Pose2d(6, 0, Rotation2d.kZero), speed, 0, 0, 0, 0)),
+            VisionProcessor.Policy::conservative,
+            () -> recoveryAllowed);
+    for (int i = 1; i <= 6; i++) {
+      double time = 10. + .06 * i;
+      assertThat(processor.process(recoverySample(name, i, time), time + .03).reason())
+          .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    }
+  }
+
+  @Test
+  void recoveryNeedsElapsedCaptureTimeAndCannotReuseStaleEvidence() throws IOException {
+    var processor =
+        new VisionProcessor(
+            profile(),
+            time ->
+                Optional.of(
+                    new VisionProcessor.CaptureState(
+                        new Pose2d(6, 0, Rotation2d.kZero), 0, 0, 0, 0, 0)),
+            VisionProcessor.Policy::conservative,
+            () -> true);
+    for (int i = 1; i <= 5; i++) {
+      double time = 10 + .001 * i;
+      assertThat(processor.process(recoverySample("multi", i, time), time + .03).reason())
+          .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    }
+    assertThat(processor.process(recoverySample("multi", 6, 10.70), 10.73).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    assertThat(processor.process(recoverySample("multi", 7, 10.76), 10.79).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    assertThat(processor.process(recoverySample("multi", 8, 10.82), 10.85).reason())
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
+  }
+
+  @Test
+  void recoveryRequiresAgreementAndEvidenceDoesNotSurviveResets() throws IOException {
+    var pose =
+        new java.util.concurrent.atomic.AtomicReference<>(new Pose2d(6, 0, Rotation2d.kZero));
+    var processor =
+        new VisionProcessor(
+            profile(),
+            time -> Optional.of(new VisionProcessor.CaptureState(pose.get(), 0, 0, 0, 0, 0)),
+            VisionProcessor.Policy::conservative,
+            () -> true);
+    for (int i = 1; i <= 4; i++) {
+      pose.set(new Pose2d(i % 2 == 0 ? 7 : 6, 0, Rotation2d.kZero));
+      double time = 10 + .06 * i;
+      assertThat(processor.process(recoverySample("multi", i, time), time + .03).reason())
+          .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    }
+    for (int i = 5; i <= 6; i++) {
+      double time = 10 + .06 * i;
+      processor.process(recoverySample("multi", i, time), time + .03);
+      processor.reset(time);
+    }
+    assertThat(processor.process(recoverySample("multi", 7, 10.42), 10.45).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    processor.process(recoverySample("multi", 8, 10.48), 10.51);
+    processor.clearRecoveryEvidence();
+    assertThat(processor.process(recoverySample("multi", 9, 10.54), 10.57).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    processor.process(recoverySample("multi", 10, 10.60), 10.63);
+    processor.newGeneration("replacement");
+    assertThat(processor.process(recoverySample("multi", 11, 10.66), 10.69).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+  }
+
   @Test
   void reorderWindowSpansLoopsAndDoesNotWaitForOfflineCamera() {
     var queue = new MeasurementQueue(.02, 8);
@@ -254,6 +337,28 @@ final class RobotContractTest {
     processor.reset(10.06);
     assertThat(processor.process(sample("multi"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.RESET);
+  }
+
+  @Test
+  void stationaryConsistentMultiTagEvidenceCanRecoverAnIncorrectInitialPose() throws IOException {
+    var processor =
+        new VisionProcessor(
+            profile(),
+            time ->
+                Optional.of(
+                    new VisionProcessor.CaptureState(
+                        new Pose2d(6, 0, Rotation2d.kZero), 0, 0, 0, 0, 0)),
+            VisionProcessor.Policy::conservative,
+            () -> true);
+    assertThat(processor.process(recoverySample("multi", 1, 10.01), 10.04).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    assertThat(processor.process(recoverySample("multi", 2, 10.07), 10.10).reason())
+        .isEqualTo(VisionProcessor.Reason.INNOVATION);
+    var recovered = processor.process(recoverySample("multi", 3, 10.13), 10.16);
+    assertThat(recovered.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    assertThat(recovered.measurement().orElseThrow().pose().getX()).isCloseTo(2., offset(1e-9));
+    // A large correction remains visible to trust tracking until the estimator converges.
+    assertThat(recovered.measurement().orElseThrow().innovationM()).isCloseTo(4., offset(1e-9));
   }
 
   @Test

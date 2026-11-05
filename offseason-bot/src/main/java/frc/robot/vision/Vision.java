@@ -104,7 +104,9 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     this.operatorVision = operatorVision;
     this.alliance = alliance;
     history = new CaptureHistory(capture::poseAt);
-    processor = new VisionProcessor(profile, history, VisionTuning::policy);
+    processor =
+        new VisionProcessor(
+            profile, history, VisionTuning::policy, () -> !hasRecentFusedMeasurement());
     queue = new MeasurementQueue(profile.reorderWindowS(), 128);
     selection = new VisionIO.TagSelection(1, broadTags());
     io.setTagSelection(selection);
@@ -141,7 +143,9 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       profile = effective;
       configured = (int) profile.cameras().stream().filter(CameraPolicy::enabled).count();
       required = (int) profile.cameras().stream().filter(c -> c.enabled() && c.required()).count();
-      processor = new VisionProcessor(profile, history, VisionTuning::policy);
+      processor =
+          new VisionProcessor(
+              profile, history, VisionTuning::policy, () -> !hasRecentFusedMeasurement());
       queue.clearPending();
       retireObservations();
     }
@@ -444,11 +448,14 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private void select(List<Integer> ids) {
     if (ids.equals(selection.allowedTagIds())) return;
     selection = new VisionIO.TagSelection(selection.generation() + 1, ids);
+    processor.clearRecoveryEvidence();
     prepared = ImmutableList.of();
     offered.clear();
     queue.clearPending();
     double acquired = lastHub;
-    retireObservations();
+    // A new filter invalidates pending frames, not measurements already fused into the pose.
+    // Preserve their timestamps so health expires naturally if new evidence stops arriving.
+    lastHub = lastTag = Double.NEGATIVE_INFINITY;
     if (getState() == VisionState.HUB_TAGS) lastHub = acquired;
     appliedSelection = 0;
     io.setTagSelection(selection);

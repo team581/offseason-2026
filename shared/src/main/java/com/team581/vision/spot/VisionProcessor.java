@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /** Robot-owned geometry, candidate selection and conservative quality model. */
@@ -48,7 +49,15 @@ public final class VisionProcessor {
       // Engineering defaults, requiring held-out robot trials. Heading remains
       // suppressed with a large finite deviation supported by CTRE's interface.
       return new Policy(
-          .04, .015, 2.0, Math.toRadians(15), Math.toRadians(35), 5.0, .5, Math.toRadians(30), .02);
+          .04,
+          .015,
+          2.0,
+          Math.toRadians(15),
+          Math.toRadians(35),
+          10.0,
+          .5,
+          Math.toRadians(30),
+          .02);
     }
   }
 
@@ -80,6 +89,8 @@ public final class VisionProcessor {
       return code;
     }
   }
+
+  private record RecoveryEvidence(Pose2d correction, double start, double last, int count) {}
 
   /** Use all configured cameras to cover correlation even across separate release batches. */
   public static List<VisionMeasurement> accountForCorrelation(
@@ -119,6 +130,8 @@ public final class VisionProcessor {
   private final Profile profile;
   private final History history;
   private final Supplier<Policy> policy;
+  private final BooleanSupplier recoveryAllowed;
+  private final Map<String, RecoveryEvidence> recovery = new HashMap<>();
   private final long fieldTagMask;
   private final Map<String, Double> lastTimestamp = new HashMap<>();
 
@@ -131,17 +144,29 @@ public final class VisionProcessor {
   }
 
   public VisionProcessor(Profile profile, History history, Supplier<Policy> policy) {
+    this(profile, history, policy, () -> false);
+  }
+
+  public VisionProcessor(
+      Profile profile, History history, Supplier<Policy> policy, BooleanSupplier recoveryAllowed) {
     this.profile = profile;
     this.history = history;
     this.policy = policy;
+    this.recoveryAllowed = recoveryAllowed;
     int tagCount = profile.field().tags().size();
     fieldTagMask = tagCount == 64 ? -1L : (1L << tagCount) - 1;
+  }
+
+  /** Observations from different tag policies must not corroborate one another. */
+  public void clearRecoveryEvidence() {
+    recovery.clear();
   }
 
   public void newGeneration(String identity) {
     if (!identity.equals(generation)) {
       generation = identity;
       lastTimestamp.clear();
+      recovery.clear();
     }
   }
 
@@ -292,8 +317,49 @@ public final class VisionProcessor {
     double innovation =
         robot.toPose2d().getTranslation().getDistance(state.pose().getTranslation());
     double normalized = innovation / sigma;
-    if (!Double.isFinite(normalized) || normalized > policy.innovationSigma()) {
+    if (!Double.isFinite(normalized)) {
       return Decision.reject(Reason.INNOVATION);
+    }
+    if (normalized > policy.innovationSigma()) {
+      // A wrong initial pose must not permanently veto good vision. While fusion evidence is
+      // stale, require a stationary robot and repeated, precise multi-tag agreement before
+      // allowing an estimator correction. Isolated outliers and single-tag ambiguity still fail.
+      if (!recoveryAllowed.getAsBoolean()
+          || candidate.method() != PoseEstimate.MULTI_TAG_SQPNP
+          || sigma > .25
+          || Math.abs(state.speedMps()) > .25
+          || Math.abs(state.angularRateRadPerS()) > .25) {
+        recovery.remove(sample.cameraName());
+        return Decision.reject(Reason.INNOVATION);
+      }
+      var correction =
+          new Pose2d(
+              robot.toPose2d().getTranslation().minus(state.pose().getTranslation()),
+              robot.toPose2d().getRotation().minus(state.pose().getRotation()));
+      var previous = recovery.get(sample.cameraName());
+      boolean consistent =
+          previous != null
+              && timestamp - previous.last() <= .5
+              && correction.getTranslation().getDistance(previous.correction().getTranslation())
+                  <= .25
+              && Math.abs(
+                      correction
+                          .getRotation()
+                          .minus(previous.correction().getRotation())
+                          .getRadians())
+                  <= Math.toRadians(10);
+      var evidence =
+          new RecoveryEvidence(
+              consistent ? previous.correction() : correction,
+              consistent ? previous.start() : timestamp,
+              timestamp,
+              consistent ? previous.count() + 1 : 1);
+      recovery.put(sample.cameraName(), evidence);
+      if (evidence.count() < 3 || timestamp - evidence.start() < .1) {
+        return Decision.reject(Reason.INNOVATION);
+      }
+    } else {
+      recovery.remove(sample.cameraName());
     }
     var measurement =
         new VisionMeasurement(
@@ -313,5 +379,6 @@ public final class VisionProcessor {
   public void reset(double timestamp) {
     resetTimestamp = timestamp;
     lastTimestamp.clear();
+    recovery.clear();
   }
 }

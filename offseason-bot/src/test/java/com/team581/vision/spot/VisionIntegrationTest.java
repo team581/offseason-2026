@@ -79,6 +79,7 @@ final class VisionIntegrationTest {
     boolean operator = true;
     Optional<Alliance> alliance = Optional.of(Alliance.Red);
     final Pose2d robot = new Pose2d(4, 4, Rotation2d.kZero);
+    Pose2d estimatedPose = robot;
     final FakeIO io = new FakeIO();
     final Profile profile;
     final Vision vision;
@@ -120,12 +121,12 @@ final class VisionIntegrationTest {
               new Vision.CaptureSource() {
                 @Override
                 public VisionProcessor.CaptureState current(double now) {
-                  return new VisionProcessor.CaptureState(robot, 0, 0, 0, 0, 0);
+                  return new VisionProcessor.CaptureState(estimatedPose, 0, 0, 0, 0, 0);
                 }
 
                 @Override
                 public Optional<Pose2d> poseAt(double now) {
-                  return Optional.of(robot);
+                  return Optional.of(estimatedPose);
                 }
               },
               () -> time,
@@ -456,6 +457,39 @@ final class VisionIntegrationTest {
   }
 
   @Test
+  void tagFilterChangesPreserveFusedHealthButDiscardPendingFramesAndStillExpire() {
+    try (var f = new Fixture(true)) {
+      var health = new frc.robot.health.HealthManager(f.vision, false);
+      health.setPoseTrustworthySupplier(() -> true);
+      f.frame("left", 2, 10.01);
+      f.tick(10.04);
+      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
+      health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isTrue();
+
+      f.vision.hubTagsRequest();
+      f.vision.robotPeriodic();
+      assertThat(f.vision.getState()).isEqualTo(VisionState.HUB_TAGS);
+      health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isTrue();
+
+      f.frame("left", 2, 10.05);
+      f.tick(10.08);
+      var pending = f.vision.drainMeasurements();
+      assertThat(pending).isNotEmpty();
+      f.vision.tagsRequest();
+      pending.forEach(value -> assertThat(f.vision.eligible(value, f.time)).isFalse());
+      health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isTrue();
+      assertThat(f.vision.getStatus().cameras().get("left").lastFused()).isEqualTo(10.01);
+
+      f.tick(10.30);
+      health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isFalse();
+    }
+  }
+
+  @Test
   void unknownAllianceStaysBroadAndChangingAllianceReacquires() {
     try (var f = new Fixture(false)) {
       f.alliance = Optional.empty();
@@ -473,6 +507,39 @@ final class VisionIntegrationTest {
       f.tick(10.12);
       assertThat(f.vision.getState()).isEqualTo(VisionState.WAITING_FOR_HUB_TAGS);
       assertThat(f.io.selection.allowedTagIds()).contains(1, 18, 2);
+    }
+  }
+
+  @Test
+  void visionEnablesGuardedRecoveryAfterFusedEvidenceExpires() {
+    try (var f = new Fixture(true)) {
+      f.frame("front", 1, 10.01);
+      f.tick(10.04);
+      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
+      assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
+
+      f.estimatedPose = new Pose2d(0, 4, Rotation2d.kZero);
+      for (int i = 1; i <= 3; i++) {
+        double time = 10.04 + .06 * i;
+        f.frame("front", 1, time);
+        f.tick(time + .03);
+        assertThat(f.vision.drainMeasurements()).isEmpty();
+      }
+      // Fresh fusion evidence has now expired. Three consistent observations may recover.
+      for (int i = 1; i <= 3; i++) {
+        double time = 10.30 + .06 * i;
+        f.frame("front", 1, time);
+        f.tick(time + .03);
+        var results = f.vision.drainMeasurements();
+        if (i < 3) {
+          assertThat(results).isEmpty();
+        } else {
+          assertThat(results).hasSize(1);
+          assertThat(results.get(0).pose().getX()).isCloseTo(4., offset(1e-9));
+          results.forEach(f.vision::measurementFused);
+          assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
+        }
+      }
     }
   }
 
