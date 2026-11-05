@@ -115,8 +115,11 @@ public final class SpotProtocol {
       // Match WPILib geometry normalization when fingerprinting a profile.
       for (double coordinate : new double[] {pose.xM(), pose.yM(), pose.zM()})
         update(digest, coordinate);
-      for (double q : new double[] {pose.qw(), pose.qx(), pose.qy(), pose.qz()})
-        update(digest, Math.rint(q * 1e12) / 1e12);
+      for (double q : new double[] {pose.qw(), pose.qx(), pose.qy(), pose.qz()}) {
+        double rounded = Math.rint(q * 1e12) / 1e12;
+        // Python's round returns integer zero; canonicalize Java's negative zero too.
+        update(digest, rounded == 0. ? 0. : rounded);
+      }
     } else if (value instanceof Record record) {
       for (var component : record.getClass().getRecordComponents()) {
         try {
