@@ -1,6 +1,7 @@
 package frc.robot.vision;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -284,6 +285,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         && value.tagIds().stream().allMatch(selection.allowedTagIds()::contains);
   }
 
+  // The copy keeps status snapshots independent of later camera updates and resets.
+  @SuppressWarnings("IdentityConversion")
   public Status getStatus() {
     int usable = (int) cameras.values().stream().filter(CameraStatus::usable).count();
     boolean all =
@@ -310,7 +313,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         queue.size(),
         queue.lateCount() + queue.overloadCount(),
         generation,
-        cameras);
+        ImmutableMap.copyOf(cameras));
   }
 
   public boolean hasRecentFusedMeasurement() {
