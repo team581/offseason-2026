@@ -9,14 +9,12 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 
 public class ConveyorConfig {
-  public static final double TOP_MOTOR_TO_ROLLER_RATIO =
+  public static final double MOTOR_TO_ROLLER_RATIO =
       1.0 / ((14.0 / 60.0) * (16.0 / 18.0) * (16.0 / 20.0) * (17.0 / 20.0) * (17.0 / 20.0));
-  public static final double BOTTOM_MOTOR_TO_ROLLER_RATIO = TOP_MOTOR_TO_ROLLER_RATIO;
 
-  public static final double TOP_ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.5);
-  public static final double BOTTOM_ROLLER_DIAMETER_METERS = TOP_ROLLER_DIAMETER_METERS;
+  public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(1.5);
 
-  public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
+  public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
@@ -25,12 +23,21 @@ public class ConveyorConfig {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(10));
-  public static final TalonFXConfiguration BOTTOM_MOTOR_CONFIG =
+  public static final TalonFXConfiguration TUNNEL_TOP_MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withInverted(InvertedValue.Clockwise_Positive)
-                  .withNeutralMode(NeutralModeValue.Coast))
+                  .withNeutralMode(NeutralModeValue.Brake))
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(10));
+  public static final TalonFXConfiguration TUNNEL_BOTTOM_MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(InvertedValue.Clockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Brake))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(10));

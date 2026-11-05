@@ -20,19 +20,9 @@ public class FeederConfig {
   // Motor rotations per roller rotation, from the offseason subsystem hardware specs.
   public static final double MOTOR_TO_ROLLER_RATIO = 28.0 / 18.0;
 
-  public static final double TOP_ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
-  public static final double BOTTOM_ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
+  public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
 
-  public static final TalonFXConfiguration TOP_MOTOR_CONFIG =
-      new TalonFXConfiguration()
-          .withMotorOutput(
-              new MotorOutputConfigs()
-                  .withInverted(InvertedValue.Clockwise_Positive)
-                  .withNeutralMode(NeutralModeValue.Brake))
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
-          .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(10));
-  public static final TalonFXConfiguration BOTTOM_MOTOR_CONFIG =
+  public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()

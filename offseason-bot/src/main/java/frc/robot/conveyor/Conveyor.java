@@ -16,55 +16,74 @@ import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Conveyor extends StateMachineSubsystem<ConveyorState> implements PowerManaged {
 
-  private final TalonFX topMotor;
-  private final TalonFX bottomMotor;
+  private final TalonFX motor;
+  private final TalonFX tunnelTopMotor;
+  private final TalonFX tunnelBottomMotor;
 
   private final NeutralOut neutralRequest = new NeutralOut();
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
-  private final StatusSignal<Voltage> topSupplyVoltageSignal;
-  private final StatusSignal<Voltage> bottomSupplyVoltageSignal;
-  private final StatusSignal<AngularVelocity> topVelocitySignal;
-  private final StatusSignal<AngularVelocity> bottomVelocitySignal;
+  private final StatusSignal<Voltage> supplyVoltageSignal;
+  private final StatusSignal<Voltage> tunnelTopSupplyVoltageSignal;
+  private final StatusSignal<Voltage> tunnelBottomSupplyVoltageSignal;
+  private final StatusSignal<AngularVelocity> velocitySignal;
+  private final StatusSignal<AngularVelocity> tunnelTopVelocitySignal;
+  private final StatusSignal<AngularVelocity> tunnelBottomVelocitySignal;
 
-  private final StatusSignal<Current> topSupplyCurrentSignal;
-  private final StatusSignal<Current> bottomSupplyCurrentSignal;
+  private final StatusSignal<Current> supplyCurrentSignal;
+  private final StatusSignal<Current> tunnelTopSupplyCurrentSignal;
+  private final StatusSignal<Current> tunnelBottomSupplyCurrentSignal;
 
-  private double topSurfaceSpeedMetersPerSecond = 0.0;
-  private double bottomSurfaceSpeedMetersPerSecond = 0.0;
+  private double surfaceSpeedMetersPerSecond = 0.0;
 
-  public Conveyor(TalonFX topMotor, TalonFX bottomMotor) {
+  public Conveyor(TalonFX motor, TalonFX tunnelTopMotor, TalonFX tunnelBottomMotor) {
     super(SubsystemPriority.CONVEYOR, ConveyorState.IDLE);
-    topMotor.getConfigurator().apply(ConveyorConfig.TOP_MOTOR_CONFIG);
-    bottomMotor.getConfigurator().apply(ConveyorConfig.BOTTOM_MOTOR_CONFIG);
+    motor.getConfigurator().apply(ConveyorConfig.MOTOR_CONFIG);
+    tunnelTopMotor.getConfigurator().apply(ConveyorConfig.TUNNEL_TOP_MOTOR_CONFIG);
+    tunnelBottomMotor.getConfigurator().apply(ConveyorConfig.TUNNEL_BOTTOM_MOTOR_CONFIG);
 
-    this.topMotor = topMotor;
-    this.bottomMotor = bottomMotor;
+    this.motor = motor;
+    this.tunnelTopMotor = tunnelTopMotor;
+    this.tunnelBottomMotor = tunnelBottomMotor;
 
-    topVelocitySignal = topMotor.getRotorVelocity(false);
-    topSupplyCurrentSignal = topMotor.getSupplyCurrent(false);
-    bottomVelocitySignal = bottomMotor.getRotorVelocity(false);
-    bottomSupplyCurrentSignal = bottomMotor.getSupplyCurrent(false);
-    Signals.forDevice(topMotor).addSignals(topVelocitySignal, topSupplyCurrentSignal);
-    Signals.forDevice(bottomMotor).addSignals(bottomVelocitySignal, bottomSupplyCurrentSignal);
-    topSupplyVoltageSignal = topMotor.getSupplyVoltage(false);
-    Signals.forDevice(topMotor).addSignals(topSupplyVoltageSignal);
-    bottomSupplyVoltageSignal = bottomMotor.getSupplyVoltage(false);
-    Signals.forDevice(bottomMotor).addSignals(bottomSupplyVoltageSignal);
+    velocitySignal = motor.getRotorVelocity(false);
+    supplyCurrentSignal = motor.getSupplyCurrent(false);
+    tunnelTopVelocitySignal = tunnelTopMotor.getRotorVelocity(false);
+    tunnelBottomVelocitySignal = tunnelBottomMotor.getRotorVelocity(false);
+    tunnelTopSupplyCurrentSignal = tunnelTopMotor.getSupplyCurrent(false);
+    tunnelBottomSupplyCurrentSignal = tunnelBottomMotor.getSupplyCurrent(false);
+    Signals.forDevice(motor).addSignals(velocitySignal, supplyCurrentSignal);
+    Signals.forDevice(tunnelTopMotor)
+        .addSignals(tunnelTopVelocitySignal, tunnelTopSupplyCurrentSignal);
+    Signals.forDevice(tunnelBottomMotor)
+        .addSignals(tunnelBottomVelocitySignal, tunnelBottomSupplyCurrentSignal);
+    supplyVoltageSignal = motor.getSupplyVoltage(false);
+    Signals.forDevice(motor).addSignals(supplyVoltageSignal);
+    tunnelTopSupplyVoltageSignal = tunnelTopMotor.getSupplyVoltage(false);
+    tunnelBottomSupplyVoltageSignal = tunnelBottomMotor.getSupplyVoltage(false);
+    Signals.forDevice(tunnelTopMotor).addSignals(tunnelTopSupplyVoltageSignal);
+    Signals.forDevice(tunnelBottomMotor).addSignals(tunnelBottomSupplyVoltageSignal);
   }
 
   @Override
   public void applyCurrentLimits(double supplyCurrentLimit) {
-    var topLimits =
-        ConveyorConfig.TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
-    topMotor.getConfigurator().apply(topLimits);
-    DogLog.log("Conveyor/Top/SupplyLimitAmps", topLimits.SupplyCurrentLimit);
-    DogLog.log("Conveyor/Top/StatorLimitAmps", topLimits.StatorCurrentLimit);
-    var bottomLimits =
-        ConveyorConfig.BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
-    bottomMotor.getConfigurator().apply(bottomLimits);
-    DogLog.log("Conveyor/Bottom/SupplyLimitAmps", bottomLimits.SupplyCurrentLimit);
-    DogLog.log("Conveyor/Bottom/StatorLimitAmps", bottomLimits.StatorCurrentLimit);
+    var floorLimits =
+        ConveyorConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
+    motor.getConfigurator().apply(floorLimits);
+    DogLog.log("Conveyor/Floor/SupplyLimitAmps", floorLimits.SupplyCurrentLimit);
+    DogLog.log("Conveyor/Floor/StatorLimitAmps", floorLimits.StatorCurrentLimit);
+    var tunnelTopLimits =
+        ConveyorConfig.TUNNEL_TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            supplyCurrentLimit);
+    tunnelTopMotor.getConfigurator().apply(tunnelTopLimits);
+    DogLog.log("Conveyor/TunnelTop/SupplyLimitAmps", tunnelTopLimits.SupplyCurrentLimit);
+    DogLog.log("Conveyor/TunnelTop/StatorLimitAmps", tunnelTopLimits.StatorCurrentLimit);
+    var tunnelBottomLimits =
+        ConveyorConfig.TUNNEL_BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
+            supplyCurrentLimit);
+    tunnelBottomMotor.getConfigurator().apply(tunnelBottomLimits);
+    DogLog.log("Conveyor/TunnelBottom/SupplyLimitAmps", tunnelBottomLimits.SupplyCurrentLimit);
+    DogLog.log("Conveyor/TunnelBottom/StatorLimitAmps", tunnelBottomLimits.StatorCurrentLimit);
   }
 
   public void ballFillingRequest() {
@@ -99,40 +118,42 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
   protected void afterTransition(ConveyorState newState) {
     switch (newState) {
       case IDLE -> {
-        topMotor.setControl(neutralRequest);
-        bottomMotor.setControl(neutralRequest);
+        motor.setControl(neutralRequest);
+        tunnelTopMotor.setControl(neutralRequest);
+        tunnelBottomMotor.setControl(neutralRequest);
       }
       default -> {
-        topMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
-        bottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        motor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        tunnelTopMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
+        tunnelBottomMotor.setControl(voltageRequest.withOutput(newState.getVoltage()));
       }
     }
   }
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Conveyor/Top/SupplyVoltage", topSupplyVoltageSignal.getValueAsDouble());
-    DogLog.log("Conveyor/Top/SupplyCurrent", topSupplyCurrentSignal.getValueAsDouble());
-    DogLog.log("Conveyor/Bottom/SupplyVoltage", bottomSupplyVoltageSignal.getValueAsDouble());
-    DogLog.log("Conveyor/Bottom/SupplyCurrent", bottomSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Conveyor/Floor/SupplyVoltage", supplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Conveyor/Floor/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Conveyor/TunnelTop/SupplyVoltage", tunnelTopSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log(
+        "Conveyor/TunnelBottom/SupplyVoltage", tunnelBottomSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Conveyor/TunnelTop/SupplyCurrent", tunnelTopSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log(
+        "Conveyor/TunnelBottom/SupplyCurrent", tunnelBottomSupplyCurrentSignal.getValueAsDouble());
 
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
-    double topVelocityRps = topVelocitySignal.getValueAsDouble();
-    topSurfaceSpeedMetersPerSecond =
+    double velocityRps = velocitySignal.getValueAsDouble();
+    surfaceSpeedMetersPerSecond =
         RollerUtil.surfaceSpeedMetersPerSecond(
-            topVelocityRps,
-            ConveyorConfig.TOP_ROLLER_DIAMETER_METERS,
-            ConveyorConfig.TOP_MOTOR_TO_ROLLER_RATIO);
-    double bottomVelocityRps = bottomVelocitySignal.getValueAsDouble();
-    bottomSurfaceSpeedMetersPerSecond =
-        RollerUtil.surfaceSpeedMetersPerSecond(
-            bottomVelocityRps,
-            ConveyorConfig.BOTTOM_ROLLER_DIAMETER_METERS,
-            ConveyorConfig.BOTTOM_MOTOR_TO_ROLLER_RATIO);
+            velocityRps,
+            ConveyorConfig.ROLLER_DIAMETER_METERS,
+            ConveyorConfig.MOTOR_TO_ROLLER_RATIO);
+    double tunnelTopVelocityRps = tunnelTopVelocitySignal.getValueAsDouble();
+    double tunnelBottomVelocityRps = tunnelBottomVelocitySignal.getValueAsDouble();
 
-    DogLog.log("Conveyor/Top/VelocityRPM", topVelocityRps * 60.0);
-    DogLog.log("Conveyor/Top/SurfaceSpeedMetersPerSecond", topSurfaceSpeedMetersPerSecond);
-    DogLog.log("Conveyor/Bottom/VelocityRPM", bottomVelocityRps * 60.0);
-    DogLog.log("Conveyor/Bottom/SurfaceSpeedMetersPerSecond", bottomSurfaceSpeedMetersPerSecond);
+    DogLog.log("Conveyor/Floor/VelocityRPM", velocityRps * 60.0);
+    DogLog.log("Conveyor/Floor/SurfaceSpeedMetersPerSecond", surfaceSpeedMetersPerSecond);
+    DogLog.log("Conveyor/TunnelTop/VelocityRPM", tunnelTopVelocityRps * 60.0);
+    DogLog.log("Conveyor/TunnelBottom/VelocityRPM", tunnelBottomVelocityRps * 60.0);
   }
 }

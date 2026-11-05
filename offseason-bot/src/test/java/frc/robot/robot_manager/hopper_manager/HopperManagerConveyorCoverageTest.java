@@ -2,6 +2,9 @@ package frc.robot.robot_manager.hopper_manager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.Hardware;
@@ -288,8 +291,9 @@ final class HopperManagerConveyorCoverageTest {
           }
         };
     intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-    conveyor = new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
-    feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+    conveyor =
+        new Conveyor(hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor);
+    feeder = new Feeder(hardware.feederMotor);
     funneler = new Funneler(hardware.funnelerMotor);
 
     hopperManager = new HopperManager(deploy, intake, conveyor, feeder, funneler);
@@ -425,5 +429,29 @@ final class HopperManagerConveyorCoverageTest {
     assertThat(conveyor.getState()).isEqualTo(ConveyorState.IDLE);
     assertThat(feeder.getState()).isEqualTo(FeederState.IDLE);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
+  }
+
+  @Test
+  void unjamReversesFloorAndTunnelWhileFeederRunsForwardThenIdleStopsAll() {
+    hopperManager.unjamRequest();
+    for (var motor :
+        new TalonFX[] {
+          hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor
+        }) {
+      var request = (VoltageOut) motor.getAppliedControl();
+      assertThat(request.Output).isNegative();
+    }
+    assertThat(((VoltageOut) hardware.feederMotor.getAppliedControl()).Output).isPositive();
+
+    hopperManager.idleRequest();
+    for (var motor :
+        new TalonFX[] {
+          hardware.conveyorMotor,
+          hardware.tunnelTopMotor,
+          hardware.tunnelBottomMotor,
+          hardware.feederMotor
+        }) {
+      assertThat(motor.getAppliedControl()).isInstanceOf(NeutralOut.class);
+    }
   }
 }

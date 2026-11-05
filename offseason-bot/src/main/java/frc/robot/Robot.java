@@ -104,9 +104,9 @@ public class Robot extends Base581Robot {
 
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
   private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
-  private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+  private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final Conveyor conveyor =
-      new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
+      new Conveyor(hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
   public final Turret turret = new Turret(hardware.turretMotor);

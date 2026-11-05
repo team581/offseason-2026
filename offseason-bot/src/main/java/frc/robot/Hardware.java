@@ -33,11 +33,11 @@ public class Hardware {
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
   public final TalonFX intakeRightMotor = new TalonFX(17, rio);
 
-  public final TalonFX conveyorTopMotor = new TalonFX(18, canivore);
-  public final TalonFX conveyorBottomMotor = new TalonFX(19, canivore);
+  public final TalonFX conveyorMotor = new TalonFX(18, canivore);
+  public final TalonFX feederMotor = new TalonFX(19, canivore);
 
-  public final TalonFX feederTopMotor = new TalonFX(20, canivore);
-  public final TalonFX feederBottomMotor = new TalonFX(21, canivore);
+  public final TalonFX tunnelTopMotor = new TalonFX(20, canivore);
+  public final TalonFX tunnelBottomMotor = new TalonFX(21, canivore);
 
   public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
 

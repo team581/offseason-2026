@@ -31,15 +31,7 @@ final class RollerUtilTest {
             * 0.0381;
     assertThat(
             RollerUtil.surfaceSpeedMetersPerSecond(
-                60.0,
-                ConveyorConfig.TOP_ROLLER_DIAMETER_METERS,
-                ConveyorConfig.TOP_MOTOR_TO_ROLLER_RATIO))
-        .isCloseTo(expectedSpeed, within(1e-12));
-    assertThat(
-            RollerUtil.surfaceSpeedMetersPerSecond(
-                60.0,
-                ConveyorConfig.BOTTOM_ROLLER_DIAMETER_METERS,
-                ConveyorConfig.BOTTOM_MOTOR_TO_ROLLER_RATIO))
+                60.0, ConveyorConfig.ROLLER_DIAMETER_METERS, ConveyorConfig.MOTOR_TO_ROLLER_RATIO))
         .isCloseTo(expectedSpeed, within(1e-12));
   }
 
@@ -61,13 +53,7 @@ final class RollerUtilTest {
     assertThat(
             RollerUtil.surfaceSpeedMetersPerSecond(
                 28.0 / 18.0,
-                FeederConfig.TOP_ROLLER_DIAMETER_METERS,
-                FeederConfig.MOTOR_TO_ROLLER_RATIO))
-        .isCloseTo(circumference, within(1e-12));
-    assertThat(
-            RollerUtil.surfaceSpeedMetersPerSecond(
-                28.0 / 18.0,
-                FeederConfig.BOTTOM_ROLLER_DIAMETER_METERS,
+                FeederConfig.ROLLER_DIAMETER_METERS,
                 FeederConfig.MOTOR_TO_ROLLER_RATIO))
         .isCloseTo(circumference, within(1e-12));
     assertThat(

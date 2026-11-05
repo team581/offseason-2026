@@ -221,8 +221,9 @@ final class HopperManagerIntakeCoverageTest {
   void setUp() {
     deploy = new Deploy(hardware.deployDifferentialMechanism);
     intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-    conveyor = new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
-    feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+    conveyor =
+        new Conveyor(hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor);
+    feeder = new Feeder(hardware.feederMotor);
     funneler = new Funneler(hardware.funnelerMotor);
 
     hopperManager = new HopperManager(deploy, intake, conveyor, feeder, funneler);
