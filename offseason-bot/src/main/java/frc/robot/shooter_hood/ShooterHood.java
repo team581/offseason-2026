@@ -17,6 +17,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
@@ -205,7 +206,9 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   protected ShooterHoodState getNextState(ShooterHoodState currentState) {
     return switch (currentState) {
       case HOMING -> {
-        if (statorCurrent >= ShooterHoodConfig.HOMING_CURRENT_THRESHOLD) {
+        // Simulation homes by seeding the rotor in simulationPeriodic(). A current-based
+        // sensor reset here would add an offset to those absolute simulated positions.
+        if (RobotBase.isReal() && statorCurrent >= ShooterHoodConfig.HOMING_CURRENT_THRESHOLD) {
           motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
           yield ShooterHoodState.IDLE;
         }
