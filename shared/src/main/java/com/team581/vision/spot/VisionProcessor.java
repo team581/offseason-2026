@@ -44,7 +44,8 @@ public final class VisionProcessor {
       double innovationSigma,
       double maxZErrorM,
       double maxTiltErrorRad,
-      double maxTimestampUncertaintyS) {
+      // Residual capture-time error after Spot's latency correction; robot-only.
+      double timestampUncertaintyS) {
     public static Policy conservative() {
       // Engineering defaults, requiring held-out robot trials. Heading remains
       // suppressed with a large finite deviation supported by CTRE's interface.
@@ -57,7 +58,7 @@ public final class VisionProcessor {
           10.0,
           .5,
           Math.toRadians(30),
-          .02);
+          .005);
     }
   }
 
@@ -199,12 +200,8 @@ public final class VisionProcessor {
     lastTimestamp.put(sample.cameraName(), timestamp);
     if (!frame.calibrationValid()) return Decision.reject(Reason.CALIBRATION);
     var policy = this.policy.get();
-    double timeUncertainty = frame.timestampUncertainty();
-    if (!Double.isFinite(timeUncertainty)
-        || timeUncertainty <= 0
-        || timeUncertainty > policy.maxTimestampUncertaintyS()
-        || frame.timestampSource() < 1
-        || frame.timestampSource() > 3) {
+    double timeUncertainty = policy.timestampUncertaintyS();
+    if (frame.timestampSource() < 1 || frame.timestampSource() > 3) {
       return Decision.reject(Reason.TIMESTAMP);
     }
     if (frame.candidateCount() == 0) {

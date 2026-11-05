@@ -183,7 +183,6 @@ final class VisionIntegrationTest {
               selectionGeneration,
               0L,
               1,
-              .001,
               primary.tagMask(),
               tag > 0 ? 1 : 0,
               mount,

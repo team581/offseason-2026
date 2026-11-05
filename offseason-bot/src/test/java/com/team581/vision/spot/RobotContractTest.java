@@ -50,13 +50,17 @@ final class RobotContractTest {
   }
 
   private static VisionProcessor processor() throws IOException {
+    return processor(VisionProcessor.Policy.conservative());
+  }
+
+  private static VisionProcessor processor(VisionProcessor.Policy policy) throws IOException {
     return new VisionProcessor(
         profile(),
         timestamp ->
             Optional.of(
                 new VisionProcessor.CaptureState(
                     new Pose2d(2, 0, Rotation2d.kZero), 1., 0., 0., 0., 0.)),
-        VisionProcessor.Policy.conservative());
+        policy);
   }
 
   private static Profile profile() throws IOException {
@@ -99,16 +103,19 @@ final class RobotContractTest {
   @ParameterizedTest
   void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
       double imageAreaFraction, double expectedFactor) throws IOException {
-    var frame = TestRecords.with(sample("multi").frame(), "timestampUncertainty", 1e-12);
+    var frame = sample("multi").frame();
+    // Negligible timing uncertainty isolates the image-area factor.
+    var policy =
+        TestRecords.with(VisionProcessor.Policy.conservative(), "timestampUncertaintyS", 1e-12);
     var baseline =
-        processor()
+        processor(policy)
             .process(new VisionIO.Sample("front", frame, 10.05), 10.1)
             .measurement()
             .orElseThrow();
     var adjusted =
         TestRecords.with(
             frame, "primary", TestRecords.with(frame.primary(), "imageArea", imageAreaFraction));
-    var result = processor().process(new VisionIO.Sample("front", adjusted, 10.05), 10.1);
+    var result = processor(policy).process(new VisionIO.Sample("front", adjusted, 10.05), 10.1);
     assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     assertThat(result.measurement().orElseThrow().stdX())
         .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));

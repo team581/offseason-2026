@@ -2,7 +2,6 @@
   "cameras": [
     {
       "image_rotation_deg": 0,
-      "timestamp_qualification": null,
       "controls": [],
       "name": "left",
       "allowed_modes": [{
@@ -31,7 +30,6 @@
     },
     {
       "image_rotation_deg": 0,
-      "timestamp_qualification": null,
       "controls": [],
       "name": "right",
       "allowed_modes": [{
@@ -60,7 +58,6 @@
     },
     {
       "image_rotation_deg": 0,
-      "timestamp_qualification": null,
       "controls": [],
       "name": "back",
       "allowed_modes": [{

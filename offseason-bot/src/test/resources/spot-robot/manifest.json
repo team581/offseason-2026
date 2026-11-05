@@ -1,7 +1,6 @@
 {"profile": {
   "cameras": [{
     "image_rotation_deg": 0,
-    "timestamp_qualification": null,
     "controls": [
       {
         "name": "gain",
@@ -79,5 +78,6 @@
     "utilization_budget": 0.8,
     "max_fps": 30
   },
-  "max_age_s": 0.25
+  "max_age_s": 0.25,
+  "latency_ms": 5
 }}
