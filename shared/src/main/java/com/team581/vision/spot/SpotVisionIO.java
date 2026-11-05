@@ -271,14 +271,8 @@ public final class SpotVisionIO implements VisionIO {
             rejectTransport("Observation predates reset or has mismatched context");
             continue;
           }
-          var applied =
-              acknowledgement.cameras().stream()
-                  .filter(c -> c.cameraName().equals(camera.getKey()))
-                  .findFirst()
-                  .orElseThrow();
-          var observation =
-              SpotFrames.observation(frame, acknowledgement, applied, manifest.profile());
-          result.add(new Sample(observation, timestamp.getAsDouble()));
+          SpotFrames.validate(frame, manifest.profile());
+          result.add(new Sample(camera.getKey(), frame, timestamp.getAsDouble()));
         } catch (IllegalArgumentException exception) {
           malformed++;
           rejectTransport("Malformed frame struct");
@@ -290,23 +284,23 @@ public final class SpotVisionIO implements VisionIO {
 
   @Override
   public void reportDecision(Sample sample, VisionProcessor.Decision decision) {
-    var observation = sample.observation();
-    if (!cameras.containsKey(observation.cameraName())) {
+    var frame = sample.frame();
+    if (!cameras.containsKey(sample.cameraName())) {
       return;
     }
     decisions.put(
-        observation.cameraName(),
+        sample.cameraName(),
         new DecisionStatus(
             decision.reason().name(),
             false,
-            observation.captureEpoch(),
-            observation.sequence(),
+            sample.captureEpoch(),
+            frame.sequence(),
             sample.captureFpgaSeconds(),
-            observation.serviceSession(),
-            observation.runtimeGeneration(),
-            observation.connectionEpoch(),
-            observation.syncEpoch(),
-            observation.tagSelectionGeneration(),
+            acknowledgement.serviceSession(),
+            acknowledgement.runtimeGeneration(),
+            acknowledgement.connectionEpoch(),
+            acknowledgement.syncEpoch(),
+            frame.tagSelectionGeneration(),
             decision.measurement().map(VisionMeasurement::frameId).orElse("")));
   }
 

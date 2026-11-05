@@ -78,11 +78,27 @@ final class RobotContractTest {
   private static VisionIO.Sample sample(String name) throws IOException {
     var frame =
         FrameResult.struct.unpack(ByteBuffer.wrap(fixture(name)).order(ByteOrder.LITTLE_ENDIAN));
-    var acknowledgement = ack();
-    return new VisionIO.Sample(
-        SpotFrames.observation(
-            frame, acknowledgement, acknowledgement.cameras().get(0), manifest().profile()),
-        10.05);
+    return new VisionIO.Sample("front", frame, 10.05);
+  }
+
+  @Test
+  void changedAcknowledgementRetiresPreviouslyValidFrameContext() throws IOException {
+    var sample = sample("multi");
+    var ack = ack();
+    var changed =
+        TestRecords.with(
+            ack,
+            "cameras",
+            ImmutableList.of(TestRecords.with(ack.cameras().get(0), "bindingGeneration", 2L)));
+    var processor = processor();
+    assertThat(processor.process(sample, changed, 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.CONFIGURATION);
+    var context = SpotProtocol.frameContext(changed, "front");
+    var current =
+        TestRecords.with(sample.frame(), "contextHigh", context[0], "contextLow", context[1]);
+    assertThat(
+            processor.process(new VisionIO.Sample("front", current, 10.05), changed, 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
   }
 
   @Test
@@ -104,27 +120,16 @@ final class RobotContractTest {
   @ParameterizedTest
   void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
       double imageAreaFraction, double expectedFactor) throws IOException {
-    var observation =
-        TestRecords.with(sample("multi").observation(), "timestampUncertaintyS", 1e-12);
-    observation =
-        TestRecords.with(
-            observation,
-            "candidates",
-            ImmutableList.of(
-                TestRecords.with(observation.candidates().get(0), "imageAreaFraction", .02)));
+    var frame = TestRecords.with(sample("multi").frame(), "timestampUncertainty", 1e-12);
     var baseline =
         processor()
-            .process(new VisionIO.Sample(observation, 10.05), ack(), 10.1)
+            .process(new VisionIO.Sample("front", frame, 10.05), ack(), 10.1)
             .measurement()
             .orElseThrow();
-    observation =
+    var adjusted =
         TestRecords.with(
-            observation,
-            "candidates",
-            ImmutableList.of(
-                TestRecords.with(
-                    observation.candidates().get(0), "imageAreaFraction", imageAreaFraction)));
-    var result = processor().process(new VisionIO.Sample(observation, 10.05), ack(), 10.1);
+            frame, "primary", TestRecords.with(frame.primary(), "imageArea", imageAreaFraction));
+    var result = processor().process(new VisionIO.Sample("front", adjusted, 10.05), ack(), 10.1);
     assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     assertThat(result.measurement().orElseThrow().stdX())
         .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));
@@ -151,6 +156,34 @@ final class RobotContractTest {
         .isEqualTo(VisionProcessor.Reason.AMBIGUOUS);
     assertThat(processor().process(sample("empty"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.NO_TAGS);
+  }
+
+  @Test
+  void malformedStructFieldsCannotBypassValidation() throws IOException {
+    var frame = sample("multi").frame();
+    for (var invalid :
+        ImmutableList.of(
+            TestRecords.with(frame, "sequence", 0L),
+            TestRecords.with(frame, "candidateCount", 3),
+            TestRecords.with(frame, "observedTags", Long.MIN_VALUE),
+            TestRecords.with(frame, "totalMs", -1.),
+            TestRecords.with(frame, "primary", TestRecords.with(frame.primary(), "method", 9)),
+            TestRecords.with(
+                frame, "primary", TestRecords.with(frame.primary(), "imageArea", Double.NaN)))) {
+      assertThat(
+              processor()
+                  .process(new VisionIO.Sample("front", invalid, 10.05), ack(), 10.1)
+                  .reason())
+          .isEqualTo(VisionProcessor.Reason.MALFORMED);
+    }
+    for (int source : new int[] {0, 4}) {
+      var invalid = TestRecords.with(frame, "timestampSource", source);
+      assertThat(
+              processor()
+                  .process(new VisionIO.Sample("front", invalid, 10.05), ack(), 10.1)
+                  .reason())
+          .isEqualTo(VisionProcessor.Reason.TIMESTAMP);
+    }
   }
 
   @Test
@@ -200,7 +233,7 @@ final class RobotContractTest {
     assertThat(SpotProtocol.hash(manifest.profile().field())).isEqualTo(ack().fieldHash());
     for (String name : ImmutableList.of("empty", "multi", "ippe", "ambiguous")) {
       assertThat(fixture(name)).hasSize(328);
-      assertThat(sample(name).observation().sequence()).isEqualTo(1);
+      assertThat(sample(name).frame().sequence()).isEqualTo(1);
     }
     var accepted = processor().process(sample("multi"), ack(), 10.1);
     assertThat(accepted.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
@@ -261,6 +294,25 @@ final class RobotContractTest {
   }
 
   @Test
+  void retiredCaptureEpochCannotReturnWithAHigherSequence() throws IOException {
+    var sample = sample("multi");
+    var processor = processor();
+    assertThat(processor.process(sample, ack(), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    var replacement =
+        TestRecords.with(sample.frame(), "captureHigh", sample.frame().captureHigh() ^ 1L);
+    assertThat(
+            processor
+                .process(new VisionIO.Sample("front", replacement, 10.05), ack(), 10.1)
+                .reason())
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    var retired = TestRecords.with(sample.frame(), "sequence", 2L);
+    assertThat(
+            processor.process(new VisionIO.Sample("front", retired, 10.05), ack(), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.OLD_EPOCH);
+  }
+
+  @Test
   void sourceCountFloorCoversCorrelatedCamerasSplitAcrossReleaseBatches() {
     var value =
         new VisionMeasurement(
@@ -277,8 +329,12 @@ final class RobotContractTest {
         .isEqualTo(VisionProcessor.Reason.STALE);
     assertThat(processor.process(sample("multi"), ack(), 10.).reason())
         .isEqualTo(VisionProcessor.Reason.FUTURE);
-    var observation = TestRecords.with(sample("multi").observation(), "runtimeGeneration", "old");
-    assertThat(processor.process(new VisionIO.Sample(observation, 10.05), ack(), 10.1).reason())
+    var frame = sample("multi").frame();
+    var mismatched = TestRecords.with(frame, "contextHigh", frame.contextHigh() ^ 1L);
+    assertThat(
+            processor
+                .process(new VisionIO.Sample("front", mismatched, 10.05), ack(), 10.1)
+                .reason())
         .isEqualTo(VisionProcessor.Reason.CONFIGURATION);
     assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);

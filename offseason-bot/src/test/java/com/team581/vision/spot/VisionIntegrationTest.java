@@ -6,6 +6,8 @@ import static org.assertj.core.data.Offset.offset;
 import com.google.common.collect.ImmutableList;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.results.VisionMeasurement;
+import com.team581.vision.spot.structs.FrameResult;
+import com.team581.vision.spot.structs.PoseEstimate;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -177,34 +179,8 @@ final class VisionIntegrationTest {
               .findFirst()
               .orElseThrow();
       var mount = new Transform3d(Pose3d.kZero, SpotProtocol.pose(definition.robotToCamera()));
-      var frameTags = new ArrayList<TagObservation>();
-      var frameCandidates = new ArrayList<PoseCandidate>();
-      var frame =
-          new Observation(
-              "synthetic",
-              "robot",
-              io.ack.serviceSession(),
-              "capture",
-              io.ack.connectionEpoch(),
-              io.ack.syncEpoch(),
-              ++sequence,
-              camera,
-              camera,
-              1,
-              io.ack.manifestHash(),
-              io.ack.fieldHash(),
-              "calibration",
-              true,
-              io.ack.runtimeGeneration(),
-              "synthetic-mode",
-              "synthetic-lens",
-              0L,
-              "read-completion-local-nt",
-              .001,
-              ImmutableList.of(),
-              ImmutableList.of(),
-              new ProcessingTiming(0.0, 0.0, 0.0, 0.0),
-              selectionGeneration);
+      var empty = new PoseEstimate(Pose3d.kZero, 0, 0, 0, 0, 0, 0, 0);
+      var primary = empty;
       if (tag > 0) {
         int companion =
             switch (tag) {
@@ -219,26 +195,39 @@ final class VisionIntegrationTest {
               case 21 -> 27;
               default -> 1;
             };
-        frameTags.add(
-            new TagObservation(
-                companion, List.of(3., 1., 4., 1., 4., 2., 3., 2.), 0, 0.0, true, "", null));
-        frameTags.add(
-            new TagObservation(
-                tag, List.of(1., 1., 2., 1., 2., 2., 1., 2.), 0, 0.0, true, "", null));
-        frameCandidates.add(
-            new PoseCandidate(
-                SpotProtocol.pose(new Pose3d(robot).transformBy(mount)),
-                PoseMethod.MULTI_TAG_SQPNP,
-                ImmutableList.of(tag, companion),
+        primary =
+            new PoseEstimate(
+                new Pose3d(robot).transformBy(mount),
+                1,
+                SpotProtocol.tagMask(ImmutableList.of(tag, companion), profile.field()),
                 .1,
                 2,
                 .02,
                 .1,
-                0.0));
+                0.);
       }
-      io.samples.add(
-          new VisionIO.Sample(
-              TestRecords.with(frame, "tags", frameTags, "candidates", frameCandidates), capture));
+      var context = SpotProtocol.frameContext(io.ack, camera);
+      var captureToken = SpotProtocol.token("capture");
+      var frame =
+          new FrameResult(
+              context[0],
+              context[1],
+              captureToken[0],
+              captureToken[1],
+              ++sequence,
+              selectionGeneration,
+              0L,
+              1,
+              .001,
+              primary.tagMask(),
+              tag > 0 ? 1 : 0,
+              primary,
+              empty,
+              0.,
+              0.,
+              0.,
+              0.);
+      io.samples.add(new VisionIO.Sample(camera, frame, capture));
     }
 
     void tick(double now) {

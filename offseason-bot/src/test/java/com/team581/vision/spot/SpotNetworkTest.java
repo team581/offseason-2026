@@ -127,14 +127,8 @@ final class SpotNetworkTest {
         fixture.frame("front", 1, 10.01);
         fixture.frame("front", 1, 10.02);
         long captureUs = NetworkTablesJNI.now() - 30_000;
-        frames.set(
-            TestPeer.frame(
-                fixture.io.samples.get(0).observation(), fixture.io.ack, fixture.profile),
-            captureUs);
-        frames.set(
-            TestPeer.frame(
-                fixture.io.samples.get(1).observation(), fixture.io.ack, fixture.profile),
-            captureUs + 1_000);
+        frames.set(TestPeer.frame(fixture.io.samples.get(0).frame()), captureUs);
+        frames.set(TestPeer.frame(fixture.io.samples.get(1).frame()), captureUs + 1_000);
         frames.set(new byte[] {(byte) 0xff}, captureUs + 2_000);
         client.flush();
         var received = new ArrayList<VisionIO.Sample>();
@@ -144,8 +138,8 @@ final class SpotNetworkTest {
           received.addAll(io.readInputs(now(), false).samples());
         } while ((received.size() < 2 || io.malformedCount() == 0) && System.nanoTime() < deadline);
         assertThat(received).hasSize(2);
-        assertThat(received.get(1).observation().sequence())
-            .isGreaterThan(received.get(0).observation().sequence());
+        assertThat(received.get(1).frame().sequence())
+            .isGreaterThan(received.get(0).frame().sequence());
         assertThat(received.get(1).captureFpgaSeconds() - received.get(0).captureFpgaSeconds())
             .isCloseTo(.001, offset(1e-6));
         assertThat(now() - received.get(0).captureFpgaSeconds()).isBetween(0., .5);

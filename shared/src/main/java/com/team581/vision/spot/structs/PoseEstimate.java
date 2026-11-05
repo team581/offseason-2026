@@ -17,6 +17,9 @@ public record PoseEstimate(
     double imageSpread,
     double distortion)
     implements StructSerializable {
+  public static final int MULTI_TAG_SQPNP = 1;
+  public static final int SINGLE_TAG_IPPE_SQUARE = 2;
+
   private static final String SCHEMA =
       new SchemaBuilder()
           .addField("pose", Pose3d.struct.getTypeName())

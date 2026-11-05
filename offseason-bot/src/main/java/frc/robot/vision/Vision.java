@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.spot.CaptureHistory;
 import com.team581.vision.spot.MeasurementQueue;
+import com.team581.vision.spot.SpotProtocol;
 import com.team581.vision.spot.VisionIO;
 import com.team581.vision.spot.VisionProcessor;
 import com.team581.vision.spot.data.*;
@@ -165,14 +166,15 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
     io.setFusionEnabled(fusion);
     if (!fusion) queue.clearPending();
+    long allowedTags = SpotProtocol.tagMask(selection.allowedTagIds(), profile.field());
     for (var sample : inputs.samples()) {
-      if (profile.cameras().stream()
-          .noneMatch(c -> c.name().equals(sample.observation().cameraName()))) continue;
-      var observation = sample.observation();
+      if (profile.cameras().stream().noneMatch(c -> c.name().equals(sample.cameraName()))) continue;
+      var frame = sample.frame();
+      long usedTags = frame.candidateCount() > 0 ? frame.primary().tagMask() : 0;
+      if (frame.candidateCount() > 1) usedTags |= frame.alternate().tagMask();
       boolean matchingPolicy =
-          observation.tagSelectionGeneration() == selection.generation()
-              && observation.candidates().stream()
-                  .allMatch(candidate -> selection.allowedTagIds().containsAll(candidate.tagIds()));
+          frame.tagSelectionGeneration() == selection.generation()
+              && (usedTags & ~allowedTags) == 0;
       var decision =
           !available
               ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CONFIGURATION)
@@ -197,7 +199,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       }
       var previous =
           cameras.getOrDefault(
-              observation.cameraName(),
+              sample.cameraName(),
               new CameraStatus(
                   Double.NEGATIVE_INFINITY,
                   Double.NEGATIVE_INFINITY,
@@ -207,7 +209,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                   false,
                   "Waiting"));
       cameras.put(
-          observation.cameraName(),
+          sample.cameraName(),
           new CameraStatus(
               operational ? sample.captureFpgaSeconds() : previous.lastObservation(),
               accepted ? sample.captureFpgaSeconds() : previous.lastAccepted(),

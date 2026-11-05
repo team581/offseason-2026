@@ -13,48 +13,7 @@ final class TestPeer implements AutoCloseable {
     return name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
   }
 
-  static byte[] frame(Observation observation, Acknowledgement ack, Profile profile) {
-    var context = SpotProtocol.frameContext(ack, observation.cameraName());
-    var capture = SpotProtocol.token(observation.captureEpoch());
-    var estimates =
-        new PoseEstimate[] {
-          new PoseEstimate(edu.wpi.first.math.geometry.Pose3d.kZero, 0, 0, 0, 0, 0, 0, 0),
-          new PoseEstimate(edu.wpi.first.math.geometry.Pose3d.kZero, 0, 0, 0, 0, 0, 0, 0)
-        };
-    for (int i = 0; i < observation.candidates().size(); i++) {
-      var c = observation.candidates().get(i);
-      estimates[i] =
-          new PoseEstimate(
-              SpotProtocol.pose(c.fieldToCamera()),
-              c.method().ordinal(),
-              SpotProtocol.tagMask(c.tagIds(), profile.field()),
-              c.reprojectionErrorPx(),
-              c.averageTagDistanceM(),
-              c.imageAreaFraction(),
-              c.imageSpreadFraction(),
-              c.distortionDisplacementPx());
-    }
-    var t = observation.timing();
-    var value =
-        new FrameResult(
-            context[0],
-            context[1],
-            capture[0],
-            capture[1],
-            observation.sequence(),
-            observation.tagSelectionGeneration(),
-            observation.captureLocalNtUs(),
-            1,
-            observation.timestampUncertaintyS(),
-            SpotProtocol.tagMask(
-                observation.tags().stream().map(TagObservation::id).toList(), profile.field()),
-            observation.candidates().size(),
-            estimates[0],
-            estimates[1],
-            t.captureToDetectMs(),
-            t.detectMs(),
-            t.solveMs(),
-            t.totalMs());
+  static byte[] frame(FrameResult value) {
     var bytes = ByteBuffer.allocate(FrameResult.struct.getSize()).order(ByteOrder.LITTLE_ENDIAN);
     FrameResult.struct.pack(bytes, value);
     return bytes.array();
