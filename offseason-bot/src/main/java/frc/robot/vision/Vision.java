@@ -1,7 +1,6 @@
 package frc.robot.vision;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.team581.util.state_machines.StateMachineSubsystem;
@@ -60,6 +59,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private static final Set<Integer> BLUE_HUB = Set.of(18, 19, 20, 21, 24, 25, 26, 27);
   private final VisionIO io;
   private final Profile profile;
+  private final int configured;
+  private final int required;
   private final CaptureSource capture;
   private final DoubleSupplier clock;
   private final BooleanSupplier enabled;
@@ -82,8 +83,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private long appliedSelection;
   private boolean hasSeenTag;
   private boolean closed;
-  private Status status =
-      new Status(false, "No camera inputs", 0, 0, 0, false, 1, true, 0, 0, "", ImmutableMap.of());
+  private boolean available;
+  private String unavailableReason = "No camera inputs";
 
   public Vision(
       VisionIO io,
@@ -96,6 +97,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     super(SubsystemPriority.VISION, VisionState.TAGS);
     this.io = io;
     this.profile = profile;
+    configured = (int) profile.cameras().stream().filter(CameraDefinition::enabled).count();
+    required = (int) profile.cameras().stream().filter(c -> c.enabled() && c.required()).count();
     this.capture = capture;
     this.clock = clock;
     this.enabled = enabled;
@@ -154,11 +157,14 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       processor.newGeneration(epoch);
       retireObservations();
     }
-    boolean available = health.available() && ack.tagSelectionSupported();
+    available = health.available() && ack.tagSelectionSupported() && configured > 0;
+    unavailableReason =
+        !ack.tagSelectionSupported() && ack.applied()
+            ? "Spot service does not support tag selection"
+            : health.reason();
     boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
     io.setFusionEnabled(fusion);
     if (!fusion) queue.clearPending();
-    boolean pending = true;
     for (var sample : inputs.samples()) {
       if (profile.cameras().stream()
           .noneMatch(c -> c.name().equals(sample.observation().cameraName()))) continue;
@@ -187,7 +193,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                       VisionProcessor.Reason.INNOVATION)
                   .contains(decision.reason());
       if (operational) {
-        pending = false;
         appliedSelection = selection.generation();
       }
       var previous =
@@ -230,12 +235,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       queue.clearPending();
       retireObservations();
     }
-    int configured = 0, usable = 0, required = 0;
-    boolean all = true;
     for (var camera : profile.cameras()) {
       if (!camera.enabled()) continue;
-      configured++;
-      if (camera.required()) required++;
       var previous =
           cameras.getOrDefault(
               camera.name(),
@@ -248,11 +249,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                   false,
                   "No fresh frame"));
       boolean valid = available && previous.usable() && now - previous.lastObservation() <= .5;
-      if (valid) {
-        usable++;
-        pending = false;
-      }
-      if (camera.required() && !valid) all = false;
       cameras.put(
           camera.name(),
           new CameraStatus(
@@ -267,30 +263,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     if (fusion)
       prepared =
           VisionProcessor.accountForCorrelation(queue.release(now, 32), Math.max(1, configured));
-    String reason =
-        configured == 0
-            ? "No measured camera configuration"
-            : !ack.tagSelectionSupported() && ack.applied()
-                ? "Spot service does not support tag selection"
-                : !available
-                    ? health.reason()
-                    : hubTags().isEmpty() && getState() != VisionState.TAGS
-                        ? "Waiting for alliance or complete hub layout"
-                        : pending ? "Waiting for tag selection application" : "Ready";
-    status =
-        new Status(
-            available && configured > 0,
-            reason,
-            configured,
-            usable,
-            required,
-            configured > 0 && all,
-            selection.generation(),
-            appliedSelection != selection.generation(),
-            queue.size(),
-            queue.lateCount() + queue.overloadCount(),
-            generation,
-            cameras);
   }
 
   public List<VisionMeasurement> drainMeasurements() {
@@ -306,12 +278,37 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         && value.timestamp() > resetTime
         && timestamp - value.timestamp() <= profile.maxAgeS()
         && value.timestamp() <= timestamp + profile.futureToleranceS()
-        && status.available()
+        && available
         && value.tagIds().stream().allMatch(selection.allowedTagIds()::contains);
   }
 
   public Status getStatus() {
-    return status;
+    int usable = (int) cameras.values().stream().filter(CameraStatus::usable).count();
+    boolean all =
+        profile.cameras().stream()
+            .filter(c -> c.enabled() && c.required())
+            .allMatch(c -> cameras.containsKey(c.name()) && cameras.get(c.name()).usable());
+    String reason =
+        configured == 0
+            ? "No measured camera configuration"
+            : !available
+                ? unavailableReason
+                : hubTags().isEmpty() && getState() != VisionState.TAGS
+                    ? "Waiting for alliance or complete hub layout"
+                    : usable == 0 ? "Waiting for tag selection application" : "Ready";
+    return new Status(
+        available,
+        reason,
+        configured,
+        usable,
+        required,
+        configured > 0 && all,
+        selection.generation(),
+        appliedSelection != selection.generation(),
+        queue.size(),
+        queue.lateCount() + queue.overloadCount(),
+        generation,
+        Map.copyOf(cameras));
   }
 
   public boolean hasRecentFusedMeasurement() {
@@ -330,7 +327,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   public boolean isFusionEnabled() {
-    return status.available() && profile.fusionEnabled() && operatorVision.getAsBoolean();
+    return available && profile.fusionEnabled() && operatorVision.getAsBoolean();
   }
 
   public void measurementFused(VisionMeasurement value) {
@@ -349,7 +346,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               previous.rejected(),
               previous.usable(),
               previous.reason()));
-    refreshStatus();
   }
 
   public void reset(double timestamp) {
@@ -362,7 +358,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     resetTime = timestamp;
     appliedSelection = 0;
     retireObservations();
-    refreshStatus();
   }
 
   @Override
@@ -385,6 +380,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   @Override
   public void whileInState(VisionState state) {
     if (closed) return;
+    var status = getStatus();
     var desired = new HashSet<String>();
     if (!status.available()) desired.add("Spot: " + status.reason());
     for (var camera : profile.cameras()) {
@@ -431,30 +427,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     return broadTags().containsAll(ids) ? ids : ImmutableSet.of();
   }
 
-  private void refreshStatus() {
-    int usable = (int) cameras.values().stream().filter(CameraStatus::usable).count();
-    boolean all =
-        profile.cameras().stream()
-            .filter(c -> c.enabled() && c.required())
-            .allMatch(c -> cameras.containsKey(c.name()) && cameras.get(c.name()).usable());
-    status =
-        new Status(
-            status.available(),
-            appliedSelection == selection.generation()
-                ? status.reason()
-                : "Waiting for tag selection application",
-            status.configured(),
-            usable,
-            status.required(),
-            status.configured() > 0 && all,
-            selection.generation(),
-            appliedSelection != selection.generation(),
-            queue.size(),
-            status.queueDrops(),
-            generation,
-            cameras);
-  }
-
   private void retireObservations() {
     cameras.replaceAll((name, old) ->
         new CameraStatus(
@@ -479,7 +451,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     if (getState() == VisionState.HUB_TAGS) lastHub = acquired;
     appliedSelection = 0;
     io.setTagSelection(selection);
-    refreshStatus();
   }
 
   @Override

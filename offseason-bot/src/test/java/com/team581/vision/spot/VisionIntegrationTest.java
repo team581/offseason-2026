@@ -421,6 +421,34 @@ final class VisionIntegrationTest {
   }
 
   @Test
+  void statusSnapshotsStayConsistentAcrossFusionAndResetWithoutPolling() {
+    try (var f = new Fixture(true)) {
+      var waiting = f.vision.getStatus();
+      assertThat(waiting.configured()).isEqualTo(4);
+      assertThat(waiting.required()).isEqualTo(4);
+      assertThat(waiting.usable()).isZero();
+      f.frame("front", 1, 10.01);
+      f.tick(10.04);
+      var ready = f.vision.getStatus();
+      assertThat(ready.usable()).isEqualTo(1);
+      assertThat(ready.selectionPending()).isFalse();
+      assertThat(waiting.cameras().get("front").usable()).isFalse();
+      int reads = f.io.reads;
+      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
+      assertThat(f.vision.getStatus().cameras().get("front").lastFused()).isEqualTo(10.01);
+      assertThat(ready.cameras().get("front").lastFused()).isNegative().isInfinite();
+      f.vision.reset(10.04);
+      var reset = f.vision.getStatus();
+      assertThat(reset.usable()).isZero();
+      assertThat(reset.selectionPending()).isTrue();
+      assertThat(reset.allRequiredHealthy()).isFalse();
+      assertThat(reset.queueDepth()).isZero();
+      assertThat(ready.cameras().get("front").usable()).isTrue();
+      assertThat(f.io.reads).isEqualTo(reads);
+    }
+  }
+
+  @Test
   void suppressionDisconnectGenerationAndResetInvalidatePendingOrReleasedFrames() {
     try (var f = new Fixture(true)) {
       f.frame("front", 1, 10.01);
