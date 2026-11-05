@@ -24,8 +24,6 @@ public final class VisionConfig {
   public static final double TAG_SIZE_M = .1651;
   public static final AprilTagFieldLayout FIELD_LAYOUT = AprilTags.FIELD_LAYOUT;
 
-  public static final List<String> CAMERA_NAMES = ImmutableList.of("left", "right", "back");
-
   // PLACEHOLDERS: cameras at the robot origin, facing the named cardinal direction.
   // These are NOT measured mounts. Verify capture mode and image rotation on each camera.
   public static final SpotCameraConfig LEFT =
@@ -89,16 +87,6 @@ public final class VisionConfig {
 
   public static Profile profile() {
     return profile(CAMERAS);
-  }
-
-  private static SpotCameraConfig placeholderCamera(String name, double yawDegrees) {
-    return new SpotCameraConfig(
-        name,
-        true,
-        mount(0, 0, 0, 0, 0, yawDegrees),
-        0,
-        new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
-        ImmutableList.of());
   }
 
   static Profile profile(List<SpotCameraConfig> cameras) {

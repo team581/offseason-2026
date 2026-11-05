@@ -180,8 +180,7 @@ public final class VisionProcessor {
     }
   }
 
-  public Decision process(
-      VisionIO.Sample sample, Acknowledgement ack, double now, boolean initialization) {
+  public Decision process(VisionIO.Sample sample, Acknowledgement ack, double now) {
     var observation = sample.observation();
     double timestamp = sample.captureFpgaSeconds();
     if (!ack.applied()
@@ -423,8 +422,7 @@ public final class VisionProcessor {
     double innovation =
         robot.toPose2d().getTranslation().getDistance(state.pose().getTranslation());
     double normalized = innovation / sigma;
-    if (!Double.isFinite(normalized)
-        || (!initialization && normalized > policy.innovationSigma())) {
+    if (!Double.isFinite(normalized) || normalized > policy.innovationSigma()) {
       return Decision.reject(Reason.INNOVATION);
     }
     var measurement =

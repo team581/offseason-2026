@@ -55,9 +55,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       int queueDepth,
       long queueDrops,
       String generation,
-      Map<String, CameraStatus> cameras) {
-    public Status {}
-  }
+      Map<String, CameraStatus> cameras) {}
 
   private static final Set<Integer> RED_HUB = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
   private static final Set<Integer> BLUE_HUB = Set.of(18, 19, 20, 21, 24, 25, 26, 27);
@@ -176,7 +174,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CONFIGURATION)
               : !matchingPolicy
                   ? VisionProcessor.Decision.reject(VisionProcessor.Reason.TAG_POLICY)
-                  : processor.process(sample, ack, now, false);
+                  : processor.process(sample, ack, now);
       io.reportDecision(sample, decision);
       boolean accepted = decision.reason() == VisionProcessor.Reason.ACCEPTED;
       boolean operational =

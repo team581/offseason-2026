@@ -25,14 +25,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-final class BetaContractTest {
+final class RobotContractTest {
   private static Acknowledgement ack() throws IOException {
     return model("ack", Acknowledgement.class);
   }
 
   private static byte[] fixture(String name) throws IOException {
     String extension = name.endsWith("ack") || name.equals("manifest") ? ".json" : ".bin";
-    try (var input = BetaContractTest.class.getResourceAsStream("/spot-beta/" + name + extension)) {
+    try (var input =
+        RobotContractTest.class.getResourceAsStream("/spot-robot/" + name + extension)) {
       if (input == null) {
         throw new IOException("fixture missing: " + name);
       }
@@ -83,8 +84,7 @@ final class BetaContractTest {
     return new VisionIO.Sample(
         SpotFrames.observation(
             frame, acknowledgement, acknowledgement.cameras().get(0), manifest().profile()),
-        10.05,
-        frame);
+        10.05);
   }
 
   @Test
@@ -118,7 +118,7 @@ final class BetaContractTest {
                 TestRecords.with(observation.candidates().get(0), "imageAreaFraction", .02)));
     var baseline =
         processor()
-            .process(new VisionIO.Sample(observation, 10.05), ack(), 10.1, false)
+            .process(new VisionIO.Sample(observation, 10.05), ack(), 10.1)
             .measurement()
             .orElseThrow();
     observation =
@@ -128,7 +128,7 @@ final class BetaContractTest {
             ImmutableList.of(
                 TestRecords.with(
                     observation.candidates().get(0), "imageAreaFraction", imageAreaFraction)));
-    var result = processor().process(new VisionIO.Sample(observation, 10.05), ack(), 10.1, false);
+    var result = processor().process(new VisionIO.Sample(observation, 10.05), ack(), 10.1);
     assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     assertThat(result.measurement().orElseThrow().stdX())
         .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));
@@ -149,11 +149,11 @@ final class BetaContractTest {
 
   @Test
   void ippeSelectionUsesCaptureHeadingAndRejectsUndecidableTranslation() throws IOException {
-    assertThat(processor().process(sample("ippe"), ack(), 10.1, false).reason())
+    assertThat(processor().process(sample("ippe"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    assertThat(processor().process(sample("ambiguous"), ack(), 10.1, false).reason())
+    assertThat(processor().process(sample("ambiguous"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.AMBIGUOUS);
-    assertThat(processor().process(sample("empty"), ack(), 10.1, false).reason())
+    assertThat(processor().process(sample("empty"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.NO_TAGS);
   }
 
@@ -165,7 +165,7 @@ final class BetaContractTest {
             ImmutableList.of(),
             timestamp -> Optional.empty(),
             VisionProcessor.Policy.conservative());
-    assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.HISTORY);
     processor =
         new VisionProcessor(
@@ -173,7 +173,7 @@ final class BetaContractTest {
             ImmutableList.of(new SpotCameraProfiles.Camera("front", null, null)),
             timestamp -> Optional.of(new VisionProcessor.CaptureState(Pose2d.kZero, 0, 0, 0, 0, 0)),
             VisionProcessor.Policy.conservative());
-    assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.MOUNT_HISTORY);
   }
 
@@ -199,9 +199,9 @@ final class BetaContractTest {
     assertThat(SpotProtocol.hash(manifest.profile().field())).isEqualTo(ack().fieldHash());
     for (String name : ImmutableList.of("empty", "multi", "ippe", "ambiguous")) {
       assertThat(fixture(name)).hasSize(328);
-      assertThat(sample(name).frame().sequence()).isEqualTo(1);
+      assertThat(sample(name).observation().sequence()).isEqualTo(1);
     }
-    var accepted = processor().process(sample("multi"), ack(), 10.1, false);
+    var accepted = processor().process(sample("multi"), ack(), 10.1);
     assertThat(accepted.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
     var measurement = accepted.measurement().orElseThrow();
     assertThat(measurement.pose().getX()).isCloseTo(2., offset(1e-12));
@@ -272,20 +272,19 @@ final class BetaContractTest {
   @Test
   void staleFutureMalformedGenerationDuplicateAndResetPacketsFailClosed() throws IOException {
     var processor = processor();
-    assertThat(processor.process(sample("multi"), ack(), 10.4, false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.4).reason())
         .isEqualTo(VisionProcessor.Reason.STALE);
-    assertThat(processor.process(sample("multi"), ack(), 10., false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.).reason())
         .isEqualTo(VisionProcessor.Reason.FUTURE);
     var observation = TestRecords.with(sample("multi").observation(), "runtimeGeneration", "old");
-    assertThat(
-            processor.process(new VisionIO.Sample(observation, 10.05), ack(), 10.1, false).reason())
+    assertThat(processor.process(new VisionIO.Sample(observation, 10.05), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.CONFIGURATION);
-    assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.DUPLICATE);
     processor.reset(10.06);
-    assertThat(processor.process(sample("multi"), ack(), 10.1, false).reason())
+    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.RESET);
   }
 

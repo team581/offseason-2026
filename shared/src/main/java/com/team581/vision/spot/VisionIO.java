@@ -28,14 +28,7 @@ public interface VisionIO extends AutoCloseable {
     }
   }
 
-  record Sample(
-      Observation observation,
-      double captureFpgaSeconds,
-      com.team581.vision.spot.structs.FrameResult frame) {
-    public Sample(Observation observation, double captureFpgaSeconds) {
-      this(observation, captureFpgaSeconds, null);
-    }
-  }
+  record Sample(Observation observation, double captureFpgaSeconds) {}
 
   record TagSelection(long generation, List<Integer> allowedTagIds) {
     public TagSelection {

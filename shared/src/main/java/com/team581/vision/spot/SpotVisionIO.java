@@ -257,7 +257,7 @@ public final class SpotVisionIO implements VisionIO {
                   .orElseThrow();
           var observation =
               SpotFrames.observation(frame, acknowledgement, applied, manifest.profile());
-          result.add(new Sample(observation, timestamp.getAsDouble(), frame));
+          result.add(new Sample(observation, timestamp.getAsDouble()));
         } catch (IllegalArgumentException exception) {
           malformed++;
           rejectTransport("Malformed frame struct");
