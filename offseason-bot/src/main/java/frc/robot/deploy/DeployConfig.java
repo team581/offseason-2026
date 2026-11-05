@@ -36,9 +36,9 @@ public class DeployConfig {
   public static final double RECOVERY_TIMEOUT_SECONDS = 5.0;
   public static final double MAX_RECOVERY_DESYNC_DEGREES = 15.0;
 
-  public static final double HOMING_VOLTAGE_INWARD = -2;
+  public static final double HOMING_VOLTAGE_INWARD = 2;
 
-  public static final double HOMING_VOLTAGE_OUTWARD = 4;
+  public static final double HOMING_VOLTAGE_OUTWARD = -4;
   public static final double HOMING_CURRENT = 20.0;
   public static final double HOMING_CURRENT_OUTWARD = 35.0;
   public static final double POSITION_TOLERANCE = 2.0;
