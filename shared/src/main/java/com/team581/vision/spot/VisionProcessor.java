@@ -78,25 +78,12 @@ public final class VisionProcessor {
     TAG_POLICY
   }
 
-  /** Conservative approximation: do not treat same-tag simultaneous views as independent. */
+  /** Use all configured cameras to cover correlation even across separate release batches. */
   public static List<VisionMeasurement> accountForCorrelation(
-      List<VisionMeasurement> observations) {
-    return accountForCorrelation(observations, 1);
-  }
-
-  public static List<VisionMeasurement> accountForCorrelation(
-      List<VisionMeasurement> observations, int maximumSources) {
+      List<VisionMeasurement> observations, int cameraCount) {
     var result = new ArrayList<VisionMeasurement>();
+    double factor = Math.sqrt(Math.max(1, cameraCount));
     for (var observation : observations) {
-      long correlated =
-          observations.stream()
-              .filter(other ->
-                  MathUtil.isNear(other.timestamp(), observation.timestamp(), .02)
-                      && other.tagIds().stream().anyMatch(observation.tagIds()::contains))
-              .map(VisionMeasurement::source)
-              .distinct()
-              .count();
-      double factor = Math.sqrt((double) Math.max(maximumSources, correlated));
       result.add(
           new VisionMeasurement(
               observation.source(),

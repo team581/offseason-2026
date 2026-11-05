@@ -91,7 +91,7 @@ final class RobotContractTest {
   void correlatedMeasurementsInflateUncertaintyAndCannotImproveTrustByCameraCount() {
     var result =
         VisionProcessor.accountForCorrelation(
-            ImmutableList.of(measurement("a", 10.), measurement("b", 10.)));
+            ImmutableList.of(measurement("a", 10.), measurement("b", 10.)), 2);
     assertThat(result.get(0).stdX()).isGreaterThan(.1);
     var trust = new TrustFactor();
     trust.ingest(ImmutableList.of(result.get(0)));
