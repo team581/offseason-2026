@@ -109,7 +109,7 @@ public class Robot extends Base581Robot {
       new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
-  public final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder);
+  public final Turret turret = new Turret(hardware.turretMotor);
 
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =

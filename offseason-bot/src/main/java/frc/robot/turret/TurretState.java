@@ -1,7 +1,7 @@
 package frc.robot.turret;
 
 public enum TurretState {
-  UNHOMED,
+  HOMING,
   SCORE,
   FEED,
   IDLE_SCORE,

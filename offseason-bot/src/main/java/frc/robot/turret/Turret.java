@@ -3,7 +3,6 @@ package frc.robot.turret;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.simkit.SimKit;
@@ -99,7 +98,6 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   private final TalonFX motor;
-  private final CANcoder encoder;
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double setpoint = 0.0;
@@ -114,16 +112,14 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
 
   private final NeutralOut neutralRequest = new NeutralOut();
 
-  public Turret(TalonFX motor, CANcoder encoder) {
-    super(SubsystemPriority.TURRET, TurretState.UNHOMED);
+  public Turret(TalonFX motor) {
+    super(SubsystemPriority.TURRET, TurretState.HOMING);
 
     motor.getConfigurator().apply(TurretConfig.MOTOR_CONFIG);
-    encoder.getConfigurator().apply(TurretConfig.ENCODER_CONFIG);
 
     TunablePid.register("Turret", motor, TurretConfig.MOTOR_CONFIG);
 
     this.motor = motor;
-    this.encoder = encoder;
   }
 
   @Override
@@ -203,13 +199,13 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
       default -> {}
     }
 
-    if (getState() == TurretState.UNHOMED) {
+    if (getState() == TurretState.HOMING) {
       DogLog.logFault("Turret is not homed", AlertType.kError);
     } else {
       DogLog.clearFault("Turret is not homed");
     }
 
-    if (getState() != TurretState.UNHOMED
+    if (getState() != TurretState.HOMING
         && DriverStation.isDisabled()
         && DriverStation.isAutonomous()
         && !MathUtil.isNear(setpoint, currentAngle, 10.0)) {
@@ -231,7 +227,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
 
   public void setState(TurretState newState) {
     switch (getState()) {
-      case UNHOMED -> {
+      case HOMING -> {
         if (RobotBase.isSimulation()) {
           setStateFromRequest(newState);
         }
@@ -251,8 +247,9 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
                     .withMinPosition(Units.degreesToRotations(TurretConfig.MIN_ANGLE))
                     .withMaxPosition(Units.degreesToRotations(TurretConfig.MAX_ANGLE)));
 
-    if (getState() == TurretState.UNHOMED) {
-      motor.setPosition(0);
+    if (getState() == TurretState.HOMING) {
+      turretSimulation.seedPosition(Units.degreesToRotations(TurretConfig.HOMING_END_POSITION));
+      currentAngle = TurretConfig.HOMING_END_POSITION;
       setStateFromRequest(TurretState.SCORE);
     }
 
@@ -260,7 +257,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   public void stuckRequest() {
-    if (getState() != TurretState.UNHOMED) {
+    if (getState() != TurretState.HOMING) {
       setStateFromRequest(TurretState.STUCK);
     }
   }
@@ -280,7 +277,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   private void updateSetpoint() {
     setpoint =
         switch (getState()) {
-          case UNHOMED -> 0.0;
+          case HOMING -> 0.0;
           case SCORE, FEED, STUCK ->
               clamp(TurretCalculator.getOptimalAngle(goalAngle, currentAngle));
           case IDLE_SCORE, IDLE_FEED ->
@@ -305,26 +302,29 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     DogLog.log("Turret/Angle", currentAngle);
     DogLog.log("Turret/VelocityDegreesPerSecond", velocity);
     DogLog.log("Turret/Motor/LatencyCompensatedAngle", latencyCompensatedAngle);
-    DogLog.log(
-        "Turret/Encoder/EncoderAngle",
-        Units.rotationsToDegrees(encoder.getAbsolutePosition().getValueAsDouble()));
+    DogLog.log("Turret/Motor/RotorPosition", motor.getRotorPosition().getValueAsDouble());
   }
 
   @Override
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
-      case UNHOMED -> {
-        if (motor.isAlive() && motor.isConnected() && encoder.isConnected() && RobotBase.isReal()) {
-          double motorPosition = motor.getRotorPosition().getValueAsDouble();
-          double encoderPosition = encoder.getAbsolutePosition().getValueAsDouble();
-          var turretPos =
-              TurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-                  motorPosition, encoderPosition);
-          motor.setPosition(turretPos);
-          return TurretState.SCORE;
-        } else {
-          return currentState;
+      case HOMING -> {
+        if (DriverStation.isDisabled()
+            && motor.isAlive()
+            && motor.isConnected()
+            && RobotBase.isReal()) {
+          var rotorPosition = motor.getRotorPosition();
+          if (rotorPosition.getStatus().isOK()
+              && Double.isFinite(rotorPosition.getValueAsDouble())) {
+            double homedPosition =
+                TurretCalculator.calculateHomedPosition(rotorPosition.getValueAsDouble());
+            if (motor.setPosition(homedPosition).isOK()) {
+              currentAngle = Units.rotationsToDegrees(homedPosition);
+              return TurretState.SCORE;
+            }
+          }
         }
+        return currentState;
       }
       default -> {
         return currentState;
@@ -339,7 +339,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     updateSetpoint();
 
     switch (currentState) {
-      case UNHOMED -> motor.setControl(neutralRequest);
+      case HOMING -> motor.setControl(neutralRequest);
       case STUCK -> {
         motor.setControl(
             positionRequest.withPosition(

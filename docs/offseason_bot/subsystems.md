@@ -116,12 +116,16 @@ flowchart LR
 
 ## Turret
 
-- Rio CAN Bus, 1 Kraken X44 (ID 28) + CANcoder (ID 29)
+- Rio CAN Bus, 1 Kraken X44 (ID 28)
 - Gear Ratio: `60:1`
 - Position Voltage control loop with velocity feedforward
-- Travel range: Unknown (soft limits TBD; offset 4.75" back, 8.025" left)
+- Travel range: -270° to -90° (offset 4.75" back, 8.025" left)
+- Before powering on, hand-set the turret to -180° within ±3° (half a motor turn at 60:1).
+  Calibrate `MOTOR_ROTOR_CAL_OFFSET` from `Turret/Motor/RotorPosition` at exactly -180°.
+  Homing runs once while disabled, using the wrapped rotor delta to refine the hand-set position.
+  Power-cycle to home again after repositioning by hand. No homing runs on enable.
 - States:
-  - `UNHOMED`
+  - `HOMING`: Hold neutral and reject aiming requests until the motor position is seeded
   - `SCORE` / `FEED`: Aim at target using shortest path
   - `IDLE_SCORE` / `IDLE_FEED`: Aim at target while smartly unwrapping to avoid hardstops
   - `STUCK`: Fault state when obstructed; inhibit firing

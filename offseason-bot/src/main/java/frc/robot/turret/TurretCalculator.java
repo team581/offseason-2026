@@ -1,25 +1,27 @@
 package frc.robot.turret;
 
 import com.team581.math.BaseTurretCalculator;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 
 public class TurretCalculator {
 
   private static final double SPACE_FROM_HARDSTOP = 0.0;
   private static final double SPACE_FROM_HARDSTOP_TOLERANCE = 0.0;
 
-  public static double calculateHomedPositionFromMotorAndEncoder(
-      double turretMotorPosition, double turretEncoderPosition) {
-    return BaseTurretCalculator.calculateHomedPositionFromMotorAndEncoder(
-        turretMotorPosition,
-        turretEncoderPosition,
-        TurretConfig.MOTOR_TO_TURRET,
-        TurretConfig.ENCODER_TO_TURRET,
-        TurretConfig.MOTOR_ROTATION_RESOLUTION,
-        TurretConfig.MOTOR_ROTOR_CAL_OFFSET);
+  /**
+   * Returns turret rotations, assuming the turret was hand-set within half a motor turn of the
+   * homing reference. Wrapping the calibrated rotor delta selects the nearest motor revolution.
+   */
+  public static double calculateHomedPosition(double rotorPosition) {
+    double rotorDelta =
+        MathUtil.inputModulus(rotorPosition - TurretConfig.MOTOR_ROTOR_CAL_OFFSET, -0.5, 0.5);
+    return Units.degreesToRotations(TurretConfig.HOMING_END_POSITION)
+        + rotorDelta / TurretConfig.MOTOR_TO_TURRET;
   }
 
   public static double calculateSwerveTurretCompensationAngle(

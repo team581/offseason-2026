@@ -1,21 +1,17 @@
 package frc.robot.turret;
 
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.config.RobotKind;
 
 public class TurretConfig {
   public static final double MIN_ANGLE = -270.0;
@@ -23,20 +19,16 @@ public class TurretConfig {
   public static final double FAUX_DUMPER_ANGLE = -180;
 
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
-  public static final double HOMING_END_POSITION = MIN_ANGLE;
+  // Hand-set the turret at the center of travel before powering on.
+  public static final double HOMING_END_POSITION = -180.0;
 
   public static final double MOTOR_TO_TURRET = 60.0;
 
-  // CAL NUMBER
-  public static final double ENCODER_CAL_OFFSET =
-      RobotKind.IS_COMP_BOT ? -0.18408203125 : 0.6796875;
-  public static final double MOTOR_ROTOR_CAL_OFFSET = RobotKind.IS_COMP_BOT ? 0.157227 : 0.0;
+  // Calibrate the fractional rotor position with the turret exactly at HOMING_END_POSITION.
+  public static final double MOTOR_ROTOR_CAL_OFFSET = 0.0;
 
-  public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double MAX_VELOCITY_RAD_PER_SEC = 10.0;
   public static final double MAX_ACCELERATION_RAD_PER_SEC_SQUARED = 35.0;
-  public static final double ENCODER_TO_TURRET =
-      (float) 220.0 / 25.0 * 8.0 / 30.0 * 8.0 / 35.0; // Encoder rot to turret rot
 
   // Turret axis relative to robot center: 4.750 inches back and 8.025 inches left.
   public static final Transform2d TURRET_TO_ROBOT =
@@ -64,13 +56,6 @@ public class TurretConfig {
                   .withMotionMagicCruiseVelocity(Units.radiansToRotations(MAX_VELOCITY_RAD_PER_SEC))
                   .withMotionMagicAcceleration(
                       Units.radiansToRotations(MAX_ACCELERATION_RAD_PER_SEC_SQUARED)));
-  public static final CANcoderConfiguration ENCODER_CONFIG =
-      new CANcoderConfiguration()
-          .withMagnetSensor(
-              new MagnetSensorConfigs()
-                  .withMagnetOffset(ENCODER_CAL_OFFSET)
-                  .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                  .withAbsoluteSensorDiscontinuityPoint(0.2));
 
   private TurretConfig() {}
 }
