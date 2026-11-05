@@ -13,6 +13,7 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import com.team581.vision.spot.SpotVisionIO;
 import com.team581.vision.spot.VisionProcessor.CaptureState;
+import com.team581.vision.spot.data.Profile;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -59,12 +60,12 @@ public class Robot extends Base581Robot {
                       Swerve.ORIGINAL_HEADING_PID.getD())),
               imu.bumpCrossingTracker));
 
+  private final Profile visionProfile = VisionConfig.profile();
   private final Vision vision =
       new Vision(
           new SpotVisionIO(
-              NetworkTableInstance.getDefault(), VisionConfig.profile(), randomUUID().toString()),
-          VisionConfig.profile(),
-          VisionConfig.mounts(),
+              NetworkTableInstance.getDefault(), visionProfile, randomUUID().toString()),
+          visionProfile,
           new Vision.CaptureSource() {
             @Override
             public CaptureState current(double now) {

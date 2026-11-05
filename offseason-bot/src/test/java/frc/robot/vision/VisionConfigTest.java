@@ -70,7 +70,6 @@ final class VisionConfigTest {
         .extracting(camera -> camera.name())
         .containsExactly("left", "right", "back");
     assertThat(profile.cameras()).allMatch(camera -> camera.enabled() && camera.required());
-    assertThat(VisionConfig.mounts()).hasSize(3);
     assertThat(profile.fusionEnabled()).isTrue();
     assertThat(profile.headingEnabled()).isFalse();
     assertThat(profile.field().tags()).hasSize(32);

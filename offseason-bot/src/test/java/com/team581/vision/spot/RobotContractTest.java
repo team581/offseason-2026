@@ -66,10 +66,8 @@ final class RobotContractTest {
   }
 
   private static VisionProcessor processor() throws IOException {
-    var mount = new Transform3d(new Translation3d(.2, 0, .5), new Rotation3d());
     return new VisionProcessor(
         manifest().profile(),
-        ImmutableList.of(SpotCameraProfiles.Camera.fixed("front", mount)),
         timestamp ->
             Optional.of(
                 new VisionProcessor.CaptureState(
@@ -158,23 +156,14 @@ final class RobotContractTest {
   }
 
   @Test
-  void missingHistoryNeverSubstitutesCurrentPoseOrJointAngle() throws IOException {
+  void missingCaptureHistoryNeverSubstitutesCurrentPose() throws IOException {
     var processor =
         new VisionProcessor(
             manifest().profile(),
-            ImmutableList.of(),
             timestamp -> Optional.empty(),
             VisionProcessor.Policy.conservative());
     assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.HISTORY);
-    processor =
-        new VisionProcessor(
-            manifest().profile(),
-            ImmutableList.of(new SpotCameraProfiles.Camera("front", null, null)),
-            timestamp -> Optional.of(new VisionProcessor.CaptureState(Pose2d.kZero, 0, 0, 0, 0, 0)),
-            VisionProcessor.Policy.conservative());
-    assertThat(processor.process(sample("multi"), ack(), 10.1).reason())
-        .isEqualTo(VisionProcessor.Reason.MOUNT_HISTORY);
   }
 
   @Test

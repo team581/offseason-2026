@@ -5,7 +5,6 @@ import com.team581.util.AprilTags;
 import com.team581.vision.spot.CaptureSettings;
 import com.team581.vision.spot.PixelFormat;
 import com.team581.vision.spot.SpotCameraConfig;
-import com.team581.vision.spot.SpotCameraProfiles;
 import com.team581.vision.spot.SpotProtocol;
 import com.team581.vision.spot.data.*;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -77,12 +76,6 @@ public final class VisionConfig {
     return new Transform3d(
         new Translation3d(xM, yM, zM),
         new Rotation3d(Math.toRadians(rollDeg), Math.toRadians(pitchDeg), Math.toRadians(yawDeg)));
-  }
-
-  public static List<SpotCameraProfiles.Camera> mounts() {
-    return CAMERAS.stream()
-        .map(camera -> SpotCameraProfiles.Camera.fixed(camera.name(), camera.robotToCamera()))
-        .toList();
   }
 
   public static Profile profile() {

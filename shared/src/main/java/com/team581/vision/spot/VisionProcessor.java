@@ -69,7 +69,6 @@ public final class VisionProcessor {
     MALFORMED,
     UNKNOWN_TAG,
     HISTORY,
-    MOUNT_HISTORY,
     FIELD_BOUNDS,
     ROBOT_TILT,
     AMBIGUOUS,
@@ -122,7 +121,7 @@ public final class VisionProcessor {
   private final Profile profile;
   private final String profileHash;
   private final String fieldHash;
-  private final Map<String, SpotCameraProfiles.Camera> cameras;
+  private final Map<String, Transform3d> cameraMounts = new HashMap<>();
   private final History history;
   private final Supplier<Policy> policy;
   private final Set<Integer> knownTags;
@@ -136,22 +135,17 @@ public final class VisionProcessor {
 
   private String generation = "";
 
-  public VisionProcessor(
-      Profile profile, List<SpotCameraProfiles.Camera> cameras, History history, Policy policy) {
-    this(profile, cameras, history, () -> policy);
+  public VisionProcessor(Profile profile, History history, Policy policy) {
+    this(profile, history, () -> policy);
   }
 
-  public VisionProcessor(
-      Profile profile,
-      List<SpotCameraProfiles.Camera> cameras,
-      History history,
-      Supplier<Policy> policy) {
+  public VisionProcessor(Profile profile, History history, Supplier<Policy> policy) {
     this.profile = profile;
     this.profileHash = SpotProtocol.hash(profile);
     this.fieldHash = SpotProtocol.hash(profile.field());
-    this.cameras = new HashMap<>();
-    for (var camera : cameras) {
-      this.cameras.put(camera.name(), camera);
+    for (var camera : profile.cameras()) {
+      cameraMounts.put(
+          camera.name(), new Transform3d(Pose3d.kZero, SpotProtocol.pose(camera.robotToCamera())));
     }
     this.history = history;
     this.policy = policy;
@@ -266,11 +260,7 @@ public final class VisionProcessor {
         || applied.calibrationHash().isEmpty()) {
       return Decision.reject(Reason.CALIBRATION);
     }
-    var camera = cameras.get(observation.cameraName());
-    var policy =
-        camera == null || camera.qualityPolicy() == null
-            ? this.policy.get()
-            : camera.qualityPolicy();
+    var policy = this.policy.get();
     double timeUncertainty = observation.timestampUncertaintyS();
     if (!Double.isFinite(timeUncertainty)
         || timeUncertainty <= 0
@@ -289,13 +279,7 @@ public final class VisionProcessor {
     if (captured.isEmpty()) {
       return Decision.reject(Reason.HISTORY);
     }
-    if (camera == null) {
-      return Decision.reject(Reason.MOUNT_HISTORY);
-    }
-    Optional<Transform3d> mount = Optional.ofNullable(camera.mount());
-    if (mount.isEmpty()) {
-      return Decision.reject(Reason.MOUNT_HISTORY);
-    }
+    var mount = cameraMounts.get(observation.cameraName());
     var alternatives = new ArrayList<Pose3d>();
     for (var candidate : observation.candidates()) {
       if (!validPose(candidate.fieldToCamera())
@@ -343,8 +327,7 @@ public final class VisionProcessor {
       if (candidate.reprojectionErrorPx() > policy.maxResidualPx()) {
         return Decision.reject(Reason.RESIDUAL);
       }
-      alternatives.add(
-          SpotProtocol.pose(candidate.fieldToCamera()).transformBy(mount.orElseThrow().inverse()));
+      alternatives.add(SpotProtocol.pose(candidate.fieldToCamera()).transformBy(mount.inverse()));
     }
     int selected = 0;
     if (observation.candidates().get(0).method() == PoseMethod.SINGLE_TAG_IPPE_SQUARE) {

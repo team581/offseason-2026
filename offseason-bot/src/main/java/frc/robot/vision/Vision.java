@@ -7,7 +7,6 @@ import com.google.common.collect.Sets;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.spot.CaptureHistory;
 import com.team581.vision.spot.MeasurementQueue;
-import com.team581.vision.spot.SpotCameraProfiles;
 import com.team581.vision.spot.VisionIO;
 import com.team581.vision.spot.VisionProcessor;
 import com.team581.vision.spot.data.*;
@@ -89,7 +88,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public Vision(
       VisionIO io,
       Profile profile,
-      List<SpotCameraProfiles.Camera> mounts,
       CaptureSource capture,
       DoubleSupplier clock,
       BooleanSupplier enabled,
@@ -104,7 +102,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     this.operatorVision = operatorVision;
     this.alliance = alliance;
     history = new CaptureHistory(capture::poseAt);
-    processor = new VisionProcessor(profile, mounts, history, VisionTuning::policy);
+    processor = new VisionProcessor(profile, history, VisionTuning::policy);
     queue = new MeasurementQueue(profile.reorderWindowS(), 128);
     selection = new VisionIO.TagSelection(1, broadTags());
     io.setTagSelection(selection);
@@ -182,7 +180,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               || Set.of(
                       VisionProcessor.Reason.NO_TAGS,
                       VisionProcessor.Reason.HISTORY,
-                      VisionProcessor.Reason.MOUNT_HISTORY,
                       VisionProcessor.Reason.FIELD_BOUNDS,
                       VisionProcessor.Reason.ROBOT_TILT,
                       VisionProcessor.Reason.AMBIGUOUS,

@@ -70,7 +70,6 @@ final class VisionIntegrationTest {
     boolean operator = true;
     Optional<Alliance> alliance = Optional.of(Alliance.Red);
     final Pose2d robot = new Pose2d(4, 4, Rotation2d.kZero);
-    final List<SpotCameraProfiles.Camera> mounts = new ArrayList<>();
     final FakeIO io = new FakeIO();
     final Profile profile;
     final Vision vision;
@@ -99,7 +98,6 @@ final class VisionIntegrationTest {
         double yaw = new double[] {Math.PI / 2, -Math.PI / 2, 0, Math.PI}[index];
         var mount =
             new Transform3d(new Translation3d(.1 * index, .1, .5), new Rotation3d(0, 0, yaw));
-        mounts.add(SpotCameraProfiles.Camera.fixed(name, mount));
         index++;
         cameraDefinitions.add(
             new CameraDefinition(
@@ -145,7 +143,6 @@ final class VisionIntegrationTest {
           new Vision(
               io,
               profile,
-              mounts,
               new Vision.CaptureSource() {
                 @Override
                 public VisionProcessor.CaptureState current(double now) {
@@ -174,12 +171,12 @@ final class VisionIntegrationTest {
     }
 
     void frame(String camera, int tag, double capture, long selectionGeneration) {
-      var mount =
-          mounts.stream()
+      var definition =
+          profile.cameras().stream()
               .filter(item -> item.name().equals(camera))
               .findFirst()
-              .orElseThrow()
-              .mount();
+              .orElseThrow();
+      var mount = new Transform3d(Pose3d.kZero, SpotProtocol.pose(definition.robotToCamera()));
       var frameTags = new ArrayList<TagObservation>();
       var frameCandidates = new ArrayList<PoseCandidate>();
       var frame =
