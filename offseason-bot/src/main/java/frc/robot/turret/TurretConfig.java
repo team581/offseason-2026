@@ -6,7 +6,6 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -45,10 +44,6 @@ public class TurretConfig {
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
-          .withVoltage(
-              new VoltageConfigs()
-                  .withPeakForwardVoltage(RobotBase.isSimulation() ? 12.0 : 0.0)
-                  .withPeakReverseVoltage(RobotBase.isSimulation() ? -12.0 : 0.0))
           .withSlot0(
               RobotBase.isSimulation()
                   ? SIM_GAINS.clone()
