@@ -116,14 +116,7 @@
     }
   ],
   "processing": {
-    "degraded_fps": 5,
-    "thermal_exit_c": 75,
-    "gpu_max_retries": 3,
-    "thermal_enter_c": 80,
     "utilization_budget": 0.8,
-    "thermal_fps": 10,
-    "gpu_retry_s": 30,
-    "max_fps": 30,
-    "fallback_to_cpu": false
+    "max_fps": 30
   }
 }
