@@ -24,12 +24,6 @@ public final class SpotVisionIO implements VisionIO {
   private static final double MANIFEST_PERIOD_S = .1;
   private static final ObjectMapper JSON = new ObjectMapper();
 
-  public static OptionalDouble captureTimestamp(
-      TimestampedObject<?> sample, boolean onRobotServer) {
-    return captureTimestamp(
-        new TimestampedRaw(sample.timestamp, sample.serverTime, new byte[0]), onRobotServer);
-  }
-
   /**
    * On the verified roboRIO NT server both clock domains use the FPGA epoch. Local-value serverTime
    * sentinels 0/1 use the server-local timestamp. Conflicting domains are rejected. Real roboRIO
@@ -325,7 +319,7 @@ public final class SpotVisionIO implements VisionIO {
         || !lastHealth.runtimeGeneration().equals(acknowledgement.runtimeGeneration())) {
       reason = "Waiting for synchronized current session";
     }
-    return new Health(reason.isEmpty(), reason, acknowledgement, lastHealth);
+    return new Health(reason.isEmpty(), reason, acknowledgement);
   }
 
   private void rejectTransport(String reason) {

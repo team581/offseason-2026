@@ -1,26 +1,12 @@
 package com.team581.vision.spot;
 
-import com.google.common.collect.ImmutableList;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.results.VisionMeasurement;
 import java.util.List;
 
 /** A single owned snapshot per control tick. Getters never poll transport. */
 public interface VisionIO extends AutoCloseable {
-  record Health(
-      boolean available,
-      String reason,
-      Acknowledgement acknowledgement,
-      com.team581.vision.spot.data.Health service) {
-    public Health(boolean available, String reason, Acknowledgement acknowledgement) {
-      this(
-          available,
-          reason,
-          acknowledgement,
-          new com.team581.vision.spot.data.Health(
-              "", 0L, 0.0, "", 0L, 0.0, 0L, 0L, 0L, "", "", "", ImmutableList.of()));
-    }
-  }
+  record Health(boolean available, String reason, Acknowledgement acknowledgement) {}
 
   record Inputs(Health health, List<Sample> samples) {
     public Inputs {
