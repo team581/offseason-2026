@@ -109,7 +109,9 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   private double statorCurrent = 0.0;
   private double feedForward = 0.0;
 
-  private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
+  // Send each same-loop target immediately instead of waiting for periodic CAN transmission.
+  private final PositionVoltage positionRequest =
+      new PositionVoltage(0.0).withEnableFOC(false).withUpdateFreqHz(0.0);
 
   private final NeutralOut neutralRequest = new NeutralOut();
 
@@ -351,8 +353,9 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
       case HOMING -> motor.setControl(neutralRequest);
       case STUCK -> {
         motor.setControl(
-            positionRequest.withPosition(
-                Units.degreesToRotations(clamp(TurretConfig.FAUX_DUMPER_ANGLE))));
+            positionRequest
+                .withPosition(Units.degreesToRotations(clamp(TurretConfig.FAUX_DUMPER_ANGLE)))
+                .withVelocity(0.0));
       }
       case SCORE, FEED ->
           motor.setControl(

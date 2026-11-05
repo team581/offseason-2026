@@ -62,6 +62,61 @@ final class AimParameterUtilTest {
   }
 
   @Test
+  void changingTofAndAngularAccelerationMatchImplicitAnalyticDerivative() {
+    var solver = new ShootOnTheMove(distance -> 0.5 + 0.1 * distance, "ImplicitDerivativeTest");
+    double horizon = ShootOnTheMove.PREDICTION_HORIZON_SECONDS.getAsDouble();
+    double linearTau = ShootOnTheMove.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
+    double angularTau = ShootOnTheMove.ANGULAR_TIME_CONSTANT_SECONDS.getAsDouble();
+    double drag = ShootOnTheMove.DRAG_CONSTANT.getAsDouble();
+    for (double heading : new double[] {-179.0, -30.0, 90.0, 179.0}) {
+      for (double omega : new double[] {-2.0, 0.0, 2.0}) {
+        var pose = new Pose2d(2.0, 3.0, Rotation2d.fromDegrees(heading));
+        var goal = new Translation2d(6.0, 4.0);
+        var measured = new ChassisSpeeds(0.8, -0.4, omega);
+        var commanded = new ChassisSpeeds(-0.3, 1.2, -omega + 1.0);
+        var result =
+            AimParameterUtil.calculateParameters(
+                solver, goal, 0.1, pose, measured, commanded, true);
+        var r = TurretConfig.TURRET_TO_ROBOT.getTranslation().rotateBy(pose.getRotation());
+        var jr = new Translation2d(-r.getY(), r.getX());
+        var measuredV = new Translation2d(measured.vxMetersPerSecond, measured.vyMetersPerSecond);
+        var commandedV =
+            new Translation2d(commanded.vxMetersPerSecond, commanded.vyMetersPerSecond);
+        var predictedV =
+            commandedV.plus(measuredV.minus(commandedV).times(Math.exp(-horizon / linearTau)));
+        double predictedOmega =
+            commanded.omegaRadiansPerSecond
+                + (omega - commanded.omegaRadiansPerSecond) * Math.exp(-horizon / angularTau);
+        var v = predictedV.plus(jr.times(predictedOmega));
+        var acceleration =
+            commandedV
+                .minus(measuredV)
+                .times(Math.exp(-horizon / linearTau) / linearTau)
+                .plus(
+                    jr.times(
+                        (commanded.omegaRadiansPerSecond - omega)
+                            * Math.exp(-horizon / angularTau)
+                            / angularTau))
+                .minus(r.times(predictedOmega * omega));
+        double tof = 0.5 + 0.1 * result.distance();
+        double effectiveTof = ShootOnTheMove.effectiveTimeOfFlight(tof, drag);
+        var q = goal.minus(pose.getTranslation().plus(r)).minus(v.times(effectiveTof));
+        var b =
+            measuredV.plus(jr.times(omega)).unaryMinus().minus(acceleration.times(effectiveTof));
+        double ePrime = Math.exp(-drag * tof) * 0.1;
+        double distanceRate =
+            (q.getX() * b.getX() + q.getY() * b.getY())
+                / (q.getNorm() + ePrime * (q.getX() * v.getX() + q.getY() * v.getY()));
+        var qDot = b.minus(v.times(ePrime * distanceRate));
+        double expected =
+            (q.getX() * qDot.getY() - q.getY() * qDot.getX()) / (q.getNorm() * q.getNorm()) - omega;
+        assertThat(result.solutionValid()).isTrue();
+        assertEquals(expected, result.turretFeedForwardRadians(), 0.003);
+      }
+    }
+  }
+
+  @Test
   void constantTofFeedforwardMatchesAnalyticCompensatedBearingDerivative() {
     var solver = new ShootOnTheMove(distance -> 1.0, "AnalyticTest");
     var goal = new Translation2d(5.0, 2.0);
