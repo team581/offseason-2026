@@ -8,7 +8,7 @@ import java.util.List;
 
 /** A single owned snapshot per control tick. Getters never poll transport. */
 public interface VisionIO extends AutoCloseable {
-  record Health(boolean available, String reason, Acknowledgement acknowledgement) {}
+  record Health(boolean available, String reason, String generation) {}
 
   record Inputs(Health health, List<Sample> samples) {
     public Inputs {
@@ -36,11 +36,16 @@ public interface VisionIO extends AutoCloseable {
   @Override
   default void close() {}
 
+  /** Effective camera availability flags from Spot. */
+  default java.util.Optional<Profile> configuration() {
+    return java.util.Optional.empty();
+  }
+
   default void measurementFused(VisionMeasurement measurement) {}
 
   default void publishDecisions(double now) {}
 
-  Inputs readInputs(double nowFpgaSeconds, boolean robotEnabled);
+  Inputs readInputs(double nowFpgaSeconds);
 
   default void reportDecision(Sample sample, VisionProcessor.Decision decision) {}
 

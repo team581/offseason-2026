@@ -9,11 +9,9 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 
 /** Robot-owned geometry, candidate selection and conservative quality model. */
@@ -55,24 +53,32 @@ public final class VisionProcessor {
   }
 
   public enum Reason {
-    ACCEPTED,
-    NO_TAGS,
-    CONFIGURATION,
-    CALIBRATION,
-    TIMESTAMP,
-    STALE,
-    FUTURE,
-    DUPLICATE,
-    OLD_EPOCH,
-    RESET,
-    MALFORMED,
-    HISTORY,
-    FIELD_BOUNDS,
-    ROBOT_TILT,
-    AMBIGUOUS,
-    RESIDUAL,
-    INNOVATION,
-    TAG_POLICY
+    ACCEPTED(0),
+    NO_TAGS(1),
+    CONFIGURATION(2),
+    CALIBRATION(3),
+    TIMESTAMP(4),
+    STALE(5),
+    FUTURE(6),
+    DUPLICATE(7),
+    RESET(8),
+    MALFORMED(9),
+    HISTORY(10),
+    FIELD_BOUNDS(11),
+    ROBOT_TILT(12),
+    AMBIGUOUS(13),
+    RESIDUAL(14),
+    INNOVATION(15),
+    TAG_POLICY(16);
+    private final int code;
+
+    Reason(int code) {
+      this.code = code;
+    }
+
+    public int code() {
+      return code;
+    }
   }
 
   /** Use all configured cameras to cover correlation even across separate release batches. */
@@ -111,19 +117,10 @@ public final class VisionProcessor {
   }
 
   private final Profile profile;
-  private final String profileHash;
-  private final String fieldHash;
-  private final Map<String, Transform3d> cameraMounts = new HashMap<>();
   private final History history;
   private final Supplier<Policy> policy;
   private final long fieldTagMask;
-  private Acknowledgement contextAcknowledgement;
-  private final Map<String, long[]> frameContexts = new HashMap<>();
-  private final Map<String, Long> lastSequence = new HashMap<>();
-
-  private final Map<String, String> currentEpoch = new HashMap<>();
-
-  private final Set<String> retiredEpochs = new HashSet<>();
+  private final Map<String, Double> lastTimestamp = new HashMap<>();
 
   private double resetTimestamp = Double.NEGATIVE_INFINITY;
 
@@ -135,12 +132,6 @@ public final class VisionProcessor {
 
   public VisionProcessor(Profile profile, History history, Supplier<Policy> policy) {
     this.profile = profile;
-    this.profileHash = SpotProtocol.hash(profile);
-    this.fieldHash = SpotProtocol.hash(profile.field());
-    for (var camera : profile.cameras()) {
-      cameraMounts.put(
-          camera.name(), new Transform3d(Pose3d.kZero, SpotProtocol.pose(camera.robotToCamera())));
-    }
     this.history = history;
     this.policy = policy;
     int tagCount = profile.field().tags().size();
@@ -150,44 +141,13 @@ public final class VisionProcessor {
   public void newGeneration(String identity) {
     if (!identity.equals(generation)) {
       generation = identity;
-      lastSequence.clear();
-      currentEpoch.clear();
-      retiredEpochs.clear();
+      lastTimestamp.clear();
     }
   }
 
-  public Decision process(VisionIO.Sample sample, Acknowledgement ack, double now) {
+  public Decision process(VisionIO.Sample sample, double now) {
     var frame = sample.frame();
     double timestamp = sample.captureFpgaSeconds();
-    if (!ack.applied()
-        || !ack.manifestHash().equals(profileHash)
-        || !ack.robotId().equals(profile.robotId())
-        || !ack.fieldHash().equals(fieldHash)) return Decision.reject(Reason.CONFIGURATION);
-    if (!ack.equals(contextAcknowledgement)) {
-      frameContexts.clear();
-      for (var camera : ack.cameras())
-        frameContexts.put(camera.cameraName(), SpotProtocol.frameContext(ack, camera.cameraName()));
-      contextAcknowledgement = ack;
-    }
-    var context = frameContexts.get(sample.cameraName());
-    if (context == null || frame.contextHigh() != context[0] || frame.contextLow() != context[1])
-      return Decision.reject(Reason.CONFIGURATION);
-    var cameraGeneration =
-        ack.cameras().stream()
-            .filter(camera -> camera.cameraName().equals(sample.cameraName()))
-            .findFirst();
-    var definition =
-        profile.cameras().stream()
-            .filter(camera -> camera.name().equals(sample.cameraName()))
-            .findFirst();
-    if (cameraGeneration.isEmpty() || definition.isEmpty() || !definition.orElseThrow().enabled())
-      return Decision.reject(Reason.CONFIGURATION);
-    var applied = cameraGeneration.orElseThrow();
-    if (definition.orElseThrow().allowedModes().stream()
-        .noneMatch(mode ->
-            mode.id().equals(applied.modeId())
-                && mode.opticalSignature().equals(applied.opticalSignature())))
-      return Decision.reject(Reason.CONFIGURATION);
     if (!Double.isFinite(now) || !Double.isFinite(timestamp) || timestamp <= 0) {
       return Decision.reject(Reason.TIMESTAMP);
     }
@@ -208,29 +168,11 @@ public final class VisionProcessor {
         new double[] {
           frame.captureToDetectMs(), frame.detectMs(), frame.solveMs(), frame.totalMs()
         }) if (!Double.isFinite(value) || value < 0) return Decision.reject(Reason.MALFORMED);
-    String epoch = ack.serviceSession() + "/" + sample.captureEpoch();
-    String key = sample.cameraName() + "/" + epoch;
-    if (retiredEpochs.contains(key)) {
-      return Decision.reject(Reason.OLD_EPOCH);
-    }
-    String previousEpoch = currentEpoch.put(sample.cameraName(), epoch);
-    if (previousEpoch != null && !previousEpoch.equals(epoch)) {
-      retiredEpochs.add(sample.cameraName() + "/" + previousEpoch);
-      if (retiredEpochs.size() > 128) {
-        // Bounded memory: a wildly flapping camera remains rejected until a new
-        // service/runtime handshake, rather than forgetting an old epoch.
-        currentEpoch.put(sample.cameraName(), previousEpoch);
-        return Decision.reject(Reason.OLD_EPOCH);
-      }
-    }
-    long sequence = frame.sequence();
-    if (sequence <= lastSequence.getOrDefault(key, 0L)) {
+    if (timestamp <= lastTimestamp.getOrDefault(sample.cameraName(), Double.NEGATIVE_INFINITY)) {
       return Decision.reject(Reason.DUPLICATE);
     }
-    lastSequence.put(key, sequence);
-    if (!applied.calibrationValid() || applied.calibrationHash().isEmpty()) {
-      return Decision.reject(Reason.CALIBRATION);
-    }
+    lastTimestamp.put(sample.cameraName(), timestamp);
+    if (!frame.calibrationValid()) return Decision.reject(Reason.CALIBRATION);
     var policy = this.policy.get();
     double timeUncertainty = frame.timestampUncertainty();
     if (!Double.isFinite(timeUncertainty)
@@ -247,7 +189,7 @@ public final class VisionProcessor {
     if (captured.isEmpty()) {
       return Decision.reject(Reason.HISTORY);
     }
-    var mount = cameraMounts.get(sample.cameraName());
+    var mount = frame.robotToCamera();
     var alternatives = new ArrayList<Pose3d>();
     for (int index = 0; index < frame.candidateCount(); index++) {
       var candidate = index == 0 ? frame.primary() : frame.alternate();
@@ -356,17 +298,7 @@ public final class VisionProcessor {
     var measurement =
         new VisionMeasurement(
             sample.cameraName(),
-            key
-                + "/"
-                + ack.runtimeGeneration()
-                + "/"
-                + ack.connectionEpoch()
-                + "/"
-                + ack.syncEpoch()
-                + "/"
-                + frame.tagSelectionGeneration()
-                + "/"
-                + sequence,
+            sample.cameraName() + "/" + sample.captureEpoch() + "/" + frame.sequence(),
             robot.toPose2d(),
             timestamp,
             sigma,
@@ -380,8 +312,6 @@ public final class VisionProcessor {
 
   public void reset(double timestamp) {
     resetTimestamp = timestamp;
-    lastSequence.clear();
-    currentEpoch.clear();
-    retiredEpochs.clear();
+    lastTimestamp.clear();
   }
 }

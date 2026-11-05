@@ -5,38 +5,16 @@ import edu.wpi.first.util.struct.StructGenerator.SchemaBuilder;
 import edu.wpi.first.util.struct.StructSerializable;
 import java.nio.ByteBuffer;
 
-/** Fixed-layout NetworkTables data. */
-public record Heartbeat(
-    long serviceHigh,
-    long serviceLow,
-    long runtimeHigh,
-    long runtimeLow,
-    long sequence,
-    double uptime,
-    int syncState,
-    long offsetUs,
-    double syncAge,
-    long connectionEpoch,
-    long syncEpoch,
-    long discontinuities)
+public record Heartbeat(long revisionHigh, long revisionLow, boolean ready)
     implements StructSerializable {
   private static final String SCHEMA =
       new SchemaBuilder()
-          .addField("serviceHigh", "int64")
-          .addField("serviceLow", "int64")
-          .addField("runtimeHigh", "int64")
-          .addField("runtimeLow", "int64")
-          .addField("sequence", "int64")
-          .addField("uptime", "double")
-          .addField("syncState", "int32")
-          .addField("offsetUs", "int64")
-          .addField("syncAge", "double")
-          .addField("connectionEpoch", "int64")
-          .addField("syncEpoch", "int64")
-          .addField("discontinuities", "int64")
+          .addField("revisionHigh", "int64")
+          .addField("revisionLow", "int64")
+          .addField("ready", "bool")
           .build();
 
-  @SuppressWarnings("ConstantNaming") // WPILib discovers this field by its conventional name.
+  @SuppressWarnings("ConstantNaming") // WPILib discovers this field by name.
   public static final Struct<Heartbeat> struct =
       new Struct<>() {
         @Override
@@ -51,7 +29,7 @@ public record Heartbeat(
 
         @Override
         public int getSize() {
-          return 92;
+          return 17;
         }
 
         @Override
@@ -71,35 +49,14 @@ public record Heartbeat(
 
         @Override
         public void pack(ByteBuffer buffer, Heartbeat value) {
-          buffer.putLong(value.serviceHigh());
-          buffer.putLong(value.serviceLow());
-          buffer.putLong(value.runtimeHigh());
-          buffer.putLong(value.runtimeLow());
-          buffer.putLong(value.sequence());
-          buffer.putDouble(value.uptime());
-          buffer.putInt(value.syncState());
-          buffer.putLong(value.offsetUs());
-          buffer.putDouble(value.syncAge());
-          buffer.putLong(value.connectionEpoch());
-          buffer.putLong(value.syncEpoch());
-          buffer.putLong(value.discontinuities());
+          buffer.putLong(value.revisionHigh());
+          buffer.putLong(value.revisionLow());
+          buffer.put((byte) (value.ready() ? 1 : 0));
         }
 
         @Override
         public Heartbeat unpack(ByteBuffer buffer) {
-          return new Heartbeat(
-              buffer.getLong(),
-              buffer.getLong(),
-              buffer.getLong(),
-              buffer.getLong(),
-              buffer.getLong(),
-              buffer.getDouble(),
-              buffer.getInt(),
-              buffer.getLong(),
-              buffer.getDouble(),
-              buffer.getLong(),
-              buffer.getLong(),
-              buffer.getLong());
+          return new Heartbeat(buffer.getLong(), buffer.getLong(), buffer.get() != 0);
         }
       };
 }

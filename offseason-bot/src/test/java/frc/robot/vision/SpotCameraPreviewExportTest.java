@@ -31,7 +31,7 @@ final class SpotCameraPreviewExportTest {
               new CaptureSettings(640, 480, 30, PixelFormat.MJPEG),
               ImmutableList.of(SpotCameraConfig.Control.tunable("gain", 5)));
       Path output = directory.resolve("profile.json");
-      SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of(camera)), output);
+      SpotCameraPreviewExport.write(ImmutableList.of(camera.definition()), output);
       var json = JsonParser.parseString(Files.readString(output)).getAsJsonObject();
       var exported = json.getAsJsonArray("cameras").get(0).getAsJsonObject();
       assertEquals(.3, exported.getAsJsonArray("translation").get(0).getAsDouble(), 1e-12);
@@ -55,7 +55,7 @@ final class SpotCameraPreviewExportTest {
   @Test
   void exportsEmptyRegisteredList() throws Exception {
     Path output = directory.resolve("empty.json");
-    SpotCameraPreviewExport.write(VisionConfig.profile(ImmutableList.of()), output);
+    SpotCameraPreviewExport.write(ImmutableList.of(), output);
     assertEquals(
         0,
         JsonParser.parseString(Files.readString(output))

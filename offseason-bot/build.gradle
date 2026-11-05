@@ -137,5 +137,5 @@ tasks.register('exportSpotCameraPreview', JavaExec) {
 	dependsOn tasks.named('classes')
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = 'frc.robot.vision.SpotCameraPreviewExport'
-	args layout.buildDirectory.file('spot-camera-preview/profile.json').get().asFile.absolutePath
+	args layout.buildDirectory.file('spot-camera-preview/profile.json').get().asFile.absolutePath, project.file('src/main/deploy/spot-config.json').absolutePath
 }

@@ -3,8 +3,7 @@ package com.team581.vision.spot.data;
 import java.util.List;
 
 public record Profile(
-    String robotId,
-    List<CameraDefinition> cameras,
+    List<CameraPolicy> cameras,
     FieldLayout field,
     boolean fusionEnabled,
     boolean headingEnabled,

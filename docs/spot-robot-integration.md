@@ -17,15 +17,12 @@ flowchart LR
 
 ## Configuration and ownership
 
-The robot defines logical camera names, measured mounts, requested capture settings,
-field geometry, and whether vision fusion is allowed. For the offseason robot,
-these settings live in [VisionConfig.java](../offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java).
-Use the [camera configuration guide](camera-configuration.md) for the Java configuration API,
-and check the robot's source for its current camera list and settings.
-
-Spot manages physical camera setup, calibration, and image processing. Use Spot's own
-documentation and tools for those tasks. Robot settings and the physical setup must
-agree before observations can be useful.
+The robot supplies camera and processing defaults in
+`offseason-bot/src/main/deploy/spot-config.json`; field geometry and fusion policy
+live in [VisionConfig.java](../offseason-bot/src/main/java/frc/robot/vision/VisionConfig.java).
+Saved dashboard overrides take priority until explicitly cleared, including across
+robot deployments. See the [camera configuration guide](camera-configuration.md)
+for editing, exporting, and clearing settings.
 
 Reusable robot-side support lives in
 [`com.team581.vision.spot`](../shared/src/main/java/com/team581/vision/spot/):
