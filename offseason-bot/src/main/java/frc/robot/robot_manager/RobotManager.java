@@ -153,7 +153,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     setStateFromRequest(RobotState.IDLE);
   }
 
-  public void intakeAutoRequest() {
+  public void intakeRequest() {
     hopperManager.setDriverWantsIntake(true);
   }
 

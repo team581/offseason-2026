@@ -525,7 +525,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
       }
       case INTAKE_FIRST_CYCLE -> {
         trailblazer.setActiveSegment(intakeFirstCycle);
-        robotManager.intakeAutoRequest();
+        robotManager.intakeRequest();
         if (trailblazer.passedMarker(Markers.PRIORITIZE_INTAKE)) {
           robotManager.powerManager.prioritizeIntakeRequest();
         } else {
@@ -571,7 +571,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         trailblazer.setActiveSegment(defaultIntakeSecondCycle);
         if (trailblazer.passedMarker(Markers.START_INTAKE_2)) {
 
-          robotManager.intakeAutoRequest();
+          robotManager.intakeRequest();
         }
       }
       case CROSS_BUMP_TO_SHOOT_2 -> {
@@ -606,7 +606,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
         trailblazer.setActiveSegment(intakeThirdCycle);
         if (trailblazer.passedMarker(Markers.START_INTAKE_3)) {
 
-          robotManager.intakeAutoRequest();
+          robotManager.intakeRequest();
         }
       }
       case CROSS_BUMP_TO_SHOOT_3 -> {
