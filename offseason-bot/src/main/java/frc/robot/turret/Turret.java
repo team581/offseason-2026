@@ -98,6 +98,7 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   }
 
   private final TalonFX motor;
+  private final TurretHoming homing = new TurretHoming();
   private double currentAngle = 0.0;
   private double goalAngle = 0.0;
   private double setpoint = 0.0;
@@ -309,19 +310,27 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
       case HOMING -> {
-        if (DriverStation.isDisabled()
-            && motor.isAlive()
-            && motor.isConnected()
-            && RobotBase.isReal()) {
+        if (RobotBase.isReal()) {
           var rotorPosition = motor.getRotorPosition();
-          if (rotorPosition.getStatus().isOK()
-              && Double.isFinite(rotorPosition.getValueAsDouble())) {
-            double homedPosition =
-                TurretCalculator.calculateHomedPosition(rotorPosition.getValueAsDouble());
-            if (motor.setPosition(homedPosition).isOK()) {
-              currentAngle = Units.rotationsToDegrees(homedPosition);
-              return TurretState.SCORE;
-            }
+          var position = motor.getPosition();
+          boolean inputsValid =
+              motor.isAlive()
+                  && motor.isConnected()
+                  && rotorPosition.getStatus().isOK()
+                  && position.getStatus().isOK();
+          if (homing.update(
+              DriverStation.isDisabled(),
+              inputsValid,
+              rotorPosition.getValueAsDouble(),
+              Units.rotationsToDegrees(position.getValueAsDouble()),
+              homedPosition -> {
+                if (!motor.setPosition(homedPosition).isOK()) {
+                  return false;
+                }
+                currentAngle = Units.rotationsToDegrees(homedPosition);
+                return true;
+              })) {
+            return TurretState.SCORE;
           }
         }
         return currentState;

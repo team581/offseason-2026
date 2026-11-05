@@ -120,10 +120,11 @@ flowchart LR
 - Gear Ratio: `60:1`
 - Position Voltage control loop with velocity feedforward
 - Travel range: -270° to -90° (offset 4.75" back, 8.025" left)
-- Before powering on, hand-set the turret to -180° within ±3° (half a motor turn at 60:1).
+- Before the first enable after boot, hand-set the turret to -180° within ±3° (half a motor turn at 60:1).
   Calibrate `MOTOR_ROTOR_CAL_OFFSET` from `Turret/Motor/RotorPosition` at exactly -180°.
-  Homing runs once while disabled, using the wrapped rotor delta to refine the hand-set position.
-  Power-cycle to home again after repositioning by hand. No homing runs on enable.
+  While disabled before first enable, homing uses the wrapped rotor delta to refine the hand-set position.
+  Errors above 0.01° for 100 ms trigger a motor-position update; checking continues until enable.
+  Power-cycle to home again after repositioning by hand. Later enables retain the position.
 - States:
   - `HOMING`: Hold neutral and reject aiming requests until the motor position is seeded
   - `SCORE` / `FEED`: Aim at target using shortest path

@@ -19,8 +19,10 @@ public class TurretConfig {
   public static final double FAUX_DUMPER_ANGLE = -180;
 
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
-  // Hand-set the turret at the center of travel before powering on.
+  // Hand-set the turret at the center of travel before the first enable after boot.
   public static final double HOMING_END_POSITION = -180.0;
+  public static final double HOMING_CORRECTION_THRESHOLD_DEGREES = 0.01;
+  public static final double HOMING_DEBOUNCE_SECONDS = 0.1;
 
   public static final double MOTOR_TO_TURRET = 60.0;
 
