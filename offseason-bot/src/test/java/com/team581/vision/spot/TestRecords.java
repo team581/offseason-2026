@@ -20,7 +20,7 @@ final class TestRecords {
         arguments[index] = changes[c + 1];
       }
       @SuppressWarnings("unchecked")
-      T result = (T) value.getClass().getConstructor(types).newInstance(arguments);
+      T result = (T) value.getClass().getDeclaredConstructor(types).newInstance(arguments);
       return result;
     } catch (ReflectiveOperationException exception) {
       throw new IllegalStateException(exception);

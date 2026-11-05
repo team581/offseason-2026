@@ -165,18 +165,32 @@ final class RobotContractTest {
   }
 
   @Test
-  void olderQueuedFusionCannotMarkANewerRejectedFrameAsFused() {
-    var latest = new java.util.HashMap<String, Object>();
-    latest.put("frame_id", "new-accepted-frame");
-    latest.put("fused", false);
-    SpotVisionIO.markDecisionFused(latest, "old-accepted-frame");
-    assertThat(latest).containsEntry("fused", false);
-    latest.put("frame_id", "");
-    SpotVisionIO.markDecisionFused(latest, "old-accepted-frame");
-    assertThat(latest).containsEntry("fused", false);
-    latest.put("frame_id", "current-accepted-frame");
-    SpotVisionIO.markDecisionFused(latest, "current-accepted-frame");
-    assertThat(latest).containsEntry("fused", true);
+  void olderQueuedFusionCannotMarkANewerRejectedFrameAsFused() throws IOException {
+    var latest =
+        new SpotVisionIO.DecisionStatus(
+            "ACCEPTED",
+            false,
+            "capture",
+            1,
+            10.05,
+            "service",
+            "runtime",
+            1,
+            1,
+            1,
+            "new-accepted-frame");
+    assertThat(latest.markFused("old-accepted-frame").fused()).isFalse();
+    latest = TestRecords.with(latest, "frameId", "");
+    assertThat(latest.markFused("old-accepted-frame").fused()).isFalse();
+    latest = TestRecords.with(latest, "frameId", "current-accepted-frame");
+    latest = latest.markFused("current-accepted-frame");
+    assertThat(latest.fused()).isTrue();
+    var json = new ObjectMapper().readTree(new ObjectMapper().writeValueAsBytes(latest));
+    assertThat(json.get("capture_fpga_s").asDouble()).isEqualTo(10.05);
+    assertThat(json.get("tag_selection_generation").asLong()).isEqualTo(1);
+    assertThat(json.get("frame_id").asText()).isEqualTo("current-accepted-frame");
+    assertThat(json.get("fused").asBoolean()).isTrue();
+    assertThat(json.size()).isEqualTo(11);
   }
 
   @Test

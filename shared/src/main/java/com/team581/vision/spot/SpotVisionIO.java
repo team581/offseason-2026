@@ -1,6 +1,8 @@
 package com.team581.vision.spot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.google.common.collect.ImmutableList;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.results.VisionMeasurement;
@@ -19,9 +21,40 @@ import java.util.OptionalDouble;
 
 /** NT4 robot server adapter; transport bytes and metadata stay atomic. */
 public final class SpotVisionIO implements VisionIO {
+  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+  record DecisionStatus(
+      String state,
+      boolean fused,
+      String captureEpoch,
+      long sequence,
+      double captureFpgaS,
+      String serviceSession,
+      String runtimeGeneration,
+      long connectionEpoch,
+      long syncEpoch,
+      long tagSelectionGeneration,
+      String frameId) {
+    DecisionStatus markFused(String identity) {
+      if (!frameId.equals(identity)) return this;
+      return new DecisionStatus(
+          state,
+          true,
+          captureEpoch,
+          sequence,
+          captureFpgaS,
+          serviceSession,
+          runtimeGeneration,
+          connectionEpoch,
+          syncEpoch,
+          tagSelectionGeneration,
+          frameId);
+    }
+  }
+
   public static final String ROOT = "/Spot";
   // A reconnect needs a newly timestamped profile; cached authority stays invalid.
   private static final double MANIFEST_PERIOD_S = .1;
+
   private static final ObjectMapper JSON = new ObjectMapper();
 
   /**
@@ -40,12 +73,6 @@ public final class SpotVisionIO implements VisionIO {
     return OptionalDouble.of(timestamp / 1e6);
   }
 
-  static void markDecisionFused(Map<String, Object> values, String frameId) {
-    if (values != null && frameId.equals(values.get("frame_id"))) {
-      values.put("fused", true);
-    }
-  }
-
   private final NetworkTableInstance instance;
   private final Manifest manifest;
   private final String fieldHash;
@@ -60,7 +87,7 @@ public final class SpotVisionIO implements VisionIO {
   private final StructBuffer<FrameResult> frameBuffer = StructBuffer.create(FrameResult.struct);
   private final StructBuffer<Heartbeat> healthBuffer = StructBuffer.create(Heartbeat.struct);
   private final StringPublisher decisionsPublisher;
-  private final Map<String, Map<String, Object>> decisions = new HashMap<>();
+  private final Map<String, DecisionStatus> decisions = new HashMap<>();
   private double lastDecisionPublish = Double.NEGATIVE_INFINITY;
   private final Map<String, RawSubscriber> cameras = new HashMap<>();
   private Acknowledgement acknowledgement =
@@ -160,7 +187,8 @@ public final class SpotVisionIO implements VisionIO {
 
   @Override
   public void measurementFused(VisionMeasurement measurement) {
-    markDecisionFused(decisions.get(measurement.source()), measurement.frameId());
+    decisions.computeIfPresent(
+        measurement.source(), (name, value) -> value.markFused(measurement.frameId()));
   }
 
   @Override
@@ -179,18 +207,17 @@ public final class SpotVisionIO implements VisionIO {
           "Vision/Spot/" + camera.cameraName() + "/CalibrationValid", camera.calibrationValid());
     }
     try {
-      var fresh = new HashMap<String, Map<String, Object>>();
+      var fresh = new HashMap<String, DecisionStatus>();
       if (health(now).available()) {
         for (var entry : decisions.entrySet()) {
           var values = entry.getValue();
-          double captured = (double) values.get("capture_fpga_s");
+          double captured = values.captureFpgaS();
           if (now - captured <= .5
               && captured <= now + .005
-              && acknowledgement.runtimeGeneration().equals(values.get("runtime_generation"))
-              && acknowledgement.serviceSession().equals(values.get("service_session"))
+              && acknowledgement.runtimeGeneration().equals(values.runtimeGeneration())
+              && acknowledgement.serviceSession().equals(values.serviceSession())
               && selection != null
-              && Long.valueOf(selection.generation())
-                  .equals(values.get("tag_selection_generation"))) {
+              && selection.generation() == values.tagSelectionGeneration()) {
             fresh.put(entry.getKey(), values);
           }
         }
@@ -267,19 +294,20 @@ public final class SpotVisionIO implements VisionIO {
     if (!cameras.containsKey(observation.cameraName())) {
       return;
     }
-    var values = new HashMap<String, Object>();
-    values.put("state", decision.reason().name());
-    values.put("fused", false);
-    values.put("capture_epoch", observation.captureEpoch());
-    values.put("sequence", observation.sequence());
-    values.put("capture_fpga_s", sample.captureFpgaSeconds());
-    values.put("service_session", observation.serviceSession());
-    values.put("runtime_generation", observation.runtimeGeneration());
-    values.put("connection_epoch", observation.connectionEpoch());
-    values.put("sync_epoch", observation.syncEpoch());
-    values.put("tag_selection_generation", observation.tagSelectionGeneration());
-    values.put("frame_id", decision.measurement().map(VisionMeasurement::frameId).orElse(""));
-    decisions.put(observation.cameraName(), values);
+    decisions.put(
+        observation.cameraName(),
+        new DecisionStatus(
+            decision.reason().name(),
+            false,
+            observation.captureEpoch(),
+            observation.sequence(),
+            sample.captureFpgaSeconds(),
+            observation.serviceSession(),
+            observation.runtimeGeneration(),
+            observation.connectionEpoch(),
+            observation.syncEpoch(),
+            observation.tagSelectionGeneration(),
+            decision.measurement().map(VisionMeasurement::frameId).orElse("")));
   }
 
   @Override
