@@ -247,8 +247,8 @@ final class HopperManagerConveyorCoverageTest {
     assertThat(funneler.getState()).isEqualTo(FunnelerState.IDLE);
   }
 
-  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
   @ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
   void releaseDuringFillFinishesOriginalWindow(boolean pressAgain) {
     SimHooks.pauseTiming();
     try {
@@ -349,7 +349,7 @@ final class HopperManagerConveyorCoverageTest {
 
   @EnumSource(
       value = HopperState.class,
-      names = {"SCORE", "SCORE_AND_INTAKE", "FEED", "FEED_AND_INTAKE"})
+      names = {"FEED", "FEED_AND_INTAKE", "SCORE", "SCORE_AND_INTAKE"})
   @ParameterizedTest
   void shootingInterruptsFillAndRearmsNextIntake(HopperState shootingState) {
     SimHooks.pauseTiming();
