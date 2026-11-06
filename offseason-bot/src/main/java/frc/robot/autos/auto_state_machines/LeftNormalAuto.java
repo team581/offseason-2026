@@ -13,6 +13,7 @@ import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -42,10 +43,13 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 
   private static final double SHOOT_X = 13.576;
 
-  // Finish scoring at the next intake segment's trench-aligned entry pose.
-  private static final Point SHOOT_ON_THE_MOVE_GOAL =
-      Point.ofRed(
-          new Pose2d(13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY(), Rotation2d.fromDegrees(-160)));
+  // Turn as far as the turret permits anywhere along the shooting translation.
+  // Finish turning to the intake heading only after scoring has ended.
+  static final Point SHOOT_ON_THE_MOVE_GOAL =
+      NormalAutoSotm.shootingGoal(
+          new Translation2d(SHOOT_X, FieldUtil.RED_DEPOT_BUMP_CENTER.getY() - BUMP_OFFSET),
+          new Translation2d(13.2, FieldUtil.RED_DEPOT_TRENCH_CENTER.getY()),
+          true);
 
   private BumpCrossingTracker bumpCrossingTracker;
 
