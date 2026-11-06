@@ -58,23 +58,23 @@ public class CompTunerConstants {
     // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
   private static final TalonFXConfiguration driveInitialConfigs =
       new TalonFXConfiguration()
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
                   .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
-                  // Default supply current limit is 70 A, but it can be lowered to avoid brownouts.
-                  // Supply current limits can be larger than the breaker current rating.
+                // Default supply current limit is 70 A, but it can be lowered to avoid brownouts.
+                // Supply current limits can be larger than the breaker current rating.
                   .withSupplyCurrentLimit(Amps.of(40 * SUPPLY_CURRENT_LIMIT_SCALE))
                   .withSupplyCurrentLimitEnable(true));
   private static final TalonFXConfiguration steerInitialConfigs =
       new TalonFXConfiguration()
-          .withCurrentLimits(
-              new CurrentLimitsConfigs()
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
                   .withSupplyCurrentLowerLimit(40 * SUPPLY_CURRENT_LIMIT_SCALE)
                   // Swerve azimuth does not require much torque output, so we can set a relatively
                   // low
-                  // stator current limit to help avoid brownouts without impacting performance.
+                // stator current limit to help avoid brownouts without impacting performance.
                   .withSupplyCurrentLimit(Amps.of(70 * SUPPLY_CURRENT_LIMIT_SCALE))
-                  .withStatorCurrentLimit(Amps.of(60))
+                .withStatorCurrentLimit(Amps.of(60))
                   .withStatorCurrentLimitEnable(true))
           // Cruise velocity is only used when MotionMagicExpo SteerRequestType is active (X
           // swerve). Normal driving uses Position SteerRequestType and is unaffected.
@@ -106,6 +106,12 @@ public class CompTunerConstants {
 
     private static final int kPigeonId = 2;
 
+    // These are only used for simulation
+    private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.01);
+    private static final MomentOfInertia kDriveInertia = KilogramSquareMeters.of(0.035);
+    // Simulated voltage necessary to overcome friction
+    private static final Voltage kSteerFrictionVoltage = Volts.of(0.2);
+    private static final Voltage kDriveFrictionVoltage = Volts.of(0.2);
 
     public static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
             .withCANBusName(kCANBus.getName())
@@ -129,14 +135,18 @@ public class CompTunerConstants {
             .withFeedbackSource(kSteerFeedbackType)
             .withDriveMotorInitialConfigs(driveInitialConfigs)
             .withSteerMotorInitialConfigs(steerInitialConfigs)
-            .withEncoderInitialConfigs(encoderInitialConfigs);
+            .withEncoderInitialConfigs(encoderInitialConfigs)
+            .withSteerInertia(kSteerInertia)
+            .withDriveInertia(kDriveInertia)
+            .withSteerFrictionVoltage(kSteerFrictionVoltage)
+            .withDriveFrictionVoltage(kDriveFrictionVoltage);
 
 
     // Front Left
     private static final int kFrontLeftDriveMotorId = 3;
     private static final int kFrontLeftSteerMotorId = 4;
     private static final int kFrontLeftEncoderId = 11;
-    private static final Angle kFrontLeftEncoderOffset = Rotations.of(-0.259521484375);
+    private static final Angle kFrontLeftEncoderOffset = Rotations.of(-0.220458984375);
     private static final boolean kFrontLeftSteerMotorInverted = true;
     private static final boolean kFrontLeftEncoderInverted = false;
 
@@ -147,7 +157,7 @@ public class CompTunerConstants {
     private static final int kFrontRightDriveMotorId = 5;
     private static final int kFrontRightSteerMotorId = 6;
     private static final int kFrontRightEncoderId = 12;
-    private static final Angle kFrontRightEncoderOffset = Rotations.of(-0.0859375);
+    private static final Angle kFrontRightEncoderOffset = Rotations.of(0.112060546875);
     private static final boolean kFrontRightSteerMotorInverted = true;
     private static final boolean kFrontRightEncoderInverted = false;
 
@@ -158,7 +168,7 @@ public class CompTunerConstants {
     private static final int kBackLeftDriveMotorId = 7;
     private static final int kBackLeftSteerMotorId = 8;
     private static final int kBackLeftEncoderId = 13;
-    private static final Angle kBackLeftEncoderOffset = Rotations.of(-0.38232421875);
+    private static final Angle kBackLeftEncoderOffset = Rotations.of(-0.376220703125);
     private static final boolean kBackLeftSteerMotorInverted = true;
     private static final boolean kBackLeftEncoderInverted = false;
 
@@ -169,7 +179,7 @@ public class CompTunerConstants {
     private static final int kBackRightDriveMotorId = 9;
     private static final int kBackRightSteerMotorId = 10;
     private static final int kBackRightEncoderId = 14;
-    private static final Angle kBackRightEncoderOffset = Rotations.of(-0.36572265625);
+    private static final Angle kBackRightEncoderOffset = Rotations.of(-0.474853515625);
     private static final boolean kBackRightSteerMotorInverted = true;
     private static final boolean kBackRightEncoderInverted = false;
 
