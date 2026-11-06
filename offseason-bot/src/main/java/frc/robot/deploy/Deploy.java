@@ -115,7 +115,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public boolean atGoal(DeployState state) {
     return switch (state) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> false;
       default ->
           MathUtil.isNear(clamp(state.getAngleDegrees()), leftMotorPosition, goalTolerance(state))
               && MathUtil.isNear(
@@ -125,21 +125,21 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void beastModeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
     }
   }
 
   public void feedCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.FEED_COMPACTION);
     }
   }
 
   public void fixDifferentialDesyncRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {}
       default -> setStateFromRequest(DeployState.FIX_DIFFERENTIAL_DESYNC);
     }
   }
@@ -163,7 +163,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void hopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
     }
   }
@@ -173,6 +173,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case UNHOMED,
           HOME_INWARD,
           HOME_OUTWARD,
+          AUTO_INTAKE_DELAY,
           FIX_DIFFERENTIAL_DESYNC,
           INTAKE,
           INTAKE_COAST,
@@ -203,18 +204,20 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
     if (getState() == DeployState.HOME_INWARD) {
       deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0);
-      setStateFromRequest(DeployState.INTAKE);
+      setStateFromRequest(stateAfterHoming());
     }
 
     if (getState() == DeployState.HOME_OUTWARD) {
       deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0);
-      setStateFromRequest(DeployState.INTAKE);
+      setStateFromRequest(stateAfterHoming());
     }
 
     // The kinematic sim has no gravity/contact model. In coast, retain the measured position
     // rather than inventing powered recovery; externally injected collapse remains observable.
     double target = clamp(getState().getAngleDegrees());
-    if (getState() == DeployState.UNHOMED || getState().isCoasting()) {
+    if (getState() == DeployState.UNHOMED
+        || getState() == DeployState.AUTO_INTAKE_DELAY
+        || getState().isCoasting()) {
       target = getAngleDegrees();
     }
     deploySimulation.update(-target / 360.0);
@@ -229,7 +232,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY, FIX_DIFFERENTIAL_DESYNC -> {
         // Homing and the operator desync override take priority over hopper requests.
       }
       default -> setStateFromRequest(DeployState.STOW);
@@ -238,18 +241,21 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void waitHopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD, FIX_DIFFERENTIAL_DESYNC -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
     }
   }
 
   private void applyOutputs(DeployState newState) {
-    if (DriverStation.isDisabled()) {
+    // Keep the homing voltage request configured while disabled; the DS inhibits motor output.
+    if (DriverStation.isDisabled()
+        && newState != DeployState.HOME_INWARD
+        && newState != DeployState.HOME_OUTWARD) {
       differentialMechanism.setNeutralOut();
       return;
     }
     switch (newState) {
-      case UNHOMED -> differentialMechanism.setNeutralOut();
+      case UNHOMED, AUTO_INTAKE_DELAY -> differentialMechanism.setNeutralOut();
       case INTAKE_COAST, INTAKE_COLLAPSED, INTAKE_RECOVERY_FAILED ->
           differentialMechanism.setCoastOut();
       case HOME_INWARD ->
@@ -283,6 +289,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  private DeployState stateAfterHoming() {
+    return DriverStation.isAutonomous() ? DeployState.AUTO_INTAKE_DELAY : DeployState.INTAKE;
+  }
+
   @Override
   protected void afterTransition(DeployState newState) {
     applyOutputs(newState);
@@ -306,7 +316,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   @Override
   protected DeployState getNextState(DeployState currentState) {
     if (DriverStation.isDisabled()) {
-      // Disabled time must not count toward the continuous raised delay.
+      if (currentState == DeployState.AUTO_INTAKE_DELAY) {
+        resetTimeout();
+      }
+      // Disabled time must not count toward either delay.
       return switch (currentState) {
         case INTAKE_COLLAPSED, INTAKE_RECOVERING -> DeployState.INTAKE_COAST;
         default -> currentState;
@@ -317,6 +330,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         Math.max(leftMotorPosition, rightMotorPosition)
             > DeployState.INTAKE.getAngleDegrees() + DeployConfig.RAISED_THRESHOLD_DEGREES;
     return switch (currentState) {
+      case AUTO_INTAKE_DELAY ->
+          timeout(DeployConfig.AUTO_INTAKE_DELAY_SECONDS) ? DeployState.INTAKE : currentState;
       case INTAKE -> down ? DeployState.INTAKE_COAST : currentState;
       case INTAKE_COAST -> raised ? DeployState.INTAKE_COLLAPSED : currentState;
       case INTAKE_COLLAPSED -> {
@@ -347,7 +362,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
           differentialMechanism.setPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0);
-          yield DeployState.INTAKE;
+          yield stateAfterHoming();
         } else {
           yield currentState;
         }
@@ -357,7 +372,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
           differentialMechanism.setPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0);
-          yield DeployState.INTAKE;
+          yield stateAfterHoming();
         } else {
           yield currentState;
         }

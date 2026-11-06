@@ -19,6 +19,7 @@ public enum DeployState {
 
   FIX_DIFFERENTIAL_DESYNC(0.0),
 
+  AUTO_INTAKE_DELAY(DeployConfig.HOMING_END_POSITION_INWARD),
   HOME_INWARD(DeployConfig.HOMING_END_POSITION_INWARD),
   HOME_OUTWARD(0.0),
   UNHOMED(DeployConfig.HOMING_END_POSITION_INWARD);
@@ -41,7 +42,7 @@ public enum DeployState {
 
   public boolean isHoming() {
     return switch (this) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> true;
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> true;
       default -> false;
     };
   }

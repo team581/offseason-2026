@@ -39,6 +39,7 @@ public class DeployConfig {
   public static final double HOMING_VOLTAGE_INWARD = -2;
 
   public static final double HOMING_VOLTAGE_OUTWARD = 4;
+  public static final double AUTO_INTAKE_DELAY_SECONDS = 0.5;
   public static final double HOMING_CURRENT = 20.0;
   public static final double HOMING_CURRENT_OUTWARD = 35.0;
   public static final double POSITION_TOLERANCE = 2.0;

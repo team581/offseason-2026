@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.compound.Diff_MotionMagicTorqueCurrentFOC_Position;
 import com.ctre.phoenix6.controls.compound.Diff_PositionTorqueCurrentFOC_Position;
+import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Open;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
@@ -61,6 +63,45 @@ final class DeployControlTest {
   }
 
   @Test
+  void autonomousHomingDelaysIntakeAndIgnoresHopperRequests() throws Exception {
+    SimHooks.pauseTiming();
+    try {
+      DriverStationSim.setAutonomous(true);
+      DriverStationSim.notifyNewData();
+      deploy.homeInAutoRequest();
+      deploy.robotPeriodic();
+      assertThat(deploy.getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
+      assertThat(deploy.getState().isHoming()).isTrue();
+      assertThat(deploy.atGoal()).isFalse();
+      assertThat(mechanism.getLeader().getAppliedControl()).isInstanceOf(NeutralOut.class);
+      assertThat(mechanism.getFollower().getAppliedControl()).isInstanceOf(NeutralOut.class);
+
+      SimHooks.stepTimingAsync(0.49);
+      for (var request :
+          new Runnable[] {
+            deploy::intakeRequest,
+            deploy::stowRequest,
+            deploy::hopperCompactionRequest,
+            deploy::waitHopperCompactionRequest,
+            deploy::feedCompactionRequest,
+            deploy::beastModeRequest,
+            deploy::fixDifferentialDesyncRequest
+          }) {
+        request.run();
+        deploy.robotPeriodic();
+        assertThat(deploy.getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
+      }
+      SimHooks.stepTimingAsync(0.02);
+      deploy.robotPeriodic();
+      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
+      assertThat(mechanism.getLeader().getAppliedControl())
+          .isInstanceOf(Diff_MotionMagicTorqueCurrentFOC_Position.class);
+    } finally {
+      SimHooks.resumeTiming();
+    }
+  }
+
+  @Test
   void bothMotorsCoastAndRepeatedIntakeRequestsDoNotRestorePid() throws Exception {
     setAngles(DeployState.INTAKE.getAngleDegrees() + 4);
     deploy.robotPeriodic();
@@ -102,6 +143,48 @@ final class DeployControlTest {
         (Diff_MotionMagicTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
     assertThat(request.AverageRequest.Slot).isEqualTo(0);
     assertThat(request.DifferentialRequest.Slot).isEqualTo(1);
+  }
+
+  @Test
+  void disabledHomingKeepsVoltageRequestAndWaitsForEnable() {
+    DriverStationSim.setAutonomous(true);
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
+    deploy.homeInAutoRequest();
+    deploy.robotPeriodic();
+    assertThat(deploy.getState()).isEqualTo(DeployState.HOME_INWARD);
+    var request = (Diff_VoltageOut_Open) mechanism.getLeader().getAppliedControl();
+    assertThat(request.AverageRequest.Output).isEqualTo(DeployConfig.HOMING_VOLTAGE_INWARD);
+
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+    deploy.robotPeriodic();
+    assertThat(deploy.getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
+  }
+
+  @Test
+  void disabledTimeDoesNotConsumeAutonomousIntakeDelay() {
+    SimHooks.pauseTiming();
+    try {
+      DriverStationSim.setAutonomous(true);
+      DriverStationSim.notifyNewData();
+      deploy.homeInAutoRequest();
+      deploy.robotPeriodic();
+      assertThat(deploy.getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
+      DriverStationSim.setEnabled(false);
+      DriverStationSim.notifyNewData();
+      SimHooks.stepTimingAsync(2);
+      deploy.robotPeriodic();
+      DriverStationSim.setEnabled(true);
+      DriverStationSim.notifyNewData();
+      deploy.robotPeriodic();
+      assertThat(deploy.getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
+      SimHooks.stepTimingAsync(0.51);
+      deploy.robotPeriodic();
+      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
+    } finally {
+      SimHooks.resumeTiming();
+    }
   }
 
   @Test
@@ -182,6 +265,7 @@ final class DeployControlTest {
 
   @BeforeEach
   void setup() throws Exception {
+    DriverStationSim.setAutonomous(false);
     DriverStationSim.setEnabled(true);
     DriverStationSim.setDsAttached(true);
     DriverStationSim.notifyNewData();
