@@ -420,9 +420,9 @@ final class RobotManagerShooterCoverageTest {
       shooter.scoreRequest(1000.0);
       shooter.feedRequest(1000.0);
       shooter.beforePeriodic();
-      assertThat(get(shooter, "shootingRpm")).isEqualTo(ShooterConfig.MAX_SAFE_RPM);
-      // The feeding regression extrapolates below zero at this extreme distance.
-      assertThat(get(shooter, "feedingRpm")).isEqualTo(0.0);
+      // The scoring regression extrapolates below zero at this extreme distance.
+      assertThat(get(shooter, "shootingRpm")).isEqualTo(0.0);
+      assertThat(get(shooter, "feedingRpm")).isEqualTo(ShooterConfig.MAX_SAFE_RPM);
       pit.set(true);
       shooter.beforePeriodic();
       assertThat(get(shooter, "shootingRpm")).isEqualTo(ShooterConfig.PIT_FUNCTIONALITY_RPM);
