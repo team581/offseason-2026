@@ -9,6 +9,7 @@ import com.team581.util.FieldUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -410,7 +411,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     var velocity = MathHelpers.getLinearVelocity(speeds);
     vision.setRobotVelocity(velocity);
 
-    isMoving = velocity > 0.2 || Math.abs(speeds.omegaRadiansPerSecond) > 0.2;
+    isMoving = velocity > 0.2 || !MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 0.2);
 
     // If using clamped points FF we are using the HOME FIELD
     nearTrench =

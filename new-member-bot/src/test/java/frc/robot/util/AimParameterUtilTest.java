@@ -37,13 +37,13 @@ final class AimParameterUtilTest {
 
     setAlliance(AllianceStationID.Blue1);
     var blue = AimParameterUtil.getFallbackFeedingParameters();
-    assertThat(blue.goalAngle()).isZero();
+    assertThat(blue.goalAngle()).isEqualTo(0);
     assertThat(blue.distance()).isEqualTo(red.distance());
     assertThat(blue.swerveTolerance()).isEqualTo(red.swerveTolerance());
   }
 
-  @ParameterizedTest
   @EnumSource(FeedLocation.class)
+  @ParameterizedTest
   void feedingAimsAtSelectedTargetWithWiderTolerance(FeedLocation location) {
     var pose =
         new Pose2d(
