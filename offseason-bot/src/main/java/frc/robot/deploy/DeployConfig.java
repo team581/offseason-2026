@@ -27,8 +27,7 @@ public class DeployConfig {
   public static final double MAX_ANGLE = COLLAPSED_ANGLE_DEGREES - 20.0;
   // Motor feedback remains positive toward deployment. Account for the down pose's physical
   // angle from horizontal separately from the zero-based public arm angle.
-  private static final double DOWN_GRAVITY_OFFSET_ROTATIONS =
-      (-Math.toDegrees(Math.atan2(0.277506655, -0.066188841)) + FULL_SWEEP_DEGREES) / 360.0;
+  private static final double DOWN_GRAVITY_OFFSET_ROTATIONS = -0.028;
 
   public static final double COAST_THRESHOLD_DEGREES = 5.0;
   public static final double RAISED_THRESHOLD_DEGREES = 10.0;
@@ -38,10 +37,10 @@ public class DeployConfig {
 
   public static final double HOMING_VOLTAGE_INWARD = -2;
 
-  public static final double HOMING_VOLTAGE_OUTWARD = 4;
+  public static final double HOMING_VOLTAGE_OUTWARD = 0.5;
   public static final double AUTO_INTAKE_DELAY_SECONDS = 0.5;
   public static final double HOMING_CURRENT = 20.0;
-  public static final double HOMING_CURRENT_OUTWARD = 35.0;
+  public static final double HOMING_CURRENT_OUTWARD = 8.0;
   public static final double POSITION_TOLERANCE = 2.0;
 
   // Torque-current output: A/arm rotation and A/(arm rotation/s).
@@ -55,25 +54,25 @@ public class DeployConfig {
 
   private static final Slot0Configs AVERAGE_GAINS =
       new Slot0Configs()
-          .withKP(100.0)
+          .withKP(300.0)
           .withKI(0)
-          .withKD(0.0)
+          .withKD(20.0)
           // Keep gravity compensation at zero until measured on the physical arm.
           .withGravityType(GravityTypeValue.Arm_Cosine)
           .withGravityArmPositionOffset(DOWN_GRAVITY_OFFSET_ROTATIONS)
-          .withKG(0.0)
+          .withKG(-18.0)
           .withKS(0.0)
           .withKV(0.0)
           .withKA(0);
 
   // Difference axis gains typically go in Slot 1
   private static final Slot1Configs DIFFERENCE_GAINS =
-      new Slot1Configs().withKP(50.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+      new Slot1Configs().withKP(1250.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   // Difference axis slot 2 for the operator desync override; average stays on slot 0.
   // Tune during bringup.
   private static final Slot2Configs DIFFERENCE_GAINS_FIX_DESYNC =
-      new Slot2Configs().withKP(50.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+      new Slot2Configs().withKP(500.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -84,15 +83,15 @@ public class DeployConfig {
                       RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(20))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(100)
-                  .withPeakReverseTorqueCurrent(-35))
+                  .withPeakReverseTorqueCurrent(-100))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(90.0 / 360.0)
-                  .withMotionMagicAcceleration(180.0 / 360.0))
+                  .withMotionMagicCruiseVelocity(15.0)
+                  .withMotionMagicAcceleration(100000.0))
           .withSlot0(RobotBase.isSimulation() ? SIM_AVERAGE_GAINS.clone() : AVERAGE_GAINS)
           .withSlot1(RobotBase.isSimulation() ? SIM_DIFFERENCE_GAINS.clone() : DIFFERENCE_GAINS)
           .withSlot2(
@@ -109,15 +108,15 @@ public class DeployConfig {
                       RobotKind.IS_COMP_BOT ? NeutralModeValue.Brake : NeutralModeValue.Coast)
                   .withInverted(InvertedValue.CounterClockwise_Positive))
           .withCurrentLimits(
-              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(18))
+              new CurrentLimitsConfigs().withStatorCurrentLimit(50).withSupplyCurrentLimit(20))
           .withTorqueCurrent(
               new TorqueCurrentConfigs()
                   .withPeakForwardTorqueCurrent(100)
-                  .withPeakReverseTorqueCurrent(-35))
+                  .withPeakReverseTorqueCurrent(-100))
           .withMotionMagic(
               new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(90.0 / 360.0)
-                  .withMotionMagicAcceleration(180.0 / 360.0))
+                  .withMotionMagicCruiseVelocity(15.0)
+                  .withMotionMagicAcceleration(100000.0))
           .withSlot0(RobotBase.isSimulation() ? SIM_AVERAGE_GAINS.clone() : AVERAGE_GAINS)
           .withSlot1(RobotBase.isSimulation() ? SIM_DIFFERENCE_GAINS.clone() : DIFFERENCE_GAINS)
           .withSlot2(
