@@ -15,11 +15,9 @@ import java.util.OptionalDouble;
 public final class SpotVisionIO implements VisionIO {
   public static final String ROOT = "/Spot";
 
-  public static OptionalDouble captureTimestamp(TimestampedRaw sample, boolean onRobotServer) {
+  public static OptionalDouble captureTimestamp(TimestampedRaw sample) {
     long timestamp = sample.serverTime > 1 ? sample.serverTime : sample.timestamp;
-    return onRobotServer && timestamp > 1
-        ? OptionalDouble.of(timestamp / 1e6)
-        : OptionalDouble.empty();
+    return timestamp > 1 ? OptionalDouble.of(timestamp / 1e6) : OptionalDouble.empty();
   }
 
   private final NetworkTableInstance instance;
@@ -112,7 +110,7 @@ public final class SpotVisionIO implements VisionIO {
           continue;
         }
         var frame = frameBuffer.read(sample.value);
-        var timestamp = captureTimestamp(sample, serverMode());
+        var timestamp = captureTimestamp(sample);
         if (timestamp.isEmpty()
             || timestamp.getAsDouble() <= resetTimestamp
             || frame.revisionHigh() != heartbeat.revisionHigh()
@@ -139,11 +137,9 @@ public final class SpotVisionIO implements VisionIO {
 
   private Health health(double now) {
     String reason =
-        !serverMode()
-            ? "Robot must be NT server"
-            : now - heartbeatTimestamp > .5 || heartbeatTimestamp > now + .005
-                ? "Spot heartbeat stale"
-                : !heartbeat.ready() ? "Spot not ready" : "";
+        now - heartbeatTimestamp > .5 || heartbeatTimestamp > now + .005
+            ? "Spot heartbeat stale"
+            : !heartbeat.ready() ? "Spot not ready" : "";
     return new Health(reason.isEmpty(), reason, generation);
   }
 
@@ -189,12 +185,7 @@ public final class SpotVisionIO implements VisionIO {
     lastRejection = reason;
   }
 
-  private boolean serverMode() {
-    return instance.getNetworkMode().contains(NetworkTableInstance.NetworkMode.kServer);
-  }
-
   private void update() {
-    if (!serverMode()) return;
     statePublisher.set(
         new RobotStatus(
             selection == null ? 0 : selection.generation(),
@@ -213,7 +204,7 @@ public final class SpotVisionIO implements VisionIO {
             Long.toHexString(value.revisionHigh()) + "/" + Long.toHexString(value.revisionLow());
       }
       heartbeat = value;
-      heartbeatTimestamp = captureTimestamp(sample, true).orElse(Double.NEGATIVE_INFINITY);
+      heartbeatTimestamp = captureTimestamp(sample).orElse(Double.NEGATIVE_INFINITY);
     }
     var names = cameraNames.get();
     if (!Arrays.equals(names, registeredCameras)) {

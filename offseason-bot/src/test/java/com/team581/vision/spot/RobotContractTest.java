@@ -369,20 +369,17 @@ final class RobotContractTest {
   }
 
   @Test
-  void timestampDomainsHandleSentinelsAndRejectUnverifiedClientEpoch() {
+  void timestampDomainsHandleSentinels() {
     var remote = new TimestampedRaw(10_050_000, 10_050_000, new byte[0]);
-    assertThat(SpotVisionIO.captureTimestamp(remote, true).orElseThrow()).isEqualTo(10.05);
+    assertThat(SpotVisionIO.captureTimestamp(remote).orElseThrow()).isEqualTo(10.05);
     for (long sentinel : ImmutableList.of(0L, 1L)) {
       assertThat(
-              SpotVisionIO.captureTimestamp(
-                      new TimestampedRaw(10_050_000, sentinel, new byte[0]), true)
+              SpotVisionIO.captureTimestamp(new TimestampedRaw(10_050_000, sentinel, new byte[0]))
                   .orElseThrow())
           .isEqualTo(10.05);
     }
-    assertThat(SpotVisionIO.captureTimestamp(remote, false)).isEmpty();
     assertThat(
-            SpotVisionIO.captureTimestamp(
-                    new TimestampedRaw(10_050_000, 99_000_000, new byte[0]), true)
+            SpotVisionIO.captureTimestamp(new TimestampedRaw(10_050_000, 99_000_000, new byte[0]))
                 .orElseThrow())
         .isEqualTo(99.);
   }
