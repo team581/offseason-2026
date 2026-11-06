@@ -3,6 +3,7 @@ package frc.robot.shooter;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.sim.ChassisReference;
@@ -17,6 +18,8 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.RollerUtil;
@@ -63,10 +66,15 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private final TalonFX rightMotor;
 
   private final VelocityTorqueCurrentFOC velocityRequest = new VelocityTorqueCurrentFOC(0);
+  private final VelocityVoltage voltageVelocityRequest =
+      new VelocityVoltage(0).withLimitReverseMotion(true).withEnableFOC(false);
   private final StatusSignal<AngularVelocity> leftVelocitySignal;
   private final StatusSignal<AngularVelocity> rightVelocitySignal;
   private final StatusSignal<Current> leftSupplyCurrentSignal;
   private final StatusSignal<Current> rightSupplyCurrentSignal;
+
+  private final StatusSignal<Voltage> rightMotorVoltageSignal;
+  private final StatusSignal<Current> rightStatorCurrentSignal;
 
   private double leftSupplyCurrent = 0;
   private double rightSupplyCurrent = 0;
@@ -96,7 +104,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     super(SubsystemPriority.SHOOTER, ShooterState.IDLE);
 
     leftMotor.getConfigurator().apply(ShooterConfig.LEFT_MOTOR_CONFIG);
-    rightMotor.getConfigurator().apply(ShooterConfig.RIGHT_MOTOR_CONFIG);
+    DogLog.log(
+        "Shooter/Right/ConfigurationStatus",
+        rightMotor.getConfigurator().apply(ShooterConfig.RIGHT_MOTOR_CONFIG).toString());
+    DogLog.log("Shooter/Right/DeviceId", rightMotor.getDeviceID());
+    DogLog.log("Shooter/Right/CanBus", rightMotor.getNetwork().getName());
 
     TunablePid.register("Shooter/Left", leftMotor, ShooterConfig.LEFT_MOTOR_CONFIG);
     TunablePid.register("Shooter/Right", rightMotor, ShooterConfig.RIGHT_MOTOR_CONFIG);
@@ -112,7 +124,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
 
     Signals.forDevice(leftMotor).addSignals(leftVelocitySignal, leftSupplyCurrentSignal);
-    Signals.forDevice(rightMotor).addSignals(rightVelocitySignal, rightSupplyCurrentSignal);
+    rightMotorVoltageSignal = rightMotor.getMotorVoltage(false);
+    rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
+    Signals.forDevice(rightMotor)
+        .addSignals(
+            rightVelocitySignal,
+            rightSupplyCurrentSignal,
+            rightMotorVoltageSignal,
+            rightStatorCurrentSignal);
   }
 
   @Override
@@ -202,6 +221,16 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return isAtGoal(getState(), rightMotorRpm, shootingRpm, feedingRpm);
   }
 
+  private void setVelocity(double rotationsPerSecond, double simulationFeedForward) {
+    if (RobotBase.isSimulation()) {
+      rightMotor.setControl(
+          velocityRequest.withVelocity(rotationsPerSecond).withFeedForward(simulationFeedForward));
+    } else {
+      // Beta's gains are voltage-based. Do not apply the old torque-current boost as volts.
+      rightMotor.setControl(voltageVelocityRequest.withVelocity(rotationsPerSecond));
+    }
+  }
+
   private void updateRpmTargets() {
     shootingRpm =
         MathUtil.clamp(distanceToScoringRpm(scoreDistance), 0.0, ShooterConfig.MAX_SAFE_RPM);
@@ -228,6 +257,9 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
     leftMotorRpm = leftVelocitySignal.getValueAsDouble() * 60.0;
     rightMotorRpm = rightVelocitySignal.getValueAsDouble() * 60.0;
+    DogLog.log("Shooter/Right/VelocityStatus", rightVelocitySignal.getStatus().toString());
+    DogLog.log("Shooter/Right/MotorVoltage", rightMotorVoltageSignal.getValueAsDouble());
+    DogLog.log("Shooter/Right/StatorCurrent", rightStatorCurrentSignal.getValueAsDouble());
 
     leftSupplyCurrent = leftSupplyCurrentSignal.getValueAsDouble();
     rightSupplyCurrent = rightSupplyCurrentSignal.getValueAsDouble();
@@ -261,13 +293,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/Right/RPM", rightMotorRpm);
     // Undo Phoenix feedback scaling to recover motor RPS before applying physical gearing.
     DogLog.log(
-        "Shooter/Left/SurfaceSpeedMetersPerSecond",
+        "Shooter/LeftSurfaceSpeedMetersPerSecond",
         RollerUtil.surfaceSpeedMetersPerSecond(
             leftMotorRpm / 60.0 * ShooterConfig.LEFT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
             ShooterConfig.ROLLER_DIAMETER_METERS,
             ShooterConfig.MOTOR_TO_ROLLER_RATIO));
     DogLog.log(
-        "Shooter/Right/SurfaceSpeedMetersPerSecond",
+        "Shooter/RightSurfaceSpeedMetersPerSecond",
         RollerUtil.surfaceSpeedMetersPerSecond(
             rightMotorRpm / 60.0 * ShooterConfig.RIGHT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio,
             ShooterConfig.ROLLER_DIAMETER_METERS,
@@ -283,19 +315,17 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     switch (state) {
       case IDLE -> {
         var setpoint = ShooterConfig.IDLE_RPM / 60.0;
-        rightMotor.setControl(velocityRequest.withVelocity(setpoint).withFeedForward(0.0));
+        setVelocity(setpoint, 0.0);
         DogLog.log("Shooter/RpmSetpoint", ShooterConfig.IDLE_RPM);
       }
       case PREPARE_SCORE, SCORE -> {
         var setpoint = shootingRpm / 60.0;
-        rightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
+        setVelocity(setpoint, initialFeedForward);
         DogLog.log("Shooter/RpmSetpoint", shootingRpm);
       }
       case PREPARE_FEED, FEED -> {
         var setpoint = feedingRpm / 60.0;
-        rightMotor.setControl(
-            velocityRequest.withVelocity(setpoint).withFeedForward(initialFeedForward));
+        setVelocity(setpoint, initialFeedForward);
         DogLog.log("Shooter/RpmSetpoint", feedingRpm);
       }
     }

@@ -70,20 +70,20 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     var floorLimits =
         ConveyorConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
     motor.getConfigurator().apply(floorLimits);
-    DogLog.log("Conveyor/Floor/SupplyLimitAmps", floorLimits.SupplyCurrentLimit);
-    DogLog.log("Conveyor/Floor/StatorLimitAmps", floorLimits.StatorCurrentLimit);
+    DogLog.log("Floor/SupplyLimitAmps", floorLimits.SupplyCurrentLimit);
+    DogLog.log("Floor/StatorLimitAmps", floorLimits.StatorCurrentLimit);
     var tunnelTopLimits =
         ConveyorConfig.TUNNEL_TOP_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
             supplyCurrentLimit);
     tunnelTopMotor.getConfigurator().apply(tunnelTopLimits);
-    DogLog.log("Conveyor/TunnelTop/SupplyLimitAmps", tunnelTopLimits.SupplyCurrentLimit);
-    DogLog.log("Conveyor/TunnelTop/StatorLimitAmps", tunnelTopLimits.StatorCurrentLimit);
+    DogLog.log("Tunnel/Top/SupplyLimitAmps", tunnelTopLimits.SupplyCurrentLimit);
+    DogLog.log("Tunnel/Top/StatorLimitAmps", tunnelTopLimits.StatorCurrentLimit);
     var tunnelBottomLimits =
         ConveyorConfig.TUNNEL_BOTTOM_MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(
             supplyCurrentLimit);
     tunnelBottomMotor.getConfigurator().apply(tunnelBottomLimits);
-    DogLog.log("Conveyor/TunnelBottom/SupplyLimitAmps", tunnelBottomLimits.SupplyCurrentLimit);
-    DogLog.log("Conveyor/TunnelBottom/StatorLimitAmps", tunnelBottomLimits.StatorCurrentLimit);
+    DogLog.log("Tunnel/Bottom/SupplyLimitAmps", tunnelBottomLimits.SupplyCurrentLimit);
+    DogLog.log("Tunnel/Bottom/StatorLimitAmps", tunnelBottomLimits.StatorCurrentLimit);
   }
 
   public void ballFillingRequest() {
@@ -132,14 +132,12 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Conveyor/Floor/SupplyVoltage", supplyVoltageSignal.getValueAsDouble());
-    DogLog.log("Conveyor/Floor/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
-    DogLog.log("Conveyor/TunnelTop/SupplyVoltage", tunnelTopSupplyVoltageSignal.getValueAsDouble());
-    DogLog.log(
-        "Conveyor/TunnelBottom/SupplyVoltage", tunnelBottomSupplyVoltageSignal.getValueAsDouble());
-    DogLog.log("Conveyor/TunnelTop/SupplyCurrent", tunnelTopSupplyCurrentSignal.getValueAsDouble());
-    DogLog.log(
-        "Conveyor/TunnelBottom/SupplyCurrent", tunnelBottomSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Floor/SupplyVoltage", supplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Floor/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Tunnel/Top/SupplyVoltage", tunnelTopSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Tunnel/Bottom/SupplyVoltage", tunnelBottomSupplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Tunnel/Top/SupplyCurrent", tunnelTopSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Tunnel/Bottom/SupplyCurrent", tunnelBottomSupplyCurrentSignal.getValueAsDouble());
 
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double velocityRps = velocitySignal.getValueAsDouble();
@@ -151,9 +149,27 @@ public class Conveyor extends StateMachineSubsystem<ConveyorState> implements Po
     double tunnelTopVelocityRps = tunnelTopVelocitySignal.getValueAsDouble();
     double tunnelBottomVelocityRps = tunnelBottomVelocitySignal.getValueAsDouble();
 
-    DogLog.log("Conveyor/Floor/VelocityRPM", velocityRps * 60.0);
-    DogLog.log("Conveyor/Floor/SurfaceSpeedMetersPerSecond", surfaceSpeedMetersPerSecond);
-    DogLog.log("Conveyor/TunnelTop/VelocityRPM", tunnelTopVelocityRps * 60.0);
-    DogLog.log("Conveyor/TunnelBottom/VelocityRPM", tunnelBottomVelocityRps * 60.0);
+    DogLog.log("Floor/VelocityRPM", velocityRps * 60.0);
+    DogLog.log("Floor/SurfaceSpeedMetersPerSecond", surfaceSpeedMetersPerSecond);
+    DogLog.log("Tunnel/Top/VelocityRPM", tunnelTopVelocityRps * 60.0);
+    DogLog.log("Tunnel/Bottom/VelocityRPM", tunnelBottomVelocityRps * 60.0);
+    double metersPerRevolution = ConveyorConfig.TUNNEL_METERS_PER_PULLEY_REVOLUTION.get();
+    boolean surfaceSpeedCalibrated =
+        Double.isFinite(metersPerRevolution) && metersPerRevolution > 0.0;
+    DogLog.log("Tunnel/SurfaceSpeedCalibrated", surfaceSpeedCalibrated);
+    DogLog.log(
+        "Tunnel/TopSurfaceSpeedMetersPerSecond",
+        surfaceSpeedCalibrated
+            ? tunnelTopVelocityRps
+                / ConveyorConfig.TUNNEL_MOTOR_TO_PULLEY_RATIO
+                * metersPerRevolution
+            : Double.NaN);
+    DogLog.log(
+        "Tunnel/BottomSurfaceSpeedMetersPerSecond",
+        surfaceSpeedCalibrated
+            ? tunnelBottomVelocityRps
+                / ConveyorConfig.TUNNEL_MOTOR_TO_PULLEY_RATIO
+                * metersPerRevolution
+            : Double.NaN);
   }
 }

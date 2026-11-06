@@ -1,6 +1,8 @@
 package frc.robot.funneler;
 
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.util.Units;
 
 public class FunnelerConfig {
@@ -9,5 +11,7 @@ public class FunnelerConfig {
 
   public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(2.0);
 
-  public static TalonFXConfiguration MOTOR_CONFIG = new TalonFXConfiguration();
+  public static TalonFXConfiguration MOTOR_CONFIG =
+      new TalonFXConfiguration()
+          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 }

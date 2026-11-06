@@ -51,8 +51,8 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
   public void applyCurrentLimits(double supplyCurrentLimit) {
     var limits = FeederConfig.MOTOR_CONFIG.CurrentLimits.withSupplyCurrentLimit(supplyCurrentLimit);
     motor.getConfigurator().apply(limits);
-    DogLog.log("Feeder/Motor/SupplyLimitAmps", limits.SupplyCurrentLimit);
-    DogLog.log("Feeder/Motor/StatorLimitAmps", limits.StatorCurrentLimit);
+    DogLog.log("Feeder/SupplyLimitAmps", limits.SupplyCurrentLimit);
+    DogLog.log("Feeder/StatorLimitAmps", limits.StatorCurrentLimit);
   }
 
   public void ballFillingRequest() {
@@ -103,16 +103,16 @@ public class Feeder extends StateMachineSubsystem<FeederState> implements PowerM
 
   @Override
   protected void collectInputs() {
-    DogLog.log("Feeder/Motor/SupplyVoltage", supplyVoltageSignal.getValueAsDouble());
-    DogLog.log("Feeder/Motor/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Feeder/SupplyVoltage", supplyVoltageSignal.getValueAsDouble());
+    DogLog.log("Feeder/SupplyCurrent", supplyCurrentSignal.getValueAsDouble());
 
     // Use raw motor rotations/sec so feedback scaling cannot apply gearing twice.
     double velocityRps = velocitySignal.getValueAsDouble();
     surfaceSpeedMetersPerSecond =
         RollerUtil.surfaceSpeedMetersPerSecond(
             velocityRps, FeederConfig.ROLLER_DIAMETER_METERS, FeederConfig.MOTOR_TO_ROLLER_RATIO);
-    DogLog.log("Feeder/Motor/VelocityRPM", velocityRps * 60.0);
-    DogLog.log("Feeder/Motor/SurfaceSpeedMetersPerSecond", surfaceSpeedMetersPerSecond);
+    DogLog.log("Feeder/VelocityRPM", velocityRps * 60.0);
+    DogLog.log("Feeder/SurfaceSpeedMetersPerSecond", surfaceSpeedMetersPerSecond);
 
     statorCurrent = statorCurrentSignal.getValueAsDouble();
     emptyDebouncer.setDebounceTime(FeederConfig.EMPTY_DEBOUNCE_SECONDS.get());

@@ -155,9 +155,9 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
             IntakeConfig.MOTOR_TO_ROLLER_RATIO);
 
     DogLog.log("Intake/Left/VelocityRPM", leftVelocityRps * 60.0);
-    DogLog.log("Intake/Left/SurfaceSpeedMetersPerSecond", leftSurfaceSpeedMetersPerSecond);
+    DogLog.log("Intake/LeftSurfaceSpeedMetersPerSecond", leftSurfaceSpeedMetersPerSecond);
     DogLog.log("Intake/Right/VelocityRPM", rightVelocityRps * 60.0);
-    DogLog.log("Intake/Right/SurfaceSpeedMetersPerSecond", rightSurfaceSpeedMetersPerSecond);
+    DogLog.log("Intake/RightSurfaceSpeedMetersPerSecond", rightSurfaceSpeedMetersPerSecond);
 
     DogLog.log("Intake/Left/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/Right/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());

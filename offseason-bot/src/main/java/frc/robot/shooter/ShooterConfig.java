@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolynomialRegression;
@@ -28,14 +29,14 @@ public class ShooterConfig {
   public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(4.0);
   public static final double MOTOR_TO_ROLLER_RATIO = 1.0;
 
-  public static final double RPM_TOLERANCE = 50.0;
+  public static final double RPM_TOLERANCE = 150.0;
   public static final double RPM_TOLERANCE_ACTIVELY_SHOOTING = 300.0;
 
-  public static final double RPM_TOLERANCE_FEEDING = 500.0;
+  public static final double RPM_TOLERANCE_FEEDING = 1000.0;
 
   public static final double GP_DETECT_CURRENT_THRESHOLD = 70.0;
 
-  public static final double IDLE_RPM = 750;
+  public static final double IDLE_RPM = 400;
 
   public static final double PIT_FUNCTIONALITY_RPM = 800;
 
@@ -45,19 +46,20 @@ public class ShooterConfig {
 
   public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(0.0, 0.0, Rotation2d.k180deg);
 
+  // Shot tables and real voltage gains from beta-bot competition configuration (6645bd8d^).
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreRPM",
-          Map.entry(4.92, 1900.0),
-          Map.entry(3.46, 1610.0),
-          Map.entry(2.79, 1560.0),
-          Map.entry(1.42, 1350.0));
+          Map.entry(5.9, 2350.0),
+          Map.entry(3.94, 1950.0),
+          Map.entry(2.82, 1800.0),
+          Map.entry(1.76, 1550.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
-          Map.entry(6.0, 1500.0),
+          Map.entry(6.0, 2000.0),
           Map.entry(8.71, 2300.0),
-          Map.entry(13.6, 2500.0));
+          Map.entry(13.6, 5000.0));
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
@@ -67,13 +69,13 @@ public class ShooterConfig {
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToScoreToF",
           // near
-          Map.entry(1.36, 1.017),
+          Map.entry(1.36, 0.8916666667),
           // tower
-          Map.entry(2.42, 1.233),
+          Map.entry(2.42, 1.063636364),
           // trench
-          Map.entry(3.54, 1.148),
+          Map.entry(3.54, 1.161904762),
           // corner
-          Map.entry(5.5, 1.348));
+          Map.entry(5.5, 1.248484848));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEED_TOF =
       TunableInterpolatingDoubleTreeMap.ofEntries(
@@ -95,7 +97,7 @@ public class ShooterConfig {
           .withSlot0(
               RobotBase.isSimulation()
                   ? SIM_GAINS.clone()
-                  : new Slot0Configs().withKP(0.0).withKV(0.0));
+                  : new Slot0Configs().withKP(0.4).withKV(0.12));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
@@ -103,7 +105,7 @@ public class ShooterConfig {
           .withSlot0(
               RobotBase.isSimulation()
                   ? SIM_GAINS.clone()
-                  : new Slot0Configs().withKP(0).withKS(0).withKV(0));
+                  : new Slot0Configs().withKP(0.55).withKV(0.127));
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
       DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
@@ -166,12 +168,16 @@ public class ShooterConfig {
             new CurrentLimitsConfigs()
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimitEnable(true)
-                .withStatorCurrentLimit(150)
-                .withSupplyCurrentLimit(25))
+                .withStatorCurrentLimit(100)
+                .withSupplyCurrentLimit(100))
+        .withVoltage(
+            RobotBase.isSimulation()
+                ? new VoltageConfigs()
+                : new VoltageConfigs().withPeakReverseVoltage(0))
         .withTorqueCurrent(
             new TorqueCurrentConfigs()
                 .withPeakForwardTorqueCurrent(200)
-                .withPeakReverseTorqueCurrent(-200));
+                .withPeakReverseTorqueCurrent(RobotBase.isSimulation() ? -200 : 0));
   }
 
   private ShooterConfig() {}

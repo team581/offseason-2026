@@ -17,14 +17,14 @@ import frc.robot.config.RobotKind;
 
 public class DeployConfig {
   // Arm angle: fully down is zero, positive angles raise/collapse the intake.
-  public static final double FULL_SWEEP_DEGREES = 88.4;
+  public static final double FULL_SWEEP_DEGREES = 75.585;
   public static final double MOTOR_TO_ARM_RATIO = 36.57;
   // Starting estimate for bringup; tune the collapsed endpoint on the robot.
-  public static final double COLLAPSED_ANGLE_DEGREES = 88.4;
+  public static final double COLLAPSED_ANGLE_DEGREES = 75.585;
   public static final double HOMING_END_POSITION_INWARD = COLLAPSED_ANGLE_DEGREES;
   public static final double HOMING_END_POSITION_OUTWARD = 0.0;
   public static final double MIN_ANGLE = 0.0;
-  public static final double MAX_ANGLE = COLLAPSED_ANGLE_DEGREES;
+  public static final double MAX_ANGLE = COLLAPSED_ANGLE_DEGREES - 20.0;
   // Motor feedback remains positive toward deployment. Account for the down pose's physical
   // angle from horizontal separately from the zero-based public arm angle.
   private static final double DOWN_GRAVITY_OFFSET_ROTATIONS =
@@ -36,9 +36,9 @@ public class DeployConfig {
   public static final double RECOVERY_TIMEOUT_SECONDS = 5.0;
   public static final double MAX_RECOVERY_DESYNC_DEGREES = 15.0;
 
-  public static final double HOMING_VOLTAGE_INWARD = 2;
+  public static final double HOMING_VOLTAGE_INWARD = -2;
 
-  public static final double HOMING_VOLTAGE_OUTWARD = -4;
+  public static final double HOMING_VOLTAGE_OUTWARD = 4;
   public static final double HOMING_CURRENT = 20.0;
   public static final double HOMING_CURRENT_OUTWARD = 35.0;
   public static final double POSITION_TOLERANCE = 2.0;
@@ -54,7 +54,7 @@ public class DeployConfig {
 
   private static final Slot0Configs AVERAGE_GAINS =
       new Slot0Configs()
-          .withKP(0.0)
+          .withKP(100.0)
           .withKI(0)
           .withKD(0.0)
           // Keep gravity compensation at zero until measured on the physical arm.
@@ -67,12 +67,12 @@ public class DeployConfig {
 
   // Difference axis gains typically go in Slot 1
   private static final Slot1Configs DIFFERENCE_GAINS =
-      new Slot1Configs().withKP(0.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+      new Slot1Configs().withKP(50.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   // Difference axis slot 2 for the operator desync override; average stays on slot 0.
   // Tune during bringup.
   private static final Slot2Configs DIFFERENCE_GAINS_FIX_DESYNC =
-      new Slot2Configs().withKP(0.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
+      new Slot2Configs().withKP(50.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()

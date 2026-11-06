@@ -52,6 +52,8 @@ flowchart LR
 
 - CANivore Bus (`581CANivore`): conveyor ID 18, tunnel top ID 20, tunnel bottom ID 21
 - Open-loop voltage control with FOC
+- Telemetry is grouped under `Floor/` and `Tunnel/`; shared state and voltage requests remain under `Conveyor/`.
+- Tunnel surface speeds are directly under `Tunnel/TopSurfaceSpeedMetersPerSecond` and `Tunnel/BottomSurfaceSpeedMetersPerSecond`. Set `Tunnel/MetersPerPulleyRevolution` to measured belt travel per drive-pulley revolution; until configured, speeds are NaN and `Tunnel/SurfaceSpeedCalibrated` is false.
 - Mechanically pivot upward when deploy retracts
 - Mechanisms:
   - **Floor**: 1 Kraken X60, 1.5" rollers + cat tongue, Ratio `(14/60)*(16/18)*(16/20)*(17/20)^2` (~8.35:1 reduction)
@@ -134,10 +136,10 @@ flowchart LR
 ## Shooter
 
 - CANivore Bus (`581CANivore`), 2 Talon FXs (left 23, right 24); right leads, left follows opposed. IDs 25 and 26 are unassigned.
-- Velocity Torque Current FOC control loop
-- Apply a timed initial feedforward boost when scoring or feeding (0.7 seconds with a full hopper, 0.1 seconds otherwise)
+- Velocity Voltage control on hardware (FOC disabled), using beta competition-bot gains.
+- Simulation retains its Torque Current FOC gains and timed initial feedforward boost. The current-based boost is not applied to the voltage request on hardware.
 - States:
-  - `IDLE`: ~750 RPM
+  - `IDLE`: ~400 RPM
   - `PREPARE_SCORE` / `SCORE`: Distance-based RPM setpoint
   - `PREPARE_FEED` / `FEED`: Distance-based RPM setpoint
 
@@ -238,3 +240,21 @@ Deploy average gains remain under `Deploy/Left` and `Deploy/Right`. Difference
 axis gains are exposed under `Deploy/Left/Slot1`, `Deploy/Right/Slot1` (normal
 synchronization) and `Deploy/Left/Slot2`, `Deploy/Right/Slot2` (desync override).
 Each exposes kP, kI, kD, kS, kV, kA, and kG; tune both motors consistently.
+
+## Beta tuning baseline
+
+Copied the competition configuration from `beta-bot` at `6645bd8d^` (the last
+revision before that project was removed): shooter voltage PID/feedforward,
+scoring and feeding RPM/hood tables, time of flight, idle RPM, preparation/feeding
+tolerances, turret voltage PID/feedforward and voltage limits, hood PID/current
+limits and tolerance, and intake stator current limits. Shooter current limits
+and reverse-output limits also follow beta; PowerManager still applies its
+state-dependent supply limits.
+
+Offseason gear ratios, motor directions, CAN mapping, travel limits, homing,
+geometry, swerve settings, simulation gains, and opposed shooter follower remain
+unchanged. The active-scoring RPM tolerance remains 300 RPM. Beta's linear deploy
+used different feedback units and voltage control, so its gains and motion limits
+were not copied to the offseason rotating arm. Beta's dye rotor and climber have
+no corresponding offseason mechanisms. These copied values are a hardware tuning
+baseline; the simulation tests do not validate physical tuning on the new robot.
