@@ -164,7 +164,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     available = health.available() && configured > 0;
     unavailableReason = health.reason();
     boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
-    io.setFusionEnabled(fusion);
     if (!fusion) queue.clearPending();
     long allowedTags = SpotProtocol.tagMask(selection.allowedTagIds(), profile.field());
     for (var sample : inputs.samples()) {
@@ -182,7 +181,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               : !matchingPolicy
                   ? VisionProcessor.Decision.reject(VisionProcessor.Reason.TAG_POLICY)
                   : processor.process(sample, now);
-      io.reportDecision(sample, decision);
       boolean accepted = decision.reason() == VisionProcessor.Reason.ACCEPTED;
       boolean operational =
           accepted
@@ -338,7 +336,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void measurementFused(VisionMeasurement value) {
     if (!eligible(value, now)) return;
     offered.remove(value.frameId());
-    io.measurementFused(value);
     var previous = cameras.get(value.source());
     if (previous != null)
       cameras.put(
@@ -418,7 +415,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       DogLog.log(path + "/LastFusedFpgaS", value.lastFused());
       DogLog.log(path + "/LastObservationFpgaS", value.lastObservation());
     }
-    io.publishDecisions(now);
+    io.logDiagnostics(now);
   }
 
   private List<Integer> broadTags() {

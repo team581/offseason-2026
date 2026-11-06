@@ -1,6 +1,5 @@
 package frc.robot;
 
-import com.team581.Base581Robot;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
@@ -8,9 +7,16 @@ import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
-import com.team581.util.profiling.LoopTiming;
+import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.event.BooleanEvent;
+import edu.wpi.first.wpilibj.event.EventLoop;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
 import frc.robot.config.FeatureFlags;
@@ -34,7 +40,12 @@ import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
 
-public class Robot extends Base581Robot {
+// Not using base robot so we can tweak stuff for better memory usage
+public class Robot extends TimedRobot {
+  private final EventLoop buttonBindingsLoop = new EventLoop();
+  private final BooleanEvent enabledEvent =
+      new BooleanEvent(buttonBindingsLoop, DriverStation::isEnabled);
+
   private final Hardware hardware = new Hardware();
   private final Limelight shooterLimelight =
       new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
@@ -104,42 +115,55 @@ public class Robot extends Base581Robot {
   private final Autos autos = new Autos(robotManager, trailblazer);
 
   public Robot() {
+    DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
+    RobotController.setBrownoutVoltage(5.5);
     DiagnosticCadence.setEnabled(true);
-    LoopTiming.setEnabled(true);
 
-    logMetadata(
-        BuildConstants.MAVEN_NAME,
-        BuildConstants.BUILD_DATE,
-        BuildConstants.GIT_SHA,
-        BuildConstants.GIT_DATE,
-        BuildConstants.GIT_BRANCH,
-        BuildConstants.DIRTY);
+    DogLog.log("Metadata/RoborioSerialNumber", RobotController.getSerialNumber());
+    DogLog.log("Metadata/ProjectName", BuildConstants.MAVEN_NAME);
+    DogLog.log("Metadata/BuildDate", BuildConstants.BUILD_DATE);
+    DogLog.log("Metadata/GitSHA", BuildConstants.GIT_SHA);
+    DogLog.log("Metadata/GitDate", BuildConstants.GIT_DATE);
+    DogLog.log("Metadata/GitBranch", BuildConstants.GIT_BRANCH);
+    switch (BuildConstants.DIRTY) {
+      case 0 -> DogLog.log("Metadata/GitDirty", "All changes committed");
+      case 1 -> DogLog.log("Metadata/GitDirty", "Uncommitted changes");
+      default -> DogLog.log("Metadata/GitDirty", "Unknown");
+    }
 
     // Reuse the SwerveDriveState from Swerve for IMU
     imu.setDriveStateSupplier(swerve::getDriveState);
 
-    finalizeInit();
+    configureBindings();
   }
 
   @Override
   public void robotPeriodic() {
     DiagnosticCadence.beginLoop();
-    LoopTiming.recordClockOverhead();
-    long loopStart = LoopTiming.start();
 
-    super.robotPeriodic();
+    DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
+    DogLog.time("Scheduler/TimeSinceLastLoop");
+
+    DogLog.time("Scheduler/ButtonBindingsLoop");
+    buttonBindingsLoop.poll();
+    DogLog.timeEnd("Scheduler/ButtonBindingsLoop");
+
+    SubsystemExecutionSequencer.periodic();
+
+    if (DriverStation.isDisabled() && RobotController.getBatteryVoltage() < 12.5) {
+      DogLog.logFault("Battery voltage low", AlertType.kWarning);
+    } else {
+      DogLog.clearFault("Battery voltage low");
+    }
 
     if (FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() && !FmsUtil.isRedAlliance()) {
       DogLog.logFault("Clamped auto points are enabled but current alliance is blue");
     } else {
       DogLog.clearFault("Clamped auto points are enabled but current alliance is blue");
     }
-
-    LoopTiming.end("Scheduler/RobotPeriodicExecution", loopStart);
   }
 
-  @Override
-  protected void configureBindings() {
+  private void configureBindings() {
     var driver =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
     var operator =

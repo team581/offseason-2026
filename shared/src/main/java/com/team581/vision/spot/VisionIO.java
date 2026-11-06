@@ -1,7 +1,6 @@
 package com.team581.vision.spot;
 
 import com.team581.vision.spot.data.*;
-import com.team581.vision.spot.results.VisionMeasurement;
 import com.team581.vision.spot.structs.FrameResult;
 import java.util.HexFormat;
 import java.util.List;
@@ -41,17 +40,11 @@ public interface VisionIO extends AutoCloseable {
     return java.util.Optional.empty();
   }
 
-  default void measurementFused(VisionMeasurement measurement) {}
-
-  default void publishDecisions(double now) {}
+  default void logDiagnostics(double now) {}
 
   Inputs readInputs(double nowFpgaSeconds);
 
-  default void reportDecision(Sample sample, VisionProcessor.Decision decision) {}
-
   default void reset(double nowFpgaSeconds) {}
-
-  default void setFusionEnabled(boolean enabled) {}
 
   default void setTagSelection(TagSelection selection) {}
 }

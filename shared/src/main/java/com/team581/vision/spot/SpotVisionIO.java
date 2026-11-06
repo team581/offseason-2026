@@ -1,7 +1,6 @@
 package com.team581.vision.spot;
 
 import com.team581.vision.spot.data.*;
-import com.team581.vision.spot.results.VisionMeasurement;
 import com.team581.vision.spot.structs.*;
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.*;
@@ -14,8 +13,6 @@ import java.util.OptionalDouble;
 
 /** Robot defaults go out as typed keys; observations and diagnostics use structs. */
 public final class SpotVisionIO implements VisionIO {
-  private record DecisionStatus(RobotDecision value, String frameId) {}
-
   public static final String ROOT = "/Spot";
 
   public static OptionalDouble captureTimestamp(TimestampedRaw sample, boolean onRobotServer) {
@@ -37,8 +34,6 @@ public final class SpotVisionIO implements VisionIO {
   private final StructBuffer<Heartbeat> healthBuffer = StructBuffer.create(Heartbeat.struct);
   private final Map<String, RawSubscriber> cameras = new HashMap<>();
   private final Map<String, StructSubscriber<CameraSettings>> settings = new HashMap<>();
-  private final Map<String, StructPublisher<RobotDecision>> decisionPublishers = new HashMap<>();
-  private final Map<String, DecisionStatus> decisions = new HashMap<>();
   private Heartbeat heartbeat = new Heartbeat(0, 0, false);
   private double heartbeatTimestamp = Double.NEGATIVE_INFINITY;
   private String generation = "";
@@ -47,9 +42,8 @@ public final class SpotVisionIO implements VisionIO {
   private long droppedObservations;
   private String lastRejection = "None";
   private TagSelection selection;
-  private boolean fusionEnabled;
   private boolean closed;
-  private double lastDecisionPublish = Double.NEGATIVE_INFINITY;
+  private double lastDiagnostics = Double.NEGATIVE_INFINITY;
 
   public SpotVisionIO(NetworkTableInstance instance, Profile profile, String cameraConfig) {
     this.instance = instance;
@@ -79,7 +73,6 @@ public final class SpotVisionIO implements VisionIO {
     errorSubscriber.close();
     cameras.values().forEach(RawSubscriber::close);
     settings.values().forEach(StructSubscriber::close);
-    decisionPublishers.values().forEach(StructPublisher::close);
   }
 
   @Override
@@ -87,53 +80,19 @@ public final class SpotVisionIO implements VisionIO {
     return java.util.Optional.of(profile);
   }
 
-  public long malformedCount() {
-    return malformed;
-  }
-
   @Override
-  public void measurementFused(VisionMeasurement measurement) {
-    decisions.computeIfPresent(
-        measurement.source(),
-        (name, status) -> {
-          if (!status.frameId().equals(measurement.frameId())) return status;
-          var value = status.value();
-          return new DecisionStatus(
-              new RobotDecision(
-                  value.captureHigh(),
-                  value.captureLow(),
-                  value.sequence(),
-                  value.captureFpgaS(),
-                  value.reason(),
-                  true,
-                  fusionEnabled),
-              status.frameId());
-        });
-  }
-
-  @Override
-  public void publishDecisions(double now) {
-    if (now - lastDecisionPublish < 1.) return;
-    lastDecisionPublish = now;
+  public void logDiagnostics(double now) {
+    if (now - lastDiagnostics < 1.) return;
+    lastDiagnostics = now;
     DogLog.log("Vision/Spot/Transport/DroppedObservations", droppedObservations);
     DogLog.log("Vision/Spot/Transport/MalformedPackets", malformed);
     DogLog.log("Vision/Spot/Transport/LastRejection", lastRejection);
     DogLog.log("Vision/Spot/Transport/HealthReason", health(now).reason());
     DogLog.log("Vision/Spot/Transport/Error", errorSubscriber.get());
-    for (var entry : decisions.entrySet()) {
-      var value = entry.getValue().value();
-      decisionPublishers
-          .get(entry.getKey())
-          .set(
-              new RobotDecision(
-                  value.captureHigh(),
-                  value.captureLow(),
-                  value.sequence(),
-                  value.captureFpgaS(),
-                  value.reason(),
-                  value.fused(),
-                  fusionEnabled));
-    }
+  }
+
+  public long malformedCount() {
+    return malformed;
   }
 
   @Override
@@ -168,38 +127,14 @@ public final class SpotVisionIO implements VisionIO {
   }
 
   @Override
-  public void reportDecision(Sample sample, VisionProcessor.Decision decision) {
-    var frame = sample.frame();
-    decisions.put(
-        sample.cameraName(),
-        new DecisionStatus(
-            new RobotDecision(
-                frame.captureHigh(),
-                frame.captureLow(),
-                frame.sequence(),
-                sample.captureFpgaSeconds(),
-                decision.reason().code(),
-                false,
-                fusionEnabled),
-            decision.measurement().map(VisionMeasurement::frameId).orElse("")));
-  }
-
-  @Override
   public void reset(double timestamp) {
     resetTimestamp = timestamp;
-    decisions.clear();
     cameras.values().forEach(RawSubscriber::readQueue);
-  }
-
-  @Override
-  public void setFusionEnabled(boolean enabled) {
-    fusionEnabled = enabled;
   }
 
   @Override
   public void setTagSelection(TagSelection value) {
     selection = value;
-    decisions.clear();
   }
 
   private Health health(double now) {
@@ -215,11 +150,8 @@ public final class SpotVisionIO implements VisionIO {
   private void registerCameras(String[] names) {
     cameras.values().forEach(RawSubscriber::close);
     settings.values().forEach(StructSubscriber::close);
-    decisionPublishers.values().forEach(StructPublisher::close);
     cameras.clear();
     settings.clear();
-    decisionPublishers.clear();
-    decisions.clear();
     var policies = new ArrayList<CameraPolicy>();
     for (var name : names) {
       policies.add(new CameraPolicy(name, false, false));
@@ -240,11 +172,6 @@ public final class SpotVisionIO implements VisionIO {
           instance
               .getStructTopic(path + "/settings", CameraSettings.struct)
               .subscribe(new CameraSettings(false, false)));
-      decisionPublishers.put(
-          name,
-          instance
-              .getStructTopic(path + "/decision", RobotDecision.struct)
-              .publish(PubSubOption.periodic(1.0)));
     }
     profile =
         new Profile(
@@ -284,7 +211,6 @@ public final class SpotVisionIO implements VisionIO {
           || value.revisionLow() != heartbeat.revisionLow()) {
         generation =
             Long.toHexString(value.revisionHigh()) + "/" + Long.toHexString(value.revisionLow());
-        decisions.clear();
       }
       heartbeat = value;
       heartbeatTimestamp = captureTimestamp(sample, true).orElse(Double.NEGATIVE_INFINITY);

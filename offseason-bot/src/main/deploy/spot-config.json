@@ -2,11 +2,9 @@
   "cameras": [
     {
       "image_rotation_deg": 0,
-      "timestamp_qualification": null,
       "controls": [],
       "name": "left",
       "allowed_modes": [{
-        "optical_signature": "capture-v1-640x480-30-MJPEG",
         "pixel_format": "MJPEG",
         "width": 640,
         "fps": 30,
@@ -14,13 +12,12 @@
         "height": 480
       }],
       "robot_to_camera": {
-        "y_m": 0.3802994934,
-        "qw": 0.696364240320019,
-        "x_m": -0.06865619999999999,
-        "qx": 0.12278780396897282,
-        "qy": -0.12278780396897285,
-        "z_m": 0.3395876622,
-        "qz": 0.6963642403200189
+        "pitch_deg": -20,
+        "y_m": 0.380299,
+        "x_m": -0.068656,
+        "roll_deg": 0,
+        "yaw_deg": 90,
+        "z_m": 0.339588
       },
       "calibration": null,
       "detector": {
@@ -33,11 +30,9 @@
     },
     {
       "image_rotation_deg": 0,
-      "timestamp_qualification": null,
       "controls": [],
       "name": "right",
       "allowed_modes": [{
-        "optical_signature": "capture-v1-640x480-30-MJPEG",
         "pixel_format": "MJPEG",
         "width": 640,
         "fps": 30,
@@ -45,13 +40,12 @@
         "height": 480
       }],
       "robot_to_camera": {
+        "pitch_deg": -20,
         "y_m": -0.378714,
-        "qw": 0.696364240320019,
         "x_m": -0.17145,
-        "qx": -0.12278780396897282,
-        "qy": -0.12278780396897285,
-        "z_m": 0.3170682,
-        "qz": -0.6963642403200189
+        "roll_deg": 0,
+        "yaw_deg": -90,
+        "z_m": 0.317068
       },
       "calibration": null,
       "detector": {
@@ -64,11 +58,9 @@
     },
     {
       "image_rotation_deg": 0,
-      "timestamp_qualification": null,
       "controls": [],
       "name": "back",
       "allowed_modes": [{
-        "optical_signature": "capture-v1-640x480-30-MJPEG",
         "pixel_format": "MJPEG",
         "width": 640,
         "fps": 30,
@@ -76,13 +68,12 @@
         "height": 480
       }],
       "robot_to_camera": {
+        "pitch_deg": -20,
         "y_m": 0.08255,
-        "qw": 6.030208312509488E-17,
         "x_m": -0.318389,
-        "qx": 0.17364817766693033,
-        "qy": -1.0632884247878856E-17,
-        "z_m": 0.3424682,
-        "qz": 0.984807753012208
+        "roll_deg": 0,
+        "yaw_deg": 180,
+        "z_m": 0.342468
       },
       "calibration": null,
       "detector": {
@@ -94,6 +85,7 @@
       "binding_id": ""
     }
   ],
+  "$schema": "https://spot.frc581.com/spot-config.schema.json",
   "processing": {
     "utilization_budget": 0.8,
     "max_fps": 30

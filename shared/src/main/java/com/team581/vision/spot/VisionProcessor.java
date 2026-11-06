@@ -44,7 +44,8 @@ public final class VisionProcessor {
       double innovationSigma,
       double maxZErrorM,
       double maxTiltErrorRad,
-      double maxTimestampUncertaintyS) {
+      // Residual capture-time error after Spot's latency correction; robot-only.
+      double timestampUncertaintyS) {
     public static Policy conservative() {
       // Engineering defaults, requiring held-out robot trials. Heading remains
       // suppressed with a large finite deviation supported by CTRE's interface.
@@ -57,37 +58,28 @@ public final class VisionProcessor {
           10.0,
           .5,
           Math.toRadians(30),
-          .02);
+          .005);
     }
   }
 
   public enum Reason {
-    ACCEPTED(0),
-    NO_TAGS(1),
-    CONFIGURATION(2),
-    CALIBRATION(3),
-    TIMESTAMP(4),
-    STALE(5),
-    FUTURE(6),
-    DUPLICATE(7),
-    RESET(8),
-    MALFORMED(9),
-    HISTORY(10),
-    FIELD_BOUNDS(11),
-    ROBOT_TILT(12),
-    AMBIGUOUS(13),
-    RESIDUAL(14),
-    INNOVATION(15),
-    TAG_POLICY(16);
-    private final int code;
-
-    Reason(int code) {
-      this.code = code;
-    }
-
-    public int code() {
-      return code;
-    }
+    ACCEPTED,
+    NO_TAGS,
+    CONFIGURATION,
+    CALIBRATION,
+    TIMESTAMP,
+    STALE,
+    FUTURE,
+    DUPLICATE,
+    RESET,
+    MALFORMED,
+    HISTORY,
+    FIELD_BOUNDS,
+    ROBOT_TILT,
+    AMBIGUOUS,
+    RESIDUAL,
+    INNOVATION,
+    TAG_POLICY
   }
 
   private record RecoveryEvidence(Pose2d correction, double start, double last, int count) {}
@@ -199,12 +191,8 @@ public final class VisionProcessor {
     lastTimestamp.put(sample.cameraName(), timestamp);
     if (!frame.calibrationValid()) return Decision.reject(Reason.CALIBRATION);
     var policy = this.policy.get();
-    double timeUncertainty = frame.timestampUncertainty();
-    if (!Double.isFinite(timeUncertainty)
-        || timeUncertainty <= 0
-        || timeUncertainty > policy.maxTimestampUncertaintyS()
-        || frame.timestampSource() < 1
-        || frame.timestampSource() > 3) {
+    double timeUncertainty = policy.timestampUncertaintyS();
+    if (frame.timestampSource() < 1 || frame.timestampSource() > 3) {
       return Decision.reject(Reason.TIMESTAMP);
     }
     if (frame.candidateCount() == 0) {

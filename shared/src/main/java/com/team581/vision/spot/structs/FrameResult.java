@@ -15,7 +15,6 @@ public record FrameResult(
     long tagSelectionGeneration,
     long captureLocalNtUs,
     int timestampSource,
-    double timestampUncertainty,
     long observedTags,
     int candidateCount,
     Transform3d robotToCamera,
@@ -37,7 +36,6 @@ public record FrameResult(
           .addField("tagSelectionGeneration", "int64")
           .addField("captureLocalNtUs", "int64")
           .addField("timestampSource", "int32")
-          .addField("timestampUncertainty", "double")
           .addField("observedTags", "int64")
           .addField("candidateCount", "int32")
           .addField("robotToCamera", "Transform3d")
@@ -65,7 +63,7 @@ public record FrameResult(
 
         @Override
         public int getSize() {
-          return 385;
+          return 377;
         }
 
         @Override
@@ -93,7 +91,6 @@ public record FrameResult(
           buffer.putLong(value.tagSelectionGeneration());
           buffer.putLong(value.captureLocalNtUs());
           buffer.putInt(value.timestampSource());
-          buffer.putDouble(value.timestampUncertainty());
           buffer.putLong(value.observedTags());
           buffer.putInt(value.candidateCount());
           Transform3d.struct.pack(buffer, value.robotToCamera());
@@ -117,7 +114,6 @@ public record FrameResult(
               buffer.getLong(),
               buffer.getLong(),
               buffer.getInt(),
-              buffer.getDouble(),
               buffer.getLong(),
               buffer.getInt(),
               Transform3d.struct.unpack(buffer),

@@ -6,7 +6,10 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Spot parses camera defaults; the robot only forwards the deployed file. */
+/**
+ * Publishes what Spot reads: the deployed spot-config.json, forwarded unparsed, and the settings
+ * robot code shares with Spot. Robot-only settings such as fusion are never sent.
+ */
 final class SpotConfigPublisher implements AutoCloseable {
   private static final String ROOT = "/Spot/Config/";
   private final NetworkTableInstance nt;
@@ -15,11 +18,8 @@ final class SpotConfigPublisher implements AutoCloseable {
   SpotConfigPublisher(NetworkTableInstance nt, Profile profile, String cameraConfig) {
     this.nt = nt;
     text("cameraConfig", cameraConfig);
-    flag("fusionEnabled", profile.fusionEnabled());
-    flag("headingEnabled", profile.headingEnabled());
     number("maxAgeS", profile.maxAgeS());
     number("futureToleranceS", profile.futureToleranceS());
-    number("reorderWindowS", profile.reorderWindowS());
     text("Field/origin", profile.field().origin());
     number("Field/lengthM", profile.field().lengthM());
     number("Field/widthM", profile.field().widthM());
@@ -41,12 +41,6 @@ final class SpotConfigPublisher implements AutoCloseable {
         throw new IllegalStateException(exception);
       }
     }
-  }
-
-  private void flag(String key, boolean value) {
-    var publisher = nt.getBooleanTopic(ROOT + key).publish();
-    publishers.add(publisher);
-    publisher.set(value);
   }
 
   private void number(String key, double value) {

@@ -48,8 +48,6 @@ import java.util.Optional;
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
   private static final double DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES = 10.0;
-  private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
-      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
@@ -146,12 +144,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private Rotation2d scoringAngleRotation = Rotation2d.kZero;
   private double scoringTolerance = 0.0;
 
-  private double scoringFeedForward = 0.0;
   private double feedingAngle = 0.0;
   private Rotation2d feedingAngleRotation = Rotation2d.kZero;
   private double feedingTolerance = 0.0;
 
-  private double feedingFeedForward = 0.0;
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
 
@@ -161,9 +157,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
 
   private boolean ableToXSwerve = false;
-
-  private boolean driverWantsSotm = false;
-  private boolean driverStillDecidingSotm = false;
 
   public Swerve(
       TunerSwerveDrivetrain drivetrain,
@@ -255,58 +248,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     };
   }
 
-  public boolean atGoal(double lookaheadTime) {
-    switch (getState()) {
-      case WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {}
-      default -> {
-        return atGoal();
-      }
-    }
-
-    Rotation2d currentRotation = drivetrainState.Pose.getRotation();
-    double angularVelocity = drivetrainState.Speeds.omegaRadiansPerSecond; // Radians per second
-
-    var targetAngleDegrees = getTargetAngleDegrees();
-    var toleranceDegrees = getToleranceDegrees();
-
-    Rotation2d targetRotation = Rotation2d.fromDegrees(targetAngleDegrees);
-
-    // Calculate the shortest signed angular distance from current to target
-    double deltaAngleToGoal = targetRotation.minus(currentRotation).getRadians(); // Radians
-
-    // If already within tolerance, we are at the goal
-    if (MathUtil.isNear(0, deltaAngleToGoal, Math.toRadians(toleranceDegrees))) {
-      return true;
-    }
-
-    // Check if we are moving towards the goal and will reach or pass it
-    // Moving towards if the signs of angularVelocity and deltaAngleToGoal are the same
-    // (or if one is zero, but deltaAngleToGoal is not zero here)
-    if (Math.signum(angularVelocity) == Math.signum(deltaAngleToGoal)) {
-      // Calculate the magnitude of rotation in lookahead time
-      double rotationMagnitudeInLookahead = Math.abs(angularVelocity * lookaheadTime);
-
-      // We reach or pass if the rotation magnitude is greater than or equal to the remaining
-      // distance
-      // (minus tolerance, since we just need to get within tolerance of the goal)
-      return rotationMagnitudeInLookahead
-          >= (Math.abs(deltaAngleToGoal) - Math.toRadians(toleranceDegrees));
-    }
-
-    // If not at goal, not moving towards it, or not reaching it, then not at or past
-    return false;
-  }
-
   public void climbAssistDriveRequest() {
     setStateFromRequest(SwerveState.CLIMB_ASSIST);
-  }
-
-  public boolean driverStillDecidingSotm() {
-    return driverStillDecidingSotm;
-  }
-
-  public boolean driverWantsSotm() {
-    return driverWantsSotm;
   }
 
   public void feedRequest(AimingParameters feedingParameters) {
@@ -314,7 +257,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     feedingTolerance =
         MathUtil.clamp(
             feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.FEED);
   }
 
@@ -334,12 +276,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return robotRelativeSpeeds;
   }
 
-  public boolean isMovingBeyondSafeSpeed() {
-    var currentSpeeds = getFieldRelativeSpeeds();
-
-    return MathHelpers.getLinearVelocity(currentSpeeds) > currentMaxLinearRate;
-  }
-
   public boolean isNear(double angle, double tolerance) {
     return MathUtil.isNear(
         drivetrainState.Pose.getRotation().getDegrees(), angle, tolerance, -180.0, 180.0);
@@ -354,7 +290,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     scoringTolerance =
         MathUtil.clamp(
             scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.SCORE);
   }
 
@@ -382,7 +317,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     feedingTolerance =
         MathUtil.clamp(
             feedingParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    feedingFeedForward = feedingParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.WARMUP_FEED);
   }
 
@@ -391,7 +325,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     scoringTolerance =
         MathUtil.clamp(
             scoringParameters.swerveTolerance(), MIN_AIMED_TOLERANCE, Double.POSITIVE_INFINITY);
-    scoringFeedForward = scoringParameters.swerveFeedForwardRadians();
     setStateFromRequest(SwerveState.WARMUP_SCORE);
   }
 
@@ -446,11 +379,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 DogLog.timestamp("Swerve/TryingToAim");
                 drivetrain.setControl(
                     withFieldRelativeTargetDirection(
-                            drivePerspectiveSnaps
-                                .withVelocityX(speeds.vxMetersPerSecond)
-                                .withVelocityY(speeds.vyMetersPerSecond),
-                            scoringAngleRotation)
-                        .withTargetRateFeedforward(scoringFeedForward));
+                        drivePerspectiveSnaps
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        scoringAngleRotation));
               }
             }
             case FIELD_CENTRIC_CLOSED_LOOP -> {
@@ -459,8 +391,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   fieldCentricSnaps
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
-                      .withTargetDirection(scoringAngleRotation)
-                      .withTargetRateFeedforward(scoringFeedForward));
+                      .withTargetDirection(scoringAngleRotation));
             }
           }
         }
@@ -486,11 +417,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 DogLog.timestamp("Swerve/TryingToAim");
                 drivetrain.setControl(
                     withFieldRelativeTargetDirection(
-                            drivePerspectiveSnaps
-                                .withVelocityX(speeds.vxMetersPerSecond)
-                                .withVelocityY(speeds.vyMetersPerSecond),
-                            feedingAngleRotation)
-                        .withTargetRateFeedforward(feedingFeedForward));
+                        drivePerspectiveSnaps
+                            .withVelocityX(speeds.vxMetersPerSecond)
+                            .withVelocityY(speeds.vyMetersPerSecond),
+                        feedingAngleRotation));
               }
             }
             case FIELD_CENTRIC_CLOSED_LOOP -> {
@@ -499,8 +429,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   fieldCentricSnaps
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
-                      .withTargetDirection(feedingAngleRotation)
-                      .withTargetRateFeedforward(feedingFeedForward));
+                      .withTargetDirection(feedingAngleRotation));
             }
           }
         }
@@ -565,26 +494,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       }
       DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
       DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
-
-      DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
-      DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
     }
-  }
-
-  private double getTargetAngleDegrees() {
-    return switch (getState()) {
-      case WARMUP_SCORE, SCORE -> scoringAngle;
-      case WARMUP_FEED, FEED -> feedingAngle;
-      default -> 0.0;
-    };
-  }
-
-  private double getToleranceDegrees() {
-    return switch (getState()) {
-      case WARMUP_SCORE, SCORE -> scoringTolerance;
-      case WARMUP_FEED, FEED -> useLooseTolerance ? LOOSE_TOLERANCE : feedingTolerance;
-      default -> 0.0;
-    };
   }
 
   private void setFeedingAngle(double angleDegrees) {
@@ -653,16 +563,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
-
-    var requestedSpeeds = driveSource.getRequestedSpeeds();
-    var movingInScoreOrFeed =
-        MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
-            && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
-    var usingTeleopDrive =
-        driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
-    var sotmDelayElapsed = timeout(DRIVER_WANTS_SOTM_DELAY.get());
-    driverWantsSotm = (sotmDelayElapsed && movingInScoreOrFeed) || !usingTeleopDrive;
-    driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
 
     switch (getState()) {
       case SCORE -> {

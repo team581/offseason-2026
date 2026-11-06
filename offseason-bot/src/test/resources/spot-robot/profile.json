@@ -1,7 +1,6 @@
 {"profile": {
   "cameras": [{
     "image_rotation_deg": 0,
-    "timestamp_qualification": null,
     "controls": [
       {
         "name": "gain",
@@ -18,7 +17,6 @@
     ],
     "name": "front",
     "allowed_modes": [{
-      "optical_signature": "fixed-lens-1",
       "pixel_format": "MJPEG",
       "width": 640,
       "fps": 30,
@@ -26,13 +24,12 @@
       "height": 480
     }],
     "robot_to_camera": {
+      "pitch_deg": 0,
       "y_m": 0,
-      "qw": 1,
       "x_m": 0.2,
-      "qx": 0,
-      "qy": 0,
-      "z_m": 0.5,
-      "qz": 0
+      "roll_deg": 0,
+      "yaw_deg": 0,
+      "z_m": 0.5
     },
     "calibration": null,
     "detector": {
@@ -76,10 +73,11 @@
       }
     ]
   },
-  "heading_enabled": false,
   "future_tolerance_s": 0.005,
-  "processing": {},
+  "processing": {
+    "utilization_budget": 0.8,
+    "max_fps": 30
+  },
   "max_age_s": 0.25,
-  "reorder_window_s": 0.02,
-  "fusion_enabled": false
+  "latency_ms": 5
 }}

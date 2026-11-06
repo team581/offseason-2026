@@ -19,7 +19,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import java.util.Map;
 
@@ -116,9 +115,6 @@ public class ShooterConfig {
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
       DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
-  // Calculated from average of CAPIN logs
-  public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
-      DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.15);
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {
@@ -135,17 +131,6 @@ public class ShooterConfig {
 
   public static Pose2d getShooterPose(Pose2d robot) {
     return robot.plus(SHOOTER_TO_ROBOT);
-  }
-
-  public static ChassisSpeeds getShooterSpeeds(ChassisSpeeds robotSpeeds, double robotHeading) {
-    var angularVelocity = robotSpeeds.omegaRadiansPerSecond;
-    Translation2d fieldRelativeOffset =
-        SHOOTER_TO_ROBOT.getTranslation().rotateBy(Rotation2d.fromDegrees(robotHeading));
-    var shooterSwingX = -angularVelocity * fieldRelativeOffset.getY();
-    var shooterSwingY = angularVelocity * fieldRelativeOffset.getX();
-    var shooterTotalVelocityX = robotSpeeds.vxMetersPerSecond + shooterSwingX;
-    var shooterTotalVelocityY = robotSpeeds.vyMetersPerSecond + shooterSwingY;
-    return new ChassisSpeeds(shooterTotalVelocityX, shooterTotalVelocityY, angularVelocity);
   }
 
   private static TalonFXConfiguration createMotorConfig() {

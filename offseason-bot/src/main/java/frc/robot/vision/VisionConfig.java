@@ -4,11 +4,11 @@ import com.team581.util.AprilTags;
 import com.team581.vision.spot.SpotProtocol;
 import com.team581.vision.spot.data.*;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
 
-/** Robot-owned field geometry and fusion policy. */
+/**
+ * Vision settings robot code reads: the field layout and observation limits it shares with Spot,
+ * robot-only fusion policy, and the spot-config.json it forwards to Spot without parsing.
+ */
 public final class VisionConfig {
   public static final boolean FUSION_ENABLED = true;
   public static final double TAG_SIZE_M = .1651;
@@ -22,14 +22,6 @@ public final class VisionConfig {
     } catch (java.io.IOException exception) {
       throw new java.io.UncheckedIOException("Cannot read Spot configuration: " + path, exception);
     }
-  }
-
-  /** NWU: +X forward, +Y left, +Z up; right-handed roll, pitch, yaw in degrees. */
-  public static Transform3d mount(
-      double xM, double yM, double zM, double rollDeg, double pitchDeg, double yawDeg) {
-    return new Transform3d(
-        new Translation3d(xM, yM, zM),
-        new Rotation3d(Math.toRadians(rollDeg), Math.toRadians(pitchDeg), Math.toRadians(yawDeg)));
   }
 
   public static Profile profile() {
