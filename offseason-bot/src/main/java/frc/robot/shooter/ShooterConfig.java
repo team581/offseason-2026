@@ -26,6 +26,17 @@ import frc.robot.config.FeatureFlags;
 import java.util.Map;
 
 public class ShooterConfig {
+  // Beta competition configuration (6645bd8d^); retained for hardware self-tests.
+  public static final double SELF_TEST_LEFT_MOTOR_EXPECTED_RPM = 2500;
+  public static final double SELF_TEST_LEFT_MOTOR_RPM_TOLERANCE = 250;
+  public static final double SELF_TEST_LEFT_MOTOR_EXPECTED_CURRENT = 10.0;
+  public static final double SELF_TEST_LEFT_MOTOR_CURRENT_TOLERANCE = 5;
+
+  public static final double SELF_TEST_RIGHT_MOTOR_EXPECTED_RPM = 2500;
+  public static final double SELF_TEST_RIGHT_MOTOR_RPM_TOLERANCE = 250;
+  public static final double SELF_TEST_RIGHT_MOTOR_EXPECTED_CURRENT = 10.0;
+  public static final double SELF_TEST_RIGHT_MOTOR_CURRENT_TOLERANCE = 5;
+
   public static final double ROLLER_DIAMETER_METERS = Units.inchesToMeters(4.0);
   public static final double MOTOR_TO_ROLLER_RATIO = 1.0;
 

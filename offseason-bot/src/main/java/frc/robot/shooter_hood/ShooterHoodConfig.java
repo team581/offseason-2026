@@ -20,14 +20,13 @@ public class ShooterHoodConfig {
    * This is the effective angle of the shooter hood relative to the floor when the shooter hood is
    * fully retracted.
    */
-  public static final double ANGLE_FROM_HORIZONTAL = 11;
+  public static final double ANGLE_FROM_HORIZONTAL = 21.4;
 
-  // 33 is max without top rollers touching
-  public static final double MAX_ANGLE = ANGLE_FROM_HORIZONTAL + 34.0;
-  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 2.0;
+  // Mechanical calibration from beta-bot competition configuration (6645bd8d^).
+  public static final double MAX_ANGLE = 43.0;
+  public static final double MIN_ANGLE = ANGLE_FROM_HORIZONTAL + 1.0;
   public static final double IDLE_ANGLE = ANGLE_FROM_HORIZONTAL + 2.0;
 
-  // TODO: Update Homing numbers
   public static final double HOMING_VOLTAGE = -1;
   public static final double HOMING_CURRENT_THRESHOLD = 10;
   public static final double HOMING_END_POSITION = ANGLE_FROM_HORIZONTAL;
@@ -41,7 +40,7 @@ public class ShooterHoodConfig {
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
           .withFeedback(
-              new FeedbackConfigs().withSensorToMechanismRatio(1 / ((8.0 / 62.0) * (10.0 / 154.0))))
+              new FeedbackConfigs().withSensorToMechanismRatio((336.0 * 42.0) / (14.0 * 8.0)))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(20).withSupplyCurrentLimit(10))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))

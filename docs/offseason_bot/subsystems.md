@@ -108,7 +108,8 @@ flowchart LR
 ## Shooter Hood
 
 - CANivore Bus (`581CANivore`), 1 Talon FX (ID 22)
-- Control exit angle relative to horizontal (~11° base, 13° to 45° travel)
+- Control exit angle relative to horizontal (21.4° base, 22.4° to 43° travel; beta/SVR calibration)
+- Hood gear ratio: `126:1`; idle angle: 23.4°.
 - Position Voltage control loop
 - States:
   - `UNHOMED`
@@ -251,9 +252,13 @@ limits and tolerance, and intake stator current limits. Shooter current limits
 and reverse-output limits also follow beta; PowerManager still applies its
 state-dependent supply limits.
 
-Offseason gear ratios, motor directions, CAN mapping, travel limits, homing,
-geometry, swerve settings, simulation gains, and opposed shooter follower remain
-unchanged. The active-scoring RPM tolerance remains 300 RPM. Beta's linear deploy
+The shooter assembly is assumed identical to beta/SVR: hood ratio (126:1),
+base/homing angle (21.4°), travel limits (22.4°–43°), and idle angle (23.4°) also
+match beta. Shooter motor-output configuration retains the offseason settings
+(left clockwise-positive, right counterclockwise-positive, default neutral mode). Beta's shooter self-test constants are retained;
+the old self-test framework is not ported. Other offseason mechanisms' gear ratios,
+motor directions, travel limits and homing remain unchanged, as do CAN mapping,
+robot geometry, swerve settings, simulation gains, and the opposed shooter follower. The active-scoring RPM tolerance remains 300 RPM. Beta's linear deploy
 used different feedback units and voltage control, so its gains and motion limits
 were not copied to the offseason rotating arm. Beta's dye rotor and climber have
 no corresponding offseason mechanisms. These copied values are a hardware tuning
