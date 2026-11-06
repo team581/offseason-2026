@@ -34,8 +34,6 @@ final class VisionIntegrationTest {
     int reads, closed;
     Runnable duringRead = () -> {};
     final List<Sample> samples = new ArrayList<>();
-    final List<VisionMeasurement> fused = new ArrayList<>();
-    final List<VisionProcessor.Reason> reasons = new ArrayList<>();
 
     @Override
     public void close() {
@@ -48,11 +46,6 @@ final class VisionIntegrationTest {
     }
 
     @Override
-    public void measurementFused(VisionMeasurement value) {
-      fused.add(value);
-    }
-
-    @Override
     public Inputs readInputs(double now) {
       reads++;
       duringRead.run();
@@ -60,11 +53,6 @@ final class VisionIntegrationTest {
           new Inputs(new Health(available, available ? "Ready" : "Offline", generation), samples);
       samples.clear();
       return result;
-    }
-
-    @Override
-    public void reportDecision(Sample sample, VisionProcessor.Decision decision) {
-      reasons.add(decision.reason());
     }
 
     @Override
@@ -196,6 +184,10 @@ final class VisionIntegrationTest {
       io.samples.add(new VisionIO.Sample(camera, frame, capture));
     }
 
+    VisionProcessor.Reason reason(String camera) {
+      return VisionProcessor.Reason.valueOf(vision.getStatus().cameras().get(camera).reason());
+    }
+
     void tick(double now) {
       time = now;
       vision.collectInputs();
@@ -248,7 +240,8 @@ final class VisionIntegrationTest {
         f.vision.measurementFused(value);
         f.vision.measurementFused(value);
       }
-      assertThat(f.io.fused).hasSize(4);
+      assertThat(f.vision.getStatus().cameras().values())
+          .allSatisfy(c -> assertThat(c.lastFused()).isEqualTo(10.01));
       int reads = f.io.reads;
       assertThat(f.vision.getStatus().allRequiredHealthy()).isTrue();
       f.vision.getStatus();
@@ -297,12 +290,11 @@ final class VisionIntegrationTest {
       f.io.duringRead = () -> f.time += .030;
       f.frame("front", 0, f.time + .010);
       f.vision.collectInputs();
-      assertThat(f.io.reasons).containsExactly(VisionProcessor.Reason.NO_TAGS);
+      assertThat(f.reason("front")).isEqualTo(VisionProcessor.Reason.NO_TAGS);
       // A genuinely future timestamp still fails the unchanged tolerance gate.
       f.frame("front", 0, f.time + .100);
       f.vision.collectInputs();
-      assertThat(f.io.reasons.get(f.io.reasons.size() - 1))
-          .isEqualTo(VisionProcessor.Reason.FUTURE);
+      assertThat(f.reason("front")).isEqualTo(VisionProcessor.Reason.FUTURE);
     }
   }
 
@@ -318,8 +310,8 @@ final class VisionIntegrationTest {
       f.frame("front", 20, 10.09); // current generation with forbidden candidate
       f.frame("left", 2, 10.09, 1); // in-flight previous policy
       f.tick(10.12);
-      assertThat(f.io.reasons.subList(f.io.reasons.size() - 2, f.io.reasons.size()))
-          .containsExactly(VisionProcessor.Reason.TAG_POLICY, VisionProcessor.Reason.TAG_POLICY);
+      assertThat(f.reason("front")).isEqualTo(VisionProcessor.Reason.TAG_POLICY);
+      assertThat(f.reason("left")).isEqualTo(VisionProcessor.Reason.TAG_POLICY);
       f.tick(10.59);
       assertThat(f.vision.getState()).isEqualTo(VisionState.WAITING_FOR_HUB_TAGS);
     }
@@ -447,11 +439,12 @@ final class VisionIntegrationTest {
       f.vision.reset(10.16);
       assertThat(f.vision.eligible(value, 10.16)).isFalse();
       f.vision.measurementFused(value);
-      assertThat(f.io.fused).isEmpty();
+      assertThat(f.vision.getStatus().cameras().get("front").lastFused())
+          .isNotEqualTo(value.timestamp());
       f.frame("front", 1, 10.15);
       f.tick(10.18);
       assertThat(f.vision.drainMeasurements()).isEmpty();
-      assertThat(f.io.reasons).contains(VisionProcessor.Reason.RESET);
+      assertThat(f.reason("front")).isEqualTo(VisionProcessor.Reason.RESET);
     }
   }
 

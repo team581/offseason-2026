@@ -63,32 +63,23 @@ public final class VisionProcessor {
   }
 
   public enum Reason {
-    ACCEPTED(0),
-    NO_TAGS(1),
-    CONFIGURATION(2),
-    CALIBRATION(3),
-    TIMESTAMP(4),
-    STALE(5),
-    FUTURE(6),
-    DUPLICATE(7),
-    RESET(8),
-    MALFORMED(9),
-    HISTORY(10),
-    FIELD_BOUNDS(11),
-    ROBOT_TILT(12),
-    AMBIGUOUS(13),
-    RESIDUAL(14),
-    INNOVATION(15),
-    TAG_POLICY(16);
-    private final int code;
-
-    Reason(int code) {
-      this.code = code;
-    }
-
-    public int code() {
-      return code;
-    }
+    ACCEPTED,
+    NO_TAGS,
+    CONFIGURATION,
+    CALIBRATION,
+    TIMESTAMP,
+    STALE,
+    FUTURE,
+    DUPLICATE,
+    RESET,
+    MALFORMED,
+    HISTORY,
+    FIELD_BOUNDS,
+    ROBOT_TILT,
+    AMBIGUOUS,
+    RESIDUAL,
+    INNOVATION,
+    TAG_POLICY
   }
 
   private record RecoveryEvidence(Pose2d correction, double start, double last, int count) {}
