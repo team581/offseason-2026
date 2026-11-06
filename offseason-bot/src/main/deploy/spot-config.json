@@ -2,15 +2,37 @@
   "cameras": [
     {
       "image_rotation_deg": 0,
-      "controls": [],
+      "controls": [
+        {
+          "name": "auto_exposure",
+          "allow_override": true,
+          "default_value": 1,
+          "required": false
+        },
+        {
+          "name": "exposure_time_absolute",
+          "allow_override": true,
+          "default_value": 6000,
+          "required": false
+        }
+      ],
       "name": "left",
-      "allowed_modes": [{
-        "pixel_format": "MJPEG",
-        "width": 640,
-        "fps": 30,
-        "id": "capture-640x480-30-MJPEG",
-        "height": 480
-      }],
+      "allowed_modes": [
+        {
+          "pixel_format": "MJPEG",
+          "width": 640,
+          "fps": 120,
+          "id": "640x480-120-MJPEG",
+          "height": 480
+        },
+        {
+          "pixel_format": "MJPEG",
+          "width": 640,
+          "fps": 30,
+          "id": "capture-640x480-30-MJPEG",
+          "height": 480
+        }
+      ],
       "robot_to_camera": {
         "pitch_deg": -20,
         "y_m": 0.380299,
@@ -26,19 +48,41 @@
       },
       "required": true,
       "enabled": true,
-      "binding_id": ""
+      "binding_id": "5216694efb9e968fcea7ea244234361795b984c8a063ad84e64c485fbe131d41"
     },
     {
       "image_rotation_deg": 0,
-      "controls": [],
+      "controls": [
+        {
+          "name": "auto_exposure",
+          "allow_override": true,
+          "default_value": 1,
+          "required": false
+        },
+        {
+          "name": "exposure_time_absolute",
+          "allow_override": true,
+          "default_value": 6000,
+          "required": false
+        }
+      ],
       "name": "right",
-      "allowed_modes": [{
-        "pixel_format": "MJPEG",
-        "width": 640,
-        "fps": 30,
-        "id": "capture-640x480-30-MJPEG",
-        "height": 480
-      }],
+      "allowed_modes": [
+        {
+          "pixel_format": "MJPEG",
+          "width": 640,
+          "fps": 120,
+          "id": "640x480-120-MJPEG",
+          "height": 480
+        },
+        {
+          "pixel_format": "MJPEG",
+          "width": 640,
+          "fps": 30,
+          "id": "capture-640x480-30-MJPEG",
+          "height": 480
+        }
+      ],
       "robot_to_camera": {
         "pitch_deg": -20,
         "y_m": -0.378714,
@@ -47,26 +91,132 @@
         "yaw_deg": -90,
         "z_m": 0.317068
       },
-      "calibration": null,
+      "calibration": {
+        "mode_signature": "640x480-120-MJPG",
+        "image_rotation_deg": 0,
+        "intrinsics": {
+          "coverage": 0.45218535297565327,
+          "provisional": false,
+          "method": "charuco",
+          "camera_matrix": [
+            [
+              483.88491184025906,
+              0,
+              317.21924295163484
+            ],
+            [
+              0,
+              484.0609635967046,
+              229.6139649853779
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "rms_reprojection_error_px": 0.6121536906691766,
+          "calibrated_at": null,
+          "schema_version": 2,
+          "frames_used": 76,
+          "diversity": 1,
+          "reprojection_error_px": 0.6121536906691766,
+          "width": 640,
+          "model": "plumb_bob",
+          "board": {
+            "dictionary": "DICT_4X4_250",
+            "marker_length_m": 0.022,
+            "squares_y": 15,
+            "squares_x": 15,
+            "square_length_m": 0.03
+          },
+          "height": 480,
+          "distortion_coefficients": [
+            -0.09008365908050343,
+            0.11766416986235285,
+            -0.00006909192424976172,
+            0.0006376038435928551,
+            -0.10975139602898693
+          ]
+        },
+        "fit": {
+          "frames_used": 76,
+          "coverage": 0.45218535297565327,
+          "reason": "calibration passed",
+          "diversity": 1,
+          "accepted": true,
+          "rms_reprojection_error_px": 0.6121536906691766,
+          "rejected_frames": 1
+        },
+        "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
+        "identity": "d360ce9690a6ac13e833aa6d32fccd2cda720c36c89c37eff97fa741059d6829",
+        "optical_controls": {},
+        "saved_at": null,
+        "model": "plumb_bob",
+        "id": "012f5358bf8e4aaeb87e26aaf30d0229",
+        "holdout": {
+          "reason": "Validation passed",
+          "rms_px": 0.6353478572721696,
+          "limit_px": 0.8,
+          "accepted": true,
+          "views": 20
+        },
+        "board": {
+          "dictionary": "DICT_4X4_250",
+          "marker_length_m": 0.022,
+          "squares_y": 15,
+          "squares_x": 15,
+          "square_length_m": 0.03
+        },
+        "algorithm": "charuco-fit-holdout-v2"
+      },
       "detector": {
         "max_hamming": 2,
         "backend": "cuda"
       },
       "required": true,
       "enabled": true,
-      "binding_id": ""
+      "binding_id": "d360ce9690a6ac13e833aa6d32fccd2cda720c36c89c37eff97fa741059d6829"
     },
     {
       "image_rotation_deg": 0,
-      "controls": [],
+      "controls": [
+        {
+          "name": "auto_exposure",
+          "allow_override": true,
+          "default_value": 1,
+          "required": false
+        },
+        {
+          "name": "exposure_time_absolute",
+          "allow_override": true,
+          "default_value": 5000,
+          "required": false
+        },
+        {
+          "name": "gain",
+          "allow_override": true,
+          "default_value": 20,
+          "required": false
+        }
+      ],
       "name": "back",
-      "allowed_modes": [{
-        "pixel_format": "MJPEG",
-        "width": 640,
-        "fps": 30,
-        "id": "capture-640x480-30-MJPEG",
-        "height": 480
-      }],
+      "allowed_modes": [
+        {
+          "pixel_format": "MJPEG",
+          "width": 640,
+          "fps": 120,
+          "id": "640x480-120-MJPEG",
+          "height": 480
+        },
+        {
+          "pixel_format": "MJPEG",
+          "width": 640,
+          "fps": 30,
+          "id": "capture-640x480-30-MJPEG",
+          "height": 480
+        }
+      ],
       "robot_to_camera": {
         "pitch_deg": -20,
         "y_m": 0.08255,
@@ -75,19 +225,98 @@
         "yaw_deg": 180,
         "z_m": 0.342468
       },
-      "calibration": null,
+      "calibration": {
+        "mode_signature": "640x480-120-MJPG",
+        "image_rotation_deg": 0,
+        "intrinsics": {
+          "coverage": 0.37292847882991814,
+          "provisional": false,
+          "method": "charuco",
+          "camera_matrix": [
+            [
+              485.22714440524544,
+              0,
+              324.50469689213844
+            ],
+            [
+              0,
+              485.2050152053196,
+              207.89836185791006
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "rms_reprojection_error_px": 0.3706733892173063,
+          "calibrated_at": null,
+          "schema_version": 2,
+          "frames_used": 80,
+          "diversity": 1,
+          "reprojection_error_px": 0.3706733892173063,
+          "width": 640,
+          "model": "plumb_bob",
+          "board": {
+            "dictionary": "DICT_4X4_250",
+            "marker_length_m": 0.022,
+            "squares_y": 15,
+            "squares_x": 15,
+            "square_length_m": 0.03
+          },
+          "height": 480,
+          "distortion_coefficients": [
+            -0.09948349064143425,
+            0.13412293525870608,
+            -0.00017105212871407996,
+            -0.00030704710075745117,
+            -0.11360614859723724
+          ]
+        },
+        "fit": {
+          "frames_used": 80,
+          "coverage": 0.37292847882991814,
+          "reason": "calibration passed",
+          "diversity": 1,
+          "accepted": true,
+          "rms_reprojection_error_px": 0.3706733892173063,
+          "rejected_frames": 0
+        },
+        "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
+        "identity": "74eb3e275f38297abac27957344e1b6ddac6298fb358cc195561bd962dc37395",
+        "optical_controls": {},
+        "saved_at": null,
+        "model": "plumb_bob",
+        "id": "47cf3a4b43654155805670a423ffd772",
+        "holdout": {
+          "reason": "Validation passed",
+          "rms_px": 0.4735673396918115,
+          "limit_px": 0.8,
+          "accepted": true,
+          "views": 20
+        },
+        "board": {
+          "dictionary": "DICT_4X4_250",
+          "marker_length_m": 0.022,
+          "squares_y": 15,
+          "squares_x": 15,
+          "square_length_m": 0.03
+        },
+        "algorithm": "charuco-fit-holdout-v2"
+      },
       "detector": {
         "max_hamming": 2,
         "backend": "cuda"
       },
       "required": true,
       "enabled": true,
-      "binding_id": ""
+      "binding_id": "74eb3e275f38297abac27957344e1b6ddac6298fb358cc195561bd962dc37395"
     }
   ],
   "$schema": "https://spot.frc581.com/spot-config.schema.json",
   "processing": {
     "utilization_budget": 0.8,
     "max_fps": 30
-  }
+  },
+  "latency_ms": 5
 }
