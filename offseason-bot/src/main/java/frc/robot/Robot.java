@@ -96,7 +96,7 @@ public class Robot extends Base581Robot {
       new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
 
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
+  private final Deploy deploy = new Deploy(hardware.deployLeftMotor, hardware.deployRightMotor);
   private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final Conveyor conveyor =
       new Conveyor(hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor);
@@ -201,10 +201,5 @@ public class Robot extends Base581Robot {
           powerManager.idleRequest();
           shooter.setTurboMode(false);
         });
-
-    operator
-        .b()
-        .onPress(deploy::fixDifferentialDesyncRequest)
-        .onRelease(deploy::stopFixDifferentialDesyncRequest);
   }
 }

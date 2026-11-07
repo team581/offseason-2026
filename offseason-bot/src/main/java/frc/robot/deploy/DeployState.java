@@ -4,7 +4,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DeployState {
-  INTAKE(0.0),
+  INTAKE(-5.0),
   STOW(20),
   // Initial angle targets in degrees; tune during bringup.
   SCORE_COMPACTION_WAITING(19.3),
@@ -13,11 +13,9 @@ public enum DeployState {
 
   BEAST_MODE_COMPACTION(20),
 
-  FIX_DIFFERENTIAL_DESYNC(0.0),
-
   AUTO_INTAKE_DELAY(DeployConfig.HOMING_END_POSITION_INWARD),
   HOME_INWARD(DeployConfig.HOMING_END_POSITION_INWARD),
-  HOME_OUTWARD(0.0),
+  HOME_OUTWARD(-5.0),
   UNHOMED(DeployConfig.HOMING_END_POSITION_INWARD);
 
   private final DoubleSubscriber tunableAngle;

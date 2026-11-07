@@ -7,7 +7,6 @@ import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.Hardware;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
-import frc.robot.deploy.DeployState;
 import frc.robot.feeder.Feeder;
 import frc.robot.funneler.Funneler;
 import frc.robot.intake.Intake;
@@ -161,39 +160,6 @@ final class HopperManagerIntakeCoverageTest {
   }
 
   @Test
-  void operatorRecoverySurvivesHopperRequestsUntilReleased() throws ReflectiveOperationException {
-    deploy.homeInAutoRequest();
-    edu.wpi.first.wpilibj.simulation.DriverStationSim.setDsAttached(true);
-    edu.wpi.first.wpilibj.simulation.DriverStationSim.setAutonomous(false);
-    edu.wpi.first.wpilibj.simulation.DriverStationSim.setEnabled(true);
-    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
-    // This unit test starts after homing; simulate both motors contacting their stops.
-    for (String name : new String[] {"leftStatorCurrent", "rightStatorCurrent"}) {
-      var current = Deploy.class.getDeclaredField(name);
-      current.setAccessible(true);
-      current.setDouble(deploy, 30.0);
-    }
-    deploy.robotPeriodic();
-    edu.wpi.first.wpilibj.simulation.DriverStationSim.setEnabled(false);
-    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
-    assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
-    deploy.fixDifferentialDesyncRequest();
-    for (var state : HopperState.values()) {
-      hopperManager.afterTransition(state);
-      hopperManager.whileInState(state);
-      assertThat(deploy.getState())
-          .as("hopper state %s", state)
-          .isEqualTo(DeployState.FIX_DIFFERENTIAL_DESYNC);
-    }
-    deploy.stopFixDifferentialDesyncRequest();
-    assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
-    hopperManager.afterTransition(HopperState.IDLE_STOWED);
-    assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
-    deploy.stopFixDifferentialDesyncRequest();
-    assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
-  }
-
-  @Test
   void scoreAndIntakeCommandsIntakeIntake() {
     hopperManager.setDriverWantsIntake(true);
     hopperManager.scoreRequest();
@@ -231,7 +197,7 @@ final class HopperManagerIntakeCoverageTest {
 
   @BeforeEach
   void setUp() {
-    deploy = new Deploy(hardware.deployDifferentialMechanism);
+    deploy = new Deploy(hardware.deployLeftMotor, hardware.deployRightMotor);
     intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
     conveyor =
         new Conveyor(hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor);

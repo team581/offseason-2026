@@ -332,7 +332,7 @@ final class HopperManagerConveyorCoverageTest {
   void setUp() {
     deployFullyExtended = false;
     deploy =
-        new Deploy(hardware.deployDifferentialMechanism) {
+        new Deploy(hardware.deployLeftMotor, hardware.deployRightMotor) {
           @Override
           public boolean isFullyExtended() {
             return deployFullyExtended;

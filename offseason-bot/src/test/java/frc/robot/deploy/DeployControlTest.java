@@ -2,15 +2,10 @@ package frc.robot.deploy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.NeutralOut;
-import com.ctre.phoenix6.controls.compound.Diff_MotionMagicTorqueCurrentFOC_Position;
-import com.ctre.phoenix6.controls.compound.Diff_PositionTorqueCurrentFOC_Position;
-import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Open;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
-import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
@@ -21,30 +16,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 final class DeployControlTest {
-  private static DifferentialMechanism<TalonFX> mechanism;
+  private static TalonFX leftMotor;
+  private static TalonFX rightMotor;
 
   @AfterAll
   static void cleanup() {
     DriverStationSim.resetData();
     DriverStationSim.notifyNewData();
-    mechanism.getLeader().close();
-    mechanism.getFollower().close();
+    leftMotor.close();
+    rightMotor.close();
   }
 
   @BeforeAll
   static void setupHardware() {
     HAL.initialize(500, 0);
-    mechanism =
-        new DifferentialMechanism<>(
-            TalonFX::new,
-            new DifferentialMotorConstants<TalonFXConfiguration>()
-                .withLeaderId(55)
-                .withFollowerId(56)
-                .withCANBusName("sim")
-                .withAlignment(MotorAlignmentValue.Opposed)
-                .withLeaderInitialConfigs(DeployConfig.LEFT_MOTOR_CONFIG)
-                .withFollowerInitialConfigs(DeployConfig.RIGHT_MOTOR_CONFIG)
-                .withFollowerUsesCommonLeaderConfigs(true));
+    leftMotor = new TalonFX(55);
+    rightMotor = new TalonFX(56);
   }
 
   private Deploy deploy;
@@ -52,7 +39,7 @@ final class DeployControlTest {
   private void setAngles(double angle) throws Exception {
     setInput("leftMotorPosition", angle);
     setInput("rightMotorPosition", angle);
-    setInput("differentialMechanismPosition", angle);
+    setInput("averagePosition", angle);
   }
 
   private void setInput(String name, double value) throws Exception {
@@ -72,8 +59,8 @@ final class DeployControlTest {
       assertThat(deploy.getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
       assertThat(deploy.getState().isHoming()).isTrue();
       assertThat(deploy.atGoal()).isFalse();
-      assertThat(mechanism.getLeader().getAppliedControl()).isInstanceOf(NeutralOut.class);
-      assertThat(mechanism.getFollower().getAppliedControl()).isInstanceOf(NeutralOut.class);
+      assertThat(leftMotor.getAppliedControl()).isInstanceOf(NeutralOut.class);
+      assertThat(rightMotor.getAppliedControl()).isInstanceOf(NeutralOut.class);
 
       SimHooks.stepTimingAsync(0.49);
       for (var request :
@@ -83,8 +70,7 @@ final class DeployControlTest {
             deploy::hopperCompactionRequest,
             deploy::waitHopperCompactionRequest,
             deploy::feedCompactionRequest,
-            deploy::beastModeRequest,
-            deploy::fixDifferentialDesyncRequest
+            deploy::beastModeRequest
           }) {
         request.run();
         deploy.robotPeriodic();
@@ -93,8 +79,7 @@ final class DeployControlTest {
       SimHooks.stepTimingAsync(0.02);
       deploy.robotPeriodic();
       assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
-      assertThat(mechanism.getLeader().getAppliedControl())
-          .isInstanceOf(Diff_MotionMagicTorqueCurrentFOC_Position.class);
+      assertThat(leftMotor.getAppliedControl()).isInstanceOf(MotionMagicTorqueCurrentFOC.class);
     } finally {
       SimHooks.resumeTiming();
     }
@@ -103,32 +88,9 @@ final class DeployControlTest {
   @Test
   void controlTargetsUseMechanismRotations() {
     deploy.stowRequest();
-    var request =
-        (Diff_MotionMagicTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-    assertThat(request.AverageRequest.Position)
-        .isEqualTo(-DeployState.STOW.getAngleDegrees() / 360.0);
+    var request = (MotionMagicTorqueCurrentFOC) leftMotor.getAppliedControl();
+    assertThat(request.Position).isEqualTo(-DeployState.STOW.getAngleDegrees() / 360.0);
     assertThat(DeployConfig.LEFT_MOTOR_CONFIG.Feedback.SensorToMechanismRatio).isEqualTo(36.57);
-  }
-
-  @Test
-  void desyncOverrideUsesDifferenceSlot2AndRestoresNormalSlotsOnRelease() {
-    deploy.fixDifferentialDesyncRequest();
-    for (int i = 0; i < 2; i++) {
-      var request =
-          (Diff_PositionTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-      assertThat(request.AverageRequest.Slot).isEqualTo(0);
-      assertThat(request.AverageRequest.Position)
-          .isEqualTo(-DeployState.FIX_DIFFERENTIAL_DESYNC.getAngleDegrees() / 360.0);
-      assertThat(request.DifferentialRequest.Slot).isEqualTo(2);
-      assertThat(request.DifferentialRequest.Position).isEqualTo(0);
-      deploy.robotPeriodic();
-    }
-
-    deploy.stopFixDifferentialDesyncRequest();
-    var request =
-        (Diff_MotionMagicTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-    assertThat(request.AverageRequest.Slot).isEqualTo(0);
-    assertThat(request.DifferentialRequest.Slot).isEqualTo(1);
   }
 
   @Test
@@ -139,8 +101,8 @@ final class DeployControlTest {
     deploy.homeInAutoRequest();
     deploy.robotPeriodic();
     assertThat(deploy.getState()).isEqualTo(DeployState.HOME_INWARD);
-    var request = (Diff_VoltageOut_Open) mechanism.getLeader().getAppliedControl();
-    assertThat(request.AverageRequest.Output).isEqualTo(DeployConfig.HOMING_VOLTAGE_INWARD);
+    var request = (VoltageOut) leftMotor.getAppliedControl();
+    assertThat(request.Output).isEqualTo(DeployConfig.HOMING_VOLTAGE_INWARD);
 
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
@@ -179,7 +141,7 @@ final class DeployControlTest {
     DriverStationSim.setEnabled(true);
     DriverStationSim.setDsAttached(true);
     DriverStationSim.notifyNewData();
-    deploy = new Deploy(mechanism);
+    deploy = new Deploy(leftMotor, rightMotor);
     deploy.robotPeriodic();
     deploy.homeInAutoRequest();
     setInput("leftStatorCurrent", 30);
@@ -199,17 +161,15 @@ final class DeployControlTest {
       try {
         publisher.set(DeployConfig.MAX_ANGLE + 10);
         deploy.stowRequest();
-        var request =
-            (Diff_MotionMagicTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-        assertThat(request.AverageRequest.Position).isEqualTo(-DeployConfig.MAX_ANGLE / 360.0);
+        var request = (MotionMagicTorqueCurrentFOC) leftMotor.getAppliedControl();
+        assertThat(request.Position).isEqualTo(-DeployConfig.MAX_ANGLE / 360.0);
         setAngles(DeployConfig.MAX_ANGLE);
         assertThat(deploy.atGoal()).isTrue();
 
         publisher.set(DeployConfig.MIN_ANGLE - 10);
         deploy.robotPeriodic();
-        request =
-            (Diff_MotionMagicTorqueCurrentFOC_Position) mechanism.getLeader().getAppliedControl();
-        assertThat(request.AverageRequest.Position).isEqualTo(-DeployConfig.MIN_ANGLE / 360.0);
+        request = (MotionMagicTorqueCurrentFOC) leftMotor.getAppliedControl();
+        assertThat(request.Position).isEqualTo(-DeployConfig.MIN_ANGLE / 360.0);
         setAngles(DeployConfig.MIN_ANGLE);
         assertThat(deploy.atGoal()).isTrue();
       } finally {

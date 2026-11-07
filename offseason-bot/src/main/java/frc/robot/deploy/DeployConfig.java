@@ -5,8 +5,6 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.Slot1Configs;
-import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -23,7 +21,7 @@ public class DeployConfig {
   public static final double COLLAPSED_ANGLE_DEGREES = 75.585;
   public static final double HOMING_END_POSITION_INWARD = COLLAPSED_ANGLE_DEGREES;
   public static final double HOMING_END_POSITION_OUTWARD = 0.0;
-  public static final double MIN_ANGLE = 0.0;
+  public static final double MIN_ANGLE = -5.0;
   public static final double MAX_ANGLE = COLLAPSED_ANGLE_DEGREES - 20.0;
   // Motor feedback remains positive toward deployment. Account for the down pose's physical
   // angle from horizontal separately from the zero-based public arm angle.
@@ -41,16 +39,11 @@ public class DeployConfig {
 
   // Torque-current output: A/arm rotation and A/(arm rotation/s).
   // No simulated gravity/friction load, so kG/kS/kV remain zero.
-  private static final Slot0Configs SIM_AVERAGE_GAINS =
-      new Slot0Configs().withKP(400.0).withKD(20.0);
-  private static final Slot1Configs SIM_DIFFERENCE_GAINS =
-      new Slot1Configs().withKP(200.0).withKD(10.0);
-  private static final Slot2Configs SIM_DIFFERENCE_GAINS_FIX_DESYNC =
-      new Slot2Configs().withKP(100.0).withKD(5.0);
+  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(400.0).withKD(20.0);
 
-  private static final Slot0Configs AVERAGE_GAINS =
+  private static final Slot0Configs GAINS =
       new Slot0Configs()
-          .withKP(350.0)
+          .withKP(500.0)
           .withKI(0)
           .withKD(20.0)
           // Keep gravity compensation at zero until measured on the physical arm.
@@ -60,15 +53,6 @@ public class DeployConfig {
           .withKS(0.0)
           .withKV(0.0)
           .withKA(0);
-
-  // Difference axis gains typically go in Slot 1
-  private static final Slot1Configs DIFFERENCE_GAINS =
-      new Slot1Configs().withKP(1500.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
-
-  // Difference axis slot 2 for the operator desync override; average stays on slot 0.
-  // Tune during bringup.
-  private static final Slot2Configs DIFFERENCE_GAINS_FIX_DESYNC =
-      new Slot2Configs().withKP(500.0).withKI(0).withKD(0.0).withKS(0.0).withKV(0.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -88,12 +72,7 @@ public class DeployConfig {
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(15.0)
                   .withMotionMagicAcceleration(100000.0))
-          .withSlot0(RobotBase.isSimulation() ? SIM_AVERAGE_GAINS.clone() : AVERAGE_GAINS)
-          .withSlot1(RobotBase.isSimulation() ? SIM_DIFFERENCE_GAINS.clone() : DIFFERENCE_GAINS)
-          .withSlot2(
-              RobotBase.isSimulation()
-                  ? SIM_DIFFERENCE_GAINS_FIX_DESYNC.clone()
-                  : DIFFERENCE_GAINS_FIX_DESYNC);
+          .withSlot0(RobotBase.isSimulation() ? SIM_GAINS.clone() : GAINS);
 
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       new TalonFXConfiguration()
@@ -113,12 +92,7 @@ public class DeployConfig {
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(15.0)
                   .withMotionMagicAcceleration(100000.0))
-          .withSlot0(RobotBase.isSimulation() ? SIM_AVERAGE_GAINS.clone() : AVERAGE_GAINS)
-          .withSlot1(RobotBase.isSimulation() ? SIM_DIFFERENCE_GAINS.clone() : DIFFERENCE_GAINS)
-          .withSlot2(
-              RobotBase.isSimulation()
-                  ? SIM_DIFFERENCE_GAINS_FIX_DESYNC.clone()
-                  : DIFFERENCE_GAINS_FIX_DESYNC);
+          .withSlot0(RobotBase.isSimulation() ? SIM_GAINS.clone() : GAINS);
 
   private DeployConfig() {}
 }
