@@ -12,7 +12,13 @@
         {
           "name": "exposure_time_absolute",
           "allow_override": true,
-          "default_value": 6000,
+          "default_value": 5000,
+          "required": false
+        },
+        {
+          "name": "gain",
+          "allow_override": true,
+          "default_value": 10,
           "required": false
         }
       ],
@@ -62,7 +68,13 @@
         {
           "name": "exposure_time_absolute",
           "allow_override": true,
-          "default_value": 6000,
+          "default_value": 5000,
+          "required": false
+        },
+        {
+          "name": "gain",
+          "allow_override": true,
+          "default_value": 10,
           "required": false
         }
       ],
@@ -117,8 +129,8 @@
           ],
           "rms_reprojection_error_px": 0.6121536906691766,
           "calibrated_at": null,
-          "schema_version": 2,
           "frames_used": 76,
+          "schema_version": 2,
           "diversity": 1,
           "reprojection_error_px": 0.6121536906691766,
           "width": 640,
@@ -130,23 +142,23 @@
             "squares_x": 15,
             "square_length_m": 0.03
           },
-          "height": 480,
           "distortion_coefficients": [
             -0.09008365908050343,
             0.11766416986235285,
             -0.00006909192424976172,
             0.0006376038435928551,
             -0.10975139602898693
-          ]
+          ],
+          "height": 480
         },
         "fit": {
-          "frames_used": 76,
           "coverage": 0.45218535297565327,
+          "frames_used": 76,
           "reason": "calibration passed",
           "diversity": 1,
           "accepted": true,
-          "rms_reprojection_error_px": 0.6121536906691766,
-          "rejected_frames": 1
+          "rejected_frames": 1,
+          "rms_reprojection_error_px": 0.6121536906691766
         },
         "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
         "identity": "d360ce9690a6ac13e833aa6d32fccd2cda720c36c89c37eff97fa741059d6829",
@@ -196,7 +208,7 @@
         {
           "name": "gain",
           "allow_override": true,
-          "default_value": 20,
+          "default_value": 10,
           "required": false
         }
       ],
@@ -251,8 +263,8 @@
           ],
           "rms_reprojection_error_px": 0.3706733892173063,
           "calibrated_at": null,
-          "schema_version": 2,
           "frames_used": 80,
+          "schema_version": 2,
           "diversity": 1,
           "reprojection_error_px": 0.3706733892173063,
           "width": 640,
@@ -264,23 +276,23 @@
             "squares_x": 15,
             "square_length_m": 0.03
           },
-          "height": 480,
           "distortion_coefficients": [
             -0.09948349064143425,
             0.13412293525870608,
             -0.00017105212871407996,
             -0.00030704710075745117,
             -0.11360614859723724
-          ]
+          ],
+          "height": 480
         },
         "fit": {
-          "frames_used": 80,
           "coverage": 0.37292847882991814,
+          "frames_used": 80,
           "reason": "calibration passed",
           "diversity": 1,
           "accepted": true,
-          "rms_reprojection_error_px": 0.3706733892173063,
-          "rejected_frames": 0
+          "rejected_frames": 0,
+          "rms_reprojection_error_px": 0.3706733892173063
         },
         "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
         "identity": "74eb3e275f38297abac27957344e1b6ddac6298fb358cc195561bd962dc37395",
