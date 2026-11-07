@@ -5,7 +5,9 @@ import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.tuning.ElasticLayoutUtil;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
+import edu.wpi.first.networktables.MultiSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -14,19 +16,24 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.event.BooleanEvent;
 import edu.wpi.first.wpilibj.event.EventLoop;
+import org.jspecify.annotations.Nullable;
 
 public abstract class Base581Robot extends TimedRobot {
   private static final String FINALIZE_INIT_FAULT = "Robot finalizeInit() never called";
-  private static boolean visionNtLoggingRegistered = false;
+  private static @Nullable MultiSubscriber visionNtSchemaSubscriber = null;
 
   private static synchronized void registerVisionNtLogging() {
-    if (!visionNtLoggingRegistered) {
-      var nt = NetworkTableInstance.getDefault();
-      nt.startEntryDataLog(DataLogManager.getLog(), "/limelight-", "NT:/limelight-");
-      // Raw Spot frames (candidates, reprojection error, corners) for offline analysis.
-      nt.startEntryDataLog(DataLogManager.getLog(), "/Spot/", "NT:/Spot/");
-      visionNtLoggingRegistered = true;
+    if (visionNtSchemaSubscriber == null) {
+      visionNtSchemaSubscriber =
+          startVisionNtLogging(NetworkTableInstance.getDefault(), DataLogManager.getLog());
     }
+  }
+
+  static MultiSubscriber startVisionNtLogging(NetworkTableInstance nt, DataLog log) {
+    nt.startEntryDataLog(log, "/limelight-", "NT:/limelight-");
+    nt.startEntryDataLog(log, "/Spot/", "NT:/Spot/");
+    nt.startEntryDataLog(log, "/.schema/", "/.schema/");
+    return new MultiSubscriber(nt, new String[] {"/.schema/"});
   }
 
   protected final EventLoop buttonBindingsLoop = new EventLoop();
