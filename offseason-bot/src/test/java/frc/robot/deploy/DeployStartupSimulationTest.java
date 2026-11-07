@@ -47,7 +47,8 @@ final class DeployStartupSimulationTest {
         assertThat(robot.deploy().getState()).isEqualTo(DeployState.AUTO_INTAKE_DELAY);
         assertThat(robot.deploy().getAngleDegrees()).isGreaterThan(70.0);
       }
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_COAST, 3.0);
+      robot.runUntil(
+          () -> robot.deploy().getState() == DeployState.INTAKE && robot.deploy().atGoal(), 3.0);
       assertThat(Timer.getFPGATimestamp() - homedAt).isGreaterThanOrEqualTo(0.48);
       assertThat(robot.deploy().getAngleDegrees()).isBetween(-5.0, 5.0);
     }

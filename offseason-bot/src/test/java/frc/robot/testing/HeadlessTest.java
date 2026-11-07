@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.HeadlessRunner;
 import frc.robot.config.DSOptions;
-import frc.robot.deploy.DeployState;
 import frc.robot.feeder.FeederState;
 import frc.robot.funneler.FunnelerState;
 import frc.robot.robot_manager.RobotState;
@@ -47,16 +46,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 @Tag("headless")
 final class HeadlessTest {
   private static HeadlessRunner robot;
-
-  /** Holds an impact position through real 20 ms scheduler ticks and refreshed motor signals. */
-  private static void holdDeploy(double angleDegrees, double seconds, DeployState expected) {
-    double until = Timer.getFPGATimestamp() + seconds;
-    while (Timer.getFPGATimestamp() < until) {
-      robot.seedDeployAngle(angleDegrees);
-      robot.tick();
-      assertThat(robot.deploy().getState()).isEqualTo(expected);
-    }
-  }
 
   private static void initializeRobot() throws IOException {
     assertThat(HAL.initialize(500, 0)).as("Initialize desktop HAL").isTrue();
@@ -121,43 +110,6 @@ final class HeadlessTest {
         DataLogManager.stop();
         log.close();
       }
-    }
-  }
-
-  @Test
-  @Timeout(60)
-  void deployCollapsesAndRecoversThroughTheRobotScheduler() throws IOException {
-    org.junit.jupiter.api.Assumptions.assumeTrue(
-        System.getProperty("sim.test", "DEPLOY_COLLAPSE").equals("DEPLOY_COLLAPSE"));
-    initializeRobot();
-    try (var testMode =
-        NetworkTableInstance.getDefault()
-            .getTable("DSOptions")
-            .getBooleanTopic("TestMode")
-            .publish()) {
-      testMode.set(false);
-      robot.tick();
-      DriverStationSim.setEnabled(true);
-      robot.deploy().homingRequest();
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_COAST, 5);
-      // Staying down for longer than the delay must never restore PID.
-      holdDeploy(0, 3.3, DeployState.INTAKE_COAST);
-      robot.seedDeployAngle(20);
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_COLLAPSED, 1);
-      holdDeploy(20, 1.5, DeployState.INTAKE_COLLAPSED);
-      robot.seedDeployAngle(8);
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_COAST, 1);
-      robot.seedDeployAngle(20);
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_COLLAPSED, 1);
-      // The first bump must not contribute to the new three-second delay.
-      holdDeploy(20, 2.0, DeployState.INTAKE_COLLAPSED);
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_RECOVERING, 2);
-      robot.runUntil(() -> robot.deploy().getState() == DeployState.INTAKE_COAST, 3);
-      assertThat(robot.deploy().getAngleDegrees()).isBetween(-5.0, 5.0);
-      holdDeploy(0, 0.3, DeployState.INTAKE_COAST);
-    } finally {
-      DriverStationSim.setEnabled(false);
-      robot.tick();
     }
   }
 

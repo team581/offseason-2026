@@ -3,7 +3,6 @@ package frc.robot.deploy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.compound.Diff_MotionMagicTorqueCurrentFOC_Position;
 import com.ctre.phoenix6.controls.compound.Diff_PositionTorqueCurrentFOC_Position;
@@ -102,19 +101,6 @@ final class DeployControlTest {
   }
 
   @Test
-  void bothMotorsCoastAndRepeatedIntakeRequestsDoNotRestorePid() throws Exception {
-    setAngles(DeployState.INTAKE.getAngleDegrees() + 4);
-    deploy.robotPeriodic();
-    for (int i = 0; i < 5; i++) {
-      deploy.intakeRequest();
-      deploy.robotPeriodic();
-      assertThat(mechanism.getLeader().getAppliedControl()).isInstanceOf(CoastOut.class);
-      assertThat(mechanism.getFollower().getAppliedControl()).isInstanceOf(CoastOut.class);
-    }
-    assertThat(deploy.isFullyExtended()).isTrue();
-  }
-
-  @Test
   void controlTargetsUseMechanismRotations() {
     deploy.stowRequest();
     var request =
@@ -187,82 +173,6 @@ final class DeployControlTest {
     }
   }
 
-  @Test
-  void failedRecoveryCoastsUntilAnotherCommand() throws Exception {
-    SimHooks.pauseTiming();
-    try {
-      setAngles(0);
-      deploy.robotPeriodic();
-      setAngles(20);
-      deploy.robotPeriodic();
-      SimHooks.stepTimingAsync(3.1);
-      deploy.robotPeriodic();
-      SimHooks.stepTimingAsync(5.1);
-      deploy.robotPeriodic();
-      deploy.intakeRequest();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_RECOVERY_FAILED);
-      assertThat(mechanism.getLeader().getAppliedControl()).isInstanceOf(CoastOut.class);
-      deploy.stowRequest();
-      assertThat(deploy.getState()).isEqualTo(DeployState.STOW);
-    } finally {
-      SimHooks.resumeTiming();
-    }
-  }
-
-  @Test
-  void oneRaisedSideTriggersTheDelayAndExcessiveDesyncPreventsRecovery() throws Exception {
-    SimHooks.pauseTiming();
-    try {
-      setAngles(0);
-      deploy.robotPeriodic();
-      setInput("leftMotorPosition", 20);
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_COLLAPSED);
-      SimHooks.stepTimingAsync(3.1);
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_RECOVERY_FAILED);
-      assertThat(mechanism.getFollower().getAppliedControl()).isInstanceOf(CoastOut.class);
-    } finally {
-      SimHooks.resumeTiming();
-    }
-  }
-
-  @Test
-  void recoveryWaitsContinuouslyThenUsesNormalPid() throws Exception {
-    SimHooks.pauseTiming();
-    try {
-      setAngles(0);
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_COAST);
-      setAngles(20);
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_COLLAPSED);
-      SimHooks.stepTimingAsync(2);
-      deploy.intakeRequest();
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_COLLAPSED);
-      setAngles(8);
-      deploy.robotPeriodic();
-      setAngles(20);
-      deploy.robotPeriodic();
-      SimHooks.stepTimingAsync(2);
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_COLLAPSED);
-      SimHooks.stepTimingAsync(1.1);
-      deploy.intakeRequest();
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_RECOVERING);
-      assertThat(mechanism.getLeader().getAppliedControl())
-          .isInstanceOf(Diff_MotionMagicTorqueCurrentFOC_Position.class);
-      setAngles(4);
-      deploy.robotPeriodic();
-      assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE_COAST);
-      assertThat(mechanism.getFollower().getAppliedControl()).isInstanceOf(CoastOut.class);
-    } finally {
-      SimHooks.resumeTiming();
-    }
-  }
-
   @BeforeEach
   void setup() throws Exception {
     DriverStationSim.setAutonomous(false);
@@ -277,18 +187,6 @@ final class DeployControlTest {
     setAngles(DeployConfig.MAX_ANGLE);
     deploy.robotPeriodic();
     assertThat(deploy.getState()).isEqualTo(DeployState.INTAKE);
-  }
-
-  @Test
-  void stowAndCompactionImmediatelyOverrideCoast() throws Exception {
-    for (var command : new Runnable[] {deploy::stowRequest, deploy::feedCompactionRequest}) {
-      deploy.intakeRequest();
-      setAngles(DeployState.INTAKE.getAngleDegrees());
-      deploy.robotPeriodic();
-      command.run();
-      assertThat(mechanism.getLeader().getAppliedControl())
-          .isInstanceOf(Diff_MotionMagicTorqueCurrentFOC_Position.class);
-    }
   }
 
   @Test

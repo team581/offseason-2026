@@ -28,8 +28,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   private static double goalTolerance(DeployState state) {
-    return state.isIntaking()
-        ? DeployConfig.COAST_THRESHOLD_DEGREES
+    return state == DeployState.INTAKE
+        ? DeployConfig.INTAKE_TOLERANCE_DEGREES
         : DeployConfig.POSITION_TOLERANCE;
   }
 
@@ -173,18 +173,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED,
-          HOME_INWARD,
-          HOME_OUTWARD,
-          AUTO_INTAKE_DELAY,
-          FIX_DIFFERENTIAL_DESYNC,
-          INTAKE,
-          INTAKE_COAST,
-          INTAKE_COLLAPSED,
-          INTAKE_RECOVERING,
-          INTAKE_RECOVERY_FAILED -> {
-        // Preserve collapse state/timers when the hopper repeats its intake request.
-      }
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY, FIX_DIFFERENTIAL_DESYNC -> {}
       default -> setStateFromRequest(DeployState.INTAKE);
     }
   }
@@ -213,17 +202,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       return;
     }
 
-    // The kinematic sim has no gravity/contact model. In coast, retain the measured position
-    // rather than inventing powered recovery; externally injected collapse remains observable.
     double target =
         switch (getState()) {
           case HOME_INWARD -> DeployConfig.HOMING_END_POSITION_INWARD;
           case HOME_OUTWARD -> DeployConfig.HOMING_END_POSITION_OUTWARD;
           default -> clamp(getState().getAngleDegrees());
         };
-    if (getState() == DeployState.UNHOMED
-        || getState() == DeployState.AUTO_INTAKE_DELAY
-        || getState().isCoasting()) {
+    if (getState() == DeployState.UNHOMED || getState() == DeployState.AUTO_INTAKE_DELAY) {
       target = getAngleDegrees();
     }
     deploySimulation.update(-target / 360.0);
@@ -262,8 +247,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
     switch (newState) {
       case UNHOMED, AUTO_INTAKE_DELAY -> differentialMechanism.setNeutralOut();
-      case INTAKE_COAST, INTAKE_COLLAPSED, INTAKE_RECOVERY_FAILED ->
-          differentialMechanism.setCoastOut();
       case HOME_INWARD ->
           differentialMechanism.setControl(
               voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD),
@@ -357,45 +340,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       if (currentState == DeployState.AUTO_INTAKE_DELAY) {
         resetTimeout();
       }
-      // Disabled time must not count toward either delay.
-      return switch (currentState) {
-        case INTAKE_COLLAPSED, INTAKE_RECOVERING -> DeployState.INTAKE_COAST;
-        default -> currentState;
-      };
+      // Disabled time must not count toward the auto intake delay.
+      return currentState;
     }
-    boolean down = atGoal(DeployState.INTAKE);
-    boolean raised =
-        Math.max(leftMotorPosition, rightMotorPosition)
-            > DeployState.INTAKE.getAngleDegrees() + DeployConfig.RAISED_THRESHOLD_DEGREES;
     return switch (currentState) {
       case AUTO_INTAKE_DELAY ->
           timeout(DeployConfig.AUTO_INTAKE_DELAY_SECONDS) ? DeployState.INTAKE : currentState;
-      case INTAKE -> down ? DeployState.INTAKE_COAST : currentState;
-      case INTAKE_COAST -> raised ? DeployState.INTAKE_COLLAPSED : currentState;
-      case INTAKE_COLLAPSED -> {
-        if (!raised) {
-          yield DeployState.INTAKE_COAST;
-        }
-        if (!timeout(DeployConfig.RECOVERY_DELAY_SECONDS)) {
-          yield currentState;
-        }
-        yield !MathUtil.isNear(
-                leftMotorPosition, rightMotorPosition, DeployConfig.MAX_RECOVERY_DESYNC_DEGREES)
-            ? DeployState.INTAKE_RECOVERY_FAILED
-            : DeployState.INTAKE_RECOVERING;
-      }
-      case INTAKE_RECOVERING -> {
-        if (down) {
-          yield DeployState.INTAKE_COAST;
-        }
-        if (timeout(DeployConfig.RECOVERY_TIMEOUT_SECONDS)
-            || !MathUtil.isNear(
-                leftMotorPosition, rightMotorPosition, DeployConfig.MAX_RECOVERY_DESYNC_DEGREES)) {
-          yield DeployState.INTAKE_RECOVERY_FAILED;
-        }
-        yield currentState;
-      }
-
       case HOME_INWARD -> {
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {

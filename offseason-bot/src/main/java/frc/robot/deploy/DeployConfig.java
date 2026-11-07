@@ -29,11 +29,7 @@ public class DeployConfig {
   // angle from horizontal separately from the zero-based public arm angle.
   private static final double DOWN_GRAVITY_OFFSET_ROTATIONS = -0.028;
 
-  public static final double COAST_THRESHOLD_DEGREES = 5.0;
-  public static final double RAISED_THRESHOLD_DEGREES = 10.0;
-  public static final double RECOVERY_DELAY_SECONDS = 3.0;
-  public static final double RECOVERY_TIMEOUT_SECONDS = 5.0;
-  public static final double MAX_RECOVERY_DESYNC_DEGREES = 15.0;
+  public static final double INTAKE_TOLERANCE_DEGREES = 5.0;
 
   public static final double HOMING_VOLTAGE_INWARD = -2;
 
