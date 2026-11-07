@@ -68,7 +68,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private final StatusSignal<Current> rightSupplyCurrentSignal;
 
   public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
-    super(SubsystemPriority.DEPLOY, DeployState.HOME_INWARD);
+    super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
     this.differentialMechanism = differentialMechanism;
     this.leftMotor = differentialMechanism.getLeader();
     this.rightMotor = differentialMechanism.getFollower();
