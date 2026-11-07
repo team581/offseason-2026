@@ -505,7 +505,7 @@ final class VisionIntegrationTest {
   }
 
   @Test
-  void visionEnablesGuardedRecoveryAfterFusedEvidenceExpires() {
+  void visionAcceptsLargeInnovationWhenInnovationFilterIsDisabled() {
     try (var f = new Fixture(true)) {
       f.frame("front", 1, 10.01);
       f.tick(10.04);
@@ -513,27 +513,15 @@ final class VisionIntegrationTest {
       assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
 
       f.estimatedPose = new Pose2d(0, 4, Rotation2d.kZero);
-      for (int i = 1; i <= 3; i++) {
-        double time = 10.04 + .06 * i;
-        f.frame("front", 1, time);
-        f.tick(time + .03);
-        assertThat(f.vision.drainMeasurements()).isEmpty();
-      }
-      // Fresh fusion evidence has now expired. Three consistent observations may recover.
-      for (int i = 1; i <= 3; i++) {
-        double time = 10.30 + .06 * i;
-        f.frame("front", 1, time);
-        f.tick(time + .03);
-        var results = f.vision.drainMeasurements();
-        if (i < 3) {
-          assertThat(results).isEmpty();
-        } else {
-          assertThat(results).hasSize(1);
-          assertThat(results.get(0).pose().getX()).isCloseTo(4., offset(1e-9));
-          results.forEach(f.vision::measurementFused);
-          assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
-        }
-      }
+      f.frame("front", 1, 10.10);
+      f.tick(10.13);
+
+      var results = f.vision.drainMeasurements();
+      assertThat(results).hasSize(1);
+      assertThat(results.get(0).pose().getX()).isCloseTo(4., offset(1e-9));
+      assertThat(results.get(0).innovationM()).isCloseTo(4., offset(1e-9));
+      results.forEach(f.vision::measurementFused);
+      assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
     }
   }
 
