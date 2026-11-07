@@ -4,6 +4,7 @@ import com.team581.autos.Point;
 import com.team581.mechanisms.imu.BumpCrossingState;
 import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -181,8 +182,8 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     // Positive tilt should be tilted up toward the crossing direction
     directionalTilt =
         calculateDirectionalTilt(pitchDegrees, rollDegrees, headingDegrees, crossingDirection);
-    isFlat = flatDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
+    isFlat = flatDebouncer.calculate(MathUtil.isNear(0, directionalTilt, FLAT_THRESHOLD.get()));
     isFlatFallbackDebounced =
-        flatFallbackDebouncer.calculate(Math.abs(directionalTilt) < FLAT_THRESHOLD.get());
+        flatFallbackDebouncer.calculate(MathUtil.isNear(0, directionalTilt, FLAT_THRESHOLD.get()));
   }
 }
