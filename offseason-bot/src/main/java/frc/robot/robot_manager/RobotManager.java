@@ -233,6 +233,23 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
+  private void logFallbackScoringTransition(ShooterState expectedShooterState) {
+    DogLog.log("RobotManager/FallbackScoring/ScoreTransition/NotMoving", !isMoving);
+    DogLog.log(
+        "RobotManager/FallbackScoring/ScoreTransition/TurretAtGoal",
+        turret.atGoal(TurretState.SCORE, scoringParameters));
+    DogLog.log(
+        "RobotManager/FallbackScoring/ScoreTransition/ShooterAtGoalDebounced",
+        shooter.atGoalDebounced(expectedShooterState));
+    DogLog.log(
+        "RobotManager/FallbackScoring/ScoreTransition/ShooterHoodAtGoal",
+        shooterHood.atGoal(ShooterHoodState.SCORING));
+    DogLog.log(
+        "RobotManager/FallbackScoring/ScoreTransition/ScorePathNotObstructed",
+        !isScorePathObstructed);
+    DogLog.log("RobotManager/FallbackScoring/ScoreTransition/NotNearTrench", !nearTrench);
+  }
+
   private void logFeedTransition(RobotState currentState) {
     DogLog.log("RobotManager/Feeding/FeedTransition/NotInAllianceZone", !isInAllianceZone);
     DogLog.log(
@@ -273,6 +290,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log("RobotManager/Scoring/ScoreTransition/NotNearTrench", !nearTrench);
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/SwerveSafeSpeed", !swerve.isMovingBeyondSafeSpeed());
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/DriverNotDecidingSotm",
+        !swerve.driverStillDecidingSotm());
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/AccelerationLowEnough",
+        localization.imu.accelerationLowEnoughToShoot());
+    DogLog.log(
+        "RobotManager/Scoring/ScoreTransition/ScorePathNotObstructed", !isScorePathObstructed);
   }
 
   private void smartFeedingPowerManagerRequest() {
@@ -588,6 +613,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             currentState == RobotState.FALLBACK_SCORE
                 ? ShooterState.SCORE
                 : ShooterState.PREPARE_SCORE;
+        logFallbackScoringTransition(expectedShooterState);
         // In pit functionality, we don't care about anything other than raw mechanism states.
         if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
           yield shooter.atGoalDebounced(expectedShooterState)
