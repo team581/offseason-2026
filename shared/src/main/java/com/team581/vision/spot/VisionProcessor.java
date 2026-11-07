@@ -253,7 +253,6 @@ public final class VisionProcessor {
     }
     var candidate = fits.get(selected);
     double range = candidate.averageDistance();
-    double conditioning = MathUtil.clamp(Math.sqrt(.02 / candidate.imageArea()), 1., 4.);
     // Count benefit capped at sqrt(3). Overlapping simultaneous cameras are
     // additionally inflated by correlationFactor at estimator ingestion.
     double sigma =
@@ -263,7 +262,6 @@ public final class VisionProcessor {
                     * range
                     * range
                     / Math.sqrt(Math.min(3, Long.bitCount(candidate.tagMask()))))
-            * conditioning
             * (1 + candidate.reprojectionError() / policy.maxResidualPx());
     sigma =
         Math.hypot(

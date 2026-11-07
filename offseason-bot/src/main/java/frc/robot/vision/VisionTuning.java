@@ -4,14 +4,17 @@ import com.team581.vision.spot.VisionProcessor;
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
-/** Provisional bringup values; validate with measured camera geometry and on-robot logs. */
+/**
+ * Deviations fit to mttd Q11 and practice-field logs: repeat readings agree within 1 cm, and
+ * cameras disagree by ~0.1-0.25 m at 3.6 m, so accuracy, not noise, sets the scale.
+ */
 public final class VisionTuning {
   private static final DoubleSubscriber TRUST =
       DogLog.tunable("Vision/Tuning/TrustworthyMeters", .5);
   private static final DoubleSubscriber FLOOR =
-      DogLog.tunable("Vision/Tuning/TranslationFloorMeters", .04);
+      DogLog.tunable("Vision/Tuning/TranslationFloorMeters", .02);
   private static final DoubleSubscriber RANGE =
-      DogLog.tunable("Vision/Tuning/RangeSquaredCoefficient", .015);
+      DogLog.tunable("Vision/Tuning/RangeSquaredCoefficient", .008);
   private static final DoubleSubscriber RESIDUAL =
       DogLog.tunable("Vision/Tuning/MaxResidualPixels", 20.0);
   private static final DoubleSubscriber INNOVATION =
@@ -19,8 +22,8 @@ public final class VisionTuning {
 
   public static VisionProcessor.Policy policy() {
     return new VisionProcessor.Policy(
-        positive(FLOOR.get(), .04),
-        positive(RANGE.get(), .015),
+        positive(FLOOR.get(), .02),
+        positive(RANGE.get(), .008),
         positive(RESIDUAL.get(), 2.),
         Math.toRadians(35),
         positive(INNOVATION.get(), 10.),

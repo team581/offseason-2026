@@ -129,28 +129,6 @@ final class RobotContractTest {
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);
   }
 
-  @CsvSource({".0003125, 4.", ".00125, 4.", ".005, 2.", ".02, 1.", ".08, 1."})
-  @ParameterizedTest
-  void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
-      double imageAreaFraction, double expectedFactor) throws IOException {
-    var frame = sample("multi").frame();
-    // Negligible timing uncertainty isolates the image-area factor.
-    var policy =
-        TestRecords.with(VisionProcessor.Policy.conservative(), "timestampUncertaintyS", 1e-12);
-    var baseline =
-        processor(policy)
-            .process(new VisionIO.Sample("front", frame, 10.05), 10.1)
-            .measurement()
-            .orElseThrow();
-    var adjusted =
-        TestRecords.with(
-            frame, "primary", TestRecords.with(frame.primary(), "imageArea", imageAreaFraction));
-    var result = processor(policy).process(new VisionIO.Sample("front", adjusted, 10.05), 10.1);
-    assertThat(result.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
-    assertThat(result.measurement().orElseThrow().stdX())
-        .isCloseTo(baseline.stdX() * expectedFactor, offset(1e-9));
-  }
-
   @Test
   void immutableMeasurementOwnsTagsAndDeviationVector() {
     var tags = new java.util.ArrayList<Integer>();
