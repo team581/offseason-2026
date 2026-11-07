@@ -109,46 +109,33 @@ final class FieldUtilTest {
   @Test
   void towerFallbackScorePointBlueAlliance() {
     setAlliance(AllianceStationID.Blue1);
-    var blueStation1Pose = FieldUtil.getTowerFallbackScorePoint();
-    assertThat(blueStation1Pose.getX()).isCloseTo(Units.inchesToMeters(17.5) + 0.5, offset(1e-4));
-    assertThat(blueStation1Pose.getY())
-        .isCloseTo(FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(146.718750 - 17.5), offset(1e-4));
-    assertThat(blueStation1Pose.getRotation()).isEqualTo(Rotation2d.k180deg);
-    assertThat(FieldUtil.isScorePathObstructed(blueStation1Pose.getTranslation())).isFalse();
+    var bluePose = FieldUtil.getTowerFallbackScorePoint();
+    assertThat(bluePose.getX())
+        .isCloseTo(
+            FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(608.375814 - 17.5), offset(1e-4));
+    assertThat(bluePose.getY())
+        .isCloseTo(FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(170.21875), offset(1e-4));
+    assertThat(bluePose.getRotation()).isEqualTo(Rotation2d.k180deg);
+    assertThat(FieldUtil.isScorePathObstructed(bluePose.getTranslation())).isFalse();
 
     setAlliance(AllianceStationID.Blue2);
-    assertThat(FieldUtil.getTowerFallbackScorePoint()).isEqualTo(blueStation1Pose);
-
+    assertThat(FieldUtil.getTowerFallbackScorePoint()).isEqualTo(bluePose);
     setAlliance(AllianceStationID.Blue3);
-    var blueStation3Pose = FieldUtil.getTowerFallbackScorePoint();
-    assertThat(blueStation3Pose.getX()).isCloseTo(Units.inchesToMeters(17.5) + 0.5, offset(1e-4));
-    assertThat(blueStation3Pose.getY())
-        .isCloseTo(FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(193.718750 + 17.5), offset(1e-4));
-    assertThat(blueStation3Pose.getRotation()).isEqualTo(Rotation2d.k180deg);
-    assertThat(FieldUtil.isScorePathObstructed(blueStation3Pose.getTranslation())).isFalse();
+    assertThat(FieldUtil.getTowerFallbackScorePoint()).isEqualTo(bluePose);
   }
 
   @Test
   void towerFallbackScorePointRedAlliance() {
     setAlliance(AllianceStationID.Red1);
-    var redStation1Pose = FieldUtil.getTowerFallbackScorePoint();
-    assertThat(redStation1Pose.getX())
-        .isCloseTo(FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(17.5) - 0.5, offset(1e-4));
-    assertThat(redStation1Pose.getY())
-        .isCloseTo(Units.inchesToMeters(146.718750 - 17.5), offset(1e-4));
-    assertThat(redStation1Pose.getRotation()).isEqualTo(Rotation2d.kZero);
-    assertThat(FieldUtil.isScorePathObstructed(redStation1Pose.getTranslation())).isFalse();
+    var redPose = FieldUtil.getTowerFallbackScorePoint();
+    assertThat(redPose.getX()).isCloseTo(Units.inchesToMeters(608.375814 - 17.5), offset(1e-4));
+    assertThat(redPose.getY()).isCloseTo(Units.inchesToMeters(170.21875), offset(1e-4));
+    assertThat(redPose.getRotation()).isEqualTo(Rotation2d.kZero);
+    assertThat(FieldUtil.isScorePathObstructed(redPose.getTranslation())).isFalse();
 
     setAlliance(AllianceStationID.Red2);
-    assertThat(FieldUtil.getTowerFallbackScorePoint()).isEqualTo(redStation1Pose);
-
+    assertThat(FieldUtil.getTowerFallbackScorePoint()).isEqualTo(redPose);
     setAlliance(AllianceStationID.Red3);
-    var redStation3Pose = FieldUtil.getTowerFallbackScorePoint();
-    assertThat(redStation3Pose.getX())
-        .isCloseTo(FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(17.5) - 0.5, offset(1e-4));
-    assertThat(redStation3Pose.getY())
-        .isCloseTo(Units.inchesToMeters(193.718750 + 17.5), offset(1e-4));
-    assertThat(redStation3Pose.getRotation()).isEqualTo(Rotation2d.kZero);
-    assertThat(FieldUtil.isScorePathObstructed(redStation3Pose.getTranslation())).isFalse();
+    assertThat(FieldUtil.getTowerFallbackScorePoint()).isEqualTo(redPose);
   }
 }

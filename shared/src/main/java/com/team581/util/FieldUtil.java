@@ -390,19 +390,15 @@ public class FieldUtil {
   private static final double ROBOT_WIDTH_WITH_BUMPERS = Units.inchesToMeters(29.0 + 6.0);
   private static final double ROBOT_HALF_WIDTH_WITH_BUMPERS = ROBOT_WIDTH_WITH_BUMPERS / 2.0;
 
-  // Preset scoring shots on either side of the climb tower, 0.5 m off the driver station wall
-  private static final Pose2d RED_LEFT_TOWER_FALLBACK =
+  // Preset scoring shot centered on the climb tower, bumpers against the hub-facing side
+  private static final Pose2d RED_TOWER_FALLBACK =
       new Pose2d(
-          FIELD_LENGTH_X - ROBOT_HALF_WIDTH_WITH_BUMPERS - 0.5,
-          CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getY() - ROBOT_HALF_WIDTH_WITH_BUMPERS,
+          CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getX() - ROBOT_HALF_WIDTH_WITH_BUMPERS,
+          MathHelpers.average(
+              CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getY(),
+              CLIMB_BACK_CORNER_DEPOT_SIDE.redPose().getY()),
           Rotation2d.kZero);
-  private static final Pose2d RED_RIGHT_TOWER_FALLBACK =
-      new Pose2d(
-          FIELD_LENGTH_X - ROBOT_HALF_WIDTH_WITH_BUMPERS - 0.5,
-          CLIMB_BACK_CORNER_DEPOT_SIDE.redPose().getY() + ROBOT_HALF_WIDTH_WITH_BUMPERS,
-          Rotation2d.kZero);
-  private static final Pose2d BLUE_LEFT_TOWER_FALLBACK = pathflip(RED_LEFT_TOWER_FALLBACK);
-  private static final Pose2d BLUE_RIGHT_TOWER_FALLBACK = pathflip(RED_RIGHT_TOWER_FALLBACK);
+  private static final Pose2d BLUE_TOWER_FALLBACK = pathflip(RED_TOWER_FALLBACK);
 
   private static final Translation2d BLUE_HUB_CENTER =
       new Translation2d(BLUE_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
@@ -860,10 +856,8 @@ public class FieldUtil {
     DogLog.log("FieldUtil/FallbackPoses/RedRight", RED_RIGHT_FALLBACK);
     DogLog.log("FieldUtil/FallbackPoses/BlueRight", BLUE_RIGHT_FALLBACK);
     DogLog.log("FieldUtil/FallbackPoses/BlueLeft", BLUE_LEFT_FALLBACK);
-    DogLog.log("FieldUtil/FallbackPoses/Tower/RedLeft", RED_LEFT_TOWER_FALLBACK);
-    DogLog.log("FieldUtil/FallbackPoses/Tower/RedRight", RED_RIGHT_TOWER_FALLBACK);
-    DogLog.log("FieldUtil/FallbackPoses/Tower/BlueRight", BLUE_RIGHT_TOWER_FALLBACK);
-    DogLog.log("FieldUtil/FallbackPoses/Tower/BlueLeft", BLUE_LEFT_TOWER_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/Tower/Red", RED_TOWER_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/Tower/Blue", BLUE_TOWER_FALLBACK);
   }
 
   public static double getAllianceZoneX() {
@@ -970,21 +964,7 @@ public class FieldUtil {
   }
 
   public static Pose2d getTowerFallbackScorePoint() {
-    var location = DriverStation.getLocation().orElse(1);
-
-    if (FmsUtil.isRedAlliance()) {
-      if (location <= 2) {
-        return RED_LEFT_TOWER_FALLBACK;
-      }
-
-      return RED_RIGHT_TOWER_FALLBACK;
-    }
-
-    if (location >= 3) {
-      return BLUE_RIGHT_TOWER_FALLBACK;
-    }
-
-    return BLUE_LEFT_TOWER_FALLBACK;
+    return FmsUtil.isRedAlliance() ? RED_TOWER_FALLBACK : BLUE_TOWER_FALLBACK;
   }
 
   // HOME FIELD ONLY
