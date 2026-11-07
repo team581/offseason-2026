@@ -47,7 +47,85 @@
         "yaw_deg": 90,
         "z_m": 0.339588
       },
-      "calibration": null,
+      "calibration": {
+        "mode_signature": "640x480-120-MJPG",
+        "image_rotation_deg": 0,
+        "intrinsics": {
+          "coverage": 0.40189508116691364,
+          "provisional": false,
+          "method": "charuco",
+          "camera_matrix": [
+            [
+              486.55838051801857,
+              0,
+              337.6271914886429
+            ],
+            [
+              0,
+              486.16465888574663,
+              225.24805759907935
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "rms_reprojection_error_px": 0.21671275699622275,
+          "calibrated_at": null,
+          "schema_version": 2,
+          "frames_used": 41,
+          "diversity": 1,
+          "reprojection_error_px": 0.21671275699622275,
+          "width": 640,
+          "model": "plumb_bob",
+          "board": {
+            "dictionary": "DICT_4X4_250",
+            "marker_length_m": 0.022,
+            "squares_y": 15,
+            "squares_x": 15,
+            "square_length_m": 0.03
+          },
+          "height": 480,
+          "distortion_coefficients": [
+            -0.08920277156193215,
+            0.11395782994918846,
+            -0.0006177016452474246,
+            0.0009343239247063074,
+            -0.10225560729122123
+          ]
+        },
+        "fit": {
+          "frames_used": 41,
+          "coverage": 0.40189508116691364,
+          "reason": "calibration passed",
+          "diversity": 1,
+          "accepted": true,
+          "rms_reprojection_error_px": 0.21671275699622275,
+          "rejected_frames": 1
+        },
+        "build": "/nix/store/6p4dwnyqjbmb558vl4r3qr9f29asxi7l-spot-vision",
+        "identity": "5216694efb9e968fcea7ea244234361795b984c8a063ad84e64c485fbe131d41",
+        "optical_controls": {},
+        "saved_at": null,
+        "model": "plumb_bob",
+        "id": "aa17ed45565e4ce891ddcc4347457ddd",
+        "holdout": {
+          "reason": "Validation passed",
+          "rms_px": 0.24415606293237024,
+          "limit_px": 0.8,
+          "accepted": true,
+          "views": 20
+        },
+        "board": {
+          "dictionary": "DICT_4X4_250",
+          "marker_length_m": 0.022,
+          "squares_y": 15,
+          "squares_x": 15,
+          "square_length_m": 0.03
+        },
+        "algorithm": "charuco-fit-holdout-v2"
+      },
       "detector": {
         "max_hamming": 2,
         "backend": "cuda"
