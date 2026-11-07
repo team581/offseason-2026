@@ -22,11 +22,9 @@ public final class VisionTuning {
         positive(FLOOR.get(), .04),
         positive(RANGE.get(), .015),
         positive(RESIDUAL.get(), 2.),
-        Math.toRadians(15),
         Math.toRadians(35),
         positive(INNOVATION.get(), 10.),
-        .5,
-        Math.toRadians(30),
+        Math.toRadians(15),
         .02);
   }
 
