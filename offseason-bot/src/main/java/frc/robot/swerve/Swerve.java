@@ -51,7 +51,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
       DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
 
-  public static final double TRANSLATION_STD_DEV = 0.01;
+  /**
+   * Spot's modeled deviations are about 10x comp-bot's Limelight ones, so 0.01 left each frame
+   * correcting ~3% of the error. 0.1 restores comp-bot's ~25% per-frame correction; measured
+   * stationary Spot noise (1-5 cm) keeps the resulting pose wobble to a few millimetres.
+   */
+  public static final double TRANSLATION_STD_DEV = 0.1;
 
   public static final double MAX_LINEAR_RATE = 4.75;
 
