@@ -35,7 +35,7 @@ depends on explicitly; omitted controls have no robot-owned default.
 The standard V4L2 exposure-mode menu has the meanings below. A camera may expose only some entries; select only values printed by its own menu. See the [Linux camera-control reference](https://docs.kernel.org/userspace-api/media/v4l/ext-ctrls-camera.html).
 
 - **`auto_exposure` or `exposure_auto`:** `0` = automatic exposure and iris; `1` = manual exposure and iris; `2` = manual exposure with automatic iris; `3` = automatic exposure with manual iris. Fixed-lens USB cameras commonly expose only `1` (manual) and `3` (automatic). Do not use OpenCV's unrelated fractional auto-exposure values such as 0.25/0.75 here.
-- **`exposure_time_absolute` or `exposure_absolute`:** integration duration. In `spot-config.json` and Spot use µs: `1000` = 1 ms; `5000` = 5 ms. Raw V4L2 uses 100 µs ticks, so those become native `10` and `50`. Set manual exposure mode first; Spot orders automatic-control writes ahead of dependent manual writes.
+- **`exposure_time_absolute` or `exposure_absolute`:** integration duration. In `spot-config.json` and Spot use ms: `1` = 1 ms; `5` = 5 ms. Raw V4L2 uses 100 µs ticks, so those become native `10` and `50`. Set manual exposure mode first; Spot orders automatic-control writes ahead of dependent manual writes.
 - **`autogain`:** `0` = manual gain; `1` = automatic gain. If supported, disable it before pinning `gain`.
 - **`white_balance_automatic` or `white_balance_temperature_auto`:** `0` = manual white balance; `1` = automatic. Disable it before writing a temperature. A monochrome camera may advertise these controls without useful color effects.
 - **`power_line_frequency`:** `0` = disabled; `1` = 50 Hz; `2` = 60 Hz; `3` = automatic. Only advertised entries are legal. This is an anti-flicker lighting setting, not capture FPS. See the [Linux user-control reference](https://docs.kernel.org/userspace-api/media/v4l/control.html).
@@ -47,7 +47,7 @@ Exposure must fit the capture interval and the device's own range/step. At 100 �
 The following list covers every name/alias in Spot's current image-control descriptions. It explains meaning; it does not claim every control exists on either camera. For each integer, use the actual `min`, `max`, `step` and menu, not an assumed 0–100 scale. Standard semantics are described by the [Linux user-control reference](https://docs.kernel.org/userspace-api/media/v4l/control.html); units and availability come from the device.
 
 - **`auto_exposure`, `exposure_auto`:** exposure mode menu; values above.
-- **`exposure_time_absolute`, `exposure_absolute`:** exposure duration in µs in robot code; values above.
+- **`exposure_time_absolute`, `exposure_absolute`:** exposure duration in ms in robot code; values above.
 - **`autogain`:** automatic/manual gain switch; values above.
 - **`gain`:** image amplification. Higher generally brightens the image and increases noise. It is not exposure duration and has no universal dB conversion or range.
 - **`brightness`:** black-level/luminance offset. Raising it can lift dark pixels without collecting more light. Zero is not necessarily the default or midpoint.
@@ -82,7 +82,7 @@ v4l2-ctl --device=/dev/video0 --list-formats-ext
 v4l2-ctl --device=/dev/video0 --list-ctrls-menus
 ```
 
-A hypothetical line `min=50 max=10000 step=1 default=166 value=50` for `exposure_time_absolute` means native ticks: 5,000–1,000,000 µs, 100 µs increments, 16,600 µs device default, 5,000 µs current. The capture interval can impose a lower usable maximum. For non-exposure integer controls use the listed units directly. Legal values satisfy min ≤ value ≤ max and `(value - min) % step == 0`; menu values must also appear in the menu. Raw `default` is the device default, not necessarily the robot-code default or saved GUI override.
+A hypothetical line `min=50 max=10000 step=1 default=166 value=50` for `exposure_time_absolute` means native ticks: 5–1,000 ms, 0.1 ms increments, 16.6 ms device default, 5 ms current. The capture interval can impose a lower usable maximum. For non-exposure integer controls use the listed units directly. Legal values satisfy min ≤ value ≤ max and `(value - min) % step == 0`; menu values must also appear in the menu. Raw `default` is the device default, not necessarily the robot-code default or saved GUI override.
 
 ## Commissioning
 
