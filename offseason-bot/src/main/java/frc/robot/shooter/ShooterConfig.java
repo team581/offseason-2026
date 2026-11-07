@@ -75,7 +75,7 @@ public class ShooterConfig {
       TUNED_SHOT_RPM / BETA_DISTANCE_TO_SCORE_RPM.get(TUNED_SHOT_DISTANCE_METERS);
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
-      scaledTunableTable("Shooter/DistanceToScoreRPM", BETA_DISTANCE_TO_SCORE_RPM);
+      InterpolatingDoubleTreeMap.ofEntries(Map.entry(2.2, 1500.0), Map.entry(2.77, 1800.0));
   // Same scaling factor as scoring
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       scaledTunableTable("Shooter/DistanceToFeedingRPM", BETA_DISTANCE_TO_FEEDING_RPM);
