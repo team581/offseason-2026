@@ -48,10 +48,12 @@ final class TurretCalculatorTest {
   })
   @ParameterizedTest
   void homesToNearestMotorRevolution(double rotorDelta, double correctionDegrees) {
-    double position =
-        TurretCalculator.calculateHomedPosition(TurretConfig.MOTOR_ROTOR_CAL_OFFSET + rotorDelta);
+    double position = TurretCalculator.calculateHomedPosition(rotorDelta);
 
     assertThat(Units.rotationsToDegrees(position))
         .isCloseTo(TurretConfig.HOMING_END_POSITION + correctionDegrees, within(1e-9));
+    // setPosition() also sets the rotor position, so homing must not move after a correction.
+    assertThat(TurretCalculator.calculateHomedPosition(position * TurretConfig.MOTOR_TO_TURRET))
+        .isCloseTo(position, within(1e-9));
   }
 }

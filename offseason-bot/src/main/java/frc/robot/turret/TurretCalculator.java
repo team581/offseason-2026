@@ -18,8 +18,7 @@ public class TurretCalculator {
    * homing reference. Wrapping the calibrated rotor delta selects the nearest motor revolution.
    */
   public static double calculateHomedPosition(double rotorPosition) {
-    double rotorDelta =
-        MathUtil.inputModulus(rotorPosition - TurretConfig.MOTOR_ROTOR_CAL_OFFSET, -0.5, 0.5);
+    double rotorDelta = MathUtil.inputModulus(rotorPosition, -0.5, 0.5);
     return Units.degreesToRotations(TurretConfig.HOMING_END_POSITION)
         + rotorDelta / TurretConfig.MOTOR_TO_TURRET;
   }

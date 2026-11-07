@@ -73,14 +73,14 @@ final class TurretHomingTest {
 
   @Test
   void ignoresSubThresholdDifferencesAndDebouncesLargerErrors() {
-    update(true, true, 0.0, -179.995);
+    update(true, true, 0.0, -179.95);
     SimHooks.stepTimingAsync(0.2);
-    update(true, true, 0.0, -179.995);
+    update(true, true, 0.0, -179.95);
     assertThat(writes).isEmpty();
-    update(true, true, 0.0, -179.98);
+    update(true, true, 0.0, -179.0);
     assertThat(writes).isEmpty();
     SimHooks.stepTimingAsync(0.11);
-    update(true, true, 0.0, -179.98);
+    update(true, true, 0.0, -179.0);
     assertThat(writes).containsExactly(-0.5);
   }
 
@@ -95,14 +95,14 @@ final class TurretHomingTest {
     update(true, true, Double.NaN, 0.0);
     update(true, true, 0.0, Double.NaN);
     update(true, true, 0.0, -180.0);
-    update(true, true, 0.0, -179.98);
+    update(true, true, 0.0, -179.0);
     SimHooks.stepTimingAsync(0.06);
     update(true, true, 0.0, -180.0);
-    update(true, true, 0.0, -179.98);
+    update(true, true, 0.0, -179.0);
     SimHooks.stepTimingAsync(0.06);
-    update(true, true, 0.0, -179.98);
+    update(true, true, 0.0, -179.0);
     assertThat(writes).isEmpty();
-    assertThat(update(false, true, 0.0, -179.98)).isFalse();
+    assertThat(update(false, true, 0.0, -179.0)).isFalse();
   }
 
   @Test

@@ -21,13 +21,16 @@ public class TurretConfig {
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
   // Hand-set the turret at the center of travel before the first enable after boot.
   public static final double HOMING_END_POSITION = -180.0;
-  public static final double HOMING_CORRECTION_THRESHOLD_DEGREES = 0.01;
+  // Must stay well above the Position signal's resolution (1/4096 turret rotation, ~0.088 degrees),
+  // or the turret never reads as aligned after a correction and can't leave HOMING on enable.
+  public static final double HOMING_CORRECTION_THRESHOLD_DEGREES = 0.5;
   public static final double HOMING_DEBOUNCE_SECONDS = 0.1;
 
   public static final double MOTOR_TO_TURRET = 60.0;
 
-  // Calibrate the fractional rotor position with the turret exactly at HOMING_END_POSITION.
-  public static final double MOTOR_ROTOR_CAL_OFFSET = 0.0;
+  // Negated fractional rotor position at boot with the turret exactly at HOMING_END_POSITION.
+  // Applied via FeedbackRotorOffset since setPosition() also overwrites the rotor position.
+  static final double MOTOR_ROTOR_OFFSET = -0.2229;
 
   public static final double MAX_VELOCITY_RAD_PER_SEC = 10.0;
   public static final double MAX_ACCELERATION_RAD_PER_SEC_SQUARED = 35.0;
@@ -42,7 +45,12 @@ public class TurretConfig {
   // Real gains from beta-bot competition configuration (6645bd8d^).
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(MOTOR_TO_TURRET))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio(MOTOR_TO_TURRET)
+                  .withFeedbackRotorOffset(
+                      // SimKit writes the raw rotor directly, so sim models a zeroed sensor.
+                      RobotBase.isReal() ? MOTOR_ROTOR_OFFSET : 0.0))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))

@@ -312,28 +312,8 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
   protected TurretState getNextState(TurretState currentState) {
     switch (currentState) {
       case HOMING -> {
-        if (RobotBase.isReal()) {
-          var rotorPosition = motor.getRotorPosition();
-          var position = motor.getPosition();
-          boolean inputsValid =
-              motor.isAlive()
-                  && motor.isConnected()
-                  && rotorPosition.getStatus().isOK()
-                  && position.getStatus().isOK();
-          if (homing.update(
-              DriverStation.isDisabled(),
-              inputsValid,
-              rotorPosition.getValueAsDouble(),
-              Units.rotationsToDegrees(position.getValueAsDouble()),
-              homedPosition -> {
-                if (!motor.setPosition(homedPosition).isOK()) {
-                  return false;
-                }
-                currentAngle = Units.rotationsToDegrees(homedPosition);
-                return true;
-              })) {
-            return TurretState.SCORE;
-          }
+        if (RobotBase.isReal() && updateHoming(DriverStation.isDisabled())) {
+          return TurretState.SCORE;
         }
         return currentState;
       }
@@ -375,5 +355,35 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
     DogLog.log("Turret/Setpoint", setpoint);
     DogLog.log("Turret/FeedForwardRadiansPerSecond", getFeedForward());
     DogLog.log("Turret/AngleErrorDegrees", getAngleError());
+  }
+
+  /** Runs one homing step against the motor, returning true once homed after enable. */
+  boolean updateHoming(boolean disabled) {
+    var rotorPosition = motor.getRotorPosition();
+    var position = motor.getPosition();
+    boolean inputsValid =
+        motor.isAlive()
+            && motor.isConnected()
+            && rotorPosition.getStatus().isOK()
+            && position.getStatus().isOK();
+    DogLog.log("Turret/Homing/InputsValid", inputsValid);
+    DogLog.log(
+        "Turret/Homing/HomedAngle",
+        Units.rotationsToDegrees(
+            TurretCalculator.calculateHomedPosition(rotorPosition.getValueAsDouble())));
+    return homing.update(
+        disabled,
+        inputsValid,
+        rotorPosition.getValueAsDouble(),
+        Units.rotationsToDegrees(position.getValueAsDouble()),
+        homedPosition -> {
+          var status = motor.setPosition(homedPosition);
+          DogLog.log("Turret/Homing/SetPositionStatus", status.toString());
+          if (!status.isOK()) {
+            return false;
+          }
+          currentAngle = Units.rotationsToDegrees(homedPosition);
+          return true;
+        });
   }
 }
