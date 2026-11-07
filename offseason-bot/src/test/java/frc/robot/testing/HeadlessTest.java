@@ -8,6 +8,7 @@ import com.team581.util.FieldUtil;
 import dev.doglog.DogLog;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -266,9 +267,14 @@ final class HeadlessTest {
       DriverStationSim.setEnabled(true);
       robot.tick();
 
-      // Home the hood so it can accept feed requests
+      // Home the hood and let it reach the idle position before changing its setpoint
       robot.robotManager.homeShooterHoodRequest();
-      robot.runUntil(() -> robot.shooterHood().getState() == ShooterHoodState.IDLE, 2.0);
+      robot.runUntil(
+          () ->
+              robot.shooterHood().getState() == ShooterHoodState.IDLE
+                  && MathUtil.isNear(
+                      robot.shooterHood().getAngle(), ShooterHoodConfig.IDLE_ANGLE, 0.5),
+          2.0);
 
       // Verify localization is reported unhealthy because UseVision is disabled
       assertThat(robot.health().isLocalizationHealthy()).isFalse();
