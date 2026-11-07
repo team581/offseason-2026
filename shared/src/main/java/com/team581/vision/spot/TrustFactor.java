@@ -11,10 +11,9 @@ public final class TrustFactor {
       double lostM,
       double travelMPerM,
       double agingMPerS,
-      double collisionM,
       double correlationS) {
     public static Policy provisional() {
-      return new Policy(.254, 1., .05, .01, 2., .02);
+      return new Policy(.254, 1., .05, .01, .02);
     }
   }
 
@@ -32,7 +31,6 @@ public final class TrustFactor {
   private double groupPenalty;
   private double penalty;
   private double time;
-  private boolean collisionActive;
 
   public TrustFactor() {
     this(() -> Policy.provisional().trustworthyM());
@@ -79,19 +77,16 @@ public final class TrustFactor {
     if (!Double.isFinite(now)) throw new IllegalArgumentException("finite reset time required");
     score = explicitlySeeded ? trustworthyMeters.getAsDouble() : Double.POSITIVE_INFINITY;
     evidenceTimestamp = groupStart = Double.NEGATIVE_INFINITY;
-    collisionActive = false;
     penalty = 0.;
     time = now;
     history.clear();
     history.addLast(new Penalty(now, 0.));
   }
 
-  public void updateOdometry(double distanceM, double elapsedS, boolean collision) {
+  public void updateOdometry(double distanceM, double elapsedS) {
     if (!Double.isFinite(distanceM) || !Double.isFinite(elapsedS) || distanceM < 0 || elapsedS < 0)
       throw new IllegalArgumentException("nonnegative finite metres and seconds required");
     double delta = distanceM * policy.travelMPerM() + elapsedS * policy.agingMPerS();
-    if (collision && !collisionActive) delta += policy.collisionM();
-    collisionActive = collision;
     score += delta;
     penalty += delta;
     time += elapsedS;

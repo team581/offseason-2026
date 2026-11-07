@@ -32,12 +32,12 @@ final class TrustFactorTest {
     split.reset(10., false);
     var strong = measurement(10.01, .01);
     var weak = measurement(10.02, .2);
-    batch.updateOdometry(.1, .04, false);
+    batch.updateOdometry(.1, .04);
     batch.ingest(strong);
     batch.ingest(weak);
-    split.updateOdometry(.05, .02, false);
+    split.updateOdometry(.05, .02);
     split.ingest(strong);
-    split.updateOdometry(.05, .02, false);
+    split.updateOdometry(.05, .02);
     split.ingest(weak);
     assertThat(split.get()).isCloseTo(batch.get(), offset(1e-12));
     assertThat(batch.get()).isCloseTo(.2 + .1 + .00405, offset(1e-12));
@@ -55,15 +55,11 @@ final class TrustFactorTest {
     trust.reset(10., true);
     assertThat(trust.isTrustworthy()).isTrue();
     assertThat(trust.evidenceAge(10.)).isInfinite();
-    trust.updateOdometry(0., 1., false);
+    trust.updateOdometry(0., 1.);
     assertThat(trust.get()).isCloseTo(.264, offset(1e-12));
-    trust.updateOdometry(2., 0., true);
-    trust.updateOdometry(0., 0., true);
-    assertThat(trust.get()).isCloseTo(2.364, offset(1e-12));
-    trust.updateOdometry(0., 0., false);
-    trust.updateOdometry(0., 0., true);
-    assertThat(trust.get()).isCloseTo(4.364, offset(1e-12));
-    assertThatThrownBy(() -> trust.updateOdometry(-1., 0., false))
+    trust.updateOdometry(2., 0.);
+    assertThat(trust.get()).isCloseTo(.364, offset(1e-12));
+    assertThatThrownBy(() -> trust.updateOdometry(-1., 0.))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -77,7 +73,5 @@ final class TrustFactorTest {
         new VisionMeasurement(
             "left", "frame", Pose2d.kZero, 10.01, sigma, sigma, 1e6, ImmutableList.of(1), .01, 0.));
     assertThat(trust.isTrustworthy()).isTrue();
-    trust.updateOdometry(0., 0., true);
-    assertThat(trust.isTrustworthy()).isFalse();
   }
 }

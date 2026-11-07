@@ -369,7 +369,7 @@ final class RobotContractTest {
     double before = trust.get();
     result.forEach(trust::ingest);
     assertThat(trust.get()).isEqualTo(before);
-    trust.updateOdometry(1., .02, false);
+    trust.updateOdometry(1., .02);
     assertThat(trust.get()).isGreaterThan(before);
   }
 

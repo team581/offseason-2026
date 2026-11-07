@@ -173,8 +173,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     var speeds = drivetrain.getState().Speeds;
     double elapsed =
         Double.isFinite(lastVisionLoopTimestamp) ? Math.max(0., now - lastVisionLoopTimestamp) : 0.;
-    trustFactor.updateOdometry(
-        MathHelpers.getLinearVelocity(speeds) * elapsed, elapsed, imu.collisionDetected());
+    trustFactor.updateOdometry(MathHelpers.getLinearVelocity(speeds) * elapsed, elapsed);
     lastVisionLoopTimestamp = now;
     ingestMeasurements(vision.drainMeasurements(), now);
     robotPose = drivetrain.getState().Pose;
