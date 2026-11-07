@@ -18,7 +18,13 @@
         {
           "name": "gain",
           "allow_override": true,
-          "default_value": 10,
+          "default_value": 1,
+          "required": false
+        },
+        {
+          "name": "brightness",
+          "allow_override": true,
+          "default_value": -57,
           "required": false
         }
       ],
@@ -152,7 +158,13 @@
         {
           "name": "gain",
           "allow_override": true,
-          "default_value": 10,
+          "default_value": 1,
+          "required": false
+        },
+        {
+          "name": "brightness",
+          "allow_override": true,
+          "default_value": -57,
           "required": false
         }
       ],
@@ -286,7 +298,13 @@
         {
           "name": "gain",
           "allow_override": true,
-          "default_value": 10,
+          "default_value": 1,
+          "required": false
+        },
+        {
+          "name": "brightness",
+          "allow_override": true,
+          "default_value": -57,
           "required": false
         }
       ],
