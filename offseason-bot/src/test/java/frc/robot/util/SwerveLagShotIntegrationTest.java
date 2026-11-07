@@ -132,7 +132,7 @@ final class SwerveLagShotIntegrationTest {
                       Math.abs(hood(feeding, tuned.distance()) - hood(feeding, old.distance()));
                   assertThat(angleChange).isLessThan(1.0);
                   assertThat(distanceChange).isLessThan(0.04);
-                  assertThat(rpmChange).isLessThan(20.0);
+                  assertThat(rpmChange).isLessThan(22.5);
                   assertThat(hoodChange).isLessThan(0.25);
                   assertThat(Math.abs(angleDelta(tuned, measuredOnly))).isLessThan(1.0);
                   assertThat(Math.abs(tuned.distance() - measuredOnly.distance())).isLessThan(0.04);
