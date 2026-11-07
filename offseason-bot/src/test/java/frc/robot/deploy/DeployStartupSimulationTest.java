@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Timeout;
 final class DeployStartupSimulationTest {
   @Test
   @Timeout(30)
-  void startupStaysUnhomedUntilAutoHomingRequest() {
+  void autoHomingWaitsForEnableThenHoldsUpBeforeIntaking() {
     HAL.initialize(500, 0);
     DriverStationSim.resetData();
     DriverStationSim.setDsAttached(true);
@@ -25,17 +25,14 @@ final class DeployStartupSimulationTest {
       double disabledUntil = Timer.getFPGATimestamp() + 1.0;
       while (Timer.getFPGATimestamp() < disabledUntil) {
         robot.tick();
-        assertThat(robot.deploy().getState()).isEqualTo(DeployState.UNHOMED);
+        // The selected auto requests homing, but the deploy can't move while disabled.
+        assertThat(robot.deploy().getState()).isEqualTo(DeployState.HOME_INWARD);
       }
       assertThat(robot.deploy().getAngleDegrees()).isGreaterThan(70.0);
       // Start away from the stop: enable alone must not declare it homed.
       robot.seedDeployAngle(45.0);
       robot.tick();
       DriverStationSim.setEnabled(true);
-      robot.tick();
-      // Enabling alone must not start homing.
-      assertThat(robot.deploy().getState()).isEqualTo(DeployState.UNHOMED);
-      robot.deploy().homeInAutoRequest();
       robot.tick();
       assertThat(robot.deploy().getState()).isEqualTo(DeployState.HOME_INWARD);
       robot.runUntil(() -> robot.deploy().getState() == DeployState.AUTO_INTAKE_DELAY, 3.0);
