@@ -17,13 +17,15 @@ import edu.wpi.first.wpilibj.event.EventLoop;
 
 public abstract class Base581Robot extends TimedRobot {
   private static final String FINALIZE_INIT_FAULT = "Robot finalizeInit() never called";
-  private static int limelightNtLogHandle = -1;
+  private static boolean visionNtLoggingRegistered = false;
 
-  private static synchronized void registerLimelightNtLogging() {
-    if (limelightNtLogHandle == -1) {
-      limelightNtLogHandle =
-          NetworkTableInstance.getDefault()
-              .startEntryDataLog(DataLogManager.getLog(), "/limelight-", "NT:/limelight-");
+  private static synchronized void registerVisionNtLogging() {
+    if (!visionNtLoggingRegistered) {
+      var nt = NetworkTableInstance.getDefault();
+      nt.startEntryDataLog(DataLogManager.getLog(), "/limelight-", "NT:/limelight-");
+      // Raw Spot frames (candidates, reprojection error, corners) for offline analysis.
+      nt.startEntryDataLog(DataLogManager.getLog(), "/Spot/", "NT:/Spot/");
+      visionNtLoggingRegistered = true;
     }
   }
 
@@ -47,7 +49,7 @@ public abstract class Base581Robot extends TimedRobot {
             .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
             .withUseLogThread(false));
 
-    registerLimelightNtLogging();
+    registerVisionNtLogging();
 
     DogLog.log("Metadata/RoborioSerialNumber", RobotController.getSerialNumber());
 
