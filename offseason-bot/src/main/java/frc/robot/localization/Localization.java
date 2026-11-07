@@ -38,6 +38,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   private double lastVisionLoopTimestamp = Double.NaN;
 
+  // Set from the tunable's notifier thread, applied on the main loop
+  private volatile double pendingHeadingResetDegrees = Double.NaN;
+
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision, Imu imu) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
     this.swerve = swerve;
@@ -46,6 +49,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.imu = imu;
     lastVisionLoopTimestamp = Timer.getFPGATimestamp();
     trustFactor.reset(lastVisionLoopTimestamp, false);
+
+    DogLog.tunable(
+        "Localization/ResetHeadingDegrees", 0.0, degrees -> pendingHeadingResetDegrees = degrees);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -169,6 +175,13 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   @Override
   protected void collectInputs() {
+    double headingResetDegrees = pendingHeadingResetDegrees;
+    if (Double.isFinite(headingResetDegrees)) {
+      pendingHeadingResetDegrees = Double.NaN;
+      drivetrain.resetRotation(Rotation2d.fromDegrees(headingResetDegrees));
+      resetVisionHistory(false);
+    }
+
     double now = vision.tickTime();
     var speeds = drivetrain.getState().Speeds;
     double elapsed =
