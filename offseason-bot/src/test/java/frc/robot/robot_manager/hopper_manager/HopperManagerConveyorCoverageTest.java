@@ -503,7 +503,7 @@ final class HopperManagerConveyorCoverageTest {
     assertThat(conveyor.getState()).isEqualTo(ConveyorState.EJECT);
     assertThat(feeder.getState()).isEqualTo(FeederState.SCORE);
     assertThat(funneler.getState()).isEqualTo(FunnelerState.SCORE);
-    assertThat(FunnelerState.SCORE.getVoltage()).isEqualTo(-10);
+    assertThat(FunnelerState.SCORE.getVoltage()).isEqualTo(10);
 
     // Unjam must restore every transport request on subsequent cycles.
     intake.idleRequest();
