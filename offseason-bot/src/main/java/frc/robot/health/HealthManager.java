@@ -10,8 +10,15 @@ import frc.robot.vision.Vision;
 import java.util.function.BooleanSupplier;
 
 public class HealthManager extends StateMachineSubsystem<HealthState> {
+  /**
+   * Sparse tag sightings make the raw localization check flicker, which swaps aiming between the
+   * estimated pose and the tower fallback every loop. Hold healthy briefly after the last good
+   * check so a single missed frame doesn't move the turret.
+   */
+  private static final double LOCALIZATION_HEALTHY_HOLD_SECONDS = 1.0;
 
   private boolean localizationHealthy = false;
+  private double lastLocalizationHealthyTimestamp = Double.NEGATIVE_INFINITY;
   private boolean fuelDetectionHealthy = false;
   private boolean allCamerasHealthy = false;
 
@@ -59,10 +66,14 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   @Override
   protected void collectInputs() {
     var status = vision.getStatus();
+    double now = vision.tickTime();
+    if (vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean()) {
+      lastLocalizationHealthyTimestamp = now;
+    }
     // Desktop simulation has odometry but no camera frames. Use its pose for aiming rather
     // than forcing RobotManager to aim from the fixed real-robot fallback location.
     localizationHealthy =
-        simulation || (vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean());
+        simulation || now - lastLocalizationHealthyTimestamp <= LOCALIZATION_HEALTHY_HOLD_SECONDS;
     fuelDetectionHealthy = false;
     allCamerasHealthy = status.allRequiredHealthy();
   }

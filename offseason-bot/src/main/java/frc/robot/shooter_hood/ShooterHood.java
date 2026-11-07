@@ -19,6 +19,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.FeatureFlags;
+import frc.robot.shooter.ShooterConfig;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> implements PowerManaged {
@@ -32,7 +33,8 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
         : ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }
 
-  static double distanceToScoringAngle(double distance) {
+  static double distanceToScoringAngle(double measuredDistance) {
+    double distance = measuredDistance + ShooterConfig.SCORING_DISTANCE_OFFSET_METERS.get();
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterHoodConfig.SCORING_REGRESSION_MODEL.calculate(distance)
         : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);

@@ -122,6 +122,10 @@ public class ShooterConfig {
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
       DogLog.tunable("Shooter/LowHopperInitialFF", 0.0);
 
+  // Added to the hub distance before the scoring RPM and hood lookups to shift every shot longer.
+  public static DoubleSubscriber SCORING_DISTANCE_OFFSET_METERS =
+      DogLog.tunable("Shooter/ScoringDistanceOffsetMeters", Units.feetToMeters(1.0));
+
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
       DogLog.tunable("Shooter/TurboShotFFCurrent", 0.0);
   // Calculated from average of CAPIN logs

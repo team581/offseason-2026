@@ -337,7 +337,7 @@ final class VisionIntegrationTest {
       assertThat(health.isFuelDetectionHealthy()).isFalse();
       health.setPoseTrustworthySupplier(() -> false);
       health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isFalse();
+      assertThat(health.isLocalizationHealthy()).isTrue(); // held through a brief trust loss
       health.setPoseTrustworthySupplier(() -> true);
       health.beforePeriodic();
       try (var use =
@@ -358,9 +358,12 @@ final class VisionIntegrationTest {
       }
       f.tick(10.6);
       health.beforePeriodic();
+      assertThat(health.isLocalizationHealthy()).isTrue(); // stale fusion is still held
+      f.tick(11.1);
+      health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
-      f.frame("back", 5, 10.61);
-      f.tick(10.64);
+      f.frame("back", 5, 11.11);
+      f.tick(11.14);
       f.vision.drainMeasurements().forEach(f.vision::measurementFused);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isTrue();
@@ -477,7 +480,7 @@ final class VisionIntegrationTest {
       assertThat(health.isLocalizationHealthy()).isTrue();
       assertThat(f.vision.getStatus().cameras().get("left").lastFused()).isEqualTo(10.01);
 
-      f.tick(10.30);
+      f.tick(11.10);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
     }

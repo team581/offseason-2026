@@ -32,7 +32,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         : ShooterConfig.DISTANCE_TO_FEEDING_RPM.get(distance);
   }
 
-  private static double distanceToScoringRpm(double distance) {
+  private static double distanceToScoringRpm(double measuredDistance) {
+    double distance = measuredDistance + ShooterConfig.SCORING_DISTANCE_OFFSET_METERS.get();
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.SCORING_REGRESSION_MODEL.calculate(distance)
         : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
