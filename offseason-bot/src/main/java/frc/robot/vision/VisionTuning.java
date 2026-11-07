@@ -13,20 +13,18 @@ public final class VisionTuning {
   private static final DoubleSubscriber RANGE =
       DogLog.tunable("Vision/Tuning/RangeSquaredCoefficient", .015);
   private static final DoubleSubscriber RESIDUAL =
-      DogLog.tunable("Vision/Tuning/MaxResidualPixels", 2.);
+      DogLog.tunable("Vision/Tuning/MaxResidualPixels", 20.0);
   private static final DoubleSubscriber INNOVATION =
-      DogLog.tunable("Vision/Tuning/InnovationSigma", 10.);
+      DogLog.tunable("Vision/Tuning/InnovationSigma", 10000.0);
 
   public static VisionProcessor.Policy policy() {
     return new VisionProcessor.Policy(
         positive(FLOOR.get(), .04),
         positive(RANGE.get(), .015),
         positive(RESIDUAL.get(), 2.),
-        Math.toRadians(15),
         Math.toRadians(35),
         positive(INNOVATION.get(), 10.),
-        .5,
-        Math.toRadians(30),
+        Math.toRadians(15),
         .02);
   }
 

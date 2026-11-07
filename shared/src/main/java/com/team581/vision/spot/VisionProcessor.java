@@ -9,7 +9,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -39,26 +38,16 @@ public final class VisionProcessor {
       double translationFloorM,
       double rangeSquaredCoefficient,
       double maxResidualPx,
-      double candidateHeadingMarginRad,
       double maxHeadingDifferenceRad,
       double innovationSigma,
-      double maxZErrorM,
-      double maxTiltErrorRad,
+      // IMU roll/pitch magnitude at capture beyond which Spot's flat-robot solve is invalid.
+      double maxTiltRad,
       // Residual capture-time error after Spot's latency correction; robot-only.
       double timestampUncertaintyS) {
     public static Policy conservative() {
       // Engineering defaults, requiring held-out robot trials. Heading remains
       // suppressed with a large finite deviation supported by CTRE's interface.
-      return new Policy(
-          .04,
-          .015,
-          2.0,
-          Math.toRadians(15),
-          Math.toRadians(35),
-          10.0,
-          .5,
-          Math.toRadians(30),
-          .005);
+      return new Policy(.04, .015, 2.0, Math.toRadians(35), 10.0, Math.toRadians(15), .005);
     }
   }
 
@@ -84,26 +73,12 @@ public final class VisionProcessor {
 
   private record RecoveryEvidence(Pose2d correction, double start, double last, int count) {}
 
-  /** Use all configured cameras to cover correlation even across separate release batches. */
-  public static List<VisionMeasurement> accountForCorrelation(
-      List<VisionMeasurement> observations, int cameraCount) {
-    var result = new ArrayList<VisionMeasurement>();
-    double factor = Math.sqrt(Math.max(1, cameraCount));
-    for (var observation : observations) {
-      result.add(
-          new VisionMeasurement(
-              observation.source(),
-              observation.frameId(),
-              observation.pose(),
-              observation.timestamp(),
-              observation.stdX() * factor,
-              observation.stdY() * factor,
-              observation.stdHeading() * factor,
-              observation.tagIds(),
-              observation.innovationM(),
-              observation.normalizedInnovation() / factor));
-    }
-    return List.copyOf(result);
+  /**
+   * Estimator deviation multiplier covering correlation between all configured cameras, even across
+   * separate release batches. Measurements keep their uninflated deviations.
+   */
+  public static double correlationFactor(int cameraCount) {
+    return Math.sqrt(Math.max(1, cameraCount));
   }
 
   private static double headingError(Pose3d candidate, Pose2d history) {
@@ -204,6 +179,7 @@ public final class VisionProcessor {
     }
     var mount = frame.robotToCamera();
     var alternatives = new ArrayList<Pose3d>();
+    var fits = new ArrayList<PoseEstimate>();
     for (int index = 0; index < frame.candidateCount(); index++) {
       var candidate = index == 0 ? frame.primary() : frame.alternate();
       if (!validPose(candidate.pose())
@@ -223,11 +199,9 @@ public final class VisionProcessor {
               && candidate.method() != PoseEstimate.SINGLE_TAG_IPPE_SQUARE)) {
         return Decision.reject(Reason.MALFORMED);
       }
+      // How Spot solved is diagnostic only; every candidate solves the same tags.
       if ((candidate.tagMask() & ~frame.observedTags()) != 0
-          || candidate.method() != frame.primary().method()
-          || (candidate.method() == PoseEstimate.SINGLE_TAG_IPPE_SQUARE
-              && (Long.bitCount(candidate.tagMask()) != 1
-                  || candidate.tagMask() != frame.primary().tagMask())))
+          || candidate.tagMask() != frame.primary().tagMask())
         return Decision.reject(Reason.MALFORMED);
       var fieldCamera = candidate.pose();
       for (int tag = 0; tag < profile.field().tags().size(); tag++) {
@@ -237,25 +211,26 @@ public final class VisionProcessor {
                 fieldCamera, SpotProtocol.pose(profile.field().tags().get(tag).fieldToTag()));
         if (cameraToTag.getX() <= .05) return Decision.reject(Reason.MALFORMED);
       }
-      if (candidate.reprojectionError() > policy.maxResidualPx()) {
-        return Decision.reject(Reason.RESIDUAL);
+      // Spot's candidates are its plausible answers; one that fits poorly is not a contender.
+      if (candidate.reprojectionError() <= policy.maxResidualPx()) {
+        alternatives.add(candidate.pose().transformBy(mount.inverse()));
+        fits.add(candidate);
       }
-      alternatives.add(candidate.pose().transformBy(mount.inverse()));
     }
+    if (alternatives.isEmpty()) {
+      return Decision.reject(Reason.RESIDUAL);
+    }
+    // The robot's heading at capture decides which of Spot's answers is most likely.
     int selected = 0;
-    if (frame.primary().method() == PoseEstimate.SINGLE_TAG_IPPE_SQUARE) {
-      if (alternatives.size() != 2) {
-        return Decision.reject(Reason.AMBIGUOUS);
+    for (int index = 1; index < alternatives.size(); index++) {
+      if (headingError(alternatives.get(index), captured.orElseThrow().pose())
+          < headingError(alternatives.get(selected), captured.orElseThrow().pose())) {
+        selected = index;
       }
-      double a = headingError(alternatives.get(0), captured.orElseThrow().pose());
-      double b = headingError(alternatives.get(1), captured.orElseThrow().pose());
-      if (MathUtil.isNear(a, b, policy.candidateHeadingMarginRad())
-          || Math.min(a, b) > policy.maxHeadingDifferenceRad()) {
-        return Decision.reject(Reason.AMBIGUOUS);
-      }
-      selected = a <= b ? 0 : 1;
-    } else if (alternatives.size() != 1 || Long.bitCount(frame.primary().tagMask()) < 2) {
-      return Decision.reject(Reason.MALFORMED);
+    }
+    if (headingError(alternatives.get(selected), captured.orElseThrow().pose())
+        > policy.maxHeadingDifferenceRad()) {
+      return Decision.reject(Reason.AMBIGUOUS);
     }
     var robot = alternatives.get(selected);
     if (robot.getX() < -.25
@@ -267,27 +242,20 @@ public final class VisionProcessor {
     var state = captured.orElseThrow();
     for (double value :
         new double[] {
-          state.speedMps(),
-          state.angularRateRadPerS(),
-          state.rollRad(),
-          state.pitchRad(),
-          state.zM()
+          state.speedMps(), state.angularRateRadPerS(), state.rollRad(), state.pitchRad()
         }) {
       if (!Double.isFinite(value)) {
         return Decision.reject(Reason.HISTORY);
       }
     }
-    if (!MathUtil.isNear(robot.getZ(), state.zM(), policy.maxZErrorM())
-        || !MathUtil.isNear(robot.getRotation().getX(), state.rollRad(), policy.maxTiltErrorRad())
-        || !MathUtil.isNear(
-            robot.getRotation().getY(), state.pitchRad(), policy.maxTiltErrorRad())) {
+    if (Math.hypot(state.rollRad(), state.pitchRad()) > policy.maxTiltRad()) {
       return Decision.reject(Reason.ROBOT_TILT);
     }
-    var candidate = selected == 0 ? frame.primary() : frame.alternate();
+    var candidate = fits.get(selected);
     double range = candidate.averageDistance();
     double conditioning = MathUtil.clamp(Math.sqrt(.02 / candidate.imageArea()), 1., 4.);
     // Count benefit capped at sqrt(3). Overlapping simultaneous cameras are
-    // additionally inflated by correlation policy at source collection.
+    // additionally inflated by correlationFactor at estimator ingestion.
     double sigma =
         Math.max(
                 policy.translationFloorM(),
@@ -313,7 +281,7 @@ public final class VisionProcessor {
       // stale, require a stationary robot and repeated, precise multi-tag agreement before
       // allowing an estimator correction. Isolated outliers and single-tag ambiguity still fail.
       if (!recoveryAllowed.getAsBoolean()
-          || candidate.method() != PoseEstimate.MULTI_TAG_SQPNP
+          || Long.bitCount(candidate.tagMask()) < 2
           || sigma > .25
           || Math.abs(state.speedMps()) > .25
           || Math.abs(state.angularRateRadPerS()) > .25) {

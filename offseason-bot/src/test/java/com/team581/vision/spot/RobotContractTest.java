@@ -85,18 +85,48 @@ final class RobotContractTest {
   }
 
   @Test
-  void correlatedMeasurementsInflateUncertaintyAndCannotImproveTrustByCameraCount() {
-    var result =
-        VisionProcessor.accountForCorrelation(
-            ImmutableList.of(measurement("a", 10.), measurement("b", 10.)), 2);
-    assertThat(result.get(0).stdX()).isGreaterThan(.1);
-    var trust = new TrustFactor();
-    trust.ingest(result.get(0));
-    double before = trust.get();
-    result.forEach(trust::ingest);
-    assertThat(trust.get()).isEqualTo(before);
-    trust.updateOdometry(1., .02, false);
-    assertThat(trust.get()).isGreaterThan(before);
+  void candidateFarFromCaptureHeadingIsRejected() throws IOException {
+    var frame = sample("multi").frame();
+    var wrongHeading =
+        TestRecords.with(
+            frame,
+            "primary",
+            TestRecords.with(
+                frame.primary(),
+                "pose",
+                new Pose3d(2.2, 0., .5, new Rotation3d(0., 0., Math.toRadians(60)))));
+    assertThat(
+            processor().process(new VisionIO.Sample("front", wrongHeading, 10.05), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.AMBIGUOUS);
+  }
+
+  @Test
+  void captureHeadingChoosesBetweenCandidates() throws IOException {
+    var frame = sample("multi").frame();
+    var wrongHeading =
+        TestRecords.with(
+            frame.primary(),
+            "pose",
+            new Pose3d(2.7, 0., .5, new Rotation3d(0., 0., Math.toRadians(20))));
+    var twoCandidates = TestRecords.with(frame, "candidateCount", 2);
+    twoCandidates = TestRecords.with(twoCandidates, "primary", wrongHeading);
+    twoCandidates = TestRecords.with(twoCandidates, "alternate", frame.primary());
+    var accepted = processor().process(new VisionIO.Sample("front", twoCandidates, 10.05), 10.1);
+    assertThat(accepted.reason()).isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    assertThat(accepted.measurement().orElseThrow().pose().getX()).isCloseTo(2., offset(1e-12));
+
+    var poorFit = TestRecords.with(frame.primary(), "reprojectionError", 50.);
+    var onlyPoorFit = TestRecords.with(frame, "primary", poorFit);
+    assertThat(processor().process(new VisionIO.Sample("front", onlyPoorFit, 10.05), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.RESIDUAL);
+    // A poorly fitting alternate is dropped instead of rejecting the frame.
+    var poorAlternate = TestRecords.with(frame, "candidateCount", 2);
+    poorAlternate =
+        TestRecords.with(
+            poorAlternate, "alternate", TestRecords.with(wrongHeading, "reprojectionError", 50.));
+    assertThat(
+            processor().process(new VisionIO.Sample("front", poorAlternate, 10.05), 10.1).reason())
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
   }
 
   @CsvSource({".0003125, 4.", ".00125, 4.", ".005, 2.", ".02, 1.", ".08, 1."})
@@ -134,12 +164,33 @@ final class RobotContractTest {
     assertThat(result.standardDevs().get(0, 0)).isEqualTo(.1);
   }
 
+  @CsvSource({"0, -14, ACCEPTED", "10, 0, ACCEPTED", "12, 12, ROBOT_TILT", "16, 0, ROBOT_TILT"})
+  @ParameterizedTest
+  void imuTiltAtCaptureDecidesWhetherTheFlatSolveApplies(
+      double rollDeg, double pitchDeg, VisionProcessor.Reason expected) throws IOException {
+    var processor =
+        new VisionProcessor(
+            profile(),
+            timestamp ->
+                Optional.of(
+                    new VisionProcessor.CaptureState(
+                        new Pose2d(2, 0, Rotation2d.kZero),
+                        0.,
+                        0.,
+                        Math.toRadians(rollDeg),
+                        Math.toRadians(pitchDeg),
+                        0.)),
+            VisionProcessor.Policy.conservative());
+    assertThat(processor.process(sample("multi"), 10.1).reason()).isEqualTo(expected);
+  }
+
   @Test
   void ippeSelectionUsesCaptureHeadingAndRejectsUndecidableTranslation() throws IOException {
     assertThat(processor().process(sample("ippe"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.ACCEPTED);
+    // Two candidates equally close to the heading: Spot's best-fitting one wins.
     assertThat(processor().process(sample("ambiguous"), 10.1).reason())
-        .isEqualTo(VisionProcessor.Reason.AMBIGUOUS);
+        .isEqualTo(VisionProcessor.Reason.ACCEPTED);
     assertThat(processor().process(sample("empty"), 10.1).reason())
         .isEqualTo(VisionProcessor.Reason.NO_TAGS);
   }
@@ -311,23 +362,15 @@ final class RobotContractTest {
   }
 
   @Test
-  void repeatedFramesDoNotManufactureAdditionalCameraSources() {
-    var frames = new java.util.ArrayList<VisionMeasurement>();
-    for (int i = 0; i < 8; i++) frames.add(measurement("front", 10. + i * .001));
-    var batch = VisionProcessor.accountForCorrelation(frames, 4);
-    assertThat(batch).allMatch(value -> value.stdX() == .2);
-    assertThat(VisionProcessor.accountForCorrelation(frames.subList(0, 4), 4))
-        .allMatch(value -> value.stdX() == .2);
-  }
-
-  @Test
-  void sourceCountFloorCoversCorrelatedCamerasSplitAcrossReleaseBatches() {
-    var value =
-        new VisionMeasurement(
-            "front", "one", Pose2d.kZero, 1, .1, .1, 1e6, ImmutableList.of(1), 0, 0);
-    var released = VisionProcessor.accountForCorrelation(ImmutableList.of(value), 4);
-    assertThat(released.get(0).stdX()).isEqualTo(.2);
-    assertThat(value.stdX()).isEqualTo(.1);
+  void simultaneousCamerasCannotImproveTrustByCameraCount() {
+    var result = ImmutableList.of(measurement("a", 10.), measurement("b", 10.));
+    var trust = new TrustFactor();
+    trust.ingest(result.get(0));
+    double before = trust.get();
+    result.forEach(trust::ingest);
+    assertThat(trust.get()).isEqualTo(before);
+    trust.updateOdometry(1., .02, false);
+    assertThat(trust.get()).isGreaterThan(before);
   }
 
   @Test
