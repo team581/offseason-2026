@@ -164,7 +164,7 @@ final class RobotContractTest {
     assertThat(result.standardDevs().get(0, 0)).isEqualTo(.1);
   }
 
-  @CsvSource({"10, 0, ACCEPTED", "0, -14, ACCEPTED", "16, 0, ROBOT_TILT", "12, 12, ROBOT_TILT"})
+  @CsvSource({"0, -14, ACCEPTED", "10, 0, ACCEPTED", "12, 12, ROBOT_TILT", "16, 0, ROBOT_TILT"})
   @ParameterizedTest
   void imuTiltAtCaptureDecidesWhetherTheFlatSolveApplies(
       double rollDeg, double pitchDeg, VisionProcessor.Reason expected) throws IOException {
