@@ -20,7 +20,7 @@ public class DoNothingAuto extends BaseImperativeAuto<DoNothingAutoState> {
         new Pose2d(
             BumpAutoStart.RED_STARTING_LINE_X + BumpAutoStart.HALF_BUMPER_METERS,
             FieldUtil.RED_HUB_CENTER.getY(),
-            Rotation2d.k180deg));
+            Rotation2d.kZero));
   }
 
   @Override
