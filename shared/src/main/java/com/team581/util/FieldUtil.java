@@ -973,7 +973,7 @@ public class FieldUtil {
     var location = DriverStation.getLocation().orElse(1);
 
     if (FmsUtil.isRedAlliance()) {
-      if (location <= 1) {
+      if (location <= 2) {
         return RED_LEFT_TOWER_FALLBACK;
       }
 
