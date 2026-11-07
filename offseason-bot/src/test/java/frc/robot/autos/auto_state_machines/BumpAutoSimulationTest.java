@@ -1,8 +1,11 @@
 package frc.robot.autos.auto_state_machines;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 import com.team581.mechanisms.imu.BumpCrossingState;
+import com.team581.util.FieldUtil;
+import com.team581.util.FmsUtil;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -13,6 +16,9 @@ import frc.robot.HeadlessRunner;
 import frc.robot.Robot;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BaseImperativeAuto;
+import frc.robot.robot_manager.RobotState;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -54,6 +60,14 @@ final class BumpAutoSimulationTest {
       var uphill = new HashSet<String>();
       var downhill = new HashSet<String>();
       var visitedStates = new HashSet<String>();
+      var stateOrder = new ArrayList<String>();
+      boolean depotAuto = selection.equals("LEFT_BUMP_DEPOT");
+      var stateStartTimes = new HashMap<String, Double>();
+      var stateEndTimes = new HashMap<String, Double>();
+      double halfwayShotHeading = Double.NaN;
+      Pose2d firstScorePose = null;
+      Pose2d finalShootStart = null;
+      Pose2d finalShootEnd = null;
       double waitStartTime = Double.NaN;
       double waitEndTime = Double.NaN;
       Pose2d shootStart = null;
@@ -73,35 +87,157 @@ final class BumpAutoSimulationTest {
           } else if (previous.equals("WAIT_BEHIND_HUB")) {
             waitEndTime = Timer.getFPGATimestamp();
           }
+          stateOrder.add(state);
+          stateStartTimes.put(state, Timer.getFPGATimestamp());
+          stateEndTimes.put(previous, Timer.getFPGATimestamp());
           previous = state;
         }
         if (crossing == BumpCrossingState.CROSSING_UPHILL) uphill.add(state);
         if (crossing == BumpCrossingState.CROSSING_DOWNHILL) downhill.add(state);
+        if (depotAuto
+            && (state.equals("CROSS_BUMP_TO_SHOOT_1") || state.equals("DRIVE_TO_DEPOT_FRONT"))) {
+          assertThat(robot.robotManager.getState()).isEqualTo(RobotState.WARMUP_SCORE);
+        }
+        if (depotAuto && state.equals("INTAKE_FIRST_CYCLE")) {
+          var redPose = FmsUtil.isRedAlliance() ? pose : FieldUtil.pathflip(pose);
+          double bumperExtent =
+              BumpAutoStart.HALF_BUMPER_METERS
+                  * (Math.abs(redPose.getRotation().getCos())
+                      + Math.abs(redPose.getRotation().getSin()));
+          assertThat(redPose.getY() + bumperExtent)
+              .as("sweep keeps the whole robot left of the longitudinal centerline")
+              .isLessThan(FieldUtil.FIELD_WIDTH_Y / 2.0);
+          if (stateOrder.get(stateOrder.size() - 1).equals("INTAKE_FIRST_CYCLE")
+              && Timer.getFPGATimestamp() - stateStartTimes.get(state) < 0.5) {
+            assertThat(redPose.getY()).isLessThan(FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.1);
+          }
+        }
+        if (depotAuto
+            && state.equals("SHOOT_1")
+            && firstScorePose == null
+            && robot.robotManager.getState() == RobotState.SCORE) {
+          firstScorePose = pose;
+          System.out.println("First actual SCORE pose " + pose);
+        }
+        if (state.equals("SHOOT_BACK_TO_HUB")) {
+          if (finalShootStart == null) finalShootStart = pose;
+          finalShootEnd = pose;
+        }
+        if (depotAuto && state.equals("COLLECT_DEPOT")) {
+          assertThat(robot.robotManager.getState().name()).isEqualTo("IDLE");
+          var redPose = FmsUtil.isRedAlliance() ? pose : FieldUtil.pathflip(pose);
+          assertThat(redPose.getRotation().getDegrees()).isCloseTo(-75.0, offset(4.0));
+        }
         if (state.equals("SHOOT_1")) {
           if (shootStart == null) {
             shootStart = pose;
           }
           shootEnd = pose;
+          if (depotAuto
+              && Double.isNaN(halfwayShotHeading)
+              && Timer.getFPGATimestamp() - stateStartTimes.get("SHOOT_1") >= 2.5) {
+            var redPose = FmsUtil.isRedAlliance() ? pose : FieldUtil.pathflip(pose);
+            halfwayShotHeading = redPose.getRotation().getDegrees();
+          }
         }
       }
       assertThat(auto.getState().name()).isEqualTo("DONE");
-      assertThat(visitedStates)
-          .containsExactlyInAnyOrder(
-              "PREPARE_BUMP_OUT_1",
-              "CROSS_BUMP_OUT",
-              "DRIVE_TO_OPPOSITE_HUB",
-              "WAIT_BEHIND_HUB",
-              "INTAKE_FIRST_CYCLE",
-              "CROSS_BUMP_TO_SHOOT_1",
-              "SHOOT_1",
-              "DONE");
-      assertThat(waitEndTime - waitStartTime).isGreaterThanOrEqualTo(1.0);
+      if (depotAuto) {
+        for (var entry : stateStartTimes.entrySet()) {
+          if (stateEndTimes.containsKey(entry.getKey())) {
+            System.out.println(
+                "Depot phase "
+                    + entry.getKey()
+                    + " seconds="
+                    + (stateEndTimes.get(entry.getKey()) - entry.getValue()));
+          }
+        }
+        assertThat(stateOrder)
+            .containsExactly(
+                "PREPARE_BUMP_OUT_1",
+                "CROSS_BUMP_OUT",
+                "INTAKE_FIRST_CYCLE",
+                "CROSS_BUMP_TO_SHOOT_1",
+                "SHOOT_1",
+                "COLLECT_DEPOT",
+                "DRIVE_TO_DEPOT_FRONT",
+                "SHOOT_BACK_TO_HUB",
+                "DONE");
+        assertThat(stateEndTimes.get("SHOOT_1") - stateStartTimes.get("SHOOT_1"))
+            .isBetween(4.95, 6.5);
+        assertThat(halfwayShotHeading)
+            .as("first shooting turn unfolds across the shot instead of finishing immediately")
+            .isBetween(-55.0, -20.0);
+        assertThat(
+                stateEndTimes.get("SHOOT_BACK_TO_HUB") - stateStartTimes.get("SHOOT_BACK_TO_HUB"))
+            .isGreaterThanOrEqualTo(3.0);
+        var redShootStart = FmsUtil.isRedAlliance() ? shootStart : FieldUtil.pathflip(shootStart);
+        assertThat(redShootStart.getX())
+            .as("scoring requested at bump landing, before x=13.9")
+            .isBetween(13.15, 13.4);
+        assertThat(firstScorePose)
+            .as("actually starts scoring on the first shooting leg")
+            .isNotNull();
+        var redFirstScore =
+            FmsUtil.isRedAlliance() ? firstScorePose : FieldUtil.pathflip(firstScorePose);
+        assertThat(redFirstScore.getX())
+            .as("starts scoring near the bump, before reaching the tower")
+            .isLessThan(14.0);
+        assertThat(
+                stateEndTimes.get("DRIVE_TO_DEPOT_FRONT")
+                    - stateStartTimes.get("DRIVE_TO_DEPOT_FRONT"))
+            .as("clears the depot quickly before starting the second shot")
+            .isLessThan(2.0);
+        assertThat(finalShootStart).isNotNull();
+        assertThat(
+                finalShootStart
+                    .getTranslation()
+                    .getDistance(LeftBumpDepotAuto.DEPOT_FRONT.getPose().getTranslation()))
+            .as("second shot only starts after reaching the front of the depot")
+            .isLessThan(0.12);
+        assertThat(finalShootEnd).isNotNull();
+        assertThat(finalShootEnd.getTranslation().getDistance(finalShootStart.getTranslation()))
+            .isGreaterThan(0.35);
+        var expected = LeftBumpDepotAuto.FINAL_SHOOT_GOAL.getPose();
+        assertThat(
+                robot
+                    .robotManager
+                    .localization
+                    .getPose()
+                    .getTranslation()
+                    .getDistance(expected.getTranslation()))
+            .isLessThan(0.15);
+        assertThat(robot.robotManager.getState().name()).isEqualTo("IDLE");
+        var stopPose = robot.robotManager.localization.getPose();
+        double holdUntil = Timer.getFPGATimestamp() + 0.5;
+        robot.runUntil(() -> Timer.getFPGATimestamp() >= holdUntil, 1.0);
+        assertThat(
+                robot
+                    .robotManager
+                    .localization
+                    .getPose()
+                    .getTranslation()
+                    .getDistance(stopPose.getTranslation()))
+            .isLessThan(0.1);
+      } else {
+        assertThat(visitedStates)
+            .containsExactlyInAnyOrder(
+                "PREPARE_BUMP_OUT_1",
+                "CROSS_BUMP_OUT",
+                "DRIVE_TO_OPPOSITE_HUB",
+                "WAIT_BEHIND_HUB",
+                "INTAKE_FIRST_CYCLE",
+                "CROSS_BUMP_TO_SHOOT_1",
+                "SHOOT_1",
+                "DONE");
+        assertThat(waitEndTime - waitStartTime).isGreaterThanOrEqualTo(1.0);
+      }
       assertThat(uphill).containsExactlyInAnyOrder("CROSS_BUMP_OUT", "CROSS_BUMP_TO_SHOOT_1");
       assertThat(downhill).containsAll(uphill);
       assertThat(shootStart).isNotNull();
       assertThat(shootEnd).isNotNull();
       assertThat(shootEnd.getTranslation().getDistance(shootStart.getTranslation()))
-          .as("drives slowly toward tower during SHOOT_1")
+          .as("translates during SHOOT_1")
           .isGreaterThan(0.5);
     }
   }

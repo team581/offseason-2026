@@ -25,6 +25,41 @@ flowchart LR
     D --> E[Slowly drive toward tower while shooting]
 ```
 
+## Left bump and depot auto
+
+- Select `LEFT_BUMP_DEPOT`. This is a separate left-side route; the existing bump autos remain
+  available. Alliance mirroring handles blue, without creating a right-side version.
+- Use the same hub-corner starting placement and outbound bump crossing as `LEFT_BUMP_CROSS`.
+  Immediately begin its neutral-zone sweep near the left wall, then arc toward the field centerline
+  without crossing it (including the bumper envelope), without driving behind the hub or waiting.
+- Aim and spin up with the live shooting solution during the return crossing, keeping the hopper idle.
+  Request scoring as soon as the bump tracker reports flat at red x = 13.25 m, without waiting to
+  reach x = 13.9 m. Shoot while approaching the depot at red `(15.2, 3.0)` meters.
+  Spread the drive and turn over roughly five seconds: `0.4 m/s`, `0.4 m/s²`,
+  `0.3 rad/s` (about 17°/s), and `0.4 rad/s²`, with a five-second minimum before proceeding.
+- Stop shooting and intake across the depot via `(15.827, 3.0)` to `(15.977, 1.0)`, holding a
+  red heading of `-75°`. Both pickup waypoints are shifted five inches toward the driver station.
+  Limit pickup speed to `1.0 m/s`.
+- After pickup, keep the hopper idle and drive quickly to red `(15.15, 1.3)` in front of the
+  depot (`2.0 m/s`, `3.0 m/s²`). Aim and warm up during this move, and only resume shooting after
+  reaching the front waypoint.
+- Resume shooting while slowly returning toward the hub to `(14.9, 1.8)`, at `0.2 m/s` and
+  `0.3 m/s²`, with a minimum three-second shooting phase. Stop driving and shooting there.
+- Coordinates are route tuning points; validate depot pickup and wall clearance on the robot.
+  The [official field layout](https://firstfrc.blob.core.windows.net/frc2026/Manual/2026GameManual.pdf)
+  places the depot against the alliance wall (Figures 5-2 and 5-11).
+
+```mermaid
+flowchart LR
+    A[Start left] --> B[Cross bump out] --> C[Big sweep] --> D[Cross back]
+    D --> E[Shoot toward depot] --> F[Intake over depot] --> I[Quick move in front] --> G[Slow shoot toward hub] --> H[Stop]
+```
+
+Run `./gradlew :offseason-bot:headlessTest --tests '*BumpAutoSimulationTest' -Psim.auto=LEFT_BUMP_DEPOT`.
+Add `-Psim.red=true` for red alliance. The depot checks cover state order, shooting durations,
+left-side bumper clearance at the field centerline, actual scoring near the bump landing,
+intake-only depot traversal, crossing angle, final position, and holding at the end.
+
 ## 2 cycle auto
 
 - Sweeps the neutral zone twice
