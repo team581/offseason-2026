@@ -58,24 +58,27 @@ public class ShooterConfig {
   public static final Transform2d SHOOTER_TO_ROBOT = new Transform2d(0.0, 0.0, Rotation2d.k180deg);
 
   // Shot tables and real voltage gains from beta-bot competition configuration (6645bd8d^).
-  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/DistanceToScoreRPM",
-          // Actually tuned RPMs:
-          // 3.2m -> 2050 RPM
+  private static final InterpolatingDoubleTreeMap BETA_DISTANCE_TO_SCORE_RPM =
+      InterpolatingDoubleTreeMap.ofEntries(
+          Map.entry(5.9, 2350.0),
+          Map.entry(3.94, 1950.0),
+          Map.entry(2.82, 1800.0),
+          Map.entry(1.76, 1550.0));
+  private static final InterpolatingDoubleTreeMap BETA_DISTANCE_TO_FEEDING_RPM =
+      InterpolatingDoubleTreeMap.ofEntries(
+          Map.entry(6.0, 2000.0), Map.entry(8.71, 2300.0), Map.entry(13.6, 5000.0));
 
-          // We use a scaling factor to adjust the original lookup table
-          Map.entry(5.9, 2350.0 * 1.108),
-          Map.entry(3.94, 1950.0 * 1.108),
-          Map.entry(2.82, 1800.0 * 1.108),
-          Map.entry(1.76, 1550.0 * 1.108));
+  // Actually tuned shot. The beta tables are scaled so the scoring table passes through it.
+  private static final double TUNED_SHOT_DISTANCE_METERS = 3.03;
+  private static final double TUNED_SHOT_RPM = 1700.0;
+  private static final double BETA_RPM_SCALE =
+      TUNED_SHOT_RPM / BETA_DISTANCE_TO_SCORE_RPM.get(TUNED_SHOT_DISTANCE_METERS);
+
+  public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
+      scaledTunableTable("Shooter/DistanceToScoreRPM", BETA_DISTANCE_TO_SCORE_RPM);
+  // Same scaling factor as scoring
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
-      TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/DistanceToFeedingRPM",
-          // Same scaling factor as scoring
-          Map.entry(6.0, 2000.0 * 1.108),
-          Map.entry(8.71, 2300.0 * 1.108),
-          Map.entry(13.6, 5000.0 * 1.108));
+      scaledTunableTable("Shooter/DistanceToFeedingRPM", BETA_DISTANCE_TO_FEEDING_RPM);
   public static final PolynomialRegression SCORING_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/ScoringRegression", DISTANCE_TO_SCORE_RPM);
   public static final PolynomialRegression FEEDING_REGRESSION_MODEL =
@@ -126,10 +129,6 @@ public class ShooterConfig {
       DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
       DogLog.tunable("Shooter/LowHopperInitialFF", 0.0);
-
-  // Added to the hub distance before the scoring RPM and hood lookups to shift every shot longer.
-  public static DoubleSubscriber SCORING_DISTANCE_OFFSET_METERS =
-      DogLog.tunable("Shooter/ScoringDistanceOffsetMeters", Units.feetToMeters(1.0));
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
       DogLog.tunable("Shooter/TurboShotFFCurrent", 0.0);
@@ -198,6 +197,16 @@ public class ShooterConfig {
             new TorqueCurrentConfigs()
                 .withPeakForwardTorqueCurrent(200)
                 .withPeakReverseTorqueCurrent(RobotBase.isSimulation() ? -200 : 0));
+  }
+
+  @SuppressWarnings("unchecked")
+  private static InterpolatingDoubleTreeMap scaledTunableTable(
+      String key, InterpolatingDoubleTreeMap betaTable) {
+    Map.Entry<Double, Double>[] entries =
+        TunableInterpolatingDoubleTreeMap.getEntries(betaTable).entrySet().stream()
+            .map(entry -> Map.entry(entry.getKey(), entry.getValue() * BETA_RPM_SCALE))
+            .toArray(Map.Entry[]::new);
+    return TunableInterpolatingDoubleTreeMap.ofEntries(key, entries);
   }
 
   private ShooterConfig() {}
