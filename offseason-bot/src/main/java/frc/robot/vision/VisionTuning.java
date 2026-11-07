@@ -13,7 +13,7 @@ public final class VisionTuning {
   private static final DoubleSubscriber RANGE =
       DogLog.tunable("Vision/Tuning/RangeSquaredCoefficient", .015);
   private static final DoubleSubscriber RESIDUAL =
-      DogLog.tunable("Vision/Tuning/MaxResidualPixels", 2.);
+      DogLog.tunable("Vision/Tuning/MaxResidualPixels", 20.0);
   private static final DoubleSubscriber INNOVATION =
       DogLog.tunable("Vision/Tuning/InnovationSigma", 10.);
 
