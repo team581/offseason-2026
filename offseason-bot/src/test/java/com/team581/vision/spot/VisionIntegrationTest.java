@@ -323,23 +323,19 @@ final class VisionIntegrationTest {
   void requiredFailureOptionalFailureAndOperatorOverridesAreHonest() {
     try (var f = new Fixture(true)) {
       var health = new frc.robot.health.HealthManager(f.vision, false);
-      health.setPoseTrustworthySupplier(() -> true);
+      var trusted = new java.util.concurrent.atomic.AtomicBoolean(false);
+      health.setPoseTrustworthySupplier(trusted::get);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
-      f.frame("front", 1, 10.01);
+      trusted.set(true);
       f.tick(10.04);
-      health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isFalse(); // accepted is not fused
-      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isTrue();
       assertThat(health.isAllCamerasHealthy()).isFalse();
       assertThat(health.isFuelDetectionHealthy()).isFalse();
-      health.setPoseTrustworthySupplier(() -> false);
+      trusted.set(false);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isTrue(); // held through a brief trust loss
-      health.setPoseTrustworthySupplier(() -> true);
-      health.beforePeriodic();
       try (var use =
               edu.wpi.first.networktables.NetworkTableInstance.getDefault()
                   .getBooleanTopic("/DSOptions/UseVision")
@@ -358,13 +354,11 @@ final class VisionIntegrationTest {
       }
       f.tick(10.6);
       health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isTrue(); // stale fusion is still held
+      assertThat(health.isLocalizationHealthy()).isTrue();
       f.tick(11.1);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isFalse();
-      f.frame("back", 5, 11.11);
-      f.tick(11.14);
-      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
+      trusted.set(true);
       health.beforePeriodic();
       assertThat(health.isLocalizationHealthy()).isTrue();
     }
@@ -454,21 +448,17 @@ final class VisionIntegrationTest {
   }
 
   @Test
-  void tagFilterChangesPreserveFusedHealthButDiscardPendingFramesAndStillExpire() {
+  void tagFilterChangesPreserveFusedEvidenceButDiscardPendingFramesAndStillExpire() {
     try (var f = new Fixture(true)) {
-      var health = new frc.robot.health.HealthManager(f.vision, false);
-      health.setPoseTrustworthySupplier(() -> true);
       f.frame("left", 2, 10.01);
       f.tick(10.04);
       f.vision.drainMeasurements().forEach(f.vision::measurementFused);
-      health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isTrue();
+      assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
 
       f.vision.hubTagsRequest();
       f.vision.robotPeriodic();
       assertThat(f.vision.getState()).isEqualTo(VisionState.HUB_TAGS);
-      health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isTrue();
+      assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
 
       f.frame("left", 2, 10.05);
       f.tick(10.08);
@@ -476,13 +466,11 @@ final class VisionIntegrationTest {
       assertThat(pending).isNotEmpty();
       f.vision.tagsRequest();
       pending.forEach(value -> assertThat(f.vision.eligible(value, f.time)).isFalse());
-      health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isTrue();
+      assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
       assertThat(f.vision.getStatus().cameras().get("left").lastFused()).isEqualTo(10.01);
 
       f.tick(11.10);
-      health.beforePeriodic();
-      assertThat(health.isLocalizationHealthy()).isFalse();
+      assertThat(f.vision.hasRecentFusedMeasurement()).isFalse();
     }
   }
 

@@ -6,14 +6,9 @@ import java.util.function.DoubleSupplier;
 
 /** Capture-time evidence heuristic in metres, not covariance or probability. */
 public final class TrustFactor {
-  public record Policy(
-      double trustworthyM,
-      double lostM,
-      double travelMPerM,
-      double agingMPerS,
-      double correlationS) {
+  public record Policy(double trustworthyM, double lostM, double travelMPerM, double correlationS) {
     public static Policy provisional() {
-      return new Policy(.254, 1., .05, .01, .02);
+      return new Policy(.254, 1., .05, .02);
     }
   }
 
@@ -86,7 +81,8 @@ public final class TrustFactor {
   public void updateOdometry(double distanceM, double elapsedS) {
     if (!Double.isFinite(distanceM) || !Double.isFinite(elapsedS) || distanceM < 0 || elapsedS < 0)
       throw new IllegalArgumentException("nonnegative finite metres and seconds required");
-    double delta = distanceM * policy.travelMPerM() + elapsedS * policy.agingMPerS();
+    // Only driving makes odometry drift; a stationary robot keeps its trust indefinitely.
+    double delta = distanceM * policy.travelMPerM();
     score += delta;
     penalty += delta;
     time += elapsedS;

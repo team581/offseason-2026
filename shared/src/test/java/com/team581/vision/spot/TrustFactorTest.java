@@ -40,7 +40,7 @@ final class TrustFactorTest {
     split.updateOdometry(.05, .02);
     split.ingest(weak);
     assertThat(split.get()).isCloseTo(batch.get(), offset(1e-12));
-    assertThat(batch.get()).isCloseTo(.2 + .1 + .00405, offset(1e-12));
+    assertThat(batch.get()).isCloseTo(.2 + .1 + .00375, offset(1e-12));
     assertThat(split.isTrustworthy()).isFalse();
     double before = split.get();
     split.ingest(strong);
@@ -55,10 +55,10 @@ final class TrustFactorTest {
     trust.reset(10., true);
     assertThat(trust.isTrustworthy()).isTrue();
     assertThat(trust.evidenceAge(10.)).isInfinite();
-    trust.updateOdometry(0., 1.);
-    assertThat(trust.get()).isCloseTo(.264, offset(1e-12));
+    trust.updateOdometry(0., 120.);
+    assertThat(trust.get()).isCloseTo(.254, offset(1e-12)); // sitting still does not age trust
     trust.updateOdometry(2., 0.);
-    assertThat(trust.get()).isCloseTo(.364, offset(1e-12));
+    assertThat(trust.get()).isCloseTo(.354, offset(1e-12));
     assertThatThrownBy(() -> trust.updateOdometry(-1., 0.))
         .isInstanceOf(IllegalArgumentException.class);
   }

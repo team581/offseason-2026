@@ -11,9 +11,9 @@ import java.util.function.BooleanSupplier;
 
 public class HealthManager extends StateMachineSubsystem<HealthState> {
   /**
-   * Sparse tag sightings make the raw localization check flicker, which swaps aiming between the
-   * estimated pose and the tower fallback every loop. Hold healthy briefly after the last good
-   * check so a single missed frame doesn't move the turret.
+   * A single noisy measurement can briefly push the trust factor over its threshold, which would
+   * swap aiming between the estimated pose and the tower fallback. Hold healthy briefly after the
+   * last trustworthy check so one bad frame doesn't move the turret.
    */
   private static final double LOCALIZATION_HEALTHY_HOLD_SECONDS = 1.0;
 
@@ -67,7 +67,9 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
   protected void collectInputs() {
     var status = vision.getStatus();
     double now = vision.tickTime();
-    if (vision.hasRecentFusedMeasurement() && poseTrustworthy.getAsBoolean()) {
+    // Trust is earned from fused Spot measurements and only decays while driving, so a robot
+    // sitting where its cameras can't see a tag keeps the pose it last confirmed.
+    if (poseTrustworthy.getAsBoolean()) {
       lastLocalizationHealthyTimestamp = now;
     }
     // Desktop simulation has odometry but no camera frames. Use its pose for aiming rather
