@@ -14,7 +14,7 @@ public class IntakeConfig {
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           // TODO: UPDATE RATIO
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
@@ -27,9 +27,10 @@ public class IntakeConfig {
       new TalonFXConfiguration()
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.Clockwise_Positive)
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           // TODO: UPDATE RATIO
+
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
