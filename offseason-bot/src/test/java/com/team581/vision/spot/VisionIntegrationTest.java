@@ -230,12 +230,14 @@ final class VisionIntegrationTest {
       f.tick(10.04);
       var batch = f.vision.drainMeasurements();
       assertThat(batch).hasSize(4);
+      assertThat(f.vision.correlationFactor()).isEqualTo(2.);
       assertThat(f.vision.drainMeasurements()).isEmpty();
       for (var value : batch) {
         assertThat(value.pose().getX()).isCloseTo(4., offset(1e-10));
         assertThat(value.pose().getY()).isCloseTo(4., offset(1e-10));
         assertThat(value.timestamp()).isEqualTo(10.01);
-        assertThat(value.stdHeading()).isEqualTo(2e6);
+        // Correlation between the four cameras is applied at the estimator, not here.
+        assertThat(value.stdHeading()).isEqualTo(1e6);
         assertThat(f.vision.eligible(value, 10.04)).isTrue();
         f.vision.measurementFused(value);
         f.vision.measurementFused(value);

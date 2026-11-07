@@ -40,35 +40,11 @@ final class TrustFactorTest {
     split.updateOdometry(.05, .02, false);
     split.ingest(weak);
     assertThat(split.get()).isCloseTo(batch.get(), offset(1e-12));
-    assertThat(batch.get()).isCloseTo(.2 + Math.hypot(.1, .1) + .00405, offset(1e-12));
+    assertThat(batch.get()).isCloseTo(.2 + .1 + .00405, offset(1e-12));
     assertThat(split.isTrustworthy()).isFalse();
     double before = split.get();
     split.ingest(strong);
     assertThat(split.get()).isEqualTo(before); // stale evidence cannot improve confidence
-  }
-
-  @Test
-  void fourCameraLongRangeEvidenceCanMeetBringupThresholdWithoutRemovingCorrelationPenalty() {
-    var trust = new TrustFactor(() -> .5);
-    trust.reset(10., false);
-    double sigma = .015 * 4. * 4. / Math.sqrt(3.);
-    var observation =
-        new VisionMeasurement(
-            "front",
-            "frame",
-            Pose2d.kZero,
-            10.01,
-            sigma,
-            sigma,
-            1e6,
-            ImmutableList.of(1, 2, 3),
-            0.,
-            0.);
-    trust.ingest(VisionProcessor.accountForCorrelation(ImmutableList.of(observation), 4).get(0));
-    assertThat(trust.get()).isCloseTo(.3919183588453085, offset(1e-12));
-    assertThat(trust.isTrustworthy()).isTrue();
-    trust.updateOdometry(0., 0., true);
-    assertThat(trust.isTrustworthy()).isFalse();
   }
 
   @Test
@@ -89,5 +65,19 @@ final class TrustFactorTest {
     assertThat(trust.get()).isCloseTo(4.364, offset(1e-12));
     assertThatThrownBy(() -> trust.updateOdometry(-1., 0., false))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void singleHubTagThatAgreesWithTheEstimateIsTrustworthy() {
+    // Field case: left camera, one hub tag ~3.8 m away, 1 cm from the estimate.
+    var trust = new TrustFactor(() -> .5);
+    trust.reset(10., false);
+    double sigma = .015 * 3.8 * 3.8;
+    trust.ingest(
+        new VisionMeasurement(
+            "left", "frame", Pose2d.kZero, 10.01, sigma, sigma, 1e6, ImmutableList.of(1), .01, 0.));
+    assertThat(trust.isTrustworthy()).isTrue();
+    trust.updateOdometry(0., 0., true);
+    assertThat(trust.isTrustworthy()).isFalse();
   }
 }

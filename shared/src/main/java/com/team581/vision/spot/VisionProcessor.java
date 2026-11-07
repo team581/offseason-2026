@@ -9,7 +9,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -84,26 +83,12 @@ public final class VisionProcessor {
 
   private record RecoveryEvidence(Pose2d correction, double start, double last, int count) {}
 
-  /** Use all configured cameras to cover correlation even across separate release batches. */
-  public static List<VisionMeasurement> accountForCorrelation(
-      List<VisionMeasurement> observations, int cameraCount) {
-    var result = new ArrayList<VisionMeasurement>();
-    double factor = Math.sqrt(Math.max(1, cameraCount));
-    for (var observation : observations) {
-      result.add(
-          new VisionMeasurement(
-              observation.source(),
-              observation.frameId(),
-              observation.pose(),
-              observation.timestamp(),
-              observation.stdX() * factor,
-              observation.stdY() * factor,
-              observation.stdHeading() * factor,
-              observation.tagIds(),
-              observation.innovationM(),
-              observation.normalizedInnovation() / factor));
-    }
-    return List.copyOf(result);
+  /**
+   * Estimator deviation multiplier covering correlation between all configured cameras, even across
+   * separate release batches. Measurements keep their uninflated deviations.
+   */
+  public static double correlationFactor(int cameraCount) {
+    return Math.sqrt(Math.max(1, cameraCount));
   }
 
   private static double headingError(Pose3d candidate, Pose2d history) {
@@ -287,7 +272,7 @@ public final class VisionProcessor {
     double range = candidate.averageDistance();
     double conditioning = MathUtil.clamp(Math.sqrt(.02 / candidate.imageArea()), 1., 4.);
     // Count benefit capped at sqrt(3). Overlapping simultaneous cameras are
-    // additionally inflated by correlation policy at source collection.
+    // additionally inflated by correlationFactor at estimator ingestion.
     double sigma =
         Math.max(
                 policy.translationFloorM(),

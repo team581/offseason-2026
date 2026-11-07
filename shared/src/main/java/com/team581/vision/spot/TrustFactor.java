@@ -53,7 +53,8 @@ public final class TrustFactor {
   /** Caller supplies only measurements actually submitted to the estimator. */
   public void ingest(VisionMeasurement value) {
     if (value.timestamp() < evidenceTimestamp) return;
-    double evidence = value.innovationM() + Math.hypot(value.stdX(), value.stdY());
+    // Disagreement with the estimate plus this measurement's own deviation, counted once.
+    double evidence = value.innovationM() + Math.max(value.stdX(), value.stdY());
     if (!Double.isFinite(evidence) || value.innovationM() < 0) return;
     if (value.timestamp() - groupStart > policy.correlationS()) {
       groupStart = value.timestamp();

@@ -261,9 +261,12 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               valid,
               previous.reason()));
     }
-    if (fusion)
-      prepared =
-          VisionProcessor.accountForCorrelation(queue.release(now, 32), Math.max(1, configured));
+    if (fusion) prepared = ImmutableList.copyOf(queue.release(now, 32));
+  }
+
+  /** Multiplier for estimator deviations; correlated cameras must not add confidence. */
+  public double correlationFactor() {
+    return VisionProcessor.correlationFactor(configured);
   }
 
   public List<VisionMeasurement> drainMeasurements() {

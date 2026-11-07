@@ -84,21 +84,6 @@ final class RobotContractTest {
     return new VisionIO.Sample("front", frame, 10.05);
   }
 
-  @Test
-  void correlatedMeasurementsInflateUncertaintyAndCannotImproveTrustByCameraCount() {
-    var result =
-        VisionProcessor.accountForCorrelation(
-            ImmutableList.of(measurement("a", 10.), measurement("b", 10.)), 2);
-    assertThat(result.get(0).stdX()).isGreaterThan(.1);
-    var trust = new TrustFactor();
-    trust.ingest(result.get(0));
-    double before = trust.get();
-    result.forEach(trust::ingest);
-    assertThat(trust.get()).isEqualTo(before);
-    trust.updateOdometry(1., .02, false);
-    assertThat(trust.get()).isGreaterThan(before);
-  }
-
   @CsvSource({".0003125, 4.", ".00125, 4.", ".005, 2.", ".02, 1.", ".08, 1."})
   @ParameterizedTest
   void imageAreaConditioningKeepsUncertaintyWithinItsIntendedBounds(
@@ -311,23 +296,15 @@ final class RobotContractTest {
   }
 
   @Test
-  void repeatedFramesDoNotManufactureAdditionalCameraSources() {
-    var frames = new java.util.ArrayList<VisionMeasurement>();
-    for (int i = 0; i < 8; i++) frames.add(measurement("front", 10. + i * .001));
-    var batch = VisionProcessor.accountForCorrelation(frames, 4);
-    assertThat(batch).allMatch(value -> value.stdX() == .2);
-    assertThat(VisionProcessor.accountForCorrelation(frames.subList(0, 4), 4))
-        .allMatch(value -> value.stdX() == .2);
-  }
-
-  @Test
-  void sourceCountFloorCoversCorrelatedCamerasSplitAcrossReleaseBatches() {
-    var value =
-        new VisionMeasurement(
-            "front", "one", Pose2d.kZero, 1, .1, .1, 1e6, ImmutableList.of(1), 0, 0);
-    var released = VisionProcessor.accountForCorrelation(ImmutableList.of(value), 4);
-    assertThat(released.get(0).stdX()).isEqualTo(.2);
-    assertThat(value.stdX()).isEqualTo(.1);
+  void simultaneousCamerasCannotImproveTrustByCameraCount() {
+    var result = ImmutableList.of(measurement("a", 10.), measurement("b", 10.));
+    var trust = new TrustFactor();
+    trust.ingest(result.get(0));
+    double before = trust.get();
+    result.forEach(trust::ingest);
+    assertThat(trust.get()).isEqualTo(before);
+    trust.updateOdometry(1., .02, false);
+    assertThat(trust.get()).isGreaterThan(before);
   }
 
   @Test

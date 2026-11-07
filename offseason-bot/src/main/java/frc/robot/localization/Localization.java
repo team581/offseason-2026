@@ -151,7 +151,9 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     }
     for (var result : eligible) {
       drivetrain.addVisionMeasurement(
-          result.pose(), Utils.fpgaToCurrentTime(result.timestamp()), result.standardDevs());
+          result.pose(),
+          Utils.fpgaToCurrentTime(result.timestamp()),
+          result.standardDevs().times(vision.correlationFactor()));
       vision.measurementFused(result);
       trustFactor.ingest(result);
     }
