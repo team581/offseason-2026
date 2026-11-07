@@ -13,11 +13,15 @@ import org.junit.jupiter.api.Test;
 
 final class NormalAutoTurretRangeTest {
   private static void assertShootingTurnHasRoom(Point goal, double startY) {
+    assertShootingTurnHasRoom(goal, 13.576, startY);
+  }
+
+  private static void assertShootingTurnHasRoom(Point goal, double startX, double startY) {
     // Another hundredth of a degree must exceed the clearance at one end of the path.
     var heading = goal.redPose().getRotation();
     var further = heading.plus(Rotation2d.fromDegrees(Math.copySign(0.01, heading.getDegrees())));
     assertThat(
-            NormalAutoSotm.hasClearance(new Pose2d(13.576, startY, further))
+            NormalAutoSotm.hasClearance(new Pose2d(startX, startY, further))
                 && NormalAutoSotm.hasClearance(
                     new Pose2d(goal.redPose().getTranslation(), further)))
         .as("shooting turn uses the maximum available turret travel")
@@ -30,7 +34,7 @@ final class NormalAutoTurretRangeTest {
       for (int rotationStep = 0; rotationStep <= 40; rotationStep++) {
         var redPose =
             new Pose2d(
-                MathUtil.interpolate(13.576, goal.redPose().getX(), progress),
+                MathUtil.interpolate(startX, goal.redPose().getX(), progress),
                 MathUtil.interpolate(startY, goal.redPose().getY(), progress),
                 Rotation2d.kZero.interpolate(goal.redPose().getRotation(), rotationStep / 40.0));
         var point = Point.ofRed(redPose);
@@ -52,9 +56,25 @@ final class NormalAutoTurretRangeTest {
   }
 
   @Test
+  void leftBumpShootingTurnKeepsHubWithinTurretTravel() {
+    assertShootingTurnHasRoom(
+        LeftBumpAuto.SHOOT_ON_THE_MOVE_GOAL,
+        LeftBumpAuto.SHOOT_X,
+        FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13);
+  }
+
+  @Test
   void leftShootingTurnKeepsHubWithinTurretTravel() {
     assertShootingTurnHasRoom(
         LeftNormalAuto.SHOOT_ON_THE_MOVE_GOAL, FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13);
+  }
+
+  @Test
+  void rightBumpShootingTurnKeepsHubWithinTurretTravel() {
+    assertShootingTurnHasRoom(
+        RightBumpAuto.SHOOT_ON_THE_MOVE_GOAL,
+        RightBumpAuto.SHOOT_X,
+        FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() - 0.13);
   }
 
   @Test
