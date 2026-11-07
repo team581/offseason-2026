@@ -5,7 +5,7 @@ import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
 public enum PowerManagerState {
   AUTO_FIRST_SEGMENT(50, 80, 15, 40, 10, 10, 70),
   PRIORITIZE_INTAKE(50, 60, 15, 40, 10, 10, 30),
-  IDLE(50, 40, 25, 40, 10, 10, 35),
+  IDLE(50, 40, 25, 40, 10, 10, 36),
   SCORING(50, 10, 15, 40, 20, 15, 30),
   SCORING_FAR(50, 10, 15, 40, 15, 15, 20),
   BEAST_MODE(50, 10, 15, 40, 15, 15, 20),
