@@ -37,7 +37,7 @@ final class AimParameterUtilTest {
             goal.minus(TurretConfig.TURRET_TO_ROBOT.getTranslation())
                 .minus(new Translation2d(4.0, 0.0)),
             Rotation2d.kZero);
-    double tau = ShootOnTheMove.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
+    double tau = AimParameterUtil.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
     double h = ShootOnTheMove.PREDICTION_HORIZON_SECONDS.getAsDouble();
     double effectiveTof =
         ShootOnTheMove.effectiveTimeOfFlight(1.0, ShootOnTheMove.DRAG_CONSTANT.getAsDouble());
@@ -65,7 +65,7 @@ final class AimParameterUtilTest {
   void changingTofAndAngularAccelerationMatchImplicitAnalyticDerivative() {
     var solver = new ShootOnTheMove(distance -> 0.5 + 0.1 * distance, "ImplicitDerivativeTest");
     double horizon = ShootOnTheMove.PREDICTION_HORIZON_SECONDS.getAsDouble();
-    double linearTau = ShootOnTheMove.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
+    double linearTau = AimParameterUtil.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
     double angularTau = ShootOnTheMove.ANGULAR_TIME_CONSTANT_SECONDS.getAsDouble();
     double drag = ShootOnTheMove.DRAG_CONSTANT.getAsDouble();
     for (double heading : new double[] {-179.0, -30.0, 90.0, 179.0}) {

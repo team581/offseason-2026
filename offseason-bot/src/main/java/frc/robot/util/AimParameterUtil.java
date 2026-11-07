@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.shooter.ShooterConfig;
@@ -46,7 +47,7 @@ public class AimParameterUtil {
     static Model current() {
       return new Model(
           ShootOnTheMove.PREDICTION_HORIZON_SECONDS.getAsDouble(),
-          ShootOnTheMove.VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble(),
+          VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble(),
           ShootOnTheMove.ANGULAR_TIME_CONSTANT_SECONDS.getAsDouble(),
           ShootOnTheMove.DRAG_CONSTANT.getAsDouble());
     }
@@ -80,6 +81,11 @@ public class AimParameterUtil {
                           angularTau))));
     }
   }
+
+  // Provisional comp Q64 response estimate; see docs/swerve-lag-q64.md.
+  // Keep this bot's calibration separate from the shared/competition default.
+  public static final DoubleSubscriber VELOCITY_TIME_CONSTANT_SECONDS =
+      DogLog.tunable("Offseason/ShootOnTheMove/VelocityTimeConstantSeconds", 0.30);
 
   public static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig::getScoreTimeOfFlight, "Scoring");

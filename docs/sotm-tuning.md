@@ -36,7 +36,9 @@ v_pred = u + (v - u) exp(-h/tau)
 position(dt) = position(0) + u*dt + (v-u)*tau*(1-exp(-dt/tau))
 ```
 
-The same equations apply to yaw with its own angular response constant. A reversal
+The offseason bot uses its own linear response tunable; shared/competition callers retain
+`ShootOnTheMove/VelocityTimeConstantSeconds` at 0.15 s. The same equations apply
+to yaw with its own angular response constant. A reversal
 first brakes, crosses zero, then approaches the opposite command. Prediction is
 performed at the robot center. The turret velocity adds `omega cross R(heading) r`
 using the predicted omega and the configured turret-axis offset. Measured speeds
@@ -78,7 +80,7 @@ hood and turret output requests use the latest submitted compensated distance.
 
 | Key | Default | Meaning | Evidence required to fit |
 | --- | ---: | --- | --- |
-| `ShootOnTheMove/VelocityTimeConstantSeconds` | 0.15 | Linear drivetrain response tau | WPILOG telemetry alone (`MeasuredFieldRelativeSpeeds` vs. `CommandedFieldRelativeSpeeds`, no shooting needed) |
+| `Offseason/ShootOnTheMove/VelocityTimeConstantSeconds` | 0.30 | Offseason linear response tau; provisional [Q64 estimate](swerve-lag-q64.md) | WPILOG telemetry alone (`MeasuredFieldRelativeSpeeds` vs. `CommandedFieldRelativeSpeeds`, no shooting needed) |
 | `ShootOnTheMove/AngularTimeConstantSeconds` | 0.15 | Angular drivetrain response tau | WPILOG telemetry alone (`omega` response, no shooting needed) |
 | `ShootOnTheMove/PredictionHorizonSeconds` | 0.02 | Fixed velocity-prediction horizon | Telemetry bounds sensor/turret tracking lag; final value requires observed shot misses during acceleration/reversals |
 | `ShootOnTheMoove/DragCoeff` | 0.465 | Effective linear drag, legacy spelling retained | **Observed shot results / video** (signed radial & tangential landing errors across speeds/distances with fixed stationary maps) |
