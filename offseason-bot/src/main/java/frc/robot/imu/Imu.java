@@ -2,7 +2,6 @@ package frc.robot.imu;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.team581.mechanisms.imu.BaseImuSubsystem;
-import com.team581.mechanisms.imu.BumpCrossingTracker;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.filter.LinearFilter;

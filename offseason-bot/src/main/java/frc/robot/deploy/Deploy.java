@@ -15,6 +15,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -52,6 +53,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
 
+  private boolean simulationInitialized = false;
+
   private double leftStatorCurrent = 0.0;
   private double rightStatorCurrent = 0.0;
   private final StatusSignal<Angle> leftPositionSignal;
@@ -65,7 +68,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   private final StatusSignal<Current> rightSupplyCurrentSignal;
 
   public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
-    super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
+    super(SubsystemPriority.DEPLOY, DeployState.HOME_INWARD);
     this.differentialMechanism = differentialMechanism;
     this.leftMotor = differentialMechanism.getLeader();
     this.rightMotor = differentialMechanism.getFollower();
@@ -202,19 +205,22 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                     .withMinPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0)
                     .withMaxPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0));
 
-    if (getState() == DeployState.HOME_INWARD) {
+    if (!simulationInitialized) {
+      // The robot is placed on the field with its intake raised. This seeds only the physical
+      // simulation; homing still requires enabled motor current at the stop.
       deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0);
-      setStateFromRequest(stateAfterHoming());
-    }
-
-    if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0);
-      setStateFromRequest(stateAfterHoming());
+      simulationInitialized = true;
+      return;
     }
 
     // The kinematic sim has no gravity/contact model. In coast, retain the measured position
     // rather than inventing powered recovery; externally injected collapse remains observable.
-    double target = clamp(getState().getAngleDegrees());
+    double target =
+        switch (getState()) {
+          case HOME_INWARD -> DeployConfig.HOMING_END_POSITION_INWARD;
+          case HOME_OUTWARD -> DeployConfig.HOMING_END_POSITION_OUTWARD;
+          default -> clamp(getState().getAngleDegrees());
+        };
     if (getState() == DeployState.UNHOMED
         || getState() == DeployState.AUTO_INTAKE_DELAY
         || getState().isCoasting()) {
@@ -289,6 +295,32 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  private double simulatedHomingCurrent(double angle) {
+    if (DriverStation.isDisabled() || !simulationInitialized) {
+      return 0.0;
+    }
+    double voltage;
+    double stop;
+    switch (getState()) {
+      case HOME_INWARD -> {
+        voltage = DeployConfig.HOMING_VOLTAGE_INWARD;
+        stop = DeployConfig.HOMING_END_POSITION_INWARD;
+      }
+      case HOME_OUTWARD -> {
+        voltage = DeployConfig.HOMING_VOLTAGE_OUTWARD;
+        stop = DeployConfig.HOMING_END_POSITION_OUTWARD;
+      }
+      default -> {
+        return 0.0;
+      }
+    }
+    // SimKit supplies kinematic positions, but does not model hard-stop motor load.
+    // Feed the contact current into the same detector used on the physical robot.
+    return MathUtil.isNear(stop, angle, 0.5)
+        ? Math.abs(DCMotor.getKrakenX60(1).getCurrent(0.0, voltage))
+        : 0.0;
+  }
+
   private DeployState stateAfterHoming() {
     return DriverStation.isAutonomous() ? DeployState.AUTO_INTAKE_DELAY : DeployState.INTAKE;
   }
@@ -311,6 +343,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
     leftStatorCurrent = leftStatorCurrentSignal.getValueAsDouble();
     rightStatorCurrent = rightStatorCurrentSignal.getValueAsDouble();
+    if (RobotBase.isSimulation() && getState().isHoming()) {
+      leftStatorCurrent = simulatedHomingCurrent(leftMotorPosition);
+      rightStatorCurrent = simulatedHomingCurrent(rightMotorPosition);
+    }
+    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftStatorCurrent);
+    DogLog.log("Deploy/RightMotor/StatorCurrent", rightStatorCurrent);
   }
 
   @Override

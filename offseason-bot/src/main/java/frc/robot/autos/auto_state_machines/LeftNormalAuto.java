@@ -4,7 +4,6 @@ import com.team581.autos.Point;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.mechanisms.imu.BumpCrossingState;
-import com.team581.mechanisms.imu.BumpCrossingTracker;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
@@ -20,6 +19,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.NormalAutoState;
 import frc.robot.config.FeatureFlags;
+import frc.robot.imu.BumpCrossingTracker;
 import frc.robot.robot_manager.RobotManager;
 
 public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {

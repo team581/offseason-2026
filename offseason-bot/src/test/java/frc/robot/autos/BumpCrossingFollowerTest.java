@@ -23,13 +23,36 @@ final class BumpCrossingFollowerTest {
         AutoPoint<?> currentPoint,
         AutoSegment segment,
         int currentPointIndex) {
-      throw new UnsupportedOperationException();
+      return new ChassisSpeeds(0.25, 0.5, 0.75);
     }
 
     @Override
     public void reset(Pose2d currentPose, ChassisSpeeds currentSpeeds) {
       resetPose = currentPose;
       resetSpeeds = currentSpeeds;
+    }
+  }
+
+  @Test
+  void crossingVelocityFollowsRequestedDirectionForOutboundAndReturn() {
+    edu.wpi.first.hal.HAL.initialize(500, 0);
+    for (boolean red : new boolean[] {true, false}) {
+      for (boolean outbound : new boolean[] {true, false}) {
+        var tracker =
+            new frc.robot.imu.BumpCrossingTracker(
+                () -> 0.0, () -> 0.0, () -> 0.0, translation -> {});
+        var direction = red == outbound ? Rotation2d.kZero : Rotation2d.k180deg;
+        tracker.bumpCrossRequest(com.team581.autos.Point.ofRed(Pose2d.kZero), direction);
+        var follower = new BumpCrossingFollower(new RecordingPathFollower(), tracker);
+        var point = AutoPoint.ofBlue(Pose2d.kZero);
+        var segment = com.team581.trailblazer.Trailblazer.segment(point).forever();
+        var speeds =
+            follower.calculateSpeeds(
+                new ChassisSpeeds(), Pose2d.kZero, Pose2d.kZero, point, segment, 0);
+        assertThat(speeds.vxMetersPerSecond).isEqualTo(red == outbound ? -4.0 : 4.0);
+        assertThat(speeds.vyMetersPerSecond).isEqualTo(0.5);
+        assertThat(speeds.omegaRadiansPerSecond).isEqualTo(0.75);
+      }
     }
   }
 

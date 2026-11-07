@@ -421,9 +421,22 @@ final class HopperManagerConveyorCoverageTest {
   }
 
   @Test
-  void stowOperatorCommandsDeployStowAndIntakeIdleInScoreAndFeed() {
+  void stowOperatorCommandsDeployStowAndIntakeIdleInScoreAndFeed()
+      throws ReflectiveOperationException {
     deploy.homeInAutoRequest();
-    deploy.simulationPeriodic();
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setDsAttached(true);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setAutonomous(false);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setEnabled(true);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
+    // This unit test starts after homing; simulate both motors contacting their stops.
+    for (String name : new String[] {"leftStatorCurrent", "rightStatorCurrent"}) {
+      var current = Deploy.class.getDeclaredField(name);
+      current.setAccessible(true);
+      current.setDouble(deploy, 30.0);
+    }
+    deploy.robotPeriodic();
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.setEnabled(false);
+    edu.wpi.first.wpilibj.simulation.DriverStationSim.notifyNewData();
     hopperManager.setOperatorWantsStow(true);
 
     for (boolean entry : new boolean[] {true, false}) {
