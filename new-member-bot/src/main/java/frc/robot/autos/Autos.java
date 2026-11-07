@@ -30,6 +30,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
 
   @Override
   protected void afterTransition(AutoSelection newState) {
+    if (newState == AutoSelection.DO_NOTHING) {
+      // Do not keep following a path loaded by a previously selected auto.
+      trailblazer.clearActiveSegment();
+    }
+
     // Recreate the auto instances when the selection changes
     selectedAuto = newState.auto.apply(robotManager, trailblazer);
   }
