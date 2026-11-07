@@ -1,6 +1,7 @@
 package com.team581;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.team581.simulation_studio.SimulationControlBridge;
 import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import com.team581.util.tuning.ElasticLayoutUtil;
 import dev.doglog.DogLog;
@@ -37,6 +38,8 @@ public abstract class Base581Robot extends TimedRobot {
 
   public Base581Robot() {
     DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
+
+    SimulationControlBridge.attachTo(this);
 
     SignalLogger.start();
 
