@@ -97,6 +97,7 @@ public final class SpotVisionIO implements VisionIO {
   public Inputs readInputs(double now) {
     update();
     var result = new ArrayList<Sample>();
+    var arrivals = new HashMap<String, Boolean>();
     var health = health(now);
     for (var camera : cameras.entrySet()) {
       for (var sample : camera.getValue().readQueue()) {
@@ -110,18 +111,21 @@ public final class SpotVisionIO implements VisionIO {
           continue;
         }
         var frame = frameBuffer.read(sample.value);
-        var timestamp = captureTimestamp(sample);
-        if (timestamp.isEmpty()
-            || timestamp.getAsDouble() <= resetTimestamp
-            || frame.revisionHigh() != heartbeat.revisionHigh()
+        if (frame.revisionHigh() != heartbeat.revisionHigh()
             || frame.revisionLow() != heartbeat.revisionLow()) {
+          reject("Observation predates reset or configuration change");
+          continue;
+        }
+        arrivals.merge(camera.getKey(), frame.observedTags() != 0, Boolean::logicalOr);
+        var timestamp = captureTimestamp(sample);
+        if (timestamp.isEmpty() || timestamp.getAsDouble() <= resetTimestamp) {
           reject("Observation predates reset or configuration change");
           continue;
         }
         result.add(new Sample(camera.getKey(), frame, timestamp.getAsDouble()));
       }
     }
-    return new Inputs(health, result);
+    return new Inputs(health, result, arrivals);
   }
 
   @Override

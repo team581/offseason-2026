@@ -524,7 +524,7 @@ final class VisionIntegrationTest {
       assertThat(f.vision.getStatus().usable()).isEqualTo(4);
       assertThat(f.vision.getStatus().allRequiredHealthy()).isTrue();
       assertThat(f.vision.seeingTag()).isFalse();
-      f.tick(10.53);
+      f.tick(10.55);
       assertThat(f.vision.getStatus().usable()).isEqualTo(0);
       assertThat(f.vision.getStatus().allRequiredHealthy()).isFalse();
       assertThat(f.vision.hasRecentFusedMeasurement()).isFalse();

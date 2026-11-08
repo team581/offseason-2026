@@ -4,14 +4,34 @@ import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.structs.FrameResult;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /** A single owned snapshot per control tick. Getters never poll transport. */
 public interface VisionIO extends AutoCloseable {
   record Health(boolean available, String reason, String generation) {}
 
-  record Inputs(Health health, List<Sample> samples) {
+  /**
+   * @param arrivals Cameras that sent any frame this tick, including frames later dropped for a
+   *     reset or tag policy change, mapped to whether one of those frames observed a tag. This is
+   *     camera health, independent of whether frames are usable for localization.
+   */
+  record Inputs(Health health, List<Sample> samples, Map<String, Boolean> arrivals) {
     public Inputs {
       samples = List.copyOf(samples);
+      arrivals = Map.copyOf(arrivals);
+    }
+
+    public Inputs(Health health, List<Sample> samples) {
+      this(
+          health,
+          samples,
+          samples.stream()
+              .collect(
+                  Collectors.toMap(
+                      Sample::cameraName,
+                      sample -> sample.frame().observedTags() != 0,
+                      Boolean::logicalOr)));
     }
   }
 

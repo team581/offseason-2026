@@ -14,6 +14,7 @@ import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.results.VisionMeasurement;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.util.scheduling.SubsystemPriority;
 import java.util.HashMap;
@@ -57,6 +58,9 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       String generation,
       Map<String, CameraStatus> cameras) {}
 
+  private static final double CAMERA_TIMEOUT_S = .5;
+  private static final double NO_TAGS_WARNING_S = 2;
+  private static final String NO_TAGS_WARNING = "Spot cameras haven't seen a tag recently";
   private static final Set<Integer> RED_HUB = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
   private static final Set<Integer> BLUE_HUB = Set.of(18, 19, 20, 21, 24, 25, 26, 27);
   private final VisionIO io;
@@ -71,6 +75,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private VisionProcessor processor;
   private final MeasurementQueue queue;
   private final Map<String, CameraStatus> cameras = new HashMap<>();
+  private final Map<String, Double> lastFrame = new HashMap<>();
+  private double lastTagSeen = Double.NEGATIVE_INFINITY;
   private final Set<String> faults = new HashSet<>();
   private List<VisionMeasurement> prepared = ImmutableList.of();
   private final Map<String, VisionMeasurement> offered = new HashMap<>();
@@ -163,6 +169,12 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     }
     available = health.available() && configured > 0;
     unavailableReason = health.reason();
+    inputs
+        .arrivals()
+        .forEach((camera, sawTag) -> {
+          lastFrame.put(camera, now);
+          if (sawTag) lastTagSeen = now;
+        });
     boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
     if (!fusion) queue.clearPending();
     long allowedTags = SpotProtocol.tagMask(selection.allowedTagIds(), profile.field());
@@ -215,14 +227,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
               previous.lastFused(),
               previous.accepted() + (accepted ? 1 : 0),
               previous.rejected() + (accepted ? 0 : 1),
-              operational
-                  || (previous.usable()
-                      && !Sets.immutableEnumSet(
-                              VisionProcessor.Reason.CONFIGURATION,
-                              VisionProcessor.Reason.CALIBRATION,
-                              VisionProcessor.Reason.MALFORMED,
-                              VisionProcessor.Reason.TIMESTAMP)
-                          .contains(decision.reason())),
+              previous.usable(),
               decision.reason().name()));
       if (accepted) {
         var measurement = decision.measurement().orElseThrow();
@@ -249,7 +254,11 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                   0,
                   false,
                   "No fresh frame"));
-      boolean valid = available && previous.usable() && now - previous.lastObservation() <= .5;
+      // A camera is healthy while Spot is sending its frames, whether or not they see a tag.
+      boolean valid =
+          available
+              && now - lastFrame.getOrDefault(camera.name(), Double.NEGATIVE_INFINITY)
+                  <= CAMERA_TIMEOUT_S;
       cameras.put(
           camera.name(),
           new CameraStatus(
@@ -386,14 +395,23 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void whileInState(VisionState state) {
     if (closed) return;
     var status = getStatus();
-    var desired = new HashSet<String>();
-    if (!status.available()) desired.add("Spot: " + status.reason());
-    for (var camera : profile.cameras()) {
-      var observed = cameras.get(camera.name());
-      if (camera.enabled() && camera.required() && (observed == null || !observed.usable()))
-        desired.add("Spot required camera unavailable: " + camera.name());
+    // Errors mean Spot or a camera is down. Not seeing a tag is only a warning.
+    var errors = new HashSet<String>();
+    var warnings = new HashSet<String>();
+    if (!status.available()) {
+      errors.add("Spot: " + status.reason());
+    } else {
+      for (var camera : profile.cameras()) {
+        var observed = cameras.get(camera.name());
+        if (camera.enabled() && camera.required() && (observed == null || !observed.usable()))
+          errors.add("Spot camera not sending frames: " + camera.name());
+      }
+      if (status.usable() > 0 && now - lastTagSeen > NO_TAGS_WARNING_S)
+        warnings.add(NO_TAGS_WARNING);
     }
-    for (var fault : desired) if (faults.add(fault)) DogLog.logFault(fault);
+    for (var fault : errors) if (faults.add(fault)) DogLog.logFault(fault, AlertType.kError);
+    for (var fault : warnings) if (faults.add(fault)) DogLog.logFault(fault, AlertType.kWarning);
+    var desired = Sets.union(errors, warnings);
     for (var fault : Set.copyOf(faults))
       if (!desired.contains(fault)) {
         DogLog.clearFault(fault);
@@ -404,6 +422,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     DogLog.log("Vision/Spot/Available", status.available());
     DogLog.log("Vision/Spot/Reason", status.reason());
     DogLog.log("Vision/Spot/UsableCameras", status.usable());
+    DogLog.log("Vision/Spot/TagSeenAgeSeconds", now - lastTagSeen);
     DogLog.log("Vision/Spot/QueueDrops", status.queueDrops());
     DogLog.log("Vision/Spot/SelectionGeneration", selection.generation());
     for (var entry : cameras.entrySet()) {
