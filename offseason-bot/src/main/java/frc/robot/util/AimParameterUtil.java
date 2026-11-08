@@ -96,7 +96,7 @@ public class AimParameterUtil {
   private static final double FEEDING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(20);
   private static final double SCORING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(5);
 
-  private static final double MIN_TURRET_TOLERANCE_DEGREES = 1.0;
+  private static final double MIN_TURRET_TOLERANCE_DEGREES = 3.0;
 
   private static final double FEEDING_FALLBACK_DISTANCE_TO_GOAL = 8.0;
 

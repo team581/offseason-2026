@@ -256,7 +256,10 @@ final class AimParameterUtilTest {
 
   @Test
   void staticFeedingUsesTwentyInchTolerance() {
-    var robotPose = new Pose2d(4.0, 2.0, Rotation2d.fromDegrees(-20.0));
+    var robotPose =
+        new Pose2d(
+            FeedLocation.RIGHT.getTranslation().plus(new Translation2d(6.0, 0.0)),
+            Rotation2d.fromDegrees(-20.0));
     var parameters =
         AimParameterUtil.getStaticFeedingParameters(
             FeedLocation.RIGHT, robotPose, new ChassisSpeeds(), new ChassisSpeeds());
@@ -284,7 +287,7 @@ final class AimParameterUtilTest {
     assertEquals(turretPose.getTranslation().getDistance(goal), parameters.distance(), DELTA);
     assertEquals(
         Math.max(
-            1.0,
+            3.0,
             TurretCalculator.getGoalCentricTurretTolerance(
                 goal, robotPose, Units.inchesToMeters(5.0))),
         parameters.turretTolerance(),
