@@ -230,7 +230,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
               && deploy.getState() != DeployState.SCORE_COMPACTION_WAITING) {
             deploy.intakeRequest();
           }
-          intake.scoreRequest();
+          intake.intakeRequest();
         }
         conveyor.initialShotRequest();
         feeder.scoreRequest();
@@ -253,7 +253,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           if (deploy.getState() != DeployState.FEED_COMPACTION) {
             deploy.intakeRequest();
           }
-          intake.feedRequest();
+          intake.intakeRequest();
         }
         conveyor.initialShotRequest();
         feeder.feedRequest();
@@ -363,7 +363,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           funneler.scoreRequest();
         } else if (shouldBeastMode) {
           deploy.beastModeRequest();
-          intake.scoreRequest();
+          intake.intakeRequest();
           conveyor.scoreRequest();
           feeder.scoreRequest();
           funneler.scoreRequest();
@@ -375,13 +375,13 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           } else {
             deploy.intakeRequest();
           }
-          intake.idleRequest();
+          intake.intakeRequest();
           conveyor.scoreRequest();
           feeder.scoreRequest();
           funneler.scoreRequest();
         } else {
           deploy.waitHopperCompactionRequest();
-          intake.scoreRequest();
+          intake.intakeRequest();
           conveyor.initialShotRequest();
           feeder.scoreRequest();
           funneler.scoreRequest();
@@ -405,11 +405,11 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
           }
         } else if (timeout(HopperManagerConfig.HOPPER_COMPACTION_DELAY.getAsDouble())) {
           deploy.feedCompactionRequest();
-          intake.idleRequest();
+          intake.intakeRequest();
           conveyor.feedRequest();
         } else {
           deploy.intakeRequest();
-          intake.feedRequest();
+          intake.intakeRequest();
           conveyor.initialShotRequest();
         }
         feeder.feedRequest();

@@ -59,12 +59,11 @@ final class HopperManagerIntakeCoverageTest {
   }
 
   @Test
-  void feedCommandsIntakeFeed() {
+  void feedRunsIntake() {
     hopperManager.feedRequest();
     hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.FEED);
-    // Before compaction timeout, intake should be feeding
-    assertThat(intake.getState()).isIn(IntakeState.FEED, IntakeState.IDLE);
+    assertThat(intake.getState()).isEqualTo(IntakeState.INTAKE);
   }
 
   @Test
@@ -173,12 +172,11 @@ final class HopperManagerIntakeCoverageTest {
   }
 
   @Test
-  void scoreCommandsIntakeScore() {
+  void scoreRunsIntake() {
     hopperManager.scoreRequest();
     hopperManager.periodic();
     assertThat(hopperManager.getState()).isEqualTo(HopperState.SCORE);
-    // Before compaction timeout, intake should be scoring
-    assertThat(intake.getState()).isIn(IntakeState.SCORE, IntakeState.IDLE);
+    assertThat(intake.getState()).isEqualTo(IntakeState.INTAKE);
   }
 
   @Test
