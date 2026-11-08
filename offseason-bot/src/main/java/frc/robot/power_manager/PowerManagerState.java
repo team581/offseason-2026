@@ -7,13 +7,13 @@ public enum PowerManagerState {
   AUTO_FIRST_SEGMENT(50, 80, 15, 40, 10, 10, 10, 70, 15),
   PRIORITIZE_INTAKE(50, 85, 15, 40, 10, 10, 10, 10, 15),
   IDLE(50, 50, 25, 40, 10, 10, 10, 35, 25),
-  SCORING(50, 20, 15, 40, 20, 20, 20, 30, 15),
-  SCORING_FAR(50, 20, 15, 40, 10, 10, 10, 20, 15),
-  BEAST_MODE(50, 10, 15, 40, 30, 30, 30, 20, 15),
-  FEEDING(35, 20, 15, 40, 30, 30, 30, 30, 15),
-  FEEDING_FAR(35, 20, 15, 40, 15, 15, 15, 30, 15),
+  SCORING(50, 50, 15, 40, 20, 20, 20, 30, 15),
+  SCORING_FAR(50, 50, 15, 40, 10, 10, 10, 20, 15),
+  BEAST_MODE(50, 50, 15, 40, 30, 30, 30, 20, 15),
+  FEEDING(35, 50, 15, 40, 30, 30, 30, 30, 15),
+  FEEDING_FAR(35, 50, 15, 40, 15, 15, 15, 30, 15),
 
-  TURBO_MODE(30, 5, 18, 10, 10, 10, 10, 70, 18);
+  TURBO_MODE(30, 50, 18, 10, 10, 10, 10, 70, 18);
 
   final DoubleSubscriber shooterSupplyCurrent;
   final DoubleSubscriber intakeSupplyCurrent;
