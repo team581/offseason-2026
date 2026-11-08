@@ -291,6 +291,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
     DogLog.log("Deploy/LeftMotor/StatorCurrent", leftStatorCurrent);
     DogLog.log("Deploy/RightMotor/StatorCurrent", rightStatorCurrent);
+    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
   }
 
   @Override
