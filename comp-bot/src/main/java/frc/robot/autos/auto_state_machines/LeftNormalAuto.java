@@ -181,7 +181,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
               AutoPoint.ofRed(new Pose2d(10.456, 4.025, Rotation2d.kZero))
                   .withAngularConstraints(2.75, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 30)),
-              AutoPoint.ofRed(new Pose2d(9.756, 2.825, Rotation2d.fromDegrees(-15)))
+              AutoPoint.ofRed(new Pose2d(9.556, 2.925, Rotation2d.fromDegrees(-15)))
                   .withAngularConstraints(2.75, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 25)),
               AutoPoint.ofRed(
