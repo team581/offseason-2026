@@ -390,10 +390,15 @@ public class FieldUtil {
   private static final double ROBOT_WIDTH_WITH_BUMPERS = Units.inchesToMeters(29.0 + 6.0);
   private static final double ROBOT_HALF_WIDTH_WITH_BUMPERS = ROBOT_WIDTH_WITH_BUMPERS / 2.0;
 
+  // The preset shot overshoots from the true pose, so aim as if we were closer to the hub
+  private static final double TOWER_FALLBACK_HUB_OFFSET_X = Units.inchesToMeters(6.0);
+
   // Preset scoring shot centered on the climb tower, bumpers against the hub-facing side
   private static final Pose2d RED_TOWER_FALLBACK =
       new Pose2d(
-          CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getX() - ROBOT_HALF_WIDTH_WITH_BUMPERS,
+          CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getX()
+              - ROBOT_HALF_WIDTH_WITH_BUMPERS
+              - TOWER_FALLBACK_HUB_OFFSET_X,
           MathHelpers.average(
               CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getY(),
               CLIMB_BACK_CORNER_DEPOT_SIDE.redPose().getY()),
