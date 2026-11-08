@@ -157,6 +157,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     hopperManager.setDriverWantsIntake(true);
   }
 
+  public void prepareFallbackScoreRequest() {
+    if (getState() != RobotState.FALLBACK_SCORE) {
+      setStateFromRequest(RobotState.PREPARE_FALLBACK_SCORE);
+    }
+  }
+
   public void prepareFeedRequest() {
     if (getState() != RobotState.FALLBACK_FEED && getState() != RobotState.FEED) {
       if (!isLocalizationHealthy()) {
@@ -251,9 +257,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/FallbackScoring/ScoreTransition/ShooterHoodAtGoal",
         shooterHood.atGoal(ShooterHoodState.SCORING));
-    DogLog.log(
-        "RobotManager/FallbackScoring/ScoreTransition/ScorePathNotObstructed",
-        !isScorePathObstructed);
   }
 
   private void logFeedTransition(RobotState currentState) {
@@ -618,7 +621,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield turret.atGoal(TurretState.SCORE, scoringParameters)
                 && shooter.atGoalDebounced(expectedShooterState)
                 && shooterHood.atGoal(ShooterHoodState.SCORING)
-                && !isScorePathObstructed
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
