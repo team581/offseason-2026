@@ -1,11 +1,13 @@
 package com.team581.vision.spot;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+
+import com.google.common.collect.ImmutableMap;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.structs.FrameResult;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /** A single owned snapshot per control tick. Getters never poll transport. */
 public interface VisionIO extends AutoCloseable {
@@ -19,7 +21,7 @@ public interface VisionIO extends AutoCloseable {
   record Inputs(Health health, List<Sample> samples, Map<String, Boolean> arrivals) {
     public Inputs {
       samples = List.copyOf(samples);
-      arrivals = Map.copyOf(arrivals);
+      arrivals = ImmutableMap.copyOf(arrivals);
     }
 
     public Inputs(Health health, List<Sample> samples) {
@@ -28,7 +30,7 @@ public interface VisionIO extends AutoCloseable {
           samples,
           samples.stream()
               .collect(
-                  Collectors.toMap(
+                  toImmutableMap(
                       Sample::cameraName,
                       sample -> sample.frame().observedTags() != 0,
                       Boolean::logicalOr)));
