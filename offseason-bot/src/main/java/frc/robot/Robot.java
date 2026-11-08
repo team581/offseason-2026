@@ -2,7 +2,6 @@ package frc.robot;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
-import com.team581.controller.ButtonEvent;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
@@ -169,7 +168,13 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreOrFeedRequest)
         .onRelease(robotManager::idleRequest);
 
-    new ButtonEvent(buttonBindingsLoop, driver.rightBumper().or(operator.leftTrigger()))
+    driver
+        .rightBumper()
+        .onPress(robotManager::prepareFallbackScoreRequest)
+        .onRelease(robotManager::idleRequest);
+
+    operator
+        .leftTrigger()
         .onPress(robotManager::stowDeployRequest)
         .onRelease(robotManager::cancelStowDeployRequest);
 
