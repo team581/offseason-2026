@@ -49,7 +49,7 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
-      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
+      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.0);
 
   /**
    * Spot's modeled deviations are about 10x comp-bot's Limelight ones, so 0.01 left each frame
@@ -455,7 +455,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
             && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
     var usingTeleopDrive =
         driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
-    var sotmDelayElapsed = timeout(DRIVER_WANTS_SOTM_DELAY.get());
+    var sotmDelay = DRIVER_WANTS_SOTM_DELAY.get();
+    var sotmDelayElapsed = sotmDelay <= 0.0 || timeout(sotmDelay);
     driverWantsSotm = (sotmDelayElapsed && movingInScoreOrFeed) || !usingTeleopDrive;
     driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
 
