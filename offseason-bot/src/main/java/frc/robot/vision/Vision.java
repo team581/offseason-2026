@@ -303,17 +303,9 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         profile.cameras().stream()
             .filter(c -> c.enabled() && c.required())
             .allMatch(c -> cameras.containsKey(c.name()) && cameras.get(c.name()).usable());
-    String reason =
-        configured == 0
-            ? "No measured camera configuration"
-            : !available
-                ? unavailableReason
-                : hubTags().isEmpty() && getState() != VisionState.TAGS
-                    ? "Waiting for alliance or complete hub layout"
-                    : usable == 0 ? "Waiting for tag selection application" : "Ready";
     return new Status(
         available,
-        reason,
+        getReason(usable),
         configured,
         usable,
         required,
@@ -442,6 +434,17 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
 
   private List<Integer> broadTags() {
     return profile.field().tags().stream().map(FieldTag::id).sorted().toList();
+  }
+
+  private String getReason(int usable) {
+    // Spot supplies the camera list, so check Spot itself first: when it's offline, an empty
+    // camera list is a symptom, not the cause.
+    if (!available && !unavailableReason.isEmpty()) return unavailableReason;
+    if (configured == 0) return "No measured camera configuration";
+    if (hubTags().isEmpty() && getState() != VisionState.TAGS)
+      return "Waiting for alliance or complete hub layout";
+    if (usable == 0) return "Waiting for tag selection application";
+    return "Ready";
   }
 
   private Set<Integer> hubTags() {
