@@ -2,6 +2,7 @@ package frc.robot.autos.auto_state_machines;
 
 import com.team581.autos.Point;
 import com.team581.autos.StuckOnBallRecovery;
+import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.mechanisms.imu.BumpCrossingState;
 import com.team581.trailblazer.AutoPoint;
@@ -10,6 +11,7 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
@@ -362,8 +364,8 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
       case DRIVE_TO_TOWER -> {
         var speeds = robotManager.swerve.getFieldRelativeSpeeds();
         yield trailblazer.atGoal(robotManager.localization.getPose())
-                && Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) < 0.1
-                && Math.abs(speeds.omegaRadiansPerSecond) < 0.1
+                && MathHelpers.getLinearVelocity(speeds) < 0.1
+                && MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 0.1)
             ? LeftBumpDepotAutoState.SHOOT_1
             : currentState;
       }

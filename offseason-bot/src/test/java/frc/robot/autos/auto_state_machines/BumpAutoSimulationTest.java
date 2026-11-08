@@ -3,6 +3,7 @@ package frc.robot.autos.auto_state_machines;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 
+import com.team581.math.MathHelpers;
 import com.team581.mechanisms.imu.BumpCrossingState;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
@@ -117,7 +118,7 @@ final class BumpAutoSimulationTest {
               .as("reaches the tower before shooting")
               .isLessThan(0.12);
           var speeds = robot.robotManager.swerve.getFieldRelativeSpeeds();
-          assertThat(Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond))
+          assertThat(MathHelpers.getLinearVelocity(speeds))
               .as("shoots at standstill")
               .isLessThan(0.1);
           assertThat(Math.abs(speeds.omegaRadiansPerSecond)).isLessThan(0.1);
