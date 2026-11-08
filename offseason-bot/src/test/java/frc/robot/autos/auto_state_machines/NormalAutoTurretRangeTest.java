@@ -17,7 +17,7 @@ final class NormalAutoTurretRangeTest {
   }
 
   private static void assertShootingTurnHasRoom(Point goal, double startX, double startY) {
-    if (Math.abs(goal.redPose().getRotation().getDegrees()) > 0.01) {
+    if (!MathUtil.isNear(0, goal.redPose().getRotation().getDegrees(), 0.01)) {
       // Another hundredth of a degree must exceed the clearance at one end of the path.
       var heading = goal.redPose().getRotation();
       var further = heading.plus(Rotation2d.fromDegrees(Math.copySign(0.01, heading.getDegrees())));
