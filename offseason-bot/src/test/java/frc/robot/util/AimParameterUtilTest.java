@@ -283,7 +283,10 @@ final class AimParameterUtilTest {
         DELTA);
     assertEquals(turretPose.getTranslation().getDistance(goal), parameters.distance(), DELTA);
     assertEquals(
-        TurretCalculator.getGoalCentricTurretTolerance(goal, robotPose, Units.inchesToMeters(5.0)),
+        Math.max(
+            1.0,
+            TurretCalculator.getGoalCentricTurretTolerance(
+                goal, robotPose, Units.inchesToMeters(5.0))),
         parameters.turretTolerance(),
         DELTA);
     assertEquals(parameters.turretAngle(), parameters.upcomingTurretAngle(), DELTA);

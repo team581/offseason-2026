@@ -96,6 +96,8 @@ public class AimParameterUtil {
   private static final double FEEDING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(20);
   private static final double SCORING_GOAL_CENTRIC_TOLERANCE = Units.inchesToMeters(5);
 
+  private static final double MIN_TURRET_TOLERANCE_DEGREES = 1.0;
+
   private static final double FEEDING_FALLBACK_DISTANCE_TO_GOAL = 8.0;
 
   private static final double FEEDING_FALLBACK_TOLERANCE = 5.0;
@@ -274,7 +276,9 @@ public class AimParameterUtil {
         new AimingParameters(
             angle,
             distance,
-            TurretCalculator.getGoalCentricTurretTolerance(solution.goal(), pose, tolerance),
+            Math.max(
+                MIN_TURRET_TOLERANCE_DEGREES,
+                TurretCalculator.getGoalCentricTurretTolerance(solution.goal(), pose, tolerance)),
             valid ? feedforward : 0.0,
             upcomingAngle,
             valid);
