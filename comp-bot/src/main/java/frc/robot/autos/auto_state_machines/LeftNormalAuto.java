@@ -162,26 +162,26 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 360)),
               AutoPoint.ofRed(new Pose2d(10.628, 0.87, Rotation2d.fromDegrees(140)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(9.140, 2.417, Rotation2d.fromDegrees(130)))
+              AutoPoint.ofRed(new Pose2d(8.9, 2.917, Rotation2d.fromDegrees(130)))
                   .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
-              AutoPoint.ofRed(new Pose2d(8.500, 3.26, Rotation2d.fromDegrees(120)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
+              // AutoPoint.ofRed(new Pose2d(8.500, 3.26, Rotation2d.fromDegrees(120)))
+              //     .withTransitionTolerance(new PoseErrorTolerance(0.4, 100)),
               AutoPoint.ofRed(new Pose2d(8.456, 3.47, Rotation2d.fromDegrees(10)))
                   .withAngularConstraints(2.75, 3.0)
                   .withLinearConstraints(3.0, 3.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.ofRed(new Pose2d(9.156, 3.625, Rotation2d.fromDegrees(-15)))
-                  .withAngularConstraints(2.75, 3.0)
-                  .withLinearConstraints(3.0, 2.0)
-                  .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
+                  .withTransitionTolerance(new PoseErrorTolerance(0.3, 60)),
+              // AutoPoint.ofRed(new Pose2d(9.156, 3.625, Rotation2d.fromDegrees(-15)))
+              //     .withAngularConstraints(2.75, 3.0)
+              //     .withLinearConstraints(3.0, 2.0)
+              //     .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
               AutoPoint.ofRed(new Pose2d(9.556, 3.625, Rotation2d.fromDegrees(10)))
                   .withAngularConstraints(2.75, 3.0)
                   .withLinearConstraints(3.0, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 30)),
-              AutoPoint.ofRed(new Pose2d(10.356, 4.025, Rotation2d.kZero))
+              AutoPoint.ofRed(new Pose2d(10.456, 4.025, Rotation2d.kZero))
                   .withAngularConstraints(2.75, 3.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.3, 30)),
-              AutoPoint.ofRed(new Pose2d(9.556, 2.925, Rotation2d.fromDegrees(-15)))
+              AutoPoint.ofRed(new Pose2d(9.756, 2.825, Rotation2d.fromDegrees(-15)))
                   .withAngularConstraints(2.75, 2.0)
                   .withTransitionTolerance(new PoseErrorTolerance(0.2, 25)),
               AutoPoint.ofRed(
