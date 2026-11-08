@@ -144,6 +144,13 @@ public class Robot extends Base581Robot {
   }
 
   @Override
+  public void autonomousExit() {
+    // Autos leave temporary overrides like PRIORITIZE_INTAKE active, which would otherwise
+    // persist into teleop since RobotManager's IDLE state doesn't reset the power manager
+    powerManager.idleRequest();
+  }
+
+  @Override
   protected void configureBindings() {
     var driver =
         new ControllerBindings(buttonBindingsLoop, enabledEvent, hardware.driverController);
@@ -176,10 +183,6 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreRequest)
         .onRelease(robotManager::idleRequest);
 
-    operator
-        .leftBumper()
-        .onPress(powerManager::prioritizeIntakeRequest)
-        .onRelease(powerManager::idleRequest);
     operator
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
