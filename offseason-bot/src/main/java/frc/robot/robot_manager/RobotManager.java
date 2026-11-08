@@ -254,7 +254,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/FallbackScoring/ScoreTransition/ScorePathNotObstructed",
         !isScorePathObstructed);
-    DogLog.log("RobotManager/FallbackScoring/ScoreTransition/NotNearTrench", !nearTrench);
   }
 
   private void logFeedTransition(RobotState currentState) {
@@ -323,16 +322,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     } else {
       DogLog.log("RobotManager/FallbackFeeding/HoodStatus", "Clear");
       shooterHood.feedRequest(fallbackFeedingParameters.distance());
-    }
-  }
-
-  private void smartHoodPrepareFallbackScoreRequest() {
-    if (nearTrench) {
-      shooterHood.idleRequest();
-      DogLog.log("RobotManager/FallbackScoring/HoodStatus", "NearTrench");
-    } else {
-      DogLog.log("RobotManager/FallbackScoring/HoodStatus", "Clear");
-      shooterHood.scoreRequest(scoringParameters.distance());
     }
   }
 
@@ -467,7 +456,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopperManager.idleRequest();
         vision.tagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
-        smartHoodPrepareFallbackScoreRequest();
+        shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
         swerve.scoreRequest();
         smartScoringPowerManagerRequest();
@@ -630,7 +619,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && shooter.atGoalDebounced(expectedShooterState)
                 && shooterHood.atGoal(ShooterHoodState.SCORING)
                 && !isScorePathObstructed
-                && !nearTrench
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
@@ -813,7 +801,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopperManager.idleRequest();
         // Automatically update scoring parameters with preset pose
         shooter.prepareScoreRequest(scoringParameters.distance());
-        smartHoodPrepareFallbackScoreRequest();
+        shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
         swerve.scoreRequest();
         smartScoringPowerManagerRequest();

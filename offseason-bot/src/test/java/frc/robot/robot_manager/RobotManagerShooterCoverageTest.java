@@ -249,6 +249,7 @@ final class RobotManagerShooterCoverageTest {
     var hood = (ShooterHood) get(manager, "shooterHood");
     var expected = expectedShooterState(state);
     var previousMoving = get(manager, "isMoving");
+    var previousNearTrench = get(manager, "nearTrench");
     set(manager, "scoringParameters", new AimingParameters(-180, 2.79, 5, 0, -180));
     set(manager, "fallbackFeedingParameters", new AimingParameters(-180, 8.0, 5, 0, -180));
     var pit = (BooleanEntry) DSOptions.PIT_FUNCTIONALITY;
@@ -256,7 +257,8 @@ final class RobotManagerShooterCoverageTest {
     try {
       for (boolean pitMode : new boolean[] {false, true}) {
         pit.set(pitMode);
-        set(manager, "nearTrench", false);
+        // Only fallback feeding uses the estimated trench proximity.
+        set(manager, "nearTrench", state.isScoring());
         set(manager, "isMoving", true);
         set(manager, "isScorePathObstructed", false);
         set(manager, "isInSafeFeedingLocation", true);
@@ -264,6 +266,7 @@ final class RobotManagerShooterCoverageTest {
         hood.homingRequest();
         hood.simulationPeriodic();
         manager.afterTransition(state);
+        manager.whileInState(state);
         set(robot.turret, "setpoint", -180.0);
         set(robot.turret, "currentAngle", -180.0);
         var goalAngle = ShooterHood.class.getDeclaredMethod("getGoalAngle");
@@ -276,11 +279,6 @@ final class RobotManagerShooterCoverageTest {
         set(shooter, "atGoalDebounced", true);
         assertThat(manager.getNextState(state))
             .isEqualTo(state.isScoring() ? RobotState.FALLBACK_SCORE : RobotState.FALLBACK_FEED);
-        if (!pitMode && state.isScoring()) {
-          set(manager, "nearTrench", true);
-          assertThat(manager.getNextState(state)).isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
-          set(manager, "nearTrench", false);
-        }
         set(shooter, "atGoalDebounced", false);
         assertThat(manager.getNextState(state))
             .isEqualTo(
@@ -303,6 +301,7 @@ final class RobotManagerShooterCoverageTest {
     } finally {
       pit.set(previousPit);
       set(manager, "isMoving", previousMoving);
+      set(manager, "nearTrench", previousNearTrench);
       shooter.idleRequest();
     }
   }
