@@ -35,7 +35,11 @@ public class ShooterConfig {
   public static final double MAX_SAFE_RPM = 6000;
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
-      InterpolatingDoubleTreeMap.ofEntries(Map.entry(2.2, 1500.0), Map.entry(2.77, 1800.0));
+      TunableInterpolatingDoubleTreeMap.ofEntries(
+          "Shooter/DistanceToScoreRPM",
+          Map.entry(2.2, 1500.0),
+          Map.entry(2.77, 1800.0),
+          Map.entry(3.2, 2000.0));
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_FEEDING_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/DistanceToFeedingRPM",
