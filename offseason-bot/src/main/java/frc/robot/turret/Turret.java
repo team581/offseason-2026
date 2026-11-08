@@ -202,7 +202,8 @@ public class Turret extends StateMachineSubsystem<TurretState> implements PowerM
       default -> {}
     }
 
-    if (getState() == TurretState.HOMING) {
+    // Homing completes on enable, so the turret is always unhomed while disabled.
+    if (getState() == TurretState.HOMING && DriverStation.isEnabled()) {
       DogLog.logFault("Turret is not homed", AlertType.kError);
     } else {
       DogLog.clearFault("Turret is not homed");
