@@ -20,7 +20,6 @@ public interface VisionIO extends AutoCloseable {
   record Inputs(Health health, List<Sample> samples, Map<String, Boolean> arrivals) {
     public Inputs {
       samples = List.copyOf(samples);
-      arrivals = arrivals;
     }
 
     public Inputs(Health health, List<Sample> samples) {
