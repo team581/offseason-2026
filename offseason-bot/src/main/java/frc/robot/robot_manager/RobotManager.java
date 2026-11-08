@@ -242,7 +242,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void logFallbackScoringTransition(ShooterState expectedShooterState) {
-    DogLog.log("RobotManager/FallbackScoring/ScoreTransition/NotMoving", !isMoving);
     DogLog.log(
         "RobotManager/FallbackScoring/ScoreTransition/TurretAtGoal",
         turret.atGoal(TurretState.SCORE, scoringParameters));
@@ -328,10 +327,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   }
 
   private void smartHoodPrepareFallbackScoreRequest() {
-    // In fallback scoring, stow if near trench or moving
-    if (nearTrench || isMoving) {
+    if (nearTrench) {
       shooterHood.idleRequest();
-      DogLog.log("RobotManager/FallbackScoring/HoodStatus", "NearTrenchOrMoving");
+      DogLog.log("RobotManager/FallbackScoring/HoodStatus", "NearTrench");
     } else {
       DogLog.log("RobotManager/FallbackScoring/HoodStatus", "Clear");
       shooterHood.scoreRequest(scoringParameters.distance());
@@ -614,7 +612,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         yield currentState;
       }
       case PREPARE_FALLBACK_SCORE, FALLBACK_SCORE -> {
-        // Fallback scoring requires a stationary robot instead of normal SOTM speed gates.
         // Once shooting, validate the active request with its shooting RPM tolerance.
         var expectedShooterState =
             currentState == RobotState.FALLBACK_SCORE
@@ -629,12 +626,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
               : RobotState.PREPARE_FALLBACK_SCORE;
         }
 
-        yield !isMoving
-                && (turret.atGoal(TurretState.SCORE, scoringParameters)
-                    && shooter.atGoalDebounced(expectedShooterState)
-                    && shooterHood.atGoal(ShooterHoodState.SCORING)
-                    && !isScorePathObstructed
-                    && !nearTrench)
+        yield turret.atGoal(TurretState.SCORE, scoringParameters)
+                && shooter.atGoalDebounced(expectedShooterState)
+                && shooterHood.atGoal(ShooterHoodState.SCORING)
+                && !isScorePathObstructed
+                && !nearTrench
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }

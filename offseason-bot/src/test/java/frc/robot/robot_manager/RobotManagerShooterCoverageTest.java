@@ -176,7 +176,6 @@ final class RobotManagerShooterCoverageTest {
     try {
       pit.set(false);
       set(manager, "nearTrench", false);
-      set(manager, "isMoving", false);
       set(manager, "isScorePathObstructed", false);
       set(manager, "isInSafeFeedingLocation", true);
       set(manager, "scoringParameters", new AimingParameters(-180, 2.79, 5, 0, -180));
@@ -206,7 +205,7 @@ final class RobotManagerShooterCoverageTest {
 
       // Interrupt condition
       if (fallbackActiveState.isScoring()) {
-        set(manager, "isMoving", true);
+        set(manager, "isScorePathObstructed", true);
       } else {
         set(manager, "isInSafeFeedingLocation", false);
       }
@@ -219,7 +218,7 @@ final class RobotManagerShooterCoverageTest {
       assertThat(shooter.getState()).isEqualTo(prepareShooterState);
 
       // Clear interruption and regain readiness
-      set(manager, "isMoving", false);
+      set(manager, "isScorePathObstructed", false);
       set(manager, "isInSafeFeedingLocation", true);
       manager.whileInState(fallbackPrepareState);
       alignTurretAndHood(manager);
@@ -249,6 +248,7 @@ final class RobotManagerShooterCoverageTest {
     var shooter = manager.shooter;
     var hood = (ShooterHood) get(manager, "shooterHood");
     var expected = expectedShooterState(state);
+    var previousMoving = get(manager, "isMoving");
     set(manager, "scoringParameters", new AimingParameters(-180, 2.79, 5, 0, -180));
     set(manager, "fallbackFeedingParameters", new AimingParameters(-180, 8.0, 5, 0, -180));
     var pit = (BooleanEntry) DSOptions.PIT_FUNCTIONALITY;
@@ -257,7 +257,7 @@ final class RobotManagerShooterCoverageTest {
       for (boolean pitMode : new boolean[] {false, true}) {
         pit.set(pitMode);
         set(manager, "nearTrench", false);
-        set(manager, "isMoving", false);
+        set(manager, "isMoving", true);
         set(manager, "isScorePathObstructed", false);
         set(manager, "isInSafeFeedingLocation", true);
         // Homing completion normally happens in the hood simulation periodic.
@@ -276,6 +276,11 @@ final class RobotManagerShooterCoverageTest {
         set(shooter, "atGoalDebounced", true);
         assertThat(manager.getNextState(state))
             .isEqualTo(state.isScoring() ? RobotState.FALLBACK_SCORE : RobotState.FALLBACK_FEED);
+        if (!pitMode && state.isScoring()) {
+          set(manager, "nearTrench", true);
+          assertThat(manager.getNextState(state)).isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
+          set(manager, "nearTrench", false);
+        }
         set(shooter, "atGoalDebounced", false);
         assertThat(manager.getNextState(state))
             .isEqualTo(
@@ -297,6 +302,7 @@ final class RobotManagerShooterCoverageTest {
       }
     } finally {
       pit.set(previousPit);
+      set(manager, "isMoving", previousMoving);
       shooter.idleRequest();
     }
   }
