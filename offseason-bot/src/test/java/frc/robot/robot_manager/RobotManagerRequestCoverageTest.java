@@ -183,12 +183,11 @@ final class RobotManagerRequestCoverageTest {
   }
 
   @Test
-  void losingLocalizationMovesNormalShotsBackToFallbackPreparation() throws Exception {
+  void losingLocalizationBlocksNormalShotsAndMovesFeedsToFallback() throws Exception {
     setLocalizationHealthy(false);
     assertThat(robotManager.getNextState(RobotState.PREPARE_SCORE))
-        .isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
-    assertThat(robotManager.getNextState(RobotState.SCORE))
-        .isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
+        .isEqualTo(RobotState.PREPARE_SCORE);
+    assertThat(robotManager.getNextState(RobotState.SCORE)).isEqualTo(RobotState.PREPARE_SCORE);
     assertThat(robotManager.getNextState(RobotState.PREPARE_FEED))
         .isEqualTo(RobotState.PREPARE_FALLBACK_FEED);
     assertThat(robotManager.getNextState(RobotState.FEED))

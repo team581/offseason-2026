@@ -185,13 +185,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
+  /**
+   * Without healthy localization the shot waits in PREPARE_SCORE instead of silently switching to
+   * the tower preset. The preset is only used when the driver explicitly requests it.
+   */
   public void prepareScoreRequest() {
     if (getState() != RobotState.FALLBACK_SCORE && getState() != RobotState.SCORE) {
-      if (!isLocalizationHealthy()) {
-        setStateFromRequest(RobotState.PREPARE_FALLBACK_SCORE);
-      } else {
-        setStateFromRequest(RobotState.PREPARE_SCORE);
-      }
+      setStateFromRequest(RobotState.PREPARE_SCORE);
     }
   }
 
@@ -292,6 +292,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/LocalizationTrustworthy",
         localization.isTrustworthy());
+    DogLog.log("RobotManager/Scoring/ScoreTransition/LocalizationHealthy", isLocalizationHealthy());
 
     DogLog.log(
         "RobotManager/Scoring/ScoreTransition/HubActive", hubActivity.getTOFBasedHubActive());
@@ -520,12 +521,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     : FieldUtil.inTrench(robotPose.getTranslation()))
                 || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
-    // Fallback states remain active until the driver ends the shot. Keep their fixed tower
-    // location even if vision recovers, rather than changing the aim in the middle of a shot.
+    // The tower preset is only used when the driver explicitly requests it. Otherwise keep aiming
+    // from the estimated pose so a blocked shot is ready as soon as localization recovers.
     boolean useTowerFallback =
-        !isLocalizationHealthy()
-            || getState() == RobotState.PREPARE_FALLBACK_SCORE
-            || getState() == RobotState.FALLBACK_SCORE;
+        getState() == RobotState.PREPARE_FALLBACK_SCORE || getState() == RobotState.FALLBACK_SCORE;
     Pose2d robotPoseUsedForScoring =
         useTowerFallback
             ? new Pose2d(
@@ -582,9 +581,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   protected RobotState getNextState(RobotState currentState) {
     if (!isLocalizationHealthy()) {
       switch (currentState) {
-        case PREPARE_SCORE, SCORE -> {
-          return RobotState.PREPARE_FALLBACK_SCORE;
-        }
         case PREPARE_FEED, FEED -> {
           return RobotState.PREPARE_FALLBACK_FEED;
         }
@@ -654,6 +650,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && localization.imu.accelerationLowEnoughToShoot()
             && shooter.atGoalDebounced(ShooterState.PREPARE_SCORE)
             && shooterHood.atGoal(ShooterHoodState.SCORING)
+            && isLocalizationHealthy()
             && (DriverStation.isAutonomous() || localization.isTrustworthy())
             && hubActivity.getTOFBasedHubActive()
             && !isScorePathObstructed
@@ -678,6 +675,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && !swerve.driverStillDecidingSotm()
                     && localization.imu.accelerationLowEnoughToShoot()
                     && shooter.atGoalDebounced(ShooterState.SCORE)
+                    && isLocalizationHealthy()
                     && (DriverStation.isAutonomous() || localization.isTrustworthy())
                     && shooterHood.atGoal(ShooterHoodState.SCORING)
                     && hubActivity.getTOFBasedHubActive()))

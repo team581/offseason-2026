@@ -608,7 +608,7 @@ final class RobotManagerShooterCoverageTest {
 
   @EnumSource(
       value = RobotState.class,
-      names = {"FALLBACK_SCORE", "FORCE_SCORE", "IDLE", "PREPARE_FALLBACK_SCORE", "WARMUP_SCORE"})
+      names = {"FALLBACK_SCORE", "PREPARE_FALLBACK_SCORE"})
   @ParameterizedTest
   void visionDisabledTowerShotIgnoresSotmAndDriveVelocity(RobotState state) throws Exception {
     var manager = robot.robotManager;
