@@ -54,6 +54,15 @@ final class RobotManagerRequestCoverageTest {
     };
   }
 
+  private static void setLocalizationHealthy(boolean healthy) throws Exception {
+    var healthField = Robot.class.getDeclaredField("health");
+    healthField.setAccessible(true);
+    Object health = healthField.get(robot);
+    var readyField = frc.robot.health.HealthManager.class.getDeclaredField("localizationHealthy");
+    readyField.setAccessible(true);
+    readyField.set(health, healthy);
+  }
+
   @BeforeAll
   static void initializeHal() {
     HAL.initialize(500, 0);
@@ -98,6 +107,24 @@ final class RobotManagerRequestCoverageTest {
     robotManager.warmupFeedRequest();
     assertThat(robotManager.getState()).isEqualTo(RobotState.WARMUP_FEED);
     assertThat(hopperManager.getState()).isEqualTo(HopperState.IDLE_DEPLOYED);
+  }
+
+  @Test
+  void autoKeepsNormalShotsWithoutLocalization() throws Exception {
+    setLocalizationHealthy(false);
+    DriverStationSim.setAutonomous(true);
+    DriverStationSim.notifyNewData();
+    try {
+      robotManager.idleRequest();
+      robotManager.prepareScoreRequest();
+      assertThat(robotManager.getState()).isEqualTo(RobotState.PREPARE_SCORE);
+      assertThat(robotManager.getNextState(RobotState.SCORE))
+          .isNotEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
+    } finally {
+      DriverStationSim.setAutonomous(false);
+      DriverStationSim.notifyNewData();
+      setLocalizationHealthy(true);
+    }
   }
 
   @EnumSource(RobotState.class)
@@ -157,12 +184,7 @@ final class RobotManagerRequestCoverageTest {
 
   @Test
   void losingLocalizationMovesNormalShotsBackToFallbackPreparation() throws Exception {
-    var healthField = Robot.class.getDeclaredField("health");
-    healthField.setAccessible(true);
-    Object health = healthField.get(robot);
-    var readyField = frc.robot.health.HealthManager.class.getDeclaredField("localizationHealthy");
-    readyField.setAccessible(true);
-    readyField.set(health, false);
+    setLocalizationHealthy(false);
     assertThat(robotManager.getNextState(RobotState.PREPARE_SCORE))
         .isEqualTo(RobotState.PREPARE_FALLBACK_SCORE);
     assertThat(robotManager.getNextState(RobotState.SCORE))

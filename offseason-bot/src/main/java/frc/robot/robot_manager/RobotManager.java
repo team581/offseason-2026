@@ -159,7 +159,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void prepareFeedRequest() {
     if (getState() != RobotState.FALLBACK_FEED && getState() != RobotState.FEED) {
-      if (!health.isLocalizationHealthy()) {
+      if (!isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_FALLBACK_FEED);
       } else {
         setStateFromRequest(RobotState.PREPARE_FEED);
@@ -181,7 +181,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   public void prepareScoreRequest() {
     if (getState() != RobotState.FALLBACK_SCORE && getState() != RobotState.SCORE) {
-      if (!health.isLocalizationHealthy()) {
+      if (!isLocalizationHealthy()) {
         setStateFromRequest(RobotState.PREPARE_FALLBACK_SCORE);
       } else {
         setStateFromRequest(RobotState.PREPARE_SCORE);
@@ -233,6 +233,14 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     }
   }
 
+  /**
+   * Auto starts from a known pose and odometry stays accurate enough to aim through the routine, so
+   * auto keeps aiming from its pose instead of the tower fallback when vision isn't working.
+   */
+  private boolean isLocalizationHealthy() {
+    return DriverStation.isAutonomous() || health.isLocalizationHealthy();
+  }
+
   private void logFallbackScoringTransition(ShooterState expectedShooterState) {
     DogLog.log("RobotManager/FallbackScoring/ScoreTransition/NotMoving", !isMoving);
     DogLog.log(
@@ -263,8 +271,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     DogLog.log(
         "RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal",
         shooterHood.atGoal(ShooterHoodState.FEEDING));
-    DogLog.log(
-        "RobotManager/Feeding/FeedTransition/LocalizationHealthy", health.isLocalizationHealthy());
+    DogLog.log("RobotManager/Feeding/FeedTransition/LocalizationHealthy", isLocalizationHealthy());
     DogLog.log("RobotManager/Feeding/FeedTransition/NotNearTrench", !nearTrench);
     DogLog.log("RobotManager/Feeding/FeedTransition/IsMoving", isMoving);
   }
@@ -333,7 +340,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void smartHoodPrepareFeedRequest() {
     // If cameras are offline or we are near a trench, always be idle
-    if (!health.isLocalizationHealthy() || nearTrench) {
+    if (!isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/Feeding/SmartPrepareFeed/HoodStatus", "NearTrenchOrUnhealthy");
     } else {
@@ -344,7 +351,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   private void smartHoodPrepareScoreRequest() {
     // If cameras are offline or we are near a trench, always be idle
-    if (!health.isLocalizationHealthy() || nearTrench) {
+    if (!isLocalizationHealthy() || nearTrench) {
       shooterHood.idleRequest();
       DogLog.log("RobotManager/Scoring/SmartPrepareScore/HoodStatus", "NearTrenchOrUnhealthy");
     } else {
@@ -367,7 +374,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   private void smartTurretIdleRequest() {
     if (DriverStation.isAutonomous() || isInAllianceZone) {
       turret.idleScoreRequest(scoringParameters);
-    } else if (!health.isLocalizationHealthy()) {
+    } else if (!isLocalizationHealthy()) {
       turret.idleFeedRequest(fallbackFeedingParameters);
     } else {
       turret.idleFeedRequest(feedingParameters);
@@ -526,7 +533,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     // Fallback states remain active until the driver ends the shot. Keep their fixed tower
     // location even if vision recovers, rather than changing the aim in the middle of a shot.
     boolean useTowerFallback =
-        !health.isLocalizationHealthy()
+        !isLocalizationHealthy()
             || getState() == RobotState.PREPARE_FALLBACK_SCORE
             || getState() == RobotState.FALLBACK_SCORE;
     Pose2d robotPoseUsedForScoring =
@@ -563,17 +570,17 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     fallbackFeedingParameters =
         AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
     isInAllianceZone =
-        !health.isLocalizationHealthy()
+        !isLocalizationHealthy()
             ? hubActivity.getTOFBasedHubActive()
             : FieldUtil.isRobotPastObstacleTowardAllianceZone(robotPose.getTranslation());
 
     isInSafeFeedingLocation =
-        !health.isLocalizationHealthy()
+        !isLocalizationHealthy()
             || !FieldUtil.isFeedPathObstructed(
                 TurretCalculator.getTurretPose(robotPose).getTranslation(),
                 feedLocation.getTranslation());
     isScorePathObstructed =
-        health.isLocalizationHealthy()
+        isLocalizationHealthy()
             && FieldUtil.isScorePathObstructed(
                 TurretCalculator.getTurretPose(robotPose).getTranslation());
 
@@ -583,7 +590,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   @Override
   protected RobotState getNextState(RobotState currentState) {
-    if (!health.isLocalizationHealthy()) {
+    if (!isLocalizationHealthy()) {
       switch (currentState) {
         case PREPARE_SCORE, SCORE -> {
           return RobotState.PREPARE_FALLBACK_SCORE;
@@ -661,7 +668,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && localization.imu.accelerationLowEnoughToShoot()
             && shooter.atGoalDebounced(ShooterState.PREPARE_SCORE)
             && shooterHood.atGoal(ShooterHoodState.SCORING)
-            && localization.isTrustworthy()
+            && (DriverStation.isAutonomous() || localization.isTrustworthy())
             && hubActivity.getTOFBasedHubActive()
             && !isScorePathObstructed
             && !nearTrench) {
@@ -685,7 +692,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                     && !swerve.driverStillDecidingSotm()
                     && localization.imu.accelerationLowEnoughToShoot()
                     && shooter.atGoalDebounced(ShooterState.SCORE)
-                    && localization.isTrustworthy()
+                    && (DriverStation.isAutonomous() || localization.isTrustworthy())
                     && shooterHood.atGoal(ShooterHoodState.SCORING)
                     && hubActivity.getTOFBasedHubActive()))
             && !isScorePathObstructed
@@ -707,7 +714,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             && shooter.atGoalDebounced(ShooterState.PREPARE_FEED)
             && isInSafeFeedingLocation
             && shooterHood.atGoal(ShooterHoodState.FEEDING)
-            && health.isLocalizationHealthy()
+            && isLocalizationHealthy()
             && !nearTrench) {
 
           yield RobotState.FEED;
@@ -727,7 +734,7 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
                 && isInSafeFeedingLocation
                 && turret.atGoal(TurretState.FEED, feedingParameters)
                 && shooterHood.atGoal(ShooterHoodState.FEEDING)
-                && health.isLocalizationHealthy()
+                && isLocalizationHealthy()
                 && !nearTrench)) {
 
           yield currentState;
