@@ -17,15 +17,17 @@ final class NormalAutoTurretRangeTest {
   }
 
   private static void assertShootingTurnHasRoom(Point goal, double startX, double startY) {
-    // Another hundredth of a degree must exceed the clearance at one end of the path.
-    var heading = goal.redPose().getRotation();
-    var further = heading.plus(Rotation2d.fromDegrees(Math.copySign(0.01, heading.getDegrees())));
-    assertThat(
-            NormalAutoSotm.hasClearance(new Pose2d(startX, startY, further))
-                && NormalAutoSotm.hasClearance(
-                    new Pose2d(goal.redPose().getTranslation(), further)))
-        .as("shooting turn uses the maximum available turret travel")
-        .isFalse();
+    if (Math.abs(goal.redPose().getRotation().getDegrees()) > 0.01) {
+      // Another hundredth of a degree must exceed the clearance at one end of the path.
+      var heading = goal.redPose().getRotation();
+      var further = heading.plus(Rotation2d.fromDegrees(Math.copySign(0.01, heading.getDegrees())));
+      assertThat(
+              NormalAutoSotm.hasClearance(new Pose2d(startX, startY, further))
+                  && NormalAutoSotm.hasClearance(
+                      new Pose2d(goal.redPose().getTranslation(), further)))
+          .as("shooting turn uses the maximum available turret travel")
+          .isFalse();
+    }
 
     // Translation and rotation have separate constraints: check every combination of progress,
     // rather than assuming that both finish at the same time. All three cycles share this goal.
@@ -64,40 +66,6 @@ final class NormalAutoTurretRangeTest {
   }
 
   @Test
-  void leftDepotShootingLegsKeepHubWithinTurretTravel() {
-    var start =
-        new Pose2d(
-            LeftBumpDepotAuto.RETURN_BUMP_LANDING_X,
-            FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13,
-            Rotation2d.kZero);
-    for (int step = 0; step <= 40; step++) {
-      double progress = step / 40.0;
-      for (int turn = 0; turn <= 40; turn++) {
-        var approach =
-            new Pose2d(
-                start
-                    .getTranslation()
-                    .interpolate(
-                        LeftBumpDepotAuto.DEPOT_APPROACH.redPose().getTranslation(), progress),
-                start
-                    .getRotation()
-                    .interpolate(
-                        LeftBumpDepotAuto.DEPOT_APPROACH.redPose().getRotation(), turn / 40.0));
-        var point = Point.ofRed(approach);
-        assertTurretHasRoom(point.redPose(), FieldUtil.HUB_POSE.redPose());
-        assertTurretHasRoom(point.bluePose(), FieldUtil.HUB_POSE.bluePose());
-      }
-      var returning =
-          Point.ofRed(
-              LeftBumpDepotAuto.DEPOT_FRONT
-                  .redPose()
-                  .interpolate(LeftBumpDepotAuto.FINAL_SHOOT_GOAL.redPose(), progress));
-      assertTurretHasRoom(returning.redPose(), FieldUtil.HUB_POSE.redPose());
-      assertTurretHasRoom(returning.bluePose(), FieldUtil.HUB_POSE.bluePose());
-    }
-  }
-
-  @Test
   void leftShootingTurnKeepsHubWithinTurretTravel() {
     assertShootingTurnHasRoom(
         LeftNormalAuto.SHOOT_ON_THE_MOVE_GOAL, FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13);
@@ -115,5 +83,17 @@ final class NormalAutoTurretRangeTest {
   void rightShootingTurnKeepsHubWithinTurretTravel() {
     assertShootingTurnHasRoom(
         RightNormalAuto.SHOOT_ON_THE_MOVE_GOAL, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() - 0.13);
+  }
+
+  @Test
+  void sweepShootingApproachesKeepHubWithinTurretTravel() {
+    assertShootingTurnHasRoom(
+        LeftBumpSweepAuto.TOWER_SHOOT_GOAL,
+        LeftBumpSweepAuto.RETURN_BUMP_LANDING_X,
+        FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13);
+    assertShootingTurnHasRoom(
+        RightBumpSweepAuto.TOWER_SHOOT_GOAL,
+        RightBumpSweepAuto.RETURN_BUMP_LANDING_X,
+        FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() - 0.13);
   }
 }

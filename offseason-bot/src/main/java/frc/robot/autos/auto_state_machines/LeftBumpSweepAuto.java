@@ -18,12 +18,12 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.BaseImperativeAuto;
-import frc.robot.autos.auto_state_machines.auto_state.LeftBumpDepotAutoState;
+import frc.robot.autos.auto_state_machines.auto_state.BumpSweepAutoState;
 import frc.robot.config.FeatureFlags;
 import frc.robot.imu.BumpCrossingTracker;
 import frc.robot.robot_manager.RobotManager;
 
-public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState> {
+public class LeftBumpSweepAuto extends BaseImperativeAuto<BumpSweepAutoState> {
 
   public enum Markers {
     PRIORITIZE_INTAKE,
@@ -37,23 +37,14 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
 
   static final double SHOOT_X = 13.9;
   static final double RETURN_BUMP_LANDING_X = 13.25;
-  static final double DEPOT_DRIVER_STATION_OFFSET = Units.inchesToMeters(5.0);
-  // Leave space for the rotated bumpers below the longitudinal field centerline.
+  // Keep the sweep on its own side, including the rotated bumper envelope.
   static final double SWEEP_MAX_RED_Y = 3.3;
 
-  // Stay outside the depot while shooting and below the tower with the rotated bumper envelope.
-  static final Point DEPOT_APPROACH =
-      Point.ofRed(new Pose2d(15.2, 3.0, Rotation2d.fromDegrees(-75)));
-  static final Point DEPOT_EXIT =
-      Point.ofRed(
-          new Pose2d(15.85 + DEPOT_DRIVER_STATION_OFFSET, 1.0, Rotation2d.fromDegrees(-75)));
-  static final Point DEPOT_FRONT = Point.ofRed(new Pose2d(15.15, 1.3, Rotation2d.fromDegrees(-75)));
-  static final Point FINAL_SHOOT_GOAL =
-      Point.ofRed(new Pose2d(14.9, 1.8, Rotation2d.fromDegrees(-75)));
+  // Centered between the hub and climb tower, just forward of the tower preset.
+  static final Point TOWER_SHOOT_GOAL =
+      Point.ofRed(new Pose2d(14.8, FieldUtil.FIELD_WIDTH_Y / 2.0, Rotation2d.kZero));
 
-  static final double FIRST_SHOOT_MIN_SECONDS = 5.0;
-
-  private Point alignmentPoint = DEPOT_APPROACH;
+  private Point alignmentPoint = TOWER_SHOOT_GOAL;
 
   private final AutoSegment crossBumpOut =
       Trailblazer.segment(
@@ -148,32 +139,9 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
   private final AutoSegment driveToTower =
-      Trailblazer.segment(AutoPoint.of(DEPOT_APPROACH))
+      Trailblazer.segment(AutoPoint.of(TOWER_SHOOT_GOAL))
           .withLinearConstraints(2.0, 3.0)
           .withAngularConstraints(2.0, 3.0)
-          .untilFinished(new PoseErrorTolerance(0.08, 3));
-
-  private final AutoSegment collectDepot =
-      Trailblazer.segment(
-              AutoPoint.ofRed(
-                      new Pose2d(
-                          15.7 + DEPOT_DRIVER_STATION_OFFSET, 3.0, Rotation2d.fromDegrees(-75)))
-                  .withTransitionTolerance(new PoseErrorTolerance(0.08, 3)),
-              AutoPoint.of(DEPOT_EXIT))
-          .withLinearConstraints(1.0, 1.0)
-          .withAngularConstraints(0.8, 1.2)
-          .untilFinished(new PoseErrorTolerance(0.08, 3));
-
-  private final AutoSegment driveToDepotFront =
-      Trailblazer.segment(AutoPoint.of(DEPOT_FRONT))
-          .withLinearConstraints(2.0, 3.0)
-          .withAngularConstraints(0.8, 1.2)
-          .untilFinished(new PoseErrorTolerance(0.08, 3));
-
-  private final AutoSegment shootBackToHub =
-      Trailblazer.segment(AutoPoint.of(FINAL_SHOOT_GOAL))
-          .withLinearConstraints(0.2, 0.3)
-          .withAngularConstraints(0.4, 0.8)
           .untilFinished(new PoseErrorTolerance(0.08, 3));
 
   private AutoSegment stuckOnBall =
@@ -182,15 +150,15 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getPitch()),
           () -> Rotation2d.fromDegrees(robotManager.localization.imu.getRoll()));
 
-  private LeftBumpDepotAutoState storedStuckOnBallState = LeftBumpDepotAutoState.INTAKE_FIRST_CYCLE;
+  private BumpSweepAutoState storedStuckOnBallState = BumpSweepAutoState.INTAKE_FIRST_CYCLE;
 
   private AutoSegment storedStuckOnBallAutoSegment = intakeFirstCycle;
   private int storedStuckOnBallIndex = 0;
   // FOR SIM ONLY!!!
   private boolean firstStuckOnBall = false;
 
-  public LeftBumpDepotAuto(RobotManager robotManager, Trailblazer trailblazer) {
-    super(LeftBumpDepotAutoState.PREPARE_BUMP_OUT_1, robotManager, trailblazer);
+  public LeftBumpSweepAuto(RobotManager robotManager, Trailblazer trailblazer) {
+    super(BumpSweepAutoState.PREPARE_BUMP_OUT_1, robotManager, trailblazer);
 
     this.bumpCrossingTracker = robotManager.localization.imu.bumpCrossingTracker;
   }
@@ -218,7 +186,7 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
   }
 
   @Override
-  protected void afterTransition(LeftBumpDepotAutoState newState) {
+  protected void afterTransition(BumpSweepAutoState newState) {
     switch (newState) {
       case PREPARE_BUMP_OUT_1 -> {
         robotManager.homeDeployInAutoRequest();
@@ -255,20 +223,6 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
       case SHOOT_1 -> {
         trailblazer.clearActiveSegment();
       }
-      case COLLECT_DEPOT -> {
-        robotManager.idleRequest();
-        robotManager.intakeRequest();
-        robotManager.powerManager.prioritizeIntakeRequest();
-      }
-      case DRIVE_TO_DEPOT_FRONT -> {
-        robotManager.cancelIntakeRequest();
-        robotManager.idleRequest();
-        robotManager.powerManager.idleRequest();
-      }
-      case SHOOT_BACK_TO_HUB -> {
-        robotManager.cancelIntakeRequest();
-        robotManager.powerManager.idleRequest();
-      }
       case DONE -> {
         robotManager.cancelIntakeRequest();
         robotManager.idleRequest();
@@ -279,16 +233,15 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
   }
 
   @Override
-  protected void beforeTransition(
-      LeftBumpDepotAutoState oldState, LeftBumpDepotAutoState newState) {
+  protected void beforeTransition(BumpSweepAutoState oldState, BumpSweepAutoState newState) {
 
-    if (newState == LeftBumpDepotAutoState.STUCK_ON_BALL_RECOVERY) {
+    if (newState == BumpSweepAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallState = oldState;
       DogLog.log("Trailblazer/StoredStuckOnBall/State", storedStuckOnBallState);
       DogLog.log("Trailblazer/StoredStuckOnBall/Index", storedStuckOnBallIndex);
     }
 
-    if (oldState == LeftBumpDepotAutoState.STUCK_ON_BALL_RECOVERY) {
+    if (oldState == BumpSweepAutoState.STUCK_ON_BALL_RECOVERY) {
       trailblazer.setActiveSegment(storedStuckOnBallAutoSegment, storedStuckOnBallIndex);
     }
   }
@@ -300,23 +253,23 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
       BumpAutoSimulation.update(robotManager.localization.imu, robotManager.localization.getPose());
     }
     if (!collisionEverDetected
-        && getState() == LeftBumpDepotAutoState.INTAKE_FIRST_CYCLE
+        && getState() == BumpSweepAutoState.INTAKE_FIRST_CYCLE
         && DriverStation.isEnabled()
         && robotManager.localization.imu.collisionDetected()) {
       collisionEverDetected = true;
-      DogLog.log("LeftBumpDepotAuto/CollisionDetected", collisionEverDetected);
+      DogLog.log("LeftBumpSweepAuto/CollisionDetected", collisionEverDetected);
     }
   }
 
   @Override
-  protected LeftBumpDepotAutoState getNextState(LeftBumpDepotAutoState currentState) {
+  protected BumpSweepAutoState getNextState(BumpSweepAutoState currentState) {
     if (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
         || FeatureFlags.UNBEACH_AUTO_SIM_ONLY.getAsBoolean()) {
       switch (currentState) {
         case INTAKE_FIRST_CYCLE -> {
           if (StuckOnBallRecovery.stuckOnBall(
               robotManager.localization.imu.getPitch(), robotManager.localization.imu.getRoll())) {
-            return LeftBumpDepotAutoState.STUCK_ON_BALL_RECOVERY;
+            return BumpSweepAutoState.STUCK_ON_BALL_RECOVERY;
           }
         }
         default -> {}
@@ -326,14 +279,14 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
     return switch (currentState) {
       case PREPARE_BUMP_OUT_1 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())) {
-          yield LeftBumpDepotAutoState.CROSS_BUMP_OUT;
+          yield BumpSweepAutoState.CROSS_BUMP_OUT;
         }
         yield currentState;
       }
       case CROSS_BUMP_OUT -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield LeftBumpDepotAutoState.INTAKE_FIRST_CYCLE;
+          yield BumpSweepAutoState.INTAKE_FIRST_CYCLE;
         }
         yield currentState;
       }
@@ -348,7 +301,7 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
       case INTAKE_FIRST_CYCLE -> {
         if (trailblazer.passedMarker(Markers.READY_TO_CROSS_BUMP)) {
           robotManager.powerManager.idleRequest();
-          yield LeftBumpDepotAutoState.CROSS_BUMP_TO_SHOOT_1;
+          yield BumpSweepAutoState.CROSS_BUMP_TO_SHOOT_1;
         } else {
           yield currentState;
         }
@@ -356,7 +309,7 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
       case CROSS_BUMP_TO_SHOOT_1 -> {
         // Drive clear of the bump as soon as the landing is detected.
         if (bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield LeftBumpDepotAutoState.DRIVE_TO_TOWER;
+          yield BumpSweepAutoState.DRIVE_TO_TOWER;
         } else {
           yield currentState;
         }
@@ -366,33 +319,18 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
         yield trailblazer.atGoal(robotManager.localization.getPose())
                 && MathHelpers.getLinearVelocity(speeds) < 0.1
                 && MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 0.1)
-            ? LeftBumpDepotAutoState.SHOOT_1
+            ? BumpSweepAutoState.SHOOT_1
             : currentState;
       }
-      case SHOOT_1 -> {
-        yield timeout(FIRST_SHOOT_MIN_SECONDS)
-            ? LeftBumpDepotAutoState.COLLECT_DEPOT
-            : currentState;
-      }
-      case COLLECT_DEPOT -> {
-        yield trailblazer.atGoal(robotManager.localization.getPose())
-            ? LeftBumpDepotAutoState.DRIVE_TO_DEPOT_FRONT
-            : currentState;
-      }
-      case DRIVE_TO_DEPOT_FRONT -> {
-        yield trailblazer.atGoal(robotManager.localization.getPose())
-            ? LeftBumpDepotAutoState.SHOOT_BACK_TO_HUB
-            : currentState;
-      }
-      // Keep requesting the final shot until autonomous is disabled or ends.
-      case SHOOT_BACK_TO_HUB -> currentState;
-      case DONE -> LeftBumpDepotAutoState.DONE;
+      // Keep shooting at standstill until autonomous ends.
+      case SHOOT_1 -> currentState;
+      case DONE -> BumpSweepAutoState.DONE;
     };
   }
 
   @Override
-  protected void whileInState(LeftBumpDepotAutoState newState) {
-    if (getState() != LeftBumpDepotAutoState.STUCK_ON_BALL_RECOVERY) {
+  protected void whileInState(BumpSweepAutoState newState) {
+    if (getState() != BumpSweepAutoState.STUCK_ON_BALL_RECOVERY) {
       storedStuckOnBallIndex = trailblazer.getCurrentPointIndex();
     }
 
@@ -442,19 +380,6 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
         robotManager.warmupScoreRequest();
       }
       case SHOOT_1 -> {
-        robotManager.prepareScoreRequest();
-      }
-      case COLLECT_DEPOT -> {
-        trailblazer.setActiveSegment(collectDepot);
-        robotManager.intakeRequest();
-      }
-      case DRIVE_TO_DEPOT_FRONT -> {
-        trailblazer.setActiveSegment(driveToDepotFront);
-        // Keep the hopper idle until the robot is fully in front of the depot.
-        robotManager.warmupScoreRequest();
-      }
-      case SHOOT_BACK_TO_HUB -> {
-        trailblazer.setActiveSegment(shootBackToHub);
         robotManager.prepareScoreRequest();
       }
       case DONE -> {}
