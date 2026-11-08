@@ -46,13 +46,13 @@ public class RightBumpAuto extends BaseImperativeAuto<BumpAutoState> {
   private static final double TOWER_CLEAR_X = 15.0;
   private static final double TOWER_CLEAR_Y = 4.77;
 
-  static final Point SHOOT_ON_THE_MOVE_GOAL =
+  static final Point TOWER_SHOOT_GOAL =
       NormalAutoSotm.shootingGoal(
           new Translation2d(SHOOT_X, FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() + BUMP_OFFSET),
           new Translation2d(TOWER_CLEAR_X, TOWER_CLEAR_Y),
           false);
 
-  private Point alignmentPoint = SHOOT_ON_THE_MOVE_GOAL;
+  private Point alignmentPoint = TOWER_SHOOT_GOAL;
 
   private final AutoSegment crossBumpOut =
       Trailblazer.segment(
@@ -156,11 +156,11 @@ public class RightBumpAuto extends BaseImperativeAuto<BumpAutoState> {
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-  private final AutoSegment shootOne =
-      Trailblazer.segment(AutoPoint.of(SHOOT_ON_THE_MOVE_GOAL))
-          .withLinearConstraints(0.4, 0.4)
-          .withAngularConstraints(0.4, 0.8)
-          .untilFinished(new PoseErrorTolerance(0.3));
+  private final AutoSegment driveToTower =
+      Trailblazer.segment(AutoPoint.of(TOWER_SHOOT_GOAL))
+          .withLinearConstraints(2.0, 3.0)
+          .withAngularConstraints(2.0, 3.0)
+          .untilFinished(new PoseErrorTolerance(0.08, 3));
 
   private AutoSegment stuckOnBall =
       StuckOnBallRecovery.getRecoverySegment(
@@ -238,8 +238,11 @@ public class RightBumpAuto extends BaseImperativeAuto<BumpAutoState> {
                     Rotation2d.kZero)),
             FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
       }
+      case DRIVE_TO_TOWER -> {
+        storedStuckOnBallAutoSegment = driveToTower;
+      }
       case SHOOT_1 -> {
-        storedStuckOnBallAutoSegment = crossBumpToShootOne;
+        trailblazer.clearActiveSegment();
       }
       case DONE -> {
         robotManager.idleRequest();
@@ -337,21 +340,21 @@ public class RightBumpAuto extends BaseImperativeAuto<BumpAutoState> {
       case CROSS_BUMP_TO_SHOOT_1 -> {
         if (trailblazer.atGoal(robotManager.localization.getPose())
             && bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield BumpAutoState.SHOOT_1;
+          yield BumpAutoState.DRIVE_TO_TOWER;
         } else {
           yield currentState;
         }
       }
-      case SHOOT_1 -> {
-        if ((timeout(2.0)
-                && trailblazer.atGoal(robotManager.localization.getPose())
-                && robotManager.hopperManager.hasFinishedShooting())
-            || timeout(5.0)) {
-          yield BumpAutoState.DONE;
-        } else {
-          yield currentState;
-        }
+      case DRIVE_TO_TOWER -> {
+        var speeds = robotManager.swerve.getFieldRelativeSpeeds();
+        yield trailblazer.atGoal(robotManager.localization.getPose())
+                && Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) < 0.1
+                && Math.abs(speeds.omegaRadiansPerSecond) < 0.1
+            ? BumpAutoState.SHOOT_1
+            : currentState;
       }
+      // Keep requesting the final shot until autonomous is disabled or ends.
+      case SHOOT_1 -> currentState;
       case DONE -> BumpAutoState.DONE;
     };
   }
@@ -406,8 +409,11 @@ public class RightBumpAuto extends BaseImperativeAuto<BumpAutoState> {
         robotManager.cancelIntakeRequest();
         robotManager.shooter.prepareScoreRequest(SHOOTER_WARMUP_DISTANCE_FROM_HUB);
       }
+      case DRIVE_TO_TOWER -> {
+        trailblazer.setActiveSegment(driveToTower);
+        robotManager.warmupScoreRequest();
+      }
       case SHOOT_1 -> {
-        trailblazer.setActiveSegment(shootOne);
         robotManager.prepareScoreRequest();
       }
       case DONE -> {}

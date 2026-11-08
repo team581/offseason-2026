@@ -7,6 +7,7 @@ public enum BumpAutoState {
   WAIT_BEHIND_HUB,
   INTAKE_FIRST_CYCLE,
   CROSS_BUMP_TO_SHOOT_1,
+  DRIVE_TO_TOWER,
   SHOOT_1,
   DONE,
 

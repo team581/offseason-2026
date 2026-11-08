@@ -10,13 +10,11 @@ import com.team581.trailblazer.segments.AutoSegment;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.Timer;
 import frc.robot.autos.BaseImperativeAuto;
 import frc.robot.autos.auto_state_machines.auto_state.LeftBumpDepotAutoState;
 import frc.robot.config.FeatureFlags;
@@ -52,11 +50,8 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
       Point.ofRed(new Pose2d(14.9, 1.8, Rotation2d.fromDegrees(-75)));
 
   static final double FIRST_SHOOT_MIN_SECONDS = 5.0;
-  static final double SECOND_SHOOT_MIN_SECONDS = 3.0;
 
   private Point alignmentPoint = DEPOT_APPROACH;
-  private double firstShotStartTimestamp;
-  private Rotation2d firstShotStartHeading = Rotation2d.kZero;
 
   private final AutoSegment crossBumpOut =
       Trailblazer.segment(
@@ -150,12 +145,11 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
           .withAngularConstraints(Units.rotationsToRadians(2.0), Units.rotationsToRadians(2.0))
           .untilFinished(new PoseErrorTolerance(0.05, 3));
 
-  // Pace heading by elapsed time so the 75-degree turn unfolds across the entire shot.
-  private final AutoSegment shootOne =
-      Trailblazer.segment(AutoPoint.of(this::firstShotGoal))
-          .withLinearConstraints(0.4, 0.4)
-          .withAngularConstraints(0.3, 0.4)
-          .untilFinished(new PoseErrorTolerance(0.08, 1));
+  private final AutoSegment driveToTower =
+      Trailblazer.segment(AutoPoint.of(DEPOT_APPROACH))
+          .withLinearConstraints(2.0, 3.0)
+          .withAngularConstraints(2.0, 3.0)
+          .untilFinished(new PoseErrorTolerance(0.08, 3));
 
   private final AutoSegment collectDepot =
       Trailblazer.segment(
@@ -209,18 +203,6 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
     return DriverStation.isAutonomousEnabled();
   }
 
-  private Point firstShotGoal() {
-    double progress =
-        MathUtil.clamp(
-            (Timer.getFPGATimestamp() - firstShotStartTimestamp) / FIRST_SHOOT_MIN_SECONDS,
-            0.0,
-            1.0);
-    return Point.ofRed(
-        new Pose2d(
-            DEPOT_APPROACH.redPose().getTranslation(),
-            firstShotStartHeading.interpolate(DEPOT_APPROACH.redPose().getRotation(), progress)));
-  }
-
   private Point getCollisionPoint(Point point) {
     if (collisionEverDetected) {
       return Point.ofRed(
@@ -265,12 +247,11 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
                     Rotation2d.kZero)),
             FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
       }
+      case DRIVE_TO_TOWER -> {
+        storedStuckOnBallAutoSegment = driveToTower;
+      }
       case SHOOT_1 -> {
-        firstShotStartTimestamp = Timer.getFPGATimestamp();
-        var pose = robotManager.localization.getPose();
-        firstShotStartHeading =
-            (FmsUtil.isRedAlliance() ? pose : FieldUtil.pathflip(pose)).getRotation();
-        storedStuckOnBallAutoSegment = shootOne;
+        trailblazer.clearActiveSegment();
       }
       case COLLECT_DEPOT -> {
         robotManager.idleRequest();
@@ -371,16 +352,23 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
         }
       }
       case CROSS_BUMP_TO_SHOOT_1 -> {
-        // The landing reset is at x=13.25. Start scoring there instead of driving to x=13.9 first.
+        // Drive clear of the bump as soon as the landing is detected.
         if (bumpCrossingTracker.getState() == BumpCrossingState.FLAT_NOT_CROSSING) {
-          yield LeftBumpDepotAutoState.SHOOT_1;
+          yield LeftBumpDepotAutoState.DRIVE_TO_TOWER;
         } else {
           yield currentState;
         }
       }
+      case DRIVE_TO_TOWER -> {
+        var speeds = robotManager.swerve.getFieldRelativeSpeeds();
+        yield trailblazer.atGoal(robotManager.localization.getPose())
+                && Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) < 0.1
+                && Math.abs(speeds.omegaRadiansPerSecond) < 0.1
+            ? LeftBumpDepotAutoState.SHOOT_1
+            : currentState;
+      }
       case SHOOT_1 -> {
         yield timeout(FIRST_SHOOT_MIN_SECONDS)
-                && trailblazer.atGoal(robotManager.localization.getPose())
             ? LeftBumpDepotAutoState.COLLECT_DEPOT
             : currentState;
       }
@@ -394,12 +382,8 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
             ? LeftBumpDepotAutoState.SHOOT_BACK_TO_HUB
             : currentState;
       }
-      case SHOOT_BACK_TO_HUB -> {
-        yield timeout(SECOND_SHOOT_MIN_SECONDS)
-                && trailblazer.atGoal(robotManager.localization.getPose())
-            ? LeftBumpDepotAutoState.DONE
-            : currentState;
-      }
+      // Keep requesting the final shot until autonomous is disabled or ends.
+      case SHOOT_BACK_TO_HUB -> currentState;
       case DONE -> LeftBumpDepotAutoState.DONE;
     };
   }
@@ -451,8 +435,11 @@ public class LeftBumpDepotAuto extends BaseImperativeAuto<LeftBumpDepotAutoState
         // WARMUP_SCORE keeps the hopper idle throughout the crossing.
         robotManager.warmupScoreRequest();
       }
+      case DRIVE_TO_TOWER -> {
+        trailblazer.setActiveSegment(driveToTower);
+        robotManager.warmupScoreRequest();
+      }
       case SHOOT_1 -> {
-        trailblazer.setActiveSegment(shootOne);
         robotManager.prepareScoreRequest();
       }
       case COLLECT_DEPOT -> {

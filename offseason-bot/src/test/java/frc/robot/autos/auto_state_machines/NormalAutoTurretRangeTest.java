@@ -58,7 +58,7 @@ final class NormalAutoTurretRangeTest {
   @Test
   void leftBumpShootingTurnKeepsHubWithinTurretTravel() {
     assertShootingTurnHasRoom(
-        LeftBumpAuto.SHOOT_ON_THE_MOVE_GOAL,
+        LeftBumpAuto.TOWER_SHOOT_GOAL,
         LeftBumpAuto.SHOOT_X,
         FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13);
   }
@@ -106,7 +106,7 @@ final class NormalAutoTurretRangeTest {
   @Test
   void rightBumpShootingTurnKeepsHubWithinTurretTravel() {
     assertShootingTurnHasRoom(
-        RightBumpAuto.SHOOT_ON_THE_MOVE_GOAL,
+        RightBumpAuto.TOWER_SHOOT_GOAL,
         RightBumpAuto.SHOOT_X,
         FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() - 0.13);
   }
