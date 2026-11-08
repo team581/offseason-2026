@@ -28,6 +28,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
   private final StatusSignal<Current> leftSupplyCurrentSignal;
   private final StatusSignal<Current> rightSupplyCurrentSignal;
+  private final StatusSignal<Current> leftStatorCurrentSignal;
+  private final StatusSignal<Current> rightStatorCurrentSignal;
 
   private double leftSurfaceSpeedMetersPerSecond = 0.0;
   private double rightSurfaceSpeedMetersPerSecond = 0.0;
@@ -44,8 +46,12 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightVelocitySignal = rightMotor.getRotorVelocity(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
-    Signals.forDevice(leftMotor).addSignals(leftVelocitySignal, leftSupplyCurrentSignal);
-    Signals.forDevice(rightMotor).addSignals(rightVelocitySignal, rightSupplyCurrentSignal);
+    leftStatorCurrentSignal = leftMotor.getStatorCurrent(false);
+    rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
+    Signals.forDevice(leftMotor)
+        .addSignals(leftVelocitySignal, leftSupplyCurrentSignal, leftStatorCurrentSignal);
+    Signals.forDevice(rightMotor)
+        .addSignals(rightVelocitySignal, rightSupplyCurrentSignal, rightStatorCurrentSignal);
     leftSupplyVoltageSignal = leftMotor.getSupplyVoltage(false);
     Signals.forDevice(leftMotor).addSignals(leftSupplyVoltageSignal);
     rightSupplyVoltageSignal = rightMotor.getSupplyVoltage(false);
@@ -161,6 +167,8 @@ public class Intake extends StateMachineSubsystem<IntakeState> implements PowerM
 
     DogLog.log("Intake/Left/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/Right/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Intake/Left/StatorCurrent", leftStatorCurrentSignal.getValueAsDouble());
+    DogLog.log("Intake/Right/StatorCurrent", rightStatorCurrentSignal.getValueAsDouble());
     DogLog.log("Intake/HasBeenIntaking", hasBeenIntaking());
   }
 }
