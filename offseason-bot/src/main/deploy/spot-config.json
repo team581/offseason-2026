@@ -250,7 +250,7 @@
         "max_hamming": 2,
         "backend": "cuda"
       },
-      "required": true,
+      "required": false,
       "enabled": true,
       "binding_id": "d360ce9690a6ac13e833aa6d32fccd2cda720c36c89c37eff97fa741059d6829"
     },
