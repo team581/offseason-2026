@@ -2,7 +2,6 @@ package com.team581.vision.spot;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
-import com.google.common.collect.ImmutableMap;
 import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.structs.FrameResult;
 import java.util.HexFormat;
@@ -21,7 +20,7 @@ public interface VisionIO extends AutoCloseable {
   record Inputs(Health health, List<Sample> samples, Map<String, Boolean> arrivals) {
     public Inputs {
       samples = List.copyOf(samples);
-      arrivals = ImmutableMap.copyOf(arrivals);
+      arrivals = arrivals;
     }
 
     public Inputs(Health health, List<Sample> samples) {
