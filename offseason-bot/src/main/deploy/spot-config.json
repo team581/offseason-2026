@@ -55,11 +55,24 @@
       },
       "calibration": {
         "mode_signature": "640x480-120-MJPG",
+        "fit": {
+          "frames_used": 41,
+          "coverage": 0.40189508116691364,
+          "reason": "calibration passed",
+          "diversity": 1,
+          "accepted": true,
+          "rms_reprojection_error_px": 0.21671275699622275,
+          "rejected_frames": 1
+        },
         "image_rotation_deg": 0,
+        "build": "/nix/store/6p4dwnyqjbmb558vl4r3qr9f29asxi7l-spot-vision",
+        "identity": "5216694efb9e968fcea7ea244234361795b984c8a063ad84e64c485fbe131d41",
+        "optical_controls": {},
+        "saved_at": null,
         "intrinsics": {
           "coverage": 0.40189508116691364,
-          "provisional": false,
-          "method": "charuco",
+          "frames_used": 41,
+          "diversity": 1,
           "camera_matrix": [
             [
               486.55838051801857,
@@ -77,21 +90,10 @@
               1
             ]
           ],
-          "rms_reprojection_error_px": 0.21671275699622275,
-          "calibrated_at": null,
-          "schema_version": 2,
-          "frames_used": 41,
-          "diversity": 1,
           "reprojection_error_px": 0.21671275699622275,
           "width": 640,
-          "model": "plumb_bob",
-          "board": {
-            "dictionary": "DICT_4X4_250",
-            "marker_length_m": 0.022,
-            "squares_y": 15,
-            "squares_x": 15,
-            "square_length_m": 0.03
-          },
+          "rms_reprojection_error_px": 0.21671275699622275,
+          "calibrated_at": null,
           "height": 480,
           "distortion_coefficients": [
             -0.08920277156193215,
@@ -101,20 +103,6 @@
             -0.10225560729122123
           ]
         },
-        "fit": {
-          "frames_used": 41,
-          "coverage": 0.40189508116691364,
-          "reason": "calibration passed",
-          "diversity": 1,
-          "accepted": true,
-          "rms_reprojection_error_px": 0.21671275699622275,
-          "rejected_frames": 1
-        },
-        "build": "/nix/store/6p4dwnyqjbmb558vl4r3qr9f29asxi7l-spot-vision",
-        "identity": "5216694efb9e968fcea7ea244234361795b984c8a063ad84e64c485fbe131d41",
-        "optical_controls": {},
-        "saved_at": null,
-        "model": "plumb_bob",
         "id": "aa17ed45565e4ce891ddcc4347457ddd",
         "holdout": {
           "reason": "Validation passed",
@@ -129,8 +117,7 @@
           "squares_y": 15,
           "squares_x": 15,
           "square_length_m": 0.03
-        },
-        "algorithm": "charuco-fit-holdout-v2"
+        }
       },
       "detector": {
         "max_hamming": 2,
@@ -195,11 +182,24 @@
       },
       "calibration": {
         "mode_signature": "640x480-120-MJPG",
+        "fit": {
+          "coverage": 0.45218535297565327,
+          "frames_used": 76,
+          "reason": "calibration passed",
+          "diversity": 1,
+          "accepted": true,
+          "rejected_frames": 1,
+          "rms_reprojection_error_px": 0.6121536906691766
+        },
         "image_rotation_deg": 0,
+        "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
+        "identity": "d360ce9690a6ac13e833aa6d32fccd2cda720c36c89c37eff97fa741059d6829",
+        "optical_controls": {},
+        "saved_at": null,
         "intrinsics": {
           "coverage": 0.45218535297565327,
-          "provisional": false,
-          "method": "charuco",
+          "frames_used": 76,
+          "diversity": 1,
           "camera_matrix": [
             [
               483.88491184025906,
@@ -217,21 +217,10 @@
               1
             ]
           ],
-          "rms_reprojection_error_px": 0.6121536906691766,
-          "calibrated_at": null,
-          "frames_used": 76,
-          "schema_version": 2,
-          "diversity": 1,
           "reprojection_error_px": 0.6121536906691766,
           "width": 640,
-          "model": "plumb_bob",
-          "board": {
-            "dictionary": "DICT_4X4_250",
-            "marker_length_m": 0.022,
-            "squares_y": 15,
-            "squares_x": 15,
-            "square_length_m": 0.03
-          },
+          "rms_reprojection_error_px": 0.6121536906691766,
+          "calibrated_at": null,
           "distortion_coefficients": [
             -0.09008365908050343,
             0.11766416986235285,
@@ -241,20 +230,6 @@
           ],
           "height": 480
         },
-        "fit": {
-          "coverage": 0.45218535297565327,
-          "frames_used": 76,
-          "reason": "calibration passed",
-          "diversity": 1,
-          "accepted": true,
-          "rejected_frames": 1,
-          "rms_reprojection_error_px": 0.6121536906691766
-        },
-        "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
-        "identity": "d360ce9690a6ac13e833aa6d32fccd2cda720c36c89c37eff97fa741059d6829",
-        "optical_controls": {},
-        "saved_at": null,
-        "model": "plumb_bob",
         "id": "012f5358bf8e4aaeb87e26aaf30d0229",
         "holdout": {
           "reason": "Validation passed",
@@ -269,8 +244,7 @@
           "squares_y": 15,
           "squares_x": 15,
           "square_length_m": 0.03
-        },
-        "algorithm": "charuco-fit-holdout-v2"
+        }
       },
       "detector": {
         "max_hamming": 2,
@@ -335,11 +309,24 @@
       },
       "calibration": {
         "mode_signature": "640x480-120-MJPG",
+        "fit": {
+          "coverage": 0.37292847882991814,
+          "frames_used": 80,
+          "reason": "calibration passed",
+          "diversity": 1,
+          "accepted": true,
+          "rejected_frames": 0,
+          "rms_reprojection_error_px": 0.3706733892173063
+        },
         "image_rotation_deg": 0,
+        "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
+        "identity": "74eb3e275f38297abac27957344e1b6ddac6298fb358cc195561bd962dc37395",
+        "optical_controls": {},
+        "saved_at": null,
         "intrinsics": {
           "coverage": 0.37292847882991814,
-          "provisional": false,
-          "method": "charuco",
+          "frames_used": 80,
+          "diversity": 1,
           "camera_matrix": [
             [
               485.22714440524544,
@@ -357,21 +344,10 @@
               1
             ]
           ],
-          "rms_reprojection_error_px": 0.3706733892173063,
-          "calibrated_at": null,
-          "frames_used": 80,
-          "schema_version": 2,
-          "diversity": 1,
           "reprojection_error_px": 0.3706733892173063,
           "width": 640,
-          "model": "plumb_bob",
-          "board": {
-            "dictionary": "DICT_4X4_250",
-            "marker_length_m": 0.022,
-            "squares_y": 15,
-            "squares_x": 15,
-            "square_length_m": 0.03
-          },
+          "rms_reprojection_error_px": 0.3706733892173063,
+          "calibrated_at": null,
           "distortion_coefficients": [
             -0.09948349064143425,
             0.13412293525870608,
@@ -381,20 +357,6 @@
           ],
           "height": 480
         },
-        "fit": {
-          "coverage": 0.37292847882991814,
-          "frames_used": 80,
-          "reason": "calibration passed",
-          "diversity": 1,
-          "accepted": true,
-          "rejected_frames": 0,
-          "rms_reprojection_error_px": 0.3706733892173063
-        },
-        "build": "/nix/store/wv31qfy2bqd048al42rxhl6fdvwdxxl7-spot-vision",
-        "identity": "74eb3e275f38297abac27957344e1b6ddac6298fb358cc195561bd962dc37395",
-        "optical_controls": {},
-        "saved_at": null,
-        "model": "plumb_bob",
         "id": "47cf3a4b43654155805670a423ffd772",
         "holdout": {
           "reason": "Validation passed",
@@ -409,8 +371,7 @@
           "squares_y": 15,
           "squares_x": 15,
           "square_length_m": 0.03
-        },
-        "algorithm": "charuco-fit-holdout-v2"
+        }
       },
       "detector": {
         "max_hamming": 2,
