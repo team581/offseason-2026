@@ -31,7 +31,7 @@ public class ShooterHoodConfig {
   public static final double HOMING_CURRENT_THRESHOLD = 10;
   public static final double HOMING_END_POSITION = ANGLE_FROM_HORIZONTAL;
 
-  public static final double TOLERANCE = 1;
+  public static final double TOLERANCE = 2;
   public static final double FEEDING_TOLERANCE = 5;
 
   // Voltage output, measured in mechanism rotations: V/rotation and V/(rotation/s).
