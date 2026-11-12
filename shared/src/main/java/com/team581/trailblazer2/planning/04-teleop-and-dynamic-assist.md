@@ -7,73 +7,43 @@
 
 ---
 
-## 1. Overview & Operational Goals
+## 1. Overview
 
-A major architectural strength of Trailblazer has always been its ability to bridge autonomous and teleoperated control through a unified code solution. In Trailblazer 1, teleop utilized Trailblazer for specific behaviors like `CLIMB_ASSIST` in `Swerve.java`, but lacked a first-class, dynamic drive-to-pose API and graceful driver preemption mechanics.
-
-Trailblazer 2 establishes teleoperated assistance as a first-class citizen with four core capabilities:
-1. **Instant On-The-Fly Drive-to-Pose:** Driver presses a button to drive to a designated field pose (e.g. Reef branch, Subwoofer, Amp, Trench scoring station) without pre-generating paths.
-2. **Dynamic Sensor Target Tracking:** Real-time alignment to camera-detected game pieces or AprilTag visual targets updated at 50 Hz.
-3. **Seamless Driver Preemption & Blending:** Instantaneous, jerk-free transition back to open-loop teleop when the driver deflects sticks beyond deadband.
-4. **Shared Physical Limits:** Teleop assists respect the exact same measured drivetrain limits, motor curves, and 2D vector acceleration bounds as autonomous routines.
+Trailblazer 2 uses the same planner for both autonomous routines and teleop driver assistance:
+1. **Single-Button Drive-to-Pose (`driveTo`):** Drive to a field pose (Reef branch, Subwoofer, Trench, Climb) on the fly without pre-generating paths.
+2. **Dynamic Vision Tracking:** Align to camera-detected game pieces or AprilTags updated at 50 Hz.
+3. **Instant Driver Override:** Touching the sticks beyond deadband (`0.15`) immediately hands control back to the driver with zero velocity jump.
+4. **Shared Physical Limits:** Teleop assists obey the exact same `DrivetrainLimits` and 2D vector acceleration bounds as auto.
 
 ---
 
 ## 2. Teleop Assist API
 
-Trailblazer 2 introduces dedicated runtime methods on the `Trailblazer` facade designed specifically for teleop invocation:
-
 ```java
 public class Trailblazer {
-    // 1. Instant single-target drive to pose
     public void driveTo(Pose2d targetPose, LimitsProfile profile);
-
-    // 2. Dynamic tracking with continuous pose supplier (e.g. Limelight / AprilTag)
     public void driveTo(Supplier<Pose2d> targetSupplier, LimitsProfile profile);
-
-    // 3. Multi-waypoint tactical trajectory (e.g. approach via offset, then dock)
     public void driveThrough(List<Pose2d> waypoints, Pose2d finalStop, LimitsProfile profile);
-
-    // 4. Cancel active teleop motion
     public void cancel();
 }
 ```
 
-### 2.1 Single-Goal Horizon Synthesis
-When `driveTo(targetPose, profile)` is invoked:
-- Trailblazer 2 synthesizes an ephemeral 1-segment, 1-goal plan on the fly.
-- Leg 0 latches the robot's current measured pose.
-- The target is declared with `pass: stop` and arrival finish tolerances (`finish: {pos: 0.03, heading: 2deg, speed: 0.1}`).
-- The two-pass velocity profiler solves the optimal trapezoidal braking profile along the line of sight in $< 20 \; \mu\text{s}$.
-- Heading planner computes the optimal shortest-path rotation with a `hard` gate at arrival.
+When `driveTo(targetPose, profile)` is called, Trailblazer creates a 1-segment plan from the robot's current pose to a `Goal.stop` target (default finish tolerance: `0.03 m`, `2°`, `0.1 m/s`) with a `HARD` heading gate.
 
 ---
 
-## 3. Driver Preemption & Seamless Stick Blending
-
-A critical requirement in competitive FRC is that autonomous assistance must never "trap" or fight the human driver. If the driver senses impending defense or changes their strategy, touching the joystick must instantly restore manual control.
-
-```mermaid
-stateDiagram-v2
-    [*] --> MANUAL_TELEOP
-    MANUAL_TELEOP --> ASSISTED_TRAILBLAZER : Driver presses Assist Button
-    ASSISTED_TRAILBLAZER --> MANUAL_TELEOP : Goal Reached
-    ASSISTED_TRAILBLAZER --> MANUAL_TELEOP : Driver Stick Deflection above Deadband
-    ASSISTED_TRAILBLAZER --> MANUAL_TELEOP : Cancel Request or Timeout
-```
+## 3. Driver Preemption & Continuous Velocity Handoff
 
 ### 3.1 Preemption Detection (Decoupled Translation & Rotation)
-`TrailblazerDriveSource` continuously monitors driver joystick magnitudes via `ControllerHelpers`. To support both full preemption and semi-autonomous assisted modes (such as Driver Translation + Auto Aim Hub), translation and rotation intervention are evaluated independently:
+Translation and rotation stick deflections are checked separately so hybrid assist modes (e.g. manual driving + auto-aiming at the Hub) only cancel the axis the driver overrides:
 
 ```java
 public boolean isTranslationIntervention() {
-    double translationMagnitude = Math.hypot(driverController.getLeftX(), driverController.getLeftY());
-    return translationMagnitude > DRIVER_OVERRIDE_THRESHOLD;
+    return Math.hypot(driverController.getLeftX(), driverController.getLeftY()) > 0.15;
 }
 
 public boolean isRotationIntervention() {
-    double rotationMagnitude = Math.abs(driverController.getRightX());
-    return rotationMagnitude > DRIVER_ROTATION_OVERRIDE_THRESHOLD;
+    return Math.abs(driverController.getRightX()) > 0.15;
 }
 
 public boolean isDriverIntervention() {
@@ -81,48 +51,17 @@ public boolean isDriverIntervention() {
 }
 ```
 
-Default thresholds:
-- `DRIVER_OVERRIDE_THRESHOLD = 0.15` (15% stick deflection)
-- `DRIVER_ROTATION_OVERRIDE_THRESHOLD = 0.15`
-
-In full automated alignment (`driveTo`), any intervention (`isDriverIntervention()`) hands control back to manual teleop. In hybrid assisted modes (§5), only the relevant axis triggers preemption—for example, in "Driver Translation + Auto Aim", translational stick deflection drives the robot while rotational control remains locked to the autonomous target until `isRotationIntervention()` is detected.
-
-### 3.2 Continuous Velocity Handoff (Eliminating Handoff Jitter)
-In naive implementations, canceling an automated drive causes the robot to suddenly brake or jerk because manual teleop starts reading raw stick inputs from zero.
-
-Trailblazer 2 guarantees **$C^0$ velocity continuity across handoffs**:
-1. When preemption triggers, `Trailblazer` records the last commanded velocity vector:
-   $$\vec{v}_{exit} = \vec{v}_{last\_command}$$
-2. The teleop drive source receives $\vec{v}_{exit}$ as the initial state of its manual rate limiter:
-   ```java
-   teleopDriveSource.seedVelocity(trailblazer.getLastCommand());
-   ```
-3. Manual drive slew rate limiters blend smoothly from $\vec{v}_{exit}$ to the driver's commanded stick velocity within 100 ms.
-4. **Result:** The driver feels seamless, tactile authority with zero mechanical shock or module skid.
+### 3.2 Continuous Velocity Handoff
+When the driver takes over, `teleopDriveSource.seedVelocity(trailblazer.getLastCommand())` seeds the manual slew-rate limiter with Trailblazer's last commanded velocity $\vec{v}_{last\_command}$ so the robot does not jerk or brake on handoff.
 
 ---
 
-## 4. Dynamic Vision Target Acquisition
+## 4. Dynamic Vision Target Filtering
 
-For scoring and intaking game pieces, target poses fluctuate as vision estimation refines:
-
-```mermaid
-flowchart LR
-    LL["Limelight or Tag Tracker<br/>(30-50 Hz)"] -->|"Target Pose (x, y, theta)"| Filter["Exponential Low-Pass Filter<br/>(tau = 0.10s)"]
-    Filter -->|"Filtered Pose Supplier"| TB2["Trailblazer 2 Planner"]
-    TB2 -->|"Continuous Dynamic Horizon"| Swerve["Swerve Drive"]
-```
-
-### 4.1 Vision Pose Filtering
-Directly feeding raw vision camera updates can induce high-frequency jitter into path tangent calculations.
-Trailblazer 2 wraps dynamic suppliers in a low-pass spatial filter:
-$$\mathbf{p}_{target, filtered}(t) = \alpha \mathbf{p}_{target, vision}(t) + (1 - \alpha) \mathbf{p}_{target, filtered}(t - \Delta t)$$
-where $\alpha = \frac{\Delta t}{\tau + \Delta t}$ with time constant $\tau = 0.10$ s.
-
-### 4.2 Moving Target Velocity Feedforward
-If tracking a moving target (e.g. an autonomous partner or moving game element):
-$$\vec{v}_{cmd} = \vec{v}_{profile} \hat{t} + \vec{v}_{target\_feedforward} + \vec{v}_{xt} \hat{n}$$
-The vector limiter bounds total acceleration, ensuring tracking remains traction-safe even if the visual target moves abruptly.
+To prevent camera noise from causing steering jitter when following a `Supplier<Pose2d>`:
+1. **Exponential Low-Pass Filter ($\tau = 0.10\text{ s}$):**
+   $$\mathbf{p}_{target, filtered}(t) = \alpha \mathbf{p}_{target, vision}(t) + (1 - \alpha) \mathbf{p}_{target, filtered}(t - \Delta t), \quad \alpha = \frac{\Delta t}{\tau + \Delta t}$$
+2. **Moving Target Feedforward:** If tracking a moving target, $\vec{v}_{des} = v_{profile} \hat{t}_{eval} + \vec{v}_{target\_ff} + v_{xt} \hat{n}(s)$, clamped by `VectorLimiter`.
 
 ---
 

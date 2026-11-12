@@ -26,7 +26,7 @@ flowchart LR
     P1["Phase 1: Instrumentation<br/>- Inject TimeSource<br/>- Limiting factor logging<br/>- Headless sim harness"] -->|"Gate 1: Sim matches logged autos"| P2["Phase 2: Limits and Limiter<br/>- DrivetrainLimits record<br/>- Isotropic 2D VectorLimiter<br/>- Symmetric accel/brake"]
     P2 -->|"Gate 2: Symmetric logs, no scrub"| P3["Phase 3: Core Planner<br/>- PathBuilder fillets<br/>- ProgressTracker s<br/>- VelocityProfiler 2-pass<br/>- HeadingPlanner gates"]
     P3 -->|"Gate 3: CI sim green and robot field run"| P4["Phase 4: Java DSL and MVP Tooling<br/>- Java Fluent DSL<br/>- FieldAnchors.java<br/>- Alliance mirroring<br/>- MVP gradlew previewAuto"]
-    P4 -->|"Gate 4: New auto previewed and run"| P5["Phase 5: CI Depth and Final App<br/>- Perturbation sweeps<br/>- CalibrateDrivetrainAuto<br/>- Delete legacy classes<br/>- In-Memory Live Preview App"]
+    P4 -->|"Gate 4: New auto previewed and run"| P5["Phase 5: CI Depth and Final App<br/>- Perturbation sweeps<br/>- Delete legacy classes<br/>- In-Memory Live Preview App"]
     P5 -->|"Gate 5: Clean codebase, green CI"| Done["Trailblazer 2 Operational"]
 ```
 
@@ -52,7 +52,7 @@ flowchart LR
 2. Implement isotropic 2D `VectorLimiter`:
    $$\|\vec{v}_{cmd} - \vec{v}_{prev}\| \le a_{fric} \cdot \Delta t$$
 3. Replace the asymmetric 1D slew rate limiter in `ConstraintsCalculator` with the 2D `VectorLimiter`.
-4. Calibrate initial limits ($a_{fric} = 3.8$ m/s$^2$, $a_{brake} = 4.0$ m/s$^2$, $v_{max} = 4.75$ m/s) in `drivetrain-limits.json`.
+4. Populate `drivetrain-limits.json` with first-principles mathematically derived constants from `TunerConstants` ($v_{free} = 4.02\text{ m/s}$, $v_{max} = 3.85\text{ m/s}$, $a_0$, $\omega_{max}$, $\alpha_{max}$) and initial empirical carpet defaults ($a_{fric} = 3.8$ m/s$^2$, $a_{brake} = 4.0$ m/s$^2$, $\tau_{lag} = 0.040$ s).
 
 > **Validation Gate 2:** Match telemetry and simulation logs confirm that acceleration and braking are strictly symmetric, module scrubbing on waypoint transitions is eliminated, and existing autos pass without hitting current limits.
 
@@ -62,20 +62,20 @@ flowchart LR
 **Focus:** Replace heuristic tracking and distance-PID velocity shaping with the online spatial planner.
 
 1. Implement `PathBuilder`:
-   - Circular fillet generation using $r \le \delta / (\sec(\theta/2) - 1)$.
-   - Collinear bypass ($\theta < 1.0^\circ$) and reversal detection ($\theta \ge 150^\circ \implies \text{forced stop}$).
+   - Circular fillet generation using $r \le \delta / (\sec(\theta/2) - 1)$ with coupled symmetric leg scaling ($G^1$ continuity).
+   - Collinear bypass ($\theta < 1.0^\circ$) and near-reversal warning ($\theta \ge 135^\circ$).
    - Horizon construction bounded by braking distance $\frac{v_{max}^2}{2 a_{brake}}$.
 2. Implement `ProgressTracker`:
-   - Spatial projection along arc length $s$.
-   - Monotonic ratcheting and cross-track error $e_{xt}$.
-   - Leg latching and re-latching on $|e_{xt}| > e_{relatch}$ or vision pose steps.
+   - Windowed spatial projection along arc length $s$ (preventing self-intersection loop-jumping).
+   - Monotonic ratcheting and cross-track error $e_{xt}$ with negative feedback $v_{xt} = \mathrm{clamp}(-e_{xt} / \tau_{xt})$.
+   - Waypoint-Vertex Sub-Segment Latching and re-latching on $|e_{xt}| > e_{relatch}$ or vision pose steps.
 3. Implement `VelocityProfiler`:
-   - Two-pass backward/forward dynamic programming profiler along $s$.
-   - Lateral centripetal acceleration capping: $v \le \sqrt{a_{lat} / \kappa}$.
-   - Friction circle tangential budget allocation.
+   - Two-pass backward/forward dynamic programming profiler along $s$ (forward pass seeded at $k_{curr}$).
+   - Second-order speed lookahead $s_{eval, v}$, decoupled tangent lookahead $s_{eval, t}$, and terminal 2D stop-goal convergence.
+   - Lateral centripetal acceleration capping ($v \le \sqrt{a_{lat} / \kappa}$) and dynamic translation-rotation allocation ($v_{max, eff}, a_{fric, eff}$).
 4. Implement `HeadingPlanner`:
-   - Keyframe target evaluation ($\theta^*(s)$).
-   - Hard gate speed capping: $v_{cap} = d_{anchor} / t_{rot}$.
+   - Keyframe target evaluation ($\theta^*(s)$) and continuous unwrapped reference evolution $\theta_{ref}$.
+   - Hard gate speed capping: $v_{cap} = \max(0, \min(v_{cap, kin}, v_{cap, brake}))$ (including overshoot and spin-arrest time).
 5. Implement `TrailblazerLegacyAdapter` allowing existing `AutoPoint` segment lists to be evaluated by the new planner.
 
 > **Validation Gate 3:** All existing competition autos pass 100% of assertion checks in CI simulation using the new planner, and `LeftNormalAuto` executes successfully on the physical robot.
@@ -99,18 +99,17 @@ flowchart LR
 
 ---
 
-### Phase 5: CI Hardening, Calibration Auto, Deprecation & Final App
-**Focus:** Deepen test automation, provide automated robot calibration, delete legacy code, and deliver the live previewer app.
+### Phase 5: CI Hardening, Deprecation & Final App
+**Focus:** Deepen test automation, delete legacy code, and deliver the live previewer app.
 
 1. Implement 20x Monte Carlo perturbation sweeps in CI (start offsets, vision noise, collision shoves).
-2. Implement `CalibrateDrivetrainAuto` on the robot to automate empirical parameter identification.
-3. Migrate all remaining competition autos (`LeftSpecial`, `RightSpecial`, `DoNothing`, `TestAuto`) to the new Fluent DSL.
-4. Safely delete legacy classes:
+2. Migrate all remaining competition autos (`LeftSpecial`, `RightSpecial`, `DoNothing`, `TestAuto`) to the new Fluent DSL.
+3. Safely delete legacy classes:
    - `com.team581.trailblazer.followers.PidPathFollower`
    - `com.team581.trailblazer.trackers.HeuristicPathTracker`
    - `com.team581.trailblazer.ConstraintsCalculator`
    - Legacy `LinearConstraintOptions` and `AngularConstraintOptions`
-5. **Build Advanced Tooling: Standalone In-Memory Live Previewer App (`TrailblazerStudio`)**:
+4. **Build Advanced Tooling: Standalone In-Memory Live Previewer App (`TrailblazerStudio`)**:
    - Background file watcher monitoring `autos/*.java`.
    - In-memory hot reload via JDK `JavaCompiler` API (`ToolProvider.getSystemJavaCompiler()`) and dynamic ClassLoader.
    - Sub-300 ms live updates on `Ctrl+S` pushed over WebSockets to a local browser canvas (`localhost:5801`).
@@ -139,7 +138,7 @@ flowchart LR
 | :--- | :---: | :--- | :--- |
 | **Fillet cuts into field obstacle** | High | Large `within` tolerance allows wide corner cut | Fillet deviation is strictly bounded: $d_{dev} \le \delta$. CI keepout checks fail builds if swept robot footprint breaches keepouts. Preview PNG highlights clearance. |
 | **Velocity chatter from noisy odometry** | High | Velocity feedback cycling through forward profile pass | Forward profiler seeds from last commanded velocity $v_{prev}$ rather than raw measured velocity, unless divergence exceeds $0.75$ m/s. |
-| **Simulation passes, robot drifts on carpet** | Medium | Inaccurate friction or latency assumptions | Automated `CalibrateDrivetrainAuto` measures real carpet limits. Log replay tracks model residuals. On-robot pre-event checklist maintained. |
+| **Simulation passes, robot drifts on carpet** | Medium | Inaccurate friction or latency assumptions | Tune the 3 empirical parameters ($a_{fric}, a_{brake}, \tau_{lag}$) in `drivetrain-limits.json` during robot bringup. Log replay tracks model residuals. |
 | **RoboRIO loop time overrun** | Medium | Heavy dynamic programming or memory allocations | All profile buffers preallocated (`double[]`). Solve time benchmarked at $< 35 \; \mu\text{s}$ ($0.18\%$ of loop budget). |
 | **Dynamic vision targets cause path jitter** | Medium | Camera pose fluctuation at 50 Hz | Exponential low-pass filter ($\tau = 0.10$ s) on dynamic goal suppliers, bounded by the 2D vector limiter. |
 | **Driver fights auto assist in teleop** | High | Inability to preempt autonomous assist cleanly | Automatic preemption when stick deflection $> 0.15$; continuous velocity handoff prevents mechanical jerking. |

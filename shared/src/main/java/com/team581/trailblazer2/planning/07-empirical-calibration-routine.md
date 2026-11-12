@@ -1,161 +1,104 @@
-# Trailblazer 2 Design Specification: Empirical Drivetrain Calibration
+# Trailblazer 2 Design Specification: Drivetrain Parameter Derivation & Physics Sandbox Validation
 
 **Document ID:** TB2-SPEC-07  
 **Status:** Approved for Implementation  
 **Author:** Team 581 Technical Staff  
-**Applies To:** `CalibrateDrivetrainAuto`, `DrivetrainLimits`, `TunerConstants`, `drivetrain-limits.json`  
+**Applies To:** `DrivetrainLimits`, `TunerConstants`, `drivetrain-limits.json`  
 
 ---
 
 ## 1. Overview & Principles
 
-A major source of fragile auto tuning in FRC is embedding assumed physical parameters (e.g. `4.5 m/s` velocity, `8.0 m/s^2` acceleration) directly into individual waypoint definitions. When wheel tread wears down, battery internal resistance rises, or the robot transitions from practice carpet to competition carpet, autos that were tuned on field day fail.
+A major source of fragile auto tuning in FRC is embedding assumed physical parameters (e.g. `4.5 m/s` velocity, `8.0 m/s^2` acceleration) and per-waypoint PID gains directly into individual path definitions.
 
-Trailblazer 2 enforces an empirical boundary:
-- **Autos declare operational intent and safety margins** (e.g. `limits: fast` $= 0.90 \times \text{limits}$, `limits: careful` $= 0.60 \times \text{limits}$).
-- **Physical capabilities belong to the drivetrain**, determined empirically via an automated calibration auto and committed to `drivetrain-limits.json`.
-
-Whenever the chassis undergoes mechanical alterations (new wheels, mass reduction, gear ratio swap), running the calibration routine updates the physical envelope across all autos instantly without editing a single path.
+Trailblazer 2 enforces a strict physical boundary:
+- **Autos declare operational intent and geometric tolerances** (e.g. `within(0.25)`, `limits: fast` $= 0.90 \times \text{limits}$, `limits: careful` $= 0.60 \times \text{limits}$).
+- **Physical capabilities belong to the drivetrain**, stored in `drivetrain-limits.json`. Nine of the twelve parameters are mathematically derived from CAD and motor datasheets before the robot ever touches carpet, leaving only three physical parameters ($a_{fric}, a_{brake}, \tau_{lag}$) to tune on the robot during bringup.
 
 ---
 
-## 2. Drivetrain Parameter Identification
+## 2. Mathematically Derived vs. On-Robot Tuned Parameters
 
-The calibration routine identifies eight fundamental physical constants:
+To enable a **$\le 1$ day robot bringup** where path following works out of the box without per-auto PID tuning, Trailblazer 2 separates parameters into **Mathematically Derived Constants** (computed from CAD, gearing, and Kraken X60 FOC motor datasheets) and **On-Robot Tuned Constants** (3 carpet/latency properties tuned once on the physical robot).
 
-| Parameter | Symbol | Units | Physical Meaning | Identification Maneuver |
+### 2.1 Category A: Mathematically Derived Parameters (9 Constants from CAD & Datasheet)
+
+Given CAD geometry, `TunerConstants` ($G_{drive}$, $r_{wheel}$, $L_x, L_y \implies R_{chassis} = \sqrt{L_x^2 + L_y^2}$, mass $m$, yaw MOI $J_{zz}$, stator limit $I_{slip}$, battery resistance $R_{bat} \approx 0.018\text{ }\Omega$, static friction $k_S \approx 0.20\text{ V}$), and Kraken X60 FOC datasheet constants ($V_{nom} = 12\text{ V}$, $\omega_{free} = 607.37\text{ rad/s}$, $\tau_{stall} = 9.37\text{ N}\cdot\text{m}$, $I_{stall} = 483\text{ A}$, $I_{free} = 2.0\text{ A}$, $R_m = 12/I_{stall} = 0.0248\text{ }\Omega$, $k_T = \tau_{stall}/I_{stall} = 0.0194\text{ N}\cdot\text{m/A}$, $k_V = (12 - I_{free}R_m)/\omega_{free} = 0.01967\text{ V/(rad/s)}$, peak current $I_{max} = \min(I_{slip}, (V_{oc} - k_S)/(R_m + 4 R_{bat}))$, $\eta_{gear} \approx 0.90$):
+
+| Parameter | Symbol | Units | Mathematical Derivation Formula | Required Input Constraints |
 | :--- | :---: | :---: | :--- | :--- |
-| **Top Linear Velocity** | $v_{max}$ | m/s | Maximum achievable steady-state linear speed on carpet | Straight-line sprint at 100% duty cycle |
-| **Zero-Speed Acceleration** | $a_0$ | m/s² | Peak stall acceleration from brushless motor torque | Linear regression y-intercept of $a(v)$ vs $v$ |
-| **Motor Free Speed** | $v_{free}$ | m/s | Theoretical motor no-load velocity | Linear regression x-intercept of $a(v)$ vs $v$ |
-| **Braking Deceleration** | $a_{brake}$ | m/s² | Maximum deceleration achievable without wheel lockup | High-speed hard stop from 4.0 m/s |
-| **Friction / Traction Limit** | $a_{fric}$ | m/s² | Peak isotropic carpet traction ($\mu \cdot g$) | Skidpad circle test at increasing speed |
-| **Lateral Acceleration Limit** | $a_{lat}$ | m/s² | Safe cornering acceleration before lateral drift | Cornering slip boundary ($a_{lat} \approx 0.90 \cdot a_{fric}$) |
-| **Max Angular Velocity** | $\omega_{max}$ | rad/s | Maximum steady-state rotation rate in place | In-place spin test at full rotational voltage |
-| **Max Angular Acceleration** | $\alpha_{max}$ | rad/s² | Peak angular acceleration from rest | Spin step response inflection slope |
-| **Drivetrain Response Lag** | $\tau_{lag}$ | s | First-order velocity tracking latency | 63.2% rise time of velocity step response |
+| **1. Motor Free Speed** | $v_{free}$ | m/s | $\dfrac{V_{nom} - k_S}{k_V \cdot G_{drive}} \cdot r_{wheel}$ | $G_{drive}$, $r_{wheel}$, motor $k_V$, $k_S$ |
+| **2. Loaded Top Speed** | $v_{max}$ | m/s | $\eta_v \cdot v_{free}$ ($\eta_v \approx 0.90\text{–}0.92$) | $v_{free}$, battery sag & steering cosine headroom |
+| **3. Stall Acceleration** | $a_0$ | m/s² | $\eta_a \min\left(\dfrac{4 \eta_{gear} G_{drive} k_T (I_{max} - I_{free})}{m \cdot r_{wheel}}, \; a_{fric}\right)$ | Mass $m$, $G_{drive}$, $r_{wheel}$, $k_T$, $I_{slip}$, $R_{bat}$, $a_{fric}$ |
+| **4. Cornering Lateral Limit** | $a_{lat}$ | m/s² | $0.85 \cdot a_{fric}$ | On-robot tire-carpet traction limit $a_{fric}$ |
+| **5. Max Angular Velocity** | $\omega_{max}$ | rad/s | $\eta_{\omega} \dfrac{v_{max}}{R_{chassis}}$ | $v_{max}$, module lever arm $R_{chassis} = \sqrt{L_x^2 + L_y^2}$ |
+| **6. Max Angular Accel** | $\alpha_{max}$ | rad/s² | $\min\left(\eta_{\alpha} \dfrac{m \cdot a_{fric} \cdot R_{chassis}}{J_{zz}}, \; \dfrac{\beta_{rot} \cdot a_{fric}}{R_{chassis}}\right)$ | Mass $m$, CAD yaw MOI $J_{zz}$, $R_{chassis}$, $a_{fric}$ ($\beta_{rot} \in [0.35, 0.50]$) |
+| **7. Cross-Track Time Constant** | $\tau_{xt}$ | s | $4 \left(\tau_{lag} + \dfrac{\Delta t}{2}\right)$ (Critical damping $\zeta \ge 1$) | Velocity tracking lag $\tau_{lag}$, loop period $\Delta t$ |
+| **8. Max Cross-Track Speed** | $v_{xt, max}$ | m/s | $\min\left(\dfrac{e_{relatch}}{\tau_{xt}}, \; 0.30 \cdot v_{max}\right)$ | Re-latch threshold $e_{relatch} = 0.40\text{ m}$, $\tau_{xt}$, $v_{max}$ |
+| **9. Heading Feedback Gain** | $kP_{\theta}$ | s⁻¹ | $\dfrac{1}{3 \left(\tau_{lag} + \Delta t / 2\right)}$ | Velocity tracking lag $\tau_{lag}$, loop period $\Delta t$ |
+
+*(Note: The low-level coaxial module azimuth-drive mechanical coupling ratio $k_{couple} = N_{ring} / N_{pinion}$ is also derived directly from CAD gear tooth counts in `TunerConstants`).*
+
+### 2.2 Category B: On-Robot Tuned Parameters (3 Constants)
+
+Only **three** physical constants depend on venue carpet grip, CG pitch weight transfer, and closed-loop actuator latency, and are tuned on the physical robot:
+
+| Parameter | Symbol | Units | Physical Meaning | Why It Is Tuned on the Robot |
+| :--- | :---: | :---: | :--- | :--- |
+| **1. Friction / Traction Limit** | $a_{fric}$ | m/s² | Peak isotropic carpet traction ($\mu \cdot g$) | Depends on wheel tread compound, wear, and carpet nap |
+| **2. Braking Deceleration** | $a_{brake}$ | m/s² | Max safe deceleration without wheel lockup or pitch tip | Depends on CG height $h_{cg}$ pitch weight transfer and regen limits |
+| **3. Drivetrain Response Lag** | $\tau_{lag}$ | s | Effective first-order velocity tracking latency | Aggregates CAN delay, velocity filter window, and steer align lag |
+
+Once $(a_{fric}, a_{brake}, \tau_{lag})$ are set on the robot, the dependent derived parameters ($a_{lat}, a_0, \alpha_{max}, \tau_{xt}, v_{xt, max}, kP_\theta$) update automatically by formula.
 
 ---
 
-## 3. The Automated Calibration Routine (`CalibrateDrivetrainAuto`)
+## 3. Physics Sandbox & Objective Model Validation
 
-The calibration sequence executes as an automated, self-contained autonomous routine selectable via the standard `AutoChooser`. 
+To objectively evaluate the mathematical model before hardware bringup, a **1000 Hz sub-stepped 4-module swerve physics sandbox** was constructed using Team 581's physical constants (`CompTunerConstants`):
+- **Plant Physics ($1\text{ ms}$ integration, $50\text{ Hz}$ planner):** Mass $m = 61.2\text{ kg}$, yaw MOI $J_{zz} = 5.20\text{ kg}\cdot\text{m}^2$, module lever arms $(\pm 11\text{"}, \pm 11.75\text{"}) \implies R_{chassis} = 0.4088\text{ m}$, $G_{drive} = 7.6737$, $r_{wheel} = 2.0\text{"}$, Kraken X60 FOC torque-speed curves with stator current clamping ($80\text{ A}$) and battery internal resistance voltage sag ($R_{bat} = 0.018\text{ }\Omega$), module steering lag ($\tau_{steer} = 18\text{ ms}$), velocity loop lag ($\tau_{drive} = 25\text{ ms}$), cosine steering compensation, $20\text{ ms}$ pose latency, and per-module isotropic tire-carpet friction circle ($\mu = 1.05$).
+- **Test Scenarios:** A 9-waypoint obstacle course combining wide high-speed sweeps, a tight $0.8\text{ m}$ S-chicane, a $160^\circ$ CW whip into a hard heading gate, an intermediate $5\text{ cm}$ stop goal, a near-intersecting loop return, and a final $4\text{ cm} / 2^\circ$ dock (tested both nominally and under a $1.44\text{ m/s}$ lateral collision impulse), plus a self-intersecting figure-8 and a $0.50\text{ m}$ short-leg U-turn.
 
-### Carpet Dimension & Safety Profiles: Analytical Motor Kinematics
-Because DC brushless motors exhibit linear back-EMF torque decay ($a(v) = a_0(1 - v / v_{free})$), acceleration is not constant. Integrating the differential equation of motion $\frac{dv}{dx} = \frac{a(v)}{v}$:
-$$\int_0^x dx = \int_0^v \frac{v'}{a_0 \left(1 - \frac{v'}{v_{free}}\right)} dv' \implies x(v) = \frac{v_{free}^2}{a_0} \left[ -\ln\left(1 - \frac{v}{v_{free}}\right) - \frac{v}{v_{free}} \right]$$
+### 3.1 How Sandbox Data Identified the Objective Optimal Model
+Comparing telemetry across model variants directly isolated the mathematical failure modes that pure kinematic analysis missed:
+1. **Commanded vs. Achieved Velocity (`RMSE = 1.989 m/s` in TB1 $\to$ `0.101 m/s` in Optimal TB2):** Trailblazer 1 requested $4.75\text{ m/s}$ on a $4.02\text{ m/s}$ drivetrain with no deceleration limit, saturating motor duty cycle at $100\%$, causing $25.3\times$ peak tire slip and $1905\text{ J}$ of tire scrub work. Deriving $v_{free} = 4.02\text{ m/s}$ and $v_{max} = \eta_v v_{free}$ from `TunerConstants` and coupling rotational wheel speed ($v_{max, eff}, a_{fric, eff}$) cut velocity tracking RMSE by **$20\times$** and tire scrub work by **$19\times$** ($101\text{ J}$).
+2. **Startup & Endpoint Traces:** Zero-velocity startup testing exposed the first-order lookahead deadlock ($v_0 = 0 \implies s_{eval} = s \implies v = 0$), solved by the second-order lookahead term $\frac{1}{2}a_{avail}(s)\tau_{eff}^2$. Stop-goal residual traces showed $1.3\text{ cm}$ of uncorrected inline lag when $s$ ratcheted to $S_{horizon}$, solved by the terminal 2D Euclidean convergence blend ($< 0.5\text{ mm}$ final error).
+3. **Consecutive Corner & Figure-8 Traces:** Re-anchoring leg origins to $T_{out, k-1}$ shrank incoming leg lengths and caused corner $k$ to over-cut `within` ($0.376\text{ m} > 0.35\text{ m}$). Preserving waypoint vertices via sub-segment latching, decoupling tangent phase-lead $s_{eval, t}$, enforcing coupled symmetric tangent scaling ($G^1$ continuity to $10^{-17}\text{ rad}$), and windowing projection around $s_{high\_water}$ achieved **100% tolerance compliance** across all waypoints and collision perturbations.
 
-For typical Kraken X60 swerve parameters ($a_0 \approx 8.2\text{ m/s}^2, \; v_{free} \approx 5.1\text{ m/s}, \; a_{brake} \approx 4.10\text{ m/s}^2$):
-- In $d_{sprint} = 1.25\text{ m}$, the robot reaches $v \approx 3.31\text{ m/s}$ ($\approx 65\%$ of free speed). Braking from $3.31\text{ m/s}$ requires $d_{brake} = \frac{3.31^2}{2 \times 4.10} \approx 1.33\text{ m}$. Total dynamic travel is $1.25 + 1.33 = \mathbf{2.58\text{ meters}}$.
-- To achieve $v = 4.53\text{ m/s}$ ($>88\%$ of $v_{free}$), the differential equation requires $d_{sprint} \ge \mathbf{4.13\text{ meters}}$ of acceleration, plus $d_{brake} = \frac{4.53^2}{2 \times 4.10} \approx \mathbf{2.50\text{ meters}}$ to stop, demanding $\mathbf{6.63\text{ meters}}$ of active travel.
-
-The routine therefore formally establishes two calibration profiles:
-1. **Standard Workshop Strip Profile ($5.0 \times 3.0\text{ meters}$):**
-   - Active track: $4.0\text{ m}$ ($0.5\text{ m}$ buffers at each end).
-   - Sprint distance: $d_{sprint} = 1.25\text{ m}$.
-   - The robot sprints to $\approx 3.3\text{ m/s}$ and stops within $2.58\text{ m}$, leaving over $1.4\text{ m}$ of stopping margin.
-   - Least-squares linear regression over the $[0, \; 3.3\text{ m/s}]$ velocity domain accurately estimates stall acceleration $a_0$, slope $m$, and theoretical free speed $v_{free} = a_0 / m$.
-2. **Full-Field Extended Strip Profile ($\ge 8.5 \times 3.0\text{ meters}$):**
-   - For practice fields with open floor space: permits $d_{sprint} = 4.15\text{ m}$ to directly observe high-speed terminal velocity ($> 4.5\text{ m/s}$) and empirical braking at full speed ($6.65\text{ m}$ dynamic travel $+ 1.85\text{ m}$ safety margins).
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Tech as Controls Engineer
-    participant DS as Driver Station
-    participant Auto as CalibrateDrivetrainAuto
-    participant HW as Swerve Drivetrain and Sensors
-    participant Out as drivetrain-limits.json
-
-    Tech->>DS: Select CalibrateDrivetrainAuto and Enable Auto
-    Auto->>HW: Stage 1: Straight-Line Sprint (1.25m standard / 4.15m extended)
-    HW-->>Auto: Stream high-speed pose, odometry and current (250 Hz)
-    Auto->>HW: Stage 2: Controlled Emergency Braking (stops within active track)
-    HW-->>Auto: Log deceleration slope and wheel slip
-    Auto->>HW: Stage 3: Skidpad Circle (R = 1.5m, ramping speed)
-    HW-->>Auto: Record lateral accel until gyro/wheel divergence
-    Auto->>HW: Stage 4: In-Place Azimuth Spin
-    HW-->>Auto: Record peak omega and angular alpha
-    Auto->>HW: Stage 5: Velocity Step Response
-    HW-->>Auto: Record latency tau_lag
-    Auto->>Out: Perform regressions and write drivetrain-limits.json
-    Auto-->>Tech: Output summary to DriverStation console and DogLog
-```
-
-### 3.1 Stage 1 & 2: Straight-Line Sprint & Braking Test
-1. Robot accelerates forward along the field $X$-axis under closed-loop velocity commands requesting $6.0$ m/s for $d_{sprint}$ ($1.25\text{ m}$ for standard $5.0\text{ m}$ strip; $4.15\text{ m}$ for extended strip).
-2. Odometry velocity $v(t)$ and acceleration $a(t) = \frac{\Delta v}{\Delta t}$ are logged at 50 Hz (with motor telemetry recorded at 250 Hz over CAN).
-3. At $x = d_{sprint}$, the robot commands immediate $v = 0$ with active neutral reverse-braking.
-4. **Mathematical Extraction:**
-   - $v_{max}$ is determined from the peak cruise velocity (or asymptotic regression extrapolation on the standard strip).
-   - For points during the acceleration phase ($v < 0.9 v_{peak}$), a linear least-squares regression is fit:
-     $$a(v) = a_0 - m \cdot v$$
-     $$v_{free} = \frac{a_0}{m}$$
-   - $a_{brake}$ is taken as the median deceleration during the braking transition:
-     $$a_{brake} = \left| \frac{\Delta v}{\Delta t} \right|_{decel}$$
-
-### 3.2 Stage 3: Skidpad Circle Test (Measuring Carpet Traction $a_{fric}$)
-Traction coefficient $\mu$ depends heavily on carpet pile direction, tread type (Billet vs 3D-printed vs TPU), and robot mass.
-1. Robot drives in a circle of radius $R = 1.50$ m.
-2. Speed ramps gradually from $1.0$ m/s upward by $0.2$ m/s per revolution.
-3. During cornering, lateral centripetal acceleration is $a_{lat} = \frac{v^2}{R}$.
-4. **Slip Detection:** Wheel encoder odometry velocity is compared against high-frequency IMU lateral acceleration and AprilTag visual pose estimation.
-5. When wheel slip occurs (wheel speed diverges from IMU integrating track by $> 10\%$), the lateral acceleration value immediately preceding slip is captured as the empirical traction ceiling:
-   $$a_{fric} = a_{lat, slip}$$
-   $$a_{lat, operational} = 0.90 \cdot a_{fric}$$
-
-### 3.3 Stage 4: In-Place Spin Test (Rotational Limits)
-1. Robot spins in place around its physical center from rest to maximum angular rate for $1.5$ seconds, then halts.
-2. Gyro yaw velocity $\omega(t)$ and angular acceleration $\alpha(t) = \dot{\omega}$ are captured.
-3. $\omega_{max}$ is the peak steady-state rotation rate (typically $12.0$ to $16.0$ rad/s).
-4. $\alpha_{max}$ is the peak slope during the step onset (typically $40.0$ to $60.0$ rad/s$^2$).
-
-### 3.4 Stage 5: Step Response Latency ($\tau_{lag}$)
-1. Robot executes small velocity steps ($0 \to 1.5$ m/s, $1.5 \to 0$ m/s).
-2. The response is modeled as a first-order lag:
-   $$v(t) = v_{step} \left(1 - e^{-t / \tau_{lag}}\right)$$
-3. $\tau_{lag}$ is measured as the time required to reach $63.2\%$ of the commanded velocity step (nominally $0.035$ to $0.045$ s).
+| Metric (9-Waypoint Obstacle Course) | Legacy TB1 | TB2 (Uncoupled / Pre-Fix) | **TB2 (Optimal Derived)** | **TB2 (Optimal + $1.44\text{ m/s}$ Shove)** |
+| :--- | :---: | :---: | :---: | :---: |
+| **Waypoint & Stop Tolerances** | FAIL | FAIL (`0.376m > 0.35m`, `3.92° > 2°`) | **100% PASS** | **100% PASS** |
+| **Velocity Tracking RMSE** | $1.989\text{ m/s}$ | $0.258\text{ m/s}$ | **$0.101\text{ m/s}$** | **$0.114\text{ m/s}$** |
+| **Peak Tire Slip Ratio** | $25.33\times$ | $1.89\times$ | **$1.11\times$** | **$1.18\times$** |
+| **Tire Scrub Work (Energy Lost)** | $1905.3\text{ J}$ | $139.0\text{ J}$ | **$101.0\text{ J}$** | **$152.9\text{ J}$** |
+| **Final Stop Error (Pos / Heading)** | $1.8\text{ cm} / 2.13^\circ$ | $1.3\text{ cm} / 3.92^\circ$ | **$0.0\text{ cm} / 1.86^\circ$** | **$0.0\text{ cm} / 1.86^\circ$** |
 
 ---
 
-## 4. Output Specification: `drivetrain-limits.json`
+## 4. Configuration Specification: `drivetrain-limits.json`
 
-Upon successful completion of the calibration auto, the robot writes the measured parameters directly to `src/main/deploy/drivetrain-limits.json` (or logs them to USB/NetworkTables for committing):
+The 12 drivetrain parameters (9 mathematically derived + 3 tuned on robot) are stored in `src/main/deploy/drivetrain-limits.json`:
 
 ```json
 {
   "schema_version": 2,
   "robot": "comp-bot",
-  "calibration_timestamp": "2026-10-07T16:30:00Z",
-  "carpet_condition": "competition_field_official",
   "limits": {
-    "max_linear_velocity": 4.75,
-    "free_linear_acceleration": 8.20,
-    "motor_free_speed": 5.10,
+    "max_linear_velocity": 3.85,
+    "free_linear_acceleration": 6.20,
+    "motor_free_speed": 4.02,
     "max_braking_deceleration": 4.10,
     "friction_limit": 3.85,
-    "max_lateral_acceleration": 3.45,
-    "max_angular_velocity": 14.50,
-    "max_angular_acceleration": 52.00,
+    "max_lateral_acceleration": 3.27,
+    "max_angular_velocity": 8.40,
+    "max_angular_acceleration": 26.00,
     "drive_response_lag_seconds": 0.040,
-    "cross_track_time_constant": 0.250,
-    "max_cross_track_correction": 1.200
+    "cross_track_time_constant": 0.200,
+    "max_cross_track_correction": 1.200,
+    "heading_kp": 6.670
   }
 }
 ```
 
 ### 4.1 Git Version Control & CI Replay Gate
-Whenever `drivetrain-limits.json` is committed, GitHub Actions CI automatically replays the entire suite of competition autos against the new limits in simulation:
-- Asserts that all autos still complete within their 15.0-second match budgets.
-- Asserts that stop tolerances and keepouts remain satisfied.
-- Highlights any auto segments that slowed down due to lower measured traction.
-
----
-
-## 5. Pre-Competition Calibration Checklist
-
-Before attending a regional or championship event:
-1. **Fresh Tread Calibration:** Install fresh competition wheels, run `CalibrateDrivetrainAuto` on the practice field, and commit `drivetrain-limits.json`.
-2. **Reference Auto Verification:** Execute three benchmark autos (`LeftNormal`, `RightNormal`, `IntegrationTest`).
-3. **Limiting-Factor Review:** Inspect DogLog telemetry in AdvantageScope to ensure no unexpected binds or premature decelerations occur.
-4. **Alliance Mirroring Sanity:** Execute one test run on the Red alliance and one on the Blue alliance to verify mirror equivalence.
+Whenever `drivetrain-limits.json` is updated, GitHub Actions CI automatically replays the suite of competition autos against the limits in simulation to verify that all autos complete within their 15.0-second match budgets and satisfy all stop tolerances and keepouts.
