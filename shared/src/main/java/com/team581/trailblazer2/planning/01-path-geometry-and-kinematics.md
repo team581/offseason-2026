@@ -61,71 +61,113 @@ The retained [comparison image](tb1-vs-tb2-comparison.png) is illustrative. Its 
 
 ## 2. Circular Fillet Mathematics
 
-Consider three consecutive goals: $P_{k-1}$, $P_k$, and $P_{k+1}$ in 2D space.
+A circular fillet rounds the corner at $P_k$ between consecutive goals $P_{k-1}$, $P_k$, and $P_{k+1}$. The formulas below apply to nonzero-length legs with a turn angle strictly between zero and 180 degrees; see sections 3 and 7 for degenerate cases.
 
-Let incoming leg vector be $\vec{L}_{in} = P_k - P_{k-1}$, with length $L_{in} = \|\vec{L}_{in}\|$.
-Let outgoing leg vector be $\vec{L}_{out} = P_{k+1} - P_k$, with length $L_{out} = \|\vec{L}_{out}\|$.
+The incoming and outgoing leg vectors and lengths are:
 
-Unit direction vectors:
-$$\hat{u} = \frac{\vec{L}_{in}}{L_{in}}, \quad \hat{v} = \frac{\vec{L}_{out}}{L_{out}}$$
+$$
+\vec{L}_{in} = P_k - P_{k-1}, \qquad L_{in} = \|\vec{L}_{in}\|
+$$
 
-### 2.1 Corner Deflection Angle $\theta$ and Turn Orientation
+$$
+\vec{L}_{out} = P_{k+1} - P_k, \qquad L_{out} = \|\vec{L}_{out}\|
+$$
 
-The corner deflection angle magnitude $\theta \in [0, \pi)$ represents the unsigned angular change between legs:
-$$\theta = \left| \mathrm{atan2}\left(u_x v_y - u_y v_x, \; u_x v_x + u_y v_y\right) \right|$$
+Their unit direction vectors are:
 
-Taking the absolute value is critical: a signed angle ($\theta < 0$ for clockwise turns) would yield a negative tangent length $t = r \tan(\theta/2) < 0$, corrupting fillet geometry and arc length parameterization.
+$$
+\hat{u} = \frac{\vec{L}_{in}}{L_{in}}, \qquad
+\hat{v} = \frac{\vec{L}_{out}}{L_{out}}
+$$
 
-The turn direction sign $\sigma_{turn} \in \{-1, +1\}$ is preserved separately to position the fillet circle center $C$:
-$$\sigma_{turn} = \mathrm{sgn}(u_x v_y - u_y v_x) \quad (+1 = \text{Left / CCW turn}, \; -1 = \text{Right / CW turn})$$
+### 2.1 Corner Angle and Turn Direction
 
-- $\theta = 0$: Collinear, straight motion (no turn).
-- $\theta = \frac{\pi}{2}$ ($90^\circ$): Right-angle turn.
-- $\theta \to \pi$ ($180^\circ$): Complete directional reversal.
+The unsigned change in direction, $\theta$, is:
 
-### 2.2 Tangent Length $t$ and Closest Approach $d_{dev}$
+$$
+\theta = \left|\operatorname{atan2}\left(u_x v_y - u_y v_x,\; u_x v_x + u_y v_y\right)\right|
+$$
 
-For a circular fillet of radius $r$:
-The tangent length $t$ (distance from corner $P_k$ to the tangent contact points $T_{in}$ and $T_{out}$ along the legs) is:
-$$t = r \tan\left(\frac{\theta}{2}\right)$$
+A straight path has $\theta = 0$, a right-angle turn has $\theta = \pi/2$, and a reversal approaches $\theta = \pi$.
 
-The closest-approach distance $d_{dev}$ from the sharp corner $P_k$ to the closest point on the circular arc (the arc apex) is:
-$$d_{dev} = r \left( \frac{1}{\cos(\theta/2)} - 1 \right) = r \left( \sec\left(\frac{\theta}{2}\right) - 1 \right)$$
+The turn direction is stored separately for positioning the circle center:
 
-```
-          P_k (Goal)
-          / \
-         /   \
-        /     \
-  T_in *   .   * T_out
-      /     .   \
-     /    d_dev  \
-    /       .     \
-   /      [Arc]    \
-  /                 \
-P_{k-1}             P_{k+1}
-```
+$$
+\sigma_{turn} = \operatorname{sgn}(u_x v_y - u_y v_x)
+$$
 
-### 2.3 Radius Bounds & Coupled Symmetric Tangent Allocation
+Here, $+1$ means a left (counterclockwise) turn and $-1$ means a right (clockwise) turn.
 
-The fillet radius $r_k$ at corner $k$ is computed in three steps:
+### 2.2 Tangent Length and Distance from the Corner
 
-1. **Deviation Limit (`within` $\delta_k$):**
-   To keep the corner cut within $\delta_k$ meters of $P_k$:
-   $$d_{dev} \le \delta_k \implies r_{\delta, k} = \frac{\delta_k}{\sec(\theta_k/2) - 1}$$
+For a fillet of radius $r$, the distance from $P_k$ to each tangent contact point ($T_{in}$ and $T_{out}$) along its leg is:
 
-2. **Coupled Symmetric Tangent Allocation ($t_{in, k} = t_{out, k} = t_k$):**
-   A circular arc tangent to two straight lines must have equal entry and exit tangent lengths ($t_{in, k} = t_{out, k}$). To guarantee adjacent corner fillets never overlap on a shared leg $L_k$ while preserving equal tangents at each corner:
-   - Desired tangent per corner (capped at $\eta = 0.85$ of its two adjacent legs):
-     $$t_{des, k} = \min\left(r_{\delta, k} \tan\left(\frac{\theta_k}{2}\right), \; \eta \cdot \min(L_{k}, \; L_{k+1})\right)$$
-   - Shared leg scale factor on leg $L_k$ (capped at $\gamma = 0.95$ of leg length):
-     $$\sigma_{leg, k} = \begin{cases} \dfrac{\gamma \cdot L_k}{t_{des, k-1} + t_{des, k}} & \text{if } t_{des, k-1} + t_{des, k} > \gamma \cdot L_k \\ 1.0 & \text{otherwise} \end{cases}$$
-   - Clamped symmetric tangent and geometric radius at corner $k$:
-     $$t_{clamped, k} = t_{des, k} \cdot \min\left(\sigma_{leg, k}, \; \sigma_{leg, k+1}\right), \quad r_{geom, k} = \frac{t_{clamped, k}}{\tan(\theta_k/2)}$$
+$$
+t = r \tan\left(\frac{\theta}{2}\right)
+$$
 
-3. **Final Fillet Radius:**
-   $$r_k = \min\left(r_{\delta, k}, \; r_{geom, k}\right)$$
-   (If the author also requested a pass-speed ceiling $v_{pass}$ where $r_{req} = v_{pass}^2 / a_{lat} > r_k$, `VelocityProfiler` caps corner speed to $\sqrt{a_{lat} r_k}$ and the preview runner logs a warning).
+The distance from $P_k$ to the closest point on the arc (the arc apex) is:
+
+$$
+d_{dev} = r\left(\frac{1}{\cos(\theta/2)} - 1\right)
+= r\left(\sec\left(\frac{\theta}{2}\right) - 1\right)
+$$
+
+### 2.3 Choosing the Fillet Radius
+
+The radius must satisfy the waypoint's `within` distance and leave room for neighboring fillets. In the formulas below, $L_k$ is the length of the leg from $P_{k-1}$ to $P_k$, and $L_{k+1}$ is the length from $P_k$ to $P_{k+1}$.
+
+**Radius allowed by `within`.** For a tolerance of $\delta_k$ meters, the largest radius satisfying $d_{dev} \le \delta_k$ is:
+
+$$
+r_{\delta,k} = \frac{\delta_k}{\sec(\theta_k/2) - 1}
+$$
+
+**Desired tangent length.** Each corner uses equal entry and exit tangent lengths. Cap the desired length at $\eta = 0.85$ of the shorter adjacent leg:
+
+$$
+t_{des,k} = \min\left(
+  r_{\delta,k}\tan\left(\frac{\theta_k}{2}\right),
+  \; \eta\min(L_k, L_{k+1})
+\right)
+$$
+
+**Shared-leg scale factor.** The two fillets on leg $L_k$ may use at most $\gamma = 0.95$ of its length. Their scale factor is:
+
+$$
+\sigma_{leg,k} =
+\begin{cases}
+\dfrac{\gamma L_k}{t_{des,k-1} + t_{des,k}}
+  & \text{if } t_{des,k-1} + t_{des,k} > \gamma L_k \\
+1.0 & \text{otherwise}
+\end{cases}
+$$
+
+**Clamped tangent length and geometric radius.** Apply the smaller scale factor from the two adjacent legs to both tangents at corner $k$:
+
+$$
+t_{clamped,k} = t_{des,k}\min\left(\sigma_{leg,k},\; \sigma_{leg,k+1}\right)
+$$
+
+$$
+r_{geom,k} = \frac{t_{clamped,k}}{\tan(\theta_k/2)}
+$$
+
+This keeps neighboring fillets from overlapping while preserving equal entry and exit tangent lengths.
+
+**Final radius.** Use the smaller of the tolerance and geometry limits:
+
+$$
+r_k = \min\left(r_{\delta,k},\; r_{geom,k}\right)
+$$
+
+If a requested pass-speed ceiling $v_{pass}$ requires a larger radius than $r_k$ at the lateral acceleration limit $a_{lat}$:
+
+$$
+r_{req} = \frac{v_{pass}^2}{a_{lat}} > r_k
+$$
+
+then `VelocityProfiler` caps corner speed at $\sqrt{a_{lat}r_k}$, and the preview runner logs a warning.
 
 ---
 
