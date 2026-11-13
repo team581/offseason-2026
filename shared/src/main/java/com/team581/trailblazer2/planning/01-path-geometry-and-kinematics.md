@@ -320,17 +320,59 @@ $$
 
 ## 6. Anchors, geometry generations, and recovery
 
-Latch the origin once at activation or release from a completed stop. Passing a through goal advances its identity without cutting away its vertex or changing neighboring fillets. Define a rounded through-goal anchor at the arc apex; an unrounded goal anchors at its vertex. Explicit stops anchor at the endpoint. Use these same anchors for passage, markers, and heading references.
+### Goal anchors and passage
 
-Keep measured projection separate from monotonic event progress. Projection windows must also be restricted by the active goal/piece topology; distance alone cannot disambiguate nearby crossing legs. A through-goal passage requires crossing its anchor and measured closest approach within its tolerance. If discrete ticks straddle the crossing, check the intervening measured motion conservatively. A miss reports failure, not a successful marker.
+An **anchor** is the point on the path that represents a goal. Use the same anchor for passage, markers, and heading references.
 
-Monotonic progress is meaningful only within one geometry generation. Rebuilds must remap the active goal/piece and reproject the measured pose; never compare an old arc length to a new path's coordinate. Preserve fired event IDs and completed goals across a rebuild, and never skip an unsatisfied stop or hard gate. Dynamic rebuilds cannot manufacture a goal passage merely by moving its anchor behind the robot.
+| Goal | Anchor |
+| --- | --- |
+| Rounded through goal | Fillet apex |
+| Unrounded through goal | Waypoint vertex |
+| Explicit stop | Path endpoint |
 
-The runtime may request recovery after sustained excessive tracking error or an explicit localization reset. Store tracking thresholds/dwell in a named Java tracking policy and validate them with scenarios. Localization owns measurement acceptance and reset detection; TB2 does not infer a vision jump from a hardcoded pose-noise threshold. Recovery starts a new geometry generation toward the next uncompleted goal and preserves command history. Revalidate the entire connecting path/footprint against supplied keepouts. If no valid connection exists, stop/fault and let the caller choose another route. TB2 does not perform obstacle routing.
+- **Path origin.** Fix it at activation or release from a completed stop.
+- **Progress.** Use measured projection for control and the high-water mark for events (§5.2).
+- **Projection.** Within the distance window, search only the pieces allowed by the active goal and path order. This prevents jumps to crossing legs.
+
+Count a through goal as passed only if both checks pass.
+
+1. The robot crossed the anchor. If two ticks straddle it, check the measured motion between them conservatively.
+2. The measured closest approach to the goal was within tolerance.
+
+On passage, advance the active goal ID and keep the vertex and neighboring fillets. On a miss, report failure and suppress the success marker.
+
+### Path rebuilds
+
+A **geometry generation** is one version of the built path. Each version has its own arc-length coordinates and high-water mark.
+
+- Remap the active goal and path piece.
+- Reproject the measured pose and track progress in the new path's coordinates.
+- Carry over fired event IDs and completed goals.
+- Keep unsatisfied stops and hard gates pending.
+- Require measured passage even if a dynamic rebuild moves an anchor behind the robot.
+
+### Recovery
+
+Runtime may request recovery after sustained tracking error or an explicit localization reset.
+
+- **Tracking error.** Store the error thresholds and required duration in a named Java tracking policy. Validate them with scenarios.
+- **Localization reset.** Localization accepts measurements and signals resets. TB2 uses that signal for vision jumps.
+
+1. Start a new geometry generation toward the next uncompleted goal. Preserve command history.
+2. Check the robot's footprint along the entire connection against the supplied keepouts.
+3. If the connection is invalid, stop and report a fault. The caller owns alternate routing.
 
 ## 7. Degenerate and dynamic inputs
 
-- Reject nonfinite coordinates. Consecutive coincident through goals are invalid; do not silently discard their IDs or markers. A single coincident stop is valid for heading-only motion.
-- Exact reversal and a zero-tolerance noncollinear through corner have no finite-radius tangent solution. Require an explicit stop and report a validation error. Near reversals may retain a small fillet and warning, provided numeric radius/length tolerances remain valid.
-- A zero-length leg uses terminal position/heading control without tangent division. Clamp projection/evaluation to valid piece domains and define deterministic tie-breaking at joins.
-- Runtime resolves and filters named dynamic targets once per tick, following [04](04-teleop-and-dynamic-assist.md). `PathBuilder` receives only resolved values; it owns neither supplier evaluation nor filtering history.
+| Input | What to do |
+| --- | --- |
+| Nonfinite coordinate | Reject it. |
+| Consecutive through goals at the same position | Reject them and retain their IDs and markers. |
+| A single stop at the same position | Allow heading-only motion. |
+| Through goal at an exact reversal, or a noncollinear through corner with zero tolerance | Report a validation error and require an explicit stop. A finite-radius tangent arc is impossible. |
+| Near reversal | Allow a small fillet with a warning if the radius and length meet numeric tolerances. |
+| Zero-length leg | Use terminal position and heading control. Skip tangent division. |
+
+Clamp projection and evaluation to each piece's valid domain. Use deterministic tie-breaking at joins.
+
+For named dynamic targets, runtime evaluates suppliers and filters their values once per tick, following [04](04-teleop-and-dynamic-assist.md). Runtime keeps the filter history and passes only resolved values to `PathBuilder`.
