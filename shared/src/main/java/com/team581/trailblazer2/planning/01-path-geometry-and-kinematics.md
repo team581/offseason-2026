@@ -181,9 +181,18 @@ then `VelocityProfiler` caps corner speed at $\sqrt{a_{lat}r_k}$, and the previe
 
 ## 4. Planning Horizon
 
-For the initial implementation, construct the complete active leg through the next stop. This makes terminal braking and coupled corner allocation independent of a moving cutoff. Validate a configured maximum goal/sample count before activation; never truncate a path silently. Stop-bounded legs can contain arbitrarily many authored points up to that declared capacity, not an assumed five goals.
+The **planning horizon** is how much of the path the planner uses to plan turns and speeds. Build from the fixed start (§6) through the next `Goal.stop(...)`, including every through goal in between.
 
-Cache static geometry until activation, release, or recovery. Dynamic goal changes create a new geometry generation. A future bounded horizon optimization must prove that its end speed accounts for all downstream constraints and that neighboring fillets retain the same tangent allocation; raw `v_max²/(2*a_brake)` alone is insufficient when cornering/rotation reduces braking capacity.
+```mermaid
+flowchart LR
+    Start["Fixed start"] --> A["Through goals (if any)"] --> Stop["Next stop (0 m/s)"]
+```
+
+The profiler works backward from zero speed at the stop. Neighboring fillets share the space on the straight between them (§2.3). Both calculations keep the same endpoint as the robot advances.
+
+- **Capacity.** Check goal and sample counts before activation. Accept paths up to the configured limits and reject oversized paths without truncating them.
+- **Rebuilds.** Build static geometry at activation, release from a completed stop, or recovery. Cache it between rebuilds. A dynamic goal change starts a new geometry generation (§6).
+- **Future shorter horizon.** Prove that the speed at the cutoff accounts for every constraint beyond it and that neighboring fillets keep the same tangent lengths as on the full path. The straight-line braking distance `v_max²/(2*a_brake)` alone cannot establish this because cornering and rotation can reduce available braking.
 
 ---
 
@@ -197,35 +206,115 @@ s = 0                                                             s = S_total
 [Straight Leg 1]  T_in   [Arc]   T_out        [Straight Leg 2]
 ```
 
-### 5.1 Piecewise Arc Length Discretization & Explicit Fillet Center Construction
+### 5.1 Position, Tangent, and Curvature
 
-For a path with $M$ pieces (alternating straight lines and circular arcs):
+Let $l$ be the distance from the start of the current path piece. The formulas below give its position $\mathbf{r}$, unit tangent $\hat{t}$, and curvature magnitude $\kappa$.
 
-- **Straight Segment $k$:** Connects $T_{out, k-1}$ to $T_{in, k}$ along unit direction $\hat{u}_k$, with length $\Delta s_{line, k} = L_k - t_{clamped, k-1} - t_{clamped, k}$:
-  $$\mathbf{r}(l) = \mathbf{p}_{start, k} + l \cdot \hat{u}_k, \quad \hat{t}(l) = \hat{u}_k, \quad \kappa(l) = 0 \quad \text{for } l \in [0, \Delta s_{line, k}]$$
-- **Fillet Arc $k$ (at corner $P_k$):** Has radius $r_k$, deflection angle $\theta_k$, turn sign $\sigma_{turn, k} \in \{-1, +1\}$, and arc length $\Delta s_{arc, k} = r_k \cdot \theta_k$:
-  - **Tangent Entry & Exit Points:**
-    $$\mathbf{T}_{in, k} = P_k - t_{clamped, k} \cdot \hat{u}_{in, k}, \quad \mathbf{T}_{out, k} = P_k + t_{clamped, k} \cdot \hat{u}_{out, k}$$
-  - **Circle Center $\mathbf{C}_k$ and Start Angle $\alpha_{start, k}$:**
-    $$\hat{n}_{in, k} = \sigma_{turn, k} \begin{bmatrix} -u_{in, y} \\ u_{in, x} \end{bmatrix}, \quad \mathbf{C}_k = \mathbf{T}_{in, k} + r_k \cdot \hat{n}_{in, k}$$
-    $$\alpha_{start, k} = \mathrm{atan2}\left(T_{in, y} - C_{k, y}, \; T_{in, x} - C_{k, x}\right)$$
-  - **Position and Unit Tangent at Local Angle $\phi = l / r_k \in [0, \theta_k]$:**
-    $$\mathbf{r}(\phi) = \mathbf{C}_k + r_k \begin{bmatrix} \cos(\alpha_{start, k} + \sigma_{turn, k} \phi) \\ \sin(\alpha_{start, k} + \sigma_{turn, k} \phi) \end{bmatrix}, \quad \hat{t}(\phi) = \sigma_{turn, k} \begin{bmatrix} -\sin(\alpha_{start, k} + \sigma_{turn, k} \phi) \\ \cos(\alpha_{start, k} + \sigma_{turn, k} \phi) \end{bmatrix}, \quad \kappa = \frac{1}{r_k}$$
+**Straight segment.** The straight part of leg $k$ runs from $T_{out,k-1}$ to $T_{in,k}$ in unit direction $\hat{u}_k$. Subtract the two tangent lengths to get the length of the straight segment.
 
-### 5.2 Windowed Orthogonal Projection onto Path
+$$
+\Delta s_{line,k} = L_k - t_{clamped,k-1} - t_{clamped,k}
+$$
 
-To prevent jumping across overlapping legs on figure-8 or out-and-back paths, $\mathbf{p}_{robot} = (x, y)$ is projected onto path pieces within a local search window around the monotonic high-water mark $s_{high\_water}$:
-$$s_{cand} \in \left[\max(0, \; s_{high\_water} - d_{back}), \; \min(S_{total}, \; s_{high\_water} + d_{fwd})\right]$$
-where backward and forward window sizes come from the tracking policy and are tested against supported speed and tick intervals.
+For $l \in [0,\Delta s_{line,k}]$, the position starts at $\mathbf{p}_{start,k} = \mathbf{T}_{out,k-1}$.
 
-1. Among all pieces $m$ overlapping $[s_{min}, s_{max}]$, find the closest point $\mathbf{p}^*$ and its arc-length coordinate $s_{meas}$.
-2. Update monotonic progress:
-   $$s_{high\_water,new} = \max\left(s_{high\_water}, \; s_{meas}\right)$$
-   Use measured projection for control/profile distance; use the high-water mark for event ordering and the bounded search window. Large backward displacement invokes recovery rather than trapping control at an old distance.
-   $s_{high\_water}$ is local to a geometry generation; see §6 for rebuild semantics.
-3. Compute signed cross-track error $e_{xt}$ using the left-hand path normal $\hat{n}(s_{meas}) = \begin{bmatrix} -t_y \\ t_x \end{bmatrix}$:
-   $$e_{xt} = (\mathbf{p}_{robot} - \mathbf{p}^*) \cdot \hat{n}(s_{meas})$$
-   ($e_{xt} > 0$ means the robot is left of the path, so the tracking calculator applies negative feedback $v_{xt} = \mathrm{clamp}(-e_{xt} / \tau_{xt})$ along $\hat{n}$).
+$$
+\mathbf{r}(l) = \mathbf{p}_{start,k} + l\hat{u}_k,
+\qquad \hat{t}(l) = \hat{u}_k,
+\qquad \kappa(l) = 0
+$$
+
+**Fillet arc.** At corner $P_k$, use the radius $r_k$, turn angle $\theta_k$, and turn sign $\sigma_{turn,k}$ from section 2. The arc length is $\Delta s_{arc,k} = r_k\theta_k$.
+
+The entry and exit points are each $t_{clamped,k}$ from the corner along their respective legs.
+
+$$
+\mathbf{T}_{in,k} = P_k - t_{clamped,k}\hat{u}_{in,k}
+$$
+
+$$
+\mathbf{T}_{out,k} = P_k + t_{clamped,k}\hat{u}_{out,k}
+$$
+
+The circle center is one radius from the entry point along the unit normal pointing into the turn.
+
+$$
+\hat{n}_{in,k} = \sigma_{turn,k}
+\begin{bmatrix}
+-u_{in,y} \\
+u_{in,x}
+\end{bmatrix},
+\qquad
+\mathbf{C}_k = \mathbf{T}_{in,k} + r_k\hat{n}_{in,k}
+$$
+
+The start angle is the direction from the center to the entry point. Here $T_{in,x}$ and $T_{in,y}$ are the components of $\mathbf{T}_{in,k}$.
+
+$$
+\alpha_{start,k} = \mathrm{atan2}(T_{in,y} - C_{k,y},\; T_{in,x} - C_{k,x})
+$$
+
+At distance $l$ along the arc, $\phi = l/r_k$ ranges from $0$ to $\theta_k$. The angle from the center to the current point is $\alpha = \alpha_{start,k} + \sigma_{turn,k}\phi$.
+
+$$
+\mathbf{r}(\phi) = \mathbf{C}_k + r_k
+\begin{bmatrix}
+\cos\alpha \\
+\sin\alpha
+\end{bmatrix}
+$$
+
+$$
+\hat{t}(\phi) = \sigma_{turn,k}
+\begin{bmatrix}
+-\sin\alpha \\
+\cos\alpha
+\end{bmatrix},
+\qquad
+\kappa = \frac{1}{r_k}
+$$
+
+### 5.2 Local Projection and Progress
+
+**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets the backward and forward distances $d_{back}$ and $d_{fwd}$, which are tested against supported speeds and tick intervals. Clip the window to the path bounds.
+
+$$
+s_{min} = \max(0,\; s_{high\_water} - d_{back}),
+\qquad
+s_{max} = \min(S_{total},\; s_{high\_water} + d_{fwd})
+$$
+
+**Measured progress.** Project the robot position $\mathbf{p}_{robot} = (x,y)$ onto the portion of each path piece inside $[s_{min},s_{max}]$. The closest point is $\mathbf{p}^*$, and its arc-length coordinate $s_{meas}$ is used for control and speed profiling.
+
+**Event progress.** Use the high-water mark for event ordering and to anchor the search window. Update it with the measured progress.
+
+$$
+s_{high\_water,new} = \max(s_{high\_water},\; s_{meas})
+$$
+
+Large backward displacement triggers recovery. The high-water mark is local to each geometry generation (see section 6).
+
+**Cross-track error.** At the closest point, rotate the path tangent with components $(t_x,t_y)$ to get the left-hand unit normal.
+
+$$
+\hat{n}(s_{meas}) =
+\begin{bmatrix}
+-t_y \\
+t_x
+\end{bmatrix}
+$$
+
+Project the offset from the path to the robot onto that normal to get the signed error.
+
+$$
+e_{xt} = (\mathbf{p}_{robot} - \mathbf{p}^*) \cdot \hat{n}(s_{meas})
+$$
+
+Positive error means the robot is left of the path. The tracking calculator applies a correction along the normal with signed speed
+
+$$
+v_{xt} = \mathrm{clamp}(-e_{xt}/\tau_{xt})
+$$
 
 ---
 
