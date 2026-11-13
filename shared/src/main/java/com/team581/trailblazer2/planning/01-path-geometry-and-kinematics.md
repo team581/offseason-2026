@@ -85,7 +85,7 @@ $$
 The unsigned change in direction, $\theta$, is:
 
 $$
-\theta = \left|\operatorname{atan2}\left(u_x v_y - u_y v_x,\; u_x v_x + u_y v_y\right)\right|
+\theta = \left|\mathrm{atan2}\left(u_x v_y - u_y v_x,\; u_x v_x + u_y v_y\right)\right|
 $$
 
 A straight path has $\theta = 0$, a right-angle turn has $\theta = \pi/2$, and a reversal approaches $\theta = \pi$.
@@ -93,7 +93,7 @@ A straight path has $\theta = 0$, a right-angle turn has $\theta = \pi/2$, and a
 The turn direction is stored separately for positioning the circle center:
 
 $$
-\sigma_{turn} = \operatorname{sgn}(u_x v_y - u_y v_x)
+\sigma_{turn} = \mathrm{sgn}(u_x v_y - u_y v_x)
 $$
 
 Here, $+1$ means a left (counterclockwise) turn and $-1$ means a right (clockwise) turn.
