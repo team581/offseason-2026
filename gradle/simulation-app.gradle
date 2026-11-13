@@ -1,0 +1,45 @@
+// Select the GUI before GradleRIO configures native libraries and VS Code metadata.
+def useWpilibGui = providers.gradleProperty('wpilibSimGui').map {
+	it.toBoolean()
+}.getOrElse(false)
+def override = providers.environmentVariable('TEAM581_SIM_APP').filter {
+	!it.isBlank()
+}
+def os = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+def candidates = []
+if (override.isPresent()) {
+	candidates.add(rootProject.file(override.get()))
+} else if (os.contains('mac')) {
+	candidates.add(new File('/Applications/Simulation Studio.app'))
+	candidates.add(new File(System.getProperty('user.home'), 'Applications/Simulation Studio.app'))
+} else if (os.contains('windows')) {
+	def local = System.getenv('LOCALAPPDATA')
+	if (local != null) {
+		candidates.add(new File(local, 'Simulation Studio/simulation-studio.exe'))
+	}
+}
+def studio = candidates.find { app ->
+	app.name.endsWith('.app')
+			? new File(app, 'Contents/MacOS/simulation-studio').isFile()
+			: app.isFile()
+}
+if (useWpilibGui || studio == null) {
+	wpi.sim.addGui().defaultEnabled = true
+	wpi.sim.addDriverstation()
+	if (!useWpilibGui) {
+		def checkStudio = tasks.register('checkSimulationStudio') {
+			group = 'simulation'
+			description = 'Suggest installing Simulation Studio when using the WPILib fallback.'
+			doLast {
+				logger.warn('Simulation Studio is not installed. Install it from https://github.com/simonstoryparker/simulation-studio/releases/latest for the team simulation experience. Set TEAM581_SIM_APP for a custom installation. Continuing with the default WPILib simulation GUI.')
+			}
+		}
+		tasks.matching { it.name.startsWith('simulate') }.configureEach {
+			dependsOn checkStudio
+		}
+	}
+} else {
+	wpi.sim.environment.put('TEAM581_CUSTOM_SIM', 'true')
+	wpi.sim.environment.put('TEAM581_SIM_PROJECT', project.name)
+	wpi.sim.environment.put('TEAM581_SIM_APP', studio.absolutePath)
+}
