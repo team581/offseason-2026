@@ -1,21 +1,19 @@
-package com.team581.vision.spot;
+package frc.robot.localization;
 
-import com.team581.vision.spot.results.VisionMeasurement;
+import frc.robot.vision.VisionMeasurement;
 import java.util.ArrayDeque;
-import java.util.function.DoubleSupplier;
 
 /** Capture-time evidence heuristic in metres, not covariance or probability. */
 public final class TrustFactor {
-  public record Policy(double trustworthyM, double lostM, double travelMPerM, double correlationS) {
-    public static Policy provisional() {
-      return new Policy(.254, 1., .05, .02);
-    }
-  }
-
   private record Penalty(double time, double value) {}
 
-  private final Policy policy = Policy.provisional();
-  private final DoubleSupplier trustworthyMeters;
+  private static final double TRUSTWORTHY_M = .5;
+  private static final double LOST_M = 1;
+  // Odometry drift per meter driven.
+  private static final double DRIFT_PER_M = .05;
+
+  // Measurements this close in time are from the same moment, so they count as one observation.
+  private static final double SAME_MOMENT_S = .02;
 
   private final ArrayDeque<Penalty> history = new ArrayDeque<>();
 
@@ -26,14 +24,6 @@ public final class TrustFactor {
   private double groupPenalty;
   private double penalty;
   private double time;
-
-  public TrustFactor() {
-    this(() -> Policy.provisional().trustworthyM());
-  }
-
-  public TrustFactor(DoubleSupplier trustworthyMeters) {
-    this.trustworthyMeters = trustworthyMeters;
-  }
 
   public double evidenceAge(double now) {
     return now - evidenceTimestamp;
@@ -47,9 +37,9 @@ public final class TrustFactor {
   public void ingest(VisionMeasurement value) {
     if (value.timestamp() < evidenceTimestamp) return;
     // Disagreement with the estimate plus this measurement's own deviation, counted once.
-    double evidence = value.innovationM() + Math.max(value.stdX(), value.stdY());
+    double evidence = value.innovationM() + value.std();
     if (!Double.isFinite(evidence) || value.innovationM() < 0) return;
-    if (value.timestamp() - groupStart > policy.correlationS()) {
+    if (value.timestamp() - groupStart > SAME_MOMENT_S) {
       groupStart = value.timestamp();
       groupWorst = evidence;
       groupPenalty = penaltyAt(groupStart);
@@ -61,16 +51,16 @@ public final class TrustFactor {
   }
 
   public boolean isLost() {
-    return score >= policy.lostM();
+    return score >= LOST_M;
   }
 
   public boolean isTrustworthy() {
-    return score <= trustworthyMeters.getAsDouble();
+    return score <= TRUSTWORTHY_M;
   }
 
   public void reset(double now, boolean explicitlySeeded) {
     if (!Double.isFinite(now)) throw new IllegalArgumentException("finite reset time required");
-    score = explicitlySeeded ? trustworthyMeters.getAsDouble() : Double.POSITIVE_INFINITY;
+    score = explicitlySeeded ? TRUSTWORTHY_M : Double.POSITIVE_INFINITY;
     evidenceTimestamp = groupStart = Double.NEGATIVE_INFINITY;
     penalty = 0.;
     time = now;
@@ -82,7 +72,7 @@ public final class TrustFactor {
     if (!Double.isFinite(distanceM) || !Double.isFinite(elapsedS) || distanceM < 0 || elapsedS < 0)
       throw new IllegalArgumentException("nonnegative finite metres and seconds required");
     // Only driving makes odometry drift; a stationary robot keeps its trust indefinitely.
-    double delta = distanceM * policy.travelMPerM();
+    double delta = distanceM * DRIFT_PER_M;
     score += delta;
     penalty += delta;
     time += elapsedS;

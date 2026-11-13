@@ -10,9 +10,7 @@ import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import com.team581.util.AprilTags;
-import com.team581.vision.spot.VisionProcessor.CaptureState;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
@@ -37,7 +35,6 @@ import frc.robot.testing.TestManager;
 import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionConfig;
-import java.util.Optional;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -59,23 +56,13 @@ public class Robot extends Base581Robot {
       new Vision(
           new Spot(VisionConfig.spotConfig(), AprilTags.FIELD_LAYOUT),
           VisionConfig.CAMERAS,
-          new Vision.CaptureSource() {
-            @Override
-            public CaptureState current(double now) {
-              var state = hardware.drivetrain.getState();
-              return new CaptureState(
-                  state.Pose,
-                  MathHelpers.getLinearVelocity(state.Speeds),
-                  state.Speeds.omegaRadiansPerSecond,
-                  Math.toRadians(imu.getRoll()),
-                  Math.toRadians(imu.getPitch()),
-                  0.);
-            }
-
-            @Override
-            public Optional<Pose2d> poseAt(double time) {
-              return hardware.drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(time));
-            }
+          time -> hardware.drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(time)),
+          () -> {
+            var speeds = hardware.drivetrain.getState().Speeds;
+            return new Vision.Motion(
+                MathHelpers.getLinearVelocity(speeds),
+                speeds.omegaRadiansPerSecond,
+                Math.toRadians(Math.hypot(imu.getRoll(), imu.getPitch())));
           },
           Timer::getFPGATimestamp,
           () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean());

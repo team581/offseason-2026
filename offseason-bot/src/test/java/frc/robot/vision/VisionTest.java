@@ -8,8 +8,6 @@ import com.team581.spot.SpotCameraStatus;
 import com.team581.spot.SpotEstimate;
 import com.team581.spot.SpotStatus;
 import com.team581.util.AprilTags;
-import com.team581.vision.spot.VisionProcessor;
-import com.team581.vision.spot.results.VisionMeasurement;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -31,8 +29,9 @@ final class VisionTest {
   static final class Fixture implements AutoCloseable {
     double time = 10.;
     boolean operator = true;
+    Vision.Motion motion = new Vision.Motion(0, 0, 0);
     final Pose2d robot = new Pose2d(4, 4, Rotation2d.kZero);
-    Pose2d estimatedPose = robot;
+    Pose2d odometry = robot;
     final NetworkTableInstance nt = NetworkTableInstance.create();
     final StructPublisher<SpotStatus> status =
         nt.getStructTopic("/Spot/outputs/status", SpotStatus.struct).publish();
@@ -49,24 +48,15 @@ final class VisionTest {
                 .publish(PubSubOption.keepDuplicates(true)));
         cameraStatus.put(
             name, nt.getStructTopic(prefix + "status", SpotCameraStatus.struct).publish());
-        streaming(name, true);
+        cameraStatus.get(name).set(new SpotCameraStatus(SpotCameraStatus.State.STREAMING, 120, 0));
       }
       status.set(new SpotStatus("test", SpotStatus.State.READY, false));
       vision =
           new Vision(
               new Spot(nt, "", AprilTags.FIELD_LAYOUT),
               CAMERAS,
-              new Vision.CaptureSource() {
-                @Override
-                public VisionProcessor.CaptureState current(double now) {
-                  return new VisionProcessor.CaptureState(estimatedPose, 0, 0, 0, 0, 0);
-                }
-
-                @Override
-                public Optional<Pose2d> poseAt(double now) {
-                  return Optional.of(estimatedPose);
-                }
-              },
+              now -> Optional.of(odometry),
+              () -> motion,
               () -> time,
               () -> operator);
       vision.collectInputs();
@@ -81,32 +71,26 @@ final class VisionTest {
       nt.close();
     }
 
-    /** Publishes an estimate of {@link #robot} from tag 1 and {@code tag}. */
-    void estimate(String camera, int tag, double capture) {
-      var ids = new int[] {1, tag};
-      estimates
-          .get(camera)
-          .set(
-              new SpotEstimate(
-                  new SpotEstimate.Candidate(new Pose3d(robot), .1), Optional.empty(), ids, 2, .02),
-              (long) (capture * 1e6));
+    /** Publishes a two-tag estimate of {@link #robot}. */
+    void estimate(String camera, double capture) {
+      publish(
+          camera,
+          new SpotEstimate(
+              new SpotEstimate.Candidate(new Pose3d(robot), .1),
+              Optional.empty(),
+              new int[] {1, 2},
+              2,
+              .02),
+          capture);
+    }
+
+    void publish(String camera, SpotEstimate estimate, double capture) {
+      estimates.get(camera).set(estimate, (long) (capture * 1e6));
       nt.waitForListenerQueue(1);
     }
 
-    VisionProcessor.Reason reason(String camera) {
-      return VisionProcessor.Reason.valueOf(vision.getStatus().cameras().get(camera).reason());
-    }
-
-    void streaming(String camera, boolean streaming) {
-      cameraStatus
-          .get(camera)
-          .set(
-              new SpotCameraStatus(
-                  streaming
-                      ? SpotCameraStatus.State.STREAMING
-                      : SpotCameraStatus.State.DISCONNECTED,
-                  120,
-                  0));
+    Vision.Reason reason(String camera) {
+      return vision.reason(camera).orElseThrow();
     }
 
     void tick(double now) {
@@ -124,30 +108,66 @@ final class VisionTest {
   }
 
   @Test
-  void camerasRecoverSamePoseAndDrainOnce() {
+  void camerasProduceMeasurementsOldestFirstAndDrainOnce() {
     try (var f = new Fixture()) {
-      f.estimate("left", 2, 10.01);
-      f.estimate("right", 3, 10.01);
-      f.estimate("back", 5, 10.01);
+      f.estimate("right", 10.03);
+      f.estimate("left", 10.01);
+      f.estimate("back", 10.02);
       f.tick(10.04);
       var batch = f.vision.drainMeasurements();
       assertThat(batch)
-          .extracting(VisionMeasurement::source)
-          .containsExactlyInAnyOrder("left", "right", "back");
-      assertThat(f.vision.correlationFactor()).isEqualTo(Math.sqrt(3));
-      assertThat(f.vision.drainMeasurements()).isEmpty();
+          .extracting(VisionMeasurement::timestamp)
+          .containsExactly(10.01, 10.02, 10.03);
       for (var value : batch) {
         assertThat(value.pose().getX()).isCloseTo(4., offset(1e-9));
         assertThat(value.pose().getY()).isCloseTo(4., offset(1e-9));
-        assertThat(value.timestamp()).isCloseTo(10.01, offset(1e-6));
-        assertThat(value.stdHeading()).isEqualTo(1e6);
-        assertThat(f.vision.eligible(value, 10.04)).isTrue();
-        f.vision.measurementFused(value);
       }
-      assertThat(f.vision.getStatus().allRequiredHealthy()).isTrue();
-      assertThat(f.vision.hasRecentFusedMeasurement()).isTrue();
+      assertThat(f.vision.correlationFactor()).isEqualTo(Math.sqrt(3));
+      assertThat(f.vision.drainMeasurements()).isEmpty();
       f.tick(10.06);
       assertThat(f.vision.drainMeasurements()).isEmpty();
+    }
+  }
+
+  @Test
+  void headingAtCapturePicksBetweenSpotsCandidates() {
+    try (var f = new Fixture()) {
+      var flipped = new Pose3d(new Pose2d(4, 4, Rotation2d.k180deg));
+      var right = new Pose3d(new Pose2d(5, 4, Rotation2d.kZero));
+      f.publish(
+          "left",
+          new SpotEstimate(
+              new SpotEstimate.Candidate(flipped, .1),
+              Optional.of(new SpotEstimate.Candidate(right, .5)),
+              new int[] {1},
+              2,
+              .02),
+          10.01);
+      f.tick(10.04);
+      assertThat(f.vision.drainMeasurements())
+          .singleElement()
+          .satisfies(value -> assertThat(value.pose().getX()).isCloseTo(5., offset(1e-9)));
+
+      f.publish(
+          "left",
+          new SpotEstimate(
+              new SpotEstimate.Candidate(flipped, .1), Optional.empty(), new int[] {1}, 2, .02),
+          10.05);
+      f.tick(10.08);
+      assertThat(f.reason("left")).isEqualTo(Vision.Reason.AMBIGUOUS);
+      assertThat(f.vision.drainMeasurements()).isEmpty();
+    }
+  }
+
+  @Test
+  void innovationIsDistanceFromOdometryAtCapture() {
+    try (var f = new Fixture()) {
+      f.odometry = new Pose2d(0, 4, Rotation2d.kZero);
+      f.estimate("left", 10.01);
+      f.tick(10.04);
+      assertThat(f.vision.drainMeasurements())
+          .singleElement()
+          .satisfies(value -> assertThat(value.innovationM()).isCloseTo(4., offset(1e-9)));
     }
   }
 
@@ -188,21 +208,37 @@ final class VisionTest {
   }
 
   @Test
-  void shadowFusionAndResetCannotClaimLocalizationReadiness() {
-    try (var shadow = new Fixture()) {
-      shadow.operator = false;
-      shadow.estimate("left", 2, 10.01);
-      shadow.tick(10.04);
-      assertThat(shadow.vision.isFusionEnabled()).isFalse();
-      assertThat(shadow.vision.hasRecentFusedMeasurement()).isFalse();
+  void nothingReachesTheEstimatorWhileFusionIsOffOrSpotIsDisconnected() {
+    try (var f = new Fixture()) {
+      f.operator = false;
+      f.estimate("left", 10.01);
+      f.tick(10.02);
+      assertThat(f.vision.drainMeasurements()).isEmpty();
+
+      f.operator = true;
+      f.status.close();
+      f.estimate("left", 10.03);
+      f.tick(10.04);
+      assertThat(f.vision.isSpotReady()).isFalse();
+      assertThat(f.reason("left")).isEqualTo(Vision.Reason.SPOT_NOT_READY);
+      assertThat(f.vision.drainMeasurements()).isEmpty();
     }
-    try (var active = new Fixture()) {
-      active.estimate("left", 2, 10.01);
-      active.tick(10.04);
-      active.vision.drainMeasurements().forEach(active.vision::measurementFused);
-      assertThat(active.vision.hasRecentFusedMeasurement()).isTrue();
-      active.vision.reset(10.04);
-      assertThat(active.vision.hasRecentFusedMeasurement()).isFalse();
+  }
+
+  @Test
+  void resetDiscardsEstimatesCapturedBeforeIt() {
+    try (var f = new Fixture()) {
+      f.estimate("left", 10.13);
+      f.tick(10.16);
+      assertThat(f.vision.drainMeasurements()).hasSize(1);
+      f.vision.reset(10.16);
+      f.estimate("left", 10.15);
+      f.tick(10.18);
+      assertThat(f.reason("left")).isEqualTo(Vision.Reason.RESET);
+      assertThat(f.vision.drainMeasurements()).isEmpty();
+      f.estimate("left", 10.17);
+      f.tick(10.19);
+      assertThat(f.vision.drainMeasurements()).hasSize(1);
     }
   }
 
@@ -210,59 +246,19 @@ final class VisionTest {
   void spotNotReadyMeansCamerasAreUnhealthy() {
     try (var f = new Fixture()) {
       f.status.set(new SpotStatus("test", SpotStatus.State.MISSING_CAMERA, false));
-      f.streaming("back", false);
       f.tick(10.04);
-      var status = f.vision.getStatus();
-      assertThat(status.allRequiredHealthy()).isFalse();
-      assertThat(status.usable()).isEqualTo(2);
-      assertThat(status.cameras().get("back").usable()).isFalse();
+      assertThat(f.vision.isSpotReady()).isFalse();
     }
   }
 
   @Test
-  void suppressionDisconnectAndResetInvalidatePendingOrReleasedEstimates() {
+  void tiltedRobotRejectsEstimates() {
     try (var f = new Fixture()) {
-      f.estimate("left", 2, 10.01);
-      f.tick(10.02);
-      assertThat(f.vision.getStatus().queueDepth()).isEqualTo(1);
-      f.operator = false;
+      f.motion = new Vision.Motion(0, 0, Math.toRadians(20));
+      f.estimate("left", 10.01);
       f.tick(10.04);
+      assertThat(f.reason("left")).isEqualTo(Vision.Reason.ROBOT_TILT);
       assertThat(f.vision.drainMeasurements()).isEmpty();
-      f.operator = true;
-      f.estimate("left", 2, 10.05);
-      f.tick(10.06);
-      f.status.close();
-      f.tick(10.08);
-      assertThat(f.vision.drainMeasurements()).isEmpty();
-    }
-    try (var f = new Fixture()) {
-      f.estimate("left", 2, 10.13);
-      f.tick(10.16);
-      var value = f.vision.drainMeasurements().get(0);
-      f.vision.reset(10.16);
-      assertThat(f.vision.eligible(value, 10.16)).isFalse();
-      f.estimate("left", 2, 10.15);
-      f.tick(10.18);
-      assertThat(f.vision.drainMeasurements()).isEmpty();
-      assertThat(f.reason("left")).isEqualTo(VisionProcessor.Reason.RESET);
-    }
-  }
-
-  @Test
-  void visionAcceptsLargeInnovationWhenInnovationFilterIsDisabled() {
-    try (var f = new Fixture()) {
-      f.estimate("left", 2, 10.01);
-      f.tick(10.04);
-      f.vision.drainMeasurements().forEach(f.vision::measurementFused);
-
-      f.estimatedPose = new Pose2d(0, 4, Rotation2d.kZero);
-      f.estimate("left", 2, 10.10);
-      f.tick(10.13);
-
-      var results = f.vision.drainMeasurements();
-      assertThat(results).hasSize(1);
-      assertThat(results.get(0).pose().getX()).isCloseTo(4., offset(1e-9));
-      assertThat(results.get(0).innovationM()).isCloseTo(4., offset(1e-9));
     }
   }
 }

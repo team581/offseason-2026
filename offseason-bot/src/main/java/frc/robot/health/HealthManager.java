@@ -65,7 +65,6 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
 
   @Override
   protected void collectInputs() {
-    var status = vision.getStatus();
     double now = vision.tickTime();
     // Trust is earned from fused Spot measurements and only decays while driving, so a robot
     // sitting where its cameras can't see a tag keeps the pose it last confirmed.
@@ -77,7 +76,7 @@ public class HealthManager extends StateMachineSubsystem<HealthState> {
     localizationHealthy =
         simulation || now - lastLocalizationHealthyTimestamp <= LOCALIZATION_HEALTHY_HOLD_SECONDS;
     fuelDetectionHealthy = false;
-    allCamerasHealthy = status.allRequiredHealthy();
+    allCamerasHealthy = vision.isSpotReady();
   }
 
   @Override

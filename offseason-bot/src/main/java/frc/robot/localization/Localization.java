@@ -4,9 +4,8 @@ import com.ctre.phoenix6.Utils;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
-import com.team581.vision.spot.TrustFactor;
-import com.team581.vision.spot.results.VisionMeasurement;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -21,18 +20,19 @@ import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
-import frc.robot.vision.VisionTuning;
-import java.util.ArrayList;
+import frc.robot.vision.VisionMeasurement;
 import java.util.List;
-import java.util.Optional;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
+  // Heading comes from the gyro; vision only corrects translation.
+  private static final double VISION_HEADING_STD = 1e6;
+
   public final Imu imu;
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
 
-  private final TrustFactor trustFactor = new TrustFactor(VisionTuning::trustworthyMeters);
+  private final TrustFactor trustFactor = new TrustFactor();
 
   private Pose2d robotPose = Pose2d.kZero;
 
@@ -80,13 +80,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor.get();
   }
 
-  public Optional<Pose2d> getVisionPoseAt(double fpgaTimestamp) {
-    if (!Double.isFinite(fpgaTimestamp)) {
-      return Optional.empty();
-    }
-    return drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(fpgaTimestamp));
-  }
-
   public boolean isLost() {
     // Bypass trust factor checks in simulation, since we don't have simulated cameras
     if (RobotBase.isSimulation()) {
@@ -103,10 +96,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor.isTrustworthy();
   }
 
-  public boolean isVisionReady() {
-    return vision.hasRecentFusedMeasurement() && isTrustworthy();
-  }
-
   public void resetPose(Pose2d estimatedPose) {
     drivetrain.resetPose(estimatedPose);
     resetVisionHistory(true);
@@ -117,8 +106,6 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
     DogLog.log("Vision/Spot/PoseTrustworthy", isTrustworthy());
-    DogLog.log("Vision/Spot/LocalizationReady", isVisionReady());
-    DogLog.log("Vision/Spot/TrustworthyThresholdMeters", VisionTuning.trustworthyMeters());
 
     if (DriverStation.isAutonomous()
         && (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
@@ -148,19 +135,13 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     resetVisionHistory(false);
   }
 
-  private void ingestMeasurements(List<VisionMeasurement> results, double now) {
-    // Recheck every history before the first estimator correction in this batch.
-    var eligible = new ArrayList<VisionMeasurement>();
+  private void ingestMeasurements(List<VisionMeasurement> results) {
     for (var result : results) {
-      if (vision.eligible(result, now) && getVisionPoseAt(result.timestamp()).isPresent())
-        eligible.add(result);
-    }
-    for (var result : eligible) {
+      double std = result.std() * vision.correlationFactor();
       drivetrain.addVisionMeasurement(
           result.pose(),
           Utils.fpgaToCurrentTime(result.timestamp()),
-          result.standardDevs().times(vision.correlationFactor()));
-      vision.measurementFused(result);
+          VecBuilder.fill(std, std, VISION_HEADING_STD));
       trustFactor.ingest(result);
     }
   }
@@ -188,7 +169,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
         Double.isFinite(lastVisionLoopTimestamp) ? Math.max(0., now - lastVisionLoopTimestamp) : 0.;
     trustFactor.updateOdometry(MathHelpers.getLinearVelocity(speeds) * elapsed, elapsed);
     lastVisionLoopTimestamp = now;
-    ingestMeasurements(vision.drainMeasurements(), now);
+    ingestMeasurements(vision.drainMeasurements());
     robotPose = drivetrain.getState().Pose;
     DogLog.log("Vision/Spot/TrustEvidenceAgeS", trustFactor.evidenceAge(now));
   }
