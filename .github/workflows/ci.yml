@@ -2,89 +2,74 @@ name: CI
 
 on: [push]
 
-jobs:
-  assemble:
-    name: Assemble
+permissions:
+  contents: read
 
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+jobs:
+  build:
+    name: Build and test
+
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Assemble
         run: ./gradlew assemble
-  build:
-    name: Build
-
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    needs:
-      - assemble
-      - test
-
-    steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: Build
-        run: ./gradlew build
-  test:
-    name: Run tests
-
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    needs:
-      - assemble
-
-    steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
       - name: Run tests
+        id: tests
         run: ./gradlew test
-      - name: Notify Slack if tests fail
-        if: failure() && github.ref == 'refs/heads/main'
-        uses: 8398a7/action-slack@v3
+  sim:
+    name: Headless tests
+    runs-on: blacksmith-2vcpu-ubuntu-2604
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
         with:
-          status: ${{ job.status }}
-          fields: repo,author,message
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Run headless tests
+        run: ./gradlew headlessTest
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: headless-results
+          retention-days: 14
+          path: |
+            **/build/reports/tests/headlessTest/
+            **/build/test-results/headlessTest/
+            **/build/reports/headlessTest/
+            **/logs/*.wpilog
   style:
     name: Check formatting
 
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-
-    needs:
-      - assemble
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v7
-      - name: Setup Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: "temurin"
-          java-version: 21
+      - parallel:
+          - name: Checkout Git repository
+            uses: actions/checkout@v7
+          - name: Setup Java
+            uses: actions/setup-java@v6
+            with:
+              distribution: "temurin"
+              java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
       - name: Check formatting
@@ -92,25 +77,30 @@ jobs:
   ruff:
     name: Lint Python
 
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v7
-      - name: Lint with Ruff
+      - name: Setup Ruff
         uses: astral-sh/ruff-action@v4.1.0
-      - name: Check formatting with Ruff
-        run: ruff format --check
+        with:
+          args: "--version"
+      - parallel:
+          - name: Lint with Ruff
+            run: ruff check
+          - name: Check formatting with Ruff
+            run: ruff format --check
   ty:
     name: Type check Python
 
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2604
 
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v7
       - name: Setup uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           prune-cache: false

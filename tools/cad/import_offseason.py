@@ -1,6 +1,6 @@
 # cadquery-ocp ships no type stubs; its submodules star-import from one compiled
 # extension module, so ty cannot resolve `from OCP.X import Y` members.
-# ty: ignore[unresolved-import]
+# ty: ignore[import-not-found]
 """Convert the offseason Onshape export package to articulated AdvantageScope assets.
 
 Run from the repository root:

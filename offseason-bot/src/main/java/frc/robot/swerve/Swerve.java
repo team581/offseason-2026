@@ -3,6 +3,7 @@ package frc.robot.swerve;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
@@ -22,10 +23,13 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.Alert.AlertType;
@@ -45,10 +49,14 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
-      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
-  ;
+      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.0);
 
-  public static final double TRANSLATION_STD_DEV = 0.01;
+  /**
+   * Spot's modeled deviations are about 10x comp-bot's Limelight ones, so 0.01 left each frame
+   * correcting ~3% of the error. 0.1 restores comp-bot's ~25% per-frame correction; measured
+   * stationary Spot noise (1-5 cm) keeps the resulting pose wobble to a few millimetres.
+   */
+  public static final double TRANSLATION_STD_DEV = 0.1;
 
   public static final double MAX_LINEAR_RATE = 4.75;
 
@@ -70,15 +78,33 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public static final PhoenixPIDController ORIGINAL_HEADING_PID =
       new PhoenixPIDController(15, 0, 0);
 
+  /** Command actually applied to the modules, including alliance perspective, snaps and limits. */
+  static ChassisSpeeds appliedFieldRelativeSpeeds(
+      SwerveDriveKinematics kinematics,
+      SwerveModuleState @Nullable [] targets,
+      Rotation2d heading) {
+    if (targets == null || targets.length == 0) {
+      return new ChassisSpeeds();
+    }
+    return ChassisSpeeds.fromRobotRelativeSpeeds(kinematics.toChassisSpeeds(targets), heading);
+  }
+
+  static boolean isMovingForSotm(ChassisSpeeds requested, ChassisSpeeds measured) {
+    return MathHelpers.getLinearVelocity(requested) > 1e-6
+        || !MathUtil.isNear(0, requested.omegaRadiansPerSecond, 1e-6)
+        || MathHelpers.getLinearVelocity(measured) > 0.05
+        || !MathUtil.isNear(0, measured.omegaRadiansPerSecond, 0.05);
+  }
+
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(1);
 
   private final SlewRateLimiter maxLinearVelocityRateLimiter =
       new SlewRateLimiter(100.0, -10.0, MAX_LINEAR_RATE);
-
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
-
   public final TunerSwerveDrivetrain drivetrain;
+
   private final XboxControllerDriveSource teleopDriveSource;
+
   private final TrailblazerDriveSource trailblazerDriveSource;
 
   private DriveSource driveSource;
@@ -113,26 +139,30 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
 
-  /**
-   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
-   * overrides the angular velocity to instead snap to an angle.
-   */
+  private final SwerveRequest.SwerveDriveBrake xRequest =
+      new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
+
   private final HealthManager health;
 
   private double lastSimTime;
-
   private @Nullable Notifier simNotifier = null;
+
   private SwerveDriveState drivetrainState = new SwerveDriveState();
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
-
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
+  private ChassisSpeeds commandedFieldRelativeSpeeds = new ChassisSpeeds();
+
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
+
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
-
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
-
   private boolean ableToBumpAssist = false;
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
+
+  private boolean ableToXSwerve = false;
+
   private boolean driverWantsSotm = false;
+
   private boolean driverStillDecidingSotm = false;
 
   public Swerve(
@@ -209,6 +239,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.FEED);
   }
 
+  public ChassisSpeeds getAppliedFieldRelativeSpeeds() {
+    return commandedFieldRelativeSpeeds;
+  }
+
   public SwerveDriveState getDriveState() {
     return drivetrainState;
   }
@@ -275,7 +309,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     switch (currentState) {
       case MANUAL, WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {
         var speeds = driveSource.getRequestedSpeeds();
-        if (ableToBumpAssist) {
+        if (ableToXSwerve) {
+          DogLog.timestamp("Swerve/XSwerveActive");
+          drivetrain.setControl(xRequest);
+        } else if (ableToBumpAssist) {
           drivetrain.setControl(
               withFieldRelativeTargetDirection(
                   drivePerspectiveSnaps
@@ -342,6 +379,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
     DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
     DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
 
     DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
     DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
@@ -352,15 +390,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     /* Run simulation at a faster rate so PID gains behave more reasonably */
     simNotifier =
-        new Notifier(
-            () -> {
-              double currentTime = Utils.getCurrentTimeSeconds();
-              double deltaTime = currentTime - lastSimTime;
-              lastSimTime = currentTime;
+        new Notifier(() -> {
+          double currentTime = Utils.getCurrentTimeSeconds();
+          double deltaTime = currentTime - lastSimTime;
+          lastSimTime = currentTime;
 
-              /* use the measured time delta, get battery voltage from WPILib */
-              drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
-            });
+          /* use the measured time delta, get battery voltage from WPILib */
+          drivetrain.updateSimState(deltaTime, RobotController.getBatteryVoltage());
+        });
     simNotifier.startPeriodic(SIM_LOOP_PERIOD);
   }
 
@@ -386,19 +423,40 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         ChassisSpeeds.fromRobotRelativeSpeeds(
             robotRelativeSpeeds, drivetrainState.Pose.getRotation());
 
+    // DriveSource outputs are field/operator-relative, NOT robot-relative. Reconstruct
+    // the applied robot-center command from module targets in the same snapshot as measured speeds.
+    commandedFieldRelativeSpeeds =
+        appliedFieldRelativeSpeeds(
+            drivetrain.getKinematics(),
+            drivetrainState.ModuleTargets,
+            drivetrainState.Pose.getRotation());
+    DogLog.log("Swerve/CommandedFieldRelativeSpeeds", commandedFieldRelativeSpeeds);
+    DogLog.log("Swerve/StateTimestampSeconds", drivetrainState.Timestamp);
+    DogLog.log("Swerve/StateAgeSeconds", Utils.getCurrentTimeSeconds() - drivetrainState.Timestamp);
+
+    var requestedSpeeds = driveSource.getRequestedSpeeds();
+    ableToXSwerve =
+        switch (getState()) {
+          case SCORE, FEED ->
+              X_SWERVE_DEBOUNCER.calculate(
+                  MathHelpers.getLinearVelocity(requestedSpeeds) < 1e-5
+                      && MathUtil.isNear(0, requestedSpeeds.omegaRadiansPerSecond, 1e-5));
+          default -> X_SWERVE_DEBOUNCER.calculate(false);
+        };
+
     ableToBumpAssist =
         DSOptions.USE_BUMP_ASSIST.get()
             && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
 
-    var requestedSpeeds = driveSource.getRequestedSpeeds();
     var movingInScoreOrFeed =
-        MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
+        isMovingForSotm(requestedSpeeds, fieldRelativeSpeeds)
             && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
     var usingTeleopDrive =
         driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
-    var sotmDelayElapsed = timeout(DRIVER_WANTS_SOTM_DELAY.get());
+    var sotmDelay = DRIVER_WANTS_SOTM_DELAY.get();
+    var sotmDelayElapsed = sotmDelay <= 0.0 || timeout(sotmDelay);
     driverWantsSotm = (sotmDelayElapsed && movingInScoreOrFeed) || !usingTeleopDrive;
     driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
 

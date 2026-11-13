@@ -1,13 +1,12 @@
 package frc.robot.autos;
 
 import com.team581.mechanisms.imu.BumpCrossingState;
-import com.team581.mechanisms.imu.BumpCrossingTracker;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.followers.PathFollower;
 import com.team581.trailblazer.segments.AutoSegment;
-import com.team581.util.FmsUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import frc.robot.imu.BumpCrossingTracker;
 
 /**
  * Wraps a {@link PathFollower} but injects custom velocities to ensure consistent bump crossing
@@ -51,7 +50,9 @@ public class BumpCrossingFollower implements PathFollower {
           default -> originalSpeeds.vxMetersPerSecond;
         };
 
-    var xVelocity = FmsUtil.isRedAlliance() ? unsignedXVelocity : -unsignedXVelocity;
+    // Tracker direction is the uphill body-up tilt direction, opposite chassis travel.
+    // Use the requested crossing, rather than assuming every crossing returns to our wall.
+    var xVelocity = -bumpCrossingTracker.getCrossingDirection().getCos() * unsignedXVelocity;
 
     // We preserve the Y and angular speeds to ensure we stay centered with the bump and maintain
     // the right heading
@@ -61,6 +62,10 @@ public class BumpCrossingFollower implements PathFollower {
 
   @Override
   public void reset(Pose2d currentPose, ChassisSpeeds currentSpeeds) {
-    follower.reset(currentPose, currentSpeeds);
+    // CTRE consumes angular velocity commands directly, so carrying measured angular velocity into
+    // a new heading profile can briefly command a turn opposite the new segment's heading error.
+    var speedsFromAngularRest =
+        new ChassisSpeeds(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond, 0.0);
+    follower.reset(currentPose, speedsFromAngularRest);
   }
 }

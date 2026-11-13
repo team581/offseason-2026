@@ -1,0 +1,83 @@
+{"profile": {
+  "cameras": [{
+    "image_rotation_deg": 0,
+    "controls": [
+      {
+        "name": "gain",
+        "allow_override": true,
+        "default_value": 1,
+        "required": false
+      },
+      {
+        "name": "contrast",
+        "allow_override": false,
+        "default_value": 16,
+        "required": false
+      }
+    ],
+    "name": "front",
+    "allowed_modes": [{
+      "pixel_format": "MJPEG",
+      "width": 640,
+      "fps": 30,
+      "id": "640x480",
+      "height": 480
+    }],
+    "robot_to_camera": {
+      "pitch_deg": 0,
+      "y_m": 0,
+      "x_m": 0.2,
+      "roll_deg": 0,
+      "yaw_deg": 0,
+      "z_m": 0.5
+    },
+    "calibration": null,
+    "detector": {
+      "max_hamming": 2,
+      "backend": "cpu"
+    },
+    "required": true,
+    "enabled": true,
+    "binding_id": ""
+  }],
+  "field": {
+    "origin": "blue-wall-right",
+    "width_m": 8,
+    "length_m": 16,
+    "tags": [
+      {
+        "size_m": 0.1651,
+        "field_to_tag": {
+          "y_m": 0,
+          "qw": 1,
+          "x_m": 4,
+          "qx": 0,
+          "qy": 0,
+          "z_m": 1,
+          "qz": 0
+        },
+        "id": 1
+      },
+      {
+        "size_m": 0.1651,
+        "field_to_tag": {
+          "y_m": 1,
+          "qw": 1,
+          "x_m": 5,
+          "qx": 0,
+          "qy": 0,
+          "z_m": 1,
+          "qz": 0
+        },
+        "id": 2
+      }
+    ]
+  },
+  "future_tolerance_s": 0.005,
+  "processing": {
+    "utilization_budget": 0.8,
+    "max_fps": 30
+  },
+  "max_age_s": 0.25,
+  "latency_ms": 5
+}}

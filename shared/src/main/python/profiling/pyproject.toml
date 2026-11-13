@@ -8,8 +8,5 @@ dependencies = ["matplotlib", "numpy", "pandas", "robotpy-wpiutil"]
 [dependency-groups]
 dev = ["ty"]
 
-[tool.ty.environment]
-python-version = "3.14"
-
 [tool.ty.src]
 include = ["**/*.py"]

@@ -13,6 +13,7 @@ This repository is organized as a Gradle monorepo with the following projects:
 - **`dumper-bot/`** - Triple barrel shooter alpha bot
 - **`beta-bot/`** - CA District Silicon Valley Event bot (dye rotor + turret)
 - **`comp-bot/`** - Competition dumper bot
+- **`new-member-bot/`** - Tweaked version of comp-bot for the new member Rubble v2 clone
 
 ## Building and running
 
@@ -42,12 +43,20 @@ This repository is organized as a Gradle monorepo with the following projects:
 ### Running tests
 
 ```sh
-# Run all tests
+# Run all unit tests
 ./gradlew test
 
 # Run tests for specific project
 ./gradlew comp-bot:test
+
+# Run headless simulation tests
+./gradlew headlessTest
+
+# Run offseason straight-line tests
+./gradlew :offseason-bot:straightLineTest
 ```
+
+See [integration testing](docs/integration-testing.md) for commands, robot test controls, and results.
 
 ### Code formatting
 

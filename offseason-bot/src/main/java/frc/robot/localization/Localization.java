@@ -2,17 +2,18 @@ package frc.robot.localization;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.autos.StuckOnBallRecovery;
-import com.team581.localization.TrustFactor;
+import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
-import com.team581.vision.results.TagResult;
+import com.team581.vision.spot.TrustFactor;
+import com.team581.vision.spot.results.VisionMeasurement;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
@@ -20,21 +21,25 @@ import frc.robot.imu.Imu;
 import frc.robot.swerve.Swerve;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionTuning;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
-  private static final DoubleSubscriber LATENCY_CONSTANT =
-      DogLog.tunable("Localization/StaticLatencyAdjustment", 0.0);
   public final Imu imu;
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;
   private final Vision vision;
-  private final TrustFactor trustFactor = new TrustFactor();
+
+  private final TrustFactor trustFactor = new TrustFactor(VisionTuning::trustworthyMeters);
 
   private Pose2d robotPose = Pose2d.kZero;
 
-  private final List<TagResult> presentList = new ArrayList<>(3);
+  private double lastVisionLoopTimestamp = Double.NaN;
+
+  // Set from the tunable's notifier thread, applied on the main loop
+  private volatile double pendingHeadingResetDegrees = Double.NaN;
 
   public Localization(Swerve swerve, TunerSwerveDrivetrain drivetrain, Vision vision, Imu imu) {
     super(SubsystemPriority.LOCALIZATION, LocalizationState.DEFAULT_STATE);
@@ -42,6 +47,11 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.vision = vision;
     this.drivetrain = drivetrain;
     this.imu = imu;
+    lastVisionLoopTimestamp = Timer.getFPGATimestamp();
+    trustFactor.reset(lastVisionLoopTimestamp, false);
+
+    DogLog.tunable(
+        "Localization/ResetHeadingDegrees", 0.0, degrees -> pendingHeadingResetDegrees = degrees);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -70,23 +80,45 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     return trustFactor.get();
   }
 
+  public Optional<Pose2d> getVisionPoseAt(double fpgaTimestamp) {
+    if (!Double.isFinite(fpgaTimestamp)) {
+      return Optional.empty();
+    }
+    return drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(fpgaTimestamp));
+  }
+
   public boolean isLost() {
+    // Bypass trust factor checks in simulation, since we don't have simulated cameras
+    if (RobotBase.isSimulation()) {
+      return false;
+    }
     return trustFactor.isLost();
   }
 
   public boolean isTrustworthy() {
+    // Bypass trust factor checks in simulation, since we don't have simulated cameras
+    if (RobotBase.isSimulation()) {
+      return true;
+    }
     return trustFactor.isTrustworthy();
+  }
+
+  public boolean isVisionReady() {
+    return vision.hasRecentFusedMeasurement() && isTrustworthy();
   }
 
   public void resetPose(Pose2d estimatedPose) {
     drivetrain.resetPose(estimatedPose);
-    trustFactor.seededPose();
+    resetVisionHistory(true);
   }
 
   @Override
   public void whileInState(LocalizationState currentState) {
     DogLog.log("Localization/EstimatedPose", getPose());
     DogLog.log("Localization/TrustFactor", getTrustFactor());
+    DogLog.log("Vision/Spot/PoseTrustworthy", isTrustworthy());
+    DogLog.log("Vision/Spot/LocalizationReady", isVisionReady());
+    DogLog.log("Vision/Spot/TrustworthyThresholdMeters", VisionTuning.trustworthyMeters());
 
     if (DriverStation.isAutonomous()
         && (FeatureFlags.UNBEACH_AUTO_IRL.getAsBoolean()
@@ -113,38 +145,51 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   public void zeroGyro() {
     drivetrain.seedFieldCentric();
-    trustFactor.reset();
+    resetVisionHistory(false);
   }
 
-  private void ingestTagResult(List<TagResult> results) {
-    DogLog.timestamp("Localization/IngestTagResult");
-    var averageTimestamp = 0.0;
-    for (TagResult result : results) {
-      var visionPose = result.pose();
-      averageTimestamp += result.timestamp();
-      swerve.drivetrain.addVisionMeasurement(
-          visionPose,
-          Utils.fpgaToCurrentTime(
-              Math.min(
-                  Timer.getFPGATimestamp() - (LATENCY_CONSTANT.get() / 1000),
-                  result.timestamp() - (LATENCY_CONSTANT.get() / 1000))),
-          result.standardDevs());
+  private void ingestMeasurements(List<VisionMeasurement> results, double now) {
+    // Recheck every history before the first estimator correction in this batch.
+    var eligible = new ArrayList<VisionMeasurement>();
+    for (var result : results) {
+      if (vision.eligible(result, now) && getVisionPoseAt(result.timestamp()).isPresent())
+        eligible.add(result);
     }
-    averageTimestamp = averageTimestamp / results.size();
-    trustFactor.ingestTagResult(getPose(averageTimestamp), results);
+    for (var result : eligible) {
+      drivetrain.addVisionMeasurement(
+          result.pose(),
+          Utils.fpgaToCurrentTime(result.timestamp()),
+          result.standardDevs().times(vision.correlationFactor()));
+      vision.measurementFused(result);
+      trustFactor.ingest(result);
+    }
+  }
+
+  private void resetVisionHistory(boolean seeded) {
+    double now = Timer.getFPGATimestamp();
+    vision.reset(now);
+    trustFactor.reset(now, seeded);
+    lastVisionLoopTimestamp = now;
+    robotPose = drivetrain.getState().Pose;
   }
 
   @Override
   protected void collectInputs() {
-    presentList.clear();
-    vision.getShooterLimelightTagResult().ifPresent(presentList::add);
-    vision.getLeftLimelightTagResult().ifPresent(presentList::add);
-    vision.getRightLimelightTagResult().ifPresent(presentList::add);
+    double headingResetDegrees = pendingHeadingResetDegrees;
+    if (Double.isFinite(headingResetDegrees)) {
+      pendingHeadingResetDegrees = Double.NaN;
+      drivetrain.resetRotation(Rotation2d.fromDegrees(headingResetDegrees));
+      resetVisionHistory(false);
+    }
 
-    ingestTagResult(presentList);
-
-    robotPose = swerve.getDriveState().Pose;
-    vision.setEstimatedPoseAngle(robotPose.getRotation().getDegrees());
-    trustFactor.update(robotPose, Swerve.TRANSLATION_STD_DEV, imu.collisionDetected());
+    double now = vision.tickTime();
+    var speeds = drivetrain.getState().Speeds;
+    double elapsed =
+        Double.isFinite(lastVisionLoopTimestamp) ? Math.max(0., now - lastVisionLoopTimestamp) : 0.;
+    trustFactor.updateOdometry(MathHelpers.getLinearVelocity(speeds) * elapsed, elapsed);
+    lastVisionLoopTimestamp = now;
+    ingestMeasurements(vision.drainMeasurements(), now);
+    robotPose = drivetrain.getState().Pose;
+    DogLog.log("Vision/Spot/TrustEvidenceAgeS", trustFactor.evidenceAge(now));
   }
 }

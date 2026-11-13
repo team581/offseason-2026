@@ -1,8 +1,9 @@
 {
   "skills": {"analyze-wpilog": {
-    "computedHash": "4abcb78407bc329bd962e9242ac5dc768b1e470f55c9a4fdc7f76f0dca674fd4",
+    "computedHash": "8bde2aee59cf3de64d7caf907c0d8fc6214f31952ea98c4aea7345df03c1fde8",
     "sourceType": "github",
-    "source": "jonahsnider/wpilog-parser"
+    "source": "jonahsnider/wpilog-parser",
+    "skillPath": "skills/analyze-wpilog/SKILL.md"
   }},
   "version": 1
 }

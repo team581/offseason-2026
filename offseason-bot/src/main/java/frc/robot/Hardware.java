@@ -1,23 +1,10 @@
 package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
-import com.ctre.phoenix6.mechanisms.DifferentialMotorConstants;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
-import com.team581.config.CameraConfig;
-import com.team581.config.LimelightModel;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.config.RobotKind;
-import frc.robot.deploy.DeployConfig;
 import frc.robot.generated.RobotTunerConstants;
 import frc.robot.generated.RobotTunerConstants.TunerSwerveDrivetrain;
-import frc.robot.vision.limelight.Limelight;
-import frc.robot.vision.limelight.LimelightState;
 
 public class Hardware {
   public final XboxController driverController = new XboxController(0);
@@ -26,64 +13,26 @@ public class Hardware {
   private final CANBus canivore = new CANBus("581CANivore");
   private final CANBus rio = CANBus.roboRIO();
 
-  public final DifferentialMechanism<TalonFX> deployDifferentialMechanism =
-      new DifferentialMechanism<>(
-          TalonFX::new,
-          new DifferentialMotorConstants<TalonFXConfiguration>()
-              .withCANBusName(canivore.getName())
-              .withLeaderId(15)
-              .withFollowerId(30)
-              .withAlignment(MotorAlignmentValue.Opposed)
-              .withLeaderInitialConfigs(DeployConfig.LEFT_MOTOR_CONFIG)
-              .withFollowerInitialConfigs(DeployConfig.RIGHT_MOTOR_CONFIG)
-              .withFollowerUsesCommonLeaderConfigs(true));
+  public final TalonFX deployLeftMotor = new TalonFX(15, canivore);
+  public final TalonFX deployRightMotor = new TalonFX(30, canivore);
 
   public final TalonFX intakeLeftMotor = new TalonFX(16, rio);
   public final TalonFX intakeRightMotor = new TalonFX(17, rio);
 
-  public final TalonFX conveyorTopMotor = new TalonFX(18, canivore);
-  public final TalonFX conveyorBottomMotor = new TalonFX(19, canivore);
+  public final TalonFX conveyorMotor = new TalonFX(18, canivore);
+  public final TalonFX feederMotor = new TalonFX(19, canivore);
 
-  public final TalonFX feederTopMotor = new TalonFX(20, canivore);
-  public final TalonFX feederBottomMotor = new TalonFX(21, canivore);
+  public final TalonFX tunnelTopMotor = new TalonFX(20, canivore);
+  public final TalonFX tunnelBottomMotor = new TalonFX(21, canivore);
 
   public final TalonFX shooterHoodMotor = new TalonFX(22, canivore);
 
-  public final TalonFX shooterBottomLeftMotor = new TalonFX(23, canivore);
-  public final TalonFX shooterBottomRightMotor = new TalonFX(24, canivore);
-  public final TalonFX shooterTopLeftMotor = new TalonFX(25, canivore);
-  public final TalonFX shooterTopRightMotor = new TalonFX(26, canivore);
+  public final TalonFX shooterLeftMotor = new TalonFX(23, canivore);
+  public final TalonFX shooterRightMotor = new TalonFX(24, canivore);
 
   public final TalonFX funnelerMotor = new TalonFX(27, canivore);
 
-  public final TalonFX turretMotor = new TalonFX(28, rio);
-  public final CANcoder turretEncoder = new CANcoder(29, rio);
-
-  // TODO: PLaceholder LimeLights
-  public final Limelight shooterLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
-  public final Limelight leftLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
-  public final Limelight rightLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
-  public final Limelight groundLimeLight =
-      new Limelight(
-          "placeholder",
-          LimelightState.OFF,
-          new CameraConfig(LimelightModel.THREEG, false, false, 0, 0, 0, 0, 0, 0));
-
-  public final CANrange hopperCANRange = new CANrange(27, RobotKind.IS_COMP_BOT ? rio : canivore);
-  public final DigitalInput towerSensor = new DigitalInput(9);
-  // public final TalonFX extender = new TalonFX(28);
+  public final TalonFX turretMotor = new TalonFX(28, canivore);
 
   public final TunerSwerveDrivetrain drivetrain =
       new TunerSwerveDrivetrain(

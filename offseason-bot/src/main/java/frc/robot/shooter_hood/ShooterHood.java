@@ -17,24 +17,45 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> implements PowerManaged {
-  private static double clamp(double angleDegrees) {
+  static double clamp(double angleDegrees) {
     return MathUtil.clamp(angleDegrees, ShooterHoodConfig.MIN_ANGLE, ShooterHoodConfig.MAX_ANGLE);
   }
 
-  private static double distanceToFeedingAngle(double distance) {
+  static double distanceToFeedingAngle(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterHoodConfig.FEEDING_REGRESSION_MODEL.calculate(distance)
         : ShooterHoodConfig.DISTANCE_TO_FEED.get(distance);
   }
 
-  private static double distanceToScoringAngle(double distance) {
+  static double distanceToScoringAngle(double distance) {
     return FeatureFlags.REGRESSION_MODEL.getAsBoolean()
         ? ShooterHoodConfig.SCORING_REGRESSION_MODEL.calculate(distance)
         : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
+  }
+
+  static boolean isAtGoal(ShooterHoodState state, double goalAngle, double currentAngle) {
+    return switch (state) {
+      case UNHOMED, HOMING, IDLE -> false;
+      case FEEDING ->
+          MathUtil.isNear(clamp(goalAngle), currentAngle, ShooterHoodConfig.FEEDING_TOLERANCE);
+      case SCORING -> MathUtil.isNear(clamp(goalAngle), currentAngle, ShooterHoodConfig.TOLERANCE);
+    };
+  }
+
+  static boolean isAtGoal(
+      ShooterHoodState state,
+      ShooterHoodState expectedState,
+      double goalAngle,
+      double currentAngle) {
+    if (state != expectedState) {
+      return false;
+    }
+    return isAtGoal(state, goalAngle, currentAngle);
   }
 
   private final TalonFX motor;
@@ -79,12 +100,11 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   }
 
   public boolean atGoal() {
-    return switch (getState()) {
-      case UNHOMED, HOMING -> false;
-      case FEEDING ->
-          MathUtil.isNear(clamp(getGoalAngle()), currentAngle, ShooterHoodConfig.FEEDING_TOLERANCE);
-      default -> MathUtil.isNear(clamp(getGoalAngle()), currentAngle, ShooterHoodConfig.TOLERANCE);
-    };
+    return isAtGoal(getState(), getGoalAngle(), currentAngle);
+  }
+
+  public boolean atGoal(ShooterHoodState expectedState) {
+    return isAtGoal(getState(), expectedState, getGoalAngle(), currentAngle);
   }
 
   public void feedRequest(double distance) {
@@ -129,15 +149,16 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
     var shooterHoodSimulation =
         SimKit.positionMechanism(
             "ShooterHood",
-            (mechanism) ->
+            mechanism ->
                 mechanism
-                    .addMotor(motor, ChassisReference.Clockwise_Positive)
+                    .addMotor(motor, ChassisReference.CounterClockwise_Positive)
                     .withMaxPosition(Units.degreesToRotations(ShooterHoodConfig.MAX_ANGLE))
                     .withMinPosition(
                         Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION)));
 
     if (getState() == ShooterHoodState.HOMING) {
-      motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
+      shooterHoodSimulation.seedPosition(
+          Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
       setStateFromRequest(ShooterHoodState.IDLE);
     }
 
@@ -185,7 +206,9 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   protected ShooterHoodState getNextState(ShooterHoodState currentState) {
     return switch (currentState) {
       case HOMING -> {
-        if (statorCurrent >= ShooterHoodConfig.HOMING_CURRENT_THRESHOLD) {
+        // Simulation homes by seeding the rotor in simulationPeriodic(). A current-based
+        // sensor reset here would add an offset to those absolute simulated positions.
+        if (RobotBase.isReal() && statorCurrent >= ShooterHoodConfig.HOMING_CURRENT_THRESHOLD) {
           motor.setPosition(Units.degreesToRotations(ShooterHoodConfig.HOMING_END_POSITION));
           yield ShooterHoodState.IDLE;
         }
@@ -203,7 +226,9 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
       case SCORING, FEEDING ->
           motor.setControl(
               positionVoltageRequest.withPosition(Units.degreesToRotations(clamp(goalAngle))));
-      // Do nothing in the other states, they have static setpoints
+      case IDLE -> {
+        // Static setpoint applied on transition
+      }
       case UNHOMED, HOMING -> {
         DogLog.log("ShooterHood/Motor/StatorCurrent", statorCurrent);
         DogLog.log("ShooterHood/Motor/Voltage", voltage);

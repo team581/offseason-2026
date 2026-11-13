@@ -223,7 +223,7 @@ tasks.register('loopBenchmarkReport') {
 				def newP99 = summary.modes[benchmarkMode].median_p99 as double
 				def pairedImprovements = (0..<5).count {
 					(summary.modes[benchmarkMode].runs[it].p99 as double) <
-					(baseline.modes[benchmarkMode].runs[it].p99 as double)
+							(baseline.modes[benchmarkMode].runs[it].p99 as double)
 				}
 				def behaviorMatches =
 						summary.modes[benchmarkMode].runs.collect { it.behavior_sha256 } ==

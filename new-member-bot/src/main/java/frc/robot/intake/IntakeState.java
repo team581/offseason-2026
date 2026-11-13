@@ -1,9 +1,23 @@
 package frc.robot.intake;
 
+import dev.doglog.DogLog;
+import edu.wpi.first.networktables.DoubleSubscriber;
+
 public enum IntakeState {
-  EJECT,
-  INTAKING,
-  IDLE;
+  INTAKE(12),
+  EJECT(-12),
+  IDLE(0),
+  SHOOT(5);
+
+  public final double voltage;
+  public final DoubleSubscriber tunableVoltage;
+
+  IntakeState(double voltage) {
+    this.voltage = voltage;
+    this.tunableVoltage = DogLog.tunable("Intake/" + this, voltage);
+  }
+
+  public double getVoltage() {
+    return tunableVoltage.get();
+  }
 }
-// consists of 3 states but in slides its 4 in reality there really wasnt a point to have a shooting
-// state

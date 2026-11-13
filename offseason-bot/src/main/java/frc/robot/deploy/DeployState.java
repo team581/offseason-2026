@@ -4,37 +4,35 @@ import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public enum DeployState {
-  INTAKE(DeployConfig.MAX_LENGTH),
-  STOW(5.0),
-  SAFE_KICKER_STOW(7.915),
-  // placeholder values
-  SCORE_COMPACTION_WAITING(DeployConfig.MAX_LENGTH - 2.5),
-  SCORE_COMPACTION(1.0),
-  FEED_COMPACTION(6.915),
+  INTAKE(-5.0),
+  STOW(20),
+  // Initial angle targets in degrees; tune during bringup.
+  SCORE_COMPACTION_WAITING(19.3),
+  SCORE_COMPACTION(20),
+  FEED_COMPACTION(37.0),
 
-  BEAST_MODE_COMPACTION(5.0),
+  BEAST_MODE_COMPACTION(20),
 
-  FIX_DIFFERENTIAL_DESYNC(DeployConfig.MAX_LENGTH),
+  AUTO_INTAKE_DELAY(DeployConfig.HOMING_END_POSITION_INWARD),
+  HOME_INWARD(DeployConfig.HOMING_END_POSITION_INWARD),
+  HOME_OUTWARD(-5.0),
+  UNHOMED(DeployConfig.HOMING_END_POSITION_INWARD);
 
-  HOME_INWARD(5.0),
-  HOME_OUTWARD(DeployConfig.MAX_LENGTH),
-  UNHOMED(0);
+  private final DoubleSubscriber tunableAngle;
 
-  private final DoubleSubscriber tunableLength;
+  DeployState(double angleDegrees) {
 
-  DeployState(double length) {
-
-    this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
+    this.tunableAngle = DogLog.tunable("Deploy/State/" + name() + "/AngleDegrees", angleDegrees);
   }
 
-  /** Target motor/sprocket travel in calibrated inches, rather than intake displacement. */
-  public double getLength() {
-    return tunableLength.get();
+  /** Target arm angle in degrees: zero is fully down, positive is raised. */
+  public double getAngleDegrees() {
+    return tunableAngle.get();
   }
 
   public boolean isHoming() {
     return switch (this) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> true;
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> true;
       default -> false;
     };
   }

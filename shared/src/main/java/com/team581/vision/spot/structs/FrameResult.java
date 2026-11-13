@@ -1,0 +1,129 @@
+package com.team581.vision.spot.structs;
+
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.util.struct.Struct;
+import edu.wpi.first.util.struct.StructGenerator.SchemaBuilder;
+import edu.wpi.first.util.struct.StructSerializable;
+import java.nio.ByteBuffer;
+
+public record FrameResult(
+    long revisionHigh,
+    long revisionLow,
+    long captureHigh,
+    long captureLow,
+    long sequence,
+    long tagSelectionGeneration,
+    long captureLocalNtUs,
+    int timestampSource,
+    long observedTags,
+    int candidateCount,
+    Transform3d robotToCamera,
+    boolean calibrationValid,
+    PoseEstimate primary,
+    PoseEstimate alternate,
+    double captureToDetectMs,
+    double detectMs,
+    double solveMs,
+    double totalMs)
+    implements StructSerializable {
+  private static final String SCHEMA =
+      new SchemaBuilder()
+          .addField("revisionHigh", "int64")
+          .addField("revisionLow", "int64")
+          .addField("captureHigh", "int64")
+          .addField("captureLow", "int64")
+          .addField("sequence", "int64")
+          .addField("tagSelectionGeneration", "int64")
+          .addField("captureLocalNtUs", "int64")
+          .addField("timestampSource", "int32")
+          .addField("observedTags", "int64")
+          .addField("candidateCount", "int32")
+          .addField("robotToCamera", "Transform3d")
+          .addField("calibrationValid", "bool")
+          .addField("primary", "SpotPoseEstimate")
+          .addField("alternate", "SpotPoseEstimate")
+          .addField("captureToDetectMs", "double")
+          .addField("detectMs", "double")
+          .addField("solveMs", "double")
+          .addField("totalMs", "double")
+          .build();
+
+  @SuppressWarnings("ConstantNaming") // WPILib discovers this field by name.
+  public static final Struct<FrameResult> struct =
+      new Struct<>() {
+        @Override
+        public Struct<?>[] getNested() {
+          return new Struct<?>[] {Transform3d.struct, PoseEstimate.struct};
+        }
+
+        @Override
+        public String getSchema() {
+          return SCHEMA;
+        }
+
+        @Override
+        public int getSize() {
+          return 377;
+        }
+
+        @Override
+        public Class<FrameResult> getTypeClass() {
+          return FrameResult.class;
+        }
+
+        @Override
+        public String getTypeName() {
+          return "SpotFrameResult";
+        }
+
+        @Override
+        public boolean isImmutable() {
+          return true;
+        }
+
+        @Override
+        public void pack(ByteBuffer buffer, FrameResult value) {
+          buffer.putLong(value.revisionHigh());
+          buffer.putLong(value.revisionLow());
+          buffer.putLong(value.captureHigh());
+          buffer.putLong(value.captureLow());
+          buffer.putLong(value.sequence());
+          buffer.putLong(value.tagSelectionGeneration());
+          buffer.putLong(value.captureLocalNtUs());
+          buffer.putInt(value.timestampSource());
+          buffer.putLong(value.observedTags());
+          buffer.putInt(value.candidateCount());
+          Transform3d.struct.pack(buffer, value.robotToCamera());
+          buffer.put((byte) (value.calibrationValid() ? 1 : 0));
+          PoseEstimate.struct.pack(buffer, value.primary());
+          PoseEstimate.struct.pack(buffer, value.alternate());
+          buffer.putDouble(value.captureToDetectMs());
+          buffer.putDouble(value.detectMs());
+          buffer.putDouble(value.solveMs());
+          buffer.putDouble(value.totalMs());
+        }
+
+        @Override
+        public FrameResult unpack(ByteBuffer buffer) {
+          return new FrameResult(
+              buffer.getLong(),
+              buffer.getLong(),
+              buffer.getLong(),
+              buffer.getLong(),
+              buffer.getLong(),
+              buffer.getLong(),
+              buffer.getLong(),
+              buffer.getInt(),
+              buffer.getLong(),
+              buffer.getInt(),
+              Transform3d.struct.unpack(buffer),
+              buffer.get() != 0,
+              PoseEstimate.struct.unpack(buffer),
+              PoseEstimate.struct.unpack(buffer),
+              buffer.getDouble(),
+              buffer.getDouble(),
+              buffer.getDouble(),
+              buffer.getDouble());
+        }
+      };
+}

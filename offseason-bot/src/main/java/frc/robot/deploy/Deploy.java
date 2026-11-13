@@ -1,11 +1,11 @@
 package frc.robot.deploy;
 
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.mechanisms.DifferentialMechanism;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
@@ -15,6 +15,7 @@ import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.util.tuning.TunablePid;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -22,70 +23,60 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class Deploy extends StateMachineSubsystem<DeployState> implements PowerManaged {
-  private static double clamp(double deployLength) {
-    return MathUtil.clamp(deployLength, DeployConfig.MIN_LENGTH, DeployConfig.MAX_LENGTH);
+  private static double clamp(double angleDegrees) {
+    return MathUtil.clamp(angleDegrees, DeployConfig.MIN_ANGLE, DeployConfig.MAX_ANGLE);
+  }
+
+  private static double goalTolerance(DeployState state) {
+    return state == DeployState.INTAKE
+        ? DeployConfig.INTAKE_TOLERANCE_DEGREES
+        : DeployConfig.POSITION_TOLERANCE;
   }
 
   private final TalonFX leftMotor;
+
   private final TalonFX rightMotor;
 
-  private final DifferentialMechanism<TalonFX> differentialMechanism;
-
-  private final PositionTorqueCurrentFOC torqueCurrentFOCAverageRequest =
-      new PositionTorqueCurrentFOC(0).withSlot(0);
-
-  private final MotionMagicTorqueCurrentFOC motionMagicTorqueCurrentFOCAverageRequest =
+  private final MotionMagicTorqueCurrentFOC motionMagicRequest =
       new MotionMagicTorqueCurrentFOC(0).withSlot(0);
-
-  private final PositionTorqueCurrentFOC positionDifferentialRequest =
-      new PositionTorqueCurrentFOC(0).withSlot(1);
   private final VoltageOut voltageRequest = new VoltageOut(0).withEnableFOC(false);
-
-  private final VoltageOut voltageDifferentialRequest = new VoltageOut(0).withEnableFOC(false);
-  private double differentialMechanismPosition = 0.0;
+  private final NeutralOut neutralRequest = new NeutralOut();
+  private double averagePosition = 0.0;
   private double leftMotorPosition = 0.0;
   private double rightMotorPosition = 0.0;
-  private double leftStatorCurrent = 0.0;
 
+  private boolean simulationInitialized = false;
+
+  private double leftStatorCurrent = 0.0;
   private double rightStatorCurrent = 0.0;
   private final StatusSignal<Angle> leftPositionSignal;
   private final StatusSignal<Angle> rightPositionSignal;
-  private final StatusSignal<Angle> differentialAveragePositionSignal;
   private final StatusSignal<Current> leftStatorCurrentSignal;
   private final StatusSignal<Current> rightStatorCurrentSignal;
+
   private final StatusSignal<Current> leftSupplyCurrentSignal;
 
   private final StatusSignal<Current> rightSupplyCurrentSignal;
 
-  public Deploy(DifferentialMechanism<TalonFX> differentialMechanism) {
+  public Deploy(TalonFX leftMotor, TalonFX rightMotor) {
     super(SubsystemPriority.DEPLOY, DeployState.UNHOMED);
-    this.differentialMechanism = differentialMechanism;
-    this.leftMotor = differentialMechanism.getLeader();
-    this.rightMotor = differentialMechanism.getFollower();
+    this.leftMotor = leftMotor;
+    this.rightMotor = rightMotor;
+    leftMotor.getConfigurator().apply(DeployConfig.LEFT_MOTOR_CONFIG);
+    rightMotor.getConfigurator().apply(DeployConfig.RIGHT_MOTOR_CONFIG);
     TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
     TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
 
-    differentialMechanism.setControl(
-        torqueCurrentFOCAverageRequest.withPosition(0),
-        positionDifferentialRequest.withPosition(0.0));
-    differentialMechanism.setControl(
-        motionMagicTorqueCurrentFOCAverageRequest.withPosition(0),
-        positionDifferentialRequest.withPosition(0.0));
-    differentialMechanism.setNeutralOut();
+    setControl(neutralRequest);
 
     leftPositionSignal = leftMotor.getPosition(false);
     rightPositionSignal = rightMotor.getPosition(false);
-    differentialAveragePositionSignal = differentialMechanism.getAveragePosition(false);
     leftStatorCurrentSignal = leftMotor.getStatorCurrent(false);
     rightStatorCurrentSignal = rightMotor.getStatorCurrent(false);
     leftSupplyCurrentSignal = leftMotor.getSupplyCurrent(false);
     rightSupplyCurrentSignal = rightMotor.getSupplyCurrent(false);
     Signals.forDevice(leftMotor)
-        .addSignals(
-            leftPositionSignal,
-            differentialAveragePositionSignal,
-            leftStatorCurrentSignal,
-            leftSupplyCurrentSignal);
+        .addSignals(leftPositionSignal, leftStatorCurrentSignal, leftSupplyCurrentSignal);
     Signals.forDevice(rightMotor)
         .addSignals(rightPositionSignal, rightStatorCurrentSignal, rightSupplyCurrentSignal);
   }
@@ -110,38 +101,31 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public boolean atGoal(DeployState state) {
     return switch (state) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> false;
       default ->
-          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+          MathUtil.isNear(clamp(state.getAngleDegrees()), leftMotorPosition, goalTolerance(state))
               && MathUtil.isNear(
-                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
+                  clamp(state.getAngleDegrees()), rightMotorPosition, goalTolerance(state));
     };
   }
 
   public void beastModeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {}
       default -> setStateFromRequest(DeployState.BEAST_MODE_COMPACTION);
     }
   }
 
   public void feedCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {}
       default -> setStateFromRequest(DeployState.FEED_COMPACTION);
     }
   }
 
-  public void fixDifferentialDesyncRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
-      default -> setStateFromRequest(DeployState.FIX_DIFFERENTIAL_DESYNC);
-    }
-  }
-
-  /** Calibrated motor/sprocket travel in inches, not the intake's Cartesian displacement. */
-  public double getPosition() {
-    return differentialMechanismPosition;
+  /** Arm angle in degrees: zero is fully down, positive is raised. */
+  public double getAngleDegrees() {
+    return averagePosition;
   }
 
   public void homeInAutoRequest() {
@@ -151,37 +135,27 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   public void homingRequest() {
     if (DriverStation.isAutonomous()) {
       setStateFromRequest(DeployState.HOME_INWARD);
+    } else {
+      setStateFromRequest(DeployState.HOME_OUTWARD);
     }
-    setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
   public void hopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION);
     }
   }
 
   public void intakeRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
-      }
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {}
       default -> setStateFromRequest(DeployState.INTAKE);
     }
   }
 
   public boolean isFullyExtended() {
     return atGoal(DeployState.INTAKE);
-  }
-
-  public void safeKickerStowRequest() {
-    switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
-      }
-      default -> setStateFromRequest(DeployState.SAFE_KICKER_STOW);
-    }
   }
 
   @Override
@@ -193,26 +167,33 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                 mechanism
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
                     .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
-                    .withMinPosition(DeployConfig.HOMING_END_POSITION_INWARD)
-                    .withMaxPosition(DeployConfig.HOMING_END_POSITION_OUTWARD));
+                    .withMinPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0)
+                    .withMaxPosition(-DeployConfig.MIN_ANGLE / 360.0));
 
-    if (getState() == DeployState.HOME_INWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_INWARD);
-      setStateFromRequest(DeployState.INTAKE);
+    if (!simulationInitialized) {
+      // The robot is placed on the field with its intake raised. This seeds only the physical
+      // simulation; homing still requires enabled motor current at the stop.
+      deploySimulation.seedPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0);
+      simulationInitialized = true;
+      return;
     }
 
-    if (getState() == DeployState.HOME_OUTWARD) {
-      deploySimulation.seedPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
-      setStateFromRequest(DeployState.INTAKE);
+    double target =
+        switch (getState()) {
+          case HOME_INWARD -> DeployConfig.HOMING_END_POSITION_INWARD;
+          case HOME_OUTWARD -> DeployConfig.HOMING_END_POSITION_OUTWARD;
+          default -> clamp(getState().getAngleDegrees());
+        };
+    if (getState() == DeployState.UNHOMED || getState() == DeployState.AUTO_INTAKE_DELAY) {
+      target = getAngleDegrees();
     }
-
-    deploySimulation.update(clamp(getState().getLength()));
+    deploySimulation.update(-target / 360.0);
   }
 
   public void stowRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {
-        // Do nothing, we aren't homed
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {
+        // Homing takes priority over hopper requests.
       }
       default -> setStateFromRequest(DeployState.STOW);
     }
@@ -220,73 +201,117 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   public void waitHopperCompactionRequest() {
     switch (getState()) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
+      case UNHOMED, HOME_INWARD, HOME_OUTWARD, AUTO_INTAKE_DELAY -> {}
       default -> setStateFromRequest(DeployState.SCORE_COMPACTION_WAITING);
     }
   }
 
+  private void applyOutputs(DeployState newState) {
+    // Keep the homing voltage request configured while disabled; the DS inhibits motor output.
+    if (DriverStation.isDisabled()
+        && newState != DeployState.HOME_INWARD
+        && newState != DeployState.HOME_OUTWARD) {
+      setControl(neutralRequest);
+      return;
+    }
+    // Deadband: stop driving the intake once it's within tolerance of the intake goal.
+    if (newState == DeployState.INTAKE
+        && MathUtil.isNear(
+            clamp(newState.getAngleDegrees()),
+            averagePosition,
+            DeployConfig.INTAKE_TOLERANCE_DEGREES)) {
+      setControl(voltageRequest.withOutput(0));
+      return;
+    }
+    switch (newState) {
+      case UNHOMED, AUTO_INTAKE_DELAY -> setControl(neutralRequest);
+      case HOME_INWARD -> setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD));
+      case HOME_OUTWARD ->
+          setControl(voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD));
+      default ->
+          setControl(motionMagicRequest.withPosition(-clamp(newState.getAngleDegrees()) / 360.0));
+    }
+  }
+
+  private void setControl(ControlRequest request) {
+    leftMotor.setControl(request);
+    rightMotor.setControl(request);
+  }
+
+  private void setPosition(double angleDegrees) {
+    leftMotor.setPosition(-angleDegrees / 360.0);
+    rightMotor.setPosition(-angleDegrees / 360.0);
+  }
+
+  private double simulatedHomingCurrent(double angle) {
+    if (DriverStation.isDisabled() || !simulationInitialized) {
+      return 0.0;
+    }
+    double voltage;
+    double stop;
+    switch (getState()) {
+      case HOME_INWARD -> {
+        voltage = DeployConfig.HOMING_VOLTAGE_INWARD;
+        stop = DeployConfig.HOMING_END_POSITION_INWARD;
+      }
+      case HOME_OUTWARD -> {
+        voltage = DeployConfig.HOMING_VOLTAGE_OUTWARD;
+        stop = DeployConfig.HOMING_END_POSITION_OUTWARD;
+      }
+      default -> {
+        return 0.0;
+      }
+    }
+    // SimKit supplies kinematic positions, but does not model hard-stop motor load.
+    // Feed the contact current into the same detector used on the physical robot.
+    return MathUtil.isNear(stop, angle, 0.5)
+        ? Math.abs(DCMotor.getKrakenX60(1).getCurrent(0.0, voltage))
+        : 0.0;
+  }
+
+  private DeployState stateAfterHoming() {
+    return DriverStation.isAutonomous() ? DeployState.AUTO_INTAKE_DELAY : DeployState.INTAKE;
+  }
+
   @Override
   protected void afterTransition(DeployState newState) {
-    switch (newState) {
-      case UNHOMED -> differentialMechanism.setNeutralOut();
-      case HOME_INWARD ->
-          differentialMechanism.setControl(
-              voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_INWARD),
-              voltageDifferentialRequest.withOutput(0));
-      case HOME_OUTWARD ->
-          differentialMechanism.setControl(
-              voltageRequest.withOutput(DeployConfig.HOMING_VOLTAGE_OUTWARD),
-              voltageDifferentialRequest.withOutput(0));
-      case SCORE_COMPACTION_WAITING -> {
-        differentialMechanism.setControl(
-            motionMagicTorqueCurrentFOCAverageRequest
-                .withPosition(clamp(newState.getLength()))
-                .withSlot(0),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
-      }
-      case FIX_DIFFERENTIAL_DESYNC -> {
-        differentialMechanism.setControl(
-            torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(2),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
-      }
-      case STOW -> {
-        differentialMechanism.setControl(
-            // Don't clamp
-            torqueCurrentFOCAverageRequest.withPosition(newState.getLength()).withSlot(0),
-            positionDifferentialRequest.withPosition(0.0).withSlot(1));
-      }
-      default ->
-          differentialMechanism.setControl(
-              torqueCurrentFOCAverageRequest.withPosition(clamp(newState.getLength())).withSlot(0),
-              positionDifferentialRequest.withPosition(0.0).withSlot(1));
-    }
+    applyOutputs(newState);
   }
 
   @Override
   protected void collectInputs() {
-    leftMotorPosition = leftPositionSignal.getValueAsDouble();
-    rightMotorPosition = rightPositionSignal.getValueAsDouble();
-    if (RobotBase.isSimulation()) {
-      // The firmware's DifferentialAveragePosition signal isn't reliably computed in sim,
-      // so derive it from individual motor positions instead.
-      differentialMechanismPosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
-    } else {
-      differentialMechanismPosition = differentialAveragePositionSignal.getValueAsDouble();
-    }
+    leftMotorPosition = leftPositionSignal.getValueAsDouble() * -360.0;
+    rightMotorPosition = rightPositionSignal.getValueAsDouble() * -360.0;
+    averagePosition = MathHelpers.average(leftMotorPosition, rightMotorPosition);
     leftStatorCurrent = leftStatorCurrentSignal.getValueAsDouble();
     rightStatorCurrent = rightStatorCurrentSignal.getValueAsDouble();
+    if (RobotBase.isSimulation() && getState().isHoming()) {
+      leftStatorCurrent = simulatedHomingCurrent(leftMotorPosition);
+      rightStatorCurrent = simulatedHomingCurrent(rightMotorPosition);
+    }
+    DogLog.log("Deploy/LeftMotor/StatorCurrent", leftStatorCurrent);
+    DogLog.log("Deploy/RightMotor/StatorCurrent", rightStatorCurrent);
+    DogLog.log("Deploy/LeftMotor/SupplyCurrent", leftSupplyCurrentSignal.getValueAsDouble());
+    DogLog.log("Deploy/RightMotor/SupplyCurrent", rightSupplyCurrentSignal.getValueAsDouble());
   }
 
   @Override
   protected DeployState getNextState(DeployState currentState) {
+    if (DriverStation.isDisabled()) {
+      if (currentState == DeployState.AUTO_INTAKE_DELAY) {
+        resetTimeout();
+      }
+      // Disabled time must not count toward the auto intake delay.
+      return currentState;
+    }
     return switch (currentState) {
-      case UNHOMED, INTAKE, STOW -> currentState;
-
+      case AUTO_INTAKE_DELAY ->
+          timeout(DeployConfig.AUTO_INTAKE_DELAY_SECONDS) ? DeployState.INTAKE : currentState;
       case HOME_INWARD -> {
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
-          yield DeployState.INTAKE;
+          setPosition(DeployConfig.HOMING_END_POSITION_INWARD);
+          yield stateAfterHoming();
         } else {
           yield currentState;
         }
@@ -295,8 +320,8 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case HOME_OUTWARD -> {
         if (leftStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD
             && rightStatorCurrent > DeployConfig.HOMING_CURRENT_OUTWARD) {
-          differentialMechanism.setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
-          yield DeployState.INTAKE;
+          setPosition(DeployConfig.HOMING_END_POSITION_OUTWARD);
+          yield stateAfterHoming();
         } else {
           yield currentState;
         }
@@ -307,10 +332,10 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
 
   @Override
   protected void whileInState(DeployState state) {
-    DogLog.log("Deploy/LeftMotor/Position", leftMotorPosition);
-    DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
-    DogLog.log("Deploy/GoalPosition", getState().getLength());
-    DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
-    DogLog.log("Deploy/LinkageAngleDegrees", DeployKinematics.angleDegrees(getPosition()));
+    applyOutputs(state);
+    DogLog.log("Deploy/LeftMotor/AngleDegrees", leftMotorPosition);
+    DogLog.log("Deploy/RightMotor/AngleDegrees", rightMotorPosition);
+    DogLog.log("Deploy/GoalAngleDegrees", getState().getAngleDegrees());
+    DogLog.log("Deploy/AngleDegrees", averagePosition);
   }
 }

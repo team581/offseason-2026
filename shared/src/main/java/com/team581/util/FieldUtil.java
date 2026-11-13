@@ -46,8 +46,11 @@ public class FieldUtil {
   private static final double TRENCH_LENGTH_X = Units.inchesToMeters(47.0);
   private static final double TRENCH_LENGTH_Y = Units.inchesToMeters(48.94);
 
-  private static final double TRENCH_ZONE_LENGTH_X = TRENCH_LENGTH_X + Units.inchesToMeters(27.0);
-  private static final double TRENCH_ZONE_LENGTH_Y = Units.inchesToMeters(68.0);
+  private static final double TRENCH_HOOD_ZONE_SCALE = 0.7;
+  private static final double TRENCH_ZONE_LENGTH_X =
+      (TRENCH_LENGTH_X + Units.inchesToMeters(27.0)) * TRENCH_HOOD_ZONE_SCALE;
+  private static final double TRENCH_ZONE_LENGTH_Y =
+      Units.inchesToMeters(68.0) * TRENCH_HOOD_ZONE_SCALE;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_X = TRENCH_LENGTH_X * 5;
   private static final double TRENCH_ASSIST_ZONE_LENGTH_Y = Units.inchesToMeters(85.0);
 
@@ -265,7 +268,10 @@ public class FieldUtil {
           Rotation2d.kZero);
 
   private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ZONE =
-      new Rectangle2d(HOME_FIELD_RED_DEPOT_TRENCH_CENTER, TRENCH_LENGTH_X, TRENCH_LENGTH_Y);
+      new Rectangle2d(
+          HOME_FIELD_RED_DEPOT_TRENCH_CENTER,
+          TRENCH_LENGTH_X * TRENCH_HOOD_ZONE_SCALE,
+          TRENCH_LENGTH_Y * TRENCH_HOOD_ZONE_SCALE);
   private static final Rectangle2d HOME_FIELD_RED_DEPOT_TRENCH_ASSIST_ZONE =
       new Rectangle2d(
           HOME_FIELD_RED_DEPOT_TRENCH_CENTER,
@@ -329,7 +335,6 @@ public class FieldUtil {
               HOME_FIELD_BLUE_DEPOT_WALL_SNAP_CORNER_ZONE,
           HOME_FIELD_RED_DEPOT_WALL_SNAP_CORNER_ZONE, RED_OUTPOST_WALL_SNAP_CORNER_ZONE);
 
-  // TODO: Validate these points
   private static final Pose2d BLUE_RIGHT_FALLBACK =
       new Pose2d(
           BLUE_TRENCH_BUMP_HUB_X - TRENCH_LENGTH_X / 2.0, AprilTags.TAG_7.getY(), Rotation2d.kZero);
@@ -381,6 +386,24 @@ public class FieldUtil {
       new Rectangle2d(
           CLIMB_FRONT_CORNER_OUTPOST_SIDE.bluePose().getTranslation(),
           CLIMB_BACK_CORNER_DEPOT_SIDE.bluePose().getTranslation());
+
+  private static final double ROBOT_WIDTH_WITH_BUMPERS = Units.inchesToMeters(29.0 + 6.0);
+  private static final double ROBOT_HALF_WIDTH_WITH_BUMPERS = ROBOT_WIDTH_WITH_BUMPERS / 2.0;
+
+  // The preset shot overshoots from the true pose, so aim as if we were closer to the hub
+  private static final double TOWER_FALLBACK_HUB_OFFSET_X = Units.inchesToMeters(6.0);
+
+  // Preset scoring shot centered on the climb tower, bumpers against the hub-facing side
+  private static final Pose2d RED_TOWER_FALLBACK =
+      new Pose2d(
+          CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getX()
+              - ROBOT_HALF_WIDTH_WITH_BUMPERS
+              - TOWER_FALLBACK_HUB_OFFSET_X,
+          MathHelpers.average(
+              CLIMB_FRONT_CORNER_OUTPOST_SIDE.redPose().getY(),
+              CLIMB_BACK_CORNER_DEPOT_SIDE.redPose().getY()),
+          Rotation2d.kZero);
+  private static final Pose2d BLUE_TOWER_FALLBACK = pathflip(RED_TOWER_FALLBACK);
 
   private static final Translation2d BLUE_HUB_CENTER =
       new Translation2d(BLUE_TRENCH_BUMP_HUB_X, FIELD_WIDTH_Y / 2.0);
@@ -838,6 +861,8 @@ public class FieldUtil {
     DogLog.log("FieldUtil/FallbackPoses/RedRight", RED_RIGHT_FALLBACK);
     DogLog.log("FieldUtil/FallbackPoses/BlueRight", BLUE_RIGHT_FALLBACK);
     DogLog.log("FieldUtil/FallbackPoses/BlueLeft", BLUE_LEFT_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/Tower/Red", RED_TOWER_FALLBACK);
+    DogLog.log("FieldUtil/FallbackPoses/Tower/Blue", BLUE_TOWER_FALLBACK);
   }
 
   public static double getAllianceZoneX() {
@@ -941,6 +966,10 @@ public class FieldUtil {
 
   public static double getObstacleX() {
     return FmsUtil.isRedAlliance() ? RED_TRENCH_BUMP_HUB_X : BLUE_TRENCH_BUMP_HUB_X;
+  }
+
+  public static Pose2d getTowerFallbackScorePoint() {
+    return FmsUtil.isRedAlliance() ? RED_TOWER_FALLBACK : BLUE_TOWER_FALLBACK;
   }
 
   // HOME FIELD ONLY

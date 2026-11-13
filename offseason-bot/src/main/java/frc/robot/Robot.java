@@ -1,13 +1,24 @@
 package frc.robot;
 
+import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
 import com.team581.controller.ControllerBindings;
+import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
+import com.team581.vision.spot.SpotVisionIO;
+import com.team581.vision.spot.VisionProcessor.CaptureState;
+import com.team581.vision.spot.data.Profile;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
+import frc.robot.config.DSOptions;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
@@ -24,8 +35,11 @@ import frc.robot.robot_manager.hopper_manager.HopperManager;
 import frc.robot.shooter.Shooter;
 import frc.robot.shooter_hood.ShooterHood;
 import frc.robot.swerve.Swerve;
+import frc.robot.testing.TestManager;
 import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
+import frc.robot.vision.VisionConfig;
+import java.util.Optional;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -43,49 +57,59 @@ public class Robot extends Base581Robot {
                       Swerve.ORIGINAL_HEADING_PID.getD())),
               imu.bumpCrossingTracker));
 
-  private final HealthManager health =
-      new HealthManager(
-          hardware.shooterLimeLight,
-          hardware.leftLimeLight,
-          hardware.rightLimeLight,
-          hardware.groundLimeLight);
+  private final Profile visionProfile = VisionConfig.profile();
   private final Vision vision =
       new Vision(
-          imu,
-          hardware.shooterLimeLight,
-          hardware.leftLimeLight,
-          hardware.rightLimeLight,
-          hardware.groundLimeLight);
+          new SpotVisionIO(
+              NetworkTableInstance.getDefault(), visionProfile, VisionConfig.cameraConfig()),
+          visionProfile,
+          new Vision.CaptureSource() {
+            @Override
+            public CaptureState current(double now) {
+              var state = hardware.drivetrain.getState();
+              return new CaptureState(
+                  state.Pose,
+                  MathHelpers.getLinearVelocity(state.Speeds),
+                  state.Speeds.omegaRadiansPerSecond,
+                  Math.toRadians(imu.getRoll()),
+                  Math.toRadians(imu.getPitch()),
+                  0.);
+            }
+
+            @Override
+            public Optional<Pose2d> poseAt(double time) {
+              return hardware.drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(time));
+            }
+          },
+          Timer::getFPGATimestamp,
+          () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean(),
+          DriverStation::getAlliance);
+  final HealthManager health = new HealthManager(vision);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
   private final Localization localization =
       new Localization(swerve, hardware.drivetrain, vision, imu);
 
-  private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
+  final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
   private final Shooter shooter =
-      new Shooter(
-          hardware.shooterTopLeftMotor,
-          hardware.shooterTopRightMotor,
-          hardware.shooterBottomLeftMotor,
-          hardware.shooterBottomRightMotor);
+      new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
 
   private final Intake intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
-  private final Deploy deploy = new Deploy(hardware.deployDifferentialMechanism);
-  private final Feeder feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+  private final Deploy deploy = new Deploy(hardware.deployLeftMotor, hardware.deployRightMotor);
+  private final Feeder feeder = new Feeder(hardware.feederMotor);
   private final Conveyor conveyor =
-      new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
+      new Conveyor(hardware.conveyorMotor, hardware.tunnelTopMotor, hardware.tunnelBottomMotor);
   private final Funneler funneler = new Funneler(hardware.funnelerMotor);
 
-  private final Turret turret = new Turret(hardware.turretMotor, hardware.turretEncoder, vision);
+  public final Turret turret = new Turret(hardware.turretMotor);
 
   private final HubActivity hubActivity = new HubActivity();
   private final HopperManager hopperManager =
-      new HopperManager(
-          deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
-  private final PowerManager powerManager =
+      new HopperManager(deploy, intake, conveyor, feeder, funneler);
+  public final PowerManager powerManager =
       new PowerManager(
           shooter, intake, deploy, shooterHood, feeder, conveyor, funneler, swerve, turret);
-  private final RobotManager robotManager =
+  public final RobotManager robotManager =
       new RobotManager(
           hopperManager,
           shooterHood,
@@ -100,6 +124,11 @@ public class Robot extends Base581Robot {
           hardware,
           powerManager);
 
+  final TestManager testManager = new TestManager(robotManager, trailblazer);
+
+  @SuppressWarnings("unused") // Registers itself as a subsystem.
+  private final Autos autos = new Autos(robotManager, trailblazer, testManager);
+
   public Robot() {
     logMetadata(
         BuildConstants.MAVEN_NAME,
@@ -109,7 +138,15 @@ public class Robot extends Base581Robot {
         BuildConstants.GIT_BRANCH,
         BuildConstants.DIRTY);
 
+    health.setPoseTrustworthySupplier(localization::isTrustworthy);
     finalizeInit();
+  }
+
+  @Override
+  public void autonomousExit() {
+    // Autos leave temporary overrides like PRIORITIZE_INTAKE active, which would otherwise
+    // persist into teleop since RobotManager's IDLE state doesn't reset the power manager
+    powerManager.idleRequest();
   }
 
   @Override
@@ -123,7 +160,7 @@ public class Robot extends Base581Robot {
 
     driver
         .leftTrigger()
-        .onPress(robotManager::intakeAutoRequest)
+        .onPress(robotManager::intakeRequest)
         .onRelease(robotManager::cancelIntakeRequest);
 
     driver
@@ -131,14 +168,26 @@ public class Robot extends Base581Robot {
         .onPress(robotManager::prepareScoreOrFeedRequest)
         .onRelease(robotManager::idleRequest);
 
-    driver.rightBumper().onPress(robotManager::stowDeployRequest);
+    driver
+        .rightBumper()
+        .onPress(robotManager::prepareFallbackScoreRequest)
+        .onRelease(robotManager::idleRequest);
 
-    driver.leftBumper().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
+    operator
+        .leftTrigger()
+        .onPress(robotManager::stowDeployRequest)
+        .onRelease(robotManager::cancelStowDeployRequest);
 
-    operator.leftTrigger().onPress(robotManager::stowDeployRequest);
-    operator.rightTrigger().onPress(robotManager::prepareScoreRequest);
+    driver
+        .leftBumper()
+        .onPress(robotManager::ejectRequest)
+        .onRelease(robotManager::cancelEjectRequest);
 
-    operator.leftBumper().onPress(powerManager::prioritizeIntakeRequest);
+    operator
+        .rightTrigger()
+        .onPress(robotManager::prepareScoreRequest)
+        .onRelease(robotManager::idleRequest);
+
     operator
         .rightBumper()
         .onPress(() -> robotManager.setTrenchOverrideRequest(true))
@@ -147,5 +196,18 @@ public class Robot extends Base581Robot {
     operator.start().onPress(() -> hopperManager.deploy.homingRequest());
 
     operator.back().onPress(robotManager::homeShooterHoodRequest);
+
+    operator.x().onPress(robotManager::unjamRequest).onRelease(robotManager::idleRequest);
+
+    operator
+        .y()
+        .onPress(() -> {
+          powerManager.turboRequest();
+          shooter.setTurboMode(true);
+        })
+        .onRelease(() -> {
+          powerManager.idleRequest();
+          shooter.setTurboMode(false);
+        });
   }
 }

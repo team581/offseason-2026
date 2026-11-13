@@ -1,72 +1,69 @@
 package frc.robot.turret;
 
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.util.Units;
-import frc.robot.config.RobotKind;
+import edu.wpi.first.wpilibj.RobotBase;
 
 public class TurretConfig {
-  public static final double MIN_ANGLE = RobotKind.IS_COMP_BOT ? -390.0 : -355.0;
-  public static final double MAX_ANGLE = RobotKind.IS_COMP_BOT ? 40.0 : 5.0;
+  public static final double MIN_ANGLE = -270.0;
+  public static final double MAX_ANGLE = -90.0;
   public static final double FAUX_DUMPER_ANGLE = -180;
 
   public static final double OUT_OF_BOUNDS_THRESHOLD = 1.0;
-  public static final double HOMING_END_POSITION = MIN_ANGLE;
+  // Hand-set the turret at the center of travel before the first enable after boot.
+  public static final double HOMING_END_POSITION = -180.0;
+  // Must stay well above the Position signal's resolution (1/4096 turret rotation, ~0.088 degrees),
+  // or the turret never reads as aligned after a correction and can't leave HOMING on enable.
+  public static final double HOMING_CORRECTION_THRESHOLD_DEGREES = 0.5;
+  public static final double HOMING_DEBOUNCE_SECONDS = 0.1;
 
-  public static final double MOTOR_TO_TURRET = ((220.0 / 14.0) * (36.0 / 10.0));
+  public static final double MOTOR_TO_TURRET = 60.0;
 
-  // CAL NUMBER
-  public static final double ENCODER_CAL_OFFSET =
-      RobotKind.IS_COMP_BOT ? -0.18408203125 : 0.6796875;
-  public static final double MOTOR_ROTOR_CAL_OFFSET = RobotKind.IS_COMP_BOT ? 0.157227 : 0.0;
+  // Negated fractional rotor position at boot with the turret exactly at HOMING_END_POSITION.
+  // Applied via FeedbackRotorOffset since setPosition() also overwrites the rotor position.
+  static final double MOTOR_ROTOR_OFFSET = -0.2229;
 
-  public static final double MOTOR_ROTATION_RESOLUTION = 1 / MOTOR_TO_TURRET;
   public static final double MAX_VELOCITY_RAD_PER_SEC = 10.0;
   public static final double MAX_ACCELERATION_RAD_PER_SEC_SQUARED = 35.0;
-  public static final double ENCODER_TO_TURRET =
-      (float) 220.0 / 25.0 * 8.0 / 30.0 * 8.0 / 35.0; // Encoder rot to turret rot
 
   // Turret axis relative to robot center: 4.750 inches back and 8.025 inches left.
   public static final Transform2d TURRET_TO_ROBOT =
       new Transform2d(Units.inchesToMeters(-4.750), Units.inchesToMeters(8.025), Rotation2d.kZero);
 
+  // Voltage output per turret rotation; SimKit has no gravity or friction model.
+  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(60.0).withKD(2.0);
+
+  // Real gains from beta-bot competition configuration (6645bd8d^).
   public static final TalonFXConfiguration MOTOR_CONFIG =
       new TalonFXConfiguration()
-          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(MOTOR_TO_TURRET))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withSensorToMechanismRatio(MOTOR_TO_TURRET)
+                  .withFeedbackRotorOffset(
+                      // SimKit writes the raw rotor directly, so sim models a zeroed sensor.
+                      RobotBase.isReal() ? MOTOR_ROTOR_OFFSET : 0.0))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs().withStatorCurrentLimit(40).withSupplyCurrentLimit(20))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withSlot0(
-              new Slot0Configs()
-                  .withKP(200)
-                  .withKV(RobotKind.IS_COMP_BOT ? 5.0 : 6.0)
-                  .withKG(0.0)
-                  .withKD(1.7)
-                  .withKS(RobotKind.IS_COMP_BOT ? 0.35 : 0.2))
+              RobotBase.isSimulation()
+                  ? SIM_GAINS.clone()
+                  : new Slot0Configs().withKP(200).withKV(5.0).withKG(0.0).withKD(1.7).withKS(0.35))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(Units.radiansToRotations(MAX_VELOCITY_RAD_PER_SEC))
                   .withMotionMagicAcceleration(
                       Units.radiansToRotations(MAX_ACCELERATION_RAD_PER_SEC_SQUARED)));
-  public static final CANcoderConfiguration ENCODER_CONFIG =
-      new CANcoderConfiguration()
-          .withMagnetSensor(
-              new MagnetSensorConfigs()
-                  .withMagnetOffset(ENCODER_CAL_OFFSET)
-                  .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                  .withAbsoluteSensorDiscontinuityPoint(0.2));
 
   private TurretConfig() {}
 }
