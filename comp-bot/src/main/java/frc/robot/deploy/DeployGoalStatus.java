@@ -1,7 +1,7 @@
 package frc.robot.deploy;
 
 public enum DeployGoalStatus {
-  AT_GOAL,
+  READY,
   UNHOMED,
   HOMING,
   WRONG_POSITION;

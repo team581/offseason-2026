@@ -262,7 +262,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
   private ShooterGoalStatus getRpmStatus(double goalRpm, double tolerance) {
     return MathUtil.isNear(goalRpm, topRightMotorRpm, tolerance)
-        ? ShooterGoalStatus.AT_GOAL
+        ? ShooterGoalStatus.READY
         : ShooterGoalStatus.WRONG_SPEED;
   }
 
@@ -294,8 +294,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
 
     goalStatus = calculateGoalStatus();
     goalStatusDebounced =
-        atGoalDebouncer.calculate(goalStatus == ShooterGoalStatus.AT_GOAL)
-            ? ShooterGoalStatus.AT_GOAL
+        atGoalDebouncer.calculate(goalStatus == ShooterGoalStatus.READY)
+            ? ShooterGoalStatus.READY
             : goalStatus;
 
     switch (getState()) {

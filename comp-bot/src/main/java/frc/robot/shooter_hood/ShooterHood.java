@@ -24,7 +24,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
   private static ShooterHoodGoalStatus getAngleStatus(
       double goalAngle, double currentAngle, double tolerance) {
     return MathUtil.isNear(goalAngle, currentAngle, tolerance)
-        ? ShooterHoodGoalStatus.AT_GOAL
+        ? ShooterHoodGoalStatus.READY
         : ShooterHoodGoalStatus.WRONG_ANGLE;
   }
 

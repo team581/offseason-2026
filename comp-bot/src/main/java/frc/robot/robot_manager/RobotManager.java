@@ -469,8 +469,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       // No auto transitions for these states
       case UNJAM, FORCE_SCORE, WARMUP_FEED, WARMUP_SCORE, IDLE -> currentState;
       case PREPARE_FORCE_SCORE -> {
-        if (shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
-            && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL) {
+        if (shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
+            && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY) {
           yield RobotState.FORCE_SCORE;
         }
         yield currentState;
@@ -479,25 +479,25 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         // In pit functionality, we don't care about anything other than raw mechanism
         // states
         if (DSOptions.PIT_FUNCTIONALITY.getAsBoolean()) {
-          yield shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
-                  && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL
+          yield shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
+                  && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY
               ? RobotState.FALLBACK_SCORE
               : RobotState.PREPARE_FALLBACK_SCORE;
         }
 
         yield !isMoving
                 && (swerve.getGoalStatus(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                        == SwerveGoalStatus.AT_GOAL
-                    && shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
-                    && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL)
+                        == SwerveGoalStatus.READY
+                    && shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
+                    && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY)
             ? RobotState.FALLBACK_SCORE
             : RobotState.PREPARE_FALLBACK_SCORE;
       }
       case PREPARE_FALLBACK_FEED, FALLBACK_FEED ->
           swerve.getGoalStatus(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                      == SwerveGoalStatus.AT_GOAL
-                  && shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
-                  && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL
+                      == SwerveGoalStatus.READY
+                  && shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
+                  && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY
               ? RobotState.FALLBACK_FEED
               : RobotState.PREPARE_FALLBACK_FEED;
       case PREPARE_SCORE -> {
@@ -511,12 +511,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (swerve.getGoalStatus(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                == SwerveGoalStatus.AT_GOAL
+                == SwerveGoalStatus.READY
             && !swerve.isMovingBeyondSafeSpeed()
             && !swerve.driverStillDecidingSotm()
             && localization.imu.accelerationLowEnoughToShoot()
-            && shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
-            && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL
+            && shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
+            && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY
             && localization.isTrustworthy()
             && hubActivity.getTOFBasedHubActive()
             && !nearTrench) {
@@ -536,13 +536,13 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         if ((!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
                 || (swerve.getGoalStatus(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                        == SwerveGoalStatus.AT_GOAL
+                        == SwerveGoalStatus.READY
                     && !swerve.isMovingBeyondSafeSpeed()
                     && !swerve.driverStillDecidingSotm()
                     && localization.imu.accelerationLowEnoughToShoot()
-                    && shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
+                    && shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
                     && localization.isTrustworthy()
-                    && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL
+                    && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY
                     && hubActivity.getTOFBasedHubActive()))
             && !nearTrench) {
           yield currentState;
@@ -558,11 +558,11 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         }
 
         if (swerve.getGoalStatus(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                == SwerveGoalStatus.AT_GOAL
+                == SwerveGoalStatus.READY
             && !swerve.isMovingBeyondSafeSpeed()
-            && shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
+            && shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
             && isInSafeFeedingLocation
-            && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL
+            && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY
             && health.isLocalizationHealthy()) {
 
           yield RobotState.FEED;
@@ -577,12 +577,12 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
         logFeedTransition();
         if (!FeatureFlags.CANCEL_IN_PROGRESS_SHOT.getAsBoolean()
-            || (shooter.getGoalStatusDebounced() == ShooterGoalStatus.AT_GOAL
+            || (shooter.getGoalStatusDebounced() == ShooterGoalStatus.READY
                 && !swerve.isMovingBeyondSafeSpeed()
                 && isInSafeFeedingLocation
                 && swerve.getGoalStatus(ShooterConfig.FEEDER_TO_SHOOTER_TRAVEL_TIME.get())
-                    == SwerveGoalStatus.AT_GOAL
-                && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.AT_GOAL
+                    == SwerveGoalStatus.READY
+                && shooterHood.getGoalStatus() == ShooterHoodGoalStatus.READY
                 && health.isLocalizationHealthy())) {
 
           yield currentState;

@@ -1,7 +1,7 @@
 package frc.robot.shooter_hood;
 
 public enum ShooterHoodGoalStatus {
-  AT_GOAL,
+  READY,
   UNHOMED,
   HOMING,
   IDLE,

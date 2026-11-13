@@ -137,7 +137,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
           MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
                   && MathUtil.isNear(
                       state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE)
-              ? DeployGoalStatus.AT_GOAL
+              ? DeployGoalStatus.READY
               : DeployGoalStatus.WRONG_POSITION;
     };
   }
@@ -174,7 +174,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   public boolean isFullyExtended() {
-    return getGoalStatus(DeployState.INTAKE) == DeployGoalStatus.AT_GOAL;
+    return getGoalStatus(DeployState.INTAKE) == DeployGoalStatus.READY;
   }
 
   public void safeKickerStowRequest() {

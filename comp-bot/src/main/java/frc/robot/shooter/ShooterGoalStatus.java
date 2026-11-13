@@ -1,7 +1,7 @@
 package frc.robot.shooter;
 
 public enum ShooterGoalStatus {
-  AT_GOAL,
+  READY,
   IDLE,
   WRONG_SPEED;
 }

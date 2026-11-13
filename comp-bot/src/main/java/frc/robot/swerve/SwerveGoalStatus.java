@@ -1,7 +1,7 @@
 package frc.robot.swerve;
 
 public enum SwerveGoalStatus {
-  AT_GOAL,
+  READY,
   NOT_AIMING,
   WRONG_ANGLE;
 }

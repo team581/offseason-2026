@@ -284,7 +284,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   scoringTolerance,
                   -180.0,
                   180.0)
-              ? SwerveGoalStatus.AT_GOAL
+              ? SwerveGoalStatus.READY
               : SwerveGoalStatus.WRONG_ANGLE;
       case WARMUP_FEED, FEED ->
           MathUtil.isNear(
@@ -293,7 +293,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   useLooseTolerance ? LOOSE_TOLERANCE : feedingTolerance,
                   -180,
                   180)
-              ? SwerveGoalStatus.AT_GOAL
+              ? SwerveGoalStatus.READY
               : SwerveGoalStatus.WRONG_ANGLE;
       default -> SwerveGoalStatus.NOT_AIMING;
     };
@@ -320,7 +320,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
     // If already within tolerance, we are at the goal
     if (MathUtil.isNear(0, deltaAngleToGoal, Math.toRadians(toleranceDegrees))) {
-      return SwerveGoalStatus.AT_GOAL;
+      return SwerveGoalStatus.READY;
     }
 
     // Check if we are moving towards the goal and will reach or pass it
@@ -335,7 +335,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       // (minus tolerance, since we just need to get within tolerance of the goal)
       if (rotationMagnitudeInLookahead
           >= (Math.abs(deltaAngleToGoal) - Math.toRadians(toleranceDegrees))) {
-        return SwerveGoalStatus.AT_GOAL;
+        return SwerveGoalStatus.READY;
       }
     }
 
