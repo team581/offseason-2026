@@ -2,30 +2,30 @@ package frc.robot.vision;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.team581.spot.Spot;
+import com.team581.spot.SpotCameraStatus;
+import com.team581.spot.SpotStatus;
+import com.team581.spot.TimestampedEstimate;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.spot.CaptureHistory;
 import com.team581.vision.spot.MeasurementQueue;
-import com.team581.vision.spot.SpotProtocol;
-import com.team581.vision.spot.VisionIO;
 import com.team581.vision.spot.VisionProcessor;
-import com.team581.vision.spot.data.*;
 import com.team581.vision.spot.results.VisionMeasurement;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 /** Sole scheduled vision owner: collection, selection, ordering and cached observations. */
 public final class Vision extends StateMachineSubsystem<VisionState> implements AutoCloseable {
@@ -49,73 +49,69 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       String reason,
       int configured,
       int usable,
-      int required,
       boolean allRequiredHealthy,
-      long selectionGeneration,
-      boolean selectionPending,
       int queueDepth,
       long queueDrops,
-      String generation,
       Map<String, CameraStatus> cameras) {}
 
-  private static final double CAMERA_TIMEOUT_S = .5;
+  private record Arrival(String camera, TimestampedEstimate sample) {}
+
+  private static final double REORDER_WINDOW_S = .02;
   private static final double NO_TAGS_WARNING_S = 2;
   private static final String NO_TAGS_WARNING = "Spot cameras haven't seen a tag recently";
-  private static final Set<Integer> RED_HUB = Set.of(2, 3, 4, 5, 8, 9, 10, 11);
-  private static final Set<Integer> BLUE_HUB = Set.of(18, 19, 20, 21, 24, 25, 26, 27);
-  private final VisionIO io;
-  private Profile profile;
-  private int configured;
-  private int required;
+  private static final Set<SpotCameraStatus.State> STREAMING =
+      Set.of(SpotCameraStatus.State.STREAMING, SpotCameraStatus.State.FALLING_BEHIND);
+  private static final Set<VisionProcessor.Reason> OPERATIONAL =
+      Set.of(
+          VisionProcessor.Reason.ACCEPTED,
+          VisionProcessor.Reason.NO_TAGS,
+          VisionProcessor.Reason.HISTORY,
+          VisionProcessor.Reason.FIELD_BOUNDS,
+          VisionProcessor.Reason.ROBOT_TILT,
+          VisionProcessor.Reason.AMBIGUOUS,
+          VisionProcessor.Reason.RESIDUAL,
+          VisionProcessor.Reason.INNOVATION);
+  private final Spot spot;
+  private final List<String> cameraNames;
   private final CaptureSource capture;
   private final DoubleSupplier clock;
   private final BooleanSupplier operatorVision;
-  private final Supplier<Optional<Alliance>> alliance;
   private final CaptureHistory history;
-  private VisionProcessor processor;
+  private final VisionProcessor processor;
   private final MeasurementQueue queue;
+  // Filled on the NetworkTables listener thread, drained on the main loop.
+  private final ConcurrentLinkedQueue<Arrival> incoming = new ConcurrentLinkedQueue<>();
   private final Map<String, CameraStatus> cameras = new HashMap<>();
-  private final Map<String, Double> lastFrame = new HashMap<>();
   private double lastTagSeen = Double.NEGATIVE_INFINITY;
   private final Set<String> faults = new HashSet<>();
   private List<VisionMeasurement> prepared = ImmutableList.of();
   private final Map<String, VisionMeasurement> offered = new HashMap<>();
-  private VisionIO.TagSelection selection;
-  private Optional<Alliance> currentAlliance = Optional.empty();
-  private String generation = "";
+  private Optional<SpotStatus> spotStatus = Optional.empty();
   private double now;
-  private double lastHub = Double.NEGATIVE_INFINITY;
   private double lastTag = Double.NEGATIVE_INFINITY;
   private double resetTime = Double.NEGATIVE_INFINITY;
-  private long appliedSelection;
   private boolean hasSeenTag;
   private boolean closed;
-  private boolean available;
-  private String unavailableReason = "No camera inputs";
 
   public Vision(
-      VisionIO io,
-      Profile profile,
+      Spot spot,
+      List<String> cameraNames,
       CaptureSource capture,
       DoubleSupplier clock,
-      BooleanSupplier operatorVision,
-      Supplier<Optional<Alliance>> alliance) {
-    super(SubsystemPriority.VISION, VisionState.TAGS);
-    this.io = io;
-    this.profile = profile;
-    configured = (int) profile.cameras().stream().filter(CameraPolicy::enabled).count();
-    required = (int) profile.cameras().stream().filter(c -> c.enabled() && c.required()).count();
+      BooleanSupplier operatorVision) {
+    super(SubsystemPriority.VISION, VisionState.DEFAULT_STATE);
+    this.spot = spot;
+    this.cameraNames = List.copyOf(cameraNames);
     this.capture = capture;
     this.clock = clock;
     this.operatorVision = operatorVision;
-    this.alliance = alliance;
     history = new CaptureHistory(capture::poseAt);
     processor =
-        new VisionProcessor(
-            profile, history, VisionTuning::policy, () -> !hasRecentFusedMeasurement());
-    queue = new MeasurementQueue(profile.reorderWindowS(), 128);
-    selection = new VisionIO.TagSelection(1, broadTags());
-    io.setTagSelection(selection);
+        new VisionProcessor(history, VisionTuning::policy, () -> !hasRecentFusedMeasurement());
+    queue = new MeasurementQueue(REORDER_WINDOW_S, 128);
+    for (var name : cameraNames) {
+      spot.camera(name).onEstimate(sample -> incoming.add(new Arrival(name, sample)));
+    }
   }
 
   @Override
@@ -127,90 +123,44 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     queue.clearPending();
     for (var fault : faults) DogLog.clearFault(fault);
     faults.clear();
-    io.close();
+    spot.close();
   }
 
   @Override
   public void collectInputs() {
     if (closed) return;
+    var arrivals = new ArrayList<Arrival>();
+    for (Arrival arrival; (arrival = incoming.poll()) != null; ) arrivals.add(arrival);
+    // Read the clock after draining so estimates that just arrived don't appear to be from the
+    // future.
     now = clock.getAsDouble();
     prepared = ImmutableList.of();
     offered.clear();
-    var observedAlliance = alliance.get();
-    if (!observedAlliance.equals(currentAlliance)) {
-      currentAlliance = observedAlliance;
-      lastHub = Double.NEGATIVE_INFINITY;
-      select(broadTags());
-      if (getState() == VisionState.HUB_TAGS) setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
-    }
-    var inputs = io.readInputs(now);
-    var effective = io.configuration().orElse(profile);
-    if (!effective.equals(profile)) {
-      profile = effective;
-      configured = (int) profile.cameras().stream().filter(CameraPolicy::enabled).count();
-      required = (int) profile.cameras().stream().filter(c -> c.enabled() && c.required()).count();
-      processor =
-          new VisionProcessor(
-              profile, history, VisionTuning::policy, () -> !hasRecentFusedMeasurement());
-      queue.clearPending();
-      retireObservations();
-    }
-    // Input collection can take long enough for newer exposures to arrive.
-    // Validate age against the clock after collection, not its earlier start.
-    now = clock.getAsDouble();
+    spotStatus = spot.status();
     history.add(now, capture.current(now));
-    var health = inputs.health();
-    String epoch = health.generation();
-    if (!epoch.equals(generation)) {
-      generation = epoch;
-      queue.clearPending();
-      processor.newGeneration(epoch);
-      retireObservations();
-    }
-    available = health.available() && configured > 0;
-    unavailableReason = health.reason();
-    inputs
-        .arrivals()
-        .forEach((camera, sawTag) -> {
-          lastFrame.put(camera, now);
-          if (sawTag) lastTagSeen = now;
-        });
-    boolean fusion = available && profile.fusionEnabled() && operatorVision.getAsBoolean();
+    boolean available = spotStatus.isPresent();
+    boolean fusion = isFusionEnabled();
     if (!fusion) queue.clearPending();
-    long allowedTags = SpotProtocol.tagMask(selection.allowedTagIds(), profile.field());
-    for (var sample : inputs.samples()) {
-      if (profile.cameras().stream()
-          .noneMatch(c -> c.enabled() && c.name().equals(sample.cameraName()))) continue;
-      var frame = sample.frame();
-      long usedTags = frame.candidateCount() > 0 ? frame.primary().tagMask() : 0;
-      if (frame.candidateCount() > 1) usedTags |= frame.alternate().tagMask();
-      boolean matchingPolicy =
-          frame.tagSelectionGeneration() == selection.generation()
-              && (usedTags & ~allowedTags) == 0;
+    for (var arrival : arrivals) {
+      var name = arrival.camera();
+      var sample = arrival.sample();
+      if (sample.estimate().tagIds().length > 0) lastTagSeen = now;
+      boolean uncalibrated =
+          spot.camera(name)
+              .status()
+              .filter(s -> s.state() == SpotCameraStatus.State.UNCALIBRATED)
+              .isPresent();
       var decision =
           !available
               ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CONFIGURATION)
-              : !matchingPolicy
-                  ? VisionProcessor.Decision.reject(VisionProcessor.Reason.TAG_POLICY)
-                  : processor.process(sample, now);
+              : uncalibrated
+                  ? VisionProcessor.Decision.reject(VisionProcessor.Reason.CALIBRATION)
+                  : processor.process(name, sample, now);
       boolean accepted = decision.reason() == VisionProcessor.Reason.ACCEPTED;
-      boolean operational =
-          accepted
-              || Set.of(
-                      VisionProcessor.Reason.NO_TAGS,
-                      VisionProcessor.Reason.HISTORY,
-                      VisionProcessor.Reason.FIELD_BOUNDS,
-                      VisionProcessor.Reason.ROBOT_TILT,
-                      VisionProcessor.Reason.AMBIGUOUS,
-                      VisionProcessor.Reason.RESIDUAL,
-                      VisionProcessor.Reason.INNOVATION)
-                  .contains(decision.reason());
-      if (operational) {
-        appliedSelection = selection.generation();
-      }
+      boolean operational = OPERATIONAL.contains(decision.reason());
       var previous =
           cameras.getOrDefault(
-              sample.cameraName(),
+              name,
               new CameraStatus(
                   Double.NEGATIVE_INFINITY,
                   Double.NEGATIVE_INFINITY,
@@ -220,10 +170,10 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                   false,
                   "Waiting"));
       cameras.put(
-          sample.cameraName(),
+          name,
           new CameraStatus(
-              operational ? sample.captureFpgaSeconds() : previous.lastObservation(),
-              accepted ? sample.captureFpgaSeconds() : previous.lastAccepted(),
+              operational ? sample.timestampSeconds() : previous.lastObservation(),
+              accepted ? sample.timestampSeconds() : previous.lastAccepted(),
               previous.lastFused(),
               previous.accepted() + (accepted ? 1 : 0),
               previous.rejected() + (accepted ? 0 : 1),
@@ -233,7 +183,6 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
         var measurement = decision.measurement().orElseThrow();
         hasSeenTag = true;
         lastTag = now;
-        if (measurement.tagIds().stream().anyMatch(hubTags()::contains)) lastHub = now;
         if (fusion) queue.add(measurement);
       }
     }
@@ -241,11 +190,10 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       queue.clearPending();
       retireObservations();
     }
-    for (var camera : profile.cameras()) {
-      if (!camera.enabled()) continue;
+    for (var name : cameraNames) {
       var previous =
           cameras.getOrDefault(
-              camera.name(),
+              name,
               new CameraStatus(
                   Double.NEGATIVE_INFINITY,
                   Double.NEGATIVE_INFINITY,
@@ -253,21 +201,20 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
                   0,
                   0,
                   false,
-                  "No fresh frame"));
-      // A camera is healthy while Spot is sending its frames, whether or not they see a tag.
-      boolean valid =
+                  "No estimate"));
+      // A camera is healthy while Spot is streaming it, whether or not it sees a tag.
+      boolean usable =
           available
-              && now - lastFrame.getOrDefault(camera.name(), Double.NEGATIVE_INFINITY)
-                  <= CAMERA_TIMEOUT_S;
+              && spot.camera(name).status().filter(s -> STREAMING.contains(s.state())).isPresent();
       cameras.put(
-          camera.name(),
+          name,
           new CameraStatus(
               previous.lastObservation(),
               previous.lastAccepted(),
               previous.lastFused(),
               previous.accepted(),
               previous.rejected(),
-              valid,
+              usable,
               previous.reason()));
     }
     if (fusion) prepared = queue.release(now, 32);
@@ -275,7 +222,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
 
   /** Multiplier for estimator deviations; correlated cameras must not add confidence. */
   public double correlationFactor() {
-    return VisionProcessor.correlationFactor(configured);
+    return VisionProcessor.correlationFactor(cameraNames.size());
   }
 
   public List<VisionMeasurement> drainMeasurements() {
@@ -285,36 +232,27 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     return result;
   }
 
-  /** Ingestion recheck; no old prepared result survives a reset or policy change. */
+  /** Ingestion recheck; no old prepared result survives a reset. */
   public boolean eligible(VisionMeasurement value, double timestamp) {
     return value.equals(offered.get(value.frameId()))
         && value.timestamp() > resetTime
-        && timestamp - value.timestamp() <= profile.maxAgeS()
-        && value.timestamp() <= timestamp + profile.futureToleranceS()
-        && available
-        && value.tagIds().stream().allMatch(selection.allowedTagIds()::contains);
+        && timestamp - value.timestamp() <= VisionProcessor.MAX_AGE_S
+        && value.timestamp() <= timestamp + VisionProcessor.FUTURE_TOLERANCE_S
+        && spotStatus.isPresent();
   }
 
   // The copy keeps status snapshots independent of later camera updates and resets.
   @SuppressWarnings("IdentityConversion")
   public Status getStatus() {
     int usable = (int) cameras.values().stream().filter(CameraStatus::usable).count();
-    boolean all =
-        profile.cameras().stream()
-            .filter(c -> c.enabled() && c.required())
-            .allMatch(c -> cameras.containsKey(c.name()) && cameras.get(c.name()).usable());
     return new Status(
-        available,
+        spotStatus.isPresent(),
         getReason(usable),
-        configured,
+        cameraNames.size(),
         usable,
-        required,
-        configured > 0 && all,
-        selection.generation(),
-        appliedSelection != selection.generation(),
+        spotStatus.filter(s -> s.state() == SpotStatus.State.READY).isPresent(),
         queue.size(),
         queue.lateCount() + queue.overloadCount(),
-        generation,
         ImmutableMap.copyOf(cameras));
   }
 
@@ -322,19 +260,16 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     return isFusionEnabled()
         && cameras.values().stream()
             .anyMatch(camera ->
-                now - camera.lastFused() >= 0 && now - camera.lastFused() <= profile.maxAgeS());
+                now - camera.lastFused() >= 0
+                    && now - camera.lastFused() <= VisionProcessor.MAX_AGE_S);
   }
 
   public boolean hasSeenTag() {
     return hasSeenTag;
   }
 
-  public void hubTagsRequest() {
-    if (getState() == VisionState.TAGS) setStateFromRequest(VisionState.WAITING_FOR_HUB_TAGS);
-  }
-
   public boolean isFusionEnabled() {
-    return available && profile.fusionEnabled() && operatorVision.getAsBoolean();
+    return spotStatus.isPresent() && operatorVision.getAsBoolean();
   }
 
   public void measurementFused(VisionMeasurement value) {
@@ -357,12 +292,11 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void reset(double timestamp) {
     prepared = ImmutableList.of();
     offered.clear();
+    incoming.clear();
     queue.reset(timestamp);
     processor.reset(timestamp);
     history.reset();
-    io.reset(timestamp);
     resetTime = timestamp;
-    appliedSelection = 0;
     retireObservations();
   }
 
@@ -372,11 +306,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   }
 
   public boolean seeingTag() {
-    return now - lastTag <= profile.maxAgeS();
-  }
-
-  public void tagsRequest() {
-    setStateFromRequest(VisionState.TAGS);
+    return now - lastTag <= VisionProcessor.MAX_AGE_S;
   }
 
   public double tickTime() {
@@ -387,16 +317,23 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void whileInState(VisionState state) {
     if (closed) return;
     var status = getStatus();
-    // Errors mean Spot or a camera is down. Not seeing a tag is only a warning.
+    // Errors mean Spot is down or not ready. A camera that isn't streaming or not seeing a tag is
+    // only a warning, since Spot reports missing required cameras itself.
     var errors = new HashSet<String>();
     var warnings = new HashSet<String>();
-    if (!status.available()) {
-      errors.add("Spot: " + status.reason());
+    if (spotStatus.isEmpty()) {
+      errors.add("Spot not connected");
     } else {
-      for (var camera : profile.cameras()) {
-        var observed = cameras.get(camera.name());
-        if (camera.enabled() && camera.required() && (observed == null || !observed.usable()))
-          errors.add("Spot camera not sending frames: " + camera.name());
+      var spotState = spotStatus.orElseThrow();
+      if (spotState.state() != SpotStatus.State.READY) {
+        var error = spot.error();
+        errors.add("Spot: " + (error.isEmpty() ? spotState.state().name() : error));
+      }
+      if (spotState.overridesActive()) warnings.add("Spot dashboard overrides active");
+      for (var name : cameraNames) {
+        var observed = cameras.get(name);
+        if (observed == null || !observed.usable())
+          warnings.add("Spot camera not streaming: " + name);
       }
       if (status.usable() > 0 && now - lastTagSeen > NO_TAGS_WARNING_S)
         warnings.add(NO_TAGS_WARNING);
@@ -416,10 +353,17 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
     DogLog.log("Vision/Spot/UsableCameras", status.usable());
     DogLog.log("Vision/Spot/TagSeenAgeSeconds", now - lastTagSeen);
     DogLog.log("Vision/Spot/QueueDrops", status.queueDrops());
-    DogLog.log("Vision/Spot/SelectionGeneration", selection.generation());
+    DogLog.log("Vision/Spot/State", spotStatus.map(s -> s.state().name()).orElse("DISCONNECTED"));
+    DogLog.log("Vision/Spot/Error", spot.error());
+    DogLog.log("Vision/Spot/Version", spotStatus.map(SpotStatus::version).orElse(""));
     for (var entry : cameras.entrySet()) {
       String path = "Vision/Spot/" + entry.getKey();
       var value = entry.getValue();
+      var cameraStatus = spot.camera(entry.getKey()).status();
+      DogLog.log(path + "/State", cameraStatus.map(s -> s.state().name()).orElse("UNKNOWN"));
+      DogLog.log(path + "/Fps", cameraStatus.map(SpotCameraStatus::fps).orElse(0.0));
+      DogLog.log(
+          path + "/DroppedFrames", cameraStatus.map(SpotCameraStatus::droppedFrames).orElse(0L));
       DogLog.log(path + "/Reason", value.reason());
       DogLog.log(path + "/Usable", value.usable());
       DogLog.log(path + "/ObservationAgeSeconds", now - value.lastObservation());
@@ -429,29 +373,12 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
       DogLog.log(path + "/LastFusedFpgaS", value.lastFused());
       DogLog.log(path + "/LastObservationFpgaS", value.lastObservation());
     }
-    io.logDiagnostics(now);
-  }
-
-  private List<Integer> broadTags() {
-    return profile.field().tags().stream().map(FieldTag::id).sorted().toList();
   }
 
   private String getReason(int usable) {
-    // Spot supplies the camera list, so check Spot itself first: when it's offline, an empty
-    // camera list is a symptom, not the cause.
-    if (!available && !unavailableReason.isEmpty()) return unavailableReason;
-    if (configured == 0) return "No measured camera configuration";
-    if (hubTags().isEmpty() && getState() != VisionState.TAGS)
-      return "Waiting for alliance or complete hub layout";
-    if (usable == 0) return "Waiting for tag selection application";
+    if (spotStatus.isEmpty()) return "Spot not connected";
+    if (usable == 0) return "No cameras streaming";
     return "Ready";
-  }
-
-  private Set<Integer> hubTags() {
-    if (currentAlliance.isEmpty()) return ImmutableSet.of();
-    var ids = currentAlliance.orElseThrow() == Alliance.Red ? RED_HUB : BLUE_HUB;
-    // An incomplete layout cannot claim alliance-hub support.
-    return broadTags().containsAll(ids) ? ids : ImmutableSet.of();
   }
 
   private void retireObservations() {
@@ -463,36 +390,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
             old.accepted(),
             old.rejected(),
             false,
-            "Retired generation"));
-    lastHub = lastTag = Double.NEGATIVE_INFINITY;
-  }
-
-  private void select(List<Integer> ids) {
-    if (ids.equals(selection.allowedTagIds())) return;
-    selection = new VisionIO.TagSelection(selection.generation() + 1, ids);
-    processor.clearRecoveryEvidence();
-    prepared = ImmutableList.of();
-    offered.clear();
-    queue.clearPending();
-    double acquired = lastHub;
-    // A new filter invalidates pending frames, not measurements already fused into the pose.
-    // Preserve their timestamps so health expires naturally if new evidence stops arriving.
-    lastHub = lastTag = Double.NEGATIVE_INFINITY;
-    if (getState() == VisionState.HUB_TAGS) lastHub = acquired;
-    appliedSelection = 0;
-    io.setTagSelection(selection);
-  }
-
-  @Override
-  protected void afterTransition(VisionState state) {
-    select(state == VisionState.HUB_TAGS ? hubTags().stream().sorted().toList() : broadTags());
-  }
-
-  @Override
-  protected VisionState getNextState(VisionState state) {
-    if (state == VisionState.TAGS) return state;
-    return !hubTags().isEmpty() && now - lastHub < .5
-        ? VisionState.HUB_TAGS
-        : VisionState.WAITING_FOR_HUB_TAGS;
+            "Retired"));
+    lastTag = Double.NEGATIVE_INFINITY;
   }
 }

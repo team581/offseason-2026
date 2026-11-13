@@ -31,7 +31,6 @@ import frc.robot.turret.TurretState;
 import frc.robot.util.AimParameterUtil;
 import frc.robot.util.AimParameterUtil.AimingParameters;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.Vision;
 
 public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final HopperManager hopperManager;
@@ -41,7 +40,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final Hardware hardware;
   private final ShooterHood shooterHood;
   public final Shooter shooter;
-  private final Vision vision;
   public final XboxController driverController;
   private final HealthManager health;
   private final HubActivity hubActivity;
@@ -77,7 +75,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       Swerve swerve,
       Shooter shooter,
       Turret turret,
-      Vision vision,
       XboxController driverController,
       HealthManager health,
       HubActivity hubActivity,
@@ -90,7 +87,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.swerve = swerve;
     this.shooter = shooter;
     this.turret = turret;
-    this.vision = vision;
     this.driverController = driverController;
     this.health = health;
     this.hubActivity = hubActivity;
@@ -377,7 +373,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     switch (newState) {
       case IDLE -> {
         hopperManager.idleRequest();
-        vision.hubTagsRequest();
         shooter.idleRequest();
         shooterHood.idleRequest();
         smartTurretIdleRequest();
@@ -386,7 +381,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FORCE_SCORE -> {
         hopperManager.idleRequest();
-        vision.tagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
@@ -395,7 +389,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FORCE_SCORE -> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
-        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
@@ -404,7 +397,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FEED -> {
         hopperManager.idleRequest();
-        vision.tagsRequest();
         shooter.prepareFeedRequest(feedingParameters.distance());
         smartHoodPrepareFeedRequest();
         turret.feedRequest(feedingParameters);
@@ -413,7 +405,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FEED -> {
         hopperManager.feedRequest();
-        vision.tagsRequest();
         shooter.feedRequest(feedingParameters.distance());
         shooterHood.feedRequest(feedingParameters.distance());
         turret.feedRequest(feedingParameters);
@@ -422,7 +413,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_SCORE -> {
         hopperManager.idleRequest();
-        vision.hubTagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
         smartHoodPrepareScoreRequest();
         turret.scoreRequest(scoringParameters);
@@ -431,7 +421,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case SCORE -> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
-        vision.hubTagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
@@ -440,7 +429,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_FEED -> {
         hopperManager.idleRequest();
-        vision.tagsRequest();
         shooter.prepareFeedRequest(fallbackFeedingParameters.distance());
         smartHoodPrepareFallbackFeedRequest();
         turret.feedRequest(fallbackFeedingParameters);
@@ -449,7 +437,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FALLBACK_FEED -> {
         hopperManager.feedRequest();
-        vision.tagsRequest();
         shooter.feedRequest(fallbackFeedingParameters.distance());
         shooterHood.feedRequest(fallbackFeedingParameters.distance());
         turret.feedRequest(fallbackFeedingParameters);
@@ -458,7 +445,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case PREPARE_FALLBACK_SCORE -> {
         hopperManager.idleRequest();
-        vision.tagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
@@ -467,7 +453,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case FALLBACK_SCORE -> {
         hopperManager.scoreRequest(hubActivity.shouldBeastMode());
-        vision.tagsRequest();
         shooter.scoreRequest(scoringParameters.distance());
         shooterHood.scoreRequest(scoringParameters.distance());
         turret.scoreRequest(scoringParameters);
@@ -476,7 +461,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       }
       case UNJAM -> {
         hopperManager.unjamRequest();
-        vision.tagsRequest();
         shooter.scoreRequest(3);
         shooterHood.scoreRequest(3);
         smartTurretIdleRequest();
@@ -484,7 +468,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         powerManager.idleRequest();
       }
       case WARMUP_SCORE -> {
-        vision.hubTagsRequest();
         shooter.prepareScoreRequest(scoringParameters.distance());
         shooterHood.idleRequest();
         turret.scoreRequest(scoringParameters);
@@ -493,7 +476,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
         hopperManager.idleRequest();
       }
       case WARMUP_FEED -> {
-        vision.tagsRequest();
         shooter.prepareFeedRequest(feedingParameters.distance());
         shooterHood.idleRequest();
         turret.feedRequest(feedingParameters);

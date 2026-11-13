@@ -5,16 +5,14 @@ import com.team581.Base581Robot;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
+import com.team581.spot.Spot;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
-import com.team581.vision.spot.SpotVisionIO;
+import com.team581.util.AprilTags;
 import com.team581.vision.spot.VisionProcessor.CaptureState;
-import com.team581.vision.spot.data.Profile;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
@@ -57,12 +55,10 @@ public class Robot extends Base581Robot {
                       Swerve.ORIGINAL_HEADING_PID.getD())),
               imu.bumpCrossingTracker));
 
-  private final Profile visionProfile = VisionConfig.profile();
   private final Vision vision =
       new Vision(
-          new SpotVisionIO(
-              NetworkTableInstance.getDefault(), visionProfile, VisionConfig.cameraConfig()),
-          visionProfile,
+          new Spot(VisionConfig.spotConfig(), AprilTags.FIELD_LAYOUT),
+          VisionConfig.CAMERAS,
           new Vision.CaptureSource() {
             @Override
             public CaptureState current(double now) {
@@ -82,8 +78,7 @@ public class Robot extends Base581Robot {
             }
           },
           Timer::getFPGATimestamp,
-          () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean(),
-          DriverStation::getAlliance);
+          () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean());
   final HealthManager health = new HealthManager(vision);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
@@ -117,7 +112,6 @@ public class Robot extends Base581Robot {
           swerve,
           shooter,
           turret,
-          vision,
           hardware.driverController,
           health,
           hubActivity,
