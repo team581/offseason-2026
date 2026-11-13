@@ -1,9 +1,9 @@
 # Trailblazer 2 Design Specification: Java Specification Model, DSL & Tooling
 
 **Document ID:** TB2-SPEC-05  
-**Status:** Approved for Implementation  
+**Status:** Implementation design
 **Author:** Team 581 Technical Staff  
-**Applies To:** `AutoPlan`, `Goal`, `HeadingPlan`, `FieldAnchors`, `AutoPreviewTask`, `TrailblazerLivePreviewer`  
+**Applies To:** `MotionPlan`, `Goal`, `HeadingPlan`, `FieldAnchors`, `AutoPreviewTask`, `TrailblazerPreviewExtension`
 
 ---
 
@@ -18,7 +18,7 @@ Trailblazer 2 keeps all auto definitions in **100% Pure Java** rather than YAML/
 
 ## 2. Canonical Java Fluent DSL
 
-Autos are authored using a strongly typed, fluent Java builder API that constructs immutable `AutoPlan` records.
+Autos are authored using a strongly typed, fluent Java builder API that constructs immutable `MotionPlan` records. These examples illustrate the proposed API. Keep plan factories callable without constructing robot hardware; runtime resolves suppliers before calling math.
 
 ### 2.1 Specification Example: `LeftNormalAuto.java`
 ```java
@@ -31,7 +31,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
   }
 
   // Canonical pure-Java auto specification
-  private final AutoSegment intakeFirstCycle =
+  private final MotionPlan intakeFirstCycle =
       Trailblazer.plan("intake_first_cycle")
           .withLimits(LimitsProfile.FAST)
           .addGoal(
@@ -43,7 +43,7 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
                   .heading(HeadingPlan.to(Rotation2d.fromDegrees(115.0)).before(1.0).gate(GatePolicy.SOFT))
                   .marker(Markers.PRIORITIZE_INTAKE))
           .addGoal(
-              Goal.stop(FieldAnchors.RED_DEPOT_BUMP.plus(0, BUMP_OFFSET))
+              Goal.stop(FieldAnchors.offset(FieldAnchors.RED_DEPOT_BUMP, 0, BUMP_OFFSET, Rotation2d.kZero))
                   .finish(0.20, Rotation2d.fromDegrees(3), 0.20)
                   .marker(Markers.READY_TO_CROSS_BUMP))
           .build();
@@ -55,11 +55,12 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 #### `Goal` Definition
 ```java
 public record Goal(
+    String id,                          // Stable across geometry rebuilds
     Supplier<Pose2d> poseSupplier,       // Absolute, anchor offset, or dynamic supplier
-    PassType passType,                   // STOP, THROUGH, or THROUGH_WITH_MIN_SPEED
-    double withinMeters,                 // Maximum corner deviation (fillet bound)
-    double minPassSpeedMetersPerSec,     // Requested exit speed for THROUGH goals
-    FinishTolerance finishTolerance,     // Position, heading, and velocity tolerances for STOP
+    PassType passType,                   // STOP or THROUGH
+    double withinMeters,                 // Nominal closest-approach bound; not obstacle clearance
+    OptionalDouble maxPassSpeedMetersPerSec, // Optional speed ceiling for THROUGH goals
+    FinishTolerance finishTolerance,     // Position, heading, linear/angular speed, and dwell for STOP
     Optional<HeadingKeyframe> heading,   // Associated heading schedule keyframe
     Optional<Enum<?>> marker             // Event marker emitted when progress crosses goal
 ) {}
@@ -68,11 +69,14 @@ public record Goal(
 #### `HeadingPlan` Keyframe
 ```java
 public record HeadingKeyframe(
-    AnchorDistance anchor,               // atGoal, before(meters), after(meters)
+    AnchorDistance activation,           // Start rotating here
+    AnchorDistance anchor,               // Arrival: atGoal, before(meters), after(meters)
     HeadingTarget target,                // fixed(rot), faceTravel(), facePoint(x,y), hold()
     TurnDirection direction,             // SHORTEST, CW, CCW
-    GatePolicy gate,                     // SOFT (unconstrained speed) vs HARD (speed-capped)
-    Rotation2d tolerance                // Arrival angular tolerance
+    GatePolicy gate,                     // SOFT readiness vs HARD arrival barrier; see spec 03
+    Rotation2d tolerance,               // Arrival angular tolerance
+    double angularSpeedTolerance,       // rad/s
+    double dwellSeconds
 ) {}
 ```
 
@@ -80,11 +84,11 @@ public record HeadingKeyframe(
 
 ## 3. Centralized Field Anchor Dictionary (`FieldAnchors.java`)
 
-To eliminate hardcoded floating-point meter constants and coordinate duplication, field geometry is centralized in `shared/src/main/java/com/team581/autos/FieldAnchors.java`:
+To eliminate hardcoded floating-point meter constants and coordinate duplication, field geometry is centralized in a season-owned `FieldAnchors.java`, supplied to TB2 rather than embedded in the shared engine:
 
 ```java
 public final class FieldAnchors {
-  // 2026 Reefscape / Offseason Field Geometry (Red Reference Frame)
+  // Illustrative 2026 anchors authored for red in the fixed field frame
   public static final Pose2d RED_DEPOT_TRENCH = new Pose2d(10.489, 1.500, Rotation2d.fromDegrees(90));
   public static final Pose2d RED_DEPOT_BUMP   = new Pose2d(13.576, 2.450, Rotation2d.kZero);
   public static final Translation2d HUB_CENTER = new Translation2d(12.100, 4.034);
@@ -95,7 +99,7 @@ public final class FieldAnchors {
     return new Pose2d(base.getX() + dx, base.getY() + dy, base.getRotation().plus(dTheta));
   }
 
-  // Pure mathematical alliance mirror
+  // 180-degree alliance rotation for this field
   public static Pose2d flipToBlue(Pose2d redPose) {
     return FieldUtil.pathflip(redPose);
   }
@@ -106,71 +110,43 @@ public final class FieldAnchors {
 
 ---
 
-## 4. Two-Tier Tooling Architecture
+## 4. Tooling Architecture: VS Code MVP + Shared Runner
 
-Tooling development is phased into two distinct stages:
-1. **MVP Tooling (Immediate Priority):** Headless `./gradlew previewAuto` simulation task integrated with AdvantageScope.
-2. **Advanced Tooling (Final Phase):** Standalone In-Memory Live Previewer application (`TrailblazerStudio`).
+The MVP is a VS Code previewer, like the Spot previewer, backed by the same Java runner used in CI. All authoring stays in Java; preview output is generated data.
 
 ```mermaid
-flowchart TD
-    subgraph Spec ["Auto Authoring in Java"]
-        Code["LeftNormalAuto.java<br/>(Pure-Java Fluent DSL)"]
-    end
-
-    subgraph MVP ["Stage 1: MVP Tooling (Immediate)"]
-        Gradle["./gradlew previewAuto -Pauto=LeftNormal"]
-        FastSim["Headless Desktop Simulation (~150 ms)"]
-        Artifacts["1. preview.png (Trajectory on Field)<br/>2. preview.wpilog (AdvantageScope)<br/>3. Metrics Table in Terminal"]
-        Scope["AdvantageScope<br/>(3D Swept Footprint, Velocity and Limiting Factor)"]
-        
-        Gradle --> FastSim --> Artifacts
-        Artifacts --> Scope
-    end
-
-    subgraph Studio ["Stage 2: Advanced Tooling (Final Phase)"]
-        Daemon["TrailblazerStudio Background Daemon"]
-        Javac["JDK JavaCompiler API (In-Memory Hot Reload)"]
-        LiveUI["Live Browser Canvas / Local Web App (localhost:5801)"]
-        
-        Daemon --> Javac --> LiveUI
-    end
-
-    Code --> MVP
-    Code --> Studio
+flowchart LR
+    Code[Java plan and scenario] --> Runner[Gradle and Java simulation]
+    Runner --> Results[Geometry, traces, metrics]
+    Results --> Preview[VS Code preview]
+    Results --> CI[CI checks and artifacts]
 ```
 
 ---
 
-## 5. MVP Tooling: `./gradlew previewAuto -Pauto=<Name>`
+## 5. Headless Runner: `./gradlew previewAuto -Pauto=<Name>`
 
-Runs the auto in a headless desktop simulation in $\approx 150\text{ ms}$ using the existing Gradle build:
-1. Instantiates the Java auto class directly on the desktop JVM.
-2. Steps the closed-loop physics model at $50\text{ Hz}$ across all segments.
-3. Outputs:
-   - `build/reports/autos/<name>.wpilog` for AdvantageScope (3D robot footprint, filleted path, velocity curves, and `LimitingFactor` timeline).
-   - `build/reports/autos/<name>.png` top-down field trajectory image.
-   - Terminal summary table (duration, peak speed/accel, min keepout clearance, and stop error).
-
----
-
-## 6. Final Phase Tooling: Live Previewer (`TrailblazerStudio`)
-
-Scheduled as the final project phase, `TrailblazerStudio` provides sub-300 ms live previewing on `Ctrl+S`:
-1. **`WatchService`:** Watches `comp-bot/src/main/java/frc/robot/autos/` for saves.
-2. **In-Memory `JavaCompiler`:** Compiles the modified auto class in memory via `ToolProvider.getSystemJavaCompiler()` and loads it in a disposable `ClassLoader`.
-3. **WebSocket Push (`localhost:5801`):** Evaluates the path in $< 50 \; \mu\text{s}$ and pushes the updated trajectory to a lightweight local browser canvas served by WPILib's `WebServer`.
+1. Loads a Java `PreviewScenario` using the normal project build/classpath, without constructing hardware. The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
+2. Steps the same runtime in closed-loop simulation. Missing dynamic/mechanism inputs are reported rather than assumed successful.
+3. Outputs under `build/reports/autos/<name>/`:
+   - Versioned preview data: input/build identity, geometry, timestamped motion, headings, limits, events, and assertion results.
+   - `.wpilog` trace, `.png` trajectory map, and terminal metrics summary.
+4. Returns nonzero on failed assertions or build/runner errors. Measure cold-build, warm-refresh, and simulation times separately.
 
 ---
 
-## 7. Tooling Comparison Summary
+## 6. MVP Viewer: VS Code Previewer
 
-| Feature | MVP: `./gradlew previewAuto` | Final Phase: `TrailblazerStudio` |
-| :--- | :--- | :--- |
-| **Status** | **Immediate MVP Priority** | **Final Project Phase** |
-| **Invocation** | Terminal command: `./gradlew previewAuto -Pauto=...` | Background daemon / auto-run on save |
-| **Turnaround Time** | $\approx 2.0$ seconds | $< 300$ milliseconds |
-| **Viewer** | AdvantageScope (`.wpilog`) + PNG image | Embedded Browser Canvas (`localhost:5801`) |
-| **Dependencies** | Existing GradleRIO + WPILib desktop tasks | JDK `JavaCompiler` + Local WebServer |
-| **CI Integration** | Runs directly in GitHub Actions PR checks | Local developer workstation use |
-| **Maintenance Cost** | Minimal ($\approx 200$ lines of Gradle/Java runner) | Medium ($\approx 600$ lines of daemon/web UI) |
+1. **Selection:** Choose scenario, robot configuration, alliance, and seed.
+2. **Refresh:** Invoke the shared runner on command or debounced save; no separate Java parser or planner in TypeScript.
+3. **View:** Display goals, fillets, keepouts, swept footprint, motion/heading playback, velocity graphs, markers, and limiting factors.
+4. **Diagnostics:** Show compile errors and failed assertions. Cancel superseded runs, discard stale results, and label the last successful preview stale after a failed build.
+5. **Integration:** Respect workspace trust, clean up child processes/watchers, and test the extension against the runner's versioned output.
+
+---
+
+## 7. Authoring Validation
+
+- Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal stop. Intermediate stops release explicitly; see [00](00-overview-and-architecture.md).
+- Dynamic suppliers need timestamp/validity metadata in runtime ([04](04-teleop-and-dynamic-assist.md)). Preview scenarios provide deterministic replacements.
+- Apply alliance transforms once. `FieldUtil.pathflip` is a 180-degree rotation, which preserves CW/CCW; a reflection reverses them. Already field-relative vision targets are not transformed again.

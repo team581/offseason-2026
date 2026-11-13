@@ -1,7 +1,7 @@
 # Trailblazer 2 Design Specification: Path Geometry & Kinematics
 
 **Document ID:** TB2-SPEC-01
-**Status:** Approved for Implementation
+**Status:** Implementation design
 **Author:** Team 581 Technical Staff
 **Applies To:** `PathBuilder`, `ProgressTracker`, `AutoGeometry`
 
@@ -30,17 +30,17 @@ Trailblazer 1 does not actually build a continuous path curve:
 Trailblazer 2 turns the list of waypoints into a **single smooth road** and tracks how far along that road the robot has traveled:
 
 1. **Connect points with straight lines:** First, draw straight lines ("legs") connecting each waypoint to the next.
-2. **Round every corner with a circle ("fillet"):** At every pass-through waypoint, replace the sharp corner with a smooth circular turn that is tangent to both straight lines. The circle is sized automatically so the curve never cuts the corner by more than the waypoint's `within` distance (e.g. `within(0.25)` means stay within $25\text{ cm}$ of the corner point).
+2. **Round every corner with a circle ("fillet"):** At every pass-through waypoint, replace the sharp corner with a smooth circular turn that is tangent to both straight lines. The circle is sized automatically so the curve never cuts the corner by more than the waypoint's `within` distance (e.g. `within(0.25)` means the nominal arc passes within $25\text{ cm}$ of the corner point; other points on the arc may be farther away).
 3. **Measure distance along the curve ($s$):** The entire path from the start to the next stop point now has a known length in meters (arc length $s$).
 4. **Find the closest spot on the path:** Every loop, `ProgressTracker` drops a perpendicular line from the robot onto the nearby section of the path to find two numbers:
-   - **Progress ($s$):** How many meters along the path the robot is (which only moves forward, never backward).
+   - **Progress ($s$):** How many meters along the path the robot is (with measured projection kept separate from monotonic event progress).
    - **Cross-track error ($e_{xt}$):** How many meters left or right of the path line the robot has drifted, so the controller can push it gently back onto the line.
-5. **Re-anchor only if knocked far off course:** If the robot is shoved more than $40\text{ cm}$ off the path (or vision snaps the pose), it smoothly draws a new starting line from the robot's current position to the next waypoint without altering any of the upcoming waypoints.
+5. **Re-anchor only if knocked far off course:** A configured recovery policy may create a new path from the measured pose to the next uncompleted goal. This changes geometry and requires fresh constraint/keepout checks; it is not automatically a collision-free recovery.
 
 | Feature                 | Trailblazer 1                                    | Trailblazer 2                                                               |
 | :---------------------- | :----------------------------------------------- | :-------------------------------------------------------------------------- |
 | **Path shape**          | Disconnected points (or manual Bézier guesses)   | Straight lines automatically joined by smooth circular turns                |
-| **Corner cutting**      | Unpredictable heuristic index switching          | Exact meter bound (`within(0.25)` stays $\le 25\text{ cm}$ from corner)     |
+| **Corner cutting**      | Unpredictable heuristic index switching          | Nominal fillet passes within the declared distance of the corner     |
 | **Where to aim**        | Straight line from robot to current target point | Follow the curve tangent $\hat{t}(s)$ + push back to the line if off-center |
 | **Progress tracking**   | `currentPointIndex` heuristic                    | Continuous distance $s$ (meters) along the path                             |
 | **Self-crossing paths** | Can accidentally skip ahead to a later point     | Only searches a local window around current progress $s$                    |
@@ -53,14 +53,9 @@ flowchart LR
     Corner["Corner P(k)"] -.->|"Corner cut d_dev <= within"| ArcCenter["Arc Apex"]
 ```
 
-### Visual Comparison (1:1 Scale Swerve Physics Sandbox)
+### Historical comparison
 
-The figure below runs both controllers through the same 8-waypoint course on an identical 1000 Hz 4-module swerve physics model (`CompTunerConstants`: $m = 61.2\text{ kg}$, $0.84\text{ m}$ bumpers, Kraken X60 FOC, $v_{free} = 4.02\text{ m/s}$, $\mu = 1.05$):
-
-- **Red (Trailblazer 1):** Drives straight at each waypoint and snaps its target direction at the corner, causing the tires to break traction ($25.3\times$ slip) and skid wide outside the path at `4:intake_ball_hard_gate`, `5:sweep_return`, and `6:loop_cross`.
-- **Green (Trailblazer 2):** Rounds every corner along the cyan circular fillet inside the yellow `within` circles, slows down before entering each turn, and tracks commanded speed with $20\times$ lower error ($0.11\text{ m/s}$ vs. $1.96\text{ m/s}$) and $19\times$ less tire scrub.
-
-![1:1 Scale Trailblazer 1 vs Trailblazer 2 Comparison](tb1-vs-tb2-comparison.png)
+The retained [comparison image](tb1-vs-tb2-comparison.png) is illustrative. Its former numerical claims are not acceptance evidence; see [07](07-empirical-calibration-routine.md#3-physics-sandbox--model-validation).
 
 ---
 
@@ -88,13 +83,13 @@ $$\sigma_{turn} = \mathrm{sgn}(u_x v_y - u_y v_x) \quad (+1 = \text{Left / CCW t
 - $\theta = \frac{\pi}{2}$ ($90^\circ$): Right-angle turn.
 - $\theta \to \pi$ ($180^\circ$): Complete directional reversal.
 
-### 2.2 Tangent Length $t$ and Maximum Corner Deviation $d_{dev}$
+### 2.2 Tangent Length $t$ and Closest Approach $d_{dev}$
 
 For a circular fillet of radius $r$:
 The tangent length $t$ (distance from corner $P_k$ to the tangent contact points $T_{in}$ and $T_{out}$ along the legs) is:
 $$t = r \tan\left(\frac{\theta}{2}\right)$$
 
-The maximum deviation $d_{dev}$ from the sharp corner $P_k$ to the closest point on the circular arc (the arc apex) is:
+The closest-approach distance $d_{dev}$ from the sharp corner $P_k$ to the closest point on the circular arc (the arc apex) is:
 $$d_{dev} = r \left( \frac{1}{\cos(\theta/2)} - 1 \right) = r \left( \sec\left(\frac{\theta}{2}\right) - 1 \right)$$
 
 ```
@@ -130,27 +125,23 @@ The fillet radius $r_k$ at corner $k$ is computed in three steps:
 
 3. **Final Fillet Radius:**
    $$r_k = \min\left(r_{\delta, k}, \; r_{geom, k}\right)$$
-   _(If the author also requested a minimum pass speed $v_{pass}$ where $r_{req} = v_{pass}^2 / a_{lat} > r_k$, `VelocityProfiler` caps corner speed to $\sqrt{a_{lat} r_k}$ and the CLI previewer logs a warning).\_
+   (If the author also requested a pass-speed ceiling $v_{pass}$ where $r_{req} = v_{pass}^2 / a_{lat} > r_k$, `VelocityProfiler` caps corner speed to $\sqrt{a_{lat} r_k}$ and the preview runner logs a warning).
 
 ---
 
 ## 3. Boundary Conditions & Edge Cases
 
-- **Collinear Corners ($\theta_k < 1.0^\circ = 0.0175\text{ rad}$):** Omit the fillet ($r_k = 0, t_k = 0$) and merge the legs into a straight line ($\kappa = 0$) to avoid dividing by zero in $\sec(\theta_k/2) - 1$.
-- **Sharp Turns ($\theta_k \ge 135^\circ = 2.356\text{ rad}$):** Intentional reversals should be authored with `Goal.stop(...)`. If a sharp turn ($\theta_k \ge 135^\circ$) is authored as `Goal.through(...)`, $r_{geom, k}$ naturally shrinks and slows the robot down, and the previewer logs a `NEAR_REVERSAL_CORNER` warning suggesting `Goal.stop(...)`.
+- **Collinear Corners:** Merge only genuinely collinear legs within documented numeric tolerance, preserving goal anchors. A blanket one-degree bypass creates a tangent discontinuity. For small nonzero turns, evaluate the denominator stably as $2\sin^2(\theta/4)/\cos(\theta/2)$ and retain the fillet; reject numerically unresolved geometry rather than inventing a sharp join.
+- **Sharp Turns ($\theta_k \ge 135^\circ = 2.356\text{ rad}$):** Intentional reversals should be authored with `Goal.stop(...)`. If a near-reversal turn ($135^\circ \le \theta_k < 180^\circ$) is authored as `Goal.through(...)`, $r_{geom, k}$ naturally shrinks and slows the robot down, and the previewer logs a `NEAR_REVERSAL_CORNER` warning suggesting `Goal.stop(...)`.
 - **Explicit Stop Goals (`Goal.stop(...)`):** $r_k = 0, t_k = 0$, and exit speed is pinned to $0.0\text{ m/s}$.
 
 ---
 
 ## 4. Planning Horizon
 
-Each loop, `PathBuilder` builds the path forward from the current sub-segment origin until:
+For the initial implementation, construct the complete active leg through the next stop. This makes terminal braking and coupled corner allocation independent of a moving cutoff. Validate a configured maximum goal/sample count before activation; never truncate a path silently. Stop-bounded legs can contain arbitrarily many authored points up to that declared capacity, not an assumed five goals.
 
-1. Cumulative distance exceeds $d_{horizon} = \frac{v_{max}^2}{2 \cdot a_{brake}} + 1.0\text{ m}$, **OR**
-2. A `Goal.stop(...)` goal is reached, **OR**
-3. The active segment ends.
-
-Goals past a `Goal.stop(...)` cannot affect current braking decisions, keeping the horizon bounded to $O(K)$ ($K \le 5$ goals).
+Cache static geometry until activation, release, or recovery. Dynamic goal changes create a new geometry generation. A future bounded horizon optimization must prove that its end speed accounts for all downstream constraints and that neighboring fillets retain the same tangent allocation; raw `v_max²/(2*a_brake)` alone is insufficient when cornering/rotation reduces braking capacity.
 
 ---
 
@@ -183,32 +174,32 @@ For a path with $M$ pieces (alternating straight lines and circular arcs):
 
 To prevent jumping across overlapping legs on figure-8 or out-and-back paths, $\mathbf{p}_{robot} = (x, y)$ is projected onto path pieces within a local search window around the monotonic high-water mark $s_{high\_water}$:
 $$s_{cand} \in \left[\max(0, \; s_{high\_water} - d_{back}), \; \min(S_{total}, \; s_{high\_water} + d_{fwd})\right]$$
-where $d_{back} = 0.25\text{ m}$ and $d_{fwd} = \max(1.20\text{ m}, \; \|\vec{v}_{meas}\| \cdot 0.35\text{ s})$.
+where backward and forward window sizes come from the tracking policy and are tested against supported speed and tick intervals.
 
 1. Among all pieces $m$ overlapping $[s_{min}, s_{max}]$, find the closest point $\mathbf{p}^*$ and its arc-length coordinate $s_{meas}$.
 2. Update monotonic progress:
-   $$s = \max\left(s_{high\_water}, \; s_{meas}\right)$$
-   $s_{high\_water}$ only resets when advancing past a stop goal or re-latching.
+   $$s_{high\_water,new} = \max\left(s_{high\_water}, \; s_{meas}\right)$$
+   Use measured projection for control/profile distance; use the high-water mark for event ordering and the bounded search window. Large backward displacement invokes recovery rather than trapping control at an old distance.
+   $s_{high\_water}$ is local to a geometry generation; see §6 for rebuild semantics.
 3. Compute signed cross-track error $e_{xt}$ using the left-hand path normal $\hat{n}(s_{meas}) = \begin{bmatrix} -t_y \\ t_x \end{bmatrix}$:
    $$e_{xt} = (\mathbf{p}_{robot} - \mathbf{p}^*) \cdot \hat{n}(s_{meas})$$
-   _($e_{xt} > 0$ means the robot is left of the path, so `VelocityProfiler` applies negative feedback $v_{xt} = \mathrm{clamp}(-e_{xt} / \tau_{xt})$ along $\hat{n}$).\_
+   ($e_{xt} > 0$ means the robot is left of the path, so the tracking calculator applies negative feedback $v_{xt} = \mathrm{clamp}(-e_{xt} / \tau_{xt})$ along $\hat{n}$).
 
 ---
 
-## 6. Waypoint-Vertex Sub-Segment Latching
+## 6. Anchors, geometry generations, and recovery
 
-To prevent drift while keeping corner geometry fixed as the robot drives:
+Latch the origin once at activation or release from a completed stop. Passing a through goal advances its identity without cutting away its vertex or changing neighboring fillets. Define a rounded through-goal anchor at the arc apex; an unrounded goal anchors at its vertex. Explicit stops anchor at the endpoint. Use these same anchors for passage, markers, and heading references.
 
-1. **Latch Origin Once per Sub-Segment:** When a segment starts (or departs a `Goal.stop`), $\mathbf{p}_{origin}$ latches to the robot's current pose (or completed stop vertex).
-2. **Keep Through-Waypoints Fixed:** All interior `Goal.through(...)` points $(\mathbf{p}_{origin}, P_1, P_2, \dots, P_{stop})$ keep their exact authored coordinates. Passing a through-waypoint at $s_{anchor, k}$ advances the goal index and fires markers **without** chopping the polyline or shifting $P_k$ to $T_{out, k}$ (which would shrink the next leg and alter the next corner's fillet).
-3. **Re-Latch Only on Large Disturbances:** $\mathbf{p}_{origin}$ re-anchors to $\mathbf{p}_{robot}$ (and resets $s_{high\_water} = 0$) only when:
-   - Cross-track error exceeds $e_{relatch} = 0.40\text{ m}$ (e.g. heavy collision),
-   - A single-loop vision update jumps pose by $> \Delta p_{vision} = 0.25\text{ m}$, or
-   - The active segment changes.
-4. **Velocity Continuity Across Re-Latch:** Re-latching updates geometry but keeps $v_{start} = \|\vec{v}_{last\_command}\|$, and the 2D Vector Limiter smoothly rotates $\vec{v}_{cmd}$ onto the new line.
+Keep measured projection separate from monotonic event progress. Projection windows must also be restricted by the active goal/piece topology; distance alone cannot disambiguate nearby crossing legs. A through-goal passage requires crossing its anchor and measured closest approach within its tolerance. If discrete ticks straddle the crossing, check the intervening measured motion conservatively. A miss reports failure, not a successful marker.
 
----
+Monotonic progress is meaningful only within one geometry generation. Rebuilds must remap the active goal/piece and reproject the measured pose; never compare an old arc length to a new path's coordinate. Preserve fired event IDs and completed goals across a rebuild, and never skip an unsatisfied stop or hard gate. Dynamic rebuilds cannot manufacture a goal passage merely by moving its anchor behind the robot.
 
-## 7. Dynamic (`Supplier<Pose2d>`) Goals
+The runtime may request recovery after sustained excessive tracking error or an explicit localization reset. Store tracking thresholds/dwell in a named Java tracking policy and validate them with scenarios. Localization owns measurement acceptance and reset detection; TB2 does not infer a vision jump from a hardcoded pose-noise threshold. Recovery starts a new geometry generation toward the next uncompleted goal and preserves command history. Revalidate the entire connecting path/footprint against supplied keepouts. If no valid connection exists, stop/fault and let the caller choose another route. TB2 does not perform obstacle routing.
 
-When a goal uses a dynamic `Supplier<Pose2d>` (such as game-piece vision tracking), `PathBuilder` evaluates the supplier each loop, applies an exponential low-pass filter ($\tau = 0.10\text{ s}$) to prevent camera jitter, and recomputes the fillet algebraically.
+## 7. Degenerate and dynamic inputs
+
+- Reject nonfinite coordinates. Consecutive coincident through goals are invalid; do not silently discard their IDs or markers. A single coincident stop is valid for heading-only motion.
+- Exact reversal and a zero-tolerance noncollinear through corner have no finite-radius tangent solution. Require an explicit stop and report a validation error. Near reversals may retain a small fillet and warning, provided numeric radius/length tolerances remain valid.
+- A zero-length leg uses terminal position/heading control without tangent division. Clamp projection/evaluation to valid piece domains and define deterministic tie-breaking at joins.
+- Runtime resolves and filters named dynamic targets once per tick, following [04](04-teleop-and-dynamic-assist.md). `PathBuilder` receives only resolved values; it owns neither supplier evaluation nor filtering history.

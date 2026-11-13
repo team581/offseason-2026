@@ -1,7 +1,7 @@
 # Trailblazer 2 Design Specification: Teleop Integration & Dynamic Assist
 
 **Document ID:** TB2-SPEC-04  
-**Status:** Approved for Implementation  
+**Status:** Implementation design
 **Author:** Team 581 Technical Staff  
 **Applies To:** `TrailblazerDriveSource`, `TeleopAssist`, `Swerve`, `DriverOverride`  
 
@@ -12,7 +12,7 @@
 Trailblazer 2 uses the same planner for both autonomous routines and teleop driver assistance:
 1. **Single-Button Drive-to-Pose (`driveTo`):** Drive to a field pose (Reef branch, Subwoofer, Trench, Climb) on the fly without pre-generating paths.
 2. **Dynamic Vision Tracking:** Align to camera-detected game pieces or AprilTags updated at 50 Hz.
-3. **Instant Driver Override:** Touching the sticks beyond deadband (`0.15`) immediately hands control back to the driver with zero velocity jump.
+3. **Instant Driver Override:** Touching the sticks beyond configured deadband immediately hands control back to the driver through a seeded motion limiter.
 4. **Shared Physical Limits:** Teleop assists obey the exact same `DrivetrainLimits` and 2D vector acceleration bounds as auto.
 
 ---
@@ -28,14 +28,14 @@ public class Trailblazer {
 }
 ```
 
-When `driveTo(targetPose, profile)` is called, Trailblazer creates a 1-segment plan from the robot's current pose to a `Goal.stop` target (default finish tolerance: `0.03 m`, `2°`, `0.1 m/s`) with a `HARD` heading gate.
+When `driveTo(targetPose, profile)` is called, Trailblazer creates a 1-segment plan from the robot's current pose to a `Goal.stop` target (default finish tolerance: `0.03 m`, `2°`, `0.1 m/s`) with a `HARD` heading gate. Tolerances also include angular speed and dwell ([00](00-overview-and-architecture.md)); `driveTo` starts once, and periodic updates do not restart it.
 
 ---
 
 ## 3. Driver Preemption & Continuous Velocity Handoff
 
 ### 3.1 Preemption Detection (Decoupled Translation & Rotation)
-Translation and rotation stick deflections are checked separately so hybrid assist modes (e.g. manual driving + auto-aiming at the Hub) only cancel the axis the driver overrides:
+Translation and rotation stick deflections are checked separately in robot integration. The `0.15` below is an example controller deadband, not a TB2 constant. Cancelling an axis required by a full-path hard gate cancels that path; independent auto-aim may remain active when explicitly selected:
 
 ```java
 public boolean isTranslationIntervention() {
@@ -52,16 +52,16 @@ public boolean isDriverIntervention() {
 ```
 
 ### 3.2 Continuous Velocity Handoff
-When the driver takes over, `teleopDriveSource.seedVelocity(trailblazer.getLastCommand())` seeds the manual slew-rate limiter with Trailblazer's last commanded velocity $\vec{v}_{last\_command}$ so the robot does not jerk or brake on handoff.
+Seed the receiving limiter with the last applied field-relative velocity, or measured velocity if unavailable. Apply this in both directions: manual-to-assist and assist-to-manual. Compose translation and rotation before applying the combined limits in [02](02-velocity-profiler-and-limits.md); only one controller owns each axis.
 
 ---
 
 ## 4. Dynamic Vision Target Filtering
 
-To prevent camera noise from causing steering jitter when following a `Supplier<Pose2d>`:
+Runtime evaluates each target supplier once per tick and owns filter history; math receives resolved values. Dynamic targets also need timestamps and validity: stale/lost targets trigger controlled stopping, with explicit reactivation on reacquisition. To reduce steering jitter:
 1. **Exponential Low-Pass Filter ($\tau = 0.10\text{ s}$):**
    $$\mathbf{p}_{target, filtered}(t) = \alpha \mathbf{p}_{target, vision}(t) + (1 - \alpha) \mathbf{p}_{target, filtered}(t - \Delta t), \quad \alpha = \frac{\Delta t}{\tau + \Delta t}$$
-2. **Moving Target Feedforward:** If tracking a moving target, $\vec{v}_{des} = v_{profile} \hat{t}_{eval} + \vec{v}_{target\_ff} + v_{xt} \hat{n}(s)$, clamped by `VectorLimiter`.
+2. **Moving Target Feedforward:** If tracking a moving target, $\vec{v}_{des} = v_{profile} \hat{t}_{eval} + \vec{v}_{target\_ff} + v_{xt} \hat{n}(s)$, bounded by the final speed, module, and acceleration limits in [02](02-velocity-profiler-and-limits.md).
 
 ---
 
@@ -74,12 +74,12 @@ Trailblazer 2 enables hybrid teleoperated control modes where one degree of free
 | **Full Alignment** | Trailblazer 2 (`driveTo`) | Trailblazer 2 (`hard` gate) | Hands-free docking to Reef, Subwoofer, or Climb |
 | **Driver Translation + Auto Aim** | Manual Driver Left Stick | Trailblazer 2 (`facePoint(Hub)`) | Shooting on the fly; driver evades defense while robot aims |
 | **Auto Line + Driver Speed** | Trailblazer 2 (latched trench line) | Manual / Fixed Heading | Confined trench transit; driver controls throttle, robot steers |
-| **Bump Crossing Assist** | Trailblazer 2 (constant 4 m/s zone) | Trailblazer 2 (`hold` heading) | Safe traverse across terrain without driver pitch/roll bounce |
+| **Bump Crossing Assist** | Trailblazer 2 (robot-validated speed cap) | Trailblazer 2 (`hold` heading) | Season-specific terrain assist, subject to robot testing |
 
 ---
 
-## 6. Teleop Safety Guarantees & Watchdogs
+## 6. Teleop Limits & Watchdogs
 
 1. **Maximum Execution Timeout:** Any `driveTo` teleop command has an internal timeout (default: $3.0$ seconds). If uncompleted, it automatically cancels to prevent runaway behavior.
-2. **Field Keepout Rejection:** If a driver accidentally commands a `driveTo` whose target pose falls inside a defined keepout zone (e.g. opposing alliance stage or illegal field perimeter), Trailblazer rejects the command with an audible driver station alert.
+2. **Field Keepout Rejection:** Check the swept robot footprint along the connecting path, not just the target pose, against supplied field bounds and keepouts. Reject blocked paths with a diagnostic; TB2 does not route around obstacles.
 3. **Wheel Lock on Arrival:** Upon successfully completing a `driveTo` (`atGoal() == true`), the swerve subsystem can be configured to command an "X-Stop" module lock to resist defensive nudges.

@@ -1,9 +1,9 @@
 # Trailblazer 2 Design Specification: Velocity Profiling & Physical Limits
 
 **Document ID:** TB2-SPEC-02
-**Status:** Approved for Implementation
+**Status:** Implementation design
 **Author:** Team 581 Technical Staff
-**Applies To:** `VelocityProfiler`, `DrivetrainLimits`, `VectorLimiter`, `ConstraintsCalculator` (replacement)
+**Applies To:** `VelocityProfiler`, `DrivetrainLimits`, `VectorLimiter`
 
 ---
 
@@ -20,9 +20,9 @@ Trailblazer 1 treats a path like a list of points to chase one by one:
 
 **Why that causes problems on the robot:**
 
-- **Sharp corner snaps:** When switching from Point A to Point B, the target direction changes instantly. At $4\text{ m/s}$, snapping the velocity direction by $90^\circ$ in one loop asks the wheels to change direction infinitely fast—so the tires skid and scrub across the carpet.
+- **Sharp corner snaps:** When switching from Point A to Point B, the target direction changes instantly. At $4\text{ m/s}$, snapping the velocity direction by $90^\circ$ in one loop requests roughly $283\text{ m/s}^2$ of vector acceleration over a 20 ms loop—so the tires skid and scrub across the carpet.
 - **No braking lookahead for corners:** Because the PID loop only cares about distance to the _final_ point, the robot charges into tight mid-path corners at full speed and only tries to slow down _after_ it has already entered the turn.
-- **Fake numbers per auto:** Every auto or waypoint has made-up speed and acceleration numbers (`4.75 m/s`, `8.0 m/s^2`) that are faster than the physical motors or carpet can actually deliver.
+- **Assumed numbers per auto:** Per-auto speed and acceleration requests (`4.75 m/s`, `8.0 m/s^2`) can exceed the drivetrain’s validated capabilities.
 
 ---
 
@@ -30,13 +30,13 @@ Trailblazer 1 treats a path like a list of points to chase one by one:
 
 Instead of chasing one point at a time with a distance PID loop, Trailblazer 2 plans speeds along the **whole upcoming path** using real robot physics:
 
-1. **Round the corners first:** Sharp corners between waypoints are replaced with smooth circular arcs sized to stay inside each waypoint's `within` tolerance.
+1. **Round the corners first:** Sharp corners between waypoints are replaced with smooth circular arcs whose closest approach satisfies each waypoint's `within` tolerance.
 2. **Slice the path into $5\text{ cm}$ steps:** The upcoming path is broken into $5\text{ cm}$ checkpoints from where the robot is now to where it next stops.
-3. **Set speed limits at every step:** Tighter turns automatically get lower speed limits so the tires never slide sideways ($v \le \sqrt{a_{lat} \cdot r}$). Stop points get a speed limit of $0\text{ m/s}$.
+3. **Set speed limits at every step:** Tighter turns automatically get lower speed limits to respect the modeled lateral traction limit ($v \le \sqrt{a_{lat} \cdot r}$). Stop points get a speed limit of $0\text{ m/s}$.
 4. **Two quick passes (Backward then Forward):**
    - **Backward pass (Braking):** Starting from the end of the path and working backward, it calculates the fastest speed the robot can be going at each step and still brake in time for upcoming corners and stops.
    - **Forward pass (Accelerating):** Starting from the robot's current speed and working forward, it caps how fast the robot can speed up based on real Kraken X60 motor torque and tire grip.
-5. **Follow the curve + smooth 2D vector clamp:** The robot drives along the curve's direction (plus a gentle push back toward the line if bumped off course), and a final 2D limiter ensures the _combined_ speed and direction change in any single loop never exceeds tire grip.
+5. **Follow the curve + smooth 2D vector clamp:** The robot drives along the curve's direction (plus a gentle push back toward the line if bumped off course), and a final 2D limiter ensures the _combined_ speed and direction change in any single loop respects the modeled traction limit for feasible input states.
 
 | Feature                     | Trailblazer 1                                          | Trailblazer 2                                                          |
 | :-------------------------- | :----------------------------------------------------- | :--------------------------------------------------------------------- |
@@ -44,7 +44,7 @@ Instead of chasing one point at a time with a distance PID loop, Trailblazer 2 p
 | **How corners are handled** | Drive straight at point, snap direction to next point  | Smooth circular turn + automatic slow-down _before_ the turn           |
 | **Slowing down mid-path**   | Drops speed limit instantly (infinite braking)         | Smoothly brakes ahead of time using $a_{brake}$                        |
 | **Direction changes**       | Only 1D speed is limited; direction can flip instantly | Full 2D vector $(v_x, v_y)$ change is limited by tire grip             |
-| **What you tune**           | Per-auto / per-point magic speeds & PID gains          | **0 per-auto tuning** (9 constants from CAD/motors, 3 robot constants) |
+| **What you tune**           | Per-auto / per-point magic speeds & PID gains          | **Robot-level limits and tracking defaults**, validated on carpet |
 
 ---
 
@@ -62,26 +62,27 @@ public record DrivetrainLimits(
     double maxLateralAcceleration,  // a_lat (m/s^2): Derived cornering limit (0.85 * a_fric)
     double maxAngularVelocity,      // omega_max (rad/s): Derived maximum rotation rate
     double maxAngularAcceleration,  // alpha_max (rad/s^2): Derived maximum rotational acceleration
-    double driveResponseLagSeconds, // tau_lag (s): On-robot tuned velocity tracking lag (~0.04s)
-    double crossTrackTimeConstant,  // tau_xt (s): Derived cross-track convergence time constant (~0.20-0.25s)
-    double maxCrossTrackCorrection, // v_xt_max (m/s): Derived max lateral correction velocity (~1.20m/s)
-    double headingKp                // kP_theta (s^-1): Derived heading disturbance gain (~6.67s^-1)
+    double driveResponseLagSeconds  // tau_lag (s): On-robot validated velocity tracking lag
 ) {}
 ```
 
-- **9 Derived Parameters ($v_{free}, v_{max}, a_0, a_{lat}, \omega_{max}, \alpha_{max}, \tau_{xt}, v_{xt, max}, kP_\theta$):** Computed directly from CAD geometry, `TunerConstants`, and Kraken X60 FOC motor datasheets.
-- **3 On-Robot Tuned Parameters ($a_{fric}, a_{brake}, \tau_{lag}$):** Tuned once on the physical robot carpet; all dependent limits and tracking gains update automatically from them.
-- **Motor Torque-Speed Curve:** Brushless drive motors lose torque linearly as speed approaches $v_{free}$:
-  $$a_{motor}(v) = a_0 \left(1 - \frac{v}{v_{free}}\right)$$
+- **Derived Estimates:** Compute initial speed/acceleration limits from CAD, gearing, motor data, and empirical calibration. Validate them on each robot; they are not exact guarantees.
+- **Empirical Parameters:** Traction $a_{fric}$, braking $a_{brake}$, and lag $\tau_{lag}$ are primary carpet measurements. Acceleration and braking need not be symmetric.
+- **Tracking Policy:** Keep $\tau_{xt}$, $v_{xt,max}$, $kP_\theta$, sampling, and recovery thresholds separate from physical capabilities. Supply module locations through the execution context.
+- **Motor Torque-Speed Approximation:**
+  $$a_{motor}(v) = a_0 \max\left(0, 1 - \frac{v}{v_{free}}\right)$$
 
-> See **[TB2-SPEC-07: Parameter Derivation & Physics Sandbox Validation](07-empirical-calibration-routine.md)** for the exact parameter derivation formulas, CAD/datasheet input constraints, and physics sandbox validation benchmarks.
+> See **[TB2-SPEC-07: Parameter Derivation & Physics Sandbox Validation](07-empirical-calibration-routine.md)** for derivation estimates, input assumptions, and calibration.
 
 ---
 
 ## 3. Two-Pass Spatial Horizon Profiler
 
-The horizon path of total length $S_{horizon}$ is discretized at uniform arc-length intervals $\Delta s$ (default: $\Delta s = 0.05$ m, or 5 cm).
-This yields $N = \lceil S_{horizon} / \Delta s \rceil$ discrete nodes $k \in \{0, 1, \dots, N-1\}$.
+The complete leg through the next stop is sampled at maximum spacing $\Delta s = 0.05$ m initially ([01](01-path-geometry-and-kinematics.md)).
+
+1. **Include both endpoints:** Uniform sampling needs $N = \lceil S_{horizon}/\Delta s\rceil + 1$ nodes, indexed $0$ through $N-1$.
+2. **Insert exact boundaries:** Add current measured progress, piece boundaries, goals, heading anchors, and zone boundaries. Recount $N$ after insertion; use actual interval length $\Delta s_k=s_{k+1}-s_k$.
+3. **Handle zero length:** Use terminal position/heading control directly; do not divide by path length.
 
 ```
 Node:     0        1        2        k       k+1               N-1 (End)
@@ -92,26 +93,24 @@ Arc (s):  0.00     0.05     0.10 ... s_k     s_{k+1} ...       S_horizon
 
 ### 3.1 Node-Level Limit Formulation
 
-Given the instantaneous rotational velocity command $\omega_{cmd}$ and angular acceleration $\alpha_{cmd}$ from `HeadingPlanner` ([TB2-SPEC-03 §5](03-heading-and-rotation.md#5-swerve-traction-coupling-wheel-speed-allocation)), the effective translational speed and friction ceilings available to `VelocityProfiler` and `VectorLimiter` are:
-$$v_{max, eff} = \max\left(v_{min}, \; v_{max} - \gamma_\omega |\omega_{cmd}| R_{chassis}\right), \quad a_{fric, eff} = \sqrt{\max\left(a_{min}^2, \; a_{fric}^2 - \left(\gamma_\alpha R_{chassis} \alpha_{cmd}\right)^2\right)}$$
-_(with defaults $v_{min} = 0.25\text{ m/s}$, $a_{min} = 1.00\text{ m/s}^2$, $\gamma_\omega = 0.70$, $\gamma_\alpha = 0.70$; when $\omega_{cmd} = 0$ and $\alpha_{cmd} = 0$, $v_{max, eff} = v_{max}$ and $a_{fric, eff} = a_{fric}$).\_
+Use the final angular command and its actual change to obtain $v_{max,eff}$ and $a_{fric,eff}$ from [TB2-SPEC-03 §5](03-heading-and-rotation.md#5-swerve-wheel-speed--friction-allocation). These budgets can reach zero; do not add positive floors that exceed available capacity.
 
 At each spatial sample $k$, the local velocity limit $v_{lim, k}$ is bounded by:
 
 1. **Effective Translational Velocity Limit:** $v_{max, eff}$
 2. **Curvature / Centripetal Acceleration Limit:**
-   For local path curvature $\kappa_k = \frac{1}{r_k}$:
-   $$a_{lat} \ge v^2 \kappa_k \implies v_{corner, k} = \sqrt{\frac{a_{lat}}{\kappa_k + \epsilon}}$$
-   _(On straight segments where $\kappa_k = 0$, $v_{corner, k} = \infty$).\_
-3. **Zone & Hard Heading Gate Constraints:** $v_{zone, k}$ (e.g. speed caps inside trench or scoring areas) and $v_{cap, k}$ (if $k$ lies within a `HARD` heading gate approach corridor $[k_{curr}, k_{anchor}]$ per [TB2-SPEC-03 §4.2](03-heading-and-rotation.md#42-hard-gate-policy-analytical-speed-capping--pacing)).
-4. **Goal Exit Constraints:** If sample $k$ corresponds to a `stop` goal, $v_{goal, k} = 0.0$. If a `through(v_{pass})` goal, $v_{goal, k} = v_{pass}$.
+   For local curvature magnitude $|\kappa_k|$ and $a_{lat,eff}=\min(a_{lat},a_{fric,eff})$:
+   $$v_{corner,k}=\sqrt{\frac{a_{lat,eff}}{|\kappa_k|}}$$
+   (On straight segments where $\kappa_k = 0$, $v_{corner,k}=\infty$.)
+3. **Zone & Hard Heading Gate Constraints:** Apply zone speed ceilings. An unsatisfied hard gate inserts a zero-speed barrier at its anchor; the backward pass propagates braking upstream ([TB2-SPEC-03 §4](03-heading-and-rotation.md#4-translation-rotation-coupling-hard-vs-soft-gates)).
+4. **Goal Exit Constraints:** A stop has $v_{goal,k}=0$. A through goal may declare a speed ceiling $v_{pass}$, never a required minimum; otherwise $v_{goal,k}=\infty$.
 
-The composite speed ceiling at sample $k$ is:
-$$v_{lim, k} = \min\left(v_{max, eff}, \; \sqrt{\frac{a_{lat}}{\kappa_k + \epsilon}}, \; v_{zone, k}, \; v_{cap, k}, \; v_{goal, k}\right)$$
+The composite speed ceiling is:
+$$v_{lim,k}=\min(v_{max,eff},v_{corner,k},v_{zone,k},v_{gate,k},v_{goal,k})$$
 
 ### 3.2 Friction Circle Coupling (Tangential Acceleration Capacity)
 
-When cornering at speed $v$, lateral acceleration $a_{lat} = v^2 \kappa$ consumes a portion of the effective translational tire friction ($a_{fric, eff}$).
+When cornering at speed $v$, lateral acceleration $a_{lateral} = v^2 |\kappa|$ consumes a portion of the effective translational tire friction ($a_{fric, eff}$).
 By the circular friction envelope ($a_{tangential}^2 + a_{lateral}^2 \le a_{fric, eff}^2$), the remaining tangential acceleration capacity is:
 $$a_{t}(v, \kappa) = \sqrt{\max\left(0, \; a_{fric, eff}^2 - (v^2 \kappa)^2\right)}$$
 
@@ -119,47 +118,46 @@ $$a_{t}(v, \kappa) = \sqrt{\max\left(0, \; a_{fric, eff}^2 - (v^2 \kappa)^2\righ
 
 #### Pass 1: Backward Pass (Enforcing Braking Limits down to $k_{curr}$)
 
-The backward pass iterates from the horizon terminus $k = N-1$ down to the robot's current progress node $k_{curr} = \lfloor s / \Delta s \rfloor$. It propagates braking deceleration backwards to guarantee the robot can stop or slow down in time for all upcoming corners and goals.
+The backward pass propagates braking from the terminal node to $k_{curr}$, the inserted node at current measured progress.
 
-To eliminate circular dependency during backward integration (since $v_k$ is the unknown being computed), braking traction capacity is evaluated using the known downstream state at node $k+1$:
-$$a_{t, k+1} = a_t(v_{k+1}, \kappa_{k+1}) = \sqrt{\max\left(0, \; a_{fric, eff}^2 - (v_{k+1}^2 \kappa_{k+1})^2\right)}$$
-$$a_{brake, k+1} = \min\left(a_{brake}, \; a_{t, k+1}\right)$$
+1. **Initialize:** $v_{N-1}=v_{lim,N-1}$.
+2. **Bound traction over each interval:** For candidate endpoints, use $\bar v=\max(v_k,v_{k+1})$ and the greatest curvature magnitude $\bar\kappa$ on that interval:
+   $$a_{dec,k}=\min\left(a_{brake},a_t(\bar v,\bar\kappa)\right)$$
+3. **Solve backward, $k=N-2$ down to $k_{curr}$:** Choose the largest nonnegative $v_k$ satisfying both:
+   $$v_k\le v_{lim,k},\qquad v_k^2\le v_{k+1}^2+2a_{dec,k}\Delta s_k$$
 
-1. Initialize terminal node: $v_{N-1} = v_{lim, N-1}$.
-2. For $k = N-2$ down to $k_{curr}$:
-   $$v_k \leftarrow \min\left(v_{lim, k}, \; \sqrt{v_{k+1}^2 + 2 \cdot a_{brake, k+1} \cdot \Delta s}\right)$$
-
-_(Note: Curvature centripetal constraints at node $k$ are strictly enforced by $v_{lim, k} \le \sqrt{a*{lat}/(\kappa_k + \epsilon)}$, ensuring $v_k$ never exceeds local traction limits).*
+**Interval check:** Evaluating traction only at the slower downstream endpoint overestimates available braking on a curve. Use a bounded scalar solve or conservative interval bound, and check the resulting interval independently.
 
 #### Pass 2: Forward Pass (Enforcing Motor Acceleration Limits from Current Node $k_{curr}$)
 
-The forward pass sweeps from the **robot's current progress node $k_{curr} = \lfloor s / \Delta s \rfloor$** (not the sub-segment origin $k = 0$) up to $N-1$, ensuring velocity increases smoothly from the current state according to available motor torque and traction:
+1. **Seed current progress:**
+   $$v_{k_{curr}}\leftarrow\min(v_{k_{curr}},v_{start})$$
+   If measured motion exceeds the backward envelope, report `INFEASIBLE` and use bounded recovery (§3.4); clamping the profile does not make the measured state feasible.
+2. **Bound acceleration over each interval:**
+   $$a_{acc,k}=\max\left(0,\min\left(a_{motor}(\bar v),a_t(\bar v,\bar\kappa)\right)\right)$$
+3. **Solve forward, $k=k_{curr}$ through $N-2$:** Choose the largest nonnegative $v_{k+1}$ satisfying its existing ceiling and:
+   $$v_{k+1}^2\le v_k^2+2a_{acc,k}\Delta s_k$$
 
-1. Seed current progress node $k_{curr}$:
-   $$v_{k_{curr}} \leftarrow \min\left(v_{k_{curr}}, \; v_{start}\right)$$
-2. For $k = k_{curr}$ up to $N-2$:
-   Compute available motor acceleration at the known upstream state $v_k$:
-   $$a_{t, k} = a_t(v_k, \kappa_k) = \sqrt{\max\left(0, \; a_{fric, eff}^2 - (v_k^2 \kappa_k)^2\right)}$$
-   $$a_{acc, k} = \max\left(0.0, \; \min\left(a_0 \left(1 - \frac{v_k}{v_{free}}\right), \; a_{t, k}\right)\right)$$
-   _(Guarding against negative acceleration when $v_k > v_{free}$, which would cause $v_k^2 + 2 a_{acc, k} \Delta s < 0$ and result in `NaN` during the forward pass)._
-   $$v_{k+1} \leftarrow \min\left(v*{k+1}, \; \sqrt{v_k^2 + 2 \cdot a*{acc, k} \cdot \Delta s}\right)$$
+**Interval check:** Evaluating motor torque only at the slower upstream endpoint overestimates acceleration. Use actual interval lengths and bounded solving with explicit failure handling in both passes.
 
 ```mermaid
-flowchart TD
+flowchart LR
     Init["1. Initialize Limits<br/>Sample horizon nodes and compute local speed limits v_lim"] -->
-    Back["2. Backward Pass (Braking)<br/>Sweep backwards: v_k = min(v_lim_k, sqrt(v_next^2 + 2*a_brake*ds))"] -->
-    Fwd["3. Forward Pass (Acceleration)<br/>Sweep forwards: v_next = min(v_next, sqrt(v_k^2 + 2*a_acc*ds))"] -->
-    Out["4. Output Profile<br/>Strictly feasible velocity profile ready for evaluation"]
+    Back["2. Backward Pass (Braking)<br/>Solve interval braking bounds backwards"] -->
+    Fwd["3. Forward Pass (Acceleration)<br/>Solve interval acceleration bounds forwards"] -->
+    Out["4. Output Profile<br/>Interval-checked profile and feasibility diagnostics"]
 ```
 
 ### 3.4 Initial Velocity Selection and Chatter Elimination
 
-To guarantee smooth control and avoid velocity chatter caused by noisy wheel odometry:
-
-- Under nominal tracking: $v_{start} = \|\vec{v}_{last\_command}\|$.
-- **Disturbance / Slip Override:** If measured chassis velocity diverges significantly from the last command:
-  $$\left| \|\vec{v}_{meas}\| - \|\vec{v}_{last\_command}\| \right| > v_{diverge\_thresh} \quad (0.75 \text{ m/s})$$
-  $v_{start}$ re-seeds to $\|\vec{v}_{meas}\|$ to prevent integrator windup and acknowledge physical slip or severe collision.
+1. **Nominal tracking:** Project the previous applied velocity onto the current path tangent:
+   $$v_{start}=\max(0,\vec v_{applied}\cdot\hat t(s))$$
+   Total vector magnitude would incorrectly count sideways correction as forward speed.
+2. **Activation / missing applied command:** Seed from measured velocity. If integration only reports the requested command, label it as such and monitor measured divergence.
+3. **Disturbance detection:** Compare vectors, so opposite or sideways motion is detected even at equal speed:
+   $$\|\vec v_{meas}-\vec v_{applied}\|>v_{diverge,threshold}$$
+   The tracking policy owns threshold/dwell and reseeding; preserve event identity during recovery.
+4. **Infeasible motion:** Negative forward velocity needs bounded arrest. Motion above the braking envelope emits `INFEASIBLE`; brake/recover without declaring a stop or gate successfully reached.
 
 ---
 
@@ -168,18 +166,19 @@ To guarantee smooth control and avoid velocity chatter caused by noisy wheel odo
 To compensate for CAN, motor filter, and steering response lag ($\tau_{lag} \approx 0.040\text{ s}$) without getting stuck at $v = 0$ from rest, `VelocityProfiler` evaluates speed and tangent direction at decoupled lookahead distances:
 
 1. **Tapering Near Stop Goals (No Endpoint Chatter):**
-   Within braking distance $d_{brake} = \max\left(0.30\text{ m}, \; \frac{v^2}{2 a_{brake}}\right)$ of a stop goal, lookahead tapers smoothly to zero:
+   Using a conservative available deceleration $a_{dec}>0$, within $d_{brake} = \max\left(0.30\text{ m}, \; \frac{v^2}{2 a_{dec}}\right)$ of a stop goal, lookahead tapers smoothly to zero:
    $$\tau_{effective} = (\Delta t + \tau_{lag}) \cdot \min\left(1.0, \; \frac{S_{horizon} - s}{d_{brake}}\right)$$
 2. **Second-Order Speed Lookahead ($s_{eval, v}$):**
-   $$a_{avail}(s) = \max\left(0.0, \; a_0 \left(1 - \frac{v(s)}{v_{free}}\right)\right)$$
+   $$a_{avail}(s)=\min(a_{motor}(v(s)),a_t(v(s),\kappa(s)))$$
    $$s_{eval, v} = s + v(s) \cdot \tau_{effective} + \frac{1}{2} a_{avail}(s) \cdot \tau_{effective}^2$$
-   _(At rest $v(s) = 0$, the $\frac{1}{2} a_0 \tau_{effective}^2$ term advances $s_{eval, v} > s$ so the robot launches with $v_{profile} = a_0 \tau_{effective}$ instead of deadlocking at $0\text{ m/s}$).\_
+   At rest with positive available acceleration, the second-order term advances the evaluation point and avoids a zero-speed startup deadlock. Final command limits still apply.
 3. **Half-Lead Tangent Lookahead ($s_{eval, t}$):**
-   Evaluating $\hat{t}$ at full $s_{eval, v}$ turns into corners too early ($\sim 60\text{ ms}$ before $T_{in}$). Instead:
+   Full speed lookahead can turn into corners early. Start with half-lead tangent evaluation and validate it in simulation/carpet tests:
    $$s_{eval, t} = s + v(s) \cdot \left(\frac{1}{2} \Delta t + \frac{1}{2} \tau_{lag}\right)$$
    - **Profile speed $v_{profile}$:** Linearly interpolated at $s_{eval, v}$.
    - **Path unit tangent $\hat{t}_{eval}$:** Evaluated at $s_{eval, t}$.
-   - **Path unit normal $\hat{n}(s)$:** Evaluated at $s$.
+   - **Path unit normal $\hat{n}(s)$:** Evaluated at measured projection $s$.
+4. **Bounds:** Clamp both lookaheads to the leg and any closed gate. Lookahead never advances event progress or samples beyond a required stop. With no braking capacity, enter infeasible recovery rather than divide by zero.
 
 ---
 
@@ -188,27 +187,33 @@ To compensate for CAN, motor filter, and steering response lag ($\tau_{lag} \app
 1. **Cross-Track Feedback Velocity ($v_{xt}$):**
    Since $e_{xt} = (\mathbf{p}_{robot} - \mathbf{p}^*(s)) \cdot \hat{n}(s) > 0$ when left of the path, negative feedback pushes the robot back onto the line:
    $$v_{xt, limit} = \min(v_{xt, max}, \; v_{max, eff}), \quad v_{xt} = \mathrm{clamp}\left(-\frac{e_{xt}}{\tau_{xt}}, \; -v_{xt, limit}, \; v_{xt, limit}\right)$$
-2. **Upstream Elliptical Priority Desaturation:**
-   Reserve wheel speed for cross-track correction first so `SwerveDriveKinematics.desaturateWheelSpeeds` does not unpredictably scale down forward speed:
-   $$v_{profile} \leftarrow \min\left(v_{profile}, \; \sqrt{\max\left(0.0, \; v_{max, eff}^2 - v_{xt}^2\right)}\right)$$
-   $$\vec{v}_{des} = v_{profile} \hat{t}_{eval} + v_{xt} \hat{n}(s)$$
+2. **Combine Forward and Cross-Track Demand:**
+   $$\vec v_{des}=v_{profile}\hat t_{eval}+v_{xt}\hat n(s)$$
+   The lookahead tangent and current normal need not be perpendicular. Apply speed/module limits to their actual sum, including any target feedforward; $\sqrt{v_{max,eff}^2-v_{xt}^2}$ alone is not sufficient.
 3. **Terminal 2D Convergence at Stop Goals:**
-   Because $v_{xt} \hat{n}(s)$ only pushes perpendicular to $\hat{t}$, any residual inline lag when $s$ reaches $S_{horizon}$ would remain uncorrected. Inside the final braking zone of a `Goal.stop` ($S_{horizon} - s < 0.20\text{ m}$ and $d_{stop} = \|\mathbf{p}_{stop} - \mathbf{p}_{robot}\| < 0.25\text{ m}$), $\vec{v}_{des}$ points directly at $\mathbf{p}_{stop}$:
-   $$\vec{e}_{stop} = \mathbf{p}_{stop} - \mathbf{p}_{robot}, \quad v_{term} = \min\left(v_{max, eff}, \; \sqrt{2 \cdot a_{brake} \cdot d_{stop}}, \; \frac{d_{stop}}{0.85 \cdot \tau_{xt}}\right)$$
-   $$\vec{v}_{des} = v_{term} \frac{\vec{e}_{stop}}{d_{stop} + \epsilon}$$
+   Because $v_{xt} \hat{n}(s)$ only pushes perpendicular to $\hat{t}$, any residual inline lag when $s$ reaches $S_{horizon}$ would remain uncorrected. Near a `Goal.stop`, blend into direct position convergence using $d_{stop}=\|\mathbf p_{stop}-\mathbf p_{robot}\|$. Choose blend distance/hysteresis in tracking policy:
+   $$\vec{e}_{stop} = \mathbf{p}_{stop} - \mathbf{p}_{robot}, \quad v_{term} = \min\left(v_{max, eff}, \; \sqrt{2 \cdot a_{dec} \cdot d_{stop}}, \; \frac{d_{stop}}{0.85 \cdot \tau_{xt}}\right)$$
+   $$\vec{v}_{des}=\begin{cases}v_{term}\vec e_{stop}/d_{stop}&d_{stop}>0\\0&d_{stop}=0\end{cases}$$
+   Reuse this controller to hold an interior hard gate. Completion requires measured pose/speed/heading and dwell, not zero profile speed ([00](00-overview-and-architecture.md)).
 4. **Isotropic 2D Vector Acceleration Clamp (`VectorLimiter`):**
-   Bound the 2D velocity change from the previous loop's command $\vec{v}_{prev}$ to $\Delta v_{max} = a_{fric, eff} \cdot \Delta t$:
+   Bound the 2D velocity change from the previous applied command $\vec{v}_{prev}$ to $\Delta v_{max} = a_{fric, eff} \cdot \Delta t$:
    $$\Delta \vec{v} = \vec{v}_{des} - \vec{v}_{prev}, \quad \vec{v}_{cmd} = \begin{cases} \vec{v}_{prev} + \Delta \vec{v} \cdot \dfrac{\Delta v_{max}}{\|\Delta \vec{v}\|} & \text{if } \|\Delta \vec{v}\| > \Delta v_{max} \\ \vec{v}_{des} & \text{otherwise} \end{cases}$$
+
+5. **Intersect Final Constraints:** Select the closest desired command satisfying the slew bound, speed/module limits, and motor/braking bounds together. Sequential speed and slew clamps can invalidate each other.
+6. **Shrinking Envelope:** If no reachable command satisfies all new bounds, emit `INFEASIBLE`, reduce angular demand where possible, and apply bounded braking toward the admissible region. Do not claim simultaneous instantaneous bounds during recovery. Disabled/emergency output inhibition takes precedence.
 
 ---
 
-## 6. Zero-Allocation Execution & Telemetry
+## 6. Execution Budget & Telemetry
 
-- **Preallocated Arrays:** Horizon buffers (`double[] s_nodes`, `v_lim`, `v_profile`, `kappa`) of length $\lceil 8.0\text{ m} / 0.05\text{ m} \rceil = 160$ are allocated once at startup. The 2-pass solve runs in $< 35 \; \mu\text{s}$ with zero GC allocations.
+- **Bounded Buffers:** Size profile arrays for validated plan capacity, both endpoints, and inserted boundaries. Reject overflow instead of dropping constraints. Reuse buffers where profiling warrants it.
+- **Measured Performance:** Benchmark worst-case runtime and allocation on the target robot; acceptance evidence belongs in [06](06-verification-simulation-and-ci.md), not an unmeasured microsecond claim.
 - **Limiting Factor Logging:** Every loop logs `Trailblazer/LimitingFactor` to DogLog so AdvantageScope shows why the robot ran at its commanded speed:
   ```java
   public enum LimitingFactor {
       TOP_SPEED, CORNER_CENTRIPETAL, ZONE_SPEED_CAP, GOAL_DECELERATION,
-      MOTOR_ACCELERATION, HEADING_HARD_GATE, VECTOR_SLEW_LIMIT
+      MOTOR_ACCELERATION, HEADING_HARD_GATE, VECTOR_SLEW_LIMIT, MODULE_SPEED, INFEASIBLE
   }
   ```
+
+Log profile and final-command constraints separately; more than one limit may be active.

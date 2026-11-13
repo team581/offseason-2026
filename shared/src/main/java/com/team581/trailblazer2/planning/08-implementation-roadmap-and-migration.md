@@ -1,144 +1,102 @@
-# Trailblazer 2 Design Specification: Implementation Roadmap & Migration
+# Trailblazer 2: Implementation Roadmap for 2027
 
-**Document ID:** TB2-SPEC-08  
-**Status:** Approved for Implementation  
-**Author:** Team 581 Technical Staff  
-**Applies To:** Full Project Rollout, CI Gates, Tooling Phasing, Deprecation Strategy  
+**Document ID:** TB2-SPEC-08
+**Status:** Implementation plan
+**Scope:** Build order, deliverables, and acceptance evidence
 
----
+## 1. Objective
 
-## 1. Migration Strategy: Zero Breaking Changes
+Deliver a clean, tested TB2 library ready for the new 2027 robot codebase. There are no remaining competition-readiness or old-auto compatibility requirements. Comp bot primarily runs the new-member pathway; occasional carpet sessions validate TB2 as opportunities arise.
 
-A primary requirement of the Trailblazer 2 rollout is that the robot software repository must remain **compilable, testable, and match-ready** at every intermediate commit. A wholesale rewrite that breaks existing autos ([`LeftNormalAuto`](../../../../../../../../comp-bot/src/main/java/frc/robot/autos/auto_state_machines/LeftNormalAuto.java), [`RightNormalAuto`](../../../../../../../../comp-bot/src/main/java/frc/robot/autos/auto_state_machines/RightNormalAuto.java), [`IntegrationTest`](../../../../../../../../comp-bot/src/main/java/frc/robot/autos/auto_state_machines/IntegrationTest.java)) is unacceptable during active offseason testing.
+Build TB2 directly in its own namespace with the math/runtime separation in [00](00-overview-and-architecture.md). Do not retrofit the TB1 follower, construct legacy adapters, or migrate old autos to establish correctness. Existing code may remain while still referenced; deleting it is dependency cleanup, not a milestone. Keep the repository compiling and preserve the pathway's normal operating mode.
 
-To achieve this, the migration uses an **In-Place Adapter Architecture**:
-1. The public `Trailblazer` facade retains its current signature (`setActiveSegment`, `getFieldRelativeSetpoint`, `atGoal`, `passedMarker`).
-2. Legacy classes (`PidPathFollower`, `HeuristicPathTracker`, `ConstraintsCalculator`) are incrementally replaced behind existing interface boundaries.
-3. Legacy `AutoPoint` instances map seamlessly to modern `Goal` definitions via an automatic adapter during Phase 3.
-4. Auto specifications remain **100% in pure Java**, with `./gradlew previewAuto` serving as the immediate MVP tooling, and the standalone live previewer app developed as the final phase.
+## 2. Requirement ownership
 
----
+This roadmap orders work. It does not define another set of formulas, physical constants, localization thresholds, or tooling requirements.
 
-## 2. Five-Phase Roadmap and Validation Gates
+| Concern | Authoritative document |
+| --- | --- |
+| Packages, lifecycle, robot boundary | [00: Architecture](00-overview-and-architecture.md) |
+| Geometry, progress, recovery | [01: Geometry](01-path-geometry-and-kinematics.md) |
+| Speed profile and command bounds | [02: Velocity and limits](02-velocity-profiler-and-limits.md) |
+| Heading schedule and readiness gates | [03: Heading](03-heading-and-rotation.md) |
+| Teleop arbitration and dynamic targets | [04: Assist](04-teleop-and-dynamic-assist.md) |
+| Java model, field transforms, VS Code preview | [05: Authoring and tooling](05-spec-model-dsl-and-tooling.md) |
+| Fixtures, simulation, CI, acceptance measurements | [06: Verification](06-verification-simulation-and-ci.md) |
+| Robot parameters and calibration | [07: Calibration](07-empirical-calibration-routine.md) |
+
+## 3. Implementation order
+
+Each step delivers usable code and its tests. CI starts with the first step. Hardware access is not required to progress through the desktop implementation; hardware qualification remains necessary before claiming robot readiness.
 
 ```mermaid
 flowchart LR
-    P1["Phase 1: Instrumentation<br/>- Inject TimeSource<br/>- Limiting factor logging<br/>- Headless sim harness"] -->|"Gate 1: Sim matches logged autos"| P2["Phase 2: Limits and Limiter<br/>- DrivetrainLimits record<br/>- Isotropic 2D VectorLimiter<br/>- Symmetric accel/brake"]
-    P2 -->|"Gate 2: Symmetric logs, no scrub"| P3["Phase 3: Core Planner<br/>- PathBuilder fillets<br/>- ProgressTracker s<br/>- VelocityProfiler 2-pass<br/>- HeadingPlanner gates"]
-    P3 -->|"Gate 3: CI sim green and robot field run"| P4["Phase 4: Java DSL and MVP Tooling<br/>- Java Fluent DSL<br/>- FieldAnchors.java<br/>- Alliance mirroring<br/>- MVP gradlew previewAuto"]
-    P4 -->|"Gate 4: New auto previewed and run"| P5["Phase 5: CI Depth and Final App<br/>- Perturbation sweeps<br/>- Delete legacy classes<br/>- In-Memory Live Preview App"]
-    P5 -->|"Gate 5: Clean codebase, green CI"| Done["Trailblazer 2 Operational"]
+    A[Contracts and fixtures] --> B[Geometry and progress]
+    B --> C[Constrained motion]
+    C --> D[Runtime and simulation]
+    D --> E[VS Code preview MVP]
+    D --> F[Robot and assist integration]
+    E --> G[2027 readiness review]
+    F --> G
 ```
 
----
+### Step 1 — Establish contracts and a desktop entry point
 
-### Phase 1: Instrumentation & Baseline Harness
-**Focus:** Make existing code deterministic and measurable before making algorithmic changes.
+Deliver:
 
-1. Create `TimeSource` and `RobotStateSource` interfaces in `com.team581.time` / `com.team581.state`.
-2. Refactor `ConstraintsCalculator` and `Swerve` to ingest `TimeSource`, eliminating direct static calls to `MathSharedStore.getTimestamp()` and `DriverStation.isDisabled()`.
-3. Instrument `PidPathFollower` with high-resolution DogLog telemetry logging commanded acceleration and current limiting factors.
-4. Construct the headless simulation harness (`SimulatedDrivetrainModel`) capable of stepping physics in fast-forward.
-5. Record golden baselines for current autos (`LeftNormal`, `RightNormal`, `IntegrationTest`).
+- `model` values for plans, goals, heading intent, limits, tick input/output, statuses, and stable event IDs. Use the minimal fluent builder in [05](05-spec-model-dsl-and-tooling.md); do not defer the public intent model until after algorithms are built.
+- Validation for invalid numbers, identities, terminal behavior, and unresolved target/heading references.
+- A Java fixture catalog with an initial straight stop and turn-in-place case. These construct plans without `Robot`, HAL devices, or mechanisms.
+- Unit-test wiring in `shared` and a desktop scenario runner skeleton, using the repository's existing Gradle/JUnit conventions. Establish build/check commands before adding more modules.
 
-> **Validation Gate 1:** The headless simulation harness runs all current competition autos and reproduces logged physical match trajectories within $\le 5\%$ temporal and spatial error.
+Done when the example plans compile, invalid plans produce useful diagnostics, and the catalog loads on desktop without hardware side effects.
 
----
+### Step 2 — Implement geometry and progress calculators
 
-### Phase 2: Drivetrain Limits & Slew Vector Limiter
-**Focus:** Fix the asymmetric acceleration flaw and directional snapping without changing path geometry.
+Deliver line/arc primitives, coupled fillet construction, exact path samples, goal anchors, local projection, and explicit next-progress calculations per [01](01-path-geometry-and-kinematics.md). Cover static paths through the next stop before optimizing horizon storage. Resolve duplicate points and exact reversals explicitly.
 
-1. Create immutable `DrivetrainLimits` record and JSON loader (`drivetrain-limits.json`).
-2. Implement isotropic 2D `VectorLimiter`:
-   $$\|\vec{v}_{cmd} - \vec{v}_{prev}\| \le a_{fric} \cdot \Delta t$$
-3. Replace the asymmetric 1D slew rate limiter in `ConstraintsCalculator` with the 2D `VectorLimiter`.
-4. Populate `drivetrain-limits.json` with first-principles mathematically derived constants from `TunerConstants` ($v_{free} = 4.02\text{ m/s}$, $v_{max} = 3.85\text{ m/s}$, $a_0$, $\omega_{max}$, $\alpha_{max}$) and initial empirical carpet defaults ($a_{fric} = 3.8$ m/s$^2$, $a_{brake} = 4.0$ m/s$^2$, $\tau_{lag} = 0.040$ s).
+Done when geometric/property tests cover adjacent short corners, zero-length geometry, figure-8 crossings, through-goal passage, and geometry-generation changes. A rebuild must preserve goal/event identity without comparing distances from different geometries.
 
-> **Validation Gate 2:** Match telemetry and simulation logs confirm that acceleration and braking are strictly symmetric, module scrubbing on waypoint transitions is eliminated, and existing autos pass without hitting current limits.
+### Step 3 — Implement constrained translation and heading math
 
----
+Deliver the backward/forward profile, bounded heading reference step, heading readiness barriers, terminal pose convergence, and final combined command allocation per [02](02-velocity-profiler-and-limits.md) and [03](03-heading-and-rotation.md). Keep recovery and gate decisions outside generic geometry calculations.
 
-### Phase 3: Core Planner & Spatial Profiler
-**Focus:** Replace heuristic tracking and distance-PID velocity shaping with the online spatial planner.
+Implement conservative interval constraint checks before performance shortcuts. Explicitly represent an infeasible measured state or a newly tightened command envelope; never hide it by clamping a simulated initial velocity and calling the result feasible.
 
-1. Implement `PathBuilder`:
-   - Circular fillet generation using $r \le \delta / (\sec(\theta/2) - 1)$ with coupled symmetric leg scaling ($G^1$ continuity).
-   - Collinear bypass ($\theta < 1.0^\circ$) and near-reversal warning ($\theta \ge 135^\circ$).
-   - Horizon construction bounded by braking distance $\frac{v_{max}^2}{2 a_{brake}}$.
-2. Implement `ProgressTracker`:
-   - Windowed spatial projection along arc length $s$ (preventing self-intersection loop-jumping).
-   - Monotonic ratcheting and cross-track error $e_{xt}$ with negative feedback $v_{xt} = \mathrm{clamp}(-e_{xt} / \tau_{xt})$.
-   - Waypoint-Vertex Sub-Segment Latching and re-latching on $|e_{xt}| > e_{relatch}$ or vision pose steps.
-3. Implement `VelocityProfiler`:
-   - Two-pass backward/forward dynamic programming profiler along $s$ (forward pass seeded at $k_{curr}$).
-   - Second-order speed lookahead $s_{eval, v}$, decoupled tangent lookahead $s_{eval, t}$, and terminal 2D stop-goal convergence.
-   - Lateral centripetal acceleration capping ($v \le \sqrt{a_{lat} / \kappa}$) and dynamic translation-rotation allocation ($v_{max, eff}, a_{fric, eff}$).
-4. Implement `HeadingPlanner`:
-   - Keyframe target evaluation ($\theta^*(s)$) and continuous unwrapped reference evolution $\theta_{ref}$.
-   - Hard gate speed capping: $v_{cap} = \max(0, \min(v_{cap, kin}, v_{cap, brake}))$ (including overshoot and spin-arrest time).
-5. Implement `TrailblazerLegacyAdapter` allowing existing `AutoPoint` segment lists to be evaluated by the new planner.
+Done when tests cover startup, braking inside corners, missed/overshot gates, angle wrapping and directed turns, shrinking translation budgets during rotation, and the final command after cross-track/target feedforward is added. The constraint checks must independently evaluate the output, not duplicate its implementation.
 
-> **Validation Gate 3:** All existing competition autos pass 100% of assertion checks in CI simulation using the new planner, and `LeftNormalAuto` executes successfully on the physical robot.
+### Step 4 — Assemble the runtime and closed-loop evidence
 
----
+Deliver plan activation/update/cancel/release, input snapshots, dynamic-target state, event history, cached output, and timeout/fault behavior. Connect calculators through this runtime and run it against the desktop plant.
 
-### Phase 4: Java Fluent DSL & MVP Tooling (`./gradlew previewAuto`)
-**Focus:** Upgrade authoring ergonomics and deliver the fast local preview tool.
+Add the complete representative fixture suite and seeded disturbances in [06](06-verification-simulation-and-ci.md). Produce versioned preview results, traces, diagnostics, and CI summaries from the same execution. Add replay input support without confusing open-loop replay with closed-loop validation.
 
-1. Implement canonical Java Fluent DSL (`Trailblazer.plan("...")`, `Goal`, `HeadingPlan`).
-2. Create centralized `FieldAnchors.java` dictionary, eliminating hardcoded meter literals.
-3. Implement native alliance mirroring utilities (`FieldAnchors.flipToBlue()`, `plan.mirror()`).
-4. **Build MVP Tooling: `./gradlew previewAuto -Pauto=<name>`**:
-   - Executes auto simulation headlessly on desktop JVM in $< 200$ ms.
-   - Generates `build/reports/autos/<name>.wpilog` for instant visualization in AdvantageScope (3D robot swept footprint, filleted path, velocity graphs, limiting factor stream).
-   - Generates `build/reports/autos/<name>.png` static trajectory map.
-   - Outputs metrics summary table directly to terminal.
-5. Re-author `LeftNormalAuto` using the new Fluent DSL and `FieldAnchors`.
+Done when valid scenarios complete, invalid/unreachable scenarios produce their expected failure status, markers behave correctly through relatches, and repeat runs with the same inputs reproduce results within documented numerical tolerances.
 
-> **Validation Gate 4:** A controls student or mentor who did not write the planner successfully authors, previews via `./gradlew previewAuto`, and runs a brand-new auto routine on the robot using the Java DSL workflow.
+### Step 5 — Deliver the VS Code preview MVP
 
----
+Implement the extension and Java runner contract in [05](05-spec-model-dsl-and-tooling.md). The editor selects a Java scenario, invokes the normal build/runner, and displays path geometry, footprint playback, headings, limits, events, and diagnostics. Refresh on save and explicit command; clearly distinguish a failed build from an up-to-date result.
 
-### Phase 5: CI Hardening, Deprecation & Final App
-**Focus:** Deepen test automation, delete legacy code, and deliver the live previewer app.
+Done when a student can edit a Java plan, see it run in VS Code, locate a failed constraint, and reproduce the same result with the headless CI command. Test compile errors, cancellation, stale results, and robot/alliance selection. Measure actual cold/warm refresh times; do not gate on invented latency claims.
 
-1. Implement 20x Monte Carlo perturbation sweeps in CI (start offsets, vision noise, collision shoves).
-2. Migrate all remaining competition autos (`LeftSpecial`, `RightSpecial`, `DoNothing`, `TestAuto`) to the new Fluent DSL.
-3. Safely delete legacy classes:
-   - `com.team581.trailblazer.followers.PidPathFollower`
-   - `com.team581.trailblazer.trackers.HeuristicPathTracker`
-   - `com.team581.trailblazer.ConstraintsCalculator`
-   - Legacy `LinearConstraintOptions` and `AngularConstraintOptions`
-4. **Build Advanced Tooling: Standalone In-Memory Live Previewer App (`TrailblazerStudio`)**:
-   - Background file watcher monitoring `autos/*.java`.
-   - In-memory hot reload via JDK `JavaCompiler` API (`ToolProvider.getSystemJavaCompiler()`) and dynamic ClassLoader.
-   - Sub-300 ms live updates on `Ctrl+S` pushed over WebSockets to a local browser canvas (`localhost:5801`).
+### Step 6 — Integrate the robot and teleop assist
 
-> **Validation Gate 5:** All legacy classes are deleted, project compiles cleanly, all unit and perturbation tests pass, nightly CI runs 100% green, and the live previewer app provides sub-300 ms updates on save.
+Add a TB2 drive source and explicit test-mode selection to the deployed robot project, starting with the new-member pathway configuration used on comp bot. Feed coherent measured state, honor control ownership, log requested/applied motion, and support cancellation. Do not redirect existing normal driving merely to exercise TB2.
 
----
+Use short dedicated test paths: straight stop, rounded corner, consecutive corners, heading gate, and displaced-start recovery. Derive the test robot's limits and validate them using [07](07-empirical-calibration-routine.md). Add static drive-to, then timestamped dynamic targets and hybrid axis ownership as specified in [04](04-teleop-and-dynamic-assist.md).
 
-## 3. Resolution of Open Architectural Questions
+Done when desktop integration tests verify mode transitions and hardware sessions demonstrate the core cases with recorded traces. Document untested cases if robot time is limited; that limits the readiness claim, not continued tooling/math work.
 
-| Decision | Final Architecture Choice | Rationale |
-| :--- | :--- | :--- |
-| **Specification Format** | **100% Pure Java Fluent DSL** | Eliminates YAML "split-brain" dilemma; guarantees compile-time safety, seamless lambdas/suppliers, and instant IDE refactoring. |
-| **In-place vs. Clean-room** | **In-place evolution via adapters** | Allows running existing competition autos (`LeftNormal`, etc.) as immediate regression tests during every phase. |
-| **Tooling Phasing** | **`./gradlew previewAuto` (MVP) → Live App (Final)** | Delivers high-value AdvantageScope previewing immediately without blocking core planner rollout; reserves dedicated GUI app for the final polish. |
-| **Swerve Module Limits** | **Swerve Setpoint Generator downstream** | Trailblazer bounds chassis 2D acceleration; CTRE / WPILib swerve setpoint generator handles individual module steer rate and wheel slip downstream. |
-| **Localization Noise Threshold** | **$e_{relatch} = 0.40$ m, $\Delta p_{vision} = 0.25$ m** | Derived from comp-bot odometry logs; absorbs camera latency without triggering unnecessary re-latches. |
-| **Heading Gate Defaults** | **Shooting/Docking = `HARD`; Transit/Intake = `SOFT`** | Guarantees scoring shots are never fired off-angle, while preventing pauses during field transit. |
-| **Reference Autos** | **`LeftNormal`, `RightNormal`, `IntegrationTest`** | Form the golden baseline test suite across all CI verification tasks. |
+### Step 7 — Review 2027 portability and completion
 
----
+Deliver a small integration example and checklist for supplying robot limits/module locations, localization snapshot, field context, drive output, telemetry, and scenario fixtures. Build that example with a second synthetic robot configuration to expose hardcoded 2026 assumptions.
 
-## 4. Risk Analysis and Technical Mitigations
+Done when:
 
-| Risk | Severity | Root Cause | Technical Mitigation |
-| :--- | :---: | :--- | :--- |
-| **Fillet cuts into field obstacle** | High | Large `within` tolerance allows wide corner cut | Fillet deviation is strictly bounded: $d_{dev} \le \delta$. CI keepout checks fail builds if swept robot footprint breaches keepouts. Preview PNG highlights clearance. |
-| **Velocity chatter from noisy odometry** | High | Velocity feedback cycling through forward profile pass | Forward profiler seeds from last commanded velocity $v_{prev}$ rather than raw measured velocity, unless divergence exceeds $0.75$ m/s. |
-| **Simulation passes, robot drifts on carpet** | Medium | Inaccurate friction or latency assumptions | Tune the 3 empirical parameters ($a_{fric}, a_{brake}, \tau_{lag}$) in `drivetrain-limits.json` during robot bringup. Log replay tracks model residuals. |
-| **RoboRIO loop time overrun** | Medium | Heavy dynamic programming or memory allocations | All profile buffers preallocated (`double[]`). Solve time benchmarked at $< 35 \; \mu\text{s}$ ($0.18\%$ of loop budget). |
-| **Dynamic vision targets cause path jitter** | Medium | Camera pose fluctuation at 50 Hz | Exponential low-pass filter ($\tau = 0.10$ s) on dynamic goal suppliers, bounded by the 2D vector limiter. |
-| **Driver fights auto assist in teleop** | High | Inability to preempt autonomous assist cleanly | Automatic preemption when stick deflection $> 0.15$; continuous velocity handoff prevents mechanical jerking. |
+- Shared math/runtime imports no season-specific robot, field, or mechanism code.
+- Unit, property, closed-loop, perturbation, and preview integration checks pass under [06](06-verification-simulation-and-ci.md).
+- The VS Code workflow and command-line runner consume the same Java plans and diagnostics.
+- Robot validation evidence and remaining limitations are recorded, with performance measured on the target hardware.
+- The 2027 integration checklist is sufficient to bind the library without altering planner math.
+
+Old-auto parity, TB1 deletion, localization tuning, and unrelated applications are not completion criteria. No commit, push, deployment, or shared-service change is authorized by this implementation plan itself.
