@@ -104,20 +104,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                 supplyCurrentLimit));
   }
 
-  public boolean atGoal() {
-    return atGoal(getState());
-  }
-
-  public boolean atGoal(DeployState state) {
-    return switch (state) {
-      case UNHOMED, HOME_INWARD, HOME_OUTWARD -> false;
-      default ->
-          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
-              && MathUtil.isNear(
-                  state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE);
-    };
-  }
-
   public void beastModeRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
@@ -137,6 +123,23 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
       default -> setStateFromRequest(DeployState.FIX_DIFFERENTIAL_DESYNC);
     }
+  }
+
+  public DeployGoalStatus getGoalStatus() {
+    return getGoalStatus(getState());
+  }
+
+  public DeployGoalStatus getGoalStatus(DeployState state) {
+    return switch (state) {
+      case UNHOMED -> DeployGoalStatus.UNHOMED;
+      case HOME_INWARD, HOME_OUTWARD -> DeployGoalStatus.HOMING;
+      default ->
+          MathUtil.isNear(state.getLength(), leftMotorPosition, DeployConfig.POSITION_TOLERANCE)
+                  && MathUtil.isNear(
+                      state.getLength(), rightMotorPosition, DeployConfig.POSITION_TOLERANCE)
+              ? DeployGoalStatus.AT_GOAL
+              : DeployGoalStatus.WRONG_POSITION;
+    };
   }
 
   public double getPosition() {
@@ -171,7 +174,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   public boolean isFullyExtended() {
-    return atGoal(DeployState.INTAKE);
+    return getGoalStatus(DeployState.INTAKE) == DeployGoalStatus.AT_GOAL;
   }
 
   public void safeKickerStowRequest() {
@@ -310,5 +313,6 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     DogLog.log("Deploy/RightMotor/Position", rightMotorPosition);
     DogLog.log("Deploy/GoalPosition", getState().getLength());
     DogLog.log("Deploy/DifferentialPosition", differentialMechanismPosition);
+    DogLog.log("Deploy/GoalStatus", getGoalStatus());
   }
 }
