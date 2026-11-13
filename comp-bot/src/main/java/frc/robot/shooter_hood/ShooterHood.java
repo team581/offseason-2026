@@ -21,6 +21,13 @@ import frc.robot.config.FeatureFlags;
 import frc.robot.util.scheduling.SubsystemPriority;
 
 public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> implements PowerManaged {
+  private static ShooterHoodGoalStatus getAngleStatus(
+      double goalAngle, double currentAngle, double tolerance) {
+    return MathUtil.isNear(goalAngle, currentAngle, tolerance)
+        ? ShooterHoodGoalStatus.READY
+        : ShooterHoodGoalStatus.WRONG_ANGLE;
+  }
+
   static double clamp(double angleDegrees) {
     return MathUtil.clamp(angleDegrees, ShooterHoodConfig.MIN_ANGLE, ShooterHoodConfig.MAX_ANGLE);
   }
@@ -37,24 +44,16 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
         : ShooterHoodConfig.DISTANCE_TO_SCORE.get(distance);
   }
 
-  static boolean isAtGoal(ShooterHoodState state, double goalAngle, double currentAngle) {
+  static ShooterHoodGoalStatus getGoalStatus(
+      ShooterHoodState state, double goalAngle, double currentAngle) {
     return switch (state) {
-      case UNHOMED, HOMING, IDLE -> false;
+      case UNHOMED -> ShooterHoodGoalStatus.UNHOMED;
+      case HOMING -> ShooterHoodGoalStatus.HOMING;
+      case IDLE -> ShooterHoodGoalStatus.IDLE;
       case FEEDING ->
-          MathUtil.isNear(clamp(goalAngle), currentAngle, ShooterHoodConfig.FEEDING_TOLERANCE);
-      case SCORING -> MathUtil.isNear(clamp(goalAngle), currentAngle, ShooterHoodConfig.TOLERANCE);
+          getAngleStatus(clamp(goalAngle), currentAngle, ShooterHoodConfig.FEEDING_TOLERANCE);
+      case SCORING -> getAngleStatus(clamp(goalAngle), currentAngle, ShooterHoodConfig.TOLERANCE);
     };
-  }
-
-  static boolean isAtGoal(
-      ShooterHoodState state,
-      ShooterHoodState expectedState,
-      double goalAngle,
-      double currentAngle) {
-    if (state != expectedState) {
-      return false;
-    }
-    return isAtGoal(state, goalAngle, currentAngle);
   }
 
   private final TalonFX motor;
@@ -98,14 +97,6 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
                 supplyCurrentLimit));
   }
 
-  public boolean atGoal() {
-    return isAtGoal(getState(), getGoalAngle(), currentAngle);
-  }
-
-  public boolean atGoal(ShooterHoodState expectedState) {
-    return isAtGoal(getState(), expectedState, getGoalAngle(), currentAngle);
-  }
-
   public void feedRequest(double distance) {
     this.feedDistance = distance;
     switch (getState()) {
@@ -118,6 +109,10 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
 
   public double getAngle() {
     return currentAngle;
+  }
+
+  public ShooterHoodGoalStatus getGoalStatus() {
+    return getGoalStatus(getState(), getGoalAngle(), currentAngle);
   }
 
   public void homingRequest() {
@@ -231,7 +226,7 @@ public class ShooterHood extends StateMachineSubsystem<ShooterHoodState> impleme
       }
     }
 
-    DogLog.log("ShooterHood/AtGoal", atGoal());
+    DogLog.log("ShooterHood/GoalStatus", getGoalStatus());
     DogLog.log("ShooterHood/Angle", currentAngle);
     DogLog.log("ShooterHood/GoalAngle", goalAngle);
   }

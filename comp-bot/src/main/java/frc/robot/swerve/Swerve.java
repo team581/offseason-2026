@@ -246,68 +246,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 .withSupplyCurrentLimitEnable(true));
   }
 
-  public boolean atGoal() {
-    return switch (getState()) {
-      case WARMUP_SCORE, SCORE ->
-          MathUtil.isNear(
-              drivetrainState.Pose.getRotation().getDegrees(),
-              scoringAngle,
-              scoringTolerance,
-              -180.0,
-              180.0);
-      case WARMUP_FEED, FEED ->
-          MathUtil.isNear(
-              drivetrainState.Pose.getRotation().getDegrees(),
-              feedingAngle,
-              useLooseTolerance ? LOOSE_TOLERANCE : feedingTolerance,
-              -180,
-              180);
-      default -> false;
-    };
-  }
-
-  public boolean atGoal(double lookaheadTime) {
-    switch (getState()) {
-      case WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {}
-      default -> {
-        return atGoal();
-      }
-    }
-
-    Rotation2d currentRotation = drivetrainState.Pose.getRotation();
-    double angularVelocity = drivetrainState.Speeds.omegaRadiansPerSecond; // Radians per second
-
-    var targetAngleDegrees = getTargetAngleDegrees();
-    var toleranceDegrees = getToleranceDegrees();
-
-    Rotation2d targetRotation = Rotation2d.fromDegrees(targetAngleDegrees);
-
-    // Calculate the shortest signed angular distance from current to target
-    double deltaAngleToGoal = targetRotation.minus(currentRotation).getRadians(); // Radians
-
-    // If already within tolerance, we are at the goal
-    if (MathUtil.isNear(0, deltaAngleToGoal, Math.toRadians(toleranceDegrees))) {
-      return true;
-    }
-
-    // Check if we are moving towards the goal and will reach or pass it
-    // Moving towards if the signs of angularVelocity and deltaAngleToGoal are the same
-    // (or if one is zero, but deltaAngleToGoal is not zero here)
-    if (Math.signum(angularVelocity) == Math.signum(deltaAngleToGoal)) {
-      // Calculate the magnitude of rotation in lookahead time
-      double rotationMagnitudeInLookahead = Math.abs(angularVelocity * lookaheadTime);
-
-      // We reach or pass if the rotation magnitude is greater than or equal to the remaining
-      // distance
-      // (minus tolerance, since we just need to get within tolerance of the goal)
-      return rotationMagnitudeInLookahead
-          >= (Math.abs(deltaAngleToGoal) - Math.toRadians(toleranceDegrees));
-    }
-
-    // If not at goal, not moving towards it, or not reaching it, then not at or past
-    return false;
-  }
-
   public void climbAssistDriveRequest() {
     setStateFromRequest(SwerveState.CLIMB_ASSIST);
   }
@@ -335,6 +273,74 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public ChassisSpeeds getFieldRelativeSpeeds() {
     return fieldRelativeSpeeds;
+  }
+
+  public SwerveGoalStatus getGoalStatus() {
+    return switch (getState()) {
+      case WARMUP_SCORE, SCORE ->
+          MathUtil.isNear(
+                  drivetrainState.Pose.getRotation().getDegrees(),
+                  scoringAngle,
+                  scoringTolerance,
+                  -180.0,
+                  180.0)
+              ? SwerveGoalStatus.READY
+              : SwerveGoalStatus.WRONG_ANGLE;
+      case WARMUP_FEED, FEED ->
+          MathUtil.isNear(
+                  drivetrainState.Pose.getRotation().getDegrees(),
+                  feedingAngle,
+                  useLooseTolerance ? LOOSE_TOLERANCE : feedingTolerance,
+                  -180,
+                  180)
+              ? SwerveGoalStatus.READY
+              : SwerveGoalStatus.WRONG_ANGLE;
+      default -> SwerveGoalStatus.NOT_AIMING;
+    };
+  }
+
+  public SwerveGoalStatus getGoalStatus(double lookaheadTime) {
+    switch (getState()) {
+      case WARMUP_SCORE, SCORE, WARMUP_FEED, FEED -> {}
+      default -> {
+        return getGoalStatus();
+      }
+    }
+
+    Rotation2d currentRotation = drivetrainState.Pose.getRotation();
+    double angularVelocity = drivetrainState.Speeds.omegaRadiansPerSecond; // Radians per second
+
+    var targetAngleDegrees = getTargetAngleDegrees();
+    var toleranceDegrees = getToleranceDegrees();
+
+    Rotation2d targetRotation = Rotation2d.fromDegrees(targetAngleDegrees);
+
+    // Calculate the shortest signed angular distance from current to target
+    double deltaAngleToGoal = targetRotation.minus(currentRotation).getRadians(); // Radians
+
+    // If already within tolerance, we are at the goal
+    if (MathUtil.isNear(0, deltaAngleToGoal, Math.toRadians(toleranceDegrees))) {
+      return SwerveGoalStatus.READY;
+    }
+
+    // Check if we are moving towards the goal and will reach or pass it
+    // Moving towards if the signs of angularVelocity and deltaAngleToGoal are the same
+    // (or if one is zero, but deltaAngleToGoal is not zero here)
+    if (Math.signum(angularVelocity) == Math.signum(deltaAngleToGoal)) {
+      // Calculate the magnitude of rotation in lookahead time
+      double rotationMagnitudeInLookahead = Math.abs(angularVelocity * lookaheadTime);
+
+      // We reach or pass if the rotation magnitude is greater than or equal to the remaining
+      // distance
+      // (minus tolerance, since we just need to get within tolerance of the goal)
+      if (rotationMagnitudeInLookahead
+          >= (Math.abs(deltaAngleToGoal) - Math.toRadians(toleranceDegrees))) {
+        return SwerveGoalStatus.READY;
+      }
+    }
+
+    // If not at goal, not moving towards it, or not reaching it, then not at or past
+    return SwerveGoalStatus.WRONG_ANGLE;
   }
 
   public ChassisSpeeds getRequestedSpeeds() {
