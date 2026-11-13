@@ -135,7 +135,9 @@ final class HeadlessTest {
       testMode.set(false);
       resetPose.set(false);
       DriverStationSim.setJoystickAxisCount(0, 6);
+      DriverStationSim.setJoystickButtonCount(0, 10);
       DriverStationSim.setJoystickAxis(0, 3, 0.0);
+      DriverStationSim.setJoystickButton(0, 6, false);
       for (var alliance :
           new AllianceStationID[] {AllianceStationID.Blue1, AllianceStationID.Red1}) {
         for (boolean visionEnabled : new boolean[] {true, false}) {
@@ -155,17 +157,18 @@ final class HeadlessTest {
           robot.runUntil(() -> robot.shooterHood().getState() == ShooterHoodState.IDLE, 2.0);
 
           DriverStationSim.setJoystickAxis(0, 3, 1.0);
-          var expected = visionEnabled ? RobotState.SCORE : RobotState.FALLBACK_SCORE;
+          var expected = visionEnabled ? RobotState.SCORE : RobotState.PREPARE_SCORE;
           robot.runUntil(() -> robot.robotManager.getState() == expected, 5.0);
           double holdUntil = Timer.getFPGATimestamp() + 0.5;
           while (Timer.getFPGATimestamp() < holdUntil) {
             robot.tick();
             assertThat(robot.robotManager.getState()).isEqualTo(expected);
-            assertThat(robot.robotManager.hopperManager.getState()).isEqualTo(HopperState.SCORE);
+            assertThat(robot.robotManager.hopperManager.getState())
+                .isEqualTo(visionEnabled ? HopperState.SCORE : HopperState.IDLE_DEPLOYED);
             assertThat(robot.robotManager.hopperManager.feeder.getState())
-                .isEqualTo(FeederState.SCORE);
+                .isEqualTo(visionEnabled ? FeederState.SCORE : FeederState.IDLE);
             assertThat(robot.robotManager.hopperManager.funneler.getState())
-                .isEqualTo(FunnelerState.SCORE);
+                .isEqualTo(visionEnabled ? FunnelerState.SCORE : FunnelerState.IDLE);
           }
 
           DriverStationSim.setJoystickAxis(0, 3, 0.0);
@@ -175,10 +178,24 @@ final class HeadlessTest {
               .isEqualTo(FeederState.IDLE);
           assertThat(robot.robotManager.hopperManager.conveyor.getState())
               .isEqualTo(frc.robot.conveyor.ConveyorState.IDLE);
+
+          if (!visionEnabled) {
+            // Without vision, the driver must explicitly request the tower preset.
+            DriverStationSim.setJoystickButton(0, 6, true);
+            robot.runUntil(() -> robot.robotManager.getState() == RobotState.FALLBACK_SCORE, 5.0);
+            assertThat(robot.robotManager.hopperManager.feeder.getState())
+                .isEqualTo(FeederState.SCORE);
+            assertThat(robot.robotManager.hopperManager.funneler.getState())
+                .isEqualTo(FunnelerState.SCORE);
+            DriverStationSim.setJoystickButton(0, 6, false);
+            robot.tick();
+            assertThat(robot.robotManager.getState()).isEqualTo(RobotState.IDLE);
+          }
         }
       }
     } finally {
       DriverStationSim.setJoystickAxis(0, 3, 0.0);
+      DriverStationSim.setJoystickButton(0, 6, false);
       robot.robotManager.idleRequest();
       DriverStationSim.setEnabled(false);
       useVision.set(previousVision);

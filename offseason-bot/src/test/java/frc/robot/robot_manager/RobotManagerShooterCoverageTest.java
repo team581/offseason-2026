@@ -203,9 +203,11 @@ final class RobotManagerShooterCoverageTest {
       set(shooter, "atGoalDebounced", true);
       assertThat(manager.getNextState(fallbackActiveState)).isEqualTo(fallbackActiveState);
 
-      // Interrupt condition
+      // The preset shot ignores vision-based obstruction, but still requires shooter readiness.
       if (fallbackActiveState.isScoring()) {
         set(manager, "isScorePathObstructed", true);
+        assertThat(manager.getNextState(fallbackActiveState)).isEqualTo(fallbackActiveState);
+        set(shooter, "atGoalDebounced", false);
       } else {
         set(manager, "isInSafeFeedingLocation", false);
       }

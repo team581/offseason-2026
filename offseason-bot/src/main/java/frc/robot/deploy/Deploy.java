@@ -168,7 +168,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
                     .addMotor(leftMotor, ChassisReference.Clockwise_Positive)
                     .addMotor(rightMotor, ChassisReference.CounterClockwise_Positive)
                     .withMinPosition(-DeployConfig.HOMING_END_POSITION_INWARD / 360.0)
-                    .withMaxPosition(-DeployConfig.HOMING_END_POSITION_OUTWARD / 360.0));
+                    .withMaxPosition(-DeployConfig.MIN_ANGLE / 360.0));
 
     if (!simulationInitialized) {
       // The robot is placed on the field with its intake raised. This seeds only the physical
