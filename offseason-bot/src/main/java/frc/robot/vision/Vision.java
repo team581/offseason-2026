@@ -2,6 +2,8 @@ package frc.robot.vision;
 
 import static java.util.Comparator.comparingDouble;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.team581.spot.Spot;
 import com.team581.spot.SpotCameraStatus;
@@ -70,7 +72,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private static final double TIMESTAMP_ERROR_S = .02;
   private static final double NO_TAGS_WARNING_S = 2;
   private static final Set<SpotCameraStatus.State> STREAMING =
-      Set.of(SpotCameraStatus.State.STREAMING, SpotCameraStatus.State.FALLING_BEHIND);
+      ImmutableSet.of(SpotCameraStatus.State.STREAMING, SpotCameraStatus.State.FALLING_BEHIND);
 
   private static double headingError(SpotEstimate.Candidate candidate, Rotation2d heading) {
     return Math.abs(candidate.pose().toPose2d().getRotation().minus(heading).getRadians());
@@ -128,7 +130,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private final Map<String, Double> lastTimestamp = new HashMap<>();
   private final Map<String, Reason> reasons = new HashMap<>();
   private final Set<String> faults = new HashSet<>();
-  private List<VisionMeasurement> measurements = List.of();
+  private List<VisionMeasurement> measurements = ImmutableList.of();
 
   private Optional<SpotStatus> spotStatus = Optional.empty();
 
@@ -167,7 +169,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   public void close() {
     if (closed) return;
     closed = true;
-    measurements = List.of();
+    measurements = ImmutableList.of();
     for (var fault : faults) DogLog.clearFault(fault);
     faults.clear();
     spot.close();
@@ -190,7 +192,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
           arrival.camera(), evaluate(arrival.camera(), arrival.sample(), currentMotion, accepted));
     }
     accepted.sort(comparingDouble(VisionMeasurement::timestamp));
-    measurements = fusionEnabled.getAsBoolean() ? List.copyOf(accepted) : List.of();
+    measurements = fusionEnabled.getAsBoolean() ? List.copyOf(accepted) : ImmutableList.of();
   }
 
   /**
@@ -204,7 +206,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   /** Measurements accepted this loop, oldest first. Each is returned once. */
   public List<VisionMeasurement> drainMeasurements() {
     var result = measurements;
-    measurements = List.of();
+    measurements = ImmutableList.of();
     return result;
   }
 
@@ -214,7 +216,7 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
 
   /** Discards estimates captured at or before {@code timestamp}, so they can't undo a reset. */
   public void reset(double timestamp) {
-    measurements = List.of();
+    measurements = ImmutableList.of();
     incoming.clear();
     lastTimestamp.clear();
     resetTime = timestamp;

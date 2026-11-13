@@ -3,6 +3,7 @@ package frc.robot.vision;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.spot.Spot;
 import com.team581.spot.SpotCameraStatus;
 import com.team581.spot.SpotEstimate;
@@ -100,7 +101,7 @@ final class VisionTest {
     }
   }
 
-  private static final List<String> CAMERAS = List.of("left", "right", "back");
+  private static final List<String> CAMERAS = ImmutableList.of("left", "right", "back");
 
   @BeforeAll
   static void hal() {
