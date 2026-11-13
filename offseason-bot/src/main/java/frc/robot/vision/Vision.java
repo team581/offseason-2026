@@ -3,7 +3,6 @@ package frc.robot.vision;
 import static java.util.Comparator.comparingDouble;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.team581.spot.Spot;
 import com.team581.spot.SpotCameraStatus;
@@ -72,7 +71,8 @@ public final class Vision extends StateMachineSubsystem<VisionState> implements 
   private static final double TIMESTAMP_ERROR_S = .02;
   private static final double NO_TAGS_WARNING_S = 2;
   private static final Set<SpotCameraStatus.State> STREAMING =
-      ImmutableSet.of(SpotCameraStatus.State.STREAMING, SpotCameraStatus.State.FALLING_BEHIND);
+      Sets.immutableEnumSet(
+          SpotCameraStatus.State.STREAMING, SpotCameraStatus.State.FALLING_BEHIND);
 
   private static double headingError(SpotEstimate.Candidate candidate, Rotation2d heading) {
     return Math.abs(candidate.pose().toPose2d().getRotation().minus(heading).getRadians());
