@@ -53,16 +53,20 @@ public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
 #### `Goal` Definition
 ```java
 public record Goal(
-    String id,                          // Stable across geometry rebuilds
-    Supplier<Pose2d> poseSupplier,       // Absolute, anchor offset, or dynamic supplier
-    PassType passType,                   // STOP or THROUGH
+    String id,                           // Stable across geometry rebuilds
+    Supplier<Pose2d> poseSupplier,       // Absolute, anchor offset, or dynamic supplier (non-null)
+    PassType passType,                   // STOP, THROUGH, or CRUISE_THROUGH
     double withinMeters,                 // Nominal closest-approach bound; not obstacle clearance
-    OptionalDouble maxPassSpeedMetersPerSec, // Optional speed ceiling for THROUGH goals
+    OptionalDouble maxPassSpeedMetersPerSec, // Ceiling for THROUGH; target cruise speed for CRUISE_THROUGH
+    OptionalDouble maxOverrunMeters,     // CRUISE_THROUGH overrun ray length past terminal goal
+    TargetLossPolicy targetLossPolicy,   // HOLD_LAST_VALID, HOLD_POSITION, or ABORT_PLAN (for dynamic suppliers)
     FinishTolerance finishTolerance,     // Position, heading, linear/angular speed, and dwell for STOP
     Optional<HeadingKeyframe> heading,   // Associated heading schedule keyframe
-    Optional<Enum<?>> marker             // Event marker emitted when progress crosses goal
+    Optional<Enum<?>> marker             // Event marker emitted on passage or release
 ) {}
 ```
+
+> Use `Goal.stop(...)`, `Goal.through(...)`, and `Goal.cruiseThrough(...)` factory/builder helpers so static goals default `TargetLossPolicy` cleanly and `CRUISE_THROUGH` requires positive `cruiseSpeedMetersPerSec` and `maxOverrunMeters`.
 
 #### `HeadingPlan` Keyframe
 ```java
@@ -82,11 +86,19 @@ public record HeadingKeyframe(
 
 ## 3. Centralized Field Anchor Dictionary (`FieldAnchors.java`)
 
-Centralize field coordinates in season-owned `FieldAnchors.java`; supply them to TB2 outside the shared engine:
+Centralize field coordinates and declared field symmetry in season-owned `FieldAnchors.java`; supply them to TB2 outside the shared engine:
 
 ```java
+public enum FieldSymmetry {
+  /** Blue/Red related by 180-deg rotation: (L-x, W-y, theta + pi). Preserves CW/CCW. */
+  ROTATIONAL_180,
+  /** Blue/Red related by X-mirroring across field centerline: (L-x, y, pi - theta). Reverses CW <-> CCW. */
+  MIRROR_X
+}
+
 public final class FieldAnchors {
   // Illustrative 2026 anchors authored for red in the fixed field frame
+  public static final FieldSymmetry SEASON_SYMMETRY = FieldSymmetry.ROTATIONAL_180;
   public static final Pose2d RED_DEPOT_TRENCH = new Pose2d(10.489, 1.500, Rotation2d.fromDegrees(90));
   public static final Pose2d RED_DEPOT_BUMP   = new Pose2d(13.576, 2.450, Rotation2d.kZero);
   public static final Translation2d HUB_CENTER = new Translation2d(12.100, 4.034);
@@ -97,37 +109,49 @@ public final class FieldAnchors {
     return new Pose2d(base.getX() + dx, base.getY() + dy, base.getRotation().plus(dTheta));
   }
 
-  // 180-degree alliance rotation for this field
-  public static Pose2d flipToBlue(Pose2d redPose) {
-    return FieldUtil.pathflip(redPose);
+  // Transform an authored static anchor to the target alliance using SEASON_SYMMETRY
+  public static Pose2d flipToBlue(Pose2d redPose, FieldSymmetry symmetry) {
+    return switch (symmetry) {
+      case ROTATIONAL_180 -> FieldUtil.pathflip(redPose); // (L-x, W-y), theta + pi; CW/CCW unchanged
+      case MIRROR_X -> new Pose2d(
+          FieldUtil.FIELD_LENGTH - redPose.getX(),
+          redPose.getY(),
+          Rotation2d.fromRadians(MathUtil.angleModulus(Math.PI - redPose.getRotation().getRadians())));
+          // Caller/plan builder reverses TurnDirection CW <-> CCW under MIRROR_X
+    };
   }
 
   private FieldAnchors() {}
 }
 ```
 
+Never apply alliance flipping to live Blue-origin field-frame vision suppliers (`Pose2d` already reported in the unified field coordinate system); transform only static authored anchors and explicitly flipped static points.
+
 ---
 
-## 4. Tooling Architecture: VS Code MVP + Shared Runner
+## 4. Tooling Architecture: VS Code MVP + Warm Worker + CI Runner
 
-The VS Code MVP uses the same Java runner as CI, like the Spot previewer. Author in Java; generate preview data.
+Interactive previews use a long-lived warm-JVM stdio worker for sub-second iteration, while CI runs the exact same shared Java planning and simulation engine through Gradle (`ErrorProne` / `Refaster` checked):
 
 ```mermaid
 flowchart LR
-    Code[Java plan and scenario] --> Runner[Gradle and Java simulation]
-    Runner --> Results[Geometry, traces, metrics]
+    Code[Java plan and scenario] --> Warm[Warm JVM worker: cached classpath + javac + URLClassLoader]
+    Code --> Gradle[./gradlew previewAuto in CI]
+    Warm --> Engine[Shared Java planner & simulation engine]
+    Gradle --> Engine
+    Engine --> Results[Geometry, traces, metrics]
     Results --> Preview[VS Code preview]
     Results --> CI[CI checks and artifacts]
 ```
 
 ---
 
-## 5. Headless Runner: `./gradlew previewAuto -Pauto=<Name>`
+## 5. Runners: CI Gradle Task & Warm-JVM Preview Worker
 
-1. Loads a Java `PreviewScenario` through the normal build/classpath without hardware. The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
-2. Steps the same runtime in closed-loop simulation. Missing dynamic/mechanism inputs are reported rather than assumed successful.
-3. Outputs under `build/reports/autos/<name>/`:
-   - Versioned preview data: input/build identity, geometry, timestamped motion, headings, limits, events, and assertion results.
+1. **CI Headless Runner (`./gradlew previewAuto -Pauto=<Name>`):** Loads a Java `PreviewScenario` through the normal build/classpath without hardware (enforcing full compilation and `ErrorProne`/`Refaster`). The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
+2. **VS Code Warm-JVM Stdio Worker:** Reads a cached Gradle classpath manifest on startup, compiles only modified Java plan/scenario files incrementally via `ToolProvider.getSystemJavaCompiler()` (or JDT LS output) bypassing cold Gradle startup, and loads scenario classes through a fresh disposable child `URLClassLoader` per request closed inside `try-with-resources` so Windows JAR/class locks and stale class state cannot accumulate. If `build.gradle` or dependencies change, the worker refreshes the classpath manifest automatically.
+3. **Closed-Loop Simulation & Outputs (`build/reports/autos/<name>/`):**
+   - Versioned preview data: input/build identity, geometry, timestamped motion, headings, limits, events, `GoalPassageStatus`, and assertion results.
    - `.wpilog` trace, `.png` trajectory map, and terminal metrics summary.
 4. Returns nonzero on failed assertions or build/runner errors. Measure cold-build, warm-refresh, and simulation times separately.
 
@@ -136,15 +160,15 @@ flowchart LR
 ## 6. MVP Viewer: VS Code Previewer
 
 1. **Selection:** Choose scenario, robot configuration, alliance, and seed.
-2. **Refresh:** Invoke the shared runner on command or debounced save; no separate Java parser or planner in TypeScript.
-3. **View:** Display goals, fillets, keepouts, swept footprint, motion/heading playback, velocity graphs, markers, and limiting factors.
+2. **Refresh:** Invoke the warm stdio preview worker on command or debounced save (falling back to Gradle when build scripts change); no separate Java parser or planner in TypeScript.
+3. **View:** Display goals, fillets, keepouts (`K_hard` and `K_margin`), swept footprint, motion/heading playback, velocity graphs, markers, and limiting factors.
 4. **Diagnostics:** Show compile errors and failed assertions. Cancel superseded runs, discard stale results, and label the last successful preview stale after a failed build.
-5. **Integration:** Respect workspace trust, clean up child processes/watchers, and test the extension against the runner's versioned output.
+5. **Integration:** Respect workspace trust, clean up worker/child processes and watchers on shutdown, and test both the warm worker and Gradle runner against the same versioned output schema.
 
 ---
 
 ## 7. Authoring Validation
 
-- Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal stop. Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
-- Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)). Preview scenarios provide deterministic replacements.
-- Apply alliance transforms once; do not re-transform field-relative vision targets. `FieldUtil.pathflip` rotates 180 degrees, preserving CW/CCW; reflection reverses them.
+- Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal `Goal.stop` or valid `Goal.cruiseThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
+- Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)) and an explicit `TargetLossPolicy`. Preview scenarios provide deterministic replacements.
+- Require explicit `FieldSymmetry` on alliance flips: `ROTATIONAL_180` maps $(L-x, W-y, \theta+\pi)$ and preserves `CW`/`CCW`; `MIRROR_X` maps $(L-x, y, \pi-\theta)$ and reverses `CW <-> CCW`. Reject or flag double-flipped live Blue-origin field-frame vision suppliers.

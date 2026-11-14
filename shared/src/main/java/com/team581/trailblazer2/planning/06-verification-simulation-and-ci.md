@@ -33,34 +33,34 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
 
 ### 2.1 Layer 1: Unit Tests (Every Push & PR)
 - `PathBuilderTest`:
-  - Check fillet deviation: $d_{dev} = r (\sec(\theta/2) - 1)$.
+  - Check fillet deviation against the tracking-compensated deviation budget: $d_{dev,k} = r_k (\sec(\theta_k/2) - 1) \le \delta_{geom,k} = \max(0.5\delta_k, \delta_k - \epsilon_{track})$ when geometry permits.
   - Check coupled symmetric tangent allocation on short adjacent legs ($t_{des, k} \le 0.85 \min(L_k, L_{k+1})$ and $t_{clamped, k-1} + t_{clamped, k} \le 0.95 L_k$) for tangency and $G^1$ continuity.
+  - Check exact `atan2` midpoint fillet-arc projection near $r_k \to 0$ and large-radius gentle turns ($r_k \to \infty$) without division-by-zero singularities.
   - Check that collinear corners omit fillets, small nonzero turns preserve tangency, and exact reversals require stops ([01](01-path-geometry-and-kinematics.md)).
   - Check that near-reversal corners ($135^\circ \le \theta < 180^\circ$) log a `NEAR_REVERSAL_CORNER` warning without changing `Goal.through` to a stop.
 - `VelocityProfilerTest`:
-  - Check curvature and combined motion limits per [02](02-velocity-profiler-and-limits.md), including exact endpoints, interval braking/acceleration, and the final command after feedback/feedforward.
-  - Check that stop samples equal $0.0$ m/s, backward braking deceleration obeys $a_{brake}$, and terminal 2D pose convergence eliminates both cross-track and inline residual error.
-  - Check second-order lookahead startup from rest ($v_0 = 0 \implies s_{eval, v} = s + \frac{1}{2} a_{avail}(s) \tau_{eff}^2 > s$) and acceleration matching motor torque curve $a_0 (1 - v/v_{free})$.
-  - Check for no velocity chatter with noisy simulated measurements.
+  - Check curvature, join-curvature, and effective steer-rate ($\dot{\delta}_{eff}$) corner limits alongside combined rotation-budget limits per [02](02-velocity-profiler-and-limits.md).
+  - Check Pass 1 (exact backward quadratic deceleration without $v=0$ stall) and Pass 2 (exact forward closed-form quadratic acceleration plus 2-step bracketed motor curve solve under stator/voltage-sag/supply-current `70/30/10 A` rolloff).
+  - Check lookahead tapering toward the earliest closed gate/stop barrier ($s_{barrier} - s$), `Goal.cruiseThrough` overrun ray behavior, stop samples equaling $0.0$ m/s, terminal 2D pose convergence eliminating both cross-track and inline residual error, and zero velocity chatter under noisy simulated measurements.
 - `HeadingPlannerTest`:
-  - Check rotation direction (`SHORTEST`, `CW`, `CCW`) and continuous unwrapped reference evolution $\theta_{ref}$.
-  - Check that hard gates hold at anchors until measured readiness; overshoot/stall must not report successful passage ([03](03-heading-and-rotation.md)).
+  - Check one-shot directional branch latching (`SHORTEST`, `CW`, `CCW`) on activation and continuous unwrapped reference evolution $\theta_{ref}$ across $\pm\pi$.
+  - Check `facePoint` smooth speed-to-target blending and `SINGULAR_HOLD` freezing inside $0.25\text{ m}$ radial distance without $\pi$-flips or angular jitter.
+  - Check error-frame `TrapezoidStep` seeded from `lastCommand` $\omega_{prev}$ and `HARD` gate anchoring with `maxGateHoldRadius = 0.25 m` pullback and $2\epsilon_\theta$ open-latch hysteresis ([03](03-heading-and-rotation.md)).
 - `VectorLimiterTest`:
-  - Check isotropic 2D acceleration bounds: $`\lVert \vec{v}_{cmd} - \vec{v}_{prev}\rVert \le a_{fric, eff} \cdot \Delta t`$ across all quadrants.
+  - Check 7-constraint 2D active-set projection (frictional ellipse, motor force cap, acceleration/deceleration rate caps, cross-track ceiling, cornering lateral cap, and origin disk continuity) including diagonal quadrants and shrinking-envelope fallback preserving smooth braking without failing `Infeasible` when budget drops mid-path.
 - `ProgressTrackerTest`:
-  - Check that measured progress follows forward and backward motion within the search window around $s_{high\_water}$ without jumping across self-intersecting/figure-8 paths.
-  - Check that event progress never decreases within a geometry generation.
-  - Check that latching preserves interior `Goal.through` vertices and re-latching triggers when $|e_{xt}| > e_{relatch}$ or on explicit localization resets. Rebuilds preserve goal/event identity without reusing old arc-length coordinates.
+  - Check that measured progress follows forward and backward motion within the fixed-origin search horizon around $s_{high\_water}$ without jumping across self-intersecting/figure-8 paths, and freezes $s_{high\_water}$ off-corridor or before closed gates.
+  - Check 3-tier `Goal.through` capture (`PASSED_WITHIN_TOLERANCE` vs `PASSED_OUTSIDE_TOLERANCE` + marker emission timing), snapshot-based dynamic rebuild deadband (`0.01 m` / `0.5°`), and `activate(plan, startAtGoalId)` pre-populating prior markers without firing duplicate events or reusing old arc-length coordinates.
 
 ### 2.2 Layer 2: Property & Fuzz Testing (Nightly)
-Runs randomized path geometries, start states, and noise levels; asserts zero `NaN`/`Infinity` outputs, $`\lVert \vec{v}_{cmd}\rVert \le v_{max} + 10^{-6}`$, $`\lVert \Delta \vec{v}\rVert/\Delta t \le a_{fric} + 10^{-6}`$, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
+Runs randomized path geometries, start states, and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$, $\|\Delta \vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
 
 ### 2.3 Layer 3: Closed-Loop Auto Simulation (Every Push & PR)
-Runs dedicated TB2 scenarios (straight/short stops, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
+Runs dedicated TB2 scenarios (straight/short stops, `Goal.cruiseThrough` score-and-go, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
 - Segment duration $t_{actual} \le t_{budget}$.
 - Stop goals satisfy their declared position, heading, linear/angular speed, and dwell tolerances.
-- Through goals pass within declared `within` distance and swept bumper footprint stays outside keepout zones.
-- Event markers fire once in authored order, including across geometry rebuilds.
+- `Goal.through` waypoints report `PASSED_WITHIN_TOLERANCE` (`PASSED_OUTSIDE_TOLERANCE` fails CI), `Goal.cruiseThrough` meets terminal velocity/overrun bounds, and swept bumper footprint stays outside `K_hard` keepout zones (logging any `K_margin` encroachment).
+- Event markers fire once in authored order, including across geometry rebuilds and `activate(plan, startAtGoalId)` starts.
 
 ### 2.4 Layer 4: Perturbation Sweeps (20x Monte Carlo per PR)
 Runs each auto across $N = 20$ seeded runs with start pose offsets $\mathcal{U}(-0.08, 0.08)\text{ m} / \mathcal{U}(-5^\circ, 5^\circ)$, odometry noise $\sigma = 0.015\text{ m}$, a $0.25\text{ m}$ vision pose step at $t = 3.0\text{ s}$, and a $1.5\text{ m/s}$ ($100\text{ ms}$) lateral collision shove; asserts recovery within the scenario envelope or its expected failure status. Include target loss, disabled/re-enabled operation, driver handoff, and missed ticks.

@@ -81,10 +81,11 @@ $$
 
 The radius must satisfy the waypoint's `within` distance and leave room for neighboring fillets. $L_k$ is the leg length from $P_{k-1}$ to $P_k$, and $L_{k+1}$ is the length from $P_k$ to $P_{k+1}$.
 
-**Radius allowed by `within`.** For a tolerance of $\delta_k$ meters, the largest radius satisfying $d_{dev} \le \delta_k$ is:
+**Radius allowed by `within`.** For a tolerance of $\delta_k$ meters, reserve inward tracking margin $\epsilon_{track}$ (tracking-policy default `0.05 m`) without collapsing small tolerances to zero. The largest radius satisfying $d_{dev} \le \delta_{geom,k}$ is:
 
 $$
-r_{\delta,k} = \frac{\delta_k}{\sec(\theta_k/2) - 1}
+\delta_{geom,k} = \max\left(0.5\,\delta_k,\; \delta_k - \epsilon_{track}\right), \qquad
+r_{\delta,k} = \frac{\delta_{geom,k}}{\sec(\theta_k/2) - 1}
 $$
 
 **Desired tangent length.** Each corner uses equal entry and exit tangent lengths. Cap the desired length at $\eta = 0.85$ of the shorter adjacent leg:
@@ -140,18 +141,20 @@ Corner-speed limits and pass-speed warnings belong to [02 §3.1](02-velocity-pro
 
 ## 4. Planning Horizon
 
-Build the **planning horizon** from the fixed start (§6) through the next `Goal.stop(...)`, including every through goal in between.
+Build the **planning horizon** from the fixed start (§6) through the next **terminal goal** (`Goal.stop(...)` or `Goal.cruiseThrough(...)`), including every through goal in between.
 
 ```mermaid
 flowchart LR
-    Start["Fixed start"] --> A["Through goals (if any)"] --> Stop["Next stop"]
+    Start["Fixed start"] --> A["Through goals (if any)"] --> Terminal["Next stop or cruiseThrough (+ overrun)"]
 ```
 
-Neighboring fillets share straight-leg space (§2.3). Keep the horizon endpoint fixed as the robot advances.
+Neighboring fillets share straight-leg space (§2.3). Keep the nominal horizon endpoint $S_{total}$ fixed as the robot advances.
+
+- **Terminal Cruise Overrun (`EndBehavior.DRIVE_PAST`):** When the terminal goal is `Goal.cruiseThrough(...)` with target speed $v_{cruise} > 0$, extend a post-anchor tangent overrun ray past $S_{total}$ of length $d_{overrun}$ (default `1.5 m`, clipped to field-wall clearance) terminating in a safety stop ($v = 0$) at $S_{total} + d_{overrun}$. This prevents deceleration on bump ramps while preventing wall collisions if the caller delays transitioning.
 
 - **Capacity.** Check goal and sample counts before activation. Accept paths up to the configured limits and reject oversized paths without truncating them.
 
-- **Rebuilds.** Build and cache static geometry at activation, release from a completed stop, or recovery. Dynamic goal changes start a new geometry generation (§6).
+- **Rebuilds.** Build and cache static geometry at activation, release from a completed stop, or recovery. For dynamic goals, compare each resolved target against the **snapshot stored when the current `geometryGeneration` was built** (never tick $n$ vs. tick $n-1$, which misses slow steady drift), rebuilding only when $\|\Delta \mathbf{p}_{goal}\| > \epsilon_{rebuild,pos}$ (`0.01 m`) or $|\Delta \theta_{goal}| > \epsilon_{rebuild,\theta}$ (`0.5°`).
 
 - **Future shorter horizon.** Preserve neighboring fillets’ full-path tangent lengths and satisfy the [profiler’s cutoff requirements](02-velocity-profiler-and-limits.md#3-two-pass-spatial-horizon-profiler).
 
@@ -237,23 +240,35 @@ $$
 
 ### 5.2 Local Projection and Progress
 
-**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets backward/forward distances $d_{back}$ and $d_{fwd}$, tested against supported speeds and tick intervals; clip to path bounds.
+**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets backward/forward distances $d_{back}$ and $d_{fwd}$, tested against supported speeds and tick intervals; clip to active horizon bounds ($S_{horizon} = S_{total} + d_{overrun}$ for `Goal.cruiseThrough`, else $S_{total}$).
 
 $$
 s_{min} = \max(0,\; s_{high\_water} - d_{back}),
 \qquad
-s_{max} = \min(S_{total},\; s_{high\_water} + d_{fwd})
+s_{max} = \min(S_{horizon},\; s_{high\_water} + d_{fwd})
 $$
 
 **Measured progress.** Project the robot position $\mathbf{p}_{robot} = (x,y)$ onto the portion of each path piece inside $[s_{min},s_{max}]$. The closest point is $\mathbf{p}^*$, and its arc-length coordinate $s_{meas}$ is used for control and speed profiling.
 
-**Event progress.** Update the high-water mark with measured progress for event ordering and search-window anchoring.
+- **Exact fillet-arc projection.** To avoid center-of-curvature discontinuities when inward cross-track error exceeds $r_k$, let $\alpha_{mid,k} = \alpha_{start,k} + \sigma_{turn,k}\theta_k/2$ and compute:
+
+  $$
+  \Delta\alpha = \mathrm{angleModulus}\left(\mathrm{atan2}(p_{robot,y} - C_{k,y},\; p_{robot,x} - C_{k,x}) - \alpha_{mid,k}\right)
+  $$
+
+  If $\|\mathbf{p}_{robot} - \mathbf{C}_k\| > 10^{-6}$ and $|\Delta\alpha| \le \theta_k/2$, use $\phi = \theta_k/2 + \sigma_{turn,k}\Delta\alpha$; otherwise choose $\arg\min_{\mathbf{T} \in \{\mathbf{T}_{in,k}, \mathbf{T}_{out,k}\}} \|\mathbf{p}_{robot} - \mathbf{T}\|^2$ (tie-breaking to $\mathbf{T}_{in,k}$).
+
+**Event progress.** Update the high-water mark with measured progress only while inside the tracking corridor ($|e_{xt}| \le e_{relatch}$), and clamp below any unsatisfied interior `HARD` heading gate ($s_{hard\_gate}^-$) so off-track sweeps or closed-gate overshoots cannot advance events:
 
 $$
-s_{high\_water,new} = \max(s_{high\_water},\; s_{meas})
+s_{high\_water,new} =
+\begin{cases}
+\max\left(s_{high\_water},\; \min(s_{meas},\; s_{hard\_gate}^-)\right) & \text{if } |e_{xt}| \le e_{relatch} \\
+s_{high\_water} & \text{otherwise}
+\end{cases}
 $$
 
-Large backward displacement triggers recovery. The high-water mark is local to each geometry generation (see section 6).
+Large backward displacement or sustained $|e_{xt}| > e_{relatch}$ triggers recovery. The high-water mark is local to each geometry generation (see section 6).
 
 **Cross-track error.** At the closest point, rotate the path tangent with components $(t_x,t_y)$ to get the left-hand unit normal.
 
@@ -271,7 +286,7 @@ $$
 e_{xt} = (\mathbf{p}_{robot} - \mathbf{p}^*) \cdot \hat{n}(s_{meas})
 $$
 
-Positive error means the robot is left of the path. [02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter) converts this error into a bounded correction velocity.
+Positive error means the robot is left of the path. [02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence-7-set-2d-projection--feedforwards) converts this error into a bounded correction velocity.
 
 ---
 
@@ -286,41 +301,45 @@ An **anchor** is the point on the path that represents a goal. Use the same anch
 | Rounded through goal | Fillet apex |
 | Unrounded through goal | Waypoint vertex |
 | Explicit stop | Path endpoint |
+| Cruise-through terminal | Path endpoint ($S_{total}$ before overrun ray) |
 
 - **Path origin.** Fix it at activation or release from a completed stop.
 
-- **Progress.** Use measured projection for control and the high-water mark for events (§5.2).
+- **Progress.** Use measured projection for control and corridor-gated high-water mark for events (§5.2).
 
 - **Projection.** Within the distance window, search only the pieces allowed by the active goal and path order. This prevents jumps to crossing legs.
 
-A through goal passes only when:
+For a `Goal.through(...)`, let $d_{closest,k} = \min_n \mathrm{dist}(P_k, \overline{\mathbf{p}_{n-1}\mathbf{p}_n})$ be the measured segment-to-goal closest approach while goal $k$ is active, and define capture radius $d_{capture,k} = \max(e_{relatch},\; 2\delta_k + 0.15\text{ m})$. When $s_{high\_water} \ge s_{anchor,k}$ (with no closed `HARD` gate at or before $s_{anchor,k}$):
 
-1. The robot crossed the anchor. If two ticks straddle it, check the measured motion between them conservatively.
-2. The measured closest approach to the goal was within tolerance.
+1. **$d_{closest,k} \le \delta_k$:** Advance active goal ID, fire `marker`, and record `PASSED_WITHIN_TOLERANCE`.
+2. **$\delta_k < d_{closest,k} \le d_{capture,k}$:** Advance active goal ID, **still fire `marker`** so minor carpet disturbances do not starve auto state transitions, and record `PASSED_OUTSIDE_TOLERANCE` with $d_{closest,k}$ for CI/preview failure checks.
+3. **$d_{closest,k} > d_{capture,k}$:** Do **not** pass the goal or fire `marker`; trigger recovery toward the unpassed goal.
 
-On passage, advance the active goal ID and keep the vertex and neighboring fillets. On a miss, report failure and suppress the success marker.
+`Goal.stop(...)` markers fire only upon full stop completion ([04 §4](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)), whereas `Goal.cruiseThrough(...)` terminal markers fire on anchor passage within $d_{capture,k}$.
 
 ### Path rebuilds
 
-A **geometry generation** is one version of the built path. Each has its own arc-length coordinates and high-water mark.
+A **geometry generation** is one version of the built path. Each has its own arc-length coordinates, high-water mark, and resolved dynamic-goal snapshot (§4).
 
 - Remap the active goal and path piece.
 - Reproject the measured pose and track progress in the new path's coordinates.
-- Carry over fired event IDs and completed goals.
+- Carry over fired event IDs, completed goals, and `GoalPassageStatus` history.
 - Keep unsatisfied stops and hard gates pending.
 - Require measured passage even if a dynamic rebuild moves an anchor behind the robot.
 
-### Recovery
+### Moving activation and recovery
 
-Runtime may request recovery after sustained tracking error or an explicit localization reset.
+- **Moving activation:** Keep Leg 1 as $\mathbf{p}_{start} \to P_1$ without inserting a virtual lead-in vertex. Include the initial arrest bow $\mathbf{p}_{start} + \frac{\|\vec{v}_{meas}\|}{2 a_{fric}}\vec{v}_{meas}$ in activation footprint checks, and pause tracking-error relatch dwell while initial perpendicular speed $|\vec{v}_{prev}\cdot\hat{n}_1| > v_{xt,max}$ is actively decaying toward Leg 1.
 
 - **Tracking error.** Store the error thresholds and required duration in a named Java tracking policy. Validate them with scenarios.
 
 - **Localization reset.** Localization accepts measurements and signals resets. TB2 uses that signal for vision jumps.
 
+- **Two-tier keepouts:** Separate **hard obstacle polygons** $K_{hard}$ (Hub, Tower, walls) from **inflation margin bands** $K_{margin}$. Pre-match CI and teleop `driveTo` reject intrusions into either.
+
 1. Start a new geometry generation toward the next uncompleted goal. Preserve command history.
-2. Check the robot's footprint along the entire connection against the supplied keepouts.
-3. If the connection is invalid, stop and report a fault. The caller owns alternate routing.
+2. Check the robot's footprint along the entire connection against $K_{hard}$ and $K_{margin}$.
+3. On hard obstacle intrusion ($d_{signed}(K_{hard}) < 0$), stop and report a fault unless the initial pose slightly touches a boundary ($d_{signed} \ge -0.03\text{ m}$) and clearance strictly increases over $s \in [0, 0.15\text{ m}]$ (wall-contact escape). On margin-only contact during mid-auto recovery ($0 \le d_{signed}(K_{hard}) < d_{margin}$), continue with `KEEPOUT_MARGIN_WARNING` and a `CAREFUL` speed cap rather than terminating the auto.
 
 ## 7. Degenerate and dynamic inputs
 
@@ -331,8 +350,8 @@ Runtime may request recovery after sustained tracking error or an explicit local
 | A single stop at the same position | Allow heading-only motion. |
 | Through goal at an exact reversal, or a noncollinear through corner with zero tolerance | Report a validation error and require an explicit stop. A finite-radius tangent arc is impossible. |
 | Near reversal | Allow a small fillet with a warning if the radius and length meet numeric tolerances. |
-| Zero-length leg | Skip tangent division; use terminal position and heading control ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter)). |
+| Zero-length leg | Skip tangent division; use terminal position and heading control ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence-7-set-2d-projection--feedforwards)). |
 
 Clamp projection and evaluation to each piece's valid domain. Use deterministic tie-breaking at joins.
 
-Runtime evaluates named dynamic targets once per tick and passes the resolved values to `PathBuilder`, following [04](04-runtime-integration-and-teleop-assist.md#8-resolved-plan-inputs).
+Runtime evaluates named dynamic targets once per tick and passes the resolved values to `PathBuilder`, applying the §4 rebuild deadband against the active generation snapshot ([04 §8](04-runtime-integration-and-teleop-assist.md#8-resolved-plan-inputs)).
