@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,9 +28,10 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private final Trailblazer trailblazer;
   private boolean started;
   private boolean hasEnabledAuto;
-  private boolean trenchWarmedUp;
+  private final EnumSet<AutoSelection> warmedUpAutos = EnumSet.noneOf(AutoSelection.class);
 
-  private TrailblazerTrenchAuto activeAuto;
+  private TrailblazerAuto<?> activeAuto;
+  private AutoSelection preparedSelection;
   private Alliance preparedAlliance;
   private double previousMeasuredSpeed;
   private double previousMeasurementTime;
@@ -42,10 +44,14 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     this.trailblazer = trailblazer;
   }
 
-  private void prepareTrenchAuto() {
+  private void prepareAuto(AutoSelection selection) {
     long activationStart = LoopTiming.start();
-    activeAuto = new TrailblazerTrenchAuto(trailblazer, autoAlliance);
+    activeAuto =
+        selection == AutoSelection.TRAILBLAZER_3_TRENCH_ROTATION_TEST
+            ? new TrailblazerTrenchRotationAuto(trailblazer, autoAlliance)
+            : new TrailblazerTrenchAuto(trailblazer, autoAlliance);
     activeAuto.periodic();
+    preparedSelection = selection;
     preparedAlliance = autoAlliance;
     LoopTiming.end("Scheduler/Autos/Activate", activationStart);
   }
@@ -57,7 +63,9 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
 
   @Override
   protected void whileInState(AutoSelection state) {
-    boolean trenchSelected = state == AutoSelection.TRAILBLAZER_3_RIGHT_TRENCH;
+    boolean rotationSelected = state == AutoSelection.TRAILBLAZER_3_TRENCH_ROTATION_TEST;
+    boolean trailblazerSelected =
+        rotationSelected || state == AutoSelection.TRAILBLAZER_3_RIGHT_TRENCH;
     if (!DriverStation.isAutonomousEnabled()) {
       autoAlliance = DriverStation.getAlliance().orElse(autoAlliance);
       if (started) {
@@ -72,26 +80,35 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       }
       robotManager.swerve.clearTrajectoryCommand();
       if (DriverStation.isDisabled()
-          && trenchSelected
+          && trailblazerSelected
           && !hasEnabledAuto
           && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()
           && (RobotBase.isSimulation()
               || DriverStation.isAutonomous()
               || DriverStation.isFMSAttached())) {
-        robotManager.localization.resetPose(TrailblazerTrenchAuto.start(autoAlliance));
+        robotManager.localization.resetPose(
+            rotationSelected
+                ? TrailblazerTrenchRotationAuto.start(autoAlliance)
+                : TrailblazerTrenchAuto.start(autoAlliance));
       }
-      if (DriverStation.isDisabled() && trenchSelected) {
+      if (DriverStation.isDisabled() && trailblazerSelected) {
         // Phoenix receives the launch direction while the Driver Station inhibits motor output.
         double direction = autoAlliance == Alliance.Red ? 1 : -1;
-        robotManager.swerve.setTrajectoryCommand(new ChassisSpeeds(direction, 0, 0));
-        if (!trenchWarmedUp) {
+        robotManager.swerve.setTrajectoryCommand(
+            rotationSelected
+                ? new ChassisSpeeds(0, -direction, 0)
+                : new ChassisSpeeds(direction, 0, 0));
+        if (warmedUpAutos.add(state)) {
           long warmupStart = LoopTiming.start();
-          TrailblazerTrenchAuto.warmup(autoAlliance);
-          trenchWarmedUp = true;
+          if (rotationSelected) {
+            TrailblazerTrenchRotationAuto.warmup(autoAlliance);
+          } else {
+            TrailblazerTrenchAuto.warmup(autoAlliance);
+          }
           LoopTiming.end("Scheduler/Autos/Warmup", warmupStart);
         }
-        if (activeAuto == null || preparedAlliance != autoAlliance) {
-          prepareTrenchAuto();
+        if (activeAuto == null || preparedSelection != state || preparedAlliance != autoAlliance) {
+          prepareAuto(state);
         }
       } else {
         activeAuto = null;
@@ -100,7 +117,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     }
 
     hasEnabledAuto = true;
-    if (!trenchSelected) {
+    if (!trailblazerSelected) {
       if (!started) {
         started = true;
         robotManager.homeDeployInAutoRequest();
@@ -111,8 +128,8 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
 
     boolean firstTick = !started;
     if (firstTick) {
-      if (activeAuto == null) {
-        prepareTrenchAuto();
+      if (activeAuto == null || preparedSelection != state || preparedAlliance != autoAlliance) {
+        prepareAuto(state);
       }
       started = true;
     } else if (trailblazer.lastResult().status()

@@ -18,11 +18,13 @@ final class TrailblazerTrenchAuto extends TrailblazerAuto<TrailblazerTrenchAuto.
 
   private static final double TRAVEL_METERS = 2.0;
   private static final Pose2d START = CompAutoField.RIGHT_TRENCH_START;
+  static final Pose2d END =
+      new Pose2d(START.getX() - TRAVEL_METERS, START.getY(), START.getRotation());
 
   private static final AutoSegment LEAVE_TRENCH =
       Trailblazer.segment("leave-trench")
           .withLimits(MotionLimits.robotMaximum())
-          .stopAt(new Pose2d(START.getX() - TRAVEL_METERS, START.getY(), START.getRotation()))
+          .stopAt(END)
           .build();
 
   static Pose2d start(Alliance alliance) {
