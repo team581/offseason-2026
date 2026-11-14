@@ -8,7 +8,7 @@
 
 - **Trailblazer 1:** Waypoint-bound heading switched halfway through curves (`t < 0.5`) without turn-direction control. Speed floors (`0.4 m/s`) and `360°` default tolerances caused stalls or ignored readiness.
 
-- **Trailblazer 2:** Heading is a separate schedule $\theta^*(s)$ along the path:
+- **Trailblazer 3:** Heading is a separate schedule $\theta^*(s)$ along the path:
   1. **Target Modes:** Face a fixed angle (`fixed`), face the direction of travel (`faceTravel`), continuously aim at a scoring or field target (`facePoint`), or keep current heading (`hold`).
   2. **Explicit Turn Direction:** Choose `SHORTEST`, `CW`, or `CCW` to control rotation direction.
   3. **Soft vs. Hard Gates:** `SOFT` permits passage without heading readiness; `HARD` brakes to a hold until measured readiness. Both respect shared motion limits.
@@ -20,7 +20,7 @@
 
 Swerve can translate along tangent $\hat{t}$ while independently rotating its azimuth $\theta$.
 
-Trailblazer 2 models heading as a piecewise schedule $\theta^*(s)$ parameterized by path progress $s$.
+Trailblazer 3 models heading as a piecewise schedule $\theta^*(s)$ parameterized by path progress $s$.
 
 ```
 Path Progress s:   0.0m                1.8m               3.2m             5.0m
@@ -156,7 +156,7 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
    \omega_{cmd}=\omega_{prev}+\mathrm{clamp}(\omega_{des}-\omega_{prev},-\alpha_{max}\Delta t,\alpha_{max}\Delta t)
    ```
 
-   Use TB2's previous `lastCommand` angular velocity during continuous tracking (measured/applied on activation or disturbance reseed). Out-of-bounds states enter bounded recovery ([02](02-velocity-profiler-and-limits.md)).
+   Use TB3's previous `lastCommand` angular velocity during continuous tracking (measured/applied on activation or disturbance reseed). Out-of-bounds states enter bounded recovery ([02](02-velocity-profiler-and-limits.md)).
 4. **Allocate from final angular demand:** Pass $\omega_{cmd}$ directly to the 4 exact module-speed constraints in [02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence-7-set-2d-projection--feedforwards), and pass noise-free $\alpha_{ref}$ (never differentiated gyro feedback) as the angular acceleration feedforward.
 
 - **State Invariant:** Advance from previous reference state, not measured heading each tick. Runtime owns state; the profile step is pure math.

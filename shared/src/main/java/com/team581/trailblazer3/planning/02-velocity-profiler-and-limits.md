@@ -75,7 +75,7 @@ public record DrivetrainLimits(
 
   (Omit $I_{sup\_max}(v)$ when `swerveSupplyCurrentLimitAmps` is absent; without $I_{supply}$ throttling, this reduces to the linear back-EMF curve bounded by $I_{slip}$.)
 
-> See **[TB2-SPEC-07: Parameter Derivation & Physics Sandbox Validation](07-empirical-calibration-routine.md)** for derivation estimates, input assumptions, and calibration.
+> See **[TB3-SPEC-07: Parameter Derivation & Physics Sandbox Validation](07-empirical-calibration-routine.md)** for derivation estimates, input assumptions, and calibration.
 
 ---
 
@@ -98,7 +98,7 @@ A future shorter horizon must account for every downstream constraint in its cut
 
 ### 3.1 Node-Level Limit Formulation
 
-Obtain noise-free **per-node** translational budgets $(v_{max, eff, k}, a_{fric, eff, k})$ from [TB2-SPEC-03 §5](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation) (which includes the closed-form path-coupled wheel limit $v_{coupled,max,k} = \frac{v_{max}}{1 + |\theta^{*\prime}|_k R_{max}}$ with join derivative $|\theta^{*\prime}|_k = \max(|\theta^{*\prime}(s_k^-)|, |\theta^{*\prime}(s_k^+)|)$ on `faceTravel`/`facePoint` segments). These budgets can reach zero; do not add positive floors that exceed available capacity.
+Obtain noise-free **per-node** translational budgets $(v_{max, eff, k}, a_{fric, eff, k})$ from [TB3-SPEC-03 §5](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation) (which includes the closed-form path-coupled wheel limit $v_{coupled,max,k} = \frac{v_{max}}{1 + |\theta^{*\prime}|_k R_{max}}$ with join derivative $|\theta^{*\prime}|_k = \max(|\theta^{*\prime}(s_k^-)|, |\theta^{*\prime}(s_k^+)|)$ on `faceTravel`/`facePoint` segments). These budgets can reach zero; do not add positive floors that exceed available capacity.
 
 At each spatial sample $k$ with join curvature $|\kappa_k| = \max(|\kappa(s_k^-)|, |\kappa(s_k^+)|)$, the local velocity limit $v_{lim, k}$ is bounded by:
 
@@ -111,7 +111,7 @@ At each spatial sample $k$ with join curvature $|\kappa_k| = \max(|\kappa(s_k^-)
    ```
 
    (On straight segments where $\kappa_k = 0$, $v_{corner,k}=\infty$.)
-3. **Zone & Hard Heading Gate Constraints:** Apply zone speed ceilings. An unsatisfied hard gate inserts a zero-speed barrier at its anchor; the backward pass propagates braking upstream ([TB2-SPEC-03 §4](03-heading-and-rotation.md#4-translation-rotation-coupling-hard-vs-soft-gates)).
+3. **Zone & Hard Heading Gate Constraints:** Apply zone speed ceilings. An unsatisfied hard gate inserts a zero-speed barrier at its anchor; the backward pass propagates braking upstream ([TB3-SPEC-03 §4](03-heading-and-rotation.md#4-translation-rotation-coupling-hard-vs-soft-gates)).
 4. **Goal Exit Constraints:** `Goal.stop` has $v_{goal,N-1}=0$. `Goal.cruiseThrough(v_cruise)` sets $v_{goal,k} = v_{cruise}$ at $S_{total}$ and $v_{goal,N-1} = 0$ at the overrun ray end $S_{total} + d_{overrun}$. An interior `Goal.through` may declare a speed ceiling $v_{pass}$, never a required minimum; otherwise $v_{goal,k}=\infty$.
 
 The composite speed ceiling is:
@@ -188,7 +188,7 @@ flowchart LR
 
 ### 3.4 Initial Velocity Selection and Chatter Elimination
 
-1. **Nominal tracking:** During continuous TB2 tracking, set $\vec{v}_{prev}$ from TB2's own `lastCommand` (feeding back azimuth-cosine-scaled module target velocities every tick deadlocks rest startup whenever wheels sit $90^\circ$ from the launch tangent). Project $\vec{v}_{prev}$ onto the current path tangent:
+1. **Nominal tracking:** During continuous TB3 tracking, set $\vec{v}_{prev}$ from TB3's own `lastCommand` (feeding back azimuth-cosine-scaled module target velocities every tick deadlocks rest startup whenever wheels sit $90^\circ$ from the launch tangent). Project $\vec{v}_{prev}$ onto the current path tangent:
 
    ```math
    v_{start}=\max(0,\vec v_{prev}\cdot\hat t(s))
@@ -196,7 +196,7 @@ flowchart LR
 
    Total vector magnitude would incorrectly count sideways correction as forward speed.
 2. **Activation / handoff:** Seed $\vec{v}_{prev}$ from `applied` velocity (falling back to measured velocity) on activation or drive-source handoff, and monitor measured divergence.
-3. **Disturbance detection:** Compare measured velocity against TB2's `lastCommand`, so opposite or sideways motion is detected even at equal speed:
+3. **Disturbance detection:** Compare measured velocity against TB3's `lastCommand`, so opposite or sideways motion is detected even at equal speed:
 
    ```math
    \|\vec v_{meas}-\vec v_{lastCmd}\|>v_{diverge,threshold}

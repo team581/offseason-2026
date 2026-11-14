@@ -57,7 +57,7 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
 Runs randomized path geometries, start states, loop rates (`nominalDtSeconds` in `[4 ms, 20 ms]`), and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\Delta\vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$ everywhere, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$ when `!result.infeasible()`, monotonic speed arrest ($\|\vec{v}_{cmd}\| \le \|\vec{v}_{prev}\| - \min(a_{brake}, a_{fric,eff,0})\Delta t + 10^{-6}$) during overspeed `INFEASIBLE` recovery, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
 
 ### 2.3 Layer 3: Closed-Loop Auto Simulation (Every Push & PR)
-Runs dedicated TB2 scenarios (straight/short stops, `Goal.cruiseThrough` score-and-go, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
+Runs dedicated TB3 scenarios (straight/short stops, `Goal.cruiseThrough` score-and-go, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
 - Segment duration $t_{actual} \le t_{budget}$.
 - Stop goals satisfy their declared position, heading, linear/angular speed, and dwell tolerances.
 - `Goal.through` waypoints report `PASSED_WITHIN_TOLERANCE` (`PASSED_OUTSIDE_TOLERANCE` fails CI), `Goal.cruiseThrough` meets terminal velocity/overrun bounds, and swept bumper footprint stays outside `K_hard` keepout zones (logging any `K_margin` encroachment).

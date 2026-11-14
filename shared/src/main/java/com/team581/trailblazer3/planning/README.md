@@ -1,12 +1,12 @@
-# Trailblazer 2 Spec Overview
+# Trailblazer 3 Spec Overview
 
-Trailblazer 2 is a clean-sheet Java path-planning and motion-control library built for the **new 2027 robot**, with zero legacy Trailblazer 1 or 2026 robot dependencies. It replaces PID-to-endpoint control with rounded paths and explicit acceleration, braking, and turning limits, replans every loop from measured motion, and keeps all authoring in code.
+Trailblazer 3 is a clean-sheet Java path-planning and motion-control library built for the **new 2027 robot**, with zero legacy Trailblazer 1 or 2026 robot dependencies. It replaces PID-to-endpoint control with rounded paths and explicit acceleration, braking, and turning limits, replans every loop from measured motion, and keeps all authoring in code.
 
 ---
 
 ## 1. Trailblazer 1 vs. Alternatives
 
-| Metric                        | Trailblazer 1                            | Choreo                                        | PathPlanner                             | 254 Hermite Splines                   | Trailblazer 2                                                                       |
+| Metric                        | Trailblazer 1                            | Choreo                                        | PathPlanner                             | 254 Hermite Splines                   | Trailblazer 3                                                                       |
 | :---------------------------- | :--------------------------------------- | :-------------------------------------------- | :-------------------------------------- | :------------------------------------ | :---------------------------------------------------------------------------------- |
 | **Indexed by**                | Heuristic $t \in [0, 1]$ per point       | Clock time $t$                                | Clock time $t$                          | Arc length $s$ or time $t$            | **Path distance $s$ (Horizon)**                                                     |
 | **Bump / Collision Recovery** | Jerky; target jumps when index advances  | Poor; setpoint runs ahead in time             | Moderate; PID winds up unless replanned | Moderate; needs high cross-track gain | **Re-solves from current state; explicit recovery policy**                          |
@@ -77,23 +77,23 @@ The runtime keeps state between ticks, handles tick inputs and outputs, and mana
 
 ## 4. Subsystem Architecture
 
-Trailblazer 2 is decoupled from low-level drivetrain motor control and high-level match state machines.
+Trailblazer 3 is decoupled from low-level drivetrain motor control and high-level match state machines.
 
 ```mermaid
 flowchart LR
-    AutoSM["Auto State Machine"] -->|"activate / release"| TB2["Trailblazer 2 Facade"]
-    Teleop["Teleop Assist / Operator Input"] -->|"driveTo / snapAngle"| TB2
-    Loc["Localization & Power Snapshot<br/>(Odometry + Vision + Supply Ceiling)"] -->|"Pose2d, Speeds, I_supply, V_oc"| TB2
-    TB2 -->|"ChassisSpeeds + ChassisAccelerations + WheelForces<br/>(Field-Relative, Zero-Deadband)"| SwerveSub["Swerve Subsystem"]
+    AutoSM["Auto State Machine"] -->|"activate / release"| TB3["Trailblazer 3 Facade"]
+    Teleop["Teleop Assist / Operator Input"] -->|"driveTo / snapAngle"| TB3
+    Loc["Localization & Power Snapshot<br/>(Odometry + Vision + Supply Ceiling)"] -->|"Pose2d, Speeds, I_supply, V_oc"| TB3
+    TB3 -->|"ChassisSpeeds + ChassisAccelerations + WheelForces<br/>(Field-Relative, Zero-Deadband)"| SwerveSub["Swerve Subsystem"]
     SwerveSub -->|"Kinematics and Desaturation"| Modules["Swerve Modules"]
-    TB2 -->|"Structured Telemetry & Limiting Factor"| Telemetry["Telemetry Sink / AdvantageScope"]
+    TB3 -->|"Structured Telemetry & Limiting Factor"| Telemetry["Telemetry Sink / AdvantageScope"]
 ```
 
 ### 4.1 Separation of Responsibilities
 
 1. **Auto State Machine:** Runs overall autos and uses `passedMarker` and `atGoal` to transition states.
 2. **Trailblazer:** Solves path geometry, velocity, and heading, emitting field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations`, and optional module `WheelForces` feedforwards.
-3. **Swerve Subsystem:** Executes TB2's closed-loop trajectory command (`ChassisSpeeds`, `ChassisAccelerations`, and optional `WheelForces`) with zero command deadband.
+3. **Swerve Subsystem:** Executes TB3's closed-loop trajectory command (`ChassisSpeeds`, `ChassisAccelerations`, and optional `WheelForces`) with zero command deadband.
 4. **Localization & Power Snapshot:** Fuses wheel odometry and vision into field-relative `Pose2d` and `ChassisSpeeds` normalized to `TimeSource`, paired with optional instantaneous drive supply-current ceiling and resting battery voltage.
 
 ### 4.2 Math and Runtime Separation
@@ -111,4 +111,4 @@ To make sure math vs. logic is easy to find, they're in separate places.
 
 - Keep season-specific field definitions and robot configuration outside shared part.
 - Any tooling should use the same model/math/runtime without constructing hardware.
-- Define TB2's own clean trajectory command and axis-ownership interface for the 2027 drivetrain rather than inheriting legacy 2026 `DriveSource` constraints (use a thin adapter only if running optional carpet tests on a prior testbed).
+- Define TB3's own clean trajectory command and axis-ownership interface for the 2027 drivetrain rather than inheriting legacy 2026 `DriveSource` constraints (use a thin adapter only if running optional carpet tests on a prior testbed).

@@ -88,7 +88,7 @@ public record HeadingKeyframe(
 
 ## 3. Canonical Field Symmetry & Whole-Plan Alliance Transforms (`FieldGeometry`)
 
-Define field dimensions and symmetry in a self-contained record—with zero hardcoded season dimensions or external game utilities inside TB2—while season code owns field coordinates outside `shared`:
+Define field dimensions and symmetry in a self-contained record—with zero hardcoded season dimensions or external game utilities inside TB3—while season code owns field coordinates outside `shared`:
 
 ```java
 public enum FieldSymmetry {

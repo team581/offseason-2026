@@ -67,7 +67,7 @@ Reported historical 2026 testbed setup: **1000 Hz sub-stepped 4-module swerve sa
 
 ### 3.1 Reported Sandbox Findings
 
-1. **Commanded vs. Achieved Velocity (`RMSE = 1.989 m/s` in TB1 $\to$ `0.101 m/s` in Revised TB2):** Trailblazer 1 requested $4.75\text{ m/s}$ on a $4.02\text{ m/s}$ drivetrain with no deceleration limit, saturating duty cycle at $100\%$, with $25.3\times$ peak tire slip and $1905\text{ J}$ of tire scrub work.
+1. **Commanded vs. Achieved Velocity (`RMSE = 1.989 m/s` in TB1 $\to$ `0.101 m/s` in Revised TB3):** Trailblazer 1 requested $4.75\text{ m/s}$ on a $4.02\text{ m/s}$ drivetrain with no deceleration limit, saturating duty cycle at $100\%$, with $25.3\times$ peak tire slip and $1905\text{ J}$ of tire scrub work.
 
    Deriving $v_{free} = 4.02\text{ m/s}$ and $v_{max} = \eta_v v_{free}$ from testbed motor/gearing parameters and coupling rotational wheel speed ($v_{max, eff}, a_{fric, eff}$) cut velocity tracking RMSE by **$20\times$** and tire scrub work by **$19\times$** ($101\text{ J}$).
 
@@ -79,7 +79,7 @@ Reported historical 2026 testbed setup: **1000 Hz sub-stepped 4-module swerve sa
 
    Preserving vertices with a fixed-origin horizon, decoupling tangent phase-lead $s_{eval, t}$, enforcing coupled symmetric tangent scaling ($G^1$ continuity to $10^{-17}\text{ rad}$), and windowing projection around $s_{high\_water}$ achieved **100% tolerance compliance** across all waypoints and collision perturbations.
 
-| Metric (9-Waypoint Obstacle Course)  |          Legacy TB1          |       TB2 (Uncoupled / Pre-Fix)       |    **TB2 (Revised Derived)**     | **TB2 (Revised + $1.44\text{ m/s}$ Shove)** |
+| Metric (9-Waypoint Obstacle Course)  |          Legacy TB1          |       TB3 (Uncoupled / Pre-Fix)       |    **TB3 (Revised Derived)**     | **TB3 (Revised + $1.44\text{ m/s}$ Shove)** |
 | :----------------------------------- | :--------------------------: | :-----------------------------------: | :------------------------------: | :-----------------------------------------: |
 | **Waypoint & Stop Tolerances**       |             FAIL             | FAIL (`0.376m > 0.35m`, `3.92° > 2°`) |          **100% PASS**           |                **100% PASS**                |
 | **Velocity Tracking RMSE**           |      $1.989\text{ m/s}$      |          $0.258\text{ m/s}$           |      **$0.101\text{ m/s}$**      |           **$0.114\text{ m/s}$**            |

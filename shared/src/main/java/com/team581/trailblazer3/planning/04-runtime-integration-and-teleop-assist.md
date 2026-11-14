@@ -1,6 +1,6 @@
 # 04 — Runtime Integration and Teleop Assist
 
-**Applies To:** `com.team581.trailblazer2.runtime`, `TimeSource`, `RobotStateSnapshot`, `TickInput`, `TickResult`, `DrivetrainConsumer`, `TeleopAssist`  
+**Applies To:** `com.team581.trailblazer3.runtime`, `TimeSource`, `RobotStateSnapshot`, `TickInput`, `TickResult`, `DrivetrainConsumer`, `TeleopAssist`  
 
 ---
 
@@ -56,7 +56,7 @@ public final class TrailblazerState {
 - Cache the `TickResult` with field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations`, optional per-module `WheelForces`, status, readiness, `GoalPassageStatus` events, and diagnostics.
 - Return the cached result from repeated getters without advancing execution.
 - **Zero-Deadband 2027 Drivetrain Consumer:** Route `(commandedFieldSpeeds, commandedFieldAccelerations, wheelForces)` to the 2027 drivetrain subsystem's dedicated closed-loop trajectory consumer with **zero command deadband** (human joystick deadbands belong solely to operator input).
-- **Command Continuity:** Evolve `lastCommand` inside `TrailblazerState` during continuous TB2 control (avoiding azimuth-cosine-scaled module-target rest deadlock; seeding from `appliedFieldSpeeds` / `measuredFieldSpeeds` only on activation, handoff, or sustained divergence per [02 §3.4](02-velocity-profiler-and-limits.md#34-initial-velocity-selection-and-chatter-elimination)).
+- **Command Continuity:** Evolve `lastCommand` inside `TrailblazerState` during continuous TB3 control (avoiding azimuth-cosine-scaled module-target rest deadlock; seeding from `appliedFieldSpeeds` / `measuredFieldSpeeds` only on activation, handoff, or sustained divergence per [02 §3.4](02-velocity-profiler-and-limits.md#34-initial-velocity-selection-and-chatter-elimination)).
 - Expose structured telemetry and active limiting factors (`profileLimitingFactor`, `commandLimitingFactor`) in `TickResult` for logging tools.
 - Emit applicable runtime events such as `STALLED`, `RELATCH`, `KEEPOUT_MARGIN_WARNING`, and `INFEASIBLE`.
 
@@ -162,8 +162,8 @@ public class Trailblazer {
 
 | Operation | Translation owner | Rotation owner | Driver cancellation |
 | --- | --- | --- | --- |
-| Full alignment | Trailblazer 2 | Trailblazer 2 | Translation or rotation intervention cancels the whole alignment |
-| Rotation snap | Driver | Trailblazer 2 | Rotation intervention cancels the snap; translation input does not |
+| Full alignment | Trailblazer 3 | Trailblazer 3 | Translation or rotation intervention cancels the whole alignment |
+| Rotation snap | Driver | Trailblazer 3 | Rotation intervention cancels the snap; translation input does not |
 
 ---
 

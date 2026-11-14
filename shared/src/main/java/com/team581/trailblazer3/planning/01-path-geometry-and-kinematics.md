@@ -333,7 +333,7 @@ A **geometry generation** is one version of the built path. Each has its own arc
 
 - **Tracking error.** Store the error thresholds and required duration in a named Java tracking policy. Validate them with scenarios.
 
-- **Localization reset.** Localization accepts measurements and signals resets. TB2 uses that signal for vision jumps.
+- **Localization reset.** Localization accepts measurements and signals resets. TB3 uses that signal for vision jumps.
 
 - **Two-tier keepouts:** Separate **hard obstacle polygons** $K_{hard}$ (field structures, walls, and pillars) from **inflation margin bands** $K_{margin}$. Pre-match CI and teleop `driveTo` reject intrusions into either.
 
