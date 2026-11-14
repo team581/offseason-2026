@@ -249,6 +249,31 @@ final class TrailblazerTest {
   }
 
   @Test
+  void resumesAfterMissedTicksWithFreshOdometryAndStillRejectsStaleOdometry() {
+    var sim = new Simulation(0.020);
+    sim.planner.activate(Trailblazer.segment("straight").stopAt(pose(2, 0, 0)).build());
+    sim.step();
+    long generation = sim.planner.lastResult().geometryGeneration();
+    for (double delay : new double[] {0.123, 0.177, 0.126}) {
+      sim.time += delay - sim.dt;
+      sim.speed = new ChassisSpeeds();
+      sim.step();
+      var result = sim.planner.lastResult();
+      assertEquals(RuntimeStatus.RUNNING, result.status());
+      assertEquals("MISSED_TICK_RECOVERY", result.diagnostic());
+      assertEquals(generation, result.geometryGeneration());
+      assertTrue(sim.speed.vxMetersPerSecond > 0);
+      assertTrue(sim.speed.vxMetersPerSecond <= 5 * sim.dt + 1e-9);
+      sim.step();
+    }
+    sim.time += 0.2;
+    var stale =
+        sim.planner.update(RobotStateSnapshot.measured(sim.time - 0.15, sim.pose, sim.speed, true));
+    assertEquals(RuntimeStatus.FAULT, stale.status());
+    assertEquals(0, stale.commandedFieldSpeeds().vxMetersPerSecond);
+  }
+
+  @Test
   void rotationSnapLeavesTranslationWithDriverAndRespectsPreemption() {
     var sim = new Simulation(0.020);
     sim.planner.snapAngle(Rotation2d.kCCW_90deg, MotionLimits.robotMaximum());

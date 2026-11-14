@@ -5,11 +5,13 @@ import com.team581.autos.AutoChooser;
 import com.team581.trailblazer3.model.RobotStateSnapshot;
 import com.team581.trailblazer3.model.TickInput;
 import com.team581.trailblazer3.runtime.Trailblazer;
+import com.team581.util.profiling.LoopTiming;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.util.scheduling.SubsystemPriority;
@@ -24,8 +26,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private final RobotManager robotManager;
   private final Trailblazer trailblazer;
   private boolean started;
+  private boolean hasEnabledAuto;
+  private boolean trenchWarmedUp;
 
   private TrailblazerTrenchAuto activeAuto;
+  private Alliance preparedAlliance;
   private double previousMeasuredSpeed;
   private double previousMeasurementTime;
   private boolean braking;
@@ -35,6 +40,14 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     super(SubsystemPriority.AUTOS, AutoSelection.DO_NOTHING);
     this.robotManager = robotManager;
     this.trailblazer = trailblazer;
+  }
+
+  private void prepareTrenchAuto() {
+    long activationStart = LoopTiming.start();
+    activeAuto = new TrailblazerTrenchAuto(trailblazer, autoAlliance);
+    activeAuto.periodic();
+    preparedAlliance = autoAlliance;
+    LoopTiming.end("Scheduler/Autos/Activate", activationStart);
   }
 
   @Override
@@ -55,22 +68,38 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
                 new ChassisSpeeds(),
                 false));
         started = false;
+        activeAuto = null;
       }
-      activeAuto = null;
       robotManager.swerve.clearTrajectoryCommand();
       if (DriverStation.isDisabled()
           && trenchSelected
-          && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()) {
+          && !hasEnabledAuto
+          && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()
+          && (RobotBase.isSimulation()
+              || DriverStation.isAutonomous()
+              || DriverStation.isFMSAttached())) {
         robotManager.localization.resetPose(TrailblazerTrenchAuto.start(autoAlliance));
       }
       if (DriverStation.isDisabled() && trenchSelected) {
         // Phoenix receives the launch direction while the Driver Station inhibits motor output.
         double direction = autoAlliance == Alliance.Red ? 1 : -1;
         robotManager.swerve.setTrajectoryCommand(new ChassisSpeeds(direction, 0, 0));
+        if (!trenchWarmedUp) {
+          long warmupStart = LoopTiming.start();
+          TrailblazerTrenchAuto.warmup(autoAlliance);
+          trenchWarmedUp = true;
+          LoopTiming.end("Scheduler/Autos/Warmup", warmupStart);
+        }
+        if (activeAuto == null || preparedAlliance != autoAlliance) {
+          prepareTrenchAuto();
+        }
+      } else {
+        activeAuto = null;
       }
       return;
     }
 
+    hasEnabledAuto = true;
     if (!trenchSelected) {
       if (!started) {
         started = true;
@@ -80,25 +109,31 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       return;
     }
 
-    var drive = robotManager.swerve.drivetrain.getStateCopy();
-    var pose = drive.Pose;
     boolean firstTick = !started;
     if (firstTick) {
-      activeAuto = new TrailblazerTrenchAuto(trailblazer, autoAlliance);
+      if (activeAuto == null) {
+        prepareTrenchAuto();
+      }
       started = true;
-    }
-
-    if (firstTick
-        || trailblazer.lastResult().status()
-            != com.team581.trailblazer3.model.TickResult.RuntimeStatus.FAULT) {
+    } else if (trailblazer.lastResult().status()
+        != com.team581.trailblazer3.model.TickResult.RuntimeStatus.FAULT) {
       activeAuto.periodic();
     }
+
+    long odometryStart = LoopTiming.start();
+    // Sample after activation so segment setup cannot age the snapshot used on the first tick.
+    var drive = robotManager.swerve.drivetrain.getStateCopy();
+    var pose = drive.Pose;
     var speeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.Speeds, pose.getRotation());
     double now = Utils.getCurrentTimeSeconds();
+    LoopTiming.end("Scheduler/Autos/ReadOdometry", odometryStart);
     DogLog.log("Trailblazer3/OdometryAgeMs", (now - drive.Timestamp) * 1000);
     var snapshot = RobotStateSnapshot.measured(drive.Timestamp, pose, speeds, true);
+    long updateStart = LoopTiming.start();
     var result =
         trailblazer.update(new TickInput(now, snapshot, Map.of(), Map.of(), Optional.empty()));
+    LoopTiming.end("Scheduler/Autos/UpdatePlanner", updateStart);
+    long outputStart = LoopTiming.start();
     robotManager.swerve.setTrajectoryCommand(result.commandedFieldSpeeds());
     DogLog.log("Trailblazer3/Status", result.status().name());
     DogLog.log("Trailblazer3/Infeasible", result.infeasible());
@@ -142,5 +177,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
           DogLog.log("Trailblazer3/StopDwellSeconds", motion.dwellSeconds());
         });
     DogLog.log(DIAGNOSTIC_KEY, result.diagnostic());
+    LoopTiming.end("Scheduler/Autos/Output", outputStart);
   }
 }

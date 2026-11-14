@@ -63,6 +63,7 @@ public final class Trailblazer {
   private static final double CORRIDOR = 0.30;
 
   private static final double RELATCH_DWELL = 0.15;
+  private static final double MAX_TICK_INTERVAL = 0.10;
 
   public static AutoSegment.Builder segment(String id) {
     return new AutoSegment.Builder(id);
@@ -309,7 +310,6 @@ public final class Trailblazer {
         goal = goal.heading(HeadingPlan.to(target.getRotation()).gate(HeadingPlan.GatePolicy.HARD));
       }
       activate(segment("assist").withLimits(assistProfile).addGoal(goal).build());
-      activationTime = now;
       assist = true;
       snapHeading = angle;
     }
@@ -321,10 +321,16 @@ public final class Trailblazer {
                         == Goal.PassType.CRUISE_THROUGH)))) {
       return result;
     }
-    double dt = Double.isNaN(lastTime) ? nominalDt : now - lastTime;
-    if (!Double.isFinite(dt) || dt <= 0 || dt > 0.10 || !Double.isFinite(now)) {
+    boolean firstTick = Double.isNaN(lastTime);
+    double elapsed = firstTick ? nominalDt : now - lastTime;
+    if (!Double.isFinite(elapsed) || elapsed <= 0 || !Double.isFinite(now)) {
       result = zero(RuntimeStatus.FAULT, "Invalid tick interval");
       return result;
+    }
+    boolean missedTick = elapsed > MAX_TICK_INTERVAL;
+    double dt = missedTick ? nominalDt : elapsed;
+    if (firstTick) {
+      activationTime = now;
     }
     lastTime = now;
     var pose = snapshot.measuredPose();
@@ -336,14 +342,26 @@ public final class Trailblazer {
     }
     var measured = translation(measuredSpeeds);
     try {
-      if (path == null) {
+      if (path == null || missedTick) {
         previous = snapshot.appliedFieldSpeeds().orElse(measuredSpeeds);
-        heading =
-            new HeadingPlanner.State(
-                pose.getRotation().getRadians(), previous.omegaRadiansPerSecond);
-        headingId = null;
+        double measuredHeading = pose.getRotation().getRadians();
+        if (path != null) {
+          measuredHeading =
+              heading.angle() + MathUtil.angleModulus(measuredHeading - heading.angle());
+        }
+        heading = new HeadingPlanner.State(measuredHeading, previous.omegaRadiansPerSecond);
         referenceAlpha = 0;
+      }
+      if (path == null) {
+        headingId = null;
         targetHeading = heading.angle();
+      }
+      if (missedTick) {
+        // The loop did not observe the robot during the gap, so restart dwell checks.
+        dwell = 0;
+        headingDwell = 0;
+        offTrack = 0;
+        divergence = 0;
       }
       if (stopping) {
         return brake(pose, snapshot, dt);
@@ -359,7 +377,8 @@ public final class Trailblazer {
       } else if (goalIndex < horizon.size() && targetsMoved()) {
         rebuild(pose, horizonStart + goalIndex);
       }
-      String diagnostic = marginWarning ? "KEEPOUT_MARGIN_WARNING" : "";
+      String diagnostic =
+          missedTick ? "MISSED_TICK_RECOVERY" : (marginWarning ? "KEEPOUT_MARGIN_WARNING" : "");
       if (snapshot.localizationResetOccurred() && goalIndex < horizon.size()) {
         rebuild(pose, horizonStart + goalIndex);
         diagnostic = "RELATCH";
@@ -974,7 +993,6 @@ public final class Trailblazer {
     telemetry = null;
     marginWarning = false;
     lastTime = Double.NaN;
-    activationTime = clock.getTimestampSeconds();
     stopping = false;
     headingDwell = 0;
     gateWait = 0;
