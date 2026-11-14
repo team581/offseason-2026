@@ -1,4 +1,4 @@
-# Trailblazer 2 Design Specification: Java Specification Model, DSL & Tooling
+# Trailblazer 2 Design Specification: Developer Tooling
 
 **Document ID:** TB2-SPEC-05  
 **Status:** Implementation design
@@ -147,6 +147,6 @@ flowchart LR
 
 ## 7. Authoring Validation
 
-- Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal stop. Intermediate stops release explicitly; see [00](00-overview-and-architecture.md).
-- Dynamic suppliers need timestamp/validity metadata in runtime ([04](04-teleop-and-dynamic-assist.md)). Preview scenarios provide deterministic replacements.
+- Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal stop. Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
+- Dynamic suppliers need timestamp/validity metadata in runtime ([04](04-runtime-integration-and-teleop-assist.md)). Preview scenarios provide deterministic replacements.
 - Apply alliance transforms once. `FieldUtil.pathflip` is a 180-degree rotation, which preserves CW/CCW; a reflection reverses them. Already field-relative vision targets are not transformed again.

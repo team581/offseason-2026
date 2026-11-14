@@ -194,7 +194,7 @@ To compensate for CAN, motor filter, and steering response lag ($\tau_{lag} \app
    Because $v_{xt} \hat{n}(s)$ only pushes perpendicular to $\hat{t}$, any residual inline lag when $s$ reaches $S_{horizon}$ would remain uncorrected. Near a `Goal.stop`, blend into direct position convergence using $d_{stop}=\|\mathbf p_{stop}-\mathbf p_{robot}\|$. Choose blend distance/hysteresis in tracking policy:
    $$\vec{e}_{stop} = \mathbf{p}_{stop} - \mathbf{p}_{robot}, \quad v_{term} = \min\left(v_{max, eff}, \; \sqrt{2 \cdot a_{dec} \cdot d_{stop}}, \; \frac{d_{stop}}{0.85 \cdot \tau_{xt}}\right)$$
    $$\vec{v}_{des}=\begin{cases}v_{term}\vec e_{stop}/d_{stop}&d_{stop}>0\\0&d_{stop}=0\end{cases}$$
-   Reuse this controller to hold an interior hard gate. Completion requires measured pose/speed/heading and dwell, not zero profile speed ([00](00-overview-and-architecture.md)).
+   Reuse this controller to hold an interior hard gate. Completion requires measured pose/speed/heading and dwell, not zero profile speed ([04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)).
 4. **Isotropic 2D Vector Acceleration Clamp (`VectorLimiter`):**
    Bound the 2D velocity change from the previous applied command $\vec{v}_{prev}$ to $\Delta v_{max} = a_{fric, eff} \cdot \Delta t$:
    $$\Delta \vec{v} = \vec{v}_{des} - \vec{v}_{prev}, \quad \vec{v}_{cmd} = \begin{cases} \vec{v}_{prev} + \Delta \vec{v} \cdot \dfrac{\Delta v_{max}}{\|\Delta \vec{v}\|} & \text{if } \|\Delta \vec{v}\| > \Delta v_{max} \\ \vec{v}_{des} & \text{otherwise} \end{cases}$$

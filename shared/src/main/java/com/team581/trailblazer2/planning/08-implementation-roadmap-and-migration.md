@@ -6,9 +6,9 @@
 
 ## 1. Objective
 
-Deliver a clean, tested TB2 library ready for the new 2027 robot codebase. There are no remaining competition-readiness or old-auto compatibility requirements. Comp bot primarily runs the new-member pathway; occasional carpet sessions validate TB2 as opportunities arise.
+Deliver a clean, tested TB2 library ready for the new 2027 robot codebase. There are no remaining competition-readiness or old-auto compatibility requirements. Use occasional carpet sessions on comp bot to validate TB2.
 
-Build TB2 directly in its own namespace with the math/runtime separation in [00](00-overview-and-architecture.md). Do not retrofit the TB1 follower, construct legacy adapters, or migrate old autos to establish correctness. Existing code may remain while still referenced; deleting it is dependency cleanup, not a milestone. Keep the repository compiling and preserve the pathway's normal operating mode.
+Build TB2 directly in its own namespace with the math/runtime separation in [architecture overview](README.md). Do not retrofit the TB1 follower, construct legacy adapters, or migrate old autos to establish correctness. Existing code may remain while still referenced; deleting it is dependency cleanup, not a milestone. Keep the repository compiling and preserve normal driving behavior.
 
 ## 2. Requirement ownership
 
@@ -16,12 +16,12 @@ This roadmap orders work. It does not define another set of formulas, physical c
 
 | Concern | Authoritative document |
 | --- | --- |
-| Packages, lifecycle, robot boundary | [00: Architecture](00-overview-and-architecture.md) |
+| Packages and robot boundary | [Architecture overview](README.md) |
 | Geometry, progress, recovery | [01: Geometry](01-path-geometry-and-kinematics.md) |
 | Speed profile and command bounds | [02: Velocity and limits](02-velocity-profiler-and-limits.md) |
 | Heading schedule and readiness gates | [03: Heading](03-heading-and-rotation.md) |
-| Teleop arbitration and dynamic targets | [04: Assist](04-teleop-and-dynamic-assist.md) |
-| Java model, field transforms, VS Code preview | [05: Authoring and tooling](05-spec-model-dsl-and-tooling.md) |
+| Runtime state, tick contracts, lifecycle, teleop, dynamic targets | [04: Runtime and integration](04-runtime-integration-and-teleop-assist.md) |
+| Java model, field transforms, VS Code preview | [05: Developer tooling](05-developer-tooling.md) |
 | Fixtures, simulation, CI, acceptance measurements | [06: Verification](06-verification-simulation-and-ci.md) |
 | Robot parameters and calibration | [07: Calibration](07-empirical-calibration-routine.md) |
 
@@ -44,7 +44,7 @@ flowchart LR
 
 Deliver:
 
-- `model` values for plans, goals, heading intent, limits, tick input/output, statuses, and stable event IDs. Use the minimal fluent builder in [05](05-spec-model-dsl-and-tooling.md); do not defer the public intent model until after algorithms are built.
+- `model` values for plans, goals, heading intent, limits, tick input/output, statuses, and stable event IDs. Use the minimal fluent builder in [05](05-developer-tooling.md); do not defer the public intent model until after algorithms are built.
 - Validation for invalid numbers, identities, terminal behavior, and unresolved target/heading references.
 - A Java fixture catalog with an initial straight stop and turn-in-place case. These construct plans without `Robot`, HAL devices, or mechanisms.
 - Unit-test wiring in `shared` and a desktop scenario runner skeleton, using the repository's existing Gradle/JUnit conventions. Establish build/check commands before adding more modules.
@@ -75,15 +75,15 @@ Done when valid scenarios complete, invalid/unreachable scenarios produce their 
 
 ### Step 5 — Deliver the VS Code preview MVP
 
-Implement the extension and Java runner contract in [05](05-spec-model-dsl-and-tooling.md). The editor selects a Java scenario, invokes the normal build/runner, and displays path geometry, footprint playback, headings, limits, events, and diagnostics. Refresh on save and explicit command; clearly distinguish a failed build from an up-to-date result.
+Implement the extension and Java runner contract in [05](05-developer-tooling.md). The editor selects a Java scenario, invokes the normal build/runner, and displays path geometry, footprint playback, headings, limits, events, and diagnostics. Refresh on save and explicit command; clearly distinguish a failed build from an up-to-date result.
 
 Done when a student can edit a Java plan, see it run in VS Code, locate a failed constraint, and reproduce the same result with the headless CI command. Test compile errors, cancellation, stale results, and robot/alliance selection. Measure actual cold/warm refresh times; do not gate on invented latency claims.
 
 ### Step 6 — Integrate the robot and teleop assist
 
-Add a TB2 drive source and explicit test-mode selection to the deployed robot project, starting with the new-member pathway configuration used on comp bot. Feed coherent measured state, honor control ownership, log requested/applied motion, and support cancellation. Do not redirect existing normal driving merely to exercise TB2.
+Add a TB2 drive source and explicit test-mode selection to the deployed robot project. Feed coherent measured state, honor control ownership, log requested/applied motion, and support cancellation. Do not redirect existing normal driving merely to exercise TB2.
 
-Use short dedicated test paths: straight stop, rounded corner, consecutive corners, heading gate, and displaced-start recovery. Derive the test robot's limits and validate them using [07](07-empirical-calibration-routine.md). Add static drive-to, then timestamped dynamic targets and hybrid axis ownership as specified in [04](04-teleop-and-dynamic-assist.md).
+Use short dedicated test paths: straight stop, rounded corner, consecutive corners, heading gate, and displaced-start recovery. Derive the test robot's limits and validate them using [07](07-empirical-calibration-routine.md). Add static drive-to, then timestamped dynamic targets and hybrid axis ownership as specified in [04](04-runtime-integration-and-teleop-assist.md).
 
 Done when desktop integration tests verify mode transitions and hardware sessions demonstrate the core cases with recorded traces. Document untested cases if robot time is limited; that limits the readiness claim, not continued tooling/math work.
 

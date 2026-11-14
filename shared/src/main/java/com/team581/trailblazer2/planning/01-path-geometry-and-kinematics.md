@@ -375,4 +375,4 @@ Runtime may request recovery after sustained tracking error or an explicit local
 
 Clamp projection and evaluation to each piece's valid domain. Use deterministic tie-breaking at joins.
 
-For named dynamic targets, runtime evaluates suppliers and filters their values once per tick, following [04](04-teleop-and-dynamic-assist.md). Runtime keeps the filter history and passes only resolved values to `PathBuilder`.
+For named dynamic targets, runtime evaluates suppliers and filters their values once per tick, following [04](04-runtime-integration-and-teleop-assist.md). Runtime keeps the filter history and passes only resolved values to `PathBuilder`.

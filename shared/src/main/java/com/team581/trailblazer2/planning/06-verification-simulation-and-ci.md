@@ -9,23 +9,9 @@
 
 ## 1. Deterministic Time & State Injection
 
-Trailblazer 1 called `MathSharedStore.getTimestamp()` and `DriverStation.isDisabled()` directly, preventing fast-forward unit testing. Robot integration injects time and state; calculators receive explicit values and `dt`. Capture one coherent [TickInput](00-overview-and-architecture.md) per update. Example adapter interfaces:
+Trailblazer 1 called `MathSharedStore.getTimestamp()` and `DriverStation.isDisabled()` directly, preventing fast-forward unit testing. Tests supply the [time and state interfaces](04-runtime-integration-and-teleop-assist.md#31-time-and-state-injection) and capture one coherent [TickInput](04-runtime-integration-and-teleop-assist.md#3-tick-contract) per update.
 
-```java
-@FunctionalInterface
-public interface TimeSource {
-    double getTimestampSeconds();
-}
-
-public interface RobotStateSource {
-    Pose2d getMeasuredPose();
-    ChassisSpeeds getMeasuredSpeeds(); // Field-relative
-    boolean isEnabled(); // Auto and teleop assists
-}
-```
-
-- **On Robot:** `TimeSource` binds to `RobotController.getFPGATime() / 1e6`.
-- **In Sim & CI:** `TimeSource` steps synthetically (`simTime += dt`), with seeded inputs and repeatable results within documented numerical tolerances. Measure execution time rather than assuming it.
+In simulation and CI, `TimeSource` steps synthetically (`simTime += dt`). Supply synthetic pose, field-relative speeds, and enabled state through `RobotStateSource`, with seeded inputs and repeatable results within documented numerical tolerances. Measure execution time rather than assuming it.
 
 ---
 
@@ -88,6 +74,6 @@ Feeds `.wpilog` match poses/velocities into the planner and tracks model acceler
 
 ## 3. Golden Metrics & PR Checks
 
-Stored in `src/test/resources/baselines/auto-metrics.json`. If a PR increases an auto's duration by $> 0.2\text{ s}$ or reduces keepout clearance by $> 0.05\text{ m}$, CI fails unless the baseline is explicitly updated. CI publishes a summary and preview artifacts using the shared runner in [05](05-spec-model-dsl-and-tooling.md). Baseline updates cannot waive absolute correctness checks.
+Stored in `src/test/resources/baselines/auto-metrics.json`. If a PR increases an auto's duration by $> 0.2\text{ s}$ or reduces keepout clearance by $> 0.05\text{ m}$, CI fails unless the baseline is explicitly updated. CI publishes a summary and preview artifacts using the shared runner in [05](05-developer-tooling.md). Baseline updates cannot waive absolute correctness checks.
 
 Measure planner latency/allocation on the target robot with worst-case supported plans (initial target: below 1 ms per 20 ms tick). Keep plant/checker implementations independent and test parameter mismatch; simulated agreement alone does not establish hardware readiness.

@@ -64,7 +64,7 @@ public record HeadingKeyframe(
 3. **Face Field Point (`facePoint(Supplier<Translation2d>)`):** Continuously aim a robot mechanism (turretless shooter or intake) at a fixed or dynamic field coordinate (e.g. Hub, Speaker, Reef, or human player station):
    $$\theta^*(s) = \mathrm{atan2}\left(y_{target} - y_{robot}(s), \; x_{target} - x_{robot}(s)\right)$$
 4. **Hold Heading (`hold()`):** Capture measured heading once at keyframe entry.
-5. **Undefined Direction:** At a zero-length path or coincident face-point target, retain the last valid target and report undefined aim readiness. Runtime resolves dynamic suppliers once per tick ([04](04-teleop-and-dynamic-assist.md)).
+5. **Undefined Direction:** At a zero-length path or coincident face-point target, retain the last valid target and report undefined aim readiness. Runtime resolves dynamic suppliers once per tick ([04](04-runtime-integration-and-teleop-assist.md)).
 
 #### Turn Direction Disambiguation
 
