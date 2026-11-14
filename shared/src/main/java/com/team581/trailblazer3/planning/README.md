@@ -4,6 +4,8 @@ Trailblazer 3 is a clean-sheet Java path-planning and motion-control library bui
 
 ---
 
+**Implementation scope.** Follow the [Trailblazer 3 roadmap](08-implementation-roadmap-and-migration.md), including the headless Java scenario runner and CI reports. The [VS Code preview app and warm-JVM worker](deferred/vs-code-preview-app.md) are deferred. Begin that work only when explicitly requested.
+
 ## 1. Trailblazer 1 vs. Alternatives
 
 | Metric                        | Trailblazer 1                            | Choreo                                        | PathPlanner                             | 254 Hermite Splines                   | Trailblazer 3                                                                       |
@@ -14,7 +16,7 @@ Trailblazer 3 is a clean-sheet Java path-planning and motion-control library bui
 | **Accel vs. Braking**         | Limits speed-up; no mid-path brake limit | Asymmetric (offline motor torque-speed)       | Symmetric scalar limits                 | Symmetric                             | **Asymmetric braking vs. live supply/stator-limited motor curve**                   |
 | **Heading Control**           | Tied to waypoints; flips mid-arc         | Coupled offline                               | Independent profile                     | Coupled or decoupled                  | **Decoupled schedule $\theta^*(s)$ with error-frame feedforward + hard/soft gates** |
 | **Dynamic / Vision Goals**    | Supported via `Supplier<Point>`          | Offline only                                  | Limited                                 | Requires re-splining                  | **Built-in online evaluation**                                                      |
-| **Preview & Testing**         | None (must run on carpet)                | Desktop GUI                                   | Desktop GUI                             | Sim scripts                           | **VS Code preview + shared Java runner + CI simulation**                            |
+| **Preview & Testing**         | None (must run on carpet)                | Desktop GUI                                   | Desktop GUI                             | Sim scripts                           | **Headless Java runner + CI simulation**                            |
 
 ---
 
@@ -42,11 +44,10 @@ Check the speed profile and final command against the robot’s combined driving
 
 ### Run the same planner everywhere
 
-Pass time and robot state as inputs so desktop tests, the VS Code preview, and CI can run the same planner as the target 2027 robot controller (e.g., SystemCore).
+Pass time and robot state as inputs so desktop tests and CI can run the same planner as the target 2027 robot controller (e.g., SystemCore).
 
 ### Clarity
 
-- Preview the path, heading, speed, and markers in VS Code [Tooling spec](05-developer-tooling.md#6-mvp-viewer-vs-code-previewer)
 - Log robot telemetry and the active speed constraint each tick so developers can see what happened in logs.
 - Publish CI check results and previews so reviewers can see how a change affects an auto. [Verification spec](06-verification-simulation-and-ci.md)
 

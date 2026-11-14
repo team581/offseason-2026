@@ -10,6 +10,8 @@ Use TB3’s own namespace and the math/runtime separation in [architecture overv
 
 Referenced legacy code may remain; deletion is dependency cleanup, not a milestone. Keep the repository compiling and normal driving intact.
 
+The VS Code app and its warm-JVM worker are out of scope. Begin that work only when explicitly requested.
+
 ## 2. Requirement ownership
 
 This roadmap orders work; the linked specs own formulas, constants, localization thresholds, and tooling requirements.
@@ -21,7 +23,7 @@ This roadmap orders work; the linked specs own formulas, constants, localization
 | Speed profile and command bounds | [02: Velocity and limits](02-velocity-profiler-and-limits.md) |
 | Heading schedule and readiness gates | [03: Heading](03-heading-and-rotation.md) |
 | Runtime state, tick contracts, lifecycle, teleop, dynamic targets | [04: Runtime and integration](04-runtime-integration-and-teleop-assist.md) |
-| Java model, field transforms, VS Code preview | [05: Developer tooling](05-developer-tooling.md) |
+| Java model, field transforms, headless Gradle runner | [05: Developer tooling](05-developer-tooling.md) |
 | Fixtures, simulation, CI, acceptance measurements | [06: Verification](06-verification-simulation-and-ci.md) |
 | Robot parameters and calibration | [07: Calibration](07-empirical-calibration-routine.md) |
 
@@ -34,10 +36,8 @@ flowchart LR
     A[Contracts and fixtures] --> B[Geometry and progress]
     B --> C[Constrained motion]
     C --> D[Runtime and simulation]
-    D --> E[VS Code preview MVP]
-    D --> F[Robot and assist integration]
-    E --> G[2027 readiness review]
-    F --> G
+    D --> E[Robot and assist integration]
+    E --> F[2027 readiness review]
 ```
 
 ### Step 1 — Establish contracts and a desktop entry point
@@ -69,17 +69,11 @@ Done when tests cover startup across `50–250 Hz`, braking inside corners witho
 
 Deliver plan activation (`activate(plan)` and `activate(plan, startAtGoalId)`), update/cancel/release, monotonic `TimeSource` clock-domain normalization and `nominalDtSeconds` (`50–250 Hz`) handling, `RobotStateSnapshot`, dynamic-target `TargetLossPolicy`, event history, cached `TickResult`, and timeout/fault behavior. Connect calculators through this runtime and run it against the desktop plant.
 
-Add the complete representative fixture suite and seeded disturbances in [06](06-verification-simulation-and-ci.md). Produce versioned preview results, traces, diagnostics, and CI summaries from one execution; support replay without treating it as closed-loop validation.
+Add the complete representative fixture suite and seeded disturbances in [06](06-verification-simulation-and-ci.md). Run them through the headless `./gradlew previewAuto` task in [05](05-developer-tooling.md). Produce versioned preview results, traces, diagnostics, and CI summaries from one execution; support replay without treating it as closed-loop validation.
 
 Done when valid scenarios complete (`PASSED_WITHIN_TOLERANCE`), invalid/unreachable scenarios produce their expected failure status, markers are recorded as passed once cleanly across relatches and mid-plan starts, and repeat runs with the same inputs reproduce results within documented numerical tolerances.
 
-### Step 5 — Deliver the VS Code preview MVP
-
-Implement the warm-JVM stdio preview worker (running under the Java 21 JDK toolchain with cached Gradle classpath manifest, incremental `javac`/JDT compilation to an isolated overlay directory, and per-request disposable `URLClassLoader` closed in `try-with-resources`) and shared CI Gradle runner in [05](05-developer-tooling.md): select a Java scenario, invoke compilation/execution, and display geometry, keepouts, footprint playback, headings, limits, events, `GoalPassageStatus`, and diagnostics. Refresh on save/command and distinguish failed builds from current results.
-
-Done when a student can edit a Java plan, see it run in VS Code in sub-second warm refreshes, locate a failed constraint, and reproduce the same result with `./gradlew previewAuto`. Test compile errors, cancellation, stale results, Windows file-lock safety, and robot/alliance selection; measure cold/warm refresh times.
-
-### Step 6 — Define 2027 robot adapter contract & testbed qualification
+### Step 5 — Define 2027 robot adapter contract & testbed qualification
 
 Define the clean **2027 drivetrain, localization, and operator-input integration contract** (zero-deadband closed-loop consumer accepting `ChassisSpeeds` + `ChassisAccelerations` / optional `WheelForces`, monotonic `TimeSource` timestamp normalization, optional instantaneous drive supply-current ceiling, and pre-mapped Blue-origin `driverFieldVelocityMpS` for shared-axis assists; note module azimuth-drive odometry coupling $k_{couple} = N_{ring}/N_{pinion}$ in the robot odometry checklist), and run an **isolated test-mode harness on a carpet testbed** to validate core physics before 2027 bringup without modifying legacy 2026 competition autos.
 
@@ -89,15 +83,14 @@ Define the clean **2027 drivetrain, localization, and operator-input integration
 
 Done when desktop integration tests verify mode transitions and testbed carpet sessions demonstrate the core cases with recorded traces. Record untested cases as readiness limits; tooling/math work may continue.
 
-### Step 7 — Review 2027 portability and completion
+### Step 6 — Review 2027 portability and completion
 
 Deliver an integration example and checklist supplying robot limits/module locations, localization snapshot, field context, drive output, telemetry, and scenario fixtures. Build with a second synthetic robot configuration to expose hardcoded 2026 assumptions.
 
 Done when:
 
 - Shared math/runtime imports no season-specific robot, field, or mechanism code.
-- Unit, property, closed-loop, perturbation, and preview integration checks pass under [06](06-verification-simulation-and-ci.md).
-- The VS Code workflow and command-line runner consume the same Java plans and diagnostics.
+- Unit, property, closed-loop, perturbation, and headless runner integration checks pass under [06](06-verification-simulation-and-ci.md).
 - Robot validation evidence and remaining limitations are recorded, with performance measured on the target hardware.
 - The 2027 integration checklist is sufficient to bind the library without altering planner math.
 

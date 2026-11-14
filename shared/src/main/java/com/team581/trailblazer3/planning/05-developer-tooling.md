@@ -1,6 +1,6 @@
 # 05 — Developer Tooling
 
-**Applies To:** `MotionPlan`, `Goal`, `HeadingPlan`, `FieldAnchors`, `AutoPreviewTask`, `TrailblazerPreviewExtension`
+**Applies To:** `MotionPlan`, `Goal`, `HeadingPlan`, `FieldAnchors`, `AutoPreviewTask`
 
 ---
 
@@ -130,45 +130,28 @@ public record FieldGeometry(double lengthMeters, double widthMeters, FieldSymmet
 
 ---
 
-## 4. Tooling Architecture: VS Code MVP + Warm Worker + CI Runner
+## 4. Headless Preview and CI Runner
 
-Interactive previews use a long-lived warm-JVM stdio worker for sub-second iteration, while CI runs the exact same shared Java planning and simulation engine through Gradle (`ErrorProne` / `Refaster` checked):
+Run `./gradlew previewAuto -Pauto=<Name>` to load a Java `PreviewScenario` through the normal build and classpath without hardware, with full compilation and ErrorProne/Refaster checks. The scenario supplies the plan factory, robot limits, field and footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
 
 ```mermaid
 flowchart LR
-    Code[Java plan and scenario] --> Warm[Warm JVM worker: cached classpath + javac + URLClassLoader]
-    Code --> Gradle[./gradlew previewAuto in CI]
-    Warm --> Engine[Shared Java planner & simulation engine]
-    Gradle --> Engine
-    Engine --> Results[Geometry, traces, metrics]
-    Results --> Preview[VS Code preview]
+    Code[Java plan and scenario] --> Gradle[Gradle previewAuto]
+    Gradle --> Engine[Shared Java planner and simulation]
+    Engine --> Results[Versioned results, traces, and metrics]
     Results --> CI[CI checks and artifacts]
 ```
 
----
+Write closed-loop simulation results to `build/reports/autos/<name>/`:
 
-## 5. Runners: CI Gradle Task & Warm-JVM Preview Worker
+- Versioned preview data with input/build identity, geometry, timestamped motion, headings, limits, events, `GoalPassageStatus`, and assertion results.
+- A `.wpilog` trace, `.png` trajectory map, and terminal metrics summary.
 
-1. **CI Headless Runner (`./gradlew previewAuto -Pauto=<Name>`):** Loads a Java `PreviewScenario` through the normal build/classpath without hardware (enforcing full compilation and `ErrorProne`/`Refaster`). The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
-2. **VS Code Warm-JVM Stdio Worker:** Launch under the full **Java 21 JDK** toolchain (`ToolProvider.getSystemJavaCompiler()` returns `null` under a JRE). Reads a cached Gradle classpath manifest on startup, compiles only modified Java plan/scenario files incrementally into an **isolated overlay output directory**, and loads scenario classes through a fresh disposable child `URLClassLoader` (with the overlay directory placed ahead of the cached Gradle classpath) closed inside `try-with-resources` so Windows JAR/class locks and stale class state cannot accumulate. If `build.gradle` or dependencies change, the worker refreshes the classpath manifest automatically.
-3. **Closed-Loop Simulation & Outputs (`build/reports/autos/<name>/`):**
-   - Versioned preview data: input/build identity, geometry, timestamped motion, headings, limits, events, `GoalPassageStatus`, and assertion results.
-   - `.wpilog` trace, `.png` trajectory map, and terminal metrics summary.
-4. Returns nonzero on failed assertions or build/runner errors. Measure cold-build, warm-refresh, and simulation times separately.
+Return a nonzero exit code on failed assertions or build/runner errors. Measure cold-build and simulation times separately.
 
 ---
 
-## 6. MVP Viewer: VS Code Previewer
-
-1. **Selection:** Choose scenario, robot configuration, alliance, and seed.
-2. **Refresh:** Invoke the warm stdio preview worker on command or debounced save (falling back to Gradle when build scripts change); no separate Java parser or planner in TypeScript.
-3. **View:** Display goals, fillets, keepouts (`K_hard` and `K_margin`), swept footprint, motion/heading playback, velocity graphs, markers, and limiting factors.
-4. **Diagnostics:** Show compile errors and failed assertions. Cancel superseded runs, discard stale results, and label the last successful preview stale after a failed build.
-5. **Integration:** Respect workspace trust, clean up worker/child processes and watchers on shutdown, and test both the warm worker and Gradle runner against the same versioned output schema.
-
----
-
-## 7. Authoring Validation
+## 5. Authoring Validation
 
 - Require stable goal/keyframe IDs, finite values, valid nominal anchor order (with dynamic rebuilds/relatches clamping relative `beforeGoal` / `afterGoal` offsets cleanly per [03 §2.1](03-heading-and-rotation.md)), and a terminal `Goal.stop` or valid `Goal.cruiseThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`, flagging `CRUISE_OVERRUN_LIMITED` if obstacles clip `d_overrun`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
 - Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)) and an explicit `TargetLossPolicy`. Preview scenarios provide deterministic replacements.
