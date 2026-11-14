@@ -45,13 +45,3 @@ flowchart LR
     A[Check gyro pitch and roll] --> B[Drive toward downward tilt]
     B --> C[Stop when flat]
 ```
-
-## Bump-auto simulation regression
-
-Run the complete robot lifecycle with `./gradlew :offseason-bot:headlessTest --tests '*BumpAutoSimulationTest'`.
-The default is `LEFT_BUMP_NO_DEPOT`. Use `-Psim.auto=RIGHT_BUMP_NO_DEPOT` to select the right lane and `-Psim.red=true` for red alliance.
-Use `-Psim.auto=LEFT_BUMP_CROSS_WAIT` or `RIGHT_BUMP_CROSS_WAIT` to check the preserved waiting routes.
-The sweep test checks lane clearance, uphill and downhill detection on both crossings, no depot states,
-and travel to the centerline followed by standstill shooting. Simulated pitch/roll come from bump
-geometry and robot heading rather than timed pulses. This models sensor tilt, not chassis traction
-or suspension.
