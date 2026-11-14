@@ -60,9 +60,17 @@ public record HeadingKeyframe(
 
 1. **Fixed Angle (`fixed(Rotation2d)`):** Target an absolute field heading (e.g. $0^\circ, 90^\circ, -180^\circ$).
 2. **Face Travel (`faceTravel()`):** Continuously align the chassis with the velocity vector tangent:
-   $$\theta^*(s) = \mathrm{atan2}\left(t_y(s), \; t_x(s)\right)$$
+
+   ```math
+   \theta^*(s) = \mathrm{atan2}\left(t_y(s), \; t_x(s)\right)
+   ```
+
 3. **Face Field Point (`facePoint(Supplier<Translation2d>)`):** Continuously aim a mechanism at a fixed or dynamic field coordinate:
-   $$\theta^*(s) = \mathrm{atan2}\left(y_{target} - y_{robot}(s), \; x_{target} - x_{robot}(s)\right)$$
+
+   ```math
+   \theta^*(s) = \mathrm{atan2}\left(y_{target} - y_{robot}(s), \; x_{target} - x_{robot}(s)\right)
+   ```
+
 4. **Hold Heading (`hold()`):** Capture measured heading once at keyframe entry.
 5. **Undefined Direction:** At a zero-length path or coincident face-point target, retain the last valid target and report undefined aim readiness. Runtime resolves dynamic suppliers once per tick ([04](04-runtime-integration-and-teleop-assist.md)).
 
@@ -86,13 +94,24 @@ Example: rotating from $0^\circ$ to $175^\circ$ with `CCW` sweeps the intake tow
 ### 3.1 Unwrapped Angular Distance
 
 At activation, seed reference angle/velocity from measured motion. Normalize the target difference once:
-$$d=\mathrm{angleModulus}(\theta^*-\theta_{ref})\in[-\pi,\pi)$$
+
+```math
+d=\mathrm{angleModulus}(\theta^*-\theta_{ref})\in[-\pi,\pi)
+```
 
 1. **`SHORTEST`:** $\Delta\theta=d$; choose a deterministic direction for the $\pi$ tie.
 2. **`CW`:**
-   $$\Delta\theta=\begin{cases}d&d\le0\\d-2\pi&d>0\end{cases}$$
+
+   ```math
+   \Delta\theta=\begin{cases}d&d\le0\\d-2\pi&d>0\end{cases}
+   ```
+
 3. **`CCW`:**
-   $$\Delta\theta=\begin{cases}d&d\ge0\\d+2\pi&d<0\end{cases}$$
+
+   ```math
+   \Delta\theta=\begin{cases}d&d\ge0\\d+2\pi&d<0\end{cases}
+   ```
+
 4. **Latch the branch:** $\theta_{goal}=\theta_{ref}+\Delta\theta$. Keep it unwrapped to prevent another full turn after overshoot; unwrap moving targets against their previous branch without resetting reference velocity.
 
 Direction chooses the planned branch; bounded arrest and small overshoot corrections may require reversal.
@@ -100,15 +119,31 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
 ### 3.2 Rotational Command Formulation & Reference State Evolution
 
 1. **Advance a bounded profile:**
-   $$(\theta_{ref,new},\omega_{ref,new})=\operatorname{TrapezoidStep}(\theta_{ref},\omega_{ref},\theta_{goal},0,\omega_{max},\alpha_{max},\Delta t)$$
+
+   ```math
+   (\theta_{ref,new},\omega_{ref,new})=\mathrm{TrapezoidStep}(\theta_{ref},\omega_{ref},\theta_{goal},0,\omega_{max},\alpha_{max},\Delta t)
+   ```
+
    Handle initial wrong-direction motion and stopping distance. Preserve continuous angle and velocity; do not wrap stored reference angles or snap at an arbitrary error threshold.
 2. **Add heading feedback:**
-   $$\omega_{des}=\operatorname{clamp}\left(\omega_{ref,new}+kP_\theta\operatorname{angleModulus}(\theta_{ref,new}-\theta_{meas}),-\omega_{max},\omega_{max}\right)$$
+
+   ```math
+   \omega_{des}=\mathrm{clamp}\left(\omega_{ref,new}+kP_\theta\mathrm{angleModulus}(\theta_{ref,new}-\theta_{meas}),-\omega_{max},\omega_{max}\right)
+   ```
+
 3. **Bound the final command:**
-   $$\omega_{cmd}=\omega_{prev}+\operatorname{clamp}(\omega_{des}-\omega_{prev},-\alpha_{max}\Delta t,\alpha_{max}\Delta t)$$
+
+   ```math
+   \omega_{cmd}=\omega_{prev}+\mathrm{clamp}(\omega_{des}-\omega_{prev},-\alpha_{max}\Delta t,\alpha_{max}\Delta t)
+   ```
+
    Use previous applied angular velocity when available; feasible inputs respect speed/acceleration bounds. Out-of-bounds states enter bounded recovery ([02](02-velocity-profiler-and-limits.md)).
 4. **Allocate from actual angular demand:**
-   $$\alpha_{cmd}=\frac{\omega_{cmd}-\omega_{prev}}{\Delta t}$$
+
+   ```math
+   \alpha_{cmd}=\frac{\omega_{cmd}-\omega_{prev}}{\Delta t}
+   ```
+
    Feed this final command/change into §5. Limiting reference acceleration alone does not limit feedback-induced acceleration.
 
 - **State Invariant:** Advance from previous reference state, not measured heading each tick. Runtime owns state; the profile step is pure math.
@@ -124,11 +159,22 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
 ### 4.1 Hard Gate Policy: Braking, Holding, and Release
 
 1. **Evaluate readiness:**
-   $$e_\theta=\operatorname{angleModulus}(\theta^*-\theta_{meas})$$
-   $$ready=\bigl(|e_\theta|\le\epsilon_\theta\bigr)\land\bigl(|\omega_{meas}|\le\omega_{tol}\bigr)$$
+
+   ```math
+   e_\theta=\mathrm{angleModulus}(\theta^*-\theta_{meas})
+   ```
+
+   ```math
+   ready=\bigl(|e_\theta|\le\epsilon_\theta\bigr)\land\bigl(|\omega_{meas}|\le\omega_{tol}\bigr)
+   ```
+
    Require `ready` continuously for the keyframe's dwell before opening the gate.
 2. **Insert a barrier while closed:**
-   $$v_{gate,k_{anchor}}=0$$
+
+   ```math
+   v_{gate,k_{anchor}}=0
+   ```
+
    The backward pass propagates braking upstream using available traction. Continue rotation while approaching/holding; do not set every upstream sample to zero.
 3. **Hold at the anchor:** Reuse terminal 2D position convergence ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter)). A scalar zero-speed profile alone cannot correct residual position error.
 4. **Release on readiness:** Remove the barrier and resume from current motion, rechecking readiness until passage. Emit no stop-arrival marker and require no caller release.
@@ -137,7 +183,10 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
 ### 4.2 Arrival-Time Estimates Are Not Gate Enforcement
 
 The original pacing estimate assumed a particular approach-speed history:
-$$v_{cap,kin}=\frac{2d_{anchor}}{t_{rot}}-v_{target}$$
+
+```math
+v_{cap,kin}=\frac{2d_{anchor}}{t_{rot}}-v_{target}
+```
 
 - Changing traction, angular feedback, and dynamic targets invalidate that assumption.
 - Keep any $t_{rot}$ estimate diagnostic; do not treat it as proof of measured arrival readiness.
@@ -150,12 +199,24 @@ $$v_{cap,kin}=\frac{2d_{anchor}}{t_{rot}}-v_{target}$$
 Use the final $\omega_{cmd}$ and $\alpha_{cmd}$ from §3.2, module positions relative to the robot center, and field-to-robot conversion of translation.
 
 1. **Exact module-speed check:** For module $i$ at $(x_i,y_i)$:
-   $$\vec v_{module,i}=\begin{bmatrix}v_x-\omega_{cmd}y_i\\v_y+\omega_{cmd}x_i\end{bmatrix},\qquad\|\vec v_{module,i}\|\le v_{wheel,max}$$
+
+   ```math
+   \vec v_{module,i}=\begin{bmatrix}v_x-\omega_{cmd}y_i\\v_y+\omega_{cmd}x_i\end{bmatrix},\qquad\|\vec v_{module,i}\|\le v_{wheel,max}
+   ```
+
 2. **Conservative translational speed budget:**
-   $$R_{max}=\max_i\sqrt{x_i^2+y_i^2},\qquad v_{max,eff}=\min\left(v_{max},\max(0,v_{wheel,max}-|\omega_{cmd}|R_{max})\right)$$
+
+   ```math
+   R_{max}=\max_i\sqrt{x_i^2+y_i^2},\qquad v_{max,eff}=\min\left(v_{max},\max(0,v_{wheel,max}-|\omega_{cmd}|R_{max})\right)
+   ```
+
    Do not impose a positive translation floor when rotation consumes wheel capacity.
 3. **Conservative translational acceleration budget:** Reserve angular tangential and centripetal demand:
-   $$a_{rot}=|\alpha_{cmd}|R_{max}+\omega_{cmd}^2R_{max},\qquad a_{fric,eff}=\max(0,a_{fric}-a_{rot})$$
+
+   ```math
+   a_{rot}=|\alpha_{cmd}|R_{max}+\omega_{cmd}^2R_{max},\qquad a_{fric,eff}=\max(0,a_{fric}-a_{rot})
+   ```
+
    Bound angular demand to the available envelope. This triangle-inequality model is conservative; it is not a tire-load or steering-rate model.
 4. **Resolve competing demands:** Pass budgets to profiling and final vector allocation. Reduce angular change where possible if it would leave no feasible translational slew step; otherwise report bounded recovery ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter)).
 5. **Verify applied output:** Check final combined module speeds after feedback/feedforward. Robot integration reports downstream saturation and owns steering/current constraints; kinematics alone does not enforce them.

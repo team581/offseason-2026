@@ -46,14 +46,14 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
   - Check rotation direction (`SHORTEST`, `CW`, `CCW`) and continuous unwrapped reference evolution $\theta_{ref}$.
   - Check that hard gates hold at anchors until measured readiness; overshoot/stall must not report successful passage ([03](03-heading-and-rotation.md)).
 - `VectorLimiterTest`:
-  - Check isotropic 2D acceleration bounds: $\|\vec{v}_{cmd} - \vec{v}_{prev}\| \le a_{fric, eff} \cdot \Delta t$ across all quadrants.
+  - Check isotropic 2D acceleration bounds: $`\lVert \vec{v}_{cmd} - \vec{v}_{prev}\rVert \le a_{fric, eff} \cdot \Delta t`$ across all quadrants.
 - `ProgressTrackerTest`:
   - Check that measured progress follows forward and backward motion within the search window around $s_{high\_water}$ without jumping across self-intersecting/figure-8 paths.
   - Check that event progress never decreases within a geometry generation.
   - Check that latching preserves interior `Goal.through` vertices and re-latching triggers when $|e_{xt}| > e_{relatch}$ or on explicit localization resets. Rebuilds preserve goal/event identity without reusing old arc-length coordinates.
 
 ### 2.2 Layer 2: Property & Fuzz Testing (Nightly)
-Runs randomized path geometries, start states, and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$, $\|\Delta \vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
+Runs randomized path geometries, start states, and noise levels; asserts zero `NaN`/`Infinity` outputs, $`\lVert \vec{v}_{cmd}\rVert \le v_{max} + 10^{-6}`$, $`\lVert \Delta \vec{v}\rVert/\Delta t \le a_{fric} + 10^{-6}`$, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
 
 ### 2.3 Layer 3: Closed-Loop Auto Simulation (Every Push & PR)
 Runs dedicated TB2 scenarios (straight/short stops, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
@@ -66,7 +66,7 @@ Runs dedicated TB2 scenarios (straight/short stops, corners, reversals, figure-8
 Runs each auto across $N = 20$ seeded runs with start pose offsets $\mathcal{U}(-0.08, 0.08)\text{ m} / \mathcal{U}(-5^\circ, 5^\circ)$, odometry noise $\sigma = 0.015\text{ m}$, a $0.25\text{ m}$ vision pose step at $t = 3.0\text{ s}$, and a $1.5\text{ m/s}$ ($100\text{ ms}$) lateral collision shove; asserts recovery within the scenario envelope or its expected failure status. Include target loss, disabled/re-enabled operation, driver handoff, and missed ticks.
 
 ### 2.5 Layer 5: Log Replay Testing
-Feeds `.wpilog` match poses/velocities into the planner and tracks model acceleration residual $\frac{1}{M}\sum \|\vec{a}_{achieved, i} - \vec{a}_{commanded, i}\|$ to investigate model mismatch, tread wear, or battery sag. Replay is open-loop evidence; it cannot prove a changed controller completes the path.
+Feeds `.wpilog` match poses/velocities into the planner and tracks model acceleration residual $`\frac{1}{M}\sum \lVert \vec{a}_{achieved, i} - \vec{a}_{commanded, i}\rVert`$ to investigate model mismatch, tread wear, or battery sag. Replay is open-loop evidence; it cannot prove a changed controller completes the path.
 
 ---
 
