@@ -1,21 +1,10 @@
-# Trailblazer 2 Design Specification: Overview and System Architecture
+# Trailblazer 2 Spec Overview
 
-**Document ID:** TB2-SPEC-00
-**Status:** Implementation design
-**Author:** Team 581 Technical Staff
-**Applies To:** `com.team581.trailblazer2`, `shared`, robot-project integration
-
-These documents describe intended implementation, not an already verified controller. See the [implementation roadmap](08-implementation-roadmap-and-migration.md) for build order and the document index.
+Trailblazer 2 is intended to make swerve path following more predictable and optimal. It replaces Trailblazer 1's PID to end point control with rounded paths and explicit acceleration, braking, and turning limits. It still replans every loop, and keeps everything in code.
 
 ---
 
-## 1. Overview
-
-Trailblazer 2 is intended to make swerve path following more predictable and optimal. It replaces Trailblazer 1's point-chasing and distance-PID speed control with rounded paths and explicit acceleration, braking, and turning limits. It still replans every loop, and keeps everything in code.
-
----
-
-## 2. Comparison: Trailblazer 1 vs. Alternatives
+## 1. Trailblazer 1 vs. Alternatives
 
 | Metric                        | Trailblazer 1                            | Choreo                            | PathPlanner                             | 254 Hermite Splines                   | Trailblazer 2                                                      |
 | :---------------------------- | :--------------------------------------- | :-------------------------------- | :-------------------------------------- | :------------------------------------ | :----------------------------------------------------------------- |
@@ -29,7 +18,7 @@ Trailblazer 2 is intended to make swerve path following more predictable and opt
 
 ---
 
-## 3. Core Design Rules
+## 2. Core Design Rules
 
 ### Everything in code
 
@@ -63,7 +52,7 @@ Pass time and robot state as inputs so desktop tests, the VS Code preview, and C
 
 ---
 
-## 4. End-to-End Runtime Pipeline
+## 3. End-to-End Runtime Pipeline
 
 The planner runs once per robot control loop. Each update is a **tick**. It takes a `TickInput` and returns a `TickResult`.
 
@@ -84,7 +73,7 @@ The runtime keeps state between ticks, handles tick inputs and outputs, and mana
 
 ---
 
-## 5. Subsystem Architecture
+## 4. Subsystem Architecture
 
 Trailblazer 2 is decoupled from low-level drivetrain motor control and high-level match state machines.
 
@@ -98,14 +87,14 @@ flowchart LR
     TB2 -->|"Telemetry and Limiting Factor"| DogLog["DogLog / AdvantageScope"]
 ```
 
-### 5.1 Separation of Responsibilities
+### 4.1 Separation of Responsibilities
 
 1. **Auto State Machine:** Runs overall autos and uses `passedMarker` and `atGoal` to transition states.
 2. **Trailblazer:** Solves path geometry, velocity heading, and outputs field-relative `ChassisSpeeds`.
 3. **Swerve Subsystem:** Uses `ChassisSpeeds` to control drive/steer motors.
 4. **Localization:** Fuses wheel odometry and AprilTag vision into `Pose2d` and `ChassisSpeeds`.
 
-### 5.2 Math and Runtime Separation
+### 4.2 Math and Runtime Separation
 
 To make sure math vs. logic is easy to find, they're in separate places.
 
