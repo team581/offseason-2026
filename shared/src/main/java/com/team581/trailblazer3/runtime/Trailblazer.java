@@ -83,6 +83,37 @@ public final class Trailblazer {
         && Double.isFinite(speed.omegaRadiansPerSecond);
   }
 
+  private static String snapshotFault(RobotStateSnapshot snapshot, double now) {
+    if (!snapshot.localizationValid()) {
+      return "Localization reported an invalid pose";
+    }
+    double timestamp = snapshot.poseTimestampSeconds();
+    if (!Double.isFinite(timestamp)) {
+      return "Odometry timestamp is nonfinite";
+    }
+    double age = now - timestamp;
+    if (age < -1e-6) {
+      return "Odometry timestamp is ahead of the planner clock";
+    }
+    if (age > 0.10) {
+      return "Odometry sample is older than 100 ms";
+    }
+    var pose = snapshot.measuredPose();
+    if (!Double.isFinite(pose.getTranslation().getNorm())
+        || !Double.isFinite(pose.getRotation().getRadians())) {
+      return "Measured pose is nonfinite";
+    }
+    if (!finite(snapshot.measuredFieldSpeeds())
+        || snapshot.appliedFieldSpeeds().filter(speed -> !finite(speed)).isPresent()) {
+      return "Measured or applied chassis velocity is nonfinite";
+    }
+    if (!validPower(snapshot.swerveSupplyCurrentLimitAmps().orElse(1))
+        || !validPower(snapshot.restingBatteryVoltageVolts().orElse(12))) {
+      return "Invalid drivetrain power limits";
+    }
+    return null;
+  }
+
   private static Translation2d translation(ChassisSpeeds speed) {
     return new Translation2d(speed.vxMetersPerSecond, speed.vyMetersPerSecond);
   }
@@ -298,17 +329,9 @@ public final class Trailblazer {
     lastTime = now;
     var pose = snapshot.measuredPose();
     var measuredSpeeds = snapshot.measuredFieldSpeeds();
-    if (!snapshot.localizationValid()
-        || !Double.isFinite(snapshot.poseTimestampSeconds())
-        || snapshot.poseTimestampSeconds() > now + 1e-6
-        || now - snapshot.poseTimestampSeconds() > 0.10
-        || !Double.isFinite(pose.getTranslation().getNorm())
-        || !Double.isFinite(pose.getRotation().getRadians())
-        || !finite(measuredSpeeds)
-        || snapshot.appliedFieldSpeeds().filter(speed -> !finite(speed)).isPresent()
-        || !validPower(snapshot.swerveSupplyCurrentLimitAmps().orElse(1))
-        || !validPower(snapshot.restingBatteryVoltageVolts().orElse(12))) {
-      result = zero(RuntimeStatus.FAULT, "Invalid or stale robot snapshot");
+    String snapshotFault = snapshotFault(snapshot, now);
+    if (snapshotFault != null) {
+      result = zero(RuntimeStatus.FAULT, snapshotFault);
       return result;
     }
     var measured = translation(measuredSpeeds);
@@ -695,16 +718,40 @@ public final class Trailblazer {
       var position = pose.getTranslation().interpolate(arrest, (double) i / checks);
       smallest = Math.min(smallest, clearance.clearance(new Pose2d(position, pose.getRotation())));
     }
-    int intervals = Math.max(1, (int) Math.ceil(geometry.length() / 0.015));
     var finish = goals.get(goals.size() - 1).pose().getRotation();
-    for (int i = 0; i <= intervals; i++) {
-      var position = geometry.sample(geometry.length() * i / intervals).position();
-      for (int angleStep = 0; angleStep <= 36; angleStep++) {
-        var rotation = pose.getRotation().interpolate(finish, angleStep / 36.0);
-        smallest = Math.min(smallest, clearance.clearance(new Pose2d(position, rotation)));
+    double turn = Math.abs(finish.minus(pose.getRotation()).getRadians());
+    int headingIntervals = (int) Math.ceil(turn / Math.toRadians(5));
+    double cornerRadius = Math.hypot(clearance.halfLength(), clearance.halfWidth());
+    double headingAllowance =
+        headingIntervals == 0 ? 0 : cornerRadius * turn / (2 * headingIntervals);
+    double required = recovery ? 0 : clearance.margin();
+    for (double progress = 0; ; ) {
+      var position = geometry.sample(progress).position();
+      double pointClearance = Double.POSITIVE_INFINITY;
+      for (int angleStep = 0; angleStep <= headingIntervals; angleStep++) {
+        var rotation =
+            headingIntervals == 0
+                ? pose.getRotation()
+                : pose.getRotation().interpolate(finish, (double) angleStep / headingIntervals);
+        pointClearance =
+            Math.min(
+                pointClearance,
+                clearance.clearance(new Pose2d(position, rotation)) - headingAllowance);
       }
+      smallest = Math.min(smallest, pointClearance);
+      if (pointClearance <= required || progress >= geometry.length()) {
+        break;
+      }
+      // Translation by ds can reduce clearance by at most ds.
+      double step =
+          Math.min(0.25, Math.min((pointClearance - required) / 2, geometry.length() - progress));
+      if (step < 1e-6 && step < geometry.length() - progress) {
+        throw new IllegalArgumentException("Path clearance cannot be established");
+      }
+      smallest = Math.min(smallest, pointClearance - step);
+      progress = Math.min(geometry.length(), progress + step);
     }
-    if (smallest <= 0 || (!recovery && smallest < clearance.margin())) {
+    if (smallest <= 0 || (!recovery && smallest <= clearance.margin())) {
       throw new IllegalArgumentException("Path footprint intersects a keepout or required margin");
     }
     marginWarning = smallest < clearance.margin();

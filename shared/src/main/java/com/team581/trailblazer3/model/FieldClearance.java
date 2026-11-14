@@ -72,7 +72,10 @@ public record FieldClearance(
       var edge = a.get((i + 1) % a.size()).minus(a.get(i));
       var normal = new Translation2d(edge.getY(), -edge.getX()).div(edge.getNorm());
       double boundary = a.get(i).dot(normal);
-      double nearest = b.stream().mapToDouble(p -> p.dot(normal)).min().orElseThrow();
+      double nearest = Double.POSITIVE_INFINITY;
+      for (var point : b) {
+        nearest = Math.min(nearest, point.dot(normal));
+      }
       maximum = Math.max(maximum, nearest - boundary);
     }
     return maximum;

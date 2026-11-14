@@ -307,7 +307,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public ChassisSpeeds getRequestedSpeeds() {
-    if (DriverStation.isAutonomousEnabled()) {
+    if (DriverStation.isAutonomousEnabled()
+        || (DriverStation.isDisabled() && trajectoryCommand != null)) {
       return trajectoryCommand == null ? new ChassisSpeeds() : trajectoryCommand;
     }
     return teleopDriveSource.getRequestedSpeeds();
@@ -372,7 +373,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     drivetrain.setOperatorPerspectiveForward(
         FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
 
-    if (DriverStation.isAutonomousEnabled()) {
+    if (DriverStation.isAutonomousEnabled()
+        || (DriverStation.isDisabled() && trajectoryCommand != null)) {
       var speeds = getRequestedSpeeds();
       drivetrain.setControl(
           trajectory

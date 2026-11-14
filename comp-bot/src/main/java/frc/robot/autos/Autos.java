@@ -3,24 +3,21 @@ package frc.robot.autos;
 import com.ctre.phoenix6.Utils;
 import com.team581.autos.AutoChooser;
 import com.team581.trailblazer3.model.RobotStateSnapshot;
+import com.team581.trailblazer3.model.TickInput;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
-import frc.robot.config.RobotKind;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.Map;
+import java.util.Optional;
 
 public class Autos extends StateMachineSubsystem<AutoSelection> {
   private static final String DIAGNOSTIC_KEY = "Trailblazer3/Diagnostic";
-
-  private static Alliance alliance() {
-    return DriverStation.getAlliance().orElse(Alliance.Blue);
-  }
 
   private final AutoChooser<AutoSelection> autoChooser =
       new AutoChooser<>(AutoSelection.values(), AutoSelection.DO_NOTHING);
@@ -28,11 +25,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private final Trailblazer trailblazer;
   private boolean started;
 
-  private boolean rejected;
   private TrailblazerTrenchAuto activeAuto;
   private double previousMeasuredSpeed;
   private double previousMeasurementTime;
   private boolean braking;
+  private Alliance autoAlliance = Alliance.Blue;
 
   public Autos(RobotManager robotManager, Trailblazer trailblazer) {
     super(SubsystemPriority.AUTOS, AutoSelection.DO_NOTHING);
@@ -49,6 +46,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   protected void whileInState(AutoSelection state) {
     boolean trenchSelected = state == AutoSelection.TRAILBLAZER_3_RIGHT_TRENCH;
     if (!DriverStation.isAutonomousEnabled()) {
+      autoAlliance = DriverStation.getAlliance().orElse(autoAlliance);
       if (started) {
         trailblazer.update(
             RobotStateSnapshot.measured(
@@ -57,18 +55,18 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
                 new ChassisSpeeds(),
                 false));
         started = false;
-        rejected = false;
-        activeAuto = null;
       }
+      activeAuto = null;
       robotManager.swerve.clearTrajectoryCommand();
       if (DriverStation.isDisabled()
           && trenchSelected
-          && RobotKind.IS_COMP_BOT
-          && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()
-          && (RobotBase.isSimulation()
-              || DriverStation.isAutonomous()
-              || DriverStation.isFMSAttached())) {
-        robotManager.localization.resetPose(TrailblazerTrenchAuto.start(alliance()));
+          && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()) {
+        robotManager.localization.resetPose(TrailblazerTrenchAuto.start(autoAlliance));
+      }
+      if (DriverStation.isDisabled() && trenchSelected) {
+        // Phoenix receives the launch direction while the Driver Station inhibits motor output.
+        double direction = autoAlliance == Alliance.Red ? 1 : -1;
+        robotManager.swerve.setTrajectoryCommand(new ChassisSpeeds(direction, 0, 0));
       }
       return;
     }
@@ -82,20 +80,12 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       return;
     }
 
-    if (rejected) {
-      return;
-    }
     var drive = robotManager.swerve.drivetrain.getStateCopy();
     var pose = drive.Pose;
     boolean firstTick = !started;
     if (firstTick) {
+      activeAuto = new TrailblazerTrenchAuto(trailblazer, autoAlliance);
       started = true;
-      activeAuto = new TrailblazerTrenchAuto(trailblazer, alliance());
-      if (!RobotKind.IS_COMP_BOT || !activeAuto.acceptsStart(pose)) {
-        DogLog.log(DIAGNOSTIC_KEY, "Comp bot or right-trench start pose required");
-        rejected = true;
-        return;
-      }
     }
 
     if (firstTick
@@ -104,8 +94,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       activeAuto.periodic();
     }
     var speeds = ChassisSpeeds.fromRobotRelativeSpeeds(drive.Speeds, pose.getRotation());
+    double now = Utils.getCurrentTimeSeconds();
+    DogLog.log("Trailblazer3/OdometryAgeMs", (now - drive.Timestamp) * 1000);
+    var snapshot = RobotStateSnapshot.measured(drive.Timestamp, pose, speeds, true);
     var result =
-        trailblazer.update(RobotStateSnapshot.measured(drive.Timestamp, pose, speeds, true));
+        trailblazer.update(new TickInput(now, snapshot, Map.of(), Map.of(), Optional.empty()));
     robotManager.swerve.setTrajectoryCommand(result.commandedFieldSpeeds());
     DogLog.log("Trailblazer3/Status", result.status().name());
     DogLog.log("Trailblazer3/Infeasible", result.infeasible());
