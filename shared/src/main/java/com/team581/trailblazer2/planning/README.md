@@ -1,6 +1,6 @@
 # Trailblazer 2 Spec Overview
 
-Trailblazer 2 is intended to make swerve path following more predictable and optimal. It replaces Trailblazer 1's PID to end point control with rounded paths and explicit acceleration, braking, and turning limits. It still replans every loop, and keeps everything in code.
+Trailblazer 2 is a clean-sheet Java path-planning and motion-control library built for the **new 2027 robot**, with zero legacy Trailblazer 1 or 2026 robot dependencies. It replaces PID-to-endpoint control with rounded paths and explicit acceleration, braking, and turning limits, replans every loop from measured motion, and keeps all authoring in code.
 
 ---
 
@@ -42,7 +42,7 @@ Check the speed profile and final command against the robot’s combined driving
 
 ### Run the same planner everywhere
 
-Pass time and robot state as inputs so desktop tests, the VS Code preview, and CI can run the same planner as the roboRIO.
+Pass time and robot state as inputs so desktop tests, the VS Code preview, and CI can run the same planner as the target 2027 robot controller (e.g., SystemCore).
 
 ### Clarity
 
@@ -82,19 +82,19 @@ Trailblazer 2 is decoupled from low-level drivetrain motor control and high-leve
 ```mermaid
 flowchart LR
     AutoSM["Auto State Machine"] -->|"activate / release"| TB2["Trailblazer 2 Facade"]
-    Teleop["Teleop Drive Source / Driver Assist"] -->|"driveTo / snapAngle"| TB2
-    Loc["Localization & Power State<br/>(Odometry + Vision + Supply Limit)"] -->|"Pose2d, Speeds, I_supply, V_bat"| TB2
-    TB2 -->|"ChassisSpeeds + ChassisAccelerations<br/>(Field-Relative, Zero-Deadband)"| SwerveSub["Swerve Subsystem"]
-    SwerveSub -->|"Kinematics and Desaturation"| Modules["Swerve Modules (TalonFX)"]
-    TB2 -->|"Telemetry and Limiting Factor"| DogLog["DogLog / AdvantageScope"]
+    Teleop["Teleop Assist / Operator Input"] -->|"driveTo / snapAngle"| TB2
+    Loc["Localization & Power Snapshot<br/>(Odometry + Vision + Supply Ceiling)"] -->|"Pose2d, Speeds, I_supply, V_oc"| TB2
+    TB2 -->|"ChassisSpeeds + ChassisAccelerations + WheelForces<br/>(Field-Relative, Zero-Deadband)"| SwerveSub["Swerve Subsystem"]
+    SwerveSub -->|"Kinematics and Desaturation"| Modules["Swerve Modules"]
+    TB2 -->|"Structured Telemetry & Limiting Factor"| Telemetry["Telemetry Sink / AdvantageScope"]
 ```
 
 ### 4.1 Separation of Responsibilities
 
 1. **Auto State Machine:** Runs overall autos and uses `passedMarker` and `atGoal` to transition states.
-2. **Trailblazer:** Solves path geometry, velocity, and heading, emitting field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations`, and optional module wheel-force feedforwards.
-3. **Swerve Subsystem:** Executes TB2 commands via a dedicated zero-deadband closed-loop request to control drive/steer motors.
-4. **Localization & Power Snapshot:** Fuses wheel odometry and AprilTag vision into `Pose2d` and `ChassisSpeeds`, paired with active `PowerManager` supply-current limits and battery voltage.
+2. **Trailblazer:** Solves path geometry, velocity, and heading, emitting field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations`, and optional module `WheelForces` feedforwards.
+3. **Swerve Subsystem:** Executes TB2's closed-loop trajectory command (`ChassisSpeeds`, `ChassisAccelerations`, and optional `WheelForces`) with zero command deadband.
+4. **Localization & Power Snapshot:** Fuses wheel odometry and vision into field-relative `Pose2d` and `ChassisSpeeds` normalized to `TimeSource`, paired with optional instantaneous drive supply-current ceiling and resting battery voltage.
 
 ### 4.2 Math and Runtime Separation
 
@@ -111,4 +111,4 @@ To make sure math vs. logic is easy to find, they're in separate places.
 
 - Keep season-specific field definitions and robot configuration outside shared part.
 - Any tooling should use the same model/math/runtime without constructing hardware.
-- Use the existing `DriveSource` boundary to choose between Trailblazer vs. Driver speeds, like before.
+- Define TB2's own clean trajectory command and axis-ownership interface for the 2027 drivetrain rather than inheriting legacy 2026 `DriveSource` constraints (use a thin adapter only if running optional carpet tests on a prior testbed).

@@ -8,7 +8,7 @@
 
 Define autos in Java:
 
-1. **One source:** Autos like [`LeftNormalAuto.java`](../../../../../../../../comp-bot/src/main/java/frc/robot/autos/auto_state_machines/LeftNormalAuto.java) mix path goals with dynamic lambdas (`() -> getCollisionPoint(...)`), IMU triggers, and enum markers (`passedMarker(READY_TO_CROSS_BUMP)`). Keep these together in Java.
+1. **One source:** Robot autos mix path goals with dynamic suppliers (`() -> getPickupTarget(...)`), mechanism triggers, and enum markers (`passedMarker(READY_TO_SCORE)`). Keep these together in Java rather than split across JSON path files.
 2. **Compile-Time Safety:** `javac`, ErrorProne, and IDE refactoring check changes.
 3. **No parser:** No YAML/JSON schema or reflection layer.
 
@@ -16,35 +16,37 @@ Define autos in Java:
 
 ## 2. Canonical Java Fluent DSL
 
-Use a typed fluent builder for immutable `MotionPlan` records; examples below show the proposed API. Plan factories must run without hardware; runtime resolves suppliers before calling math.
+Use a typed fluent builder for immutable `MotionPlan` records; examples below show the proposed 2027 API. Plan factories must run without hardware and are authored in the canonical **Blue-origin field frame** before alliance transformation via `forAlliance(...)`; runtime resolves dynamic suppliers before calling math.
 
-### 2.1 Specification Example: `LeftNormalAuto.java`
+### 2.1 Specification Example: `ExampleCycleAuto.java`
 ```java
-public class LeftNormalAuto extends BaseImperativeAuto<NormalAutoState> {
+public class ExampleCycleAuto {
 
   public enum Markers {
-    PRIORITIZE_INTAKE,
-    START_SHOOT_RQ,
-    READY_TO_CROSS_BUMP
+    START_INTAKE,
+    READY_TO_SCORE
   }
 
-  // Canonical pure-Java auto specification
-  private final MotionPlan intakeFirstCycle =
-      Trailblazer.plan("intake_first_cycle")
-          .withLimits(LimitsProfile.FAST)
-          .addGoal(
-              Goal.through(FieldAnchors.RED_DEPOT_TRENCH)
-                  .within(0.75))
-          .addGoal(
-              Goal.through(() -> getCollisionPoint(FieldAnchors.BALL_A))
-                  .within(0.30)
-                  .heading(HeadingPlan.to(Rotation2d.fromDegrees(115.0)).before(1.0).gate(GatePolicy.SOFT))
-                  .marker(Markers.PRIORITIZE_INTAKE))
-          .addGoal(
-              Goal.stop(FieldAnchors.offset(FieldAnchors.RED_DEPOT_BUMP, 0, BUMP_OFFSET, Rotation2d.kZero))
-                  .finish(0.20, Rotation2d.fromDegrees(3), 0.20)
-                  .marker(Markers.READY_TO_CROSS_BUMP))
-          .build();
+  // Canonical pure-Java auto specification (authored in Blue-origin field coordinates)
+  public MotionPlan buildCyclePlan(
+      Alliance alliance, Supplier<TimestampedTarget<Pose2d>> pickupSupplier) {
+    return Trailblazer.plan("example_cycle")
+        .withLimits(LimitsProfile.FAST)
+        .addGoal(
+            Goal.through(SeasonAnchors.STAGE_PASS)
+                .within(0.75))
+        .addGoal(
+            Goal.through(pickupSupplier, TargetLossPolicy.holdLastValid(0.25))
+                .within(0.30)
+                .heading(HeadingPlan.to(Rotation2d.fromDegrees(115.0)).before(1.0).gate(GatePolicy.SOFT))
+                .marker(Markers.START_INTAKE))
+        .addGoal(
+            Goal.stop(SeasonAnchors.SCORE_POSE)
+                .finish(0.03, Rotation2d.fromDegrees(2), 0.10)
+                .marker(Markers.READY_TO_SCORE))
+        .build()
+        .forAlliance(alliance, SeasonField.GEOMETRY);
+  }
 }
 ```
 
@@ -59,14 +61,14 @@ public record Goal(
     double withinMeters,                 // Nominal closest-approach bound; not obstacle clearance
     OptionalDouble maxPassSpeedMetersPerSec, // Ceiling for THROUGH; target cruise speed for CRUISE_THROUGH
     OptionalDouble maxOverrunMeters,     // CRUISE_THROUGH overrun ray length past terminal goal
-    TargetLossPolicy targetLossPolicy,   // HOLD_LAST_VALID, HOLD_POSITION, or ABORT_PLAN (for dynamic suppliers)
+    TargetLossPolicy targetLossPolicy,   // HoldLastValid, FallbackNominal, or ControlledStop (for dynamic suppliers)
     FinishTolerance finishTolerance,     // Position, heading, linear/angular speed, and dwell for STOP
     Optional<HeadingKeyframe> heading,   // Associated heading schedule keyframe
-    Optional<Enum<?>> marker             // Event marker emitted on passage or release
+    Optional<Enum<?>> marker             // Event marker recorded as passed on passage or stop completion
 ) {}
 ```
 
-> Use `Goal.stop(...)`, `Goal.through(...)`, and `Goal.cruiseThrough(...)` factory/builder helpers so static goals default `TargetLossPolicy` cleanly and `CRUISE_THROUGH` requires positive `cruiseSpeedMetersPerSec` and `maxOverrunMeters`.
+> Use `Goal.through(Translation2d / Supplier)` (accepts position directly or ignores `Pose2d` rotation unless `.heading(...)` is explicitly attached, preventing accidental TB1-style waypoint heading snaps), `Goal.stop(Pose2d)` (defaults finish heading to `pose.getRotation()` unless overridden by `.heading(...)`), and `Goal.cruiseThrough(...)` (`cruiseSpeedMetersPerSec > 0` and `maxOverrunMeters > 0`). Static goals default `TargetLossPolicy` to `ControlledStop`.
 
 #### `HeadingPlan` Keyframe
 ```java
@@ -84,48 +86,47 @@ public record HeadingKeyframe(
 
 ---
 
-## 3. Centralized Field Anchor Dictionary (`FieldAnchors.java`)
+## 3. Canonical Field Symmetry & Whole-Plan Alliance Transforms (`FieldGeometry`)
 
-Centralize field coordinates and declared field symmetry in season-owned `FieldAnchors.java`; supply them to TB2 outside the shared engine:
+Define field dimensions and symmetry in a self-contained record—with zero hardcoded season dimensions or external game utilities inside TB2—while season code owns field coordinates outside `shared`:
 
 ```java
 public enum FieldSymmetry {
-  /** Blue/Red related by 180-deg rotation: (L-x, W-y, theta + pi). Preserves CW/CCW. */
+  /** Blue/Red related by 180-deg rotation: (L-x, W-y, theta + pi). det(J) = +1; preserves CW/CCW. */
   ROTATIONAL_180,
-  /** Blue/Red related by X-mirroring across field centerline: (L-x, y, pi - theta). Reverses CW <-> CCW. */
+  /** Blue/Red related by X-mirroring across field centerline: (L-x, y, pi - theta). det(J) = -1; reverses CW <-> CCW. */
   MIRROR_X
 }
 
-public final class FieldAnchors {
-  // Illustrative 2026 anchors authored for red in the fixed field frame
-  public static final FieldSymmetry SEASON_SYMMETRY = FieldSymmetry.ROTATIONAL_180;
-  public static final Pose2d RED_DEPOT_TRENCH = new Pose2d(10.489, 1.500, Rotation2d.fromDegrees(90));
-  public static final Pose2d RED_DEPOT_BUMP   = new Pose2d(13.576, 2.450, Rotation2d.kZero);
-  public static final Translation2d HUB_CENTER = new Translation2d(12.100, 4.034);
-  public static final Pose2d BALL_A           = new Pose2d(8.744, 2.021, Rotation2d.fromDegrees(115));
-
-  // Algebraic offset helper
-  public static Pose2d offset(Pose2d base, double dx, double dy, Rotation2d dTheta) {
-    return new Pose2d(base.getX() + dx, base.getY() + dy, base.getRotation().plus(dTheta));
-  }
-
-  // Transform an authored static anchor to the target alliance using SEASON_SYMMETRY
-  public static Pose2d flipToBlue(Pose2d redPose, FieldSymmetry symmetry) {
+public record FieldGeometry(double lengthMeters, double widthMeters, FieldSymmetry symmetry) {
+  public Pose2d flipPose(Pose2d bluePose) {
     return switch (symmetry) {
-      case ROTATIONAL_180 -> FieldUtil.pathflip(redPose); // (L-x, W-y), theta + pi; CW/CCW unchanged
+      case ROTATIONAL_180 -> new Pose2d(
+          lengthMeters - bluePose.getX(),
+          widthMeters - bluePose.getY(),
+          bluePose.getRotation().plus(Rotation2d.kPi));
       case MIRROR_X -> new Pose2d(
-          FieldUtil.FIELD_LENGTH - redPose.getX(),
-          redPose.getY(),
-          Rotation2d.fromRadians(MathUtil.angleModulus(Math.PI - redPose.getRotation().getRadians())));
-          // Caller/plan builder reverses TurnDirection CW <-> CCW under MIRROR_X
+          lengthMeters - bluePose.getX(),
+          bluePose.getY(),
+          Rotation2d.fromRadians(MathUtil.angleModulus(Math.PI - bluePose.getRotation().getRadians())));
     };
   }
 
-  private FieldAnchors() {}
+  public Translation2d flipPoint(Translation2d bluePoint) {
+    return switch (symmetry) {
+      case ROTATIONAL_180 -> new Translation2d(lengthMeters - bluePoint.getX(), widthMeters - bluePoint.getY());
+      case MIRROR_X -> new Translation2d(lengthMeters - bluePoint.getX(), bluePoint.getY());
+    };
+  }
 }
 ```
 
-Never apply alliance flipping to live Blue-origin field-frame vision suppliers (`Pose2d` already reported in the unified field coordinate system); transform only static authored anchors and explicitly flipped static points.
+**Why whole-plan transformation (`MotionPlan.forAlliance(Alliance, FieldGeometry)`) is mandatory:** World offsets `offset(P, dx, dy, dTheta)` and local `Pose2d.transformBy(...)` do **not** commute with `MIRROR_X` ($\det J = -1$), because reflecting negates $\Delta y$ and $\Delta\theta$. Author the entire `MotionPlan` (including all offsets) once in the canonical **Blue-origin field frame**, and call `plan.forAlliance(alliance, geometry)`:
+
+1. **Static Goal Poses & Headings:** Transform static `Goal` poses, `HeadingTarget.fixed(Rotation2d)`, and static `HeadingTarget.facePoint(Translation2d)` via `FieldGeometry`. Leave dynamic Blue-origin vision goals and `facePointDynamic(Supplier<TimestampedTarget<Translation2d>>)` untouched, and never negate a physical robot-frame mechanism angle offset $\psi_{mech}$ (robot hardware chirality does not mirror across alliances).
+2. **`TurnDirection` (`CW` / `CCW`):** Preserve under `ROTATIONAL_180`; swap `CW <-> CCW` under `MIRROR_X`.
+3. **Zone & Keepout Polygons:** When reflecting polygon vertices under `MIRROR_X`, **reverse the vertex winding list** after transforming coordinates so `CCW` outward normals and signed distances $d_{signed}(K_{hard})$ remain positive outside obstacles.
+4. **`PreviewScenario` Initial Velocities:** Transform field-relative starting velocities as $(-v_x, -v_y, +\omega)$ under `ROTATIONAL_180` vs. $(-v_x, +v_y, -\omega)$ under `MIRROR_X`.
 
 ---
 
@@ -149,7 +150,7 @@ flowchart LR
 ## 5. Runners: CI Gradle Task & Warm-JVM Preview Worker
 
 1. **CI Headless Runner (`./gradlew previewAuto -Pauto=<Name>`):** Loads a Java `PreviewScenario` through the normal build/classpath without hardware (enforcing full compilation and `ErrorProne`/`Refaster`). The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
-2. **VS Code Warm-JVM Stdio Worker:** Reads a cached Gradle classpath manifest on startup, compiles only modified Java plan/scenario files incrementally via `ToolProvider.getSystemJavaCompiler()` (or JDT LS output) bypassing cold Gradle startup, and loads scenario classes through a fresh disposable child `URLClassLoader` per request closed inside `try-with-resources` so Windows JAR/class locks and stale class state cannot accumulate. If `build.gradle` or dependencies change, the worker refreshes the classpath manifest automatically.
+2. **VS Code Warm-JVM Stdio Worker:** Launch under the full **Java 21 JDK** toolchain (`ToolProvider.getSystemJavaCompiler()` returns `null` under a JRE). Reads a cached Gradle classpath manifest on startup, compiles only modified Java plan/scenario files incrementally into an **isolated overlay output directory**, and loads scenario classes through a fresh disposable child `URLClassLoader` (with the overlay directory placed ahead of the cached Gradle classpath) closed inside `try-with-resources` so Windows JAR/class locks and stale class state cannot accumulate. If `build.gradle` or dependencies change, the worker refreshes the classpath manifest automatically.
 3. **Closed-Loop Simulation & Outputs (`build/reports/autos/<name>/`):**
    - Versioned preview data: input/build identity, geometry, timestamped motion, headings, limits, events, `GoalPassageStatus`, and assertion results.
    - `.wpilog` trace, `.png` trajectory map, and terminal metrics summary.
@@ -169,6 +170,6 @@ flowchart LR
 
 ## 7. Authoring Validation
 
-- Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal `Goal.stop` or valid `Goal.cruiseThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
+- Require stable goal/keyframe IDs, finite values, valid nominal anchor order (with dynamic rebuilds/relatches clamping relative `beforeGoal` / `afterGoal` offsets cleanly per [03 §2.1](03-heading-and-rotation.md)), and a terminal `Goal.stop` or valid `Goal.cruiseThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`, flagging `CRUISE_OVERRUN_LIMITED` if obstacles clip `d_overrun`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
 - Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)) and an explicit `TargetLossPolicy`. Preview scenarios provide deterministic replacements.
-- Require explicit `FieldSymmetry` on alliance flips: `ROTATIONAL_180` maps $(L-x, W-y, \theta+\pi)$ and preserves `CW`/`CCW`; `MIRROR_X` maps $(L-x, y, \pi-\theta)$ and reverses `CW <-> CCW`. Reject or flag double-flipped live Blue-origin field-frame vision suppliers.
+- Require explicit `FieldGeometry` (`ROTATIONAL_180` vs `MIRROR_X`) in `MotionPlan.forAlliance`, using type-distinct static vs. dynamic `Goal` / `facePoint` factories so live Blue-origin vision targets cannot be double-flipped.

@@ -9,7 +9,7 @@
 - **Trailblazer 1:** Waypoint-bound heading switched halfway through curves (`t < 0.5`) without turn-direction control. Speed floors (`0.4 m/s`) and `360°` default tolerances caused stalls or ignored readiness.
 
 - **Trailblazer 2:** Heading is a separate schedule $\theta^*(s)$ along the path:
-  1. **Target Modes:** Face a fixed angle (`fixed`), face the direction of travel (`faceTravel`), continuously aim at a field point like the Hub (`facePoint`), or keep current heading (`hold`).
+  1. **Target Modes:** Face a fixed angle (`fixed`), face the direction of travel (`faceTravel`), continuously aim at a scoring or field target (`facePoint`), or keep current heading (`hold`).
   2. **Explicit Turn Direction:** Choose `SHORTEST`, `CW`, or `CCW` to control rotation direction.
   3. **Soft vs. Hard Gates:** `SOFT` permits passage without heading readiness; `HARD` brakes to a hold until measured readiness. Both respect shared motion limits.
   4. **Shared Wheel Budget:** `RotationBudgetEstimator` reserves per-node rotational wheel-speed and traction budgets ($v_{max, eff, k}, a_{fric, eff, k}$) ahead of speed profiling, while `HeadingPlanner` bounds current-tick rotation without starving `SOFT` translation.
@@ -25,7 +25,7 @@ Trailblazer 2 models heading as a piecewise schedule $\theta^*(s)$ parameterized
 ```
 Path Progress s:   0.0m                1.8m               3.2m             5.0m
 Translation:       [Start] ---------- [Goal A] --------- [Goal B] ------- [Stop]
-Heading Plan:      Face 0° ---------> Face 90° (Soft) -> Face Hub (Hard)-> Face 180°
+Heading Plan:      Face 0° ---------> Face 90° (Soft) -> Aim Target (Hard)-> Face 180°
 ```
 
 ### 2.1 Heading Keyframe Data Model
@@ -54,7 +54,7 @@ public record HeadingKeyframe(
 
 - **Activation:** Defaults to the previous heading arrival or leg start. `beforeGoal` specifies when heading should be ready, not when rotation starts.
 
-- **Validation:** Reject conflicting/out-of-order anchors. Resolve goal anchors using [01](01-path-geometry-and-kinematics.md), preserving keyframe identity across rebuilds.
+- **Validation & Relatch Clamping:** Reject conflicting/out-of-order anchors on the nominal authored horizon. Resolve goal anchors using [01](01-path-geometry-and-kinematics.md), preserving keyframe identity across rebuilds; during dynamic rebuilds, relatches, or `activate(plan, startAtGoalId)`, clamp relative `beforeGoal` / `afterGoal` positions to $[0, S_{total}]$ (while preserving keyframe order) so recovery closer than `beforeGoal`'s offset never faults. Keep static vs. live-field `facePoint` targets type-distinct ([05 §3](05-developer-tooling.md)): `facePoint(Translation2d)` transforms with alliance symmetry, whereas `facePointDynamic(...)` consumes Blue-origin field coordinates untouched (and any robot-frame mechanism angle offset $\psi_{mech}$ is hardware geometry and is never negated under `MIRROR_X`).
 
 #### Heading Target Modes
 
@@ -131,7 +131,7 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
    e_0 = \theta_{ref} - \theta^*_{unwrapped}, \qquad \dot{e}_0 = \omega_{ref} - \omega^*
    ```
 
-   with directional relative speed bound $\dot{e}_{max} = \max(0, \omega_{eff} - \omega^*)$ when $e_0 < 0$ (or $e_0 = 0, \dot{e}_0 > 0$), else $\max(0, \omega_{eff} + \omega^*)$. Stepping `TrapezoidStep` toward $(0, 0)$ in the error frame avoids point-to-point braking chatter when $\omega^* \ne 0$:
+   with directional relative speed bound $\dot{e}_{max} = \max(0, \omega_{eff} - \omega^*)$ when $e_0 < 0$ (or $e_0 = 0, \dot{e}_0 > 0$), else $\max(0, \omega_{eff} + \omega^*)$. When $\alpha_{eff} \le 10^{-6}$, hold $\omega_{ref,new} = \omega_{ref}$; when $\dot{e}_{max} \le 10^{-4}\text{ rad/s}$ (feedforward saturation or zero speed budget), bypass `TrapezoidStep` (whose cruise-distance division would yield `NaN`) and apply bounded velocity arrest $\dot{e}_{new} = \dot{e}_0 + \mathrm{clamp}(-\dot{e}_0, -\alpha_{eff}\Delta t, \alpha_{eff}\Delta t)$. Otherwise step `TrapezoidStep` toward $(0, 0)$ in the error frame to avoid point-to-point braking chatter when $\omega^* \ne 0$:
 
    ```math
    (e_{new}, \dot{e}_{new}) = \mathrm{TrapezoidStep}(e_0, \dot{e}_0, 0, 0, \dot{e}_{max}, \alpha_{eff}, \Delta t)
@@ -178,17 +178,17 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
    ```
 
    ```math
-   ready=\bigl(|e_\theta|\le\epsilon_\theta\bigr)\land\bigl(|\omega_{meas}|\le\omega_{tol}\bigr)
+   ready=\bigl(|e_\theta|\le\epsilon_\theta\bigr)\land\bigl(|\omega_{meas}|\le\omega_{tol}\bigr)\land\bigl(|\theta^*_{unwrapped}-\theta_{ref}|<\tfrac{\pi}{2}\bigr)
    ```
 
-   Require `ready` continuously for `dwellSeconds` inside `maxGateHoldRadius` before opening the gate.
+   (Requiring $|\theta^*_{unwrapped} - \theta_{ref}| < \pi/2$ prevents near-$360^\circ$ directed `CW`/`CCW` turns from latching `ready` before starting their sweep.) Require `ready` continuously for `dwellSeconds` inside `maxGateHoldRadius` before opening the gate.
 2. **Insert a barrier while closed:**
 
    ```math
    v_{gate,k_{anchor}}=0
    ```
 
-   Clamp $s_{high\_water} \le s_{anchor}^-$ while the gate is closed so overshoot cannot fire downstream markers. The backward pass propagates braking upstream using available traction. Continue rotation while approaching/holding; do not set every upstream sample to zero.
+   Clamp $s_{high\_water} \le s_{anchor}$ (paired with [01 §6](01-path-geometry-and-kinematics.md#goal-anchors-and-passage)'s closed-gate guard) while the gate is closed so overshoot cannot record downstream markers as passed. The backward pass propagates braking upstream using available traction. Continue rotation while approaching/holding; do not set every upstream sample to zero.
 3. **Hold & pullback at the anchor:** Treat an unsatisfied `HARD` gate as a 2D spatial hold point $\mathbf{p}_{gate} = \mathbf{r}(s_{anchor})$ using [02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence-7-set-2d-projection--feedforwards) terminal convergence. Braking overshoot within `maxGateHoldRadius` (default `0.25 m`) pulls back to $\mathbf{p}_{gate}$ while finishing rotation rather than faulting.
 4. **Latch open on readiness:** Once `ready` holds for `dwellSeconds` within `maxGateHoldRadius`, **latch the gate open** with $2\epsilon_\theta$ dropout hysteresis until anchor passage, removing the zero-speed barrier so resume transients do not slam it shut again. Emit no stop-arrival marker and require no caller release.
 5. **Miss / stall:** If overshoot exceeds `maxGateHoldRadius`, motion cannot recover within `maxGateHoldRadius`, or the gate watchdog expires while closed, report infeasibility/gate miss and fault with controlled braking; never bypass readiness.
@@ -224,7 +224,7 @@ Allocate shared wheel speed and tire-carpet traction in two places: **per-node b
    ```
 
    Do not impose a positive translation floor when rotation consumes wheel capacity.
-3. **Rigid-body rotational friction reserve:** During pure spin around the CoM ($\alpha = 0$), internal chassis frame tension—not ground tire friction—carries $-\omega^2 \vec{r}_i$. Only yaw inertia $\gamma_J = \min\left(1.0,\; \frac{J_{zz}}{m R_{chassis}^2}\right)$ and parasitic steering/CG-offset scrub ($c_{parasitic} = 0.12$) consume ground friction in $L_2$:
+3. **Rigid-body rotational friction reserve:** During pure spin around the CoM ($\alpha = 0$), internal chassis frame tension—not ground tire friction—carries $-\omega^2 \vec{r}_i$. Only yaw inertia $\gamma_J = \min\left(1.0,\; \frac{4 J_{zz}}{m \sum_{j=0}^{3} (x_j^2 + y_j^2)}\right)$ and parasitic steering/CG-offset scrub ($c_{parasitic} = 0.12$) consume ground friction in $L_2$:
 
    ```math
    a_{rot}(\omega, \alpha) = R_{max}\sqrt{\left(\gamma_J |\alpha|\right)^2 + \left(c_{parasitic}\omega^2\right)^2}, \qquad
@@ -245,8 +245,8 @@ Allocate shared wheel speed and tire-carpet traction in two places: **per-node b
 
    (This guarantees angular braking retains at least $60\%$ of the rotational traction share at peak spin.)
 5. **Per-node spatial horizon budgets (`RotationBudgetEstimator`):** Before `VelocityProfiler` runs, compute noise-free $(v_{max,eff,k}, a_{fric,eff,k})$ at every node $k$ from:
-   - The closed-form path-coupled wheel limit $v_{coupled,max,k} = \frac{v_{max}}{1 + |\theta^{*\prime}(s_k)| R_{max}}$ on `faceTravel`/`facePoint` segments;
-   - Scheduled turn footprints downstream of $s_{act}$, including acquisition jump $\Delta\theta_{acq}$ when entering `faceTravel`/`facePoint`; and
+   - The closed-form path-coupled wheel limit $v_{coupled,max,k} = \frac{v_{max}}{1 + |\theta^{*\prime}|_k R_{max}}$ on `faceTravel`/`facePoint` segments;
+   - Scheduled turn footprints downstream of $s_{act,m}$: for each turn $|\Delta\theta_m|$ using upper-bound cruise speed $v_{est} = \min(v_{max}, v_{zone,k}, v_{corner,nom,k})$, reserve rotational budgets over $\Delta s_{rot,m} = v_{est}\left(\frac{|\Delta\theta_m|}{\omega_{eff}(v_{est})} + \frac{\omega_{eff}(v_{est})}{\alpha_{eff}(v_{est})}\right)$ (including acquisition jump $\Delta\theta_{acq}$ when entering `faceTravel`/`facePoint`); and
    - Local stopping-distance decay of the current reference state $(\omega_{ref}, \alpha_{ref})$ near $s_{meas}$.
    Never feed differentiated gyro feedback $\alpha_{cmd} = (\omega_{cmd} - \omega_{prev})/\Delta t$ into the spatial horizon; apply exact $\omega_{cmd}$ only in the 7-constraint final projection ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence-7-set-2d-projection--feedforwards)).
 6. **Verify applied output:** Check final combined module speeds after feedback/feedforward. Robot integration reports downstream saturation and owns steering/current constraints; kinematics alone does not enforce them.

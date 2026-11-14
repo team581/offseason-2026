@@ -56,19 +56,20 @@ public record DrivetrainLimits(
 
 - **Tracking Policy:** Keep $\tau_{xt}$, $v_{xt,max}$, $kP_\theta$, sampling, and recovery thresholds separate from physical capabilities. Supply module locations through the execution context.
 
-- **Supply-Current & Voltage-Aware Motor Torque-Speed Curve:** Using optional live `TickInput` values `swerveSupplyCurrentLimitAmps` ($I_{supply}$) and `batteryVoltage` ($V_{bat}$, defaulting to $V_{nom}$ if absent), bound per-motor stator current by stator slip, battery voltage sag ($V_{oc,est} = \min(V_{nom}, V_{bat})$ when $V_{bat}$ is supplied so loaded sag is never double-counted), and supply power:
+- **Supply-Current & Voltage-Aware Motor Torque-Speed Curve:** Using optional live `TickInput` values `swerveSupplyCurrentLimitAmps` ($I_{supply}$—strictly the **instantaneous** per-drive-motor DC supply ceiling enforced by hardware, accounting for any asynchronous bus latency, rather than a delayed continuous thermal floor) and `restingBatteryVoltageVolts` ($V_{oc}$, latched at near-zero draw or compensated via $V_{oc} = \mathrm{clamp}(V_{bat} + I_{tot} R_{bat}, 9.0, V_{nom})$ so loaded sag is never double-counted, defaulting to $V_{nom}$ if absent):
 
   ```math
   E(v) = k_S + (V_{nom} - k_S)\frac{v}{v_{free}}, \qquad
-  I_{volt}(v) = \frac{\max\left(0,\; V_{oc,est} - E(v)\right)}{R_m + 4 R_{bat}/\eta_{inv}}
+  I_{volt}(v) = \frac{\max\left(0,\; V_{oc} - E(v)\right)}{R_m + 4 R_{bat}/\eta_{inv}}
   ```
 
   ```math
-  I_{sup\_max}(v) = \frac{-E(v) + \sqrt{E(v)^2 + 4 R_m \eta_{inv} V_{bat,eff} I_{supply}}}{2 R_m}, \qquad
-  I_{max}(v) = \min\left(I_{slip},\; I_{volt}(v),\; I_{sup\_max}(v)\right)
+  V_{bus,sup} = \max\left(7.0\text{ V},\; V_{oc} - 4 I_{supply} R_{bat}\right), \qquad
+  I_{sup\_max}(v) = \frac{-E(v) + \sqrt{E(v)^2 + 4 R_m \eta_{inv} V_{bus,sup} I_{supply}}}{2 R_m}
   ```
 
   ```math
+  I_{max}(v) = \min\left(I_{slip},\; I_{volt}(v),\; I_{sup\_max}(v)\right), \qquad
   a_{motor}(v) = \eta_a \frac{4 \eta_{gear} G_{drive} k_T \max\left(0,\; I_{max}(v) - I_{free}\right)}{m \cdot r_{wheel}}
   ```
 
@@ -97,7 +98,7 @@ A future shorter horizon must account for every downstream constraint in its cut
 
 ### 3.1 Node-Level Limit Formulation
 
-Obtain noise-free **per-node** translational budgets $(v_{max, eff, k}, a_{fric, eff, k})$ from [TB2-SPEC-03 §5](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation) (which includes the closed-form path-coupled wheel limit $v_{coupled,max,k} = \frac{v_{max}}{1 + |\theta^{*\prime}(s_k)| R_{max}}$ on `faceTravel`/`facePoint` segments). These budgets can reach zero; do not add positive floors that exceed available capacity.
+Obtain noise-free **per-node** translational budgets $(v_{max, eff, k}, a_{fric, eff, k})$ from [TB2-SPEC-03 §5](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation) (which includes the closed-form path-coupled wheel limit $v_{coupled,max,k} = \frac{v_{max}}{1 + |\theta^{*\prime}|_k R_{max}}$ with join derivative $|\theta^{*\prime}|_k = \max(|\theta^{*\prime}(s_k^-)|, |\theta^{*\prime}(s_k^+)|)$ on `faceTravel`/`facePoint` segments). These budgets can reach zero; do not add positive floors that exceed available capacity.
 
 At each spatial sample $k$ with join curvature $|\kappa_k| = \max(|\kappa(s_k^-)|, |\kappa(s_k^+)|)$, the local velocity limit $v_{lim, k}$ is bounded by:
 
@@ -119,10 +120,10 @@ The composite speed ceiling is:
 v_{lim,k}=\min(v_{max,eff,k},v_{corner,k},v_{zone,k},v_{gate,k},v_{goal,k})
 ```
 
-For fillet radius $r_k$ from [01 §2.3](01-path-geometry-and-kinematics.md#23-choosing-the-fillet-radius), if a requested pass-speed ceiling $v_{pass}$ requires a larger radius at lateral acceleration limit $a_{lat}$:
+For fillet radius $r_k$ from [01 §2.3](01-path-geometry-and-kinematics.md#23-choosing-the-fillet-radius), if a requested pass-speed ceiling $v_{pass}$ exceeds the corner's combined lateral/turn-rate capability:
 
 ```math
-r_{req} = \frac{v_{pass}^2}{a_{lat}} > r_k
+v_{pass} > \min\left(\sqrt{a_{lat} r_k},\; \dot{\delta}_{eff} r_k\right)
 ```
 
 then `VelocityProfiler` caps corner speed at $\min\left(\sqrt{a_{lat} r_k},\; \dot{\delta}_{eff} r_k\right)$, and the preview runner logs a warning.
@@ -142,17 +143,17 @@ For each interval $[s_k, s_{k+1}]$ of length $\Delta s_k = s_{k+1} - s_k$, defin
 
 #### Pass 1: Backward Pass (Enforcing Braking Limits down to $k_{curr}$)
 
-The backward pass propagates braking from the terminal node to $k_{curr}$, the inserted node at current measured progress.
+The backward pass propagates braking from the terminal node to $k_{curr}$, the inserted node at current measured progress, storing backward-feasible speeds $v_{bwd,k}$.
 
-1. **Initialize:** $v_{N-1}=v_{lim,N-1}$.
-2. **Solve backward, $k=N-2$ down to $k_{curr}$:** Evaluate the exact closed-form friction-circle braking root in $u = v_k^2$ together with the straight braking bound:
+1. **Initialize:** $v_{bwd,N-1}=v_{lim,N-1}$.
+2. **Solve backward, $k=N-2$ down to $k_{curr}$:** Evaluate the exact closed-form friction-circle braking root in $u = v_{bwd,k}^2$ together with the straight braking bound:
 
    ```math
-   u_{fric,bwd} = \frac{v_{k+1}^2 + 2\Delta s_k \sqrt{\max\left(0,\; (1 + 4\Delta s_k^2 \bar{\kappa}_k^2)\bar{a}_{fric,eff,k}^2 - \bar{\kappa}_k^2 v_{k+1}^4\right)}}{1 + 4\Delta s_k^2 \bar{\kappa}_k^2}
+   u_{fric,bwd} = \frac{v_{bwd,k+1}^2 + 2\Delta s_k \sqrt{\max\left(0,\; (1 + 4\Delta s_k^2 \bar{\kappa}_k^2)\bar{a}_{fric,eff,k}^2 - \bar{\kappa}_k^2 v_{bwd,k+1}^4\right)}}{1 + 4\Delta s_k^2 \bar{\kappa}_k^2}
    ```
 
    ```math
-   v_k = \min\left(v_{lim,k},\; \sqrt{\min\left(v_{k+1}^2 + 2 a_{brake}\Delta s_k,\; u_{fric,bwd}\right)}\right)
+   v_{bwd,k} = \min\left(v_{lim,k},\; \sqrt{\min\left(v_{bwd,k+1}^2 + 2 a_{brake}\Delta s_k,\; u_{fric,bwd}\right)}\right)
    ```
 
 #### Pass 2: Forward Pass (Enforcing Motor Acceleration Limits from Current Node $k_{curr}$)
@@ -160,18 +161,22 @@ The backward pass propagates braking from the terminal node to $k_{curr}$, the i
 1. **Seed current progress:**
 
    ```math
-   v_{k_{curr}}\leftarrow\min(v_{k_{curr}},v_{start})
+   v_{k_{curr}}\leftarrow\min\left(v_{bwd,k_{curr}},\; v_{start}\right)
    ```
 
-   If measured motion exceeds the backward envelope, report `INFEASIBLE` and use bounded recovery (§3.4); clamping the profile does not make the measured state feasible.
-2. **Solve forward, $k=k_{curr}$ through $N-2$:** Separate the curve friction-circle bound from the monotone motor-torque bound so corner acceleration never stalls where $\frac{\mathrm{d}a_t}{\mathrm{d}u} \to -\infty$:
-   - Compute the exact forward friction-circle quadratic root:
+   If measured motion exceeds the backward envelope ($v_{start} > v_{bwd,k_{curr}}$), report `INFEASIBLE` and use bounded recovery (§3.4); clamping the profile does not make the measured state feasible.
+2. **Solve forward, $k=k_{curr}$ through $N-2$:** Separate the curve friction-circle bound from the monotone motor-torque bound so corner acceleration never stalls where $\frac{\mathrm{d}a_t}{\mathrm{d}u} \to -\infty$, while never exceeding Pass 1's backward braking envelope $v_{bwd,k+1}$:
+   - Compute the exact forward friction-circle quadratic root and combined cap:
 
      ```math
-     u_{fric,fwd} = \frac{v_k^2 + 2\Delta s_k \sqrt{\max\left(0,\; (1 + 4\Delta s_k^2 \bar{\kappa}_k^2)\bar{a}_{fric,eff,k}^2 - \bar{\kappa}_k^2 v_k^4\right)}}{1 + 4\Delta s_k^2 \bar{\kappa}_k^2}
+     u_{fric,fwd} = \frac{v_k^2 + 2\Delta s_k \sqrt{\max\left(0,\; (1 + 4\Delta s_k^2 \bar{\kappa}_k^2)\bar{a}_{fric,eff,k}^2 - \bar{\kappa}_k^2 v_k^4\right)}}{1 + 4\Delta s_k^2 \bar{\kappa}_k^2}, \qquad
+     u_{cap} = \min\left(v_{bwd,k+1}^2,\; u_{fric,fwd}\right)
      ```
 
-   - Bracket $u = v_{k+1}^2 \in [v_k^2,\; u_{hi}]$ where $u_{hi} = \min\left(v_{lim,k+1}^2,\; u_{fric,fwd},\; v_k^2 + 2\Delta s_k a_{motor}(v_k)\right)$, and solve $g(u) = u - v_k^2 - 2\Delta s_k a_{motor}(\sqrt{u}) \le 0$ via two bracketed bisection/regula-falsi steps, returning the conservative lower bracket $u_{lo}$ and setting $v_{k+1} = \sqrt{u_{lo}}$.
+   - If $u_{cap} \le v_k^2$ (braking or downstream-ceiling limited), set $v_{k+1} = \sqrt{u_{cap}}$ directly.
+   - Otherwise let $u_{hi} = \min\left(u_{cap},\; v_k^2 + 2\Delta s_k a_{motor}(v_k)\right)$ and $g(u) = u - v_k^2 - 2\Delta s_k a_{motor}(\sqrt{u})$:
+     - If $g(u_{hi}) \le 0$ (motor torque non-binding over $[s_k, s_{k+1}]$), set $v_{k+1} = \sqrt{u_{hi}}$ directly.
+     - Else ($g(v_k^2) \le 0 < g(u_{hi})$), run 4 bracketed bisection steps on $[v_k^2, u_{hi}]$ and set $v_{k+1} = \sqrt{u_{lo}}$.
 
 ```mermaid
 flowchart LR
@@ -183,7 +188,7 @@ flowchart LR
 
 ### 3.4 Initial Velocity Selection and Chatter Elimination
 
-1. **Nominal tracking:** During continuous TB2 tracking, set $\vec{v}_{prev}$ from TB2's own `lastCommand` (feeding back Phoenix 6 cosine-compensated `ModuleTargets` every tick deadlocks rest startup when modules sit $90^\circ$ from the target direction). Project $\vec{v}_{prev}$ onto the current path tangent:
+1. **Nominal tracking:** During continuous TB2 tracking, set $\vec{v}_{prev}$ from TB2's own `lastCommand` (feeding back azimuth-cosine-scaled module target velocities every tick deadlocks rest startup whenever wheels sit $90^\circ$ from the launch tangent). Project $\vec{v}_{prev}$ onto the current path tangent:
 
    ```math
    v_{start}=\max(0,\vec v_{prev}\cdot\hat t(s))
@@ -207,7 +212,7 @@ flowchart LR
 `VelocityProfiler` uses separate speed and tangent lookaheads to compensate for CAN, motor-filter, and steering lag ($\tau_{lag} \approx 0.040\text{ s}$) and avoid startup deadlock at $v = 0$:
 
 1. **Tapering Near Earliest Active Stop Barrier (No Endpoint Chatter):**
-   Let $s_{barrier}$ be the earliest closed `HARD` gate anchor $\ge s$, or $S_{total}$ when `EndBehavior` is `STOP` (and $S_{total} + d_{overrun}$ for `Goal.cruiseThrough`). For `Goal.cruiseThrough` with no closed `HARD` gate ahead, keep $\tau_{effective} = \Delta t + \tau_{lag}$ untapered until entering the safety overrun braking distance $d_{brake} = \max\left(0.30\text{ m},\; \frac{v^2}{2 a_{dec}}\right)$ of $s_{barrier}$:
+   Define available braking deceleration $a_{dec} = \min(a_{brake},\; a_{fric,eff,0})$ (if $a_{dec} \le 10^{-6}$, enter infeasible recovery rather than dividing by zero). Let $s_{barrier}$ be the earliest closed `HARD` gate anchor $\ge s$, or $S_{total}$ when terminal `PassType` is `STOP` (and $S_{total} + d_{overrun}$ for `Goal.cruiseThrough`). For `Goal.cruiseThrough` with no closed `HARD` gate ahead, keep $\tau_{effective} = \Delta t + \tau_{lag}$ untapered until entering the safety overrun braking distance $d_{brake} = \max\left(0.30\text{ m},\; \frac{v^2}{2 a_{dec}}\right)$ of $s_{barrier}$:
 
    ```math
    \tau_{effective} = (\Delta t + \tau_{lag}) \cdot \min\left(1.0, \; \frac{s_{barrier} - s}{d_{brake}}\right)
@@ -231,7 +236,13 @@ flowchart LR
    s_{eval, t} = s + v(s) \cdot \left(\frac{1}{2} \Delta t + \frac{1}{2} \tau_{lag}\right)
    ```
 
-   - **Profile speed $v_{profile}$:** Linearly interpolated at $s_{eval, v}$.
+   - **Profile speed $v_{profile}$:** Evaluate by **quadratic ($v^2$-linear) interpolation** across interval $[s_k, s_{k+1}]$ containing $s_{eval,v}$ (with $v_{profile} = v_k, a_{t,prof,k} = 0$ if $\Delta s_k \le 10^{-9}$) so constant-torque launches from rest are exact across any control rate (`50–250 Hz`):
+
+     ```math
+     v_{profile}(s_{eval,v}) = \sqrt{v_k^2 + \frac{s_{eval,v} - s_k}{\Delta s_k}\left(v_{k+1}^2 - v_k^2\right)}, \qquad
+     a_{t,prof}(s_{eval,v}) = \frac{v_{k+1}^2 - v_k^2}{2\Delta s_k}
+     ```
+
    - **Path unit tangent $\hat{t}_{eval}$:** Evaluated at $s_{eval, t}$.
    - **Path unit normal $\hat{n}(s)$:** Evaluated at measured projection $s$.
 4. **Bounds:** Clamp both lookaheads to the horizon leg and any closed gate ($s_{barrier}$). Lookahead never advances event progress or samples beyond a required stop. With no braking capacity, enter infeasible recovery rather than divide by zero.
@@ -253,7 +264,7 @@ flowchart LR
    \vec v_{des,path}=v_{profile}\hat t_{eval}+v_{xt}\hat n(s)
    ```
 
-   The lookahead tangent and current normal need not be perpendicular. Apply speed/module limits to their actual sum, including any target feedforward.
+   The lookahead tangent and current normal need not be perpendicular. Apply speed/module limits to their actual sum.
 3. **Terminal 2D Convergence at Stop Goals & Closed Hard Gates:**
    Cross-track feedback $v_{xt} \hat{n}(s)$ acts perpendicular to $\hat{t}$, leaving inline lag when $s$ reaches $s_{barrier}$. Disabled at `Goal.cruiseThrough` unless entering the overrun safety stop; near `Goal.stop` or a closed interior `HARD` gate at $\mathbf{p}_{stop} = \mathbf{r}(s_{barrier})$, compute $d_{stop} = \lVert \mathbf{p}_{stop} - \mathbf{p}_{robot} \rVert$ and blend deterministically:
 
@@ -266,7 +277,10 @@ flowchart LR
      v_{term}\vec e_{stop}/d_{stop} & d_{stop}>0\\
      0 & d_{stop}=0
    \end{cases}, \qquad
-   \beta_{term} = \mathrm{clamp}\left(\frac{d_{outer} - \max(s_{barrier} - s_{meas},\; d_{stop})}{d_{outer} - d_{inner}},\; 0,\; 1\right)
+   \beta_{term} = \begin{cases}
+     1 & \text{if } s_{meas} \ge s_{barrier} \lor d_{stop} \le d_{inner} \text{ (or latched)} \\
+     \mathrm{clamp}\left(\dfrac{d_{outer} - \max(s_{barrier} - s_{meas},\; d_{stop})}{d_{outer} - d_{inner}},\; 0,\; 1\right) & \text{otherwise}
+   \end{cases}
    ```
 
    with defaults $d_{outer} = 0.25\text{ m}$, $d_{inner} = 0.08\text{ m}$, latching $\beta_{term} = 1$ once $d_{stop} \le d_{inner}$ (with $0.04\text{ m}$ dropout hysteresis), and $\vec{v}_{des} = (1 - \beta_{term})\vec{v}_{des,path} + \beta_{term}\vec{v}_{term}$. Completion requires measured pose/speed/heading and dwell, not zero profile speed ([04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)).
@@ -278,22 +292,28 @@ flowchart LR
    - **Four exact field-frame module-speed disks ($i = 0\dots 3$):** $\|\vec{v} + \vec{v}_{rot,i}^{field}\| \le v_{max}$, where for module $(x_i, y_i)$ in the robot frame at heading $\theta = \theta_{meas}$:
 
      ```math
-     \vec{v}_{rot,i}^{field} = \omega_{cmd}
+     \vec{v}_{rot,i}^{field} = \omega_{cmd}\,\vec{r}_i^{\perp,field} = \omega_{cmd}
      \begin{bmatrix}
        -x_i\sin\theta - y_i\cos\theta \\
        x_i\cos\theta - y_i\sin\theta
      \end{bmatrix}
      ```
 
-   Evaluate $\vec{v}_{des}$, the $7$ single-boundary orthogonal projections, and the $\le 2\binom{7}{2} = 42$ pairwise boundary intersections ($\le 50$ closed-form candidates total, zero heap allocation), keeping the feasible candidate minimizing $\|\vec{v} - \vec{v}_{des}\|^2$.
+   Evaluate $\vec{v}_{des}$, the $7$ single-boundary orthogonal projections, and the $\le 2\binom{7}{2} = 42$ pairwise boundary intersections ($\le 50$ closed-form candidates total, zero heap allocation), keeping the feasible candidate minimizing $\|\vec{v} - \vec{v}_{des}\|^2$. Skip any disk-disk pair that is concentric ($d = \|\mathbf{c}_1 - \mathbf{c}_2\| < 10^{-9}$, e.g. when $\omega_{cmd} = 0$), disjoint ($d > r_1 + r_2$), or strictly nested ($d < |r_1 - r_2|$), as well as parallel half-space/line intersections, so singular `0/0` divides cannot produce `NaN`.
 5. **Shrinking Envelope Fallback:** If $\mathcal{C} = \emptyset$, first reduce $|\omega_{cmd} - \omega_{prev}|$ within $\alpha_{max}\Delta t$ when module-speed disks conflict; if still empty, select $\vec{v}_{cmd}$ inside the physical slew disk $\|\vec{v} - \vec{v}_{prev}\| \le a_{fric,eff,0}\Delta t$ minimizing maximum excess over the speed/module disks and emit `INFEASIBLE`. Disabled/emergency output inhibition takes precedence.
 6. **Planned Acceleration & Wheel-Force Feedforwards:** Compute noise-free field-relative acceleration feedforwards strictly from the spatial profile and reference step—never finite-differencing feedback commands $\vec{v}_{cmd}$ or $\omega_{cmd}$:
 
    ```math
-   \vec{a}_{ff}^{field} = \gamma_{clip}\,a_{t,prof}(s_{eval,v})\,\hat{t}_{eval} + \sigma_{turn}(s_{eval,t})\kappa(s_{eval,t})v_{profile}^2\,\hat{n}(s_{eval,t}), \qquad \alpha_{ff} = \alpha_{ref}
+   \vec{a}_{ff}^{field} = \gamma_{clip}\,a_{t,prof}(s_{eval,v})\,\hat{t}_{eval} + \sigma_{turn}(s_{eval,t})\kappa(s_{eval,t})v_{lat,ff}^2\,\hat{n}(s_{eval,t}), \qquad \alpha_{ff} = \alpha_{ref}
    ```
 
-   where $\gamma_{clip} = 0$ during terminal hold or ceiling saturation, and optional per-module wheel-force feedforwards are $\vec{F}_i^{field} = \frac{m}{4}\vec{a}_{ff}^{field} + \frac{J_{zz}\alpha_{ff}}{\sum_j R_j^2}\vec{r}_i^{\perp,field}$. Enabling downstream CTRE `WheelForceFeedforwards` requires recalibrating $\tau_{lag}$ with wheel forces active so §4 lookahead does not double-count longitudinal acceleration.
+   where $v_{lat,ff} = \min(v_{profile}, \|\vec{v}_{cmd}\|)$, $\gamma_{clip} = 1$ when $s_{meas} < s_{barrier}$, $\beta_{term} < 1$, and tangential clipping $(\vec{v}_{des} - \vec{v}_{cmd})\cdot\hat{t}_{eval} \le 10^{-3}\text{ m/s}$ (else $0$), and optional per-module field wheel-force feedforwards (bounded by $\|\vec{F}_i^{field}\| \le \frac{m}{4}a_{fric}$) use the **unnormalized** lever-arm vector $\vec{r}_i^{\perp,field}$ (in meters):
+
+   ```math
+   \vec{F}_i^{field} = \frac{m}{4}\vec{a}_{ff}^{field} + \frac{J_{zz}\alpha_{ff}}{\sum_{j=0}^{3} (x_j^2 + y_j^2)}\,\vec{r}_i^{\perp,field}
+   ```
+
+   Calibrate $\tau_{lag}$ empirically under the **exact downstream feedforward mode** (`ChassisSpeeds`-only vs. chassis-acceleration / wheel-force torque feedforward enabled) used on the robot so §4 lookahead never double-counts longitudinal acceleration.
 
 ---
 
@@ -303,7 +323,7 @@ flowchart LR
 
 - **Measured Performance:** Benchmark worst-case runtime and allocation on the target robot; record acceptance evidence in [06](06-verification-simulation-and-ci.md).
 
-- **Limiting Factor Logging:** Log `Trailblazer/LimitingFactor` to DogLog every loop for AdvantageScope:
+- **Limiting Factor Logging:** Expose `Trailblazer/LimitingFactor` in `TickResult` every loop for structured robot telemetry (AdvantageScope / WPILib DataLog):
   ```java
   public enum LimitingFactor {
       TOP_SPEED, CORNER_CENTRIPETAL, ZONE_SPEED_CAP, GOAL_DECELERATION,

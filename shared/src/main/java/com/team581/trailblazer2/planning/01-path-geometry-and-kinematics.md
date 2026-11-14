@@ -150,11 +150,11 @@ flowchart LR
 
 Neighboring fillets share straight-leg space (§2.3). Keep the nominal horizon endpoint $S_{total}$ fixed as the robot advances.
 
-- **Terminal Cruise Overrun (`EndBehavior.DRIVE_PAST`):** When the terminal goal is `Goal.cruiseThrough(...)` with target speed $v_{cruise} > 0$, extend a post-anchor tangent overrun ray past $S_{total}$ of length $d_{overrun}$ (default `1.5 m`, clipped to field-wall clearance) terminating in a safety stop ($v = 0$) at $S_{total} + d_{overrun}$. This prevents deceleration on bump ramps while preventing wall collisions if the caller delays transitioning.
+- **Terminal Cruise Overrun (`PassType.CRUISE_THROUGH`):** When the terminal goal is `Goal.cruiseThrough(...)` with target speed $v_{cruise} > 0$, extend a post-anchor tangent overrun ray past $S_{total}$ of length $d_{overrun} = \max\left(1.5\text{ m},\; 1.15\frac{v_{cruise}^2}{2\min(a_{brake}, a_{fric})}\right)$ (clipped to field-wall and $K_{hard}$ clearance, logging `CRUISE_OVERRUN_LIMITED` if clipping reduces $v(S_{total}) < v_{cruise}$) terminating in a safety stop ($v = 0$) at $S_{total} + d_{overrun}$. This prevents premature braking across scoring, handoff, or zone transitions while preventing wall/obstacle collisions if the caller delays transitioning.
 
 - **Capacity.** Check goal and sample counts before activation. Accept paths up to the configured limits and reject oversized paths without truncating them.
 
-- **Rebuilds.** Build and cache static geometry at activation, release from a completed stop, or recovery. For dynamic goals, compare each resolved target against the **snapshot stored when the current `geometryGeneration` was built** (never tick $n$ vs. tick $n-1$, which misses slow steady drift), rebuilding only when $\|\Delta \mathbf{p}_{goal}\| > \epsilon_{rebuild,pos}$ (`0.01 m`) or $|\Delta \theta_{goal}| > \epsilon_{rebuild,\theta}$ (`0.5°`).
+- **Rebuilds.** Build and cache static geometry at activation, release from a completed stop, or recovery. For dynamic goals, compare each resolved target against the **snapshot stored when the current `geometryGeneration` was built** (never tick $n$ vs. tick $n-1$, which misses slow steady drift): increment `geometryGeneration` and rebuild curve geometry when any resolved goal's **position** shifts by $\|\Delta \mathbf{p}_{goal}\| > \epsilon_{rebuild,pos}$ (`0.01 m`), whereas pure goal-heading shifts ($|\Delta \theta_{goal}| > 0.5^\circ$ with $\|\Delta \mathbf{p}_{goal}\| \le 0.01\text{ m}$) update the target heading in place without resetting arc-length coordinates (re-checking terminal footprint clearance if outside rotational margin).
 
 - **Future shorter horizon.** Preserve neighboring fillets’ full-path tangent lengths and satisfy the [profiler’s cutoff requirements](02-velocity-profiler-and-limits.md#3-two-pass-spatial-horizon-profiler).
 
@@ -162,7 +162,7 @@ Neighboring fillets share straight-leg space (§2.3). Keep the nominal horizon e
 
 ## 5. Progress Tracking & Spatial Parameterization
 
-The path within the horizon is parameterized by cumulative arc length $s \in [0, S_{total}]$.
+The path within the horizon is parameterized by cumulative arc length $s \in [0, S_{horizon}]$, where $S_{horizon} = S_{total} + d_{overrun}$ for `PassType.CRUISE_THROUGH` and $S_{total}$ otherwise.
 
 ```
 s = 0                                                             s = S_total
@@ -240,7 +240,7 @@ $$
 
 ### 5.2 Local Projection and Progress
 
-**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets backward/forward distances $d_{back}$ and $d_{fwd}$, tested against supported speeds and tick intervals; clip to active horizon bounds ($S_{horizon} = S_{total} + d_{overrun}$ for `Goal.cruiseThrough`, else $S_{total}$).
+**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets loop-rate-independent spatial backward/forward distances $d_{back}$ and $d_{fwd}$ ($d_{fwd} \ge v_{max} T_{relatch\_dwell} + e_{vision\_max} + v_{max}\Delta t_{max}$, default `1.5 m`; $d_{back} \ge \max(d_{gate\_hold}, 0.6\text{ m})$) so high-rate control loops (`100–250 Hz`) never shrink the search window while $s_{high\_water}$ is frozen; clip to active horizon bounds ($S_{horizon} = S_{total} + d_{overrun}$ for `Goal.cruiseThrough`, else $S_{total}$).
 
 $$
 s_{min} = \max(0,\; s_{high\_water} - d_{back}),
@@ -258,12 +258,12 @@ $$
 
   If $\|\mathbf{p}_{robot} - \mathbf{C}_k\| > 10^{-6}$ and $|\Delta\alpha| \le \theta_k/2$, use $\phi = \theta_k/2 + \sigma_{turn,k}\Delta\alpha$; otherwise choose $\arg\min_{\mathbf{T} \in \{\mathbf{T}_{in,k}, \mathbf{T}_{out,k}\}} \|\mathbf{p}_{robot} - \mathbf{T}\|^2$ (tie-breaking to $\mathbf{T}_{in,k}$).
 
-**Event progress.** Update the high-water mark with measured progress only while inside the tracking corridor ($|e_{xt}| \le e_{relatch}$), and clamp below any unsatisfied interior `HARD` heading gate ($s_{hard\_gate}^-$) so off-track sweeps or closed-gate overshoots cannot advance events:
+**Event progress.** Update the high-water mark with measured progress only while inside the tracking corridor ($|e_{xt}| \le e_{relatch}$), and clamp to the earliest unsatisfied interior `HARD` heading gate ($s_{hard\_gate}$) so off-track sweeps or closed-gate overshoots cannot advance events:
 
 $$
 s_{high\_water,new} =
 \begin{cases}
-\max\left(s_{high\_water},\; \min(s_{meas},\; s_{hard\_gate}^-)\right) & \text{if } |e_{xt}| \le e_{relatch} \\
+\max\left(s_{high\_water},\; \min(s_{meas},\; s_{hard\_gate})\right) & \text{if } |e_{xt}| \le e_{relatch} \\
 s_{high\_water} & \text{otherwise}
 \end{cases}
 $$
@@ -309,13 +309,13 @@ An **anchor** is the point on the path that represents a goal. Use the same anch
 
 - **Projection.** Within the distance window, search only the pieces allowed by the active goal and path order. This prevents jumps to crossing legs.
 
-For a `Goal.through(...)`, let $d_{closest,k} = \min_n \mathrm{dist}(P_k, \overline{\mathbf{p}_{n-1}\mathbf{p}_n})$ be the measured segment-to-goal closest approach while goal $k$ is active, and define capture radius $d_{capture,k} = \max(e_{relatch},\; 2\delta_k + 0.15\text{ m})$. When $s_{high\_water} \ge s_{anchor,k}$ (with no closed `HARD` gate at or before $s_{anchor,k}$):
+For a `Goal.through(...)`, let $d_{closest,k} = \min_n \mathrm{dist}(P_k, \overline{\mathbf{p}_{n-1}\mathbf{p}_n})$ be the measured segment-to-goal closest approach while goal $k$ is active (if $s_{high\_water}$ advances past multiple closely spaced anchors in a single tick, evaluate segment $\overline{\mathbf{p}_{n-1}\mathbf{p}_n}$ against each crossed anchor in authored order), and define capture radius $d_{capture,k} = \max(e_{relatch},\; 2\delta_k + 0.15\text{ m})$. When $s_{high\_water} \ge s_{anchor,k}$ (with no closed `HARD` gate at or before $s_{anchor,k}$):
 
-1. **$d_{closest,k} \le \delta_k$:** Advance active goal ID, fire `marker`, and record `PASSED_WITHIN_TOLERANCE`.
-2. **$\delta_k < d_{closest,k} \le d_{capture,k}$:** Advance active goal ID, **still fire `marker`** so minor carpet disturbances do not starve auto state transitions, and record `PASSED_OUTSIDE_TOLERANCE` with $d_{closest,k}$ for CI/preview failure checks.
-3. **$d_{closest,k} > d_{capture,k}$:** Do **not** pass the goal or fire `marker`; trigger recovery toward the unpassed goal.
+1. **$d_{closest,k} \le \delta_k$:** Advance active goal ID, record `marker` as passed, and record `PASSED_WITHIN_TOLERANCE`.
+2. **$\delta_k < d_{closest,k} \le d_{capture,k}$:** Advance active goal ID, **still record `marker` as passed** so minor carpet disturbances do not starve auto state transitions, and record `PASSED_OUTSIDE_TOLERANCE` with $d_{closest,k}$ for CI/preview failure checks.
+3. **$d_{closest,k} > d_{capture,k}$:** Do **not** pass the goal or record `marker` as passed; trigger recovery toward the unpassed goal.
 
-`Goal.stop(...)` markers fire only upon full stop completion ([04 §4](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)), whereas `Goal.cruiseThrough(...)` terminal markers fire on anchor passage within $d_{capture,k}$.
+`Goal.stop(...)` markers are recorded as passed only upon full stop completion ([04 §4](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)), whereas `Goal.cruiseThrough(...)` terminal markers are recorded as passed on anchor passage within $d_{capture,k}$.
 
 ### Path rebuilds
 
@@ -323,19 +323,19 @@ A **geometry generation** is one version of the built path. Each has its own arc
 
 - Remap the active goal and path piece.
 - Reproject the measured pose and track progress in the new path's coordinates.
-- Carry over fired event IDs, completed goals, and `GoalPassageStatus` history.
+- Carry over passed markers, completed goals, and `GoalPassageStatus` history.
 - Keep unsatisfied stops and hard gates pending.
 - Require measured passage even if a dynamic rebuild moves an anchor behind the robot.
 
 ### Moving activation and recovery
 
-- **Moving activation:** Keep Leg 1 as $\mathbf{p}_{start} \to P_1$ without inserting a virtual lead-in vertex. Include the initial arrest bow $\mathbf{p}_{start} + \frac{\|\vec{v}_{meas}\|}{2 a_{fric}}\vec{v}_{meas}$ in activation footprint checks, and pause tracking-error relatch dwell while initial perpendicular speed $|\vec{v}_{prev}\cdot\hat{n}_1| > v_{xt,max}$ is actively decaying toward Leg 1.
+- **Moving activation:** Keep Leg 1 as $\mathbf{p}_{start} \to P_1$ without inserting a virtual lead-in vertex. Include the initial arrest bow $\mathbf{p}_{start} + \frac{\|\vec{v}_{meas}\|}{2\min(a_{brake}, a_{fric})}\vec{v}_{meas}$ in activation footprint checks, and pause tracking-error relatch dwell while initial perpendicular speed $|\vec{v}_{prev}\cdot\hat{n}_1| > v_{xt,max}$ is actively decaying toward Leg 1.
 
 - **Tracking error.** Store the error thresholds and required duration in a named Java tracking policy. Validate them with scenarios.
 
 - **Localization reset.** Localization accepts measurements and signals resets. TB2 uses that signal for vision jumps.
 
-- **Two-tier keepouts:** Separate **hard obstacle polygons** $K_{hard}$ (Hub, Tower, walls) from **inflation margin bands** $K_{margin}$. Pre-match CI and teleop `driveTo` reject intrusions into either.
+- **Two-tier keepouts:** Separate **hard obstacle polygons** $K_{hard}$ (field structures, walls, and pillars) from **inflation margin bands** $K_{margin}$. Pre-match CI and teleop `driveTo` reject intrusions into either.
 
 1. Start a new geometry generation toward the next uncompleted goal. Preserve command history.
 2. Check the robot's footprint along the entire connection against $K_{hard}$ and $K_{margin}$.

@@ -1,13 +1,13 @@
 # 04 — Runtime Integration and Teleop Assist
 
-**Applies To:** `com.team581.trailblazer2.runtime`, `TimeSource`, `RobotStateSource`, `TrailblazerDriveSource`, `TeleopAssist`, `Swerve`, `DriverOverride`  
+**Applies To:** `com.team581.trailblazer2.runtime`, `TimeSource`, `RobotStateSnapshot`, `TickInput`, `TickResult`, `DrivetrainConsumer`, `TeleopAssist`  
 
 ---
 
 ## 1. Overview
 
 - Runtime owns state, updates once per tick, and manages activation, completion, cancellation, and faults.
-- Robot integration supplies measurements, reads driver input, binds buttons, selects the drive source, and routes commands to swerve.
+- The 2027 robot adapter supplies time-normalized measurements and pre-mapped driver translation, binds controls, selects command ownership, and feeds commands to the closed-loop drivetrain consumer.
 - Teleop uses the same motion calculations and physical limits as auto.
 - `driveTo` aligns to a fixed field pose. `snapAngle` rotates to a fixed field heading with driver-controlled translation.
 
@@ -16,61 +16,92 @@
 ## 2. Persistent State
 
 - Runtime owns motion state and passes it to pure calculators.
-- Runtime owns activation/goal IDs, the set of markers recorded as passed, applied-command history, and timeout/dwell timers.
+- Runtime owns activation/goal IDs, the set of markers recorded as passed, dynamic-goal snapshots, applied-command history, and timeout/dwell timers.
 - Recovery remaps progress and preserves goal and event identity. See [01 — Geometry](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery).
 - Localization supplies validity and reset signals, with vision-noise thresholds owned by localization.
 
 ```java
 public final class TrailblazerState {
-    String activeGoalId;                          // Currently active goal ID in the horizon
-    Pose2d horizonOrigin;                         // Fixed origin at activation, stop release, or recovery
-    long geometryGeneration;                      // Prevent comparing old and rebuilt arc lengths
-    double progressHighWaterMark;                 // Corridor-gated monotonic progress in this generation
-    Set<Enum<?>> passedMarkers;                   // Markers recorded as passed across rebuilds
-    Map<String, GoalPassageStatus> goalStatuses;  // Recorded passage diagnostics per goal ID
-    HardGateState hardGateState;                  // Active hard-gate hold, dwell timer, and open latch
-    double headingReferenceRad;                   // Continuous unwrapped heading reference state theta_ref
-    double headingReferenceVelocity;              // Angular reference velocity
-    ChassisSpeeds lastCommand;                    // Previous loop's emitted velocity vector
-    double lastTimestamp;                         // Previous loop timestamp for dynamic dt
+    String activeGoalId;                              // Currently active goal ID in the horizon
+    Pose2d horizonOrigin;                             // Fixed origin at activation, stop release, or recovery
+    long geometryGeneration;                          // Prevent comparing old and rebuilt arc lengths
+    double progressHighWaterMark;                     // Corridor-gated monotonic progress in this generation
+    Set<Enum<?>> passedMarkers;                       // Markers recorded as passed across rebuilds
+    Map<String, GoalPassageStatus> goalStatuses;      // Recorded passage diagnostics per goal ID
+    Map<String, Double> closestApproachByGoalId;      // Minimum measured segment distance to active through goals
+    Map<String, Pose2d> dynamicTargetSnapshots;       // Goal poses captured when geometryGeneration was built
+    HardGateState hardGateState;                      // Active hard-gate hold, dwell timer, and open latch
+    String activeHeadingKeyframeId;                   // Keyframe ID currently holding directional branch latch
+    double unwrappedHeadingTargetRad;                 // Continuous target evolved by continuity after branch latch
+    OptionalDouble latchedHeadingRad;                 // Captured angle for hold() or SINGULAR_HOLD
+    boolean terminalConvergenceLatched;               // Latch bit + hysteresis for terminal 2D blend
+    double headingReferenceRad;                       // Continuous unwrapped heading reference state theta_ref
+    double headingReferenceVelocity;                  // Angular reference velocity
+    ChassisSpeeds lastCommand;                        // Previous loop's emitted velocity vector
+    double lastTimestamp;                             // Previous update timestamp from TimeSource (NaN on activation)
 }
 ```
 
 ## 3. Tick Contract
 
-- Run one update per control-loop tick, nominally every 20 ms (50 Hz) or 10 ms (100 Hz).
+- Run one update per control-loop tick across target 2027 control rates (`50–250 Hz`, configured `nominalDtSeconds` in `[0.002 s, 0.025 s]`). Accumulate all dwells and watchdogs in elapsed `TimeSource` seconds, never tick counts.
+- **First-Tick & Duplicate-Tick `dt` Handling:** On the first `update` after `activate` or stop `release`, step envelopes with `dt = nominalDtSeconds`. On subsequent ticks, fault if `dt < 0` or `dt > max(0.10 s, 5 * nominalDtSeconds)`; if `0 <= dt < 1e-4 s` (same-tick `activate` + `update`), return the cached `TickResult` without dividing by zero; otherwise integrate with `dt_step = min(dt, 2 * nominalDtSeconds)`.
 - Supply the plan's goals, heading plan, and zones to the pipeline.
-- Capture one coherent `TickInput` with the injected `TimeSource` timestamp, measured field pose and speeds, enabled and localization status, resolved targets, and optional `swerveSupplyCurrentLimitAmps`, `batteryVoltage`, and applied-command telemetry.
-- **Clock-Domain Normalization:** Convert all timestamps in `TickInput` (tick time, localization snapshot age, and dynamic target timestamps) into the single `TimeSource` (FPGA seconds) clock domain at the robot-integration boundary; never compare raw Phoenix 6 `Utils.getCurrentTimeSeconds()` directly against `RobotController.getFPGATime() / 1e6`.
-- **Power-Limit Hardware Contract:** Include active `PowerManager` supply current when available (noting asynchronous CAN delay and that Phoenix 6 `SupplyCurrentLimit` changes take immediate effect only when `SupplyCurrentLowerLimit` / `SupplyCurrentLowerTime` are configured consistently).
+- Capture one coherent `TickInput` containing the `TimeSource` timestamp, `RobotStateSnapshot`, resolved dynamic targets, and optional `driverFieldVelocityMpS`.
+- **Monotonic Clock Normalization:** Convert all incoming timestamps (localization pose timestamp and dynamic target timestamps) into the single `TimeSource` monotonic controller clock domain (seconds) at the robot-integration boundary before building `TickInput`—never compare raw CAN FD, IMU, or vision coprocessor epochs directly against controller time.
+- **Power-State Contract:** Optional `swerveSupplyCurrentLimitAmps` must represent the **instantaneous per-drive-motor DC supply ceiling** currently enforced by hardware (accounting for any asynchronous bus-update latency when lowering limits dynamically), never a delayed continuous thermal floor; pair with optional resting/compensated `restingBatteryVoltageVolts`.
 - Use meters, seconds, radians, and counterclockwise-positive rotation.
 - At activation, supply robot limits (`v_max`, `a_fric`, `a_brake`, `tau_lag`, `delta_dot_eff`, and `DriveMotorModel`), tracking policy, field bounds and keepouts, robot footprint, and module geometry.
 - Run pure footprint checks over the route and permitted headings before activation or rebuild.
-- Cache the `TickResult` with field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations` (plus optional per-module wheel-force feedforwards), status, readiness, `GoalPassageStatus` events, and diagnostics.
+- Cache the `TickResult` with field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations`, optional per-module `WheelForces`, status, readiness, `GoalPassageStatus` events, and diagnostics.
 - Return the cached result from repeated getters without advancing execution.
-- Route commands to swerve through a **dedicated zero-deadband closed-loop request** (e.g., Phoenix 6 `SwerveRequest.ApplyFieldSpeeds` with `DriveRequestType.Velocity` and `0.0` linear/rotational deadbands; never reuse teleop `fieldCentric`'s `0.07 m/s` or `0.05 rad/s` deadbands).
-- Track `lastCommand` inside `TrailblazerState` during continuous TB2 control (using `applied` / measured speeds only to seed on activation/handoff and reseed on sustained divergence per [02 §3.4](02-velocity-profiler-and-limits.md#34-initial-velocity-selection-and-chatter-elimination)).
-- Log diagnostics and the active limiting factor via DogLog.
+- **Zero-Deadband 2027 Drivetrain Consumer:** Route `(commandedFieldSpeeds, commandedFieldAccelerations, wheelForces)` to the 2027 drivetrain subsystem's dedicated closed-loop trajectory consumer with **zero command deadband** (human joystick deadbands belong solely to operator input).
+- **Command Continuity:** Evolve `lastCommand` inside `TrailblazerState` during continuous TB2 control (avoiding azimuth-cosine-scaled module-target rest deadlock; seeding from `appliedFieldSpeeds` / `measuredFieldSpeeds` only on activation, handoff, or sustained divergence per [02 §3.4](02-velocity-profiler-and-limits.md#34-initial-velocity-selection-and-chatter-elimination)).
+- Expose structured telemetry and active limiting factors (`profileLimitingFactor`, `commandLimitingFactor`) in `TickResult` for logging tools.
 - Emit applicable runtime events such as `STALLED`, `RELATCH`, `KEEPOUT_MARGIN_WARNING`, and `INFEASIBLE`.
 
 ### 3.1 Time and State Injection
 
-- Inject time and measured state through robot integration. Pass explicit values and `dt` to the calculators.
+- Inject monotonic time and measured state snapshots through the 2027 robot adapter. Pass explicit snapshots and `dt` to the pure calculators.
 
 ```java
 @FunctionalInterface
 public interface TimeSource {
-    double getTimestampSeconds();
+    double getTimestampSeconds(); // Bound on hardware to the 2027 controller monotonic clock
 }
 
-public interface RobotStateSource {
-    Pose2d getMeasuredPose();
-    ChassisSpeeds getMeasuredSpeeds(); // Field-relative
-    boolean isEnabled(); // Auto and teleop assists
-}
+public record RobotStateSnapshot(
+    double poseTimestampSeconds,                 // Normalized to TimeSource epoch
+    Pose2d measuredPose,                         // Blue-origin field frame
+    ChassisSpeeds measuredFieldSpeeds,           // Blue-origin field frame
+    boolean localizationValid,
+    boolean localizationResetOccurred,
+    Optional<ChassisSpeeds> appliedFieldSpeeds,
+    OptionalDouble swerveSupplyCurrentLimitAmps, // Instantaneous per-drive-motor ceiling
+    OptionalDouble restingBatteryVoltageVolts,   // Open-circuit / compensated V_oc
+    boolean enabled
+) {}
+
+public record TickInput(
+    double timestampSeconds,                     // From TimeSource
+    RobotStateSnapshot robotState,
+    Map<String, TimestampedTarget<Pose2d>> resolvedGoalTargets,
+    Map<String, TimestampedTarget<Translation2d>> resolvedAimTargets,
+    Optional<Translation2d> driverFieldVelocityMpS // Pre-mapped Blue-origin (vx, vy) for snapAngle, ||v|| <= v_max
+) {}
+
+public record TickResult(
+    ChassisSpeeds commandedFieldSpeeds,          // Zero-deadband closed-loop target
+    ChassisAccelerations commandedFieldAccelerations, // Noise-free (ax, ay, alpha_ref)
+    Optional<WheelForces> wheelForces,           // Optional per-module field force vectors (N)
+    RuntimeStatus status,                        // RUNNING, AT_GOAL, FAULT, CANCELLED, DISABLED
+    boolean infeasible,
+    LimitingFactor profileLimitingFactor,
+    LimitingFactor commandLimitingFactor,
+    Set<Enum<?>> newlyPassedMarkers,
+    Map<String, GoalPassageStatus> goalStatuses
+) {}
 ```
-
-- On the robot, bind `TimeSource` to `RobotController.getFPGATime() / 1e6`.
 
 ## 4. Stops and Markers
 
@@ -85,7 +116,7 @@ public interface RobotStateSource {
 ## 5. Lifecycle and Faults
 
 - Start, update, and cancel explicitly; support mid-plan resumption via `activate(MotionPlan plan, String startAtGoalId)`.
-  - Validate that `startAtGoalId` exists, build the horizon from current pose through the next terminal goal via `startAtGoalId`, mark all strictly preceding goals as skipped/completed, **pre-populate their markers as passed** (`passedMarker == true`), and inherit the latest `HeadingKeyframe` preceding `startAtGoalId` if none activates immediately.
+  - Validate that `startAtGoalId` exists, build the horizon from current pose through the next terminal goal via `startAtGoalId`, mark all strictly preceding goals as skipped/completed, **pre-populate their markers as passed** (`passedMarker == true`), mark any `HARD` heading gates strictly preceding `startAtGoalId` as already passed, and inherit the latest `HeadingKeyframe` target angle as `SOFT` if none activates immediately.
 - Latch completion until restart.
 - On cancellation, hand off through a seeded controller or use a controlled stop.
 - Fault on invalid input, stale localization, or invalid or excessive `dt` without advancing events.
@@ -116,7 +147,7 @@ public class Trailblazer {
 
 - Latch the absolute field heading on activation.
 - Use the shortest turn direction and the [bounded heading reference and angular controller](03-heading-and-rotation.md).
-- Map operator stick translation into **Blue-origin field-relative closed-loop `ChassisSpeeds`** by rotating by `OperatorPerspective` (`180°` on Red Alliance, `0°` on Blue) and scaling full stick deflection to TB2's active `LimitsProfile` `v_max` (not teleop open-loop `4.75 m/s`) before TB2's 7-set 2D limiter.
+- Accept the operator-input layer's alliance-oriented Blue-origin field-relative desired translational velocity `driverFieldVelocityMpS` (bounded to $\|\vec{v}_{driver}^{field}\| \le v_{max}$ of the active `LimitsProfile`) inside `TickInput`, pass its magnitude to `HeadingPlanner` for $\rho(v)$ budget blending ([03 §5.4](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation)), and project jointly with $\omega_{cmd}$ in the 7-set 2D limiter.
 - Complete when measured heading error and angular speed stay within the configured tolerances for the configured dwell.
 - Omit position goals, position and linear-speed completion checks, and wheel lock.
 - Return rotation to manual control through the seeded handoff on completion or cancellation.
@@ -164,7 +195,7 @@ Seeding the receiving limiter keeps the velocity command from jumping when contr
 
 - Seed the receiving limiter on manual-to-assist and assist-to-manual transitions. Use the last applied field-relative velocity, falling back to measured velocity.
 - Seed the heading reference with measured heading and the last applied angular velocity. Fall back to measured angular velocity.
-- Select one command source per axis. During a snap, convert operator sticks to Blue-origin field-relative closed-loop speeds rotated by `OperatorPerspective` and scaled to TB2's active `v_max`, pairing them with assist rotation.
+- Select one command source per axis. During a snap, pair the pre-mapped Blue-origin `driverFieldVelocityMpS` (bounded to active `v_max`) from `TickInput` with assist rotation.
 - Combine translation and rotation each tick before applying the [drivetrain limits](02-velocity-profiler-and-limits.md).
 
 ---
@@ -173,10 +204,10 @@ Seeding the receiving limiter keeps the velocity command from jumping when contr
 
 - Evaluate each autonomous target supplier once per tick.
 - Require timestamps (normalized to `TimeSource`) and validity for dynamic targets. Pass resolved values to the calculators.
-- Handle transient target dropouts using each dynamic goal's configured `TargetLossPolicy`:
-  - `HOLD_LAST_VALID(graceSeconds)`: latch the last valid resolved pose while `tickTime - lastValidTargetTime <= graceSeconds`, then transition to fallback or `CONTROLLED_STOP`.
-  - `FALLBACK_NOMINAL(Pose2d)`: fall back to the static nominal pose on stale/lost input.
-  - `CONTROLLED_STOP`: brake to a controlled stop and require explicit reactivation on reacquisition.
+- Handle transient target dropouts using each dynamic goal's configured `TargetLossPolicy` (`sealed interface`):
+  - `HoldLastValid(double graceSeconds)`: latch the last valid resolved pose while `tickTime - lastValidTargetTime <= graceSeconds`, then transition to fallback or `ControlledStop`.
+  - `FallbackNominal(Pose2d nominalPose)`: fall back to the static nominal pose on stale/lost input.
+  - `ControlledStop()`: brake to a controlled stop and require explicit reactivation on reacquisition.
 
 ---
 

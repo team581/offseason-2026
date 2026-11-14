@@ -40,27 +40,28 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
   - Check that near-reversal corners ($135^\circ \le \theta < 180^\circ$) log a `NEAR_REVERSAL_CORNER` warning without changing `Goal.through` to a stop.
 - `VelocityProfilerTest`:
   - Check curvature, join-curvature, and effective steer-rate ($\dot{\delta}_{eff}$) corner limits alongside combined rotation-budget limits per [02](02-velocity-profiler-and-limits.md).
-  - Check Pass 1 (exact backward quadratic deceleration without $v=0$ stall) and Pass 2 (exact forward closed-form quadratic acceleration plus 2-step bracketed motor curve solve under stator/voltage-sag/supply-current `70/30/10 A` rolloff).
-  - Check lookahead tapering toward the earliest closed gate/stop barrier ($s_{barrier} - s$), `Goal.cruiseThrough` overrun ray behavior, stop samples equaling $0.0$ m/s, terminal 2D pose convergence eliminating both cross-track and inline residual error, and zero velocity chatter under noisy simulated measurements.
+  - Check Pass 1 + Pass 2 preservation of backward braking ($v_{k+1} \le v_{bwd,k+1}$), exact handling of non-binding motor intervals ($g(u_{hi}) \le 0$), 4-step bisection accuracy under resting-$V_{oc}$ and instantaneous supply-current rolloff, and quadratic ($v^2$-linear) lookahead interpolation at `50 Hz` and `250 Hz`.
+  - Check lookahead tapering toward the earliest closed gate/stop barrier ($s_{barrier} - s$), `Goal.cruiseThrough` dynamic `d_overrun`, stop samples equaling $0.0$ m/s, terminal 2D pose convergence (including pullback at $s_{meas} \ge s_{barrier}$), and zero velocity chatter under noisy simulated measurements.
 - `HeadingPlannerTest`:
-  - Check one-shot directional branch latching (`SHORTEST`, `CW`, `CCW`) on activation and continuous unwrapped reference evolution $\theta_{ref}$ across $\pm\pi$.
+  - Check one-shot directional branch latching (`SHORTEST`, `CW`, `CCW`), zero-headroom / saturated-feedforward `NaN`-free arrest ($\dot{e}_{max} = 0$, $\alpha_{eff} = 0$), and continuous unwrapped evolution $\theta_{ref}$ across $\pm\pi$.
   - Check `facePoint` smooth speed-to-target blending and `SINGULAR_HOLD` freezing inside $0.25\text{ m}$ radial distance without $\pi$-flips or angular jitter.
-  - Check error-frame `TrapezoidStep` seeded from `lastCommand` $\omega_{prev}$ and `HARD` gate anchoring with `maxGateHoldRadius = 0.25 m` pullback and $2\epsilon_\theta$ open-latch hysteresis ([03](03-heading-and-rotation.md)).
+  - Check error-frame `TrapezoidStep` seeded from `lastCommand` $\omega_{prev}$ and `HARD` gate anchoring with `maxGateHoldRadius = 0.25 m` pullback, $|\theta^*_{unwrapped} - \theta_{ref}| < \pi/2$ branch completion, and $2\epsilon_\theta$ open-latch hysteresis ([03](03-heading-and-rotation.md)).
+  - Check whole-plan `MotionPlan.forAlliance` under both `ROTATIONAL_180` and `MIRROR_X`, including `offset`, static `facePoint`, `CW <-> CCW` reversal, and `MIRROR_X` keepout polygon winding reversal.
 - `VectorLimiterTest`:
-  - Check 7-constraint 2D active-set projection (frictional ellipse, motor force cap, acceleration/deceleration rate caps, cross-track ceiling, cornering lateral cap, and origin disk continuity) including diagonal quadrants and shrinking-envelope fallback preserving smooth braking without failing `Infeasible` when budget drops mid-path.
+  - Check exact 7-constraint 2D active-set projection (1 work-energy origin speed/motor disk, 1 directional braking half-space, 1 isotropic friction-slew disk, and 4 exact field-frame module-speed disks) across all quadrants, concentric-disk ($\omega_{cmd} = 0$) `NaN` immunity, and shrinking-envelope fallback preserving smooth braking when budgets drop mid-path.
 - `ProgressTrackerTest`:
-  - Check that measured progress follows forward and backward motion within the fixed-origin search horizon around $s_{high\_water}$ without jumping across self-intersecting/figure-8 paths, and freezes $s_{high\_water}$ off-corridor or before closed gates.
-  - Check 3-tier `Goal.through` capture (`PASSED_WITHIN_TOLERANCE` vs `PASSED_OUTSIDE_TOLERANCE` + marker emission timing), snapshot-based dynamic rebuild deadband (`0.01 m` / `0.5°`), and `activate(plan, startAtGoalId)` pre-populating prior markers without firing duplicate events or reusing old arc-length coordinates.
+  - Check that measured progress follows forward and backward motion within the loop-rate-independent fixed-origin search horizon around $s_{high\_water}$ without jumping across self-intersecting/figure-8 paths, and freezes $s_{high\_water}$ off-corridor or at closed gates.
+  - Check 3-tier `Goal.through` capture (`PASSED_WITHIN_TOLERANCE` vs `PASSED_OUTSIDE_TOLERANCE` + multi-goal single-tick traversal), snapshot-based dynamic rebuild deadband (`0.01 m` position), relative `beforeGoal` clamping on relatch, and `activate(plan, startAtGoalId)` pre-populating prior markers/gates cleanly.
 
 ### 2.2 Layer 2: Property & Fuzz Testing (Nightly)
-Runs randomized path geometries, start states, and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$, $\|\Delta \vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
+Runs randomized path geometries, start states, loop rates (`nominalDtSeconds` in `[4 ms, 20 ms]`), and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\Delta\vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$ everywhere, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$ when `!result.infeasible()`, monotonic speed arrest ($\|\vec{v}_{cmd}\| \le \|\vec{v}_{prev}\| - \min(a_{brake}, a_{fric,eff,0})\Delta t + 10^{-6}$) during overspeed `INFEASIBLE` recovery, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
 
 ### 2.3 Layer 3: Closed-Loop Auto Simulation (Every Push & PR)
 Runs dedicated TB2 scenarios (straight/short stops, `Goal.cruiseThrough` score-and-go, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
 - Segment duration $t_{actual} \le t_{budget}$.
 - Stop goals satisfy their declared position, heading, linear/angular speed, and dwell tolerances.
 - `Goal.through` waypoints report `PASSED_WITHIN_TOLERANCE` (`PASSED_OUTSIDE_TOLERANCE` fails CI), `Goal.cruiseThrough` meets terminal velocity/overrun bounds, and swept bumper footprint stays outside `K_hard` keepout zones (logging any `K_margin` encroachment).
-- Event markers fire once in authored order, including across geometry rebuilds and `activate(plan, startAtGoalId)` starts.
+- Event markers are recorded as passed once in authored order, including across geometry rebuilds and `activate(plan, startAtGoalId)` starts.
 
 ### 2.4 Layer 4: Perturbation Sweeps (20x Monte Carlo per PR)
 Runs each auto across $N = 20$ seeded runs with start pose offsets $\mathcal{U}(-0.08, 0.08)\text{ m} / \mathcal{U}(-5^\circ, 5^\circ)$, odometry noise $\sigma = 0.015\text{ m}$, a $0.25\text{ m}$ vision pose step at $t = 3.0\text{ s}$, and a $1.5\text{ m/s}$ ($100\text{ ms}$) lateral collision shove; asserts recovery within the scenario envelope or its expected failure status. Include target loss, disabled/re-enabled operation, driver handoff, and missed ticks.
@@ -76,4 +77,4 @@ Store baselines in `src/test/resources/baselines/auto-metrics.json`. Fail CI if 
 
 Baseline updates cannot waive absolute correctness checks. Publish a summary and preview artifacts through the shared runner in [05](05-developer-tooling.md).
 
-Measure planner latency/allocation on the target robot with worst-case supported plans (initial target: below 1 ms per 20 ms tick). Keep plant/checker implementations independent and test parameter mismatch; simulated agreement alone does not establish hardware readiness.
+Measure planner latency/allocation on the target 2027 controller (`50–250 Hz`) with worst-case supported plans (target: below $\min(1.0\text{ ms},\; 0.20\,\Delta t_{nom})$ per tick). Keep plant/checker implementations independent and test parameter mismatch; simulated agreement alone does not establish hardware readiness.
