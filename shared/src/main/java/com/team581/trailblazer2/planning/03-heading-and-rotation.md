@@ -1,26 +1,24 @@
-# Trailblazer 2 Design Specification: Holonomic Heading Scheduling & Coupling
+# 03 — Heading and Rotation
 
-**Document ID:** TB2-SPEC-03
-**Status:** Implementation design
-**Author:** Team 581 Technical Staff
 **Applies To:** `HeadingPlanner`, `HeadingKeyframe`, `HeadingGate`
 
 ---
 
 ## 1. Overview
 
-- **Trailblazer 1:** Heading was tied directly to each waypoint, switched targets abruptly halfway through curved paths (`t < 0.5`), couldn't specify clockwise vs. counter-clockwise turns, and used ad-hoc speed floors (`0.4 m/s`) or `360°` default tolerances that either stalled the robot or ignored rotation readiness.
+- **Trailblazer 1:** Waypoint-bound heading switched halfway through curves (`t < 0.5`) without turn-direction control. Speed floors (`0.4 m/s`) and `360°` default tolerances caused stalls or ignored readiness.
+
 - **Trailblazer 2:** Heading is a separate schedule $\theta^*(s)$ along the path:
   1. **Target Modes:** Face a fixed angle (`fixed`), face the direction of travel (`faceTravel`), continuously aim at a field point like the Hub (`facePoint`), or keep current heading (`hold`).
-  2. **Explicit Turn Direction:** Choose `SHORTEST`, `CW`, or `CCW` so intakes or turrets always swing the right way.
-  3. **Soft vs. Hard Gates:** A `SOFT` gate does not require heading readiness for passage. A `HARD` gate brakes to a hold if needed until measured heading readiness is satisfied. Both respect shared motion limits.
-  4. **Shared Wheel Budget:** While spinning fast, `HeadingPlanner` automatically lowers the translation speed ceiling ($v_{max, eff}$) and friction budget ($a_{fric, eff}$) so outer swerve wheels don't saturate.
+  2. **Explicit Turn Direction:** Choose `SHORTEST`, `CW`, or `CCW` to control rotation direction.
+  3. **Soft vs. Hard Gates:** `SOFT` permits passage without heading readiness; `HARD` brakes to a hold until measured readiness. Both respect shared motion limits.
+  4. **Shared Wheel Budget:** `HeadingPlanner` reduces translation speed ($v_{max, eff}$) and friction ($a_{fric, eff}$) budgets during rotation to avoid wheel saturation.
 
 ---
 
 ## 2. Decoupled Heading Schedule Architecture
 
-In a holonomic swerve drive, translation and rotation are kinematically decoupled: the chassis can translate along an arbitrary path tangent $\hat{t}$ while independently rotating its azimuth $\theta$.
+Swerve can translate along tangent $\hat{t}$ while independently rotating its azimuth $\theta$.
 
 Trailblazer 2 models heading as a piecewise schedule $\theta^*(s)$ parameterized by path progress $s$.
 
@@ -32,7 +30,7 @@ Heading Plan:      Face 0° ---------> Face 90° (Soft) -> Face Hub (Hard)-> Fac
 
 ### 2.1 Heading Keyframe Data Model
 
-A heading schedule consists of an ordered sequence of `HeadingKeyframe` records:
+Use ordered `HeadingKeyframe` records:
 
 ```java
 public record HeadingKeyframe(
@@ -53,7 +51,9 @@ public record HeadingKeyframe(
 - `beforeGoal(goalId, distanceMeters)`: Arrival is at $s = s_{goal} - d$.
 - `afterGoal(goalId, distanceMeters)`: Arrival is at $s = s_{goal} + d$.
 - `atProgress(sMeters)`: Fixed arc length along the stop-bounded leg.
+
 - **Activation:** Defaults to the previous heading arrival or leg start. `beforeGoal` specifies when heading should be ready, not when rotation starts.
+
 - **Validation:** Reject conflicting/out-of-order anchors. Resolve goal anchors using [01](01-path-geometry-and-kinematics.md), preserving keyframe identity across rebuilds.
 
 #### Heading Target Modes
@@ -61,7 +61,7 @@ public record HeadingKeyframe(
 1. **Fixed Angle (`fixed(Rotation2d)`):** Target an absolute field heading (e.g. $0^\circ, 90^\circ, -180^\circ$).
 2. **Face Travel (`faceTravel()`):** Continuously align the chassis with the velocity vector tangent:
    $$\theta^*(s) = \mathrm{atan2}\left(t_y(s), \; t_x(s)\right)$$
-3. **Face Field Point (`facePoint(Supplier<Translation2d>)`):** Continuously aim a robot mechanism (turretless shooter or intake) at a fixed or dynamic field coordinate (e.g. Hub, Speaker, Reef, or human player station):
+3. **Face Field Point (`facePoint(Supplier<Translation2d>)`):** Continuously aim a mechanism at a fixed or dynamic field coordinate:
    $$\theta^*(s) = \mathrm{atan2}\left(y_{target} - y_{robot}(s), \; x_{target} - x_{robot}(s)\right)$$
 4. **Hold Heading (`hold()`):** Capture measured heading once at keyframe entry.
 5. **Undefined Direction:** At a zero-length path or coincident face-point target, retain the last valid target and report undefined aim readiness. Runtime resolves dynamic suppliers once per tick ([04](04-runtime-integration-and-teleop-assist.md)).
@@ -72,13 +72,13 @@ public record HeadingKeyframe(
 - `CW`: Choose the clockwise target branch.
 - `CCW`: Choose the counter-clockwise target branch.
 
-_Why this matters in FRC:_ If the robot is at $0^\circ$ and needs to face $175^\circ$ while intaking balls from the right side, a `CCW` constraint ensures the intake sweeps toward the balls rather than spinning the back bumpers across the game pieces.
+Example: rotating from $0^\circ$ to $175^\circ$ with `CCW` sweeps the intake toward balls on the right.
 
 ---
 
 ## 3. Angular Motion Profiling & Feedforward
 
-To achieve smooth rotation without step changes, `HeadingPlanner` generates a continuous angular state $(\theta_{ref}, \omega_{ref})$ using an analytical trapezoidal profile bounded by measured drivetrain limits:
+`HeadingPlanner` generates continuous angular state $(\theta_{ref}, \omega_{ref})$ using an analytical trapezoidal profile bounded by measured drivetrain limits:
 
 - $\omega_{max}$: Maximum angular velocity (rad/s)
 - $\alpha_{max}$: Maximum angular acceleration (rad/s$^2$)
@@ -93,7 +93,7 @@ $$d=\mathrm{angleModulus}(\theta^*-\theta_{ref})\in[-\pi,\pi)$$
    $$\Delta\theta=\begin{cases}d&d\le0\\d-2\pi&d>0\end{cases}$$
 3. **`CCW`:**
    $$\Delta\theta=\begin{cases}d&d\ge0\\d+2\pi&d<0\end{cases}$$
-4. **Latch the branch:** $\theta_{goal}=\theta_{ref}+\Delta\theta$. Keep it unwrapped; do not request another full turn after overshoot. Moving targets unwrap against their previous target branch without resetting reference velocity.
+4. **Latch the branch:** $\theta_{goal}=\theta_{ref}+\Delta\theta$. Keep it unwrapped to prevent another full turn after overshoot; unwrap moving targets against their previous branch without resetting reference velocity.
 
 Direction chooses the planned branch; bounded arrest and small overshoot corrections may require reversal.
 
@@ -106,18 +106,19 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
    $$\omega_{des}=\operatorname{clamp}\left(\omega_{ref,new}+kP_\theta\operatorname{angleModulus}(\theta_{ref,new}-\theta_{meas}),-\omega_{max},\omega_{max}\right)$$
 3. **Bound the final command:**
    $$\omega_{cmd}=\omega_{prev}+\operatorname{clamp}(\omega_{des}-\omega_{prev},-\alpha_{max}\Delta t,\alpha_{max}\Delta t)$$
-   Use previous applied angular velocity when available. For feasible inputs this respects speed and acceleration bounds; an already-out-of-bounds state enters bounded recovery ([02](02-velocity-profiler-and-limits.md)).
+   Use previous applied angular velocity when available; feasible inputs respect speed/acceleration bounds. Out-of-bounds states enter bounded recovery ([02](02-velocity-profiler-and-limits.md)).
 4. **Allocate from actual angular demand:**
    $$\alpha_{cmd}=\frac{\omega_{cmd}-\omega_{prev}}{\Delta t}$$
    Feed this final command/change into §5. Limiting reference acceleration alone does not limit feedback-induced acceleration.
 
-- **State Invariant:** Reference state advances from its own previous state, not from measured heading each tick. Runtime owns that state; the profile step is pure math.
+- **State Invariant:** Advance from previous reference state, not measured heading each tick. Runtime owns state; the profile step is pure math.
 
 ---
 
 ## 4. Translation-Rotation Coupling: Hard vs. Soft Gates
 
 - **Soft Gate (`GatePolicy.SOFT`):** Heading readiness does not gate passage. Shared wheel/traction limits can still slow translation.
+
 - **Hard Gate (`GatePolicy.HARD`):** Passage requires measured angle and angular speed within tolerance for the declared dwell. Mechanism readiness remains the caller's responsibility.
 
 ### 4.1 Hard Gate Policy: Braking, Holding, and Release
@@ -130,7 +131,7 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
    $$v_{gate,k_{anchor}}=0$$
    The backward pass propagates braking upstream using available traction. Continue rotation while approaching/holding; do not set every upstream sample to zero.
 3. **Hold at the anchor:** Reuse terminal 2D position convergence ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter)). A scalar zero-speed profile alone cannot correct residual position error.
-4. **Release on readiness:** Remove the barrier and resume the profile from current motion state. Recheck readiness until passage. This temporary hold emits no stop-arrival marker and needs no caller release.
+4. **Release on readiness:** Remove the barrier and resume from current motion, rechecking readiness until passage. Emit no stop-arrival marker and require no caller release.
 5. **Miss / stall:** If motion cannot stop before an unsatisfied gate or crosses it unready, report infeasibility/gate miss and fault with controlled braking. A configured watchdog faults a stalled gate; it never bypasses readiness or automatically backtracks.
 
 ### 4.2 Arrival-Time Estimates Are Not Gate Enforcement

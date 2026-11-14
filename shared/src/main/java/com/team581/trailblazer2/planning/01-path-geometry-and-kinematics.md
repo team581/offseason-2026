@@ -1,38 +1,31 @@
-# Trailblazer 2 Design Specification: Path Geometry & Kinematics
+# 01 — Path Geometry and Kinematics
 
-**Document ID:** TB2-SPEC-01
-**Status:** Implementation design
-**Author:** Team 581 Technical Staff
 **Applies To:** `PathBuilder`, `ProgressTracker`, `AutoGeometry`
 
 ---
 
-## 1. Overview
+## 1. Scope: Path Shape and Robot Position
 
-### Trailblazer 1
+This spec defines the path and locates the robot on it. [02 — Velocity and limits](02-velocity-profiler-and-limits.md) uses that geometry to choose speeds and drive commands.
 
-- Follows a list of waypoints, with Bézier curves added by hand when needed.
-- Aims directly at the next waypoint, so switching targets can change the drive direction in one 20 ms loop.
-- Cuts corners by varying amounts depending on speed and when the target switches.
-- Tracks progress by waypoint index and can skip ahead where the route crosses itself.
-- Aims at the waypoint from its new position after a bump, which can send it across obstacles.
+- **Inputs:** Resolved goals, tolerances, measured pose, tracking policy, and field keepouts.
+- **Outputs:** Straight segments and tangent circular fillets; position, tangent, and curvature along the path; measured progress, event progress, and signed cross-track error.
+- **Owns:** Fillet sizing, the stop-bounded horizon, projection, goal anchors/passage, and geometry rebuilds.
 
-### Trailblazer 2
-
-- Builds a path to the next stop by joining straight legs with tangent circular arcs called fillets.
-- Sizes each fillet so its closest point to the waypoint is within the set distance, such as 25 cm for `within(0.25)`.
-- Finds the closest point in a local window to avoid skipping ahead where the path crosses itself.
-- Measures progress in meters along the path and separately tracks event progress, which only moves forward.
-- Steers along the path tangent and uses sideways distance from the path to correct drift.
-- Can rebuild the path to the next unfinished goal if the robot strays too far, with fresh checks for constraints and keepouts.
-
-The former numerical claims in the [comparison image](tb1-vs-tb2-comparison.png) are illustrative only (see [validation](07-empirical-calibration-routine.md#3-physics-sandbox--model-validation)).
+```mermaid
+flowchart LR
+    Goals[Goals and tolerances] --> Geometry[01: Path geometry]
+    Pose[Measured pose] --> Progress[01: Progress and error]
+    Geometry --> Progress
+    Geometry --> Motion[02: Speed and command limits]
+    Progress --> Motion
+```
 
 ---
 
 ## 2. Circular Fillet Mathematics
 
-A circular fillet rounds the corner at $P_k$ between consecutive goals $P_{k-1}$, $P_k$, and $P_{k+1}$. The formulas below apply to nonzero-length legs with a turn angle strictly between zero and 180 degrees; see sections 3 and 7 for degenerate cases.
+A circular fillet rounds the corner at $P_k$ between consecutive goals $P_{k-1}$, $P_k$, and $P_{k+1}$. These formulas require nonzero-length legs and a turn angle strictly between zero and 180 degrees; see sections 3 and 7 for degenerate cases.
 
 The incoming and outgoing leg vectors and lengths are:
 
@@ -61,13 +54,13 @@ $$
 
 A straight path has $\theta = 0$, a right-angle turn has $\theta = \pi/2$, and a reversal approaches $\theta = \pi$.
 
-The turn direction is stored separately for positioning the circle center:
+Store turn direction separately to position the circle center:
 
 $$
 \sigma_{turn} = \mathrm{sgn}(u_x v_y - u_y v_x)
 $$
 
-Here, $+1$ means a left (counterclockwise) turn and $-1$ means a right (clockwise) turn.
+$+1$ means left (counterclockwise); $-1$ means right (clockwise).
 
 ### 2.2 Tangent Length and Distance from the Corner
 
@@ -86,7 +79,7 @@ $$
 
 ### 2.3 Choosing the Fillet Radius
 
-The radius must satisfy the waypoint's `within` distance and leave room for neighboring fillets. In the formulas below, $L_k$ is the length of the leg from $P_{k-1}$ to $P_k$, and $L_{k+1}$ is the length from $P_k$ to $P_{k+1}$.
+The radius must satisfy the waypoint's `within` distance and leave room for neighboring fillets. $L_k$ is the leg length from $P_{k-1}$ to $P_k$, and $L_{k+1}$ is the length from $P_k$ to $P_{k+1}$.
 
 **Radius allowed by `within`.** For a tolerance of $\delta_k$ meters, the largest radius satisfying $d_{dev} \le \delta_k$ is:
 
@@ -124,46 +117,43 @@ $$
 r_{geom,k} = \frac{t_{clamped,k}}{\tan(\theta_k/2)}
 $$
 
-This keeps neighboring fillets from overlapping while preserving equal entry and exit tangent lengths.
-
 **Final radius.** Use the smaller of the tolerance and geometry limits:
 
 $$
 r_k = \min\left(r_{\delta,k},\; r_{geom,k}\right)
 $$
 
-If a requested pass-speed ceiling $v_{pass}$ requires a larger radius than $r_k$ at the lateral acceleration limit $a_{lat}$:
-
-$$
-r_{req} = \frac{v_{pass}^2}{a_{lat}} > r_k
-$$
-
-then `VelocityProfiler` caps corner speed at $\sqrt{a_{lat}r_k}$, and the preview runner logs a warning.
+Corner-speed limits and pass-speed warnings belong to [02 §3.1](02-velocity-profiler-and-limits.md#31-node-level-limit-formulation).
 
 ---
 
 ## 3. Boundary Conditions & Edge Cases
 
-- **Collinear Corners:** Merge only genuinely collinear legs within documented numeric tolerance, preserving goal anchors. A blanket one-degree bypass creates a tangent discontinuity. For small nonzero turns, evaluate the denominator stably as $2\sin^2(\theta/4)/\cos(\theta/2)$ and retain the fillet; reject numerically unresolved geometry rather than inventing a sharp join.
-- **Sharp Turns ($\theta_k \ge 135^\circ = 2.356\text{ rad}$):** Intentional reversals should be authored with `Goal.stop(...)`. If a near-reversal turn ($135^\circ \le \theta_k < 180^\circ$) is authored as `Goal.through(...)`, $r_{geom, k}$ naturally shrinks and slows the robot down, and the previewer logs a `NEAR_REVERSAL_CORNER` warning suggesting `Goal.stop(...)`.
-- **Explicit Stop Goals (`Goal.stop(...)`):** $r_k = 0, t_k = 0$, and exit speed is pinned to $0.0\text{ m/s}$.
+- **Collinear Corners:** Merge only collinear legs within documented numeric tolerance, preserving goal anchors; a blanket one-degree bypass breaks tangency.
+  For small nonzero turns, evaluate the denominator stably as $2\sin^2(\theta/4)/\cos(\theta/2)$ and retain the fillet; reject numerically unresolved geometry rather than inventing a sharp join.
+
+- **Sharp Turns ($\theta_k \ge 135^\circ = 2.356\text{ rad}$):** Intentional reversals should be authored with `Goal.stop(...)`. If a near-reversal turn ($135^\circ \le \theta_k < 180^\circ$) is authored as `Goal.through(...)`, $r_{geom, k}$ shrinks; the previewer logs a `NEAR_REVERSAL_CORNER` warning suggesting `Goal.stop(...)`.
+
+- **Explicit Stop Goals (`Goal.stop(...)`):** $r_k = 0, t_k = 0$. Stop-speed constraints are defined in [02 §3.1](02-velocity-profiler-and-limits.md#31-node-level-limit-formulation).
 
 ---
 
 ## 4. Planning Horizon
 
-The **planning horizon** is how much of the path the planner uses to plan turns and speeds. Build from the fixed start (§6) through the next `Goal.stop(...)`, including every through goal in between.
+Build the **planning horizon** from the fixed start (§6) through the next `Goal.stop(...)`, including every through goal in between.
 
 ```mermaid
 flowchart LR
-    Start["Fixed start"] --> A["Through goals (if any)"] --> Stop["Next stop (0 m/s)"]
+    Start["Fixed start"] --> A["Through goals (if any)"] --> Stop["Next stop"]
 ```
 
-The profiler works backward from zero speed at the stop. Neighboring fillets share the space on the straight between them (§2.3). Both calculations keep the same endpoint as the robot advances.
+Neighboring fillets share straight-leg space (§2.3). Keep the horizon endpoint fixed as the robot advances.
 
 - **Capacity.** Check goal and sample counts before activation. Accept paths up to the configured limits and reject oversized paths without truncating them.
-- **Rebuilds.** Build static geometry at activation, release from a completed stop, or recovery. Cache it between rebuilds. A dynamic goal change starts a new geometry generation (§6).
-- **Future shorter horizon.** Prove that the speed at the cutoff accounts for every constraint beyond it and that neighboring fillets keep the same tangent lengths as on the full path. The straight-line braking distance `v_max²/(2*a_brake)` alone cannot establish this because cornering and rotation can reduce available braking.
+
+- **Rebuilds.** Build and cache static geometry at activation, release from a completed stop, or recovery. Dynamic goal changes start a new geometry generation (§6).
+
+- **Future shorter horizon.** Preserve neighboring fillets’ full-path tangent lengths and satisfy the [profiler’s cutoff requirements](02-velocity-profiler-and-limits.md#3-two-pass-spatial-horizon-profiler).
 
 ---
 
@@ -179,9 +169,9 @@ s = 0                                                             s = S_total
 
 ### 5.1 Position, Tangent, and Curvature
 
-Let $l$ be the distance from the start of the current path piece. The formulas below give its position $\mathbf{r}$, unit tangent $\hat{t}$, and curvature magnitude $\kappa$.
+Let $l$ be the distance from the start of the current path piece. The formulas give its position $\mathbf{r}$, unit tangent $\hat{t}$, and curvature magnitude $\kappa$.
 
-**Straight segment.** The straight part of leg $k$ runs from $T_{out,k-1}$ to $T_{in,k}$ in unit direction $\hat{u}_k$. Subtract the two tangent lengths to get the length of the straight segment.
+**Straight segment.** The straight part of leg $k$ runs from $T_{out,k-1}$ to $T_{in,k}$ in unit direction $\hat{u}_k$. Subtract both tangent lengths for its length.
 
 $$
 \Delta s_{line,k} = L_k - t_{clamped,k-1} - t_{clamped,k}
@@ -247,7 +237,7 @@ $$
 
 ### 5.2 Local Projection and Progress
 
-**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets the backward and forward distances $d_{back}$ and $d_{fwd}$, which are tested against supported speeds and tick intervals. Clip the window to the path bounds.
+**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets backward/forward distances $d_{back}$ and $d_{fwd}$, tested against supported speeds and tick intervals; clip to path bounds.
 
 $$
 s_{min} = \max(0,\; s_{high\_water} - d_{back}),
@@ -257,7 +247,7 @@ $$
 
 **Measured progress.** Project the robot position $\mathbf{p}_{robot} = (x,y)$ onto the portion of each path piece inside $[s_{min},s_{max}]$. The closest point is $\mathbf{p}^*$, and its arc-length coordinate $s_{meas}$ is used for control and speed profiling.
 
-**Event progress.** Use the high-water mark for event ordering and to anchor the search window. Update it with the measured progress.
+**Event progress.** Update the high-water mark with measured progress for event ordering and search-window anchoring.
 
 $$
 s_{high\_water,new} = \max(s_{high\_water},\; s_{meas})
@@ -281,11 +271,7 @@ $$
 e_{xt} = (\mathbf{p}_{robot} - \mathbf{p}^*) \cdot \hat{n}(s_{meas})
 $$
 
-Positive error means the robot is left of the path. The tracking calculator applies a correction along the normal with signed speed
-
-$$
-v_{xt} = \mathrm{clamp}(-e_{xt}/\tau_{xt})
-$$
+Positive error means the robot is left of the path. [02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter) converts this error into a bounded correction velocity.
 
 ---
 
@@ -302,10 +288,12 @@ An **anchor** is the point on the path that represents a goal. Use the same anch
 | Explicit stop | Path endpoint |
 
 - **Path origin.** Fix it at activation or release from a completed stop.
+
 - **Progress.** Use measured projection for control and the high-water mark for events (§5.2).
+
 - **Projection.** Within the distance window, search only the pieces allowed by the active goal and path order. This prevents jumps to crossing legs.
 
-Count a through goal as passed only if both checks pass.
+A through goal passes only when:
 
 1. The robot crossed the anchor. If two ticks straddle it, check the measured motion between them conservatively.
 2. The measured closest approach to the goal was within tolerance.
@@ -314,7 +302,7 @@ On passage, advance the active goal ID and keep the vertex and neighboring fille
 
 ### Path rebuilds
 
-A **geometry generation** is one version of the built path. Each version has its own arc-length coordinates and high-water mark.
+A **geometry generation** is one version of the built path. Each has its own arc-length coordinates and high-water mark.
 
 - Remap the active goal and path piece.
 - Reproject the measured pose and track progress in the new path's coordinates.
@@ -327,6 +315,7 @@ A **geometry generation** is one version of the built path. Each version has its
 Runtime may request recovery after sustained tracking error or an explicit localization reset.
 
 - **Tracking error.** Store the error thresholds and required duration in a named Java tracking policy. Validate them with scenarios.
+
 - **Localization reset.** Localization accepts measurements and signals resets. TB2 uses that signal for vision jumps.
 
 1. Start a new geometry generation toward the next uncompleted goal. Preserve command history.
@@ -342,8 +331,8 @@ Runtime may request recovery after sustained tracking error or an explicit local
 | A single stop at the same position | Allow heading-only motion. |
 | Through goal at an exact reversal, or a noncollinear through corner with zero tolerance | Report a validation error and require an explicit stop. A finite-radius tangent arc is impossible. |
 | Near reversal | Allow a small fillet with a warning if the radius and length meet numeric tolerances. |
-| Zero-length leg | Use terminal position and heading control. Skip tangent division. |
+| Zero-length leg | Skip tangent division; use terminal position and heading control ([02 §5](02-velocity-profiler-and-limits.md#5-cross-track-control-stop-convergence--2d-vector-limiter)). |
 
 Clamp projection and evaluation to each piece's valid domain. Use deterministic tie-breaking at joins.
 
-For named dynamic targets, runtime evaluates suppliers and filters their values once per tick, following [04](04-runtime-integration-and-teleop-assist.md). Runtime keeps the filter history and passes only resolved values to `PathBuilder`.
+Runtime evaluates and filters named dynamic targets once per tick, following [04](04-runtime-integration-and-teleop-assist.md). Runtime keeps the filter history and passes only resolved values to `PathBuilder`.

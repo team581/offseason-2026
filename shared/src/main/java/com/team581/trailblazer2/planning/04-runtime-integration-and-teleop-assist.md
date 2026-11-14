@@ -1,26 +1,22 @@
-# Trailblazer 2 Design Specification: Runtime, Robot Integration, and Teleop Assist
+# 04 — Runtime Integration and Teleop Assist
 
-**Document ID:** TB2-SPEC-04  
-**Status:** Implementation design
-**Author:** Team 581 Technical Staff  
 **Applies To:** `com.team581.trailblazer2.runtime`, `TimeSource`, `RobotStateSource`, `TrailblazerDriveSource`, `TeleopAssist`, `Swerve`, `DriverOverride`  
 
 ---
 
 ## 1. Overview
 
-Runtime owns state, executes one planner update per tick, and manages activation, completion, and faults. Robot integration supplies measurements and routes commands to the drivetrain. The same planner supports autonomous routines and teleop driver assistance:
-1. **Single-Button Drive-to-Pose (`driveTo`):** Drive to a field pose (Reef branch, Subwoofer, Trench, Climb) on the fly without pre-generating paths.
-2. **Dynamic Vision Tracking:** Align to camera-detected game pieces or AprilTags updated at 50 Hz.
-3. **Instant Driver Override:** Touching the sticks beyond configured deadband immediately hands control back to the driver through a seeded motion limiter.
-4. **Shared Physical Limits:** Teleop assists obey the exact same `DrivetrainLimits` and 2D vector acceleration bounds as auto.
+- Runtime owns state, updates once per tick, and manages activation, completion, cancellation, and faults.
+- Robot integration supplies measurements, reads driver input, binds buttons, selects the drive source, and routes commands to swerve.
+- Teleop uses the same motion calculations and physical limits as auto.
+- `driveTo` aligns to a fixed field pose. `snapAngle` rotates to a fixed field heading with driver-controlled translation.
 
 ---
 
 ## 2. Persistent State
 
 - Runtime owns motion state and passes it to pure calculators.
-- Runtime also owns activation and goal IDs, fired markers, applied-command history, target filters, and timeout and dwell timers.
+- Runtime owns activation/goal IDs, fired markers, applied-command history, target filters, and timeout/dwell timers.
 - Recovery remaps progress and preserves goal and event identity. See [01 — Geometry](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery).
 - Localization supplies validity and reset signals, with vision-noise thresholds owned by localization.
 
@@ -54,7 +50,7 @@ public final class TrailblazerState {
 
 ### 3.1 Time and State Injection
 
-Robot integration injects time and measured state; calculators receive explicit values and `dt`. Example adapter interfaces:
+- Inject time and measured state through robot integration. Pass explicit values and `dt` to the calculators.
 
 ```java
 @FunctionalInterface
@@ -69,7 +65,7 @@ public interface RobotStateSource {
 }
 ```
 
-- **On Robot:** `TimeSource` binds to `RobotController.getFPGATime() / 1e6`.
+- On the robot, bind `TimeSource` to `RobotController.getFPGATime() / 1e6`.
 
 ## 4. Stops and Markers
 
@@ -95,20 +91,48 @@ public interface RobotStateSource {
 ```java
 public class Trailblazer {
     public void driveTo(Pose2d targetPose, LimitsProfile profile);
-    public void driveTo(Supplier<Pose2d> targetSupplier, LimitsProfile profile);
-    public void driveThrough(List<Pose2d> waypoints, Pose2d finalStop, LimitsProfile profile);
+    public void snapAngle(Rotation2d targetHeading, LimitsProfile profile);
     public void cancel();
 }
 ```
 
-When `driveTo(targetPose, profile)` is called, Trailblazer creates a 1-segment plan from the robot's current pose to a `Goal.stop` target (default finish tolerance: `0.03 m`, `2°`, `0.1 m/s`) with a `HARD` heading gate. Tolerances also include angular speed and dwell ([stop completion](#4-stops-and-markers)); `driveTo` starts once, and periodic updates do not restart it.
+### 6.1 Full Alignment
+
+- Latch the target field pose on activation.
+- Build a single-segment plan from the current pose to `Goal.stop` with a `HARD` heading gate.
+- Use default completion tolerances of `0.03 m` position error, `2°` heading error, and `0.1 m/s` linear speed.
+- Apply angular-speed and dwell requirements from [stop completion](#4-stops-and-markers).
+
+### 6.2 Rotation Snap
+
+- Latch the absolute field heading on activation.
+- Use the shortest turn direction and the [bounded heading reference and angular controller](03-heading-and-rotation.md).
+- Complete when measured heading error and angular speed stay within the configured tolerances for the configured dwell.
+- Omit position goals, position and linear-speed completion checks, and wheel lock.
+- Return rotation to manual control through the seeded handoff on completion or cancellation.
+
+### 6.3 Activation and Ownership
+
+- Start each assist on explicit activation. Periodic updates and held buttons do not restart it.
+- Replace an active assist through a seeded handoff on new activation.
+- Latch completion until the next activation.
+- Route manual commands for axes the assist does not own.
+- Release assist ownership on completion, cancellation, timeout, fault, or disable.
+
+| Operation | Translation owner | Rotation owner | Driver cancellation |
+| --- | --- | --- | --- |
+| Full alignment | Trailblazer 2 | Trailblazer 2 | Translation or rotation intervention cancels the whole alignment |
+| Rotation snap | Driver | Trailblazer 2 | Rotation intervention cancels the snap; translation input does not |
 
 ---
 
 ## 7. Driver Preemption & Continuous Velocity Handoff
 
 ### 7.1 Preemption Detection (Decoupled Translation & Rotation)
-Translation and rotation stick deflections are checked separately in robot integration. The `0.15` below is an example controller deadband, not a TB2 constant. Cancelling an axis required by a full-path hard gate cancels that path; independent auto-aim may remain active when explicitly selected:
+
+- Check translation and rotation sticks separately in robot integration.
+- Use a configured deadband. The example uses `0.15`.
+- Apply the cancellation rules in §6.3 before selecting the current tick's drivetrain command.
 
 ```java
 public boolean isTranslationIntervention() {
@@ -125,34 +149,27 @@ public boolean isDriverIntervention() {
 ```
 
 ### 7.2 Continuous Velocity Handoff
-Seed the receiving limiter with the last applied field-relative velocity, or measured velocity if unavailable. Apply this in both directions: manual-to-assist and assist-to-manual. Compose translation and rotation before applying the combined limits in [02](02-velocity-profiler-and-limits.md); only one controller owns each axis.
+
+Seeding the receiving limiter keeps the velocity command from jumping when control changes hands.
+
+- Seed the receiving limiter on manual-to-assist and assist-to-manual transitions. Use the last applied field-relative velocity, falling back to measured velocity.
+- Seed the heading reference with measured heading and the last applied angular velocity. Fall back to measured angular velocity.
+- Select one command source per axis. During a snap, use driver translation and assist rotation.
+- Combine translation and rotation each tick before applying the [drivetrain limits](02-velocity-profiler-and-limits.md).
 
 ---
 
-## 8. Dynamic Vision Target Filtering
+## 8. Resolved Plan Inputs
 
-Runtime evaluates each target supplier once per tick and owns filter history; math receives resolved values. Dynamic targets also need timestamps and validity: stale/lost targets trigger controlled stopping, with explicit reactivation on reacquisition. To reduce steering jitter:
-1. **Exponential Low-Pass Filter ($\tau = 0.10\text{ s}$):**
-   $$\mathbf{p}_{target, filtered}(t) = \alpha \mathbf{p}_{target, vision}(t) + (1 - \alpha) \mathbf{p}_{target, filtered}(t - \Delta t), \quad \alpha = \frac{\Delta t}{\tau + \Delta t}$$
-2. **Moving Target Feedforward:** If tracking a moving target, $\vec{v}_{des} = v_{profile} \hat{t}_{eval} + \vec{v}_{target\_ff} + v_{xt} \hat{n}(s)$, bounded by the final speed, module, and acceleration limits in [02](02-velocity-profiler-and-limits.md).
-
----
-
-## 9. Semi-Autonomous Assisted Modes
-
-Trailblazer 2 enables hybrid teleoperated control modes where one degree of freedom is automated while the other remains under driver manual control:
-
-| Assist Mode | Translation Authority | Rotation Authority | Use Case |
-| :--- | :--- | :--- | :--- |
-| **Full Alignment** | Trailblazer 2 (`driveTo`) | Trailblazer 2 (`hard` gate) | Hands-free docking to Reef, Subwoofer, or Climb |
-| **Driver Translation + Auto Aim** | Manual Driver Left Stick | Trailblazer 2 (`facePoint(Hub)`) | Shooting on the fly; driver evades defense while robot aims |
-| **Auto Line + Driver Speed** | Trailblazer 2 (latched trench line) | Manual / Fixed Heading | Confined trench transit; driver controls throttle, robot steers |
-| **Bump Crossing Assist** | Trailblazer 2 (robot-validated speed cap) | Trailblazer 2 (`hold` heading) | Season-specific terrain assist, subject to robot testing |
+- Evaluate each autonomous target supplier once per tick and keep filter history in runtime.
+- Require timestamps and validity for dynamic targets. Pass resolved values to the calculators.
+- Use a controlled stop when a target goes stale or is lost. Require explicit reactivation after reacquisition.
+- Latch teleop targets at activation as specified in §6.
 
 ---
 
-## 10. Teleop Limits & Watchdogs
+## 9. Teleop Limits & Watchdogs
 
-1. **Maximum Execution Timeout:** Any `driveTo` teleop command has an internal timeout (default: $3.0$ seconds). If uncompleted, it automatically cancels to prevent runaway behavior.
-2. **Field Keepout Rejection:** Check the swept robot footprint along the connecting path, not just the target pose, against supplied field bounds and keepouts. Reject blocked paths with a diagnostic; TB2 does not route around obstacles.
-3. **Wheel Lock on Arrival:** Upon successfully completing a `driveTo` (`atGoal() == true`), the swerve subsystem can be configured to command an "X-Stop" module lock to resist defensive nudges.
+- **Timeout.** Cancel unfinished `driveTo` and `snapAngle` operations at the configured timeout (default `3.0 s`). Report failure and return control through the seeded limiter.
+- **Keepouts.** For full alignment, check the swept robot footprint along the entire path against field bounds and keepouts. Reject blocked paths with a diagnostic and leave alternate routing to the caller.
+- **Wheel lock.** After successful `driveTo` completion (`atGoal() == true`), swerve may apply the configured X-Stop while the driver requests no manual motion. Release the lock on driver input through the normal teleop handoff.

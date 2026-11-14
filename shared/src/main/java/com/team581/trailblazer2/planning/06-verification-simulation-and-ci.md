@@ -1,17 +1,14 @@
-# Trailblazer 2 Design Specification: Verification, Simulation & CI
+# 06 — Verification Simulation and CI
 
-**Document ID:** TB2-SPEC-06  
-**Status:** Implementation design
-**Author:** Team 581 Technical Staff  
 **Applies To:** `TimeSource`, `AutoSimulationHarness`, `PerturbationTest`, `LogReplay`  
 
 ---
 
 ## 1. Deterministic Time & State Injection
 
-Trailblazer 1 called `MathSharedStore.getTimestamp()` and `DriverStation.isDisabled()` directly, preventing fast-forward unit testing. Tests supply the [time and state interfaces](04-runtime-integration-and-teleop-assist.md#31-time-and-state-injection) and capture one coherent [TickInput](04-runtime-integration-and-teleop-assist.md#3-tick-contract) per update.
+TB1’s direct `MathSharedStore.getTimestamp()` and `DriverStation.isDisabled()` calls prevented fast-forward tests. Tests supply the [time and state interfaces](04-runtime-integration-and-teleop-assist.md#31-time-and-state-injection) and capture one coherent [TickInput](04-runtime-integration-and-teleop-assist.md#3-tick-contract) per update.
 
-In simulation and CI, `TimeSource` steps synthetically (`simTime += dt`). Supply synthetic pose, field-relative speeds, and enabled state through `RobotStateSource`, with seeded inputs and repeatable results within documented numerical tolerances. Measure execution time rather than assuming it.
+In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply synthetic pose, field-relative speeds, and enabled state through `RobotStateSource`. Seed inputs, require repeatability within documented numerical tolerances, and measure execution time.
 
 ---
 
@@ -36,23 +33,24 @@ In simulation and CI, `TimeSource` steps synthetically (`simTime += dt`). Supply
 
 ### 2.1 Layer 1: Unit Tests (Every Push & PR)
 - `PathBuilderTest`:
-  - Validates fillet deviation formula: $d_{dev} = r (\sec(\theta/2) - 1)$.
-  - Verifies coupled symmetric tangent length allocation on short adjacent legs ($t_{des, k} \le 0.85 \min(L_k, L_{k+1})$ and $t_{clamped, k-1} + t_{clamped, k} \le 0.95 L_k$) so circular tangency and $G^1$ continuity are preserved.
-  - Asserts that collinear corners omit fillets cleanly, small nonzero turns preserve tangency, and exact reversals require stops ([01](01-path-geometry-and-kinematics.md)).
-  - Asserts that near-reversal corners ($135^\circ \le \theta < 180^\circ$) log a `NEAR_REVERSAL_CORNER` warning without silently mutating `Goal.through` into a stop.
+  - Check fillet deviation: $d_{dev} = r (\sec(\theta/2) - 1)$.
+  - Check coupled symmetric tangent allocation on short adjacent legs ($t_{des, k} \le 0.85 \min(L_k, L_{k+1})$ and $t_{clamped, k-1} + t_{clamped, k} \le 0.95 L_k$) for tangency and $G^1$ continuity.
+  - Check that collinear corners omit fillets, small nonzero turns preserve tangency, and exact reversals require stops ([01](01-path-geometry-and-kinematics.md)).
+  - Check that near-reversal corners ($135^\circ \le \theta < 180^\circ$) log a `NEAR_REVERSAL_CORNER` warning without changing `Goal.through` to a stop.
 - `VelocityProfilerTest`:
-  - Checks curvature and combined motion limits per [02](02-velocity-profiler-and-limits.md), including exact endpoints, interval braking/acceleration, and the final command after feedback/feedforward.
-  - Asserts that a stop goal sample is pinned to $0.0$ m/s, backward braking deceleration obeys $a_{brake}$, and terminal 2D pose convergence eliminates both cross-track and inline residual error.
-  - Verifies second-order lookahead startup from rest ($v_0 = 0 \implies s_{eval, v} = s + \frac{1}{2} a_{avail}(s) \tau_{eff}^2 > s$) and acceleration matching motor torque curve $a_0 (1 - v/v_{free})$.
-  - Verifies that velocity chatter is eliminated when simulated measured velocity has noise.
+  - Check curvature and combined motion limits per [02](02-velocity-profiler-and-limits.md), including exact endpoints, interval braking/acceleration, and the final command after feedback/feedforward.
+  - Check that stop samples equal $0.0$ m/s, backward braking deceleration obeys $a_{brake}$, and terminal 2D pose convergence eliminates both cross-track and inline residual error.
+  - Check second-order lookahead startup from rest ($v_0 = 0 \implies s_{eval, v} = s + \frac{1}{2} a_{avail}(s) \tau_{eff}^2 > s$) and acceleration matching motor torque curve $a_0 (1 - v/v_{free})$.
+  - Check for no velocity chatter with noisy simulated measurements.
 - `HeadingPlannerTest`:
-  - Verifies rotation direction disambiguation (`SHORTEST`, `CW`, `CCW`) and continuous unwrapped reference evolution $\theta_{ref}$.
-  - Asserts that hard gates hold at their anchors until measured readiness, and that overshoot/stall never reports successful passage ([03](03-heading-and-rotation.md)).
+  - Check rotation direction (`SHORTEST`, `CW`, `CCW`) and continuous unwrapped reference evolution $\theta_{ref}$.
+  - Check that hard gates hold at anchors until measured readiness; overshoot/stall must not report successful passage ([03](03-heading-and-rotation.md)).
 - `VectorLimiterTest`:
-  - Asserts isotropic 2D acceleration bounds: $\|\vec{v}_{cmd} - \vec{v}_{prev}\| \le a_{fric, eff} \cdot \Delta t$ across all quadrants.
+  - Check isotropic 2D acceleration bounds: $\|\vec{v}_{cmd} - \vec{v}_{prev}\| \le a_{fric, eff} \cdot \Delta t$ across all quadrants.
 - `ProgressTrackerTest`:
-  - Asserts monotonic progress ratcheting ($s_{k+1} \ge s_k$) within the windowed local search interval around $s_{high\_water}$ (preventing loop-jumping on self-intersecting / figure-8 paths).
-  - Verifies Waypoint-Vertex Sub-Segment Latching so interior `Goal.through` vertices remain invariant and re-latching triggers cleanly when $|e_{xt}| > e_{relatch}$ or on explicit localization resets. Rebuilds preserve goal/event identity without reusing old arc-length coordinates.
+  - Check that measured progress follows forward and backward motion within the search window around $s_{high\_water}$ without jumping across self-intersecting/figure-8 paths.
+  - Check that event progress never decreases within a geometry generation.
+  - Check that latching preserves interior `Goal.through` vertices and re-latching triggers when $|e_{xt}| > e_{relatch}$ or on explicit localization resets. Rebuilds preserve goal/event identity without reusing old arc-length coordinates.
 
 ### 2.2 Layer 2: Property & Fuzz Testing (Nightly)
 Runs randomized path geometries, start states, and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$, $\|\Delta \vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
@@ -74,6 +72,8 @@ Feeds `.wpilog` match poses/velocities into the planner and tracks model acceler
 
 ## 3. Golden Metrics & PR Checks
 
-Stored in `src/test/resources/baselines/auto-metrics.json`. If a PR increases an auto's duration by $> 0.2\text{ s}$ or reduces keepout clearance by $> 0.05\text{ m}$, CI fails unless the baseline is explicitly updated. CI publishes a summary and preview artifacts using the shared runner in [05](05-developer-tooling.md). Baseline updates cannot waive absolute correctness checks.
+Store baselines in `src/test/resources/baselines/auto-metrics.json`. Fail CI if duration increases by $> 0.2\text{ s}$ or keepout clearance drops by $> 0.05\text{ m}$ unless the baseline is explicitly updated.
+
+Baseline updates cannot waive absolute correctness checks. Publish a summary and preview artifacts through the shared runner in [05](05-developer-tooling.md).
 
 Measure planner latency/allocation on the target robot with worst-case supported plans (initial target: below 1 ms per 20 ms tick). Keep plant/checker implementations independent and test parameter mismatch; simulated agreement alone does not establish hardware readiness.

@@ -1,24 +1,22 @@
-# Trailblazer 2 Design Specification: Developer Tooling
+# 05 — Developer Tooling
 
-**Document ID:** TB2-SPEC-05  
-**Status:** Implementation design
-**Author:** Team 581 Technical Staff  
 **Applies To:** `MotionPlan`, `Goal`, `HeadingPlan`, `FieldAnchors`, `AutoPreviewTask`, `TrailblazerPreviewExtension`
 
 ---
 
 ## 1. Pure-Java Specification
 
-Trailblazer 2 keeps all auto definitions in **100% Pure Java** rather than YAML/JSON:
-1. **No Split-Brain Logic:** Autos like [`LeftNormalAuto.java`](../../../../../../../../comp-bot/src/main/java/frc/robot/autos/auto_state_machines/LeftNormalAuto.java) mix path goals with dynamic lambdas (`() -> getCollisionPoint(...)`), IMU triggers, and enum markers (`passedMarker(READY_TO_CROSS_BUMP)`). Keeping everything in Java avoids splitting logic between config files and code.
-2. **Compile-Time Safety:** `javac` and ErrorProne catch typos at build time, and IDE refactoring works out of the box.
-3. **Zero Parser Maintenance:** No YAML/JSON schema or reflection plumbing to maintain.
+Define autos in Java:
+
+1. **One source:** Autos like [`LeftNormalAuto.java`](../../../../../../../../comp-bot/src/main/java/frc/robot/autos/auto_state_machines/LeftNormalAuto.java) mix path goals with dynamic lambdas (`() -> getCollisionPoint(...)`), IMU triggers, and enum markers (`passedMarker(READY_TO_CROSS_BUMP)`). Keep these together in Java.
+2. **Compile-Time Safety:** `javac`, ErrorProne, and IDE refactoring check changes.
+3. **No parser:** No YAML/JSON schema or reflection layer.
 
 ---
 
 ## 2. Canonical Java Fluent DSL
 
-Autos are authored using a strongly typed, fluent Java builder API that constructs immutable `MotionPlan` records. These examples illustrate the proposed API. Keep plan factories callable without constructing robot hardware; runtime resolves suppliers before calling math.
+Use a typed fluent builder for immutable `MotionPlan` records; examples below show the proposed API. Plan factories must run without hardware; runtime resolves suppliers before calling math.
 
 ### 2.1 Specification Example: `LeftNormalAuto.java`
 ```java
@@ -84,7 +82,7 @@ public record HeadingKeyframe(
 
 ## 3. Centralized Field Anchor Dictionary (`FieldAnchors.java`)
 
-To eliminate hardcoded floating-point meter constants and coordinate duplication, field geometry is centralized in a season-owned `FieldAnchors.java`, supplied to TB2 rather than embedded in the shared engine:
+Centralize field coordinates in season-owned `FieldAnchors.java`; supply them to TB2 outside the shared engine:
 
 ```java
 public final class FieldAnchors {
@@ -112,7 +110,7 @@ public final class FieldAnchors {
 
 ## 4. Tooling Architecture: VS Code MVP + Shared Runner
 
-The MVP is a VS Code previewer, like the Spot previewer, backed by the same Java runner used in CI. All authoring stays in Java; preview output is generated data.
+The VS Code MVP uses the same Java runner as CI, like the Spot previewer. Author in Java; generate preview data.
 
 ```mermaid
 flowchart LR
@@ -126,7 +124,7 @@ flowchart LR
 
 ## 5. Headless Runner: `./gradlew previewAuto -Pauto=<Name>`
 
-1. Loads a Java `PreviewScenario` using the normal project build/classpath, without constructing hardware. The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
+1. Loads a Java `PreviewScenario` through the normal build/classpath without hardware. The scenario supplies the plan factory, robot limits, field/footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
 2. Steps the same runtime in closed-loop simulation. Missing dynamic/mechanism inputs are reported rather than assumed successful.
 3. Outputs under `build/reports/autos/<name>/`:
    - Versioned preview data: input/build identity, geometry, timestamped motion, headings, limits, events, and assertion results.
@@ -148,5 +146,5 @@ flowchart LR
 ## 7. Authoring Validation
 
 - Require stable goal/keyframe IDs, finite values, valid anchor order, and a terminal stop. Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
-- Dynamic suppliers need timestamp/validity metadata in runtime ([04](04-runtime-integration-and-teleop-assist.md)). Preview scenarios provide deterministic replacements.
-- Apply alliance transforms once. `FieldUtil.pathflip` is a 180-degree rotation, which preserves CW/CCW; a reflection reverses them. Already field-relative vision targets are not transformed again.
+- Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)). Preview scenarios provide deterministic replacements.
+- Apply alliance transforms once; do not re-transform field-relative vision targets. `FieldUtil.pathflip` rotates 180 degrees, preserving CW/CCW; reflection reverses them.
