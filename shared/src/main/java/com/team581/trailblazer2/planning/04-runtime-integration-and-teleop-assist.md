@@ -16,7 +16,7 @@
 ## 2. Persistent State
 
 - Runtime owns motion state and passes it to pure calculators.
-- Runtime owns activation/goal IDs, fired markers, applied-command history, and timeout/dwell timers.
+- Runtime owns activation/goal IDs, the set of markers recorded as passed, applied-command history, and timeout/dwell timers.
 - Recovery remaps progress and preserves goal and event identity. See [01 — Geometry](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery).
 - Localization supplies validity and reset signals, with vision-noise thresholds owned by localization.
 
@@ -26,7 +26,7 @@ public final class TrailblazerState {
     Pose2d horizonOrigin;                         // Fixed origin at activation, stop release, or recovery
     long geometryGeneration;                      // Prevent comparing old and rebuilt arc lengths
     double progressHighWaterMark;                 // Corridor-gated monotonic progress in this generation
-    Set<Enum<?>> firedMarkers;                    // Preserved fired event markers across rebuilds
+    Set<Enum<?>> passedMarkers;                   // Markers recorded as passed across rebuilds
     Map<String, GoalPassageStatus> goalStatuses;  // Recorded passage diagnostics per goal ID
     HardGateState hardGateState;                  // Active hard-gate hold, dwell timer, and open latch
     double headingReferenceRad;                   // Continuous unwrapped heading reference state theta_ref
@@ -76,9 +76,11 @@ public interface RobotStateSource {
 
 - Determine stop completion from measured position, linear and angular speed, heading readiness, and dwell.
 - Release intermediate stops explicitly.
-- Fire each marker once per activation, in authored order.
-- Fire `Goal.through` markers when corridor-gated $s_{high\_water} \ge s_{anchor}$ within capture radius $d_{capture}$, logging `GoalPassageStatus` (`PASSED_WITHIN_TOLERANCE` vs. `PASSED_OUTSIDE_TOLERANCE`); fire `Goal.cruiseThrough` terminal markers on anchor passage within $d_{capture}$; fire `Goal.stop` markers only upon full stop completion ([01 §6](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery)).
-- Preserve fired-marker and `GoalPassageStatus` state across rebuilds.
+- Record each marker as passed once per activation, in the order defined by the plan. Once recorded, `passedMarker(marker)` returns `true`.
+- For `Goal.through`, record the marker as passed when corridor-gated progress reaches or exceeds the goal anchor ($s_{high\_water} \ge s_{anchor}$) and the robot's closest approach to the goal is within the capture radius $d_{capture}$. Record `PASSED_WITHIN_TOLERANCE` if the closest approach is within the goal tolerance, or `PASSED_OUTSIDE_TOLERANCE` if it is outside the tolerance but still within the capture radius. See [01 §6](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery) for the passage and recovery rules.
+- For `Goal.cruiseThrough`, record the terminal marker as passed when the robot passes the anchor within the capture radius.
+- For `Goal.stop`, record the marker as passed only after the stop completion criteria are met.
+- Preserve which markers have passed and their recorded `GoalPassageStatus` values across path rebuilds.
 
 ## 5. Lifecycle and Faults
 
