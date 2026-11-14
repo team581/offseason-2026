@@ -89,7 +89,7 @@ public class Robot extends Base581Robot {
           powerManager);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
-  private final Autos autos = new Autos(robotManager, CompTrailblazer.create());
+  private final Autos autos = new Autos(robotManager, CompTrailblazer.create(), vision);
 
   public Robot() {
     DiagnosticCadence.setEnabled(true);

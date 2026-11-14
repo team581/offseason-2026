@@ -3,6 +3,7 @@ package frc.robot.vision;
 import com.team581.math.MathHelpers;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.results.OptionalTagResult;
+import com.team581.vision.results.TagResult;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -11,6 +12,7 @@ import frc.robot.imu.Imu;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
+import java.util.function.BiConsumer;
 
 public class Vision extends StateMachineSubsystem<VisionState> {
   private final Debouncer seeingHubTagDebouncer = new Debouncer(0.5, DebounceType.kFalling);
@@ -40,6 +42,18 @@ public class Vision extends StateMachineSubsystem<VisionState> {
     this.shooterLimelight = shooterLimelight;
     this.leftLimelight = leftLimelight;
     this.rightLimelight = rightLimelight;
+  }
+
+  public void forEachHubTagResult(BiConsumer<String, TagResult> consumer) {
+    if (shooterLimelight.seeingHubTag() && shooterResult.isPresent()) {
+      consumer.accept("Shooter", shooterResult.orElseThrow());
+    }
+    if (leftLimelight.seeingHubTag() && leftResult.isPresent()) {
+      consumer.accept("Left", leftResult.orElseThrow());
+    }
+    if (rightLimelight.seeingHubTag() && rightResult.isPresent()) {
+      consumer.accept("Right", rightResult.orElseThrow());
+    }
   }
 
   public OptionalTagResult getLeftLimelightTagResult() {

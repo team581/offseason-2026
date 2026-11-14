@@ -112,6 +112,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDeadband(0)
           .withRotationalDeadband(0);
   private ChassisSpeeds trajectoryCommand;
+  private boolean logCalibrationCommands;
+  private Rotation2d trajectoryModuleDirection;
+  private final SwerveRequest.PointWheelsAt trajectoryAlignment =
+      new SwerveRequest.PointWheelsAt().withDriveRequestType(DriveRequestType.Velocity);
 
   private final SwerveRequest.SwerveDriveBrake xRequest =
       new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
@@ -164,6 +168,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     this.teleopDriveSource =
         new XboxControllerDriveSource(
             driverController, Swerve.MAX_LINEAR_RATE, Swerve.TELEOP_MAX_ANGULAR_RATE);
+  }
+
+  public void alignTrajectoryModules(Rotation2d robotRelativeDirection) {
+    trajectoryCommand = new ChassisSpeeds();
+    trajectoryModuleDirection = robotRelativeDirection;
   }
 
   @Override
@@ -279,6 +288,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void clearTrajectoryCommand() {
     trajectoryCommand = null;
+    trajectoryModuleDirection = null;
   }
 
   public boolean driverStillDecidingSotm() {
@@ -342,8 +352,13 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.SCORE);
   }
 
+  public void setLogCalibrationCommands(boolean enabled) {
+    logCalibrationCommands = enabled;
+  }
+
   public void setTrajectoryCommand(ChassisSpeeds speeds) {
     trajectoryCommand = speeds;
+    trajectoryModuleDirection = null;
   }
 
   public void setUseLooseTolerance(boolean value) {
@@ -376,6 +391,15 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     if (DriverStation.isAutonomousEnabled()
         || (DriverStation.isDisabled() && trajectoryCommand != null)) {
       var speeds = getRequestedSpeeds();
+      if (logCalibrationCommands) {
+        DogLog.log("Trailblazer3/Calibration/CommandTime", Utils.getCurrentTimeSeconds());
+        DogLog.log("Trailblazer3/Calibration/CommandFieldSpeeds", speeds);
+        DogLog.log("Trailblazer3/Calibration/AligningModules", trajectoryModuleDirection != null);
+      }
+      if (trajectoryModuleDirection != null) {
+        drivetrain.setControl(trajectoryAlignment.withModuleDirection(trajectoryModuleDirection));
+        return;
+      }
       drivetrain.setControl(
           trajectory
               .withVelocityX(speeds.vxMetersPerSecond)

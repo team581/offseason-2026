@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.util.scheduling.SubsystemPriority;
+import frc.robot.vision.Vision;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       new AutoChooser<>(AutoSelection.values(), AutoSelection.DO_NOTHING);
   private final RobotManager robotManager;
   private final Trailblazer trailblazer;
+  private final TrailblazerCalibrationAuto calibration;
   private boolean started;
   private boolean hasEnabledAuto;
   private final EnumSet<AutoSelection> warmedUpAutos = EnumSet.noneOf(AutoSelection.class);
@@ -38,10 +40,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private boolean braking;
   private Alliance autoAlliance = Alliance.Blue;
 
-  public Autos(RobotManager robotManager, Trailblazer trailblazer) {
+  public Autos(RobotManager robotManager, Trailblazer trailblazer, Vision vision) {
     super(SubsystemPriority.AUTOS, AutoSelection.DO_NOTHING);
     this.robotManager = robotManager;
     this.trailblazer = trailblazer;
+    calibration = new TrailblazerCalibrationAuto(robotManager, vision);
   }
 
   private void prepareAuto(AutoSelection selection) {
@@ -67,6 +70,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     boolean trailblazerSelected =
         rotationSelected || state == AutoSelection.TRAILBLAZER_3_RIGHT_TRENCH;
     if (!DriverStation.isAutonomousEnabled()) {
+      calibration.end();
       autoAlliance = DriverStation.getAlliance().orElse(autoAlliance);
       if (started) {
         trailblazer.update(
@@ -117,6 +121,12 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     }
 
     hasEnabledAuto = true;
+    var calibrationTest = TrailblazerCalibrationAuto.Test.fromSelection(state);
+    if (calibrationTest != null) {
+      calibration.run(calibrationTest);
+      return;
+    }
+
     if (!trailblazerSelected) {
       if (!started) {
         started = true;

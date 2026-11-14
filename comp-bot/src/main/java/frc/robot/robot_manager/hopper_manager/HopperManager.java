@@ -45,6 +45,7 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   private boolean driverWantsIntake = false;
   private boolean driverWantsEject = false;
   private boolean operatorWantsStow = false;
+  private boolean calibrationWantsStow;
 
   private boolean wantsSafeStow = false;
 
@@ -139,6 +140,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
     setState(resolveScoreState());
   }
 
+  public void setCalibrationWantsStow(boolean wantsStow) {
+    calibrationWantsStow = wantsStow;
+  }
+
   public void setDriverWantsEject(boolean wantsEject) {
     driverWantsEject = wantsEject;
   }
@@ -192,6 +197,10 @@ public class HopperManager extends StateMachineSubsystem<HopperState> {
   }
 
   private HopperState resolveIdleState() {
+    if (calibrationWantsStow) {
+      return HopperState.IDLE_STOWED;
+    }
+
     if (driverWantsEject) {
       return HopperState.EJECTING;
     }
