@@ -46,7 +46,7 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
   - Check one-shot directional branch latching (`SHORTEST`, `CW`, `CCW`), zero-headroom / saturated-feedforward `NaN`-free arrest ($\dot{e}_{max} = 0$, $\alpha_{eff} = 0$), and continuous unwrapped evolution $\theta_{ref}$ across $\pm\pi$.
   - Check `facePoint` smooth speed-to-target blending and `SINGULAR_HOLD` freezing inside $0.25\text{ m}$ radial distance without $\pi$-flips or angular jitter.
   - Check error-frame `TrapezoidStep` seeded from `lastCommand` $\omega_{prev}$ and `HARD` gate anchoring with `maxGateHoldRadius = 0.25 m` pullback, $|\theta^*_{unwrapped} - \theta_{ref}| < \pi/2$ branch completion, and $2\epsilon_\theta$ open-latch hysteresis ([03](03-heading-and-rotation.md)).
-  - Check whole-plan `MotionPlan.forAlliance` under both `ROTATIONAL_180` and `MIRROR_X`, including `offset`, static `facePoint`, `CW <-> CCW` reversal, and `MIRROR_X` keepout polygon winding reversal.
+  - Check whole-plan `AutoSegment.forAlliance` under both `ROTATIONAL_180` and `MIRROR_X`, including `offset`, static `facePoint`, `CW <-> CCW` reversal, and `MIRROR_X` keepout polygon winding reversal.
 - `VectorLimiterTest`:
   - Check exact 7-constraint 2D active-set projection (1 work-energy origin speed/motor disk, 1 directional braking half-space, 1 isotropic friction-slew disk, and 4 exact field-frame module-speed disks) across all quadrants, concentric-disk ($\omega_{cmd} = 0$) `NaN` immunity, and shrinking-envelope fallback preserving smooth braking when budgets drop mid-path.
 - `ProgressTrackerTest`:
@@ -75,6 +75,11 @@ Feeds `.wpilog` match poses/velocities into the planner and tracks model acceler
 
 Store baselines in `src/test/resources/baselines/auto-metrics.json`. Fail CI if duration increases by $> 0.2\text{ s}$ or keepout clearance drops by $> 0.05\text{ m}$ unless the baseline is explicitly updated.
 
-Baseline updates cannot waive absolute correctness checks. Publish a summary and preview artifacts through the shared runner in [05](05-developer-tooling.md).
+Baseline updates cannot waive absolute correctness checks. Keep simulation metrics and traces as described in [05](05-developer-tooling.md).
 
 Measure planner latency/allocation on the target 2027 controller (`50–250 Hz`) with worst-case supported plans (target: below $\min(1.0\text{ ms},\; 0.20\,\Delta t_{nom})$ per tick). Keep plant/checker implementations independent and test parameter mismatch; simulated agreement alone does not establish hardware readiness.
+
+
+## Straight-line acceptance
+
+Calculate an independent rest-to-rest reference from the motor curve, traction, braking and speed ceiling. Compare planned peak speed within 2% and braking position within one 0.05 m spatial sample. Check each command against the resolved limits. Check the 2 m stop within 3 cm, 2 degrees, 0.10 m/s and 0.10 rad/s for 0.10 s, then verify one second of stopped behavior. Run the deterministic plant on both alliances and repeat Phoenix five times per alliance. Keep measured and planned traces and record discrepancies.

@@ -8,7 +8,7 @@
 
 Keep physical parameters and per-waypoint PID gains out of path definitions:
 
-- **Autos declare operational intent and geometric tolerances** (e.g. `within(0.25)`, `limits: fast` $= 0.90 \times \text{limits}$, `limits: careful` $= 0.60 \times \text{limits}$).
+- **Autos declare operational intent and geometric tolerances** (e.g. `within(0.25)`, explicit `MotionLimits` ceilings).
 
 - **Physical capabilities belong to the drivetrain**, stored in robot Java configuration. Start with CAD/motor estimates and derived controller defaults; tune three primary empirical parameters ($a_{fric}, a_{brake}, \tau_{lag}$) during bringup on the new 2027 robot.
 

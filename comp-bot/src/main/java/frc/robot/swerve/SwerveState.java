@@ -5,6 +5,5 @@ public enum SwerveState {
   WARMUP_SCORE,
   SCORE,
   WARMUP_FEED,
-  FEED,
-  CLIMB_ASSIST
+  FEED
 }

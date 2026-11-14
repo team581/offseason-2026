@@ -13,6 +13,8 @@
 
 ---
 
+An auto state machine activates a named `AutoSegment` once on state entry. The robot adapter resolves alliance and clearance, then ticks one shared runtime once per loop. The next state can wait for a marker, a completed stop, or mechanism readiness. Activating a new segment clears the preceding segment's markers and completion, and seeds from applied velocity or measured motion. An intermediate stop inside a segment requires explicit release. Disabled, rejected, and faulted autos cannot advance states.
+
 ## 2. Persistent State
 
 - Runtime owns motion state and passes it to pure calculators.
@@ -115,7 +117,7 @@ public record TickResult(
 
 ## 5. Lifecycle and Faults
 
-- Start, update, and cancel explicitly; support mid-plan resumption via `activate(MotionPlan plan, String startAtGoalId)`.
+- Start, update, and cancel explicitly; support mid-plan resumption via `activate(AutoSegment plan, String startAtGoalId)`.
   - Validate that `startAtGoalId` exists, build the horizon from current pose through the next terminal goal via `startAtGoalId`, mark all strictly preceding goals as skipped/completed, **pre-populate their markers as passed** (`passedMarker == true`), mark any `HARD` heading gates strictly preceding `startAtGoalId` as already passed, and inherit the latest `HeadingKeyframe` target angle as `SOFT` if none activates immediately.
 - Latch completion until restart.
 - On cancellation, hand off through a seeded controller or use a controlled stop.
@@ -130,8 +132,8 @@ public record TickResult(
 
 ```java
 public class Trailblazer {
-    public void driveTo(Pose2d targetPose, LimitsProfile profile);
-    public void snapAngle(Rotation2d targetHeading, LimitsProfile profile);
+    public void driveTo(Pose2d targetPose, MotionLimits profile);
+    public void snapAngle(Rotation2d targetHeading, MotionLimits profile);
     public void cancel();
 }
 ```
@@ -147,7 +149,7 @@ public class Trailblazer {
 
 - Latch the absolute field heading on activation.
 - Use the shortest turn direction and the [bounded heading reference and angular controller](03-heading-and-rotation.md).
-- Accept the operator-input layer's alliance-oriented Blue-origin field-relative desired translational velocity `driverFieldVelocityMpS` (bounded to $\|\vec{v}_{driver}^{field}\| \le v_{max}$ of the active `LimitsProfile`) inside `TickInput`, pass its magnitude to `HeadingPlanner` for $\rho(v)$ budget blending ([03 §5.4](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation)), and project jointly with $\omega_{cmd}$ in the 7-set 2D limiter.
+- Accept the operator-input layer's alliance-oriented Blue-origin field-relative desired translational velocity `driverFieldVelocityMpS` (bounded to $\|\vec{v}_{driver}^{field}\| \le v_{max}$ of the active `MotionLimits`) inside `TickInput`, pass its magnitude to `HeadingPlanner` for $\rho(v)$ budget blending ([03 §5.4](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation)), and project jointly with $\omega_{cmd}$ in the 7-set 2D limiter.
 - Complete when measured heading error and angular speed stay within the configured tolerances for the configured dwell.
 - Omit position goals, position and linear-speed completion checks, and wheel lock.
 - Return rotation to manual control through the seeded handoff on completion or cancellation.

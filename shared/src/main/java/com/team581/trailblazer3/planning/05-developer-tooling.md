@@ -1,6 +1,6 @@
 # 05 — Developer Tooling
 
-**Applies To:** `MotionPlan`, `Goal`, `HeadingPlan`, `FieldAnchors`, `AutoPreviewTask`
+**Applies To:** `AutoSegment`, `Goal`, `HeadingPlan`, `FieldAnchors`
 
 ---
 
@@ -14,9 +14,21 @@ Define autos in Java:
 
 ---
 
-## 2. Canonical Java Fluent DSL
+## 2. Named Java segments
 
-Use a typed fluent builder for immutable `MotionPlan` records; examples below show the proposed 2027 API. Plan factories must run without hardware and are authored in the canonical **Blue-origin field frame** before alliance transformation via `forAlliance(...)`; runtime resolves dynamic suppliers before calling math.
+An auto declares named segments as fields. A state activates its segment once on entry, then transitions on stop completion or an authored marker. A mechanism wait is another state with a readiness condition. Activate through the comp auto base to apply alliance transforms and field clearance. Use `through` for waypoints, `stopAt` for ordinary stops, and `addGoal` for goals with markers or heading options. See the compiled `TwoSegmentAutoExample` in the comp test sources.
+
+```java
+private final AutoSegment leaveTrench =
+    Trailblazer.segment("leave-trench")
+        .withLimits(MotionLimits.robotMaximum())
+        .stopAt(destination)
+        .build();
+```
+
+The runtime owns the moving reference. The auto owns transitions and mechanism requests.
+
+Use a typed fluent builder for immutable `AutoSegment` records; examples below show the proposed 2027 API. Plan factories must run without hardware and are authored in the canonical **Blue-origin field frame** before alliance transformation via `forAlliance(...)`; runtime resolves dynamic suppliers before calling math.
 
 ### 2.1 Specification Example: `ExampleCycleAuto.java`
 ```java
@@ -28,10 +40,10 @@ public class ExampleCycleAuto {
   }
 
   // Canonical pure-Java auto specification (authored in Blue-origin field coordinates)
-  public MotionPlan buildCyclePlan(
+  public AutoSegment buildCycleSegment(
       Alliance alliance, Supplier<TimestampedTarget<Pose2d>> pickupSupplier) {
-    return Trailblazer.plan("example_cycle")
-        .withLimits(LimitsProfile.FAST)
+    return Trailblazer.segment("example_cycle")
+        .withLimits(MotionLimits.robotMaximum())
         .addGoal(
             Goal.through(SeasonAnchors.STAGE_PASS)
                 .within(0.75))
@@ -121,7 +133,7 @@ public record FieldGeometry(double lengthMeters, double widthMeters, FieldSymmet
 }
 ```
 
-**Why whole-plan transformation (`MotionPlan.forAlliance(Alliance, FieldGeometry)`) is mandatory:** World offsets `offset(P, dx, dy, dTheta)` and local `Pose2d.transformBy(...)` do **not** commute with `MIRROR_X` ($\det J = -1$), because reflecting negates $\Delta y$ and $\Delta\theta$. Author the entire `MotionPlan` (including all offsets) once in the canonical **Blue-origin field frame**, and call `plan.forAlliance(alliance, geometry)`:
+**Why whole-plan transformation (`AutoSegment.forAlliance(Alliance, FieldGeometry)`) is mandatory:** World offsets `offset(P, dx, dy, dTheta)` and local `Pose2d.transformBy(...)` do **not** commute with `MIRROR_X` ($\det J = -1$), because reflecting negates $\Delta y$ and $\Delta\theta$. Author the entire `AutoSegment` (including all offsets) once in the canonical **Blue-origin field frame**, and call `segment.forAlliance(alliance, geometry)`:
 
 1. **Static Goal Poses & Headings:** Transform static `Goal` poses, `HeadingTarget.fixed(Rotation2d)`, and static `HeadingTarget.facePoint(Translation2d)` via `FieldGeometry`. Leave dynamic Blue-origin vision goals and `facePointDynamic(Supplier<TimestampedTarget<Translation2d>>)` untouched, and never negate a physical robot-frame mechanism angle offset $\psi_{mech}$ (robot hardware chirality does not mirror across alliances).
 2. **`TurnDirection` (`CW` / `CCW`):** Preserve under `ROTATIONAL_180`; swap `CW <-> CCW` under `MIRROR_X`.
@@ -130,29 +142,12 @@ public record FieldGeometry(double lengthMeters, double widthMeters, FieldSymmet
 
 ---
 
-## 4. Headless Preview and CI Runner
+## 4. Headless verification
 
-Run `./gradlew previewAuto -Pauto=<Name>` to load a Java `PreviewScenario` through the normal build and classpath without hardware, with full compilation and ErrorProne/Refaster checks. The scenario supplies the plan factory, robot limits, field and footprint, starting state, alliance, seed, dynamic targets, and stop-release inputs.
-
-```mermaid
-flowchart LR
-    Code[Java plan and scenario] --> Gradle[Gradle previewAuto]
-    Gradle --> Engine[Shared Java planner and simulation]
-    Engine --> Results[Versioned results, traces, and metrics]
-    Results --> CI[CI checks and artifacts]
-```
-
-Write closed-loop simulation results to `build/reports/autos/<name>/`:
-
-- Versioned preview data with input/build identity, geometry, timestamped motion, headings, limits, events, `GoalPassageStatus`, and assertion results.
-- A `.wpilog` trace, `.png` trajectory map, and terminal metrics summary.
-
-Return a nonzero exit code on failed assertions or build/runner errors. Measure cold-build and simulation times separately.
-
----
+Run the real auto state machine and shared planner against an independent deterministic plant and the comp Phoenix simulation using temporary harness code. Keep numeric results and traces with the tested configuration. Remove the temporary harness and its build wiring after the investigation. Shared regression tests run through the normal Gradle test tasks.
 
 ## 5. Authoring Validation
 
 - Require stable goal/keyframe IDs, finite values, valid nominal anchor order (with dynamic rebuilds/relatches clamping relative `beforeGoal` / `afterGoal` offsets cleanly per [03 §2.1](03-heading-and-rotation.md)), and a terminal `Goal.stop` or valid `Goal.cruiseThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`, flagging `CRUISE_OVERRUN_LIMITED` if obstacles clip `d_overrun`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
 - Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)) and an explicit `TargetLossPolicy`. Preview scenarios provide deterministic replacements.
-- Require explicit `FieldGeometry` (`ROTATIONAL_180` vs `MIRROR_X`) in `MotionPlan.forAlliance`, using type-distinct static vs. dynamic `Goal` / `facePoint` factories so live Blue-origin vision targets cannot be double-flipped.
+- Require explicit `FieldGeometry` (`ROTATIONAL_180` vs `MIRROR_X`) in `AutoSegment.forAlliance`, using type-distinct static vs. dynamic `Goal` / `facePoint` factories so live Blue-origin vision targets cannot be double-flipped.

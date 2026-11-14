@@ -23,7 +23,7 @@ This roadmap orders work; the linked specs own formulas, constants, localization
 | Speed profile and command bounds | [02: Velocity and limits](02-velocity-profiler-and-limits.md) |
 | Heading schedule and readiness gates | [03: Heading](03-heading-and-rotation.md) |
 | Runtime state, tick contracts, lifecycle, teleop, dynamic targets | [04: Runtime and integration](04-runtime-integration-and-teleop-assist.md) |
-| Java model, field transforms, headless Gradle runner | [05: Developer tooling](05-developer-tooling.md) |
+| Java model, field transforms, headless verification | [05: Developer tooling](05-developer-tooling.md) |
 | Fixtures, simulation, CI, acceptance measurements | [06: Verification](06-verification-simulation-and-ci.md) |
 | Robot parameters and calibration | [07: Calibration](07-empirical-calibration-routine.md) |
 
@@ -44,10 +44,10 @@ flowchart LR
 
 Deliver:
 
-- `model` values for plans, goals (`Goal.stop`, `Goal.through`, `Goal.cruiseThrough`), `FieldGeometry` / `FieldSymmetry` (`MotionPlan.forAlliance`), heading intent, sealed `TargetLossPolicy` (`HoldLastValid`, `FallbackNominal`, `ControlledStop`), `RobotDrivetrainSpec` -> `DrivetrainLimits` + `DriveMotorModel`, `RobotStateSnapshot` / `TickInput` / `TickResult` (including `ChassisAccelerations` / `WheelForces` and `GoalPassageStatus`), statuses, and stable event IDs. Use the minimal fluent builder in [05](05-developer-tooling.md); define public intent before algorithms.
+- `model` values for plans, goals (`Goal.stop`, `Goal.through`, `Goal.cruiseThrough`), `FieldGeometry` / `FieldSymmetry` (`AutoSegment.forAlliance`), heading intent, sealed `TargetLossPolicy` (`HoldLastValid`, `FallbackNominal`, `ControlledStop`), `RobotDrivetrainSpec` -> `DrivetrainLimits` + `DriveMotorModel`, `RobotStateSnapshot` / `TickInput` / `TickResult` (including `ChassisAccelerations` / `WheelForces` and `GoalPassageStatus`), statuses, and stable event IDs. Use the minimal fluent builder in [05](05-developer-tooling.md); define public intent before algorithms.
 - Validation for invalid numbers, identities, terminal behavior (`Goal.stop` or `Goal.cruiseThrough`), `FieldGeometry` / `MIRROR_X` flip rules, `TargetLossPolicy`, and unresolved target/heading references.
 - A Java fixture catalog with an initial straight stop and turn-in-place case. Construct plans without `Robot`, HAL devices, or mechanisms.
-- Unit-test wiring in `shared` and a desktop scenario runner skeleton, using existing Gradle/JUnit conventions; establish build/check commands before more modules.
+- Unit-test wiring in `shared` and desktop fixtures, using existing Gradle/JUnit conventions; establish build/check commands before more modules.
 
 Done when the example plans compile, invalid plans produce useful diagnostics, and the catalog loads on desktop without hardware side effects.
 
@@ -69,7 +69,7 @@ Done when tests cover startup across `50–250 Hz`, braking inside corners witho
 
 Deliver plan activation (`activate(plan)` and `activate(plan, startAtGoalId)`), update/cancel/release, monotonic `TimeSource` clock-domain normalization and `nominalDtSeconds` (`50–250 Hz`) handling, `RobotStateSnapshot`, dynamic-target `TargetLossPolicy`, event history, cached `TickResult`, and timeout/fault behavior. Connect calculators through this runtime and run it against the desktop plant.
 
-Add the complete representative fixture suite and seeded disturbances in [06](06-verification-simulation-and-ci.md). Run them through the headless `./gradlew previewAuto` task in [05](05-developer-tooling.md). Produce versioned preview results, traces, diagnostics, and CI summaries from one execution; support replay without treating it as closed-loop validation.
+Add the complete representative fixture suite and seeded disturbances in [06](06-verification-simulation-and-ci.md). Run them through the temporary headless harness in [05](05-developer-tooling.md). Record results, traces, and diagnostics; support replay without treating it as closed-loop validation.
 
 Done when valid scenarios complete (`PASSED_WITHIN_TOLERANCE`), invalid/unreachable scenarios produce their expected failure status, markers are recorded as passed once cleanly across relatches and mid-plan starts, and repeat runs with the same inputs reproduce results within documented numerical tolerances.
 

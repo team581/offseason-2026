@@ -4,7 +4,7 @@ Trailblazer 3 is a clean-sheet Java path-planning and motion-control library bui
 
 ---
 
-**Implementation scope.** Follow the [Trailblazer 3 roadmap](08-implementation-roadmap-and-migration.md), including the headless Java scenario runner and CI reports. The [VS Code preview app and warm-JVM worker](deferred/vs-code-preview-app.md) are deferred. Begin that work only when explicitly requested.
+**Implementation scope.** Follow the [Trailblazer 3 roadmap](08-implementation-roadmap-and-migration.md), including the temporary headless verification and shared regression tests. The [VS Code preview app and warm-JVM worker](deferred/vs-code-preview-app.md) are deferred. Begin that work only when explicitly requested.
 
 ## 1. Trailblazer 1 vs. Alternatives
 
@@ -16,7 +16,7 @@ Trailblazer 3 is a clean-sheet Java path-planning and motion-control library bui
 | **Accel vs. Braking**         | Limits speed-up; no mid-path brake limit | Asymmetric (offline motor torque-speed)       | Symmetric scalar limits                 | Symmetric                             | **Asymmetric braking vs. live supply/stator-limited motor curve**                   |
 | **Heading Control**           | Tied to waypoints; flips mid-arc         | Coupled offline                               | Independent profile                     | Coupled or decoupled                  | **Decoupled schedule $\theta^*(s)$ with error-frame feedforward + hard/soft gates** |
 | **Dynamic / Vision Goals**    | Supported via `Supplier<Point>`          | Offline only                                  | Limited                                 | Requires re-splining                  | **Built-in online evaluation**                                                      |
-| **Preview & Testing**         | None (must run on carpet)                | Desktop GUI                                   | Desktop GUI                             | Sim scripts                           | **Headless Java runner + CI simulation**                            |
+| **Preview & Testing**         | None (must run on carpet)                | Desktop GUI                                   | Desktop GUI                             | Sim scripts                           | **Temporary headless verification + shared regression tests**                            |
 
 ---
 
@@ -49,7 +49,7 @@ Pass time and robot state as inputs so desktop tests and CI can run the same pla
 ### Clarity
 
 - Log robot telemetry and the active speed constraint each tick so developers can see what happened in logs.
-- Publish CI check results and previews so reviewers can see how a change affects an auto. [Verification spec](06-verification-simulation-and-ci.md)
+- Keep numeric checks and traces so reviewers can see how a change affects an auto. [Verification spec](06-verification-simulation-and-ci.md)
 
 ---
 
@@ -82,7 +82,7 @@ Trailblazer 3 is decoupled from low-level drivetrain motor control and high-leve
 
 ```mermaid
 flowchart LR
-    AutoSM["Auto State Machine"] -->|"activate / release"| TB3["Trailblazer 3 Facade"]
+    AutoSM["Auto state machine and named segments"] -->|"activate / release"| TB3["Trailblazer 3 Facade"]
     Teleop["Teleop Assist / Operator Input"] -->|"driveTo / snapAngle"| TB3
     Loc["Localization & Power Snapshot<br/>(Odometry + Vision + Supply Ceiling)"] -->|"Pose2d, Speeds, I_supply, V_oc"| TB3
     TB3 -->|"ChassisSpeeds + ChassisAccelerations + WheelForces<br/>(Field-Relative, Zero-Deadband)"| SwerveSub["Swerve Subsystem"]
@@ -92,7 +92,7 @@ flowchart LR
 
 ### 4.1 Separation of Responsibilities
 
-1. **Auto State Machine:** Runs overall autos and uses `passedMarker` and `atGoal` to transition states.
+1. **Auto state machine and named segments:** Runs overall autos and uses `passedMarker` and `atGoal` to transition states.
 2. **Trailblazer:** Solves path geometry, velocity, and heading, emitting field-relative `ChassisSpeeds`, noise-free `ChassisAccelerations`, and optional module `WheelForces` feedforwards.
 3. **Swerve Subsystem:** Executes TB3's closed-loop trajectory command (`ChassisSpeeds`, `ChassisAccelerations`, and optional `WheelForces`) with zero command deadband.
 4. **Localization & Power Snapshot:** Fuses wheel odometry and vision into field-relative `Pose2d` and `ChassisSpeeds` normalized to `TimeSource`, paired with optional instantaneous drive supply-current ceiling and resting battery voltage.

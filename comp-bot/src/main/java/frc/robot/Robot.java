@@ -3,19 +3,14 @@ package frc.robot;
 import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
-import com.team581.math.PoseErrorTolerance;
-import com.team581.trailblazer.Trailblazer;
-import com.team581.trailblazer.followers.PidPathFollower;
-import com.team581.trailblazer.trackers.HeuristicPathTracker;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.profiling.LoopTiming;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
-import frc.robot.autos.BumpCrossingFollower;
+import frc.robot.config.CompTrailblazer;
 import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
@@ -53,20 +48,7 @@ public class Robot extends Base581Robot {
 
   private final Imu imu = new Imu(hardware.drivetrain);
 
-  private final Trailblazer trailblazer =
-      new Trailblazer(
-          new HeuristicPathTracker(new PoseErrorTolerance(0.5, 10)),
-          new BumpCrossingFollower(
-              new PidPathFollower(
-                  new PIDController(3.5, 0, 0),
-                  new PIDController(
-                      Swerve.ORIGINAL_HEADING_PID.getP(),
-                      Swerve.ORIGINAL_HEADING_PID.getI(),
-                      Swerve.ORIGINAL_HEADING_PID.getD())),
-              imu.bumpCrossingTracker));
-
-  private final Swerve swerve =
-      new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
+  private final Swerve swerve = new Swerve(hardware.drivetrain, health, hardware.driverController);
 
   private final ShooterHood shooterHood = new ShooterHood(hardware.shooterHoodMotor);
   private final Shooter shooter =
@@ -103,12 +85,11 @@ public class Robot extends Base581Robot {
           hardware.driverController,
           health,
           hubActivity,
-          trailblazer,
           hardware,
           powerManager);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
-  private final Autos autos = new Autos(robotManager, trailblazer);
+  private final Autos autos = new Autos(robotManager, CompTrailblazer.create());
 
   public Robot() {
     DiagnosticCadence.setEnabled(true);

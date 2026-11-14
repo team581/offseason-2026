@@ -339,7 +339,7 @@ A **geometry generation** is one version of the built path. Each has its own arc
 
 1. Start a new geometry generation toward the next uncompleted goal. Preserve command history.
 2. Check the robot's footprint along the entire connection against $K_{hard}$ and $K_{margin}$.
-3. On hard obstacle intrusion ($d_{signed}(K_{hard}) < 0$), stop and report a fault unless the initial pose slightly touches a boundary ($d_{signed} \ge -0.03\text{ m}$) and clearance strictly increases over $s \in [0, 0.15\text{ m}]$ (wall-contact escape). On margin-only contact during mid-auto recovery ($0 \le d_{signed}(K_{hard}) < d_{margin}$), continue with `KEEPOUT_MARGIN_WARNING` and a `CAREFUL` speed cap rather than terminating the auto.
+3. On hard obstacle intrusion ($d_{signed}(K_{hard}) < 0$), stop and report a fault unless the initial pose slightly touches a boundary ($d_{signed} \ge -0.03\text{ m}$) and clearance strictly increases over $s \in [0, 0.15\text{ m}]$ (wall-contact escape). On margin-only contact during mid-auto recovery ($0 \le d_{signed}(K_{hard}) < d_{margin}$), continue with `KEEPOUT_MARGIN_WARNING` and a 60% model derate subject to authored ceilings rather than terminating the auto.
 
 ## 7. Degenerate and dynamic inputs
 

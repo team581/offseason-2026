@@ -79,6 +79,10 @@ public record DrivetrainLimits(
 
 ---
 
+### Segment ceilings
+
+`MotionLimits.robotMaximum()` uses the physical model with its normal derates. A segment can supply lower positive ceilings for chassis speed (m/s), acceleration and braking (m/s²), angular speed (rad/s), and angular acceleration (rad/s²). The motor curve and traction still constrain speed gain. Apply authored acceleration in the forward pass and final command projection. The chassis speed ceiling and physical module speed ceiling are independent. Log resolved ceilings alongside profile, commanded, and measured motion.
+
 ## 3. Two-Pass Spatial Horizon Profiler
 
 Sample the [horizon defined in 01 §4](01-path-geometry-and-kinematics.md#4-planning-horizon) at maximum spacing $\Delta s = 0.05$ m initially.

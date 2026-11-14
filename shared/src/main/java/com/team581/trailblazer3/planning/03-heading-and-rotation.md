@@ -18,6 +18,8 @@
 
 ## 2. Decoupled Heading Schedule Architecture
 
+Heading keyframes belong to the active named segment. Releasing an intermediate stop advances the horizon inside that segment. Activating another segment starts its authored schedule and seeds the heading reference from measured heading and applied angular velocity, with measured angular velocity as the fallback.
+
 Swerve can translate along tangent $\hat{t}$ while independently rotating its azimuth $\theta$.
 
 Trailblazer 3 models heading as a piecewise schedule $\theta^*(s)$ parameterized by path progress $s$.

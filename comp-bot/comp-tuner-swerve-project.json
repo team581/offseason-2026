@@ -1,6 +1,6 @@
 {
   "SwerveOptions": {
-    "HorizontalTrackSizeInches": 11.75,
+    "HorizontalTrackSizeInches": 23.5,
     "HasVerifiedDrive": true,
     "IsLeftSideInverted": false,
     "IsRightSideInverted": false,
@@ -23,7 +23,7 @@
     },
     "HasVerifiedSteer": true,
     "SwerveModuleType": 11,
-    "VerticalTrackSizeInches": 11,
+    "VerticalTrackSizeInches": 22,
     "SelectedModuleManufacturer": "WestCoast Products (WCP)",
     "IsValidGyroCANbus": true
   },
