@@ -9,53 +9,24 @@
 
 ## 1. Overview
 
-### How Trailblazer 1 Works
+### Trailblazer 1
 
-Trailblazer 1 does not actually build a continuous path curve:
+- Follows a list of waypoints, with Bézier curves added by hand when needed.
+- Aims directly at the next waypoint, so switching targets can change the drive direction in one 20 ms loop.
+- Cuts corners by varying amounts depending on speed and when the target switches.
+- Tracks progress by waypoint index and can skip ahead where the route crosses itself.
+- Aims at the waypoint from its new position after a bump, which can send it across obstacles.
 
-1. **A list of points, not a curve:** An auto is just a list of $(x, y)$ points (`AutoPoint`). There are no lines or curves connecting them unless someone manually creates a Bézier curve with hand-guessed control points.
-2. **Look-at-next-point tracking:** `HeuristicPathTracker` checks the robot's distance to the next point (and up to 2 points ahead). Once the robot gets close enough to the current target point, the tracker switches the target to the next point in the list.
-3. **Point-and-shoot steering:** `PidPathFollower` calculates the straight-line angle from the robot's current pose directly to that single target point (`getDriveDirection`) and tells the swerve drive to head that way.
+### Trailblazer 2
 
-**Why that causes problems on the robot:**
+- Builds a path to the next stop by joining straight legs with tangent circular arcs called fillets.
+- Sizes each fillet so its closest point to the waypoint is within the set distance, such as 25 cm for `within(0.25)`.
+- Finds the closest point in a local window to avoid skipping ahead where the path crosses itself.
+- Measures progress in meters along the path and separately tracks event progress, which only moves forward.
+- Steers along the path tangent and uses sideways distance from the path to correct drift.
+- Can rebuild the path to the next unfinished goal if the robot strays too far, with fresh checks for constraints and keepouts.
 
-- **Instant direction snaps at every waypoint:** Because the robot drives straight toward Point 1 and then suddenly switches its target to Point 2, the commanded drive direction jumps in a single 20 ms loop. The swerve modules have to violently snap to a new angle while moving at high speed.
-- **No guaranteed path between points:** If the robot gets bumped sideways by another robot, it just aims straight from its new position to the target point instead of returning to the intended lane—which can clip field obstacles (like the Reef or stage posts).
-- **Corner cutting is unpredictable:** How much the robot cuts a corner depends on how fast it happens to be moving and when `HeuristicPathTracker` decides to advance the index, rather than a clear distance in meters.
-
----
-
-### How Trailblazer 2 Works
-
-Trailblazer 2 turns the list of waypoints into a **single smooth road** and tracks how far along that road the robot has traveled:
-
-1. **Connect points with straight lines:** First, draw straight lines ("legs") connecting each waypoint to the next.
-2. **Round every corner with a circle ("fillet"):** At every pass-through waypoint, replace the sharp corner with a smooth circular turn that is tangent to both straight lines. The circle is sized automatically so the curve never cuts the corner by more than the waypoint's `within` distance (e.g. `within(0.25)` means the nominal arc passes within $25\text{ cm}$ of the corner point; other points on the arc may be farther away).
-3. **Measure distance along the curve ($s$):** The entire path from the start to the next stop point now has a known length in meters (arc length $s$).
-4. **Find the closest spot on the path:** Every loop, `ProgressTracker` drops a perpendicular line from the robot onto the nearby section of the path to find two numbers:
-   - **Progress ($s$):** How many meters along the path the robot is (with measured projection kept separate from monotonic event progress).
-   - **Cross-track error ($e_{xt}$):** How many meters left or right of the path line the robot has drifted, so the controller can push it gently back onto the line.
-5. **Re-anchor only if knocked far off course:** A configured recovery policy may create a new path from the measured pose to the next uncompleted goal. This changes geometry and requires fresh constraint/keepout checks; it is not automatically a collision-free recovery.
-
-| Feature                 | Trailblazer 1                                    | Trailblazer 2                                                               |
-| :---------------------- | :----------------------------------------------- | :-------------------------------------------------------------------------- |
-| **Path shape**          | Disconnected points (or manual Bézier guesses)   | Straight lines automatically joined by smooth circular turns                |
-| **Corner cutting**      | Unpredictable heuristic index switching          | Nominal fillet passes within the declared distance of the corner     |
-| **Where to aim**        | Straight line from robot to current target point | Follow the curve tangent $\hat{t}(s)$ + push back to the line if off-center |
-| **Progress tracking**   | `currentPointIndex` heuristic                    | Continuous distance $s$ (meters) along the path                             |
-| **Self-crossing paths** | Can accidentally skip ahead to a later point     | Only searches a local window around current progress $s$                    |
-
-```mermaid
-flowchart LR
-    P_prev["Goal P(k-1)"] -->|"Straight Leg L(k)"| T_in["T_in (Turn Entry)"]
-    T_in -->|"Circular Fillet Arc (Radius r, Curvature 1/r)"| T_out["T_out (Turn Exit)"]
-    T_out -->|"Straight Leg L(k+1)"| P_next["Goal P(k+1)"]
-    Corner["Corner P(k)"] -.->|"Corner cut d_dev <= within"| ArcCenter["Arc Apex"]
-```
-
-### Historical comparison
-
-The retained [comparison image](tb1-vs-tb2-comparison.png) is illustrative. Its former numerical claims are not acceptance evidence; see [07](07-empirical-calibration-routine.md#3-physics-sandbox--model-validation).
+The former numerical claims in the [comparison image](tb1-vs-tb2-comparison.png) are illustrative only (see [validation](07-empirical-calibration-routine.md#3-physics-sandbox--model-validation)).
 
 ---
 
