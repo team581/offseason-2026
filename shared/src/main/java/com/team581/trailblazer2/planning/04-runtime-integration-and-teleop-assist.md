@@ -16,7 +16,7 @@
 ## 2. Persistent State
 
 - Runtime owns motion state and passes it to pure calculators.
-- Runtime owns activation/goal IDs, fired markers, applied-command history, target filters, and timeout/dwell timers.
+- Runtime owns activation/goal IDs, fired markers, applied-command history, and timeout/dwell timers.
 - Recovery remaps progress and preserves goal and event identity. See [01 — Geometry](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery).
 - Localization supplies validity and reset signals, with vision-noise thresholds owned by localization.
 
@@ -161,10 +161,9 @@ Seeding the receiving limiter keeps the velocity command from jumping when contr
 
 ## 8. Resolved Plan Inputs
 
-- Evaluate each autonomous target supplier once per tick and keep filter history in runtime.
+- Evaluate each autonomous target supplier once per tick.
 - Require timestamps and validity for dynamic targets. Pass resolved values to the calculators.
 - Use a controlled stop when a target goes stale or is lost. Require explicit reactivation after reacquisition.
-- Latch teleop targets at activation as specified in §6.
 
 ---
 

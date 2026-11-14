@@ -102,7 +102,7 @@ To make sure math vs. logic is easy to find, they're in separate places.
 | :----------------- | :-------------------------------------------------------------------------------------------------------- |
 | `model`            | Immutable plans, resolved inputs/results, limits, and stable IDs                                          |
 | `math`             | Pure geometry, projection, profiling, heading, and constraint calculators; explicit state and `dt`, no IO |
-| `runtime`          | Activation, state transitions, supplier/filter history, events, and cached output                         |
+| `runtime`          | Activation, state transitions, target supplier evaluation, events, and cached output                      |
 | Robot integration  | Localization snapshots, drive-source selection, controls, telemetry, and drivetrain output                |
 
 ### Extra Notes
