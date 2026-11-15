@@ -33,6 +33,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
   private final TrustFactor trustFactor = new TrustFactor();
 
   private Pose2d robotPose = Pose2d.kZero;
+  private boolean poseResetTriggered = false;
 
   private final List<TagResult> presentList = new ArrayList<>(3);
 
@@ -42,6 +43,12 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     this.vision = vision;
     this.drivetrain = drivetrain;
     this.imu = imu;
+  }
+
+  public boolean consumePoseReset() {
+    boolean wasReset = poseResetTriggered;
+    poseResetTriggered = false;
+    return wasReset;
   }
 
   public Pose2d getLookaheadPose(double lookahead) {
@@ -80,6 +87,8 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   public void resetPose(Pose2d estimatedPose) {
     drivetrain.resetPose(estimatedPose);
+    robotPose = estimatedPose;
+    poseResetTriggered = true;
     trustFactor.seededPose();
   }
 
@@ -113,6 +122,7 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
 
   public void zeroGyro() {
     drivetrain.seedFieldCentric();
+    poseResetTriggered = true;
     trustFactor.reset();
   }
 

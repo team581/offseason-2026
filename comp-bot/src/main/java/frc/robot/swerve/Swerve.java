@@ -112,6 +112,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDeadband(0)
           .withRotationalDeadband(0);
   private ChassisSpeeds trajectoryCommand;
+  private @Nullable ChassisSpeeds lastEnabledTrajectoryCommand;
   private boolean logCalibrationCommands;
   private Rotation2d trajectoryModuleDirection;
   private final SwerveRequest.PointWheelsAt trajectoryAlignment =
@@ -172,6 +173,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void alignTrajectoryModules(Rotation2d robotRelativeDirection) {
     trajectoryCommand = new ChassisSpeeds();
+    lastEnabledTrajectoryCommand = null;
     trajectoryModuleDirection = robotRelativeDirection;
   }
 
@@ -288,6 +290,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void clearTrajectoryCommand() {
     trajectoryCommand = null;
+    lastEnabledTrajectoryCommand = null;
     trajectoryModuleDirection = null;
   }
 
@@ -316,6 +319,12 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return fieldRelativeSpeeds;
   }
 
+  public ChassisSpeeds getLastAppliedFieldSpeeds() {
+    return lastEnabledTrajectoryCommand != null
+        ? lastEnabledTrajectoryCommand
+        : fieldRelativeSpeeds;
+  }
+
   public ChassisSpeeds getRequestedSpeeds() {
     if (DriverStation.isAutonomousEnabled()
         || (DriverStation.isDisabled() && trajectoryCommand != null)) {
@@ -337,6 +346,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public boolean isNear(double angle, double tolerance) {
     return MathUtil.isNear(
         drivetrainState.Pose.getRotation().getDegrees(), angle, tolerance, -180.0, 180.0);
+  }
+
+  public boolean isOdometryValid() {
+    return drivetrain.isOdometryValid();
   }
 
   public void normalDriveRequest() {
@@ -397,85 +410,88 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         DogLog.log("Trailblazer3/Calibration/AligningModules", trajectoryModuleDirection != null);
       }
       if (trajectoryModuleDirection != null) {
+        lastEnabledTrajectoryCommand = null;
         drivetrain.setControl(trajectoryAlignment.withModuleDirection(trajectoryModuleDirection));
-        return;
+      } else {
+        lastEnabledTrajectoryCommand = DriverStation.isAutonomousEnabled() ? speeds : null;
+        drivetrain.setControl(
+            trajectory
+                .withVelocityX(speeds.vxMetersPerSecond)
+                .withVelocityY(speeds.vyMetersPerSecond)
+                .withRotationalRate(speeds.omegaRadiansPerSecond));
       }
-      drivetrain.setControl(
-          trajectory
-              .withVelocityX(speeds.vxMetersPerSecond)
-              .withVelocityY(speeds.vyMetersPerSecond)
-              .withRotationalRate(speeds.omegaRadiansPerSecond));
-      return;
-    }
+    } else {
+      lastEnabledTrajectoryCommand = null;
 
-    switch (currentState) {
-      case MANUAL -> {
-        var speeds = getRequestedSpeeds();
-        if (ableToBumpAssist) {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveSnaps
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  SwerveAssist.getRoundedSnapAngle(
-                      drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-        } else {
-          drivetrain.setControl(
-              driverPerspective
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withRotationalRate(speeds.omegaRadiansPerSecond));
-        }
-      }
-      case WARMUP_SCORE, SCORE -> {
-        var speeds = getRequestedSpeeds();
-
-        if (ableToXSwerve) {
-          DogLog.timestamp("Swerve/XSwerveActive");
-          drivetrain.setControl(xRequest);
-        } else {
-          if (!MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 1e-5)) {
-            DogLog.timestamp("Swerve/DriverOverridingRotation");
+      switch (currentState) {
+        case MANUAL -> {
+          var speeds = getRequestedSpeeds();
+          if (ableToBumpAssist) {
+            drivetrain.setControl(
+                withFieldRelativeTargetDirection(
+                    drivePerspectiveSnaps
+                        .withVelocityX(speeds.vxMetersPerSecond)
+                        .withVelocityY(speeds.vyMetersPerSecond),
+                    SwerveAssist.getRoundedSnapAngle(
+                        drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
+          } else {
             drivetrain.setControl(
                 driverPerspective
                     .withVelocityX(speeds.vxMetersPerSecond)
                     .withVelocityY(speeds.vyMetersPerSecond)
                     .withRotationalRate(speeds.omegaRadiansPerSecond));
-          } else {
-            DogLog.timestamp("Swerve/TryingToAim");
-            drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                        drivePerspectiveSnaps
-                            .withVelocityX(speeds.vxMetersPerSecond)
-                            .withVelocityY(speeds.vyMetersPerSecond),
-                        scoringAngleRotation)
-                    .withTargetRateFeedforward(scoringFeedForward));
           }
         }
-      }
-      case WARMUP_FEED, FEED -> {
-        var speeds = getRequestedSpeeds();
+        case WARMUP_SCORE, SCORE -> {
+          var speeds = getRequestedSpeeds();
 
-        if (ableToXSwerve) {
-          DogLog.timestamp("Swerve/XSwerveActive");
-          drivetrain.setControl(xRequest);
-        } else {
-          if (!MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 1e-5)) {
-            DogLog.timestamp("Swerve/DriverOverridingRotation");
-            drivetrain.setControl(
-                driverPerspective
-                    .withVelocityX(speeds.vxMetersPerSecond)
-                    .withVelocityY(speeds.vyMetersPerSecond)
-                    .withRotationalRate(speeds.omegaRadiansPerSecond));
+          if (ableToXSwerve) {
+            DogLog.timestamp("Swerve/XSwerveActive");
+            drivetrain.setControl(xRequest);
           } else {
-            DogLog.timestamp("Swerve/TryingToAim");
-            drivetrain.setControl(
-                withFieldRelativeTargetDirection(
-                        drivePerspectiveSnaps
-                            .withVelocityX(speeds.vxMetersPerSecond)
-                            .withVelocityY(speeds.vyMetersPerSecond),
-                        feedingAngleRotation)
-                    .withTargetRateFeedforward(feedingFeedForward));
+            if (!MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 1e-5)) {
+              DogLog.timestamp("Swerve/DriverOverridingRotation");
+              drivetrain.setControl(
+                  driverPerspective
+                      .withVelocityX(speeds.vxMetersPerSecond)
+                      .withVelocityY(speeds.vyMetersPerSecond)
+                      .withRotationalRate(speeds.omegaRadiansPerSecond));
+            } else {
+              DogLog.timestamp("Swerve/TryingToAim");
+              drivetrain.setControl(
+                  withFieldRelativeTargetDirection(
+                          drivePerspectiveSnaps
+                              .withVelocityX(speeds.vxMetersPerSecond)
+                              .withVelocityY(speeds.vyMetersPerSecond),
+                          scoringAngleRotation)
+                      .withTargetRateFeedforward(scoringFeedForward));
+            }
+          }
+        }
+        case WARMUP_FEED, FEED -> {
+          var speeds = getRequestedSpeeds();
+
+          if (ableToXSwerve) {
+            DogLog.timestamp("Swerve/XSwerveActive");
+            drivetrain.setControl(xRequest);
+          } else {
+            if (!MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 1e-5)) {
+              DogLog.timestamp("Swerve/DriverOverridingRotation");
+              drivetrain.setControl(
+                  driverPerspective
+                      .withVelocityX(speeds.vxMetersPerSecond)
+                      .withVelocityY(speeds.vyMetersPerSecond)
+                      .withRotationalRate(speeds.omegaRadiansPerSecond));
+            } else {
+              DogLog.timestamp("Swerve/TryingToAim");
+              drivetrain.setControl(
+                  withFieldRelativeTargetDirection(
+                          drivePerspectiveSnaps
+                              .withVelocityX(speeds.vxMetersPerSecond)
+                              .withVelocityY(speeds.vyMetersPerSecond),
+                          feedingAngleRotation)
+                      .withTargetRateFeedforward(feedingFeedForward));
+            }
           }
         }
       }
