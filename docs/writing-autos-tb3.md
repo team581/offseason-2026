@@ -67,7 +67,7 @@ AutoSegment grabBall =
     Trailblazer.segment("grab-ball")
         .maxSpeed(3.0)
         .through(CompAutoField.point(5.5, 1.5), g -> g.within(0.35).mark(Marker.START_INTAKING).faceDegrees(0))
-        .cruiseThrough(CompAutoField.point(7.2, 1.5), 1.8, g -> g.mark(Marker.DROP_DEPLOY))
+        .finishThrough(CompAutoField.point(7.2, 1.5), 1.8, g -> g.mark(Marker.DROP_DEPLOY))
         .build();
 
 drive("grab_ball", grabBall)
@@ -87,7 +87,7 @@ Each path is a chain of waypoints starting from wherever the robot currently is:
 
 - `.through(point, blendRadius)`: Drive through `(x, y)` smoothly curving toward the next point. Larger `blendRadius` (e.g. `0.25`–`0.50` m) makes wider, faster corners.
 - `.through(pose)` / `.through(pose, blendRadius)`: Drive through `pose` while targeting `pose.getRotation()`.
-- `.cruiseThrough(point, speedMps)`: Drive straight through a point (such as when picking up a game piece on the fly) at `speedMps`.
+- `.finishThrough(point, speedMps)`: Drive straight through a point (such as when picking up a game piece on the fly) at `speedMps`.
 - `.stopAt(pose)` / `.stopAt(x, y, headingDeg)`: Come to a smooth stop at the target pose.
 - `.stopAndWait(pose)` (via `.addGoal(Goal.stopAndWait(pose))`): Pause inside a multi-goal segment until `.releaseWhen(...)` becomes true.
 

@@ -36,11 +36,11 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
     }
     goals = List.copyOf(normalized);
     if (goals.get(goals.size() - 1).passType() == Goal.PassType.THROUGH) {
-      throw new IllegalArgumentException("Final goal must stop or cruise through");
+      throw new IllegalArgumentException("Final goal must use stop or finishThrough");
     }
     for (var goal : goals.subList(0, goals.size() - 1)) {
-      if (goal.passType() == Goal.PassType.CRUISE_THROUGH) {
-        throw new IllegalArgumentException("Cruise-through goal must be last");
+      if (goal.passType() == Goal.PassType.FINISH_THROUGH) {
+        throw new IllegalArgumentException("finishThrough must be the last goal");
       }
     }
   }
@@ -77,20 +77,20 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
       return new AutoSegment(id, limits, goals, zones);
     }
 
-    public Builder cruiseThrough(Pose2d pose, double speed) {
-      return addGoal(Goal.cruiseThrough(pose, speed));
+    public Builder finishThrough(Pose2d pose, double speed) {
+      return addGoal(Goal.finishThrough(pose, speed));
     }
 
-    public Builder cruiseThrough(Translation2d point, double speed) {
-      return addGoal(Goal.cruiseThrough(point, speed));
+    public Builder finishThrough(Translation2d point, double speed) {
+      return addGoal(Goal.finishThrough(point, speed));
     }
 
-    public Builder cruiseThrough(Translation2d point, double speed, double overrun) {
-      return addGoal(Goal.cruiseThrough(point, speed, overrun));
+    public Builder finishThrough(Translation2d point, double speed, double overrun) {
+      return addGoal(Goal.finishThrough(point, speed, overrun));
     }
 
-    public Builder cruiseThrough(Translation2d point, double speed, UnaryOperator<Goal> configure) {
-      return addGoal(Objects.requireNonNull(configure).apply(Goal.cruiseThrough(point, speed)));
+    public Builder finishThrough(Translation2d point, double speed, UnaryOperator<Goal> configure) {
+      return addGoal(Objects.requireNonNull(configure).apply(Goal.finishThrough(point, speed)));
     }
 
     public Builder maxAcceleration(double maxAccelerationMetersPerSecondSquared) {

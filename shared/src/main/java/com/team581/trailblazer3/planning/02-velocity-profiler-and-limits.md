@@ -116,7 +116,7 @@ At each spatial sample $k$ with join curvature $|\kappa_k| = \max(|\kappa(s_k^-)
 
    (On straight segments where $\kappa_k = 0$, $v_{corner,k}=\infty$.)
 3. **Zone & Hard Heading Gate Constraints:** Apply zone speed ceilings. An unsatisfied hard gate inserts a zero-speed barrier at its anchor; the backward pass propagates braking upstream ([TB3-SPEC-03 §4](03-heading-and-rotation.md#4-translation-rotation-coupling-hard-vs-soft-gates)).
-4. **Goal Exit Constraints:** `Goal.stop` has $v_{goal,N-1}=0$. `Goal.cruiseThrough(v_cruise)` sets $v_{goal,k} = v_{cruise}$ at $S_{total}$ and $v_{goal,N-1} = 0$ at the overrun ray end $S_{total} + d_{overrun}$. An interior `Goal.through` may declare a speed ceiling $v_{pass}$, never a required minimum; otherwise $v_{goal,k}=\infty$.
+4. **Goal Exit Constraints:** `Goal.stop` has $v_{goal,N-1}=0$. `Goal.finishThrough(v_cruise)` sets $v_{goal,k} = v_{cruise}$ at $S_{total}$ and $v_{goal,N-1} = 0$ at the overrun ray end $S_{total} + d_{overrun}$. An interior `Goal.through` may declare a speed ceiling $v_{pass}$, never a required minimum; otherwise $v_{goal,k}=\infty$.
 
 The composite speed ceiling is:
 
@@ -216,7 +216,7 @@ flowchart LR
 `VelocityProfiler` uses separate speed and tangent lookaheads to compensate for CAN, motor-filter, and steering lag ($\tau_{lag} \approx 0.040\text{ s}$) and avoid startup deadlock at $v = 0$:
 
 1. **Tapering Near Earliest Active Stop Barrier (No Endpoint Chatter):**
-   Define available braking deceleration $a_{dec} = \min(a_{brake},\; a_{fric,eff,0})$ (if $a_{dec} \le 10^{-6}$, enter infeasible recovery rather than dividing by zero). Let $s_{barrier}$ be the earliest closed `HARD` gate anchor $\ge s$, or $S_{total}$ when terminal `PassType` is `STOP` (and $S_{total} + d_{overrun}$ for `Goal.cruiseThrough`). For `Goal.cruiseThrough` with no closed `HARD` gate ahead, keep $\tau_{effective} = \Delta t + \tau_{lag}$ untapered until entering the safety overrun braking distance $d_{brake} = \max\left(0.30\text{ m},\; \frac{v^2}{2 a_{dec}}\right)$ of $s_{barrier}$:
+   Define available braking deceleration $a_{dec} = \min(a_{brake},\; a_{fric,eff,0})$ (if $a_{dec} \le 10^{-6}$, enter infeasible recovery rather than dividing by zero). Let $s_{barrier}$ be the earliest closed `HARD` gate anchor $\ge s$, or $S_{total}$ when terminal `PassType` is `STOP` (and $S_{total} + d_{overrun}$ for `Goal.finishThrough`). For `Goal.finishThrough` with no closed `HARD` gate ahead, keep $\tau_{effective} = \Delta t + \tau_{lag}$ untapered until entering the safety overrun braking distance $d_{brake} = \max\left(0.30\text{ m},\; \frac{v^2}{2 a_{dec}}\right)$ of $s_{barrier}$:
 
    ```math
    \tau_{effective} = (\Delta t + \tau_{lag}) \cdot \min\left(1.0, \; \frac{s_{barrier} - s}{d_{brake}}\right)
@@ -270,7 +270,7 @@ flowchart LR
 
    The lookahead tangent and current normal need not be perpendicular. Apply speed/module limits to their actual sum.
 3. **Terminal 2D Convergence at Stop Goals & Closed Hard Gates:**
-   Cross-track feedback $v_{xt} \hat{n}(s)$ acts perpendicular to $\hat{t}$, leaving inline lag when $s$ reaches $s_{barrier}$. Disabled at `Goal.cruiseThrough` unless entering the overrun safety stop; near `Goal.stop` or a closed interior `HARD` gate at $\mathbf{p}_{stop} = \mathbf{r}(s_{barrier})$, compute $d_{stop} = \lVert \mathbf{p}_{stop} - \mathbf{p}_{robot} \rVert$ and blend deterministically:
+   Cross-track feedback $v_{xt} \hat{n}(s)$ acts perpendicular to $\hat{t}$, leaving inline lag when $s$ reaches $s_{barrier}$. Disabled at `Goal.finishThrough` unless entering the overrun safety stop; near `Goal.stop` or a closed interior `HARD` gate at $\mathbf{p}_{stop} = \mathbf{r}(s_{barrier})$, compute $d_{stop} = \lVert \mathbf{p}_{stop} - \mathbf{p}_{robot} \rVert$ and blend deterministically:
 
    ```math
    \vec{e}_{stop} = \mathbf{p}_{stop} - \mathbf{p}_{robot}, \quad v_{term} = \min\left(v_{max, eff, 0}, \; \sqrt{2 \cdot a_{dec} \cdot d_{stop}}, \; \frac{d_{stop}}{0.85 \cdot \tau_{xt}}\right)

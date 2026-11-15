@@ -740,7 +740,7 @@ public final class Trailblazer {
             && (stopping
                 || (path != null
                     && horizon.get(horizon.size() - 1).passType()
-                        == Goal.PassType.CRUISE_THROUGH)))) {
+                        == Goal.PassType.FINISH_THROUGH)))) {
       return result;
     }
     boolean firstTick = Double.isNaN(lastTime);
@@ -890,7 +890,7 @@ public final class Trailblazer {
         newMarkers = recordPass(goal, closest <= goal.withinMeters(), newMarkers);
         goalIndex++;
         closest = Double.POSITIVE_INFINITY;
-        if (goal.passType() == Goal.PassType.CRUISE_THROUGH) {
+        if (goal.passType() == Goal.PassType.FINISH_THROUGH) {
           status = RuntimeStatus.AT_GOAL;
         }
       }

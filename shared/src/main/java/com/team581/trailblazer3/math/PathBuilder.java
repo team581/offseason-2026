@@ -290,10 +290,10 @@ public final class PathBuilder {
       }
     }
     var terminal = goals.get(count - 1);
-    if (terminal.passType() == Goal.PassType.CRUISE_THROUGH) {
+    if (terminal.passType() == Goal.PassType.FINISH_THROUGH) {
       if (lengths[count - 1] <= EPSILON || braking <= 0) {
         throw new IllegalArgumentException(
-            "Cruise-through requires a direction and braking capacity");
+            "finishThrough requires a direction and braking capacity");
       }
       double desired =
           Math.max(1.5, 1.15 * terminal.passSpeed() * terminal.passSpeed() / (2 * braking));

@@ -44,8 +44,8 @@ flowchart LR
 
 Deliver:
 
-- `model` values for plans, goals (`Goal.stop`, `Goal.through`, `Goal.cruiseThrough`), `FieldGeometry` / `FieldSymmetry` (`AutoSegment.forAlliance`), heading intent, sealed `TargetLossPolicy` (`HoldLastValid`, `FallbackNominal`, `ControlledStop`), `RobotDrivetrainSpec` -> `DrivetrainLimits` + `DriveMotorModel`, `RobotStateSnapshot` / `TickInput` / `TickResult` (including `ChassisAccelerations` / `WheelForces` and `GoalPassageStatus`), statuses, and stable event IDs. Use the minimal fluent builder in [05](05-developer-tooling.md); define public intent before algorithms.
-- Validation for invalid numbers, identities, terminal behavior (`Goal.stop` or `Goal.cruiseThrough`), `FieldGeometry` / `MIRROR_X` flip rules, `TargetLossPolicy`, and unresolved target/heading references.
+- `model` values for plans, goals (`Goal.stop`, `Goal.through`, `Goal.finishThrough`), `FieldGeometry` / `FieldSymmetry` (`AutoSegment.forAlliance`), heading intent, sealed `TargetLossPolicy` (`HoldLastValid`, `FallbackNominal`, `ControlledStop`), `RobotDrivetrainSpec` -> `DrivetrainLimits` + `DriveMotorModel`, `RobotStateSnapshot` / `TickInput` / `TickResult` (including `ChassisAccelerations` / `WheelForces` and `GoalPassageStatus`), statuses, and stable event IDs. Use the minimal fluent builder in [05](05-developer-tooling.md); define public intent before algorithms.
+- Validation for invalid numbers, identities, terminal behavior (`Goal.stop` or `Goal.finishThrough`), `FieldGeometry` / `MIRROR_X` flip rules, `TargetLossPolicy`, and unresolved target/heading references.
 - A Java fixture catalog with an initial straight stop and turn-in-place case. Construct plans without `Robot`, HAL devices, or mechanisms.
 - Unit-test wiring in `shared` and desktop fixtures, using existing Gradle/JUnit conventions; establish build/check commands before more modules.
 
@@ -53,7 +53,7 @@ Done when the example plans compile, invalid plans produce useful diagnostics, a
 
 ### Step 2 — Implement geometry and progress calculators
 
-Deliver line/arc primitives, coupled fillet construction respecting $\delta_{geom,k}$, exact `atan2` midpoint fillet-arc projection, fixed-origin loop-rate-independent local horizon with off-corridor/closed-gate $s_{high\_water}$ freeze, 3-tier `Goal.through` capture, `Goal.cruiseThrough` overrun ray, 2-tier keepouts (`K_hard` / `K_margin`), and position-snapshot rebuild deadbands (`0.01 m`) per [01](01-path-geometry-and-kinematics.md). Cover static paths through the next stop before optimizing storage; handle duplicate points and exact reversals explicitly.
+Deliver line/arc primitives, coupled fillet construction respecting $\delta_{geom,k}$, exact `atan2` midpoint fillet-arc projection, fixed-origin loop-rate-independent local horizon with off-corridor/closed-gate $s_{high\_water}$ freeze, 3-tier `Goal.through` capture, `Goal.finishThrough` overrun ray, 2-tier keepouts (`K_hard` / `K_margin`), and position-snapshot rebuild deadbands (`0.01 m`) per [01](01-path-geometry-and-kinematics.md). Cover static paths through the next stop before optimizing storage; handle duplicate points and exact reversals explicitly.
 
 Done when geometric/property tests cover adjacent short corners, zero-length/near-zero-radius geometry, figure-8 crossings, through-goal passage tiers, and geometry-generation rebuilds without comparing arc lengths across different geometries.
 
@@ -77,7 +77,7 @@ Done when valid scenarios complete (`PASSED_WITHIN_TOLERANCE`), invalid/unreacha
 
 Define the clean **2027 drivetrain, localization, and operator-input integration contract** (zero-deadband closed-loop consumer accepting `ChassisSpeeds` + `ChassisAccelerations` / optional `WheelForces`, monotonic `TimeSource` timestamp normalization, optional instantaneous drive supply-current ceiling, and pre-mapped Blue-origin `driverFieldVelocityMpS` for shared-axis assists; note module azimuth-drive odometry coupling $k_{couple} = N_{ring}/N_{pinion}$ in the robot odometry checklist), and run an **isolated test-mode harness on a carpet testbed** to validate core physics before 2027 bringup without modifying legacy 2026 competition autos.
 
-- Test straight stops, `Goal.cruiseThrough`, rounded/consecutive corners, heading gates, and displaced-start recovery.
+- Test straight stops, `Goal.finishThrough`, rounded/consecutive corners, heading gates, and displaced-start recovery.
 - Derive and validate limits from `RobotDrivetrainSpec` + startup sanity guardrails using [07](07-empirical-calibration-routine.md).
 - Verify full alignment (`driveTo`) and rotation snaps (`snapAngle` with pre-mapped `driverFieldVelocityMpS`) per [04](04-runtime-integration-and-teleop-assist.md), covering per-axis cancellation, completion/timeout, and continuous handoffs to and from manual driving.
 

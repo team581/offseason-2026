@@ -65,7 +65,7 @@ flowchart LR
     Limit --> Output["Command, FF, telemetry, events"]
 ```
 
-1. Build or reuse the path through the next terminal goal (`Goal.stop` or `Goal.cruiseThrough`). [Geometry spec](01-path-geometry-and-kinematics.md#4-planning-horizon)
+1. Build or reuse the path through the next terminal goal (`Goal.stop` or `Goal.finishThrough`). [Geometry spec](01-path-geometry-and-kinematics.md#4-planning-horizon)
 2. Project the measured pose onto the path to get $s_{meas}$, $e_{xt}$, and corridor-gated $s_{high\_water}$. [Geometry spec](01-path-geometry-and-kinematics.md#52-local-projection-and-progress)
 3. Estimate noise-free per-node rotation budgets $(v_{max,eff,k}, a_{fric,eff,k})$ along the spatial horizon. [Heading spec](03-heading-and-rotation.md#5-swerve-wheel-speed-friction--spatial-budget-allocation)
 4. Plan speed along the path: run backward braking and forward acceleration passes, then evaluate lookahead ($s_{eval,v}, s_{eval,t}, v_{profile}$). [Velocity spec](02-velocity-profiler-and-limits.md#3-two-pass-spatial-horizon-profiler)

@@ -111,7 +111,7 @@ public record TickResult(
 - Release intermediate stops explicitly.
 - Record each marker as passed once per activation, in the order defined by the plan. Once recorded, `passedMarker(marker)` returns `true`.
 - For `Goal.through`, record the marker as passed when corridor-gated progress reaches or exceeds the goal anchor ($s_{high\_water} \ge s_{anchor}$) and the robot's closest approach to the goal is within the capture radius $d_{capture}$. Record `PASSED_WITHIN_TOLERANCE` if the closest approach is within the goal tolerance, or `PASSED_OUTSIDE_TOLERANCE` if it is outside the tolerance but still within the capture radius. See [01 §6](01-path-geometry-and-kinematics.md#6-anchors-geometry-generations-and-recovery) for the passage and recovery rules.
-- For `Goal.cruiseThrough`, record the terminal marker as passed when the robot passes the anchor within the capture radius.
+- For `Goal.finishThrough`, record the terminal marker as passed when the robot passes the anchor within the capture radius.
 - For `Goal.stop`, record the marker as passed only after the stop completion criteria are met.
 - Preserve which markers have passed and their recorded `GoalPassageStatus` values across path rebuilds.
 

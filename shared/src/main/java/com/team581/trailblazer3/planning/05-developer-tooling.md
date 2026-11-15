@@ -69,10 +69,10 @@ public class ExampleCycleAuto {
 public record Goal(
     String id,                           // Stable across geometry rebuilds
     Supplier<Pose2d> poseSupplier,       // Absolute, anchor offset, or dynamic supplier (non-null)
-    PassType passType,                   // STOP, THROUGH, or CRUISE_THROUGH
+    PassType passType,                   // STOP, THROUGH, or FINISH_THROUGH
     double withinMeters,                 // Nominal closest-approach bound; not obstacle clearance
-    OptionalDouble maxPassSpeedMetersPerSec, // Ceiling for THROUGH; target cruise speed for CRUISE_THROUGH
-    OptionalDouble maxOverrunMeters,     // CRUISE_THROUGH overrun ray length past terminal goal
+    OptionalDouble maxPassSpeedMetersPerSec, // Ceiling for THROUGH; target cruise speed for FINISH_THROUGH
+    OptionalDouble maxOverrunMeters,     // FINISH_THROUGH overrun ray length past terminal goal
     TargetLossPolicy targetLossPolicy,   // HoldLastValid, FallbackNominal, or ControlledStop (for dynamic suppliers)
     FinishTolerance finishTolerance,     // Position, heading, linear/angular speed, and dwell for STOP
     Optional<HeadingKeyframe> heading,   // Associated heading schedule keyframe
@@ -80,7 +80,7 @@ public record Goal(
 ) {}
 ```
 
-> Use `Goal.through(Translation2d / Supplier)` (accepts position directly or ignores `Pose2d` rotation unless `.heading(...)` is explicitly attached, preventing accidental TB1-style waypoint heading snaps), `Goal.stop(Pose2d)` (defaults finish heading to `pose.getRotation()` unless overridden by `.heading(...)`), and `Goal.cruiseThrough(...)` (`cruiseSpeedMetersPerSec > 0` and `maxOverrunMeters > 0`). Static goals default `TargetLossPolicy` to `ControlledStop`.
+> Use `Goal.through(Translation2d / Supplier)` (accepts position directly or ignores `Pose2d` rotation unless `.heading(...)` is explicitly attached, preventing accidental TB1-style waypoint heading snaps), `Goal.stop(Pose2d)` (defaults finish heading to `pose.getRotation()` unless overridden by `.heading(...)`), and `Goal.finishThrough(...)` (`cruiseSpeedMetersPerSec > 0` and `maxOverrunMeters > 0`). Static goals default `TargetLossPolicy` to `ControlledStop`.
 
 #### `HeadingPlan` Keyframe
 ```java
@@ -148,6 +148,6 @@ Run the real auto state machine and shared planner against an independent determ
 
 ## 5. Authoring Validation
 
-- Require stable goal/keyframe IDs, finite values, valid nominal anchor order (with dynamic rebuilds/relatches clamping relative `beforeGoal` / `afterGoal` offsets cleanly per [03 §2.1](03-heading-and-rotation.md)), and a terminal `Goal.stop` or valid `Goal.cruiseThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`, flagging `CRUISE_OVERRUN_LIMITED` if obstacles clip `d_overrun`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
+- Require stable goal/keyframe IDs, finite values, valid nominal anchor order (with dynamic rebuilds/relatches clamping relative `beforeGoal` / `afterGoal` offsets cleanly per [03 §2.1](03-heading-and-rotation.md)), and a terminal `Goal.stop` or valid `Goal.finishThrough` (`cruiseSpeedMetersPerSec > 0`, `maxOverrunMeters > 0`, flagging `CRUISE_OVERRUN_LIMITED` if obstacles clip `d_overrun`). Intermediate stops release explicitly; see [04](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers).
 - Dynamic suppliers require runtime timestamp/validity metadata ([04](04-runtime-integration-and-teleop-assist.md)) and an explicit `TargetLossPolicy`. Preview scenarios provide deterministic replacements.
 - Require explicit `FieldGeometry` (`ROTATIONAL_180` vs `MIRROR_X`) in `AutoSegment.forAlliance`, using type-distinct static vs. dynamic `Goal` / `facePoint` factories so live Blue-origin vision targets cannot be double-flipped.

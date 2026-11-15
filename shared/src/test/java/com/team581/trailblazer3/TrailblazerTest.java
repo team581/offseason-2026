@@ -225,23 +225,6 @@ final class TrailblazerTest {
   }
 
   @Test
-  void cruiseThroughKeepsMovingAfterMarkerAndStopsOnOverrun() {
-    var sim = new Simulation(0.020);
-    sim.planner.activate(
-        Trailblazer.segment("cruise")
-            .addGoal(Goal.cruiseThrough(new Translation2d(1.5, 0), 0.8, 1.5).marker(Marker.FINISH))
-            .build());
-    sim.untilGoal();
-    assertTrue(sim.planner.passedMarker(Marker.FINISH));
-    assertTrue(sim.speed.vxMetersPerSecond > 0.60);
-    while (sim.time < 7) {
-      sim.step();
-    }
-    assertEquals(3, sim.pose.getX(), 0.03);
-    assertEquals(0, sim.speed.vxMetersPerSecond, 0.03);
-  }
-
-  @Test
   void dynamicRebuildAccumulatesDriftAgainstOriginalSnapshot() {
     var sim = new Simulation(0.020);
     double[] targetX = {1};
@@ -279,6 +262,23 @@ final class TrailblazerTest {
     var clearance = new FieldClearance(field, 0.40, 0.35, 0.06, List.of(keepout));
     assertTrue(clearance.clearance(pose(3, 3.5, 0)) > 0.06);
     assertTrue(clearance.clearance(pose(3.7, 3.5, 0)) < 0);
+  }
+
+  @Test
+  void finishThroughKeepsMovingAfterMarkerAndStopsOnOverrun() {
+    var sim = new Simulation(0.020);
+    sim.planner.activate(
+        Trailblazer.segment("finish-through")
+            .addGoal(Goal.finishThrough(new Translation2d(1.5, 0), 0.8, 1.5).marker(Marker.FINISH))
+            .build());
+    sim.untilGoal();
+    assertTrue(sim.planner.passedMarker(Marker.FINISH));
+    assertTrue(sim.speed.vxMetersPerSecond > 0.60);
+    while (sim.time < 7) {
+      sim.step();
+    }
+    assertEquals(3, sim.pose.getX(), 0.03);
+    assertEquals(0, sim.speed.vxMetersPerSecond, 0.03);
   }
 
   @Test

@@ -141,16 +141,16 @@ Corner-speed limits and pass-speed warnings belong to [02 §3.1](02-velocity-pro
 
 ## 4. Planning Horizon
 
-Build the **planning horizon** from the fixed start (§6) through the next **terminal goal** (`Goal.stop(...)` or `Goal.cruiseThrough(...)`), including every through goal in between.
+Build the **planning horizon** from the fixed start (§6) through the next **terminal goal** (`Goal.stop(...)` or `Goal.finishThrough(...)`), including every through goal in between.
 
 ```mermaid
 flowchart LR
-    Start["Fixed start"] --> A["Through goals (if any)"] --> Terminal["Next stop or cruiseThrough (+ overrun)"]
+    Start["Fixed start"] --> A["Through goals (if any)"] --> Terminal["Next stop or finishThrough (+ overrun)"]
 ```
 
 Neighboring fillets share straight-leg space (§2.3). Keep the nominal horizon endpoint $S_{total}$ fixed as the robot advances.
 
-- **Terminal Cruise Overrun (`PassType.CRUISE_THROUGH`):** When the terminal goal is `Goal.cruiseThrough(...)` with target speed $v_{cruise} > 0$, extend a post-anchor tangent overrun ray past $S_{total}$ of length $d_{overrun} = \max\left(1.5\text{ m},\; 1.15\frac{v_{cruise}^2}{2\min(a_{brake}, a_{fric})}\right)$ (clipped to field-wall and $K_{hard}$ clearance, logging `CRUISE_OVERRUN_LIMITED` if clipping reduces $v(S_{total}) < v_{cruise}$) terminating in a safety stop ($v = 0$) at $S_{total} + d_{overrun}$. This prevents premature braking across scoring, handoff, or zone transitions while preventing wall/obstacle collisions if the caller delays transitioning.
+- **Finish-through overrun (`PassType.FINISH_THROUGH`):** When the terminal goal is `Goal.finishThrough(...)` with target speed $v_{cruise} > 0$, extend a post-anchor tangent overrun ray past $S_{total}$ of length $d_{overrun} = \max\left(1.5\text{ m},\; 1.15\frac{v_{cruise}^2}{2\min(a_{brake}, a_{fric})}\right)$ (clipped to field-wall and $K_{hard}$ clearance, logging `CRUISE_OVERRUN_LIMITED` if clipping reduces $v(S_{total}) < v_{cruise}$) terminating in a safety stop ($v = 0$) at $S_{total} + d_{overrun}$. This prevents premature braking across scoring, handoff, or zone transitions while preventing wall/obstacle collisions if the caller delays transitioning.
 
 - **Capacity.** Check goal and sample counts before activation. Accept paths up to the configured limits and reject oversized paths without truncating them.
 
@@ -162,7 +162,7 @@ Neighboring fillets share straight-leg space (§2.3). Keep the nominal horizon e
 
 ## 5. Progress Tracking & Spatial Parameterization
 
-The path within the horizon is parameterized by cumulative arc length $s \in [0, S_{horizon}]$, where $S_{horizon} = S_{total} + d_{overrun}$ for `PassType.CRUISE_THROUGH` and $S_{total}$ otherwise.
+The path within the horizon is parameterized by cumulative arc length $s \in [0, S_{horizon}]$, where $S_{horizon} = S_{total} + d_{overrun}$ for `PassType.FINISH_THROUGH` and $S_{total}$ otherwise.
 
 ```
 s = 0                                                             s = S_total
@@ -240,7 +240,7 @@ $$
 
 ### 5.2 Local Projection and Progress
 
-**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets loop-rate-independent spatial backward/forward distances $d_{back}$ and $d_{fwd}$ ($d_{fwd} \ge v_{max} T_{relatch\_dwell} + e_{vision\_max} + v_{max}\Delta t_{max}$, default `1.5 m`; $d_{back} \ge \max(d_{gate\_hold}, 0.6\text{ m})$) so high-rate control loops (`100–250 Hz`) never shrink the search window while $s_{high\_water}$ is frozen; clip to active horizon bounds ($S_{horizon} = S_{total} + d_{overrun}$ for `Goal.cruiseThrough`, else $S_{total}$).
+**Search window.** To avoid jumping to another leg at a crossing or overlap, search near the high-water mark $s_{high\_water}$. The tracking policy sets loop-rate-independent spatial backward/forward distances $d_{back}$ and $d_{fwd}$ ($d_{fwd} \ge v_{max} T_{relatch\_dwell} + e_{vision\_max} + v_{max}\Delta t_{max}$, default `1.5 m`; $d_{back} \ge \max(d_{gate\_hold}, 0.6\text{ m})$) so high-rate control loops (`100–250 Hz`) never shrink the search window while $s_{high\_water}$ is frozen; clip to active horizon bounds ($S_{horizon} = S_{total} + d_{overrun}$ for `Goal.finishThrough`, else $S_{total}$).
 
 $$
 s_{min} = \max(0,\; s_{high\_water} - d_{back}),
@@ -301,7 +301,7 @@ An **anchor** is the point on the path that represents a goal. Use the same anch
 | Rounded through goal | Fillet apex |
 | Unrounded through goal | Waypoint vertex |
 | Explicit stop | Path endpoint |
-| Cruise-through terminal | Path endpoint ($S_{total}$ before overrun ray) |
+| Finish-through terminal | Path endpoint ($S_{total}$ before overrun ray) |
 
 - **Path origin.** Fix it at activation or release from a completed stop.
 
@@ -315,7 +315,7 @@ For a `Goal.through(...)`, let $d_{closest,k} = \min_n \mathrm{dist}(P_k, \overl
 2. **$\delta_k < d_{closest,k} \le d_{capture,k}$:** Advance active goal ID, **still record `marker` as passed** so minor carpet disturbances do not starve auto state transitions, and record `PASSED_OUTSIDE_TOLERANCE` with $d_{closest,k}$ for CI/preview failure checks.
 3. **$d_{closest,k} > d_{capture,k}$:** Do **not** pass the goal or record `marker` as passed; trigger recovery toward the unpassed goal.
 
-`Goal.stop(...)` markers are recorded as passed only upon full stop completion ([04 §4](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)), whereas `Goal.cruiseThrough(...)` terminal markers are recorded as passed on anchor passage within $d_{capture,k}$.
+`Goal.stop(...)` markers are recorded as passed only upon full stop completion ([04 §4](04-runtime-integration-and-teleop-assist.md#4-stops-and-markers)), whereas `Goal.finishThrough(...)` terminal markers are recorded as passed on anchor passage within $d_{capture,k}$.
 
 ### Path rebuilds
 

@@ -41,7 +41,7 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
 - `VelocityProfilerTest`:
   - Check curvature, join-curvature, and effective steer-rate ($\dot{\delta}_{eff}$) corner limits alongside combined rotation-budget limits per [02](02-velocity-profiler-and-limits.md).
   - Check Pass 1 + Pass 2 preservation of backward braking ($v_{k+1} \le v_{bwd,k+1}$), exact handling of non-binding motor intervals ($g(u_{hi}) \le 0$), 4-step bisection accuracy under resting-$V_{oc}$ and instantaneous supply-current rolloff, and quadratic ($v^2$-linear) lookahead interpolation at `50 Hz` and `250 Hz`.
-  - Check lookahead tapering toward the earliest closed gate/stop barrier ($s_{barrier} - s$), `Goal.cruiseThrough` dynamic `d_overrun`, stop samples equaling $0.0$ m/s, terminal 2D pose convergence (including pullback at $s_{meas} \ge s_{barrier}$), and zero velocity chatter under noisy simulated measurements.
+  - Check lookahead tapering toward the earliest closed gate/stop barrier ($s_{barrier} - s$), `Goal.finishThrough` dynamic `d_overrun`, stop samples equaling $0.0$ m/s, terminal 2D pose convergence (including pullback at $s_{meas} \ge s_{barrier}$), and zero velocity chatter under noisy simulated measurements.
 - `HeadingPlannerTest`:
   - Check one-shot directional branch latching (`SHORTEST`, `CW`, `CCW`), zero-headroom / saturated-feedforward `NaN`-free arrest ($\dot{e}_{max} = 0$, $\alpha_{eff} = 0$), and continuous unwrapped evolution $\theta_{ref}$ across $\pm\pi$.
   - Check `facePoint` smooth speed-to-target blending and `SINGULAR_HOLD` freezing inside $0.25\text{ m}$ radial distance without $\pi$-flips or angular jitter.
@@ -57,10 +57,10 @@ In simulation/CI, step `TimeSource` synthetically (`simTime += dt`) and supply s
 Runs randomized path geometries, start states, loop rates (`nominalDtSeconds` in `[4 ms, 20 ms]`), and noise levels; asserts zero `NaN`/`Infinity` outputs, $\|\Delta\vec{v}\|/\Delta t \le a_{fric} + 10^{-6}$ everywhere, $\|\vec{v}_{cmd}\| \le v_{max} + 10^{-6}$ when `!result.infeasible()`, monotonic speed arrest ($\|\vec{v}_{cmd}\| \le \|\vec{v}_{prev}\| - \min(a_{brake}, a_{fric,eff,0})\Delta t + 10^{-6}$) during overspeed `INFEASIBLE` recovery, and bounded completion for feasible scenarios. Infeasible initial states or unreachable goals must report the declared recovery/failure behavior.
 
 ### 2.3 Layer 3: Closed-Loop Auto Simulation (Every Push & PR)
-Runs dedicated TB3 scenarios (straight/short stops, `Goal.cruiseThrough` score-and-go, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
+Runs dedicated TB3 scenarios (straight/short stops, `Goal.finishThrough` score-and-go, corners, reversals, figure-8, heading gates, and dynamic assists) against the swerve physics model ($\tau_{lag}, a_{fric}, a_0, v_{free}$) and asserts:
 - Segment duration $t_{actual} \le t_{budget}$.
 - Stop goals satisfy their declared position, heading, linear/angular speed, and dwell tolerances.
-- `Goal.through` waypoints report `PASSED_WITHIN_TOLERANCE` (`PASSED_OUTSIDE_TOLERANCE` fails CI), `Goal.cruiseThrough` meets terminal velocity/overrun bounds, and swept bumper footprint stays outside `K_hard` keepout zones (logging any `K_margin` encroachment).
+- `Goal.through` waypoints report `PASSED_WITHIN_TOLERANCE` (`PASSED_OUTSIDE_TOLERANCE` fails CI), `Goal.finishThrough` meets terminal velocity/overrun bounds, and swept bumper footprint stays outside `K_hard` keepout zones (logging any `K_margin` encroachment).
 - Event markers are recorded as passed once in authored order, including across geometry rebuilds and `activate(plan, startAtGoalId)` starts.
 
 ### 2.4 Layer 4: Perturbation Sweeps (20x Monte Carlo per PR)

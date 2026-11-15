@@ -28,7 +28,7 @@ public record Goal(
   public enum PassType {
     STOP,
     THROUGH,
-    CRUISE_THROUGH
+    FINISH_THROUGH
   }
 
   public record FinishTolerance(
@@ -61,12 +61,12 @@ public record Goal(
     if (Double.isNaN(maxOverrunMeters) || maxOverrunMeters < 0) {
       throw new IllegalArgumentException("Expected a nonnegative overrun");
     }
-    if (passType != PassType.CRUISE_THROUGH && !Double.isFinite(maxOverrunMeters)) {
+    if (passType != PassType.FINISH_THROUGH && !Double.isFinite(maxOverrunMeters)) {
       throw new IllegalArgumentException("Expected a finite overrun");
     }
     if (Double.isNaN(passSpeed)
         || passSpeed < 0
-        || (passType == PassType.CRUISE_THROUGH
+        || (passType == PassType.FINISH_THROUGH
             && (!Double.isFinite(passSpeed) || passSpeed == 0 || maxOverrunMeters == 0))) {
       throw new IllegalArgumentException("Invalid goal speed or overrun");
     }
@@ -91,18 +91,18 @@ public record Goal(
     return through(pose.getTranslation()).withPose(pose).face(pose.getRotation());
   }
 
-  public static Goal cruiseThrough(Translation2d point, double speed) {
-    return cruiseThrough(point, speed, Double.POSITIVE_INFINITY);
+  public static Goal finishThrough(Translation2d point, double speed) {
+    return finishThrough(point, speed, Double.POSITIVE_INFINITY);
   }
 
-  public static Goal cruiseThrough(Pose2d pose, double speed) {
-    return create(pose, PassType.CRUISE_THROUGH, speed, Double.POSITIVE_INFINITY)
+  public static Goal finishThrough(Pose2d pose, double speed) {
+    return create(pose, PassType.FINISH_THROUGH, speed, Double.POSITIVE_INFINITY)
         .face(pose.getRotation());
   }
 
-  public static Goal cruiseThrough(Translation2d point, double speed, double maxOverrunMeters) {
+  public static Goal finishThrough(Translation2d point, double speed, double maxOverrunMeters) {
     return create(
-        new Pose2d(point, Rotation2d.kZero), PassType.CRUISE_THROUGH, speed, maxOverrunMeters);
+        new Pose2d(point, Rotation2d.kZero), PassType.FINISH_THROUGH, speed, maxOverrunMeters);
   }
 
   private static Goal create(Pose2d pose, PassType type, double speed, double overrun) {
