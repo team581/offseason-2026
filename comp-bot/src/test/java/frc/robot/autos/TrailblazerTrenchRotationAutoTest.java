@@ -27,11 +27,26 @@ final class TrailblazerTrenchRotationAutoTest {
       var pose = start;
       var speeds = new ChassisSpeeds();
       double overlapRadians = 0;
+      double prevLinearSpeed = 0;
+      double peakLinearSpeed = 0;
       for (; time[0] < 14; time[0] += dt) {
         auto.periodic();
         var result = planner.update(RobotStateSnapshot.measured(time[0], pose, speeds, true));
         assertNotEquals(RuntimeStatus.FAULT, result.status(), result.diagnostic());
         speeds = result.commandedFieldSpeeds();
+        double linearSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+        peakLinearSpeed = Math.max(peakLinearSpeed, linearSpeed);
+        if (Math.abs(pose.getY() - start.getY()) < 0.60) {
+          assertTrue(
+              linearSpeed >= prevLinearSpeed - 1e-6,
+              "Expected smooth monotonic launch without dip: prev="
+                  + prevLinearSpeed
+                  + ", curr="
+                  + linearSpeed
+                  + " at yDelta="
+                  + Math.abs(pose.getY() - start.getY()));
+        }
+        prevLinearSpeed = linearSpeed;
         if (Math.abs(speeds.vyMetersPerSecond) > 0.25) {
           overlapRadians += speeds.omegaRadiansPerSecond * dt;
         }
@@ -45,6 +60,7 @@ final class TrailblazerTrenchRotationAutoTest {
         }
       }
       assertTrue(planner.atGoal());
+      assertTrue(peakLinearSpeed > 1.5, "Expected peak speed > 1.5 m/s, got " + peakLinearSpeed);
       assertTrue(
           overlapRadians > Math.PI / 2,
           "Expected over 90 degrees of rotation while strafing, got "
