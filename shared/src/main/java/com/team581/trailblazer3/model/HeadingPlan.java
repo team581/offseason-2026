@@ -72,6 +72,14 @@ public record HeadingPlan(
     }
   }
 
+  public static HeadingPlan face(Rotation2d angle) {
+    return to(angle);
+  }
+
+  public static HeadingPlan faceDegrees(double degrees) {
+    return to(Rotation2d.fromDegrees(degrees));
+  }
+
   public static HeadingPlan to(Rotation2d angle) {
     return of(new Target.Fixed(angle));
   }
@@ -120,6 +128,41 @@ public record HeadingPlan(
   public HeadingPlan direction(TurnDirection turn) {
     return new HeadingPlan(
         target, offsetMeters, turn, gate, toleranceRadians, angularSpeedTolerance, dwellSeconds);
+  }
+
+  public HeadingPlan clockwise() {
+    return direction(TurnDirection.CW);
+  }
+
+  public HeadingPlan counterClockwise() {
+    return direction(TurnDirection.CCW);
+  }
+
+  public HeadingPlan hardGate() {
+    return gate(GatePolicy.HARD);
+  }
+
+  public HeadingPlan shortestTurn() {
+    return direction(TurnDirection.SHORTEST);
+  }
+
+  public HeadingPlan softGate() {
+    return gate(GatePolicy.SOFT);
+  }
+
+  public HeadingPlan tolerance(Rotation2d tolerance) {
+    return new HeadingPlan(
+        target,
+        offsetMeters,
+        direction,
+        gate,
+        tolerance.getRadians(),
+        angularSpeedTolerance,
+        dwellSeconds);
+  }
+
+  public HeadingPlan withinDegrees(double toleranceDegrees) {
+    return tolerance(Rotation2d.fromDegrees(toleranceDegrees));
   }
 
   public HeadingPlan flip(FieldGeometry field) {

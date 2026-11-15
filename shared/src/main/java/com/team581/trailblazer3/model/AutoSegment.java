@@ -1,10 +1,14 @@
 package com.team581.trailblazer3.model;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List<SpeedZone> zones) {
   public AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
@@ -73,17 +77,116 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
       return new AutoSegment(id, limits, goals, zones);
     }
 
-    public Builder cruiseThrough(
-        edu.wpi.first.math.geometry.Translation2d point, double speed, double overrun) {
+    public Builder cruiseThrough(Pose2d pose, double speed) {
+      return addGoal(Goal.cruiseThrough(pose, speed));
+    }
+
+    public Builder cruiseThrough(Translation2d point, double speed) {
+      return addGoal(Goal.cruiseThrough(point, speed));
+    }
+
+    public Builder cruiseThrough(Translation2d point, double speed, double overrun) {
       return addGoal(Goal.cruiseThrough(point, speed, overrun));
     }
 
-    public Builder stopAt(edu.wpi.first.math.geometry.Pose2d pose) {
+    public Builder cruiseThrough(Translation2d point, double speed, UnaryOperator<Goal> configure) {
+      return addGoal(Objects.requireNonNull(configure).apply(Goal.cruiseThrough(point, speed)));
+    }
+
+    public Builder maxAcceleration(double maxAccelerationMetersPerSecondSquared) {
+      limits = limits.withMaxAcceleration(maxAccelerationMetersPerSecondSquared);
+      return this;
+    }
+
+    public Builder maxBraking(double maxBrakingMetersPerSecondSquared) {
+      limits = limits.withMaxBraking(maxBrakingMetersPerSecondSquared);
+      return this;
+    }
+
+    public Builder maxSpeed(double maxVelocityMetersPerSecond) {
+      limits = limits.withMaxSpeed(maxVelocityMetersPerSecond);
+      return this;
+    }
+
+    public Builder stopAt(double xMeters, double yMeters, double headingDegrees) {
+      return addGoal(
+          Goal.stop(new Pose2d(xMeters, yMeters, Rotation2d.fromDegrees(headingDegrees))));
+    }
+
+    public Builder stopAt(
+        double xMeters, double yMeters, double headingDegrees, UnaryOperator<Goal> configure) {
+      return addGoal(
+          Objects.requireNonNull(configure)
+              .apply(
+                  Goal.stop(new Pose2d(xMeters, yMeters, Rotation2d.fromDegrees(headingDegrees)))));
+    }
+
+    public Builder stopAt(double xMeters, double yMeters, Rotation2d heading) {
+      return addGoal(Goal.stop(new Pose2d(xMeters, yMeters, heading)));
+    }
+
+    public Builder stopAt(Pose2d pose) {
       return addGoal(Goal.stop(pose));
     }
 
-    public Builder through(edu.wpi.first.math.geometry.Translation2d point) {
+    public Builder stopAt(Pose2d pose, UnaryOperator<Goal> configure) {
+      return addGoal(Objects.requireNonNull(configure).apply(Goal.stop(pose)));
+    }
+
+    public Builder through(double xMeters, double yMeters) {
+      return addGoal(Goal.through(new Translation2d(xMeters, yMeters)));
+    }
+
+    public Builder through(double xMeters, double yMeters, double blendRadiusMeters) {
+      return addGoal(Goal.through(new Translation2d(xMeters, yMeters)).within(blendRadiusMeters));
+    }
+
+    public Builder through(
+        double xMeters, double yMeters, double blendRadiusMeters, UnaryOperator<Goal> configure) {
+      return addGoal(
+          Objects.requireNonNull(configure)
+              .apply(Goal.through(new Translation2d(xMeters, yMeters)).within(blendRadiusMeters)));
+    }
+
+    public Builder through(double xMeters, double yMeters, UnaryOperator<Goal> configure) {
+      return addGoal(
+          Objects.requireNonNull(configure)
+              .apply(Goal.through(new Translation2d(xMeters, yMeters))));
+    }
+
+    public Builder through(Pose2d pose) {
+      return addGoal(Goal.through(pose));
+    }
+
+    public Builder through(Pose2d pose, double blendRadiusMeters) {
+      return addGoal(Goal.through(pose).within(blendRadiusMeters));
+    }
+
+    public Builder through(Pose2d pose, double blendRadiusMeters, UnaryOperator<Goal> configure) {
+      return addGoal(
+          Objects.requireNonNull(configure).apply(Goal.through(pose).within(blendRadiusMeters)));
+    }
+
+    public Builder through(Pose2d pose, UnaryOperator<Goal> configure) {
+      return addGoal(Objects.requireNonNull(configure).apply(Goal.through(pose)));
+    }
+
+    public Builder through(Translation2d point) {
       return addGoal(Goal.through(point));
+    }
+
+    public Builder through(Translation2d point, double blendRadiusMeters) {
+      return addGoal(Goal.through(point).within(blendRadiusMeters));
+    }
+
+    public Builder through(
+        Translation2d point, double blendRadiusMeters, UnaryOperator<Goal> configure) {
+      return addGoal(
+          Objects.requireNonNull(configure).apply(Goal.through(point).within(blendRadiusMeters)));
+    }
+
+    public Builder through(Translation2d point, UnaryOperator<Goal> configure) {
+      return addGoal(Objects.requireNonNull(configure).apply(Goal.through(point)));
     }
 
     public Builder withLimits(MotionLimits profile) {

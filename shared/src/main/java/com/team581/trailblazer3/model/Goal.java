@@ -58,7 +58,12 @@ public record Goal(
     Objects.requireNonNull(passType);
     Objects.requireNonNull(finishTolerance);
     nonnegative(withinMeters);
-    nonnegative(maxOverrunMeters);
+    if (Double.isNaN(maxOverrunMeters) || maxOverrunMeters < 0) {
+      throw new IllegalArgumentException("Expected a nonnegative overrun");
+    }
+    if (passType != PassType.CRUISE_THROUGH && !Double.isFinite(maxOverrunMeters)) {
+      throw new IllegalArgumentException("Expected a finite overrun");
+    }
     if (Double.isNaN(passSpeed)
         || passSpeed < 0
         || (passType == PassType.CRUISE_THROUGH
@@ -83,7 +88,16 @@ public record Goal(
   }
 
   public static Goal through(Pose2d pose) {
-    return through(pose.getTranslation());
+    return through(pose.getTranslation()).withPose(pose).face(pose.getRotation());
+  }
+
+  public static Goal cruiseThrough(Translation2d point, double speed) {
+    return cruiseThrough(point, speed, Double.POSITIVE_INFINITY);
+  }
+
+  public static Goal cruiseThrough(Pose2d pose, double speed) {
+    return create(pose, PassType.CRUISE_THROUGH, speed, Double.POSITIVE_INFINITY)
+        .face(pose.getRotation());
   }
 
   public static Goal cruiseThrough(Translation2d point, double speed, double maxOverrunMeters) {
@@ -107,7 +121,7 @@ public record Goal(
 
   public static Goal through(
       Supplier<TimestampedTarget<Pose2d>> supplier, TargetLossPolicy policy) {
-    return through(Pose2d.kZero).tracking(supplier, policy);
+    return through(Translation2d.kZero).tracking(supplier, policy);
   }
 
   public static Goal stop(Supplier<TimestampedTarget<Pose2d>> supplier, TargetLossPolicy policy) {
@@ -126,6 +140,34 @@ public record Goal(
         marker,
         heading,
         new DynamicTarget(supplier, policy));
+  }
+
+  public Goal face(Rotation2d target) {
+    return heading(HeadingPlan.to(target));
+  }
+
+  public Goal faceDegrees(double degrees) {
+    return heading(HeadingPlan.faceDegrees(degrees));
+  }
+
+  public Goal faceHard(Rotation2d target) {
+    return heading(HeadingPlan.to(target).hardGate());
+  }
+
+  public Goal faceHardDegrees(double degrees) {
+    return heading(HeadingPlan.faceDegrees(degrees).hardGate());
+  }
+
+  public Goal facePoint(Translation2d fieldTarget) {
+    return heading(HeadingPlan.facePoint(fieldTarget));
+  }
+
+  public Goal faceTravel() {
+    return heading(HeadingPlan.faceTravel());
+  }
+
+  public Goal finishWithin(double positionMeters, double headingDegrees) {
+    return finish(positionMeters, Rotation2d.fromDegrees(headingDegrees), 0.10);
   }
 
   public Goal heading(HeadingPlan keyframe) {
@@ -210,6 +252,10 @@ public record Goal(
         dynamicTarget);
   }
 
+  public Goal mark(Enum<?> event) {
+    return marker(event);
+  }
+
   public Goal marker(Enum<?> event) {
     return new Goal(
         id,
@@ -222,6 +268,18 @@ public record Goal(
         event,
         heading,
         dynamicTarget);
+  }
+
+  public Goal clockwise() {
+    return heading(baseHeadingPlan().clockwise());
+  }
+
+  public Goal counterClockwise() {
+    return heading(baseHeadingPlan().counterClockwise());
+  }
+
+  public Goal hardGate() {
+    return heading(baseHeadingPlan().hardGate());
   }
 
   public Goal finish(double meters, Rotation2d headingTolerance, double speed) {
@@ -246,5 +304,15 @@ public record Goal(
         marker,
         heading,
         dynamicTarget);
+  }
+
+  private HeadingPlan baseHeadingPlan() {
+    if (heading != null) {
+      return heading;
+    }
+    if (passType == PassType.STOP) {
+      return HeadingPlan.face(pose.getRotation());
+    }
+    throw new IllegalStateException("Set a heading before configuring turn direction or gate");
   }
 }

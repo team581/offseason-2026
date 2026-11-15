@@ -2,6 +2,8 @@ package com.team581.trailblazer3.model;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,10 +23,12 @@ public record TickResult(
     String diagnostic) {
   public TickResult {
     commandedFieldSpeeds = copy(commandedFieldSpeeds);
-    wheelForces = List.copyOf(wheelForces);
+    wheelForces = wheelForces.isEmpty() ? List.of() : List.copyOf(wheelForces);
     newlyPassedMarkers =
-        java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(newlyPassedMarkers));
-    goalStatuses = Map.copyOf(goalStatuses);
+        newlyPassedMarkers.isEmpty()
+            ? Set.of()
+            : Collections.unmodifiableSet(new LinkedHashSet<>(newlyPassedMarkers));
+    goalStatuses = goalStatuses.isEmpty() ? Map.of() : Map.copyOf(goalStatuses);
   }
 
   @Override
