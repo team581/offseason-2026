@@ -1,6 +1,8 @@
 package com.team581.trailblazer3.math;
 
+import com.team581.trailblazer3.model.FieldClearance;
 import com.team581.trailblazer3.model.Goal;
+import com.team581.trailblazer3.model.HeadingPlan;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -20,8 +22,19 @@ public final class PathBuilder {
       warnings = List.copyOf(warnings);
     }
 
+    public double curvatureAt(double s) {
+      for (int i = 0; i < pieces.size(); i++) {
+        var piece = pieces.get(i);
+        if (s <= piece.end()) {
+          return piece.curvature();
+        }
+      }
+      return pieces.isEmpty() ? 0 : pieces.get(pieces.size() - 1).curvature();
+    }
+
     public Sample sample(double s) {
-      for (var piece : pieces) {
+      for (int i = 0; i < pieces.size(); i++) {
+        var piece = pieces.get(i);
         if (s <= piece.end()) {
           return piece.sample(s);
         }
@@ -31,28 +44,52 @@ public final class PathBuilder {
           : pieces.get(pieces.size() - 1).sample(length);
     }
 
+    /** Zero-allocation sample filling {@code out = [x, y, tx, ty, curvature]}. */
+    public void sampleInto(double s, double[] out) {
+      for (int i = 0; i < pieces.size(); i++) {
+        var piece = pieces.get(i);
+        if (s <= piece.end()) {
+          piece.sampleInto(s, out);
+          return;
+        }
+      }
+      if (pieces.isEmpty()) {
+        out[0] = origin.getX();
+        out[1] = origin.getY();
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = 0;
+        return;
+      }
+      pieces.get(pieces.size() - 1).sampleInto(length, out);
+    }
+
     public Projection project(Translation2d position, double lower, double upper) {
+      double px = position.getX();
+      double py = position.getY();
       double bestProgress = lower;
       double bestDistance = Double.POSITIVE_INFINITY;
-      for (var piece : pieces) {
+      for (int i = 0; i < pieces.size(); i++) {
+        var piece = pieces.get(i);
         double from = Math.max(piece.start(), lower);
         double to = Math.min(piece.end(), upper);
         if (from > to) {
           continue;
         }
-        double progress = piece.project(position, from, to);
-        double distance = position.getDistance(piece.sample(progress).position());
+        double progress = piece.project(px, py, from, to);
+        double distance = piece.distanceToSample(px, py, progress);
         if (distance < bestDistance - EPSILON) {
           bestProgress = progress;
           bestDistance = distance;
         }
       }
       var closest = sample(bestProgress);
-      return new Projection(
-          bestProgress,
-          closest,
-          position.minus(closest.position()).dot(closest.normal()),
-          position.getDistance(closest.position()));
+      double cx = closest.position().getX();
+      double cy = closest.position().getY();
+      double tx = closest.tangent().getX();
+      double ty = closest.tangent().getY();
+      double crossTrack = (px - cx) * (-ty) + (py - cy) * tx;
+      return new Projection(bestProgress, closest, crossTrack, Math.hypot(px - cx, py - cy));
     }
   }
 
@@ -73,23 +110,87 @@ public final class PathBuilder {
       return new Sample(center.minus(left(tangent).div(curvature)), tangent, curvature);
     }
 
-    public double project(Translation2d point, double lower, double upper) {
+    /** Zero-allocation sample filling {@code out = [x, y, tx, ty, curvature]}. */
+    public void sampleInto(double s, double[] out) {
+      double local = MathUtil.clamp(s - start, 0, length);
+      double dx = direction.getX();
+      double dy = direction.getY();
       if (curvature == 0) {
-        return MathUtil.clamp(start + point.minus(entry).dot(direction), lower, upper);
+        out[0] = entry.getX() + dx * local;
+        out[1] = entry.getY() + dy * local;
+        out[2] = dx;
+        out[3] = dy;
+        out[4] = 0;
+        return;
       }
-      var center = entry.plus(left(direction).div(curvature));
-      var radial = point.minus(center);
-      var midpoint = sample((lower + upper) / 2).position().minus(center);
-      double offset =
-          MathUtil.angleModulus(radial.getAngle().minus(midpoint.getAngle()).getRadians());
-      double candidate = (lower + upper) / 2 + offset / curvature;
-      if (radial.getNorm() > 1e-6 && candidate >= lower && candidate <= upper) {
+      double angle = curvature * local;
+      double cos = Math.cos(angle);
+      double sin = Math.sin(angle);
+      double tx = dx * cos - dy * sin;
+      double ty = dx * sin + dy * cos;
+      double cx = entry.getX() - dy / curvature;
+      double cy = entry.getY() + dx / curvature;
+      out[0] = cx + ty / curvature;
+      out[1] = cy - tx / curvature;
+      out[2] = tx;
+      out[3] = ty;
+      out[4] = curvature;
+    }
+
+    public double project(Translation2d point, double lower, double upper) {
+      return project(point.getX(), point.getY(), lower, upper);
+    }
+
+    /** Zero-allocation point projection onto this piece within {@code [lower, upper]}. */
+    public double project(double px, double py, double lower, double upper) {
+      double dx = direction.getX();
+      double dy = direction.getY();
+      if (curvature == 0) {
+        double localDot = (px - entry.getX()) * dx + (py - entry.getY()) * dy;
+        return MathUtil.clamp(start + localDot, lower, upper);
+      }
+      double cx = entry.getX() - dy / curvature;
+      double cy = entry.getY() + dx / curvature;
+      double rx = px - cx;
+      double ry = py - cy;
+      double mid = (lower + upper) * 0.5;
+      double midLocal = MathUtil.clamp(mid - start, 0, length);
+      double midAngle = curvature * midLocal;
+      double midCos = Math.cos(midAngle);
+      double midSin = Math.sin(midAngle);
+      double mtx = dx * midCos - dy * midSin;
+      double mty = dx * midSin + dy * midCos;
+      double mx = mty / curvature;
+      double my = -mtx / curvature;
+      double offset = MathUtil.angleModulus(Math.atan2(ry, rx) - Math.atan2(my, mx));
+      double candidate = mid + offset / curvature;
+      if (Math.hypot(rx, ry) > 1e-6 && candidate >= lower && candidate <= upper) {
         return candidate;
       }
-      return point.getDistance(sample(lower).position())
-              <= point.getDistance(sample(upper).position())
-          ? lower
-          : upper;
+      return distanceToSample(px, py, lower) <= distanceToSample(px, py, upper) ? lower : upper;
+    }
+
+    private double distanceToSample(double px, double py, double s) {
+      double local = MathUtil.clamp(s - start, 0, length);
+      double dx = direction.getX();
+      double dy = direction.getY();
+      double sx;
+      double sy;
+      if (curvature == 0) {
+        sx = entry.getX() + dx * local;
+        sy = entry.getY() + dy * local;
+      } else {
+        double angle = curvature * local;
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        double tx = dx * cos - dy * sin;
+        double ty = dx * sin + dy * cos;
+        double cx = entry.getX() - dy / curvature;
+        double cy = entry.getY() + dx / curvature;
+        sx = cx + ty / curvature;
+        sy = cy - tx / curvature;
+      }
+      return Math.hypot(px - sx, py - sy);
     }
   }
 
@@ -104,6 +205,11 @@ public final class PathBuilder {
   private static final double EPSILON = 1e-9;
 
   public static Path build(Translation2d origin, List<Goal> goals, double braking) {
+    return build(origin, goals, braking, null);
+  }
+
+  public static Path build(
+      Translation2d origin, List<Goal> goals, double braking, FieldClearance clearance) {
     int count = goals.size();
     var points = new Translation2d[count + 1];
     var directions = new Translation2d[count];
@@ -192,7 +298,34 @@ public final class PathBuilder {
       double desired =
           Math.max(1.5, 1.15 * terminal.passSpeed() * terminal.passSpeed() / (2 * braking));
       double overrun = Math.min(desired, terminal.maxOverrunMeters());
-      if (overrun < desired) {
+      if (clearance != null) {
+        double requiredClearance = Math.max(0.02, clearance.margin());
+        HeadingPlan.Target.Fixed fixedHeading =
+            terminal.heading() != null
+                    && terminal.heading().target() instanceof HeadingPlan.Target.Fixed fixed
+                ? fixed
+                : null;
+        double safe = 0.0;
+        int steps = Math.max(1, (int) Math.ceil(overrun / 0.05));
+        for (int s = 1; s <= steps; s++) {
+          double step = s == steps ? overrun : s * 0.05;
+          var probe = entry.plus(directions[count - 1].times(step));
+          double dist =
+              fixedHeading != null
+                  ? clearance.clearance(
+                      probe.getX(),
+                      probe.getY(),
+                      fixedHeading.angle().getCos(),
+                      fixedHeading.angle().getSin())
+                  : clearance.minimumAngleClearance(probe.getX(), probe.getY());
+          if (dist < requiredClearance) {
+            break;
+          }
+          safe = step;
+        }
+        overrun = safe;
+      }
+      if (overrun < desired - 1e-6) {
         warnings.add("CRUISE_OVERRUN_LIMITED " + terminal.id());
       }
       pieces.add(new Piece(progress, overrun, entry, directions[count - 1], 0));

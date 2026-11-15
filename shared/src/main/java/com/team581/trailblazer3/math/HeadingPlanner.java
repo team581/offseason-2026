@@ -8,6 +8,10 @@ public final class HeadingPlanner {
 
   public record State(double angle, double velocity) {}
 
+  /**
+   * Steps heading tracking using {@code translationSpeed} for kinematic {@code targetOmega} and
+   * {@code budgetSpeed} for the rotation/translation friction split.
+   */
   public static Result step(
       State reference,
       double target,
@@ -15,10 +19,11 @@ public final class HeadingPlanner {
       double measuredAngle,
       double previousOmega,
       double translationSpeed,
+      double budgetSpeed,
       DrivetrainLimits limits,
       double dt) {
-    double omegaLimit = limits.rotationSpeed(translationSpeed);
-    double alphaLimit = limits.rotationAccel(translationSpeed);
+    double omegaLimit = limits.rotationSpeed(budgetSpeed);
+    double alphaLimit = limits.rotationAccel(budgetSpeed);
     double targetOmega = MathUtil.clamp(derivative * translationSpeed, -omegaLimit, omegaLimit);
     double error = reference.angle() - target;
     double rate = reference.velocity() - targetOmega;
@@ -54,6 +59,30 @@ public final class HeadingPlanner {
                 demand - previousOmega, -limits.maxAlpha() * dt, limits.maxAlpha() * dt);
     return new Result(
         new State(nextAngle, nextOmega), command, (nextOmega - reference.velocity()) / dt);
+  }
+
+  /**
+   * Steps heading tracking using {@code translationSpeed} for both tangent rate and friction share.
+   */
+  public static Result step(
+      State reference,
+      double target,
+      double derivative,
+      double measuredAngle,
+      double previousOmega,
+      double translationSpeed,
+      DrivetrainLimits limits,
+      double dt) {
+    return step(
+        reference,
+        target,
+        derivative,
+        measuredAngle,
+        previousOmega,
+        translationSpeed,
+        translationSpeed,
+        limits,
+        dt);
   }
 
   private HeadingPlanner() {}

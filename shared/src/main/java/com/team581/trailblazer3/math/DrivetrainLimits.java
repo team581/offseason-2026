@@ -4,7 +4,6 @@ import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Translation2d;
 import java.util.OptionalDouble;
 
 public record DrivetrainLimits(
@@ -36,12 +35,18 @@ public record DrivetrainLimits(
       double nominalDt,
       MotionLimits caps,
       double scale) {
-    double radius =
-        robot.modulePositionsMeters().stream()
-            .mapToDouble(Translation2d::getNorm)
-            .max()
-            .orElseThrow();
-    double squaredRadii = robot.modulePositionsMeters().stream().mapToDouble(p -> p.dot(p)).sum();
+    var modulePositions = robot.modulePositionsMeters();
+    if (modulePositions.isEmpty()) {
+      throw new IllegalArgumentException("At least one module position is required");
+    }
+    double radius = 0.0;
+    double squaredRadii = 0.0;
+    for (int i = 0; i < modulePositions.size(); i++) {
+      var position = modulePositions.get(i);
+      double normSq = position.dot(position);
+      squaredRadii += normSq;
+      radius = Math.max(radius, Math.sqrt(normSq));
+    }
     double voltage = robot.driveMotor().nominalVoltageVolts;
     double free =
         (voltage - robot.staticFrictionVolts())
@@ -53,6 +58,12 @@ public record DrivetrainLimits(
     double friction = calibration.frictionLimit() * scale;
     double lag = calibration.driveResponseLagSeconds();
     double raw = motorAccel(robot, free, 0, OptionalDouble.empty(), OptionalDouble.empty()) / 0.90;
+    double steerEffectiveVoltage =
+        Math.max(
+            0,
+            robot.steerMotor().nominalVoltageVolts
+                - Math.min(
+                    robot.staticFrictionVolts(), 0.5 * robot.steerMotor().nominalVoltageVolts));
     return new DrivetrainLimits(
         robot,
         max,
@@ -67,7 +78,10 @@ public record DrivetrainLimits(
             0.85 * robot.massKg() * Math.min(raw, friction) * radius / robot.yawMoiKgMetersSq(),
             caps.maxAngularAccelerationRadiansPerSecondSquared()),
         Math.min(
-            0.5 * voltage * robot.steerMotor().KvRadPerSecPerVolt / robot.steerGearRatio(),
+            0.5
+                * steerEffectiveVoltage
+                * robot.steerMotor().KvRadPerSecPerVolt
+                / robot.steerGearRatio(),
             0.50 / (lag + nominalDt / 2)),
         lag,
         radius,
