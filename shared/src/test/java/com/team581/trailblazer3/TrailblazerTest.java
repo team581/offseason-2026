@@ -148,6 +148,83 @@ final class TrailblazerTest {
   }
 
   @Test
+  void clearanceGatedTurnDelaysRotationUntilClearAndRejectsImpossibleTurn() {
+    var throughGoal = Goal.through(pose(2, 1, 90));
+    assertTrue(throughGoal.heading() != null);
+    assertTrue(throughGoal.heading().target() instanceof HeadingPlan.Target.Fixed);
+    var fixedTarget = (HeadingPlan.Target.Fixed) throughGoal.heading().target();
+    assertEquals(90.0, fixedTarget.angle().getDegrees(), 1e-6);
+
+    var robot =
+        new RobotDrivetrainSpec(
+            55.0,
+            4.5,
+            0.048,
+            6.12,
+            15.0,
+            List.of(
+                new Translation2d(0.28, 0.24),
+                new Translation2d(0.28, -0.24),
+                new Translation2d(-0.28, 0.24),
+                new Translation2d(-0.28, -0.24)),
+            DCMotor.getKrakenX60Foc(1),
+            DCMotor.getKrakenX44Foc(1),
+            80,
+            0.18);
+    var clearance =
+        new FieldClearance(
+            new FieldGeometry(16.5, 8.2, FieldSymmetry.ROTATIONAL_180),
+            0.40,
+            0.40,
+            0.04,
+            List.of());
+
+    double[] time = {0.0};
+    var validPlanner =
+        new Trailblazer(() -> time[0], robot, new EmpiricalDriveCalibration(4.5, 2.5, 0.04), 0.02);
+    validPlanner.activate(
+        Trailblazer.segment("auto-delayed-turn")
+            .stopAt(pose(2, 3, 0), Goal::counterClockwise)
+            .build(),
+        clearance);
+    Pose2d currentPose = pose(2.0, 0.50, 180);
+    ChassisSpeeds currentSpeeds = new ChassisSpeeds();
+    for (int i = 0; i < 300 && !validPlanner.atGoal(); i++) {
+      var res =
+          validPlanner.update(
+              RobotStateSnapshot.measured(time[0], currentPose, currentSpeeds, true));
+      assertFalse(res.status() == RuntimeStatus.FAULT, res.diagnostic());
+      currentSpeeds = res.commandedFieldSpeeds();
+      if (i == 0) {
+        assertEquals(0.0, currentSpeeds.omegaRadiansPerSecond);
+      }
+      assertTrue(clearance.clearance(currentPose) >= 0.04 - 1e-3);
+      currentPose =
+          new Pose2d(
+              currentPose.getX() + currentSpeeds.vxMetersPerSecond * 0.02,
+              currentPose.getY() + currentSpeeds.vyMetersPerSecond * 0.02,
+              currentPose
+                  .getRotation()
+                  .plus(Rotation2d.fromRadians(currentSpeeds.omegaRadiansPerSecond * 0.02)));
+      time[0] += 0.02;
+    }
+    assertTrue(validPlanner.atGoal());
+    assertEquals(1.0, currentPose.getRotation().getCos(), 1e-2);
+
+    var invalidPlanner =
+        new Trailblazer(() -> 0.0, robot, new EmpiricalDriveCalibration(4.5, 2.5, 0.04), 0.02);
+    invalidPlanner.activate(
+        Trailblazer.segment("impossible-parallel-turn")
+            .stopAt(pose(5.0, 0.50, 0), Goal::counterClockwise)
+            .build(),
+        clearance);
+    var rejected =
+        invalidPlanner.update(
+            RobotStateSnapshot.measured(0.0, pose(2.0, 0.50, 180), new ChassisSpeeds(), true));
+    assertEquals(RuntimeStatus.FAULT, rejected.status());
+  }
+
+  @Test
   void cruiseThroughKeepsMovingAfterMarkerAndStopsOnOverrun() {
     var sim = new Simulation(0.020);
     sim.planner.activate(
@@ -345,5 +422,40 @@ final class TrailblazerTest {
     assertTrue(sim.speed.omegaRadiansPerSecond < 0);
     sim.untilGoal();
     assertEquals(90, sim.pose.getRotation().getDegrees(), 2);
+  }
+
+  @Test
+  void waitsBrieflyForInitialOdometryBeforeFirstBuild() {
+    var sim = new Simulation(0.020);
+    sim.time = 1450.0;
+    sim.planner.activate(Trailblazer.segment("warmup").stopAt(2.0, 0.0, 0.0).build());
+
+    for (int i = 0; i < 5; i++) {
+      var res =
+          sim.planner.update(
+              new TickInput(
+                  sim.time,
+                  new RobotStateSnapshot(
+                      0.0,
+                      sim.pose,
+                      sim.speed,
+                      false,
+                      false,
+                      Optional.empty(),
+                      java.util.OptionalDouble.empty(),
+                      java.util.OptionalDouble.empty(),
+                      true),
+                  Map.of(),
+                  Map.of(),
+                  Optional.empty()));
+      assertEquals(RuntimeStatus.RUNNING, res.status());
+      assertEquals(0.0, res.commandedFieldSpeeds().vxMetersPerSecond);
+      assertEquals(0.0, res.commandedFieldSpeeds().vyMetersPerSecond);
+      assertEquals(0.0, res.commandedFieldSpeeds().omegaRadiansPerSecond);
+      sim.time += sim.dt;
+    }
+
+    sim.untilGoal();
+    assertEquals(2.0, sim.pose.getX(), 0.05);
   }
 }
