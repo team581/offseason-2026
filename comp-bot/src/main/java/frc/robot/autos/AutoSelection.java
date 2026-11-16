@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 /** Competition and characterization autonomous routines shown on the driver station chooser. */
 public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING("Do Nothing", DoNothingAuto::new),
+  RIGHT_TRENCH("Right Trench", RightTrenchAuto::new),
   TRAILBLAZER_3_RIGHT_TRENCH("TB3 Right Trench Leave", TrailblazerTrenchAuto::new),
   TRAILBLAZER_3_LEFT_TRENCH("TB3 Left Trench Leave", LeftTrenchAuto::new),
   TRAILBLAZER_3_TRENCH_ROTATION_TEST(
