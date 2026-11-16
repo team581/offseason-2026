@@ -1,6 +1,7 @@
 package com.team581.trailblazer3.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -115,9 +116,7 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      * @throws IllegalStateException if no waypoint has been added
      */
     public Builder mark(Enum<?> marker) {
-      if (goals.isEmpty()) {
-        throw new IllegalStateException("Add a waypoint before marking it");
-      }
+      checkState(!goals.isEmpty(), "Add a waypoint before marking it");
       int lastIndex = goals.size() - 1;
       goals.set(lastIndex, goals.get(lastIndex).mark(marker));
       return this;
