@@ -1,9 +1,11 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import java.util.Objects;
 
 public record HeadingPlan(
     Target target,
@@ -27,17 +29,15 @@ public record HeadingPlan(
   public sealed interface Target {
     record Fixed(Rotation2d angle) implements Target {
       public Fixed {
-        if (!Double.isFinite(angle.getRadians())) {
-          throw new IllegalArgumentException("Invalid fixed heading");
-        }
+        checkArgument(Double.isFinite(angle.getRadians()), "Invalid fixed heading");
       }
     }
 
     record Point(Translation2d target, Rotation2d mechanismOffset) implements Target {
       public Point {
-        if (!Double.isFinite(target.getNorm()) || !Double.isFinite(mechanismOffset.getRadians())) {
-          throw new IllegalArgumentException("Invalid aim point");
-        }
+        checkArgument(
+            Double.isFinite(target.getNorm()) && Double.isFinite(mechanismOffset.getRadians()),
+            "Invalid aim point");
       }
     }
 
@@ -45,18 +45,18 @@ public record HeadingPlan(
   }
 
   public HeadingPlan {
-    Objects.requireNonNull(target);
-    Objects.requireNonNull(direction);
-    Objects.requireNonNull(gate);
-    if (!Double.isFinite(offsetMeters)
-        || !Double.isFinite(toleranceRadians)
-        || toleranceRadians < 0
-        || !Double.isFinite(angularSpeedTolerance)
-        || angularSpeedTolerance < 0
-        || !Double.isFinite(dwellSeconds)
-        || dwellSeconds < 0) {
-      throw new IllegalArgumentException("Invalid heading keyframe");
-    }
+    requireNonNull(target);
+    requireNonNull(direction);
+    requireNonNull(gate);
+    checkArgument(
+        Double.isFinite(offsetMeters)
+            && Double.isFinite(toleranceRadians)
+            && toleranceRadians >= 0
+            && Double.isFinite(angularSpeedTolerance)
+            && angularSpeedTolerance >= 0
+            && Double.isFinite(dwellSeconds)
+            && dwellSeconds >= 0,
+        "Invalid heading keyframe");
   }
 
   public static HeadingPlan faceDegrees(double degrees) {

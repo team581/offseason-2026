@@ -1,7 +1,9 @@
 package com.team581.trailblazer3.runtime;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.math.DrivetrainLimits;
 import com.team581.trailblazer3.math.HeadingPlanner;
 import com.team581.trailblazer3.math.PathBuilder;
@@ -200,7 +202,7 @@ public final class Trailblazer {
   private AutoSegment plan;
   private Optional<FieldClearance> activeClearance = Optional.empty();
   private DrivetrainLimits limits;
-  private List<Goal> activeGoals = List.of();
+  private List<Goal> activeGoals = ImmutableList.of();
   private boolean[] openedGates = new boolean[0];
   private PathBuilder.Path path;
   private int remainingGoalStart;
@@ -250,9 +252,9 @@ public final class Trailblazer {
     this.robot = requireNonNull(robot);
     this.calibration = requireNonNull(calibration);
     this.defaultFieldClearance = requireNonNull(defaultFieldClearance);
-    if (!Double.isFinite(nominalDt) || nominalDt < 0.004 || nominalDt > 0.020) {
-      throw new IllegalArgumentException("Nominal period must be within 4–20 ms");
-    }
+    checkArgument(
+        Double.isFinite(nominalDt) && nominalDt >= 0.004 && nominalDt <= 0.020,
+        "Nominal period must be within 4–20 ms");
     this.nominalDt = nominalDt;
   }
 
@@ -275,7 +277,7 @@ public final class Trailblazer {
   public void cancel() {
     plan = null;
     path = null;
-    activeGoals = List.of();
+    activeGoals = ImmutableList.of();
     openedGates = new boolean[0];
     passed.clear();
     previous = null;
@@ -393,9 +395,7 @@ public final class Trailblazer {
       rebuild(measuredPose, remainingGoalStart);
     } else if (relatchRequested) {
       relatchRequested = false;
-      rebuild(
-          measuredPose,
-          remainingGoalStart + Math.min(goalIndex, Math.max(0, activeGoals.size() - 1)));
+      rebuild(measuredPose, remainingGoalStart + Math.clamp(0, activeGoals.size() - 1, goalIndex));
       if (diagnostic.isEmpty()) {
         diagnostic = "RELATCH";
       }
@@ -420,9 +420,7 @@ public final class Trailblazer {
       divergence = 0;
     }
     if (offTrack >= RELATCH_DWELL && !atGoal()) {
-      rebuild(
-          measuredPose,
-          remainingGoalStart + Math.min(goalIndex, Math.max(0, activeGoals.size() - 1)));
+      rebuild(measuredPose, remainingGoalStart + Math.clamp(0, activeGoals.size() - 1, goalIndex));
       projected = path.project(measuredPose.getTranslation(), 0, 0);
       diagnostic = "RELATCH";
     }
@@ -435,7 +433,7 @@ public final class Trailblazer {
       }
     }
     if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
-      highWater = Math.max(highWater, Math.min(projected.progress(), barrier.progress()));
+      highWater = Math.clamp(projected.progress(), highWater, barrier.progress());
     }
 
     RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
@@ -485,12 +483,10 @@ public final class Trailblazer {
 
     double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
     double headingBudgetSpeed =
-        Math.max(
+        Math.clamp(
+            limits.maxSpeed(),
             profile.speed(),
-            Math.min(
-                limits.maxSpeed(),
-                Math.sqrt(
-                    2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier)));
+            Math.sqrt(2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier));
 
     var tolerance = terminal.finishTolerance();
     boolean stopTerminalWindow =
@@ -709,7 +705,7 @@ public final class Trailblazer {
   private List<RotationBudgetEstimator.HeadingSpan> collectDownstreamHeadingSpans(
       double progress, double barrierProgress) {
     if (path == null || activeGoals.isEmpty()) {
-      return List.of();
+      return ImmutableList.of();
     }
     List<RotationBudgetEstimator.HeadingSpan> spans = null;
     boolean appliedDelay = false;
@@ -763,7 +759,7 @@ public final class Trailblazer {
       prevAngle = targetAngle;
       spanStart = anchor;
     }
-    return spans == null ? List.of() : spans;
+    return spans == null ? ImmutableList.of() : spans;
   }
 
   private double computeInitialTurnHold(Pose2d pose, PathBuilder.Path geometry, List<Goal> goals) {
@@ -939,9 +935,7 @@ public final class Trailblazer {
             candidate,
             Math.min(limits.braking(), limits.friction()),
             activeClearance.orElse(null));
-    if (geometry.length() > 100) {
-      throw new IllegalArgumentException("Path exceeds profile capacity");
-    }
+    checkArgument(geometry.length() <= 100, "Path exceeds profile capacity");
     remainingGoalStart = from;
     activeGoals = candidate;
     rebuildStartPose = pose;

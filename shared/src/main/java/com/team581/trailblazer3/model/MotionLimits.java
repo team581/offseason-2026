@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /** Optional ceilings in SI units. Positive infinity delegates a ceiling to the robot model. */
 public record MotionLimits(
     double maxVelocityMetersPerSecond,
@@ -16,9 +18,7 @@ public record MotionLimits(
           maxAngularVelocityRadiansPerSecond,
           maxAngularAccelerationRadiansPerSecondSquared
         }) {
-      if (!(cap > 0)) {
-        throw new IllegalArgumentException("Motion ceilings must be positive");
-      }
+      checkArgument((cap > 0), "Motion ceilings must be positive");
     }
   }
 

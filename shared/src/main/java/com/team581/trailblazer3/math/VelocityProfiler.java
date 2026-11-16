@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.math;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import edu.wpi.first.math.MathUtil;
@@ -55,9 +57,7 @@ public final class VelocityProfiler {
           overspeed,
           overspeed ? LimitingFactor.INFEASIBLE : LimitingFactor.GOAL_DECELERATION);
     }
-    if (path.length() > 100) {
-      throw new IllegalArgumentException("Path exceeds profile capacity");
-    }
+    checkArgument(path.length() <= 100, "Path exceeds profile capacity");
     int intervals = (int) Math.ceil(path.length() / 0.05);
     var pieces = path.pieces();
     var anchors = path.anchors();

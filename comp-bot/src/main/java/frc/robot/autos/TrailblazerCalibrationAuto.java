@@ -150,8 +150,8 @@ final class TrailblazerCalibrationAuto {
         abort("Deploy left the retracted position", now);
       } else if (offset.getX() < -0.35
           || offset.getX() > 2.0
-          || Math.abs(offset.getY()) > 0.45
-          || Math.abs(offset.getRotation().getDegrees()) > 15) {
+          || !MathUtil.isNear(0, offset.getY(), 0.45)
+          || !MathUtil.isNear(0, offset.getRotation().getDegrees(), 15)) {
         abort("Robot left the calibration lane", now);
       }
     }
@@ -211,7 +211,7 @@ final class TrailblazerCalibrationAuto {
 
   private boolean stoppedFor(SwerveDriveState drive, double now, double duration) {
     if (MathHelpers.getLinearVelocity(drive.Speeds) > STOP_SPEED
-        || Math.abs(drive.Speeds.omegaRadiansPerSecond) > 0.15) {
+        || !MathUtil.isNear(0, drive.Speeds.omegaRadiansPerSecond, 0.15)) {
       stationarySince = Double.NaN;
     } else if (Double.isNaN(stationarySince)) {
       stationarySince = now;
@@ -296,7 +296,7 @@ final class TrailblazerCalibrationAuto {
         robot.swerve.alignTrajectoryModules(driveDirection);
         boolean modulesAligned = true;
         for (var module : drive.ModuleStates) {
-          modulesAligned &= Math.abs(module.angle.minus(driveDirection).getSin()) < 0.09;
+          modulesAligned &= MathUtil.isNear(0, module.angle.minus(driveDirection).getSin(), 0.09);
         }
         if (elapsed >= 0.15 && modulesAligned && stoppedFor(drive, now, 0.10)) {
           transition(Phase.TEST, now);
@@ -326,7 +326,7 @@ final class TrailblazerCalibrationAuto {
         double angle = resetPose.getRotation().minus(drive.Pose.getRotation()).getRadians();
         if (elapsed >= 3.2) {
           abort("Return to start timed out", now);
-        } else if (distance <= RETURN_TOLERANCE && Math.abs(angle) <= HEADING_TOLERANCE) {
+        } else if (distance <= RETURN_TOLERANCE && MathUtil.isNear(0, angle, HEADING_TOLERANCE)) {
           if (stoppedFor(drive, now, 0.15)) {
             DogLog.log(KEY + "ReturnedPose", drive.Pose);
             if (pass + 1 == test.levels.length) {

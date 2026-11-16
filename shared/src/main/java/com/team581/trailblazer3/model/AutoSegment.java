@@ -1,5 +1,8 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -7,34 +10,33 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
   public AutoSegment {
-    Objects.requireNonNull(limits);
-    if (id == null || id.isBlank() || goals.isEmpty() || goals.size() > 128) {
-      throw new IllegalArgumentException("Invalid plan ID or goal count");
-    }
+    requireNonNull(limits);
+    checkArgument(
+        id != null && !id.isBlank() && !goals.isEmpty() && goals.size() <= 128,
+        "Invalid plan ID or goal count");
     var markers = new HashSet<Enum<?>>();
     for (int i = 0; i < goals.size(); i++) {
       var goal = goals.get(i);
-      if (goal.marker() != null && !markers.add(goal.marker())) {
-        throw new IllegalArgumentException("Repeated goal marker " + goal.marker());
-      }
-      if (i < goals.size() - 1 && goal.passType() != Goal.PassType.THROUGH) {
-        throw new IllegalArgumentException("Intermediate goals must pass through");
-      }
-      if (i == goals.size() - 1 && goal.passType() == Goal.PassType.THROUGH) {
-        throw new IllegalArgumentException("Final goal must use stop or finishThrough");
-      }
+      checkArgument(
+          goal.marker() == null || markers.add(goal.marker()),
+          "Repeated goal marker " + goal.marker());
+      checkArgument(
+          i >= goals.size() - 1 || goal.passType() == Goal.PassType.THROUGH,
+          "Intermediate goals must pass through");
+      checkArgument(
+          i != goals.size() - 1 || goal.passType() != Goal.PassType.THROUGH,
+          "Final goal must use stop or finishThrough");
     }
     goals = List.copyOf(goals);
   }
 
   public AutoSegment forAlliance(Alliance alliance, FieldGeometry field) {
-    Objects.requireNonNull(alliance);
-    Objects.requireNonNull(field);
+    requireNonNull(alliance);
+    requireNonNull(field);
     return alliance == Alliance.Blue
         ? this
         : new AutoSegment(id, limits, goals.stream().map(goal -> goal.flip(field)).toList());
@@ -67,7 +69,7 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
     }
 
     public Builder finishThrough(Translation2d point, double speed, UnaryOperator<Goal> configure) {
-      return addGoal(Objects.requireNonNull(configure).apply(Goal.finishThrough(point, speed)));
+      return addGoal(requireNonNull(configure).apply(Goal.finishThrough(point, speed)));
     }
 
     public Builder maxAcceleration(double maxAccelerationMetersPerSecondSquared) {
@@ -99,12 +101,12 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
     }
 
     public Builder stopAt(Pose2d pose, UnaryOperator<Goal> configure) {
-      return addGoal(Objects.requireNonNull(configure).apply(Goal.stop(pose)));
+      return addGoal(requireNonNull(configure).apply(Goal.stop(pose)));
     }
 
     public Builder stopAt(Translation2d point, UnaryOperator<Goal> configure) {
       return addGoal(
-          Objects.requireNonNull(configure).apply(Goal.stop(new Pose2d(point, Rotation2d.kZero))));
+          requireNonNull(configure).apply(Goal.stop(new Pose2d(point, Rotation2d.kZero))));
     }
 
     public Builder through(double xMeters, double yMeters) {
@@ -118,14 +120,13 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
     public Builder through(
         double xMeters, double yMeters, double blendRadiusMeters, UnaryOperator<Goal> configure) {
       return addGoal(
-          Objects.requireNonNull(configure)
+          requireNonNull(configure)
               .apply(Goal.through(new Translation2d(xMeters, yMeters)).within(blendRadiusMeters)));
     }
 
     public Builder through(double xMeters, double yMeters, UnaryOperator<Goal> configure) {
       return addGoal(
-          Objects.requireNonNull(configure)
-              .apply(Goal.through(new Translation2d(xMeters, yMeters))));
+          requireNonNull(configure).apply(Goal.through(new Translation2d(xMeters, yMeters))));
     }
 
     public Builder through(Pose2d pose) {
@@ -147,11 +148,11 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
     public Builder through(
         Translation2d point, double blendRadiusMeters, UnaryOperator<Goal> configure) {
       return addGoal(
-          Objects.requireNonNull(configure).apply(Goal.through(point).within(blendRadiusMeters)));
+          requireNonNull(configure).apply(Goal.through(point).within(blendRadiusMeters)));
     }
 
     public Builder through(Translation2d point, UnaryOperator<Goal> configure) {
-      return addGoal(Objects.requireNonNull(configure).apply(Goal.through(point)));
+      return addGoal(requireNonNull(configure).apply(Goal.through(point)));
     }
 
     public Builder withLimits(MotionLimits profile) {

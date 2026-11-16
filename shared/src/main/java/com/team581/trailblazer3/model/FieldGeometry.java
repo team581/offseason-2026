@@ -1,19 +1,21 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import java.util.Objects;
 
 public record FieldGeometry(double lengthMeters, double widthMeters, FieldSymmetry symmetry) {
   public FieldGeometry {
-    Objects.requireNonNull(symmetry);
-    if (!Double.isFinite(lengthMeters)
-        || !Double.isFinite(widthMeters)
-        || lengthMeters <= 0
-        || widthMeters <= 0) {
-      throw new IllegalArgumentException("Invalid field dimensions");
-    }
+    requireNonNull(symmetry);
+    checkArgument(
+        Double.isFinite(lengthMeters)
+            && Double.isFinite(widthMeters)
+            && lengthMeters > 0
+            && widthMeters > 0,
+        "Invalid field dimensions");
   }
 
   public Translation2d flipPoint(Translation2d point) {

@@ -1,10 +1,10 @@
 package frc.robot.autos;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.runtime.Trailblazer;
@@ -44,7 +44,7 @@ final class TrailblazerTrenchAutoTest {
     static final RobotManager ROBOT_MANAGER = createRobotManager();
 
     private static RobotManager createRobotManager() {
-      assertTrue(HAL.initialize(500, 0));
+      assertThat(HAL.initialize(500, 0)).isTrue();
       var hardware = new Hardware();
       var shooterLimelight = new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
       var leftLimelight = new Limelight("left", LimelightState.TAGS, CameraConfigs.LEFT);
@@ -129,17 +129,17 @@ final class TrailblazerTrenchAutoTest {
 
   @Test
   void autoPreparedWhileDisabledCommandsTowardAllianceWallAfterWaiting() {
-    assertTrue(HAL.initialize(500, 0));
+    assertThat(HAL.initialize(500, 0)).isTrue();
     double[] time = {0};
     var planner = CompTrailblazer.create(() -> time[0]);
     for (var alliance : Alliance.values()) {
       var rightAuto = new TrailblazerTrenchAuto(testContext(planner, alliance));
       var rightStart = rightAuto.startPose().orElseThrow();
-      assertTrue(rightAuto.isNearStartPose(rightStart));
-      assertFalse(rightAuto.isNearStartPose(Pose2d.kZero));
+      assertThat(rightAuto.isNearStartPose(rightStart)).isTrue();
+      assertThat(rightAuto.isNearStartPose(Pose2d.kZero)).isFalse();
 
       var rightWheelTarget = rightAuto.initialDisabledWheelTarget(rightStart);
-      assertTrue(rightWheelTarget.isPresent());
+      assertThat(rightWheelTarget.isPresent()).isTrue();
       double expectedDir = alliance == Alliance.Red ? 1.0 : -1.0;
       assertEquals(expectedDir, rightWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
       assertEquals(0.0, rightWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
@@ -148,9 +148,11 @@ final class TrailblazerTrenchAutoTest {
       time[0] += 30;
       var rightResult = planner.update(time[0], rightStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, rightResult.status());
-      assertTrue(
-          rightResult.commandedFieldSpeeds().vxMetersPerSecond * rightStart.getRotation().getCos()
-              > 0);
+      assertThat(
+              rightResult.commandedFieldSpeeds().vxMetersPerSecond
+                      * rightStart.getRotation().getCos()
+                  > 0)
+          .isTrue();
       time[0] += 0.02;
       planner.cancel();
       time[0] += 0.02;
@@ -178,18 +180,19 @@ final class TrailblazerTrenchAutoTest {
             }
           };
       var leftStart = leftAuto.startPose().orElseThrow();
-      assertTrue(leftAuto.isNearStartPose(leftStart));
+      assertThat(leftAuto.isNearStartPose(leftStart)).isTrue();
       var leftWheelTarget = leftAuto.initialDisabledWheelTarget(leftStart);
-      assertTrue(leftWheelTarget.isPresent());
+      assertThat(leftWheelTarget.isPresent()).isTrue();
       assertEquals(expectedDir, leftWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
       assertEquals(0.0, leftWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
 
       leftAuto.periodic();
       var leftResult = planner.update(time[0], leftStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, leftResult.status());
-      assertTrue(
-          leftResult.commandedFieldSpeeds().vxMetersPerSecond * leftStart.getRotation().getCos()
-              > 0);
+      assertThat(
+              leftResult.commandedFieldSpeeds().vxMetersPerSecond * leftStart.getRotation().getCos()
+                  > 0)
+          .isTrue();
       time[0] += 0.02;
       planner.cancel();
       time[0] += 0.02;
@@ -198,7 +201,7 @@ final class TrailblazerTrenchAutoTest {
 
   @Test
   void stateMachineAutoRunsTransitionsMarkersAndTimeoutsInOrder() {
-    assertTrue(HAL.initialize(500, 0));
+    assertThat(HAL.initialize(500, 0)).isTrue();
     double[] time = {10.0};
     var planner = CompTrailblazer.create(() -> time[0]);
     Pose2d[] pose = {CompAutoField.pose(1.0, 0.30, 0.0)};
@@ -264,7 +267,7 @@ final class TrailblazerTrenchAutoTest {
 
     // Tick 0 initializes DRIVE_LEG and calls whileInState without advancing prematurely.
     auto.periodic();
-    assertEquals(List.of("drive_start"), log);
+    assertEquals(ImmutableList.of("drive_start"), log);
     assertEquals("DRIVE_LEG", auto.currentStepName());
     stepKinematics(planner, time, pose, speeds);
     assertNotEquals("KEEPOUT_VIOLATION", planner.lastResult().diagnostic());
@@ -280,7 +283,7 @@ final class TrailblazerTrenchAutoTest {
     // Entering WAIT_READY sets ready[0]=true inside afterTransition AFTER getNextState checked it.
     assertEquals(SequenceState.WAIT_READY, auto.getState());
     assertEquals(1, waitLoops.get());
-    assertTrue(log.contains("midpoint"));
+    assertThat(log.contains("midpoint")).isTrue();
     stepKinematics(planner, time, pose, speeds);
 
     // Next tick sees ready[0] == true and transitions into SHORT_PAUSE.
@@ -294,8 +297,8 @@ final class TrailblazerTrenchAutoTest {
     }
     assertEquals(SequenceState.DONE, auto.getState());
     assertEquals("DONE", auto.currentStepName());
-    assertEquals(List.of("drive_start", "midpoint", "wait_start", "done"), log);
-    assertTrue(auto.isNearStartPose(CompAutoField.pose(1.1, 0.30, 5.0)));
-    assertFalse(auto.isNearStartPose(Pose2d.kZero));
+    assertEquals(ImmutableList.of("drive_start", "midpoint", "wait_start", "done"), log);
+    assertThat(auto.isNearStartPose(CompAutoField.pose(1.1, 0.30, 5.0))).isTrue();
+    assertThat(auto.isNearStartPose(Pose2d.kZero)).isFalse();
   }
 }

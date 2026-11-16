@@ -1,5 +1,6 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.reverse;
 import static java.util.Objects.requireNonNull;
 
@@ -34,14 +35,14 @@ public final class FieldClearance {
       List<List<Translation2d>> keepouts) {
     this.field = requireNonNull(field);
     requireNonNull(keepouts);
-    if (!Double.isFinite(halfLength)
-        || halfLength <= 0
-        || !Double.isFinite(halfWidth)
-        || halfWidth <= 0
-        || !Double.isFinite(margin)
-        || margin < 0) {
-      throw new IllegalArgumentException("Invalid footprint or margin");
-    }
+    checkArgument(
+        Double.isFinite(halfLength)
+            && halfLength > 0
+            && Double.isFinite(halfWidth)
+            && halfWidth > 0
+            && Double.isFinite(margin)
+            && margin >= 0,
+        "Invalid footprint or margin");
     this.halfLength = halfLength;
     this.halfWidth = halfWidth;
     this.cornerRadius = Math.hypot(halfLength, halfWidth);
@@ -58,9 +59,9 @@ public final class FieldClearance {
     for (int k = 0; k < polygonCount; k++) {
       var polygon = this.keepouts.get(k);
       int n = polygon.size();
-      if (n < 3 || polygon.stream().anyMatch(p -> !Double.isFinite(p.getNorm()))) {
-        throw new IllegalArgumentException("Invalid keepout polygon");
-      }
+      checkArgument(
+          n >= 3 && !polygon.stream().anyMatch(p -> !Double.isFinite(p.getNorm())),
+          "Invalid keepout polygon");
       double[] px = new double[n];
       double[] py = new double[n];
       double[] nx = new double[n];
@@ -78,15 +79,12 @@ public final class FieldClearance {
         double edgeX = px[next] - ax;
         double edgeY = py[next] - ay;
         double norm = Math.hypot(edgeX, edgeY);
-        if (norm < 1e-9) {
-          throw new IllegalArgumentException("Duplicate keepout vertices");
-        }
+        checkArgument(norm >= 1e-9, "Duplicate keepout vertices");
         for (int j = 0; j < n; j++) {
           double offX = px[j] - ax;
           double offY = py[j] - ay;
-          if (edgeX * offY - edgeY * offX < -1e-9) {
-            throw new IllegalArgumentException("Keepouts must be convex and counterclockwise");
-          }
+          checkArgument(
+              edgeX * offY - edgeY * offX >= -1e-9, "Keepouts must be convex and counterclockwise");
         }
         double unitNx = edgeY / norm;
         double unitNy = -edgeX / norm;

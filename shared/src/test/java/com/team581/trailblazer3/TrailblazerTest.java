@@ -1,11 +1,11 @@
 package com.team581.trailblazer3;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.FieldClearance;
@@ -56,7 +56,7 @@ final class TrailblazerTest {
               0.047,
               6.2,
               12,
-              List.of(
+              ImmutableList.of(
                   new Translation2d(0.31, 0.24),
                   new Translation2d(0.31, -0.24),
                   new Translation2d(-0.31, 0.24),
@@ -74,11 +74,12 @@ final class TrailblazerTest {
       assertNotEquals("KEEPOUT_VIOLATION", result.diagnostic());
       speed = result.commandedFieldSpeeds();
       if (result.status() == RuntimeStatus.RUNNING) {
-        assertTrue(
-            Math.hypot(
-                    speed.vxMetersPerSecond - previousSpeed.vxMetersPerSecond,
-                    speed.vyMetersPerSecond - previousSpeed.vyMetersPerSecond)
-                <= maxAccel * dt + 1e-8);
+        assertThat(
+                Math.hypot(
+                        speed.vxMetersPerSecond - previousSpeed.vxMetersPerSecond,
+                        speed.vyMetersPerSecond - previousSpeed.vyMetersPerSecond)
+                    <= maxAccel * dt + 1e-8)
+            .isTrue();
       }
       pose =
           new Pose2d(
@@ -93,8 +94,9 @@ final class TrailblazerTest {
       while (!planner.atGoal() && time < deadline) {
         step();
       }
-      assertTrue(
-          planner.atGoal(), () -> "Planner missed stop at " + pose + ": " + planner.lastResult());
+      assertThat(planner.atGoal())
+          .withFailMessage(() -> "Planner missed stop at " + pose + ": " + planner.lastResult())
+          .isTrue();
     }
   }
 
@@ -105,7 +107,7 @@ final class TrailblazerTest {
   @Test
   void adjacentFilletsFitToleranceAndShareTangent() {
     var goals =
-        List.of(
+        ImmutableList.of(
             Goal.through(new Translation2d(1, 0)).within(0.30),
             Goal.through(new Translation2d(1, 0.20)).within(0.30),
             Goal.stop(pose(2, 0.20, 0)));
@@ -113,7 +115,8 @@ final class TrailblazerTest {
     assertEquals(5, path.pieces().size());
     for (int i = 0; i < 2; i++) {
       var anchor = path.sample(path.anchors().get(i));
-      assertTrue(anchor.position().getDistance(goals.get(i).pose().getTranslation()) <= 0.25);
+      assertThat(anchor.position().getDistance(goals.get(i).pose().getTranslation()) <= 0.25)
+          .isTrue();
       assertEquals(
           path.anchors().get(i),
           path.project(anchor.position(), 0, path.length()).progress(),
@@ -138,7 +141,7 @@ final class TrailblazerTest {
             0.048,
             6.12,
             15.0,
-            List.of(
+            ImmutableList.of(
                 new Translation2d(0.28, 0.24),
                 new Translation2d(0.28, -0.24),
                 new Translation2d(-0.28, 0.24),
@@ -153,7 +156,7 @@ final class TrailblazerTest {
             0.40,
             0.40,
             0.04,
-            List.of());
+            ImmutableList.of());
 
     double[] time = {0.0};
     var validPlanner =
@@ -172,7 +175,7 @@ final class TrailblazerTest {
       if (i == 0) {
         assertEquals(0.0, currentSpeeds.omegaRadiansPerSecond);
       }
-      assertTrue(clearance.clearance(currentPose) >= 0.04 - 1e-3);
+      assertThat(clearance.clearance(currentPose) >= 0.04 - 1e-3).isTrue();
       currentPose =
           new Pose2d(
               currentPose.getX() + currentSpeeds.vxMetersPerSecond * 0.02,
@@ -182,7 +185,7 @@ final class TrailblazerTest {
                   .plus(Rotation2d.fromRadians(currentSpeeds.omegaRadiansPerSecond * 0.02)));
       time[0] += 0.02;
     }
-    assertTrue(validPlanner.atGoal());
+    assertThat(validPlanner.atGoal()).isTrue();
     assertEquals(1.0, currentPose.getRotation().getCos(), 1e-2);
 
     // Turning parallel to the wall logs KEEPOUT_VIOLATION without stopping the auto.
@@ -213,7 +216,7 @@ final class TrailblazerTest {
                   .plus(Rotation2d.fromRadians(parallelSpeeds.omegaRadiansPerSecond * 0.02)));
       time[0] += 0.02;
     }
-    assertTrue(sawKeepoutWarning);
+    assertThat(sawKeepoutWarning).isTrue();
   }
 
   @Test
@@ -234,13 +237,17 @@ final class TrailblazerTest {
     while (!sim.planner.atGoal() && sim.time < deadline) {
       sim.step();
       var res = sim.planner.lastResult();
-      assertFalse(res.infeasible(), () -> "Unexpected infeasible at progress=" + res.progress());
+      assertThat(res.infeasible())
+          .withFailMessage(() -> "Unexpected infeasible at progress=" + res.progress())
+          .isFalse();
       maxProgress = Math.max(maxProgress, res.progress());
     }
-    assertTrue(sim.planner.atGoal());
-    assertTrue(maxProgress > 4.0, "Closed loop aborted early at maxProgress=" + maxProgress);
-    assertTrue(sim.planner.passedMarker(Marker.INTERMEDIATE));
-    assertTrue(sim.planner.passedMarker(Marker.FINISH));
+    assertThat(sim.planner.atGoal()).isTrue();
+    assertThat(maxProgress > 4.0)
+        .withFailMessage("Closed loop aborted early at maxProgress=" + maxProgress)
+        .isTrue();
+    assertThat(sim.planner.passedMarker(Marker.INTERMEDIATE)).isTrue();
+    assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
     assertEquals(1.0, sim.pose.getX(), 0.05);
     assertEquals(1.0, sim.pose.getY(), 0.05);
   }
@@ -272,14 +279,14 @@ final class TrailblazerTest {
   void fieldClearanceRejectsFootprintOverlap() {
     var field = new FieldGeometry(12, 7, FieldSymmetry.ROTATIONAL_180);
     var keepout =
-        List.of(
+        ImmutableList.of(
             new Translation2d(4, 3),
             new Translation2d(5, 3),
             new Translation2d(5, 4),
             new Translation2d(4, 4));
-    var clearance = new FieldClearance(field, 0.40, 0.35, 0.06, List.of(keepout));
-    assertTrue(clearance.clearance(pose(3, 3.5, 0)) > 0.06);
-    assertTrue(clearance.clearance(pose(3.7, 3.5, 0)) < 0);
+    var clearance = new FieldClearance(field, 0.40, 0.35, 0.06, ImmutableList.of(keepout));
+    assertThat(clearance.clearance(pose(3, 3.5, 0)) > 0.06).isTrue();
+    assertThat(clearance.clearance(pose(3.7, 3.5, 0)) < 0).isTrue();
   }
 
   @Test
@@ -290,8 +297,8 @@ final class TrailblazerTest {
             .addGoal(Goal.finishThrough(new Translation2d(1.5, 0), 0.8, 1.5).mark(Marker.FINISH))
             .build());
     sim.untilGoal();
-    assertTrue(sim.planner.passedMarker(Marker.FINISH));
-    assertTrue(sim.speed.vxMetersPerSecond > 0.60);
+    assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
+    assertThat(sim.speed.vxMetersPerSecond > 0.60).isTrue();
     while (sim.time < 7) {
       sim.step();
     }
@@ -310,9 +317,9 @@ final class TrailblazerTest {
             .addGoal(Goal.stop(pose(1.50, 0, 180)))
             .build());
     sim.step();
-    assertFalse(sim.planner.passedMarker(Marker.INTERMEDIATE));
+    assertThat(sim.planner.passedMarker(Marker.INTERMEDIATE)).isFalse();
     sim.untilGoal();
-    assertTrue(sim.planner.passedMarker(Marker.INTERMEDIATE));
+    assertThat(sim.planner.passedMarker(Marker.INTERMEDIATE)).isTrue();
   }
 
   @Test
@@ -321,7 +328,7 @@ final class TrailblazerTest {
       var sim = new Simulation(dt);
       sim.planner.activate(Trailblazer.segment("straight").stopAt(0.6, 0, 0).build());
       sim.step();
-      assertTrue(sim.speed.vxMetersPerSecond > 0);
+      assertThat(sim.speed.vxMetersPerSecond > 0).isTrue();
       sim.planner.cancel();
       var idle = sim.planner.update(sim.time, sim.pose, sim.speed);
       assertEquals(RuntimeStatus.IDLE, idle.status());
@@ -349,10 +356,11 @@ final class TrailblazerTest {
     while (!sim.planner.atGoal() && sim.time < deadline) {
       sim.step();
       var res = sim.planner.lastResult();
-      assertFalse(
-          res.infeasible(), () -> "Corner exit triggered infeasible at progress=" + res.progress());
+      assertThat(res.infeasible())
+          .withFailMessage(() -> "Corner exit triggered infeasible at progress=" + res.progress())
+          .isFalse();
     }
-    assertTrue(sim.planner.atGoal());
+    assertThat(sim.planner.atGoal()).isTrue();
   }
 
   @Test
@@ -360,7 +368,7 @@ final class TrailblazerTest {
     var sim = new Simulation(0.020);
     sim.planner.activate(Trailblazer.segment("recover").stopAt(2.0, 0.0, 0.0).build());
     sim.step();
-    assertTrue(sim.speed.vxMetersPerSecond > 0);
+    assertThat(sim.speed.vxMetersPerSecond > 0).isTrue();
 
     var bad =
         sim.planner.update(
@@ -378,35 +386,36 @@ final class TrailblazerTest {
   void pathBuilderClampsCornerFilletNearKeepout() {
     var field = new FieldGeometry(12.0, 7.0, FieldSymmetry.ROTATIONAL_180);
     var keepout =
-        List.of(
+        ImmutableList.of(
             new Translation2d(2.0, 0.0),
             new Translation2d(4.0, 0.0),
             new Translation2d(4.0, 1.2),
             new Translation2d(2.0, 1.2));
-    var clearance = new FieldClearance(field, 0.30, 0.30, 0.05, List.of(keepout));
+    var clearance = new FieldClearance(field, 0.30, 0.30, 0.05, ImmutableList.of(keepout));
     var segment =
         Trailblazer.segment("corner-clamp")
             .through(3.0, 1.8, 1.5, g -> g.faceDegrees(0.0))
             .stopAt(6.0, 0.0, 0.0)
             .build();
     var built = PathBuilder.build(new Translation2d(0.0, 0.0), segment.goals(), 3.0, clearance);
-    assertTrue(
-        built.warnings().contains("CORNER_FILLET_CLAMPED goal-0"), built.warnings().toString());
+    assertThat(built.warnings().contains("CORNER_FILLET_CLAMPED goal-0"))
+        .withFailMessage(built.warnings().toString())
+        .isTrue();
     var filletMid = built.sample(built.anchors().get(0)).position();
-    assertTrue(
-        clearance.clearance(filletMid.getX(), filletMid.getY(), 1.0, 0.0)
-            >= clearance.margin() - 1e-2);
+    assertThat(
+            clearance.clearance(filletMid.getX(), filletMid.getY(), 1.0, 0.0)
+                >= clearance.margin() - 1e-2)
+        .isTrue();
   }
 
   @Test
   void rejectsExactReversalWithoutStop() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
+    assertThatThrownBy(() ->
             PathBuilder.build(
                 Translation2d.kZero,
                 List.of(Goal.through(new Translation2d(1, 0)), Goal.stop(Pose2d.kZero)),
-                3));
+                3))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -423,8 +432,8 @@ final class TrailblazerTest {
       assertEquals(RuntimeStatus.RUNNING, result.status());
       assertEquals("MISSED_TICK_RECOVERY", result.diagnostic());
       assertEquals(generation, result.geometryGeneration());
-      assertTrue(sim.speed.vxMetersPerSecond > 0);
-      assertTrue(sim.speed.vxMetersPerSecond <= 5 * sim.dt + 1e-9);
+      assertThat(sim.speed.vxMetersPerSecond > 0).isTrue();
+      assertThat(sim.speed.vxMetersPerSecond <= 5 * sim.dt + 1e-9).isTrue();
       sim.step();
     }
     sim.untilGoal();
@@ -440,7 +449,7 @@ final class TrailblazerTest {
             .stopAt(pose(1.0, 1.0, 0), g -> g.mark(Marker.FINISH))
             .build());
     sim.untilGoal();
-    assertTrue(sim.planner.passedMarker(Marker.FINISH));
+    assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
     assertEquals(1.0, sim.pose.getX(), 0.05);
     assertEquals(1.0, sim.pose.getY(), 0.05);
   }
@@ -449,12 +458,12 @@ final class TrailblazerTest {
   void seededStartOffsetsAndLocalizationResetRecoverOnSyntheticRobot() {
     var random = new Random(581);
     for (int sample = 0; sample < 20; sample++) {
-      var sim = new Simulation(0.004 + random.nextDouble() * 0.016);
+      var sim = new Simulation(0.004 + random.nextDouble(0.016));
       sim.pose =
           pose(
-              random.nextDouble() * 0.16 - 0.08,
-              random.nextDouble() * 0.16 - 0.08,
-              random.nextDouble() * 10 - 5);
+              random.nextDouble(0.16) - 0.08,
+              random.nextDouble(0.16) - 0.08,
+              random.nextDouble(10) - 5);
       sim.planner.activate(
           Trailblazer.segment("perturbation")
               .addGoal(Goal.stop(pose(4, 0, 0)).mark(Marker.FINISH))
@@ -467,7 +476,7 @@ final class TrailblazerTest {
       sim.step();
       assertEquals(2, sim.planner.lastResult().geometryGeneration());
       sim.untilGoal();
-      assertTrue(sim.planner.passedMarker(Marker.FINISH));
+      assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
     }
   }
 
@@ -497,9 +506,10 @@ final class TrailblazerTest {
     double deadline = sim.time + 8.0;
     while (!sim.planner.atGoal() && sim.time < deadline) {
       var res = sim.planner.update(sim.time, sim.pose, sim.speed);
-      assertFalse(
-          res.infeasible(),
-          () -> "Stop pocket flagged infeasible at t=" + sim.time + " pose=" + sim.pose);
+      assertThat(res.infeasible())
+          .withFailMessage(
+              () -> "Stop pocket flagged infeasible at t=" + sim.time + " pose=" + sim.pose)
+          .isFalse();
 
       var cmd = res.commandedFieldSpeeds();
       boolean insideHalfTolerance =
@@ -566,11 +576,13 @@ final class TrailblazerTest {
       sim.time += sim.dt;
     }
 
-    assertTrue(sim.planner.atGoal(), () -> "Planner failed to settle at " + sim.pose);
+    assertThat(sim.planner.atGoal())
+        .withFailMessage(() -> "Planner failed to settle at " + sim.pose)
+        .isTrue();
     assertEquals(0, postPocketCommandReversals);
-    assertTrue(sim.pose.getTranslation().getDistance(targetPose.getTranslation()) <= 0.03);
-    assertTrue(
-        Math.abs(sim.pose.getRotation().minus(targetPose.getRotation()).getDegrees()) <= 2.0);
+    assertThat(sim.pose.getTranslation().getDistance(targetPose.getTranslation()) <= 0.03).isTrue();
+    assertThat(Math.abs(sim.pose.getRotation().minus(targetPose.getRotation()).getDegrees()) <= 2.0)
+        .isTrue();
   }
 
   @Test
@@ -584,7 +596,7 @@ final class TrailblazerTest {
     assertEquals(HeadingPlan.TurnDirection.CCW, reflected.goals().get(0).heading().direction());
     sim.planner.activate(plan);
     sim.step();
-    assertTrue(sim.speed.omegaRadiansPerSecond < 0);
+    assertThat(sim.speed.omegaRadiansPerSecond < 0).isTrue();
     sim.untilGoal();
     assertEquals(90, sim.pose.getRotation().getDegrees(), 2);
   }

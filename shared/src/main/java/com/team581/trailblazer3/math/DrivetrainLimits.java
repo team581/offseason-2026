@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.math;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
@@ -26,9 +28,7 @@ public record DrivetrainLimits(
       double nominalDt,
       MotionLimits caps) {
     var modulePositions = robot.modulePositionsMeters();
-    if (modulePositions.isEmpty()) {
-      throw new IllegalArgumentException("At least one module position is required");
-    }
+    checkArgument(!modulePositions.isEmpty(), "At least one module position is required");
     double radius = 0.0;
     double squaredRadii = 0.0;
     for (int i = 0; i < modulePositions.size(); i++) {

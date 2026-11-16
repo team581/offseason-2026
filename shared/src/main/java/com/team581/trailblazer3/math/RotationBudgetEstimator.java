@@ -1,5 +1,6 @@
 package com.team581.trailblazer3.math;
 
+import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.MathUtil;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public final class RotationBudgetEstimator {
         referenceOmega,
         referenceAlpha,
         angleRemaining,
-        List.of());
+        ImmutableList.of());
   }
 
   public static Budget estimate(
@@ -79,9 +80,7 @@ public final class RotationBudgetEstimator {
     double turnDistance =
         coupled * (Math.abs(angleRemaining) / omegaShare + omegaShare / alphaShare);
     if (Math.abs(angleRemaining) > 0.01 && distanceAhead < turnDistance) {
-      omega =
-          Math.max(
-              omega, Math.min(omegaShare, Math.sqrt(2 * alphaShare * Math.abs(angleRemaining))));
+      omega = Math.clamp(omegaShare, omega, Math.sqrt(2 * alphaShare * Math.abs(angleRemaining)));
       alpha = Math.max(alpha, alphaShare);
     }
     for (int i = 0; i < downstreamSpans.size(); i++) {
@@ -99,14 +98,12 @@ public final class RotationBudgetEstimator {
         double windowTime =
             Math.max(0.15, (span.endProgress() - spanStart) / Math.max(0.5, coupled));
         double requiredOmega =
-            Math.min(
-                omegaShare, Math.max(absDelta / windowTime, Math.sqrt(2 * alphaShare * absDelta)));
+            Math.clamp(absDelta / windowTime, Math.sqrt(2 * alphaShare * absDelta), omegaShare);
         omega = Math.max(omega, requiredOmega);
         alpha = Math.max(alpha, alphaShare);
       }
     }
-    outSpeedAndTraction[0] =
-        Math.max(0, Math.min(coupled, limits.maxWheelSpeed() - omega * radius));
+    outSpeedAndTraction[0] = Math.clamp(coupled, 0, limits.maxWheelSpeed() - omega * radius);
     outSpeedAndTraction[1] = limits.availableTraction(omega, alpha);
   }
 

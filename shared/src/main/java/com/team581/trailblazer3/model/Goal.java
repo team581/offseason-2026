@@ -1,10 +1,12 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import java.util.Objects;
 
 public record Goal(
     Pose2d pose,
@@ -37,32 +39,29 @@ public record Goal(
   }
 
   public Goal {
-    if (!Double.isFinite(pose.getX())
-        || !Double.isFinite(pose.getY())
-        || !Double.isFinite(pose.getRotation().getRadians())) {
-      throw new IllegalArgumentException("Nonfinite goal pose");
-    }
-    Objects.requireNonNull(passType);
-    Objects.requireNonNull(finishTolerance);
+    checkArgument(
+        Double.isFinite(pose.getX())
+            && Double.isFinite(pose.getY())
+            && Double.isFinite(pose.getRotation().getRadians()),
+        "Nonfinite goal pose");
+    requireNonNull(passType);
+    requireNonNull(finishTolerance);
     nonnegative(withinMeters);
-    if (Double.isNaN(maxOverrunMeters) || maxOverrunMeters < 0) {
-      throw new IllegalArgumentException("Expected a nonnegative overrun");
-    }
-    if (passType != PassType.FINISH_THROUGH && !Double.isFinite(maxOverrunMeters)) {
-      throw new IllegalArgumentException("Expected a finite overrun");
-    }
-    if (Double.isNaN(passSpeed)
-        || passSpeed < 0
-        || (passType == PassType.FINISH_THROUGH
-            && (!Double.isFinite(passSpeed) || passSpeed == 0 || maxOverrunMeters == 0))) {
-      throw new IllegalArgumentException("Invalid goal speed or overrun");
-    }
+    checkArgument(
+        !Double.isNaN(maxOverrunMeters) && maxOverrunMeters >= 0, "Expected a nonnegative overrun");
+    checkArgument(
+        passType == PassType.FINISH_THROUGH || Double.isFinite(maxOverrunMeters),
+        "Expected a finite overrun");
+    checkArgument(
+        !Double.isNaN(passSpeed)
+            && passSpeed >= 0
+            && !(passType == PassType.FINISH_THROUGH
+                && (!Double.isFinite(passSpeed) || passSpeed == 0 || maxOverrunMeters == 0)),
+        "Invalid goal speed or overrun");
   }
 
   private static void nonnegative(double value) {
-    if (!Double.isFinite(value) || value < 0) {
-      throw new IllegalArgumentException("Expected a finite nonnegative value");
-    }
+    checkArgument(Double.isFinite(value) && value >= 0, "Expected a finite nonnegative value");
   }
 
   public static Goal stop(Pose2d pose) {

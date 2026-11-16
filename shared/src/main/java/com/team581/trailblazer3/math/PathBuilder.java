@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.math;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.team581.trailblazer3.model.FieldClearance;
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.HeadingPlan;
@@ -227,9 +229,7 @@ public final class PathBuilder {
     }
     for (int i = 0; i < count - 1; i++) {
       var goal = goals.get(i);
-      if (lengths[i + 1] <= EPSILON) {
-        throw new IllegalArgumentException("Duplicate waypoint at goal-" + i);
-      }
+      checkArgument(lengths[i + 1] > EPSILON, "Duplicate waypoint at goal-" + i);
       if (lengths[i] <= EPSILON) {
         continue;
       }
@@ -238,9 +238,9 @@ public final class PathBuilder {
       if (magnitude <= EPSILON) {
         continue;
       }
-      if (Math.PI - magnitude <= EPSILON || goal.withinMeters() == 0) {
-        throw new IllegalArgumentException("Corner requires a stop at goal-" + i);
-      }
+      checkArgument(
+          Math.PI - magnitude > EPSILON && goal.withinMeters() != 0,
+          "Corner requires a stop at goal-" + i);
       if (magnitude >= 3 * Math.PI / 4) {
         warnings.add("NEAR_REVERSAL_CORNER goal-" + i);
       }
@@ -324,9 +324,7 @@ public final class PathBuilder {
         anchors.add(progress);
       } else {
         double radius = tangents[i] / Math.tan(Math.abs(turns[i]) / 2);
-        if (radius <= EPSILON) {
-          throw new IllegalArgumentException("Unresolved fillet at goal-" + i);
-        }
+        checkArgument(radius > EPSILON, "Unresolved fillet at goal-" + i);
         double length = radius * Math.abs(turns[i]);
         pieces.add(
             new Piece(
@@ -350,10 +348,9 @@ public final class PathBuilder {
                   : new Translation2d(
                       terminal.pose().getRotation().getCos(),
                       terminal.pose().getRotation().getSin()));
-      if (finishDir.getNorm() <= EPSILON || braking <= 0) {
-        throw new IllegalArgumentException(
-            "finishThrough requires a direction and braking capacity");
-      }
+      checkArgument(
+          finishDir.getNorm() > EPSILON && braking > 0,
+          "finishThrough requires a direction and braking capacity");
       double desired =
           Math.max(1.5, 1.15 * terminal.passSpeed() * terminal.passSpeed() / (2 * braking));
       double overrun = Math.min(desired, terminal.maxOverrunMeters());
