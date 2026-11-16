@@ -11,6 +11,6 @@
   "jniDependencies": [],
   "mavenUrls": ["https://repo.maven.apache.org/maven2/"],
   "cppDependencies": [],
-  "version": "2026.0.0",
+  "version": "2026.0.1",
   "uuid": "aef2be80-9619-425f-9860-6f8fab1f47d7"
 }
