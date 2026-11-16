@@ -55,6 +55,7 @@ public final class Trailblazer {
     return sampleSegmentPoses(startPose, geometry, goals, 0.0, stepMeters, new double[5]);
   }
 
+  /** Starts a named segment with the robot’s default motion limits. */
   public static AutoSegment.Builder segment(String id) {
     return new AutoSegment.Builder(id);
   }
@@ -234,6 +235,7 @@ public final class Trailblazer {
   private ChassisSpeeds previous;
   private TickResult result = IDLE_RESULT;
 
+  /** Creates a follower with a nominal period in seconds and no default field clearance. */
   public Trailblazer(
       DoubleSupplier clock,
       RobotDrivetrainSpec robot,
@@ -242,6 +244,7 @@ public final class Trailblazer {
     this(clock, robot, calibration, nominalDt, Optional.empty());
   }
 
+  /** Creates a follower with a nominal period in seconds and optional default field clearance. */
   public Trailblazer(
       DoubleSupplier clock,
       RobotDrivetrainSpec robot,
@@ -258,22 +261,27 @@ public final class Trailblazer {
     this.nominalDt = nominalDt;
   }
 
+  /** Starts a segment with the default field clearance and clears previous marker state. */
   public void activate(AutoSegment motionPlan) {
     activate(motionPlan, defaultFieldClearance);
   }
 
+  /** Starts a segment with an explicit field clearance model. */
   public void activate(AutoSegment motionPlan, FieldClearance clearance) {
     activate(motionPlan, Optional.of(requireNonNull(clearance)));
   }
 
+  /** Starts a segment with field clearance checks disabled. */
   public void activateWithoutClearance(AutoSegment motionPlan) {
     activate(motionPlan, Optional.empty());
   }
 
+  /** Reports whether the current segment has reached its terminal completion condition. */
   public boolean atGoal() {
     return result.status() == RuntimeStatus.AT_GOAL;
   }
 
+  /** Clears the active segment, marker state, and drive command. */
   public void cancel() {
     plan = null;
     path = null;
@@ -289,6 +297,9 @@ public final class Trailblazer {
             new ChassisSpeeds(), RuntimeStatus.IDLE, false, LimitingFactor.NONE, generation, 0, "");
   }
 
+  /**
+   * Returns the path position at recorded progress and the active target heading, when available.
+   */
   public Optional<Pose2d> currentTargetPose() {
     if (path == null || heading == null) {
       return Optional.empty();
@@ -301,22 +312,27 @@ public final class Trailblazer {
             Rotation2d.fromRadians(targetHeading)));
   }
 
+  /** Returns the most recent stored follower result. */
   public TickResult lastResult() {
     return result;
   }
 
+  /** Reads the follower clock in seconds. */
   public double nowSeconds() {
     return clock.getAsDouble();
   }
 
+  /** Reports whether the active segment has recorded the given goal marker. */
   public boolean passedMarker(Enum<?> marker) {
     return passed.contains(marker);
   }
 
+  /** Requests rebuilding the remaining path from the measured pose on the next update. */
   public void relatch() {
     relatchRequested = true;
   }
 
+  /** Samples the built path for preview at the given spacing in meters. */
   public Pose2d[] sampledPathPoses(double stepMeters) {
     if (path == null || activeGoals.isEmpty() || !Double.isFinite(stepMeters) || stepMeters <= 0) {
       return new Pose2d[0];
@@ -325,6 +341,10 @@ public final class Trailblazer {
         rebuildStartPose, path, activeGoals, turnHoldProgress, stepMeters, headingSampleScratch);
   }
 
+  /**
+   * Computes a drive command using an explicit timestamp in seconds and field-relative
+   * measurements.
+   */
   public TickResult update(
       double nowSeconds, Pose2d measuredPose, ChassisSpeeds measuredFieldSpeeds) {
     if (plan == null) {
@@ -664,6 +684,7 @@ public final class Trailblazer {
     return result;
   }
 
+  /** Computes a drive command using the follower clock and field-relative measurements. */
   public TickResult update(Pose2d measuredPose, ChassisSpeeds measuredFieldSpeeds) {
     return update(clock.getAsDouble(), measuredPose, measuredFieldSpeeds);
   }

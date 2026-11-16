@@ -79,14 +79,17 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
               .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30)
               .addGoal(sweep(10.6, RED_BUMP_Y, 0, 0.30).mark(Marker.PREPARE_BUMP)));
 
+  /** Converts an archived red-alliance field point in meters to the blue authoring frame. */
   private static Translation2d bluePoint(double redX, double redY) {
     return bluePose(redX, redY, 0).getTranslation();
   }
 
+  /** Converts a red-alliance pose in meters and degrees to the blue authoring frame. */
   private static Pose2d bluePose(double redX, double redY, double redDegrees) {
     return CompAutoField.FIELD.flipPose(CompAutoField.pose(redX, redY, redDegrees));
   }
 
+  /** Adds the bump crossing, hub-facing shot stop, and shared angular limits to a cycle. */
   private static AutoSegment finishCycle(AutoSegment.Builder builder) {
     return builder
         .withLimits(
@@ -100,6 +103,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
         .build();
   }
 
+  /** Starts another intake cycle with the shared trench entry, intake marker, and exit guide. */
   private static AutoSegment.Builder returnToTrench(String name, double exitWithin) {
     // The archive repeats 13.2 m for its 180° heading. Use a single 160° entry point
     // and approach the 179° trench heading on the next leg.
@@ -113,10 +117,27 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
                 .heading(HeadingPlan.to(Rotation2d.fromDegrees(-1)).after(0.15)));
   }
 
+  /**
+   * Returns a regular through goal authored in the archived auto's red frame. This helper converts
+   * the position and heading to blue and sets how close the path should pass to the waypoint. The
+   * robot drives through while turning toward the heading, just as it would for {@code
+   * through(bluePose(redX, redY, redDegrees), within)}.
+   *
+   * <p>Use {@code addGoal(sweep(...).mark(marker))} when the state machine needs to react to
+   * passing the waypoint. The helper itself only creates the goal. The state machine handles intake
+   * requests.
+   *
+   * @param redX red-frame field X in meters
+   * @param redY red-frame field Y in meters
+   * @param redDegrees red-frame chassis heading in degrees, counterclockwise from +X
+   * @param within positional tolerance in meters for rounding and passing the waypoint
+   * @return the configured through goal in the blue authoring frame
+   */
   private static Goal sweep(double redX, double redY, double redDegrees, double within) {
     return Goal.through(bluePose(redX, redY, redDegrees)).within(within);
   }
 
+  /** Returns the stop pose with the rear shooter aimed at the hub on the selected alliance. */
   static Pose2d shootPose(Alliance alliance) {
     return CompAutoField.pose(
         new Pose2d(
@@ -125,6 +146,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
         alliance);
   }
 
+  /** Creates the three-cycle right-trench state machine for the given robot context. */
   public RightTrenchAuto(AutoContext context) {
     super(State.INTAKE_CYCLE_1, START, context, CYCLE_1_SEGMENT, CYCLE_2_SEGMENT, CYCLE_3_SEGMENT);
   }

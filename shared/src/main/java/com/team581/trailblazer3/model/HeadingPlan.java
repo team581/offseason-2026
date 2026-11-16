@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
+/** A chassis heading target, its anchor offset along the path, and the rules for reaching it. */
 public record HeadingPlan(
     Target target,
     double offsetMeters,
@@ -15,24 +16,29 @@ public record HeadingPlan(
     double toleranceRadians,
     double angularSpeedTolerance,
     double dwellSeconds) {
+  /** Chooses how the follower unwraps a heading target when the keyframe becomes active. */
   public enum TurnDirection {
     SHORTEST,
     CW,
     CCW
   }
 
+  /** Determines whether heading readiness can hold translation at the anchor. */
   public enum GatePolicy {
     SOFT,
     HARD
   }
 
+  /** Describes how to compute the field heading the robot should face. */
   public sealed interface Target {
+    /** An absolute field heading. */
     record Fixed(Rotation2d angle) implements Target {
       public Fixed {
         checkArgument(Double.isFinite(angle.getRadians()), "Invalid fixed heading");
       }
     }
 
+    /** A field point to aim at using a robot-relative mechanism angle. */
     record Point(Translation2d target, Rotation2d mechanismOffset) implements Target {
       public Point {
         checkArgument(
@@ -41,9 +47,11 @@ public record HeadingPlan(
       }
     }
 
+    /** A heading that follows the path tangent. */
     record Travel() implements Target {}
   }
 
+  /** Validates the target and the heading readiness thresholds. */
   public HeadingPlan {
     requireNonNull(target);
     requireNonNull(direction);
@@ -59,22 +67,29 @@ public record HeadingPlan(
         "Invalid heading keyframe");
   }
 
+  /** Creates a fixed field heading in degrees, counterclockwise from +X. */
   public static HeadingPlan faceDegrees(double degrees) {
     return to(Rotation2d.fromDegrees(degrees));
   }
 
+  /** Creates a soft fixed-heading plan that takes the shortest turn by default. */
   public static HeadingPlan to(Rotation2d angle) {
     return of(new Target.Fixed(angle));
   }
 
+  /** Creates a heading plan that follows the path tangent. */
   public static HeadingPlan faceTravel() {
     return of(new Target.Travel());
   }
 
+  /** Creates a heading plan that points the front of the robot at the given field point. */
   public static HeadingPlan facePoint(Translation2d point) {
     return facePoint(point, Rotation2d.kZero);
   }
 
+  /**
+   * Creates a heading plan that aims a mechanism with the given robot-relative offset at the point.
+   */
   public static HeadingPlan facePoint(Translation2d point, Rotation2d mechanismOffset) {
     return of(new Target.Point(point, mechanismOffset));
   }
@@ -84,15 +99,18 @@ public record HeadingPlan(
         target, 0, TurnDirection.SHORTEST, GatePolicy.SOFT, Math.toRadians(2.5), 0.10, 0.10);
   }
 
+  /** Places the heading anchor this many meters before the waypoint along the path. */
   public HeadingPlan before(double meters) {
     return new HeadingPlan(
         target, -meters, direction, gate, toleranceRadians, angularSpeedTolerance, dwellSeconds);
   }
 
+  /** Places the heading anchor this many meters after the waypoint along the path. */
   public HeadingPlan after(double meters) {
     return before(-meters);
   }
 
+  /** Returns a copy with the given heading gate policy. */
   public HeadingPlan gate(GatePolicy policy) {
     return new HeadingPlan(
         target,
@@ -104,23 +122,28 @@ public record HeadingPlan(
         dwellSeconds);
   }
 
+  /** Returns a copy with the given turn direction. */
   public HeadingPlan direction(TurnDirection turn) {
     return new HeadingPlan(
         target, offsetMeters, turn, gate, toleranceRadians, angularSpeedTolerance, dwellSeconds);
   }
 
+  /** Requests the clockwise branch when acquiring the target. */
   public HeadingPlan clockwise() {
     return direction(TurnDirection.CW);
   }
 
+  /** Requests the counterclockwise branch when acquiring the target. */
   public HeadingPlan counterClockwise() {
     return direction(TurnDirection.CCW);
   }
 
+  /** Allows the follower to brake and hold at the anchor for heading readiness. */
   public HeadingPlan hardGate() {
     return gate(GatePolicy.HARD);
   }
 
+  /** Returns a copy with the given maximum heading error for gate readiness. */
   public HeadingPlan tolerance(Rotation2d tolerance) {
     return new HeadingPlan(
         target,
@@ -132,6 +155,7 @@ public record HeadingPlan(
         dwellSeconds);
   }
 
+  /** Transforms the target and turn direction for the supplied field symmetry. */
   public HeadingPlan flip(FieldGeometry field) {
     Target flipped = target;
     if (target instanceof Target.Fixed fixed) {
