@@ -41,12 +41,8 @@ final class TrailblazerTrenchRotationAutoTest {
         if (MathUtil.isNear(pose.getY(), start.getY(), 0.60)) {
           assertThat(linearSpeed >= prevLinearSpeed - 1e-6)
               .withFailMessage(
-                  "Expected smooth monotonic launch without dip: prev="
-                      + prevLinearSpeed
-                      + ", curr="
-                      + linearSpeed
-                      + " at yDelta="
-                      + Math.abs(pose.getY() - start.getY()))
+                  "Expected smooth monotonic launch without dip: prev=%s, curr=%s at yDelta=%s",
+                  prevLinearSpeed, linearSpeed, Math.abs(pose.getY() - start.getY()))
               .isTrue();
         }
         prevLinearSpeed = linearSpeed;
@@ -64,12 +60,12 @@ final class TrailblazerTrenchRotationAutoTest {
       }
       assertThat(planner.atGoal()).isTrue();
       assertThat(peakLinearSpeed > 1.5)
-          .withFailMessage("Expected peak speed > 1.5 m/s, got " + peakLinearSpeed)
+          .withFailMessage("Expected peak speed > 1.5 m/s, got %s", peakLinearSpeed)
           .isTrue();
       assertThat(overlapRadians > Math.PI / 2)
           .withFailMessage(
-              "Expected over 90 degrees of rotation while strafing, got "
-                  + Math.toDegrees(overlapRadians))
+              "Expected over 90 degrees of rotation while strafing, got %s",
+              Math.toDegrees(overlapRadians))
           .isTrue();
       assertEquals(start.getX(), pose.getX(), 0.06);
       assertEquals(start.getY() + (alliance == Alliance.Blue ? 3 : -3), pose.getY(), 0.06);

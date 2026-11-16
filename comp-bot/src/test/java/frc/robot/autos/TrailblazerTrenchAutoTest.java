@@ -139,7 +139,7 @@ final class TrailblazerTrenchAutoTest {
       assertThat(rightAuto.isNearStartPose(Pose2d.kZero)).isFalse();
 
       var rightWheelTarget = rightAuto.initialDisabledWheelTarget(rightStart);
-      assertThat(rightWheelTarget.isPresent()).isTrue();
+      assertThat(rightWheelTarget).isPresent();
       double expectedDir = alliance == Alliance.Red ? 1.0 : -1.0;
       assertEquals(expectedDir, rightWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
       assertEquals(0.0, rightWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
@@ -150,9 +150,8 @@ final class TrailblazerTrenchAutoTest {
       assertEquals(TickResult.RuntimeStatus.RUNNING, rightResult.status());
       assertThat(
               rightResult.commandedFieldSpeeds().vxMetersPerSecond
-                      * rightStart.getRotation().getCos()
-                  > 0)
-          .isTrue();
+                  * rightStart.getRotation().getCos())
+          .isGreaterThan(0);
       time[0] += 0.02;
       planner.cancel();
       time[0] += 0.02;
@@ -182,7 +181,7 @@ final class TrailblazerTrenchAutoTest {
       var leftStart = leftAuto.startPose().orElseThrow();
       assertThat(leftAuto.isNearStartPose(leftStart)).isTrue();
       var leftWheelTarget = leftAuto.initialDisabledWheelTarget(leftStart);
-      assertThat(leftWheelTarget.isPresent()).isTrue();
+      assertThat(leftWheelTarget).isPresent();
       assertEquals(expectedDir, leftWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
       assertEquals(0.0, leftWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
 
@@ -190,9 +189,9 @@ final class TrailblazerTrenchAutoTest {
       var leftResult = planner.update(time[0], leftStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, leftResult.status());
       assertThat(
-              leftResult.commandedFieldSpeeds().vxMetersPerSecond * leftStart.getRotation().getCos()
-                  > 0)
-          .isTrue();
+              leftResult.commandedFieldSpeeds().vxMetersPerSecond
+                  * leftStart.getRotation().getCos())
+          .isGreaterThan(0);
       time[0] += 0.02;
       planner.cancel();
       time[0] += 0.02;
@@ -283,7 +282,7 @@ final class TrailblazerTrenchAutoTest {
     // Entering WAIT_READY sets ready[0]=true inside afterTransition AFTER getNextState checked it.
     assertEquals(SequenceState.WAIT_READY, auto.getState());
     assertEquals(1, waitLoops.get());
-    assertThat(log.contains("midpoint")).isTrue();
+    assertThat(log).contains("midpoint");
     stepKinematics(planner, time, pose, speeds);
 
     // Next tick sees ready[0] == true and transitions into SHORT_PAUSE.

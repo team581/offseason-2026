@@ -41,8 +41,8 @@ public record RobotDrivetrainSpec(
             && staticFrictionVolts >= 0
             && staticFrictionVolts < driveMotor.nominalVoltageVolts
             && modulePositionsMeters.size() == 4
-            && !modulePositionsMeters.stream()
-                .anyMatch(p ->
+            && modulePositionsMeters.stream()
+                .noneMatch(p ->
                     !Double.isFinite(p.getNorm())
                         || Math.abs(p.getX()) < 0.18
                         || Math.abs(p.getY()) < 0.18),

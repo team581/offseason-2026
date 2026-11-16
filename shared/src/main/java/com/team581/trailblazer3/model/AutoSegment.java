@@ -23,7 +23,8 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
       var goal = goals.get(i);
       checkArgument(
           goal.marker() == null || markers.add(goal.marker()),
-          "Repeated goal marker " + goal.marker());
+          "Repeated goal marker %s",
+          goal.marker());
       checkArgument(
           i >= goals.size() - 1 || goal.passType() == Goal.PassType.THROUGH,
           "Intermediate goals must pass through");

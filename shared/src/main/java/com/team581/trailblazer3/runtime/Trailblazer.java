@@ -395,9 +395,7 @@ public final class Trailblazer {
       rebuild(measuredPose, remainingGoalStart);
     } else if (relatchRequested) {
       relatchRequested = false;
-      rebuild(
-          measuredPose,
-          remainingGoalStart + Math.min(goalIndex, Math.max(0, activeGoals.size() - 1)));
+      rebuild(measuredPose, remainingGoalStart + Math.clamp(0, activeGoals.size() - 1, goalIndex));
       if (diagnostic.isEmpty()) {
         diagnostic = "RELATCH";
       }
@@ -422,9 +420,7 @@ public final class Trailblazer {
       divergence = 0;
     }
     if (offTrack >= RELATCH_DWELL && !atGoal()) {
-      rebuild(
-          measuredPose,
-          remainingGoalStart + Math.min(goalIndex, Math.max(0, activeGoals.size() - 1)));
+      rebuild(measuredPose, remainingGoalStart + Math.clamp(0, activeGoals.size() - 1, goalIndex));
       projected = path.project(measuredPose.getTranslation(), 0, 0);
       diagnostic = "RELATCH";
     }
@@ -437,7 +433,7 @@ public final class Trailblazer {
       }
     }
     if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
-      highWater = Math.max(highWater, Math.min(projected.progress(), barrier.progress()));
+      highWater = Math.clamp(projected.progress(), highWater, barrier.progress());
     }
 
     RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
@@ -487,12 +483,10 @@ public final class Trailblazer {
 
     double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
     double headingBudgetSpeed =
-        Math.max(
+        Math.clamp(
+            limits.maxSpeed(),
             profile.speed(),
-            Math.min(
-                limits.maxSpeed(),
-                Math.sqrt(
-                    2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier)));
+            Math.sqrt(2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier));
 
     var tolerance = terminal.finishTolerance();
     boolean stopTerminalWindow =

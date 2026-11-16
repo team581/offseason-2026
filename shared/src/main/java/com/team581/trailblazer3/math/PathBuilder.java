@@ -229,7 +229,7 @@ public final class PathBuilder {
     }
     for (int i = 0; i < count - 1; i++) {
       var goal = goals.get(i);
-      checkArgument(lengths[i + 1] > EPSILON, "Duplicate waypoint at goal-" + i);
+      checkArgument(lengths[i + 1] > EPSILON, "Duplicate waypoint at goal-%s", i);
       if (lengths[i] <= EPSILON) {
         continue;
       }
@@ -240,7 +240,8 @@ public final class PathBuilder {
       }
       checkArgument(
           Math.PI - magnitude > EPSILON && goal.withinMeters() != 0,
-          "Corner requires a stop at goal-" + i);
+          "Corner requires a stop at goal-%s",
+          i);
       if (magnitude >= 3 * Math.PI / 4) {
         warnings.add("NEAR_REVERSAL_CORNER goal-" + i);
       }
@@ -324,7 +325,7 @@ public final class PathBuilder {
         anchors.add(progress);
       } else {
         double radius = tangents[i] / Math.tan(Math.abs(turns[i]) / 2);
-        checkArgument(radius > EPSILON, "Unresolved fillet at goal-" + i);
+        checkArgument(radius > EPSILON, "Unresolved fillet at goal-%s", i);
         double length = radius * Math.abs(turns[i]);
         pieces.add(
             new Piece(
