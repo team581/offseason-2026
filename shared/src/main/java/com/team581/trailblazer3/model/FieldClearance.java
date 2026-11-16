@@ -60,7 +60,7 @@ public final class FieldClearance {
       var polygon = this.keepouts.get(k);
       int n = polygon.size();
       checkArgument(
-          n >= 3 && polygon.stream().noneMatch(p -> !Double.isFinite(p.getNorm())),
+          n >= 3 && polygon.stream().allMatch(p -> Double.isFinite(p.getNorm())),
           "Invalid keepout polygon");
       double[] px = new double[n];
       double[] py = new double[n];

@@ -284,7 +284,7 @@ final class TrailblazerTest {
             new Translation2d(4, 4));
     var clearance = new FieldClearance(field, 0.40, 0.35, 0.06, ImmutableList.of(keepout));
     assertThat(clearance.clearance(pose(3, 3.5, 0))).isGreaterThan(0.06);
-    assertThat(clearance.clearance(pose(3.7, 3.5, 0))).isLessThan(0);
+    assertThat(clearance.clearance(pose(3.7, 3.5, 0))).isNegative();
   }
 
   @Test
@@ -326,7 +326,7 @@ final class TrailblazerTest {
       var sim = new Simulation(dt);
       sim.planner.activate(Trailblazer.segment("straight").stopAt(0.6, 0, 0).build());
       sim.step();
-      assertThat(sim.speed.vxMetersPerSecond).isGreaterThan(0);
+      assertThat(sim.speed.vxMetersPerSecond).isPositive();
       sim.planner.cancel();
       var idle = sim.planner.update(sim.time, sim.pose, sim.speed);
       assertEquals(RuntimeStatus.IDLE, idle.status());
@@ -366,7 +366,7 @@ final class TrailblazerTest {
     var sim = new Simulation(0.020);
     sim.planner.activate(Trailblazer.segment("recover").stopAt(2.0, 0.0, 0.0).build());
     sim.step();
-    assertThat(sim.speed.vxMetersPerSecond).isGreaterThan(0);
+    assertThat(sim.speed.vxMetersPerSecond).isPositive();
 
     var bad =
         sim.planner.update(
@@ -428,7 +428,7 @@ final class TrailblazerTest {
       assertEquals(RuntimeStatus.RUNNING, result.status());
       assertEquals("MISSED_TICK_RECOVERY", result.diagnostic());
       assertEquals(generation, result.geometryGeneration());
-      assertThat(sim.speed.vxMetersPerSecond).isGreaterThan(0);
+      assertThat(sim.speed.vxMetersPerSecond).isPositive();
       assertThat(sim.speed.vxMetersPerSecond).isLessThanOrEqualTo(5 * sim.dt + 1e-9);
       sim.step();
     }
@@ -593,7 +593,7 @@ final class TrailblazerTest {
     assertEquals(HeadingPlan.TurnDirection.CCW, reflected.goals().get(0).heading().direction());
     sim.planner.activate(plan);
     sim.step();
-    assertThat(sim.speed.omegaRadiansPerSecond).isLessThan(0);
+    assertThat(sim.speed.omegaRadiansPerSecond).isNegative();
     sim.untilGoal();
     assertEquals(90, sim.pose.getRotation().getDegrees(), 2);
   }

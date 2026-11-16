@@ -151,7 +151,7 @@ final class TrailblazerTrenchAutoTest {
       assertThat(
               rightResult.commandedFieldSpeeds().vxMetersPerSecond
                   * rightStart.getRotation().getCos())
-          .isGreaterThan(0);
+          .isPositive();
       time[0] += 0.02;
       planner.cancel();
       time[0] += 0.02;
@@ -191,7 +191,7 @@ final class TrailblazerTrenchAutoTest {
       assertThat(
               leftResult.commandedFieldSpeeds().vxMetersPerSecond
                   * leftStart.getRotation().getCos())
-          .isGreaterThan(0);
+          .isPositive();
       time[0] += 0.02;
       planner.cancel();
       time[0] += 0.02;
