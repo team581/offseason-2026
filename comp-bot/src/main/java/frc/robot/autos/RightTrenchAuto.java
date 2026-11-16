@@ -49,12 +49,14 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
           Trailblazer.segment("right-trench-cycle-1")
               .through(bluePose(10.489, RED_TRENCH_Y, -90), 0.75)
               .through(bluePose(8.744, 6.049, -115), 0.30)
-              .addGoal(sweep(8.316, 4.945, -115, 0.35).mark(Marker.PRIORITIZE_INTAKE))
+              .through(bluePose(8.316, 4.945, -115), 0.35)
+              .mark(Marker.PRIORITIZE_INTAKE)
               .through(bluePose(8.856, 4.445, -40), 0.20)
               .through(bluePose(9.356, 4.245, 0), 0.20)
               .through(bluePoint(9.756, 4.545), 0.30)
               .through(bluePose(10.15, RED_BUMP_Y, 0), 0.20)
-              .addGoal(sweep(10.6, RED_BUMP_Y, 0, 0.30).mark(Marker.PREPARE_BUMP)));
+              .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30)
+              .mark(Marker.PREPARE_BUMP));
 
   static final AutoSegment CYCLE_2_SEGMENT =
       finishCycle(
@@ -67,7 +69,8 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
               .through(bluePoint(9.556, 4.445), 0.20)
               .through(bluePoint(10.356, 4.045), 0.30)
               .through(bluePoint(9.556, 5.145), 0.20)
-              .addGoal(sweep(10.5, RED_BUMP_Y, 0, 0.20).mark(Marker.PREPARE_BUMP)));
+              .through(bluePose(10.5, RED_BUMP_Y, 0), 0.20)
+              .mark(Marker.PREPARE_BUMP));
 
   static final AutoSegment CYCLE_3_SEGMENT =
       finishCycle(
@@ -77,7 +80,8 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
               .through(bluePose(8.600, 4.31, -90), 0.30)
               .through(bluePoint(9.31, 4.3), 0.30)
               .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30)
-              .addGoal(sweep(10.6, RED_BUMP_Y, 0, 0.30).mark(Marker.PREPARE_BUMP)));
+              .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30)
+              .mark(Marker.PREPARE_BUMP));
 
   /** Converts an archived red-alliance field point in meters to the blue authoring frame. */
   private static Translation2d bluePoint(double redX, double redY) {
@@ -96,9 +100,10 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
             MotionLimits.robotMaximum()
                 .withMaxAngularSpeedDegrees(210)
                 .withMaxAngularAccelerationDegrees(320))
-        .addGoal(
-            sweep(13.25, RED_BUMP_Y, 0, 0.25)
-                .heading(HeadingPlan.to(Rotation2d.k180deg).before(0.25)))
+        .through(
+            bluePose(13.25, RED_BUMP_Y, 0),
+            0.25,
+            goal -> goal.heading(HeadingPlan.to(Rotation2d.k180deg).before(0.25)))
         .stopAt(SHOOT_POINT, Goal::faceHub)
         .build();
   }
@@ -109,32 +114,14 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
     // and approach the 179° trench heading on the next leg.
     return Trailblazer.segment(name)
         .through(bluePose(13.2, RED_TRENCH_Y, 160), 0.30)
-        .addGoal(sweep(12.5, RED_TRENCH_Y, 179, 0.30).mark(Marker.START_INTAKE))
+        .through(bluePose(12.5, RED_TRENCH_Y, 179), 0.30)
+        .mark(Marker.START_INTAKE)
         .through(bluePose(11.5, RED_TRENCH_Y, 179), exitWithin)
         // Keep the bumper parallel to the trench until it clears the neutral-side post.
-        .addGoal(
-            sweep(10.83, RED_TRENCH_Y, 179, 0.04)
-                .heading(HeadingPlan.to(Rotation2d.fromDegrees(-1)).after(0.15)));
-  }
-
-  /**
-   * Returns a regular through goal authored in the archived auto's red frame. This helper converts
-   * the position and heading to blue and sets how close the path should pass to the waypoint. The
-   * robot drives through while turning toward the heading, just as it would for {@code
-   * through(bluePose(redX, redY, redDegrees), within)}.
-   *
-   * <p>Use {@code addGoal(sweep(...).mark(marker))} when the state machine needs to react to
-   * passing the waypoint. The helper itself only creates the goal. The state machine handles intake
-   * requests.
-   *
-   * @param redX red-frame field X in meters
-   * @param redY red-frame field Y in meters
-   * @param redDegrees red-frame chassis heading in degrees, counterclockwise from +X
-   * @param within positional tolerance in meters for rounding and passing the waypoint
-   * @return the configured through goal in the blue authoring frame
-   */
-  private static Goal sweep(double redX, double redY, double redDegrees, double within) {
-    return Goal.through(bluePose(redX, redY, redDegrees)).within(within);
+        .through(
+            bluePose(10.83, RED_TRENCH_Y, 179),
+            0.04,
+            goal -> goal.heading(HeadingPlan.to(Rotation2d.fromDegrees(-1)).after(0.15)));
   }
 
   /** Returns the stop pose with the rear shooter aimed at the hub on the selected alliance. */

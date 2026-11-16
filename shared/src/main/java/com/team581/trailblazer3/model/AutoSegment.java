@@ -57,10 +57,10 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
    *
    * <p>A coordinate or translation overload adds only a position. A pose overload also adds a
    * heading target, so the chassis can turn while driving independently of its direction of travel.
-   * Use a callback to set a heading or attach a marker at the point. For example, {@code through(x,
-   * y, 0.35, g -> g.faceDegrees(90).mark(MyMarker.INTAKE))} lets the caller check whether the robot
-   * has passed the waypoint with {@code passedMarker(MyMarker.INTAKE)}. The caller decides what
-   * action to take when the marker passes.
+   * Use a callback to set a custom heading and chain {@code mark} to attach a marker. For example,
+   * {@code through(x, y, 0.35, g -> g.faceDegrees(90)).mark(MyMarker.INTAKE)} lets the caller check
+   * whether the robot has passed the waypoint with {@code passedMarker(MyMarker.INTAKE)}. The
+   * caller decides what action to take when the marker passes.
    *
    * <p>Use {@code stopAt} when the segment should finish after settling at a pose. Use {@code
    * finishThrough} when the segment should finish at a moving handoff.
@@ -106,6 +106,21 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      */
     public Builder finishThrough(Translation2d point, double speed, UnaryOperator<Goal> configure) {
       return addGoal(requireNonNull(configure).apply(Goal.finishThrough(point, speed)));
+    }
+
+    /**
+     * Sets the marker on the most recently added waypoint and returns this builder. A waypoint
+     * holds one marker, so this replaces any marker already on that waypoint.
+     *
+     * @throws IllegalStateException if no waypoint has been added
+     */
+    public Builder mark(Enum<?> marker) {
+      if (goals.isEmpty()) {
+        throw new IllegalStateException("Add a waypoint before marking it");
+      }
+      int lastIndex = goals.size() - 1;
+      goals.set(lastIndex, goals.get(lastIndex).mark(marker));
+      return this;
     }
 
     /** Caps forward translational acceleration in meters per second squared. */
@@ -202,6 +217,16 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      */
     public Builder through(Pose2d pose, double blendRadiusMeters) {
       return addGoal(Goal.through(pose).within(blendRadiusMeters));
+    }
+
+    /** Applies the configurator after setting the pose heading and given positional tolerance. */
+    public Builder through(Pose2d pose, double blendRadiusMeters, UnaryOperator<Goal> configure) {
+      return addGoal(requireNonNull(configure).apply(Goal.through(pose).within(blendRadiusMeters)));
+    }
+
+    /** Configures a through waypoint initialized with the pose heading and a 0.25 m tolerance. */
+    public Builder through(Pose2d pose, UnaryOperator<Goal> configure) {
+      return addGoal(requireNonNull(configure).apply(Goal.through(pose)));
     }
 
     /** Adds a through waypoint with the default 0.25 m positional tolerance. */

@@ -225,9 +225,11 @@ final class TrailblazerTest {
     sim.planner.activate(
         Trailblazer.segment("closed-loop")
             .through(3.0, 1.0, g -> g.faceDegrees(0))
-            .through(4.0, 2.5, g -> g.faceDegrees(90).mark(Marker.INTERMEDIATE))
+            .through(pose(4.0, 2.5, 90))
+            .mark(Marker.INTERMEDIATE)
             .through(2.0, 2.5, g -> g.faceDegrees(180))
-            .stopAt(loopOrigin, g -> g.mark(Marker.FINISH))
+            .stopAt(loopOrigin)
+            .mark(Marker.FINISH)
             .build());
 
     double maxProgress = 0;
@@ -292,7 +294,8 @@ final class TrailblazerTest {
     var sim = new Simulation(0.020);
     sim.planner.activate(
         Trailblazer.segment("finish-through")
-            .addGoal(Goal.finishThrough(new Translation2d(1.5, 0), 0.8, 1.5).mark(Marker.FINISH))
+            .addGoal(Goal.finishThrough(new Translation2d(1.5, 0), 0.8, 1.5))
+            .mark(Marker.FINISH)
             .build());
     sim.untilGoal();
     assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
@@ -334,6 +337,28 @@ final class TrailblazerTest {
       assertEquals(0.0, idle.commandedFieldSpeeds().vyMetersPerSecond);
       assertEquals(0.0, idle.commandedFieldSpeeds().omegaRadiansPerSecond);
     }
+  }
+
+  @Test
+  void marksLatestGoalAndPreservesPoseConfiguration() {
+    var builder = Trailblazer.segment("configure-pose");
+    assertThatThrownBy(() -> builder.mark(Marker.FINISH)).isInstanceOf(IllegalStateException.class);
+
+    var waypoint = pose(2, 1, 90);
+    var secondWaypoint = pose(3, 1, 60);
+    var heading = HeadingPlan.to(Rotation2d.k180deg).before(0.25);
+    var segment =
+        builder
+            .through(waypoint, goal -> goal)
+            .mark(Marker.FINISH)
+            .mark(Marker.INTERMEDIATE)
+            .through(secondWaypoint, 0.4, goal -> goal.heading(heading))
+            .stopAt(pose(4, 1, 0))
+            .build();
+
+    assertThat(segment.goals().get(0)).isEqualTo(Goal.through(waypoint).mark(Marker.INTERMEDIATE));
+    assertThat(segment.goals().get(1))
+        .isEqualTo(Goal.through(secondWaypoint).within(0.4).heading(heading));
   }
 
   @Test
