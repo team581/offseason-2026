@@ -24,6 +24,7 @@ public class FieldUtil {
 
   public static final Point HUB_POSE =
       Point.ofRed(new Pose2d(11.915394, 4.034663, Rotation2d.kZero));
+  public static final Translation2d BLUE_HUB_TRANSLATION = HUB_POSE.bluePose().getTranslation();
   public static final double HUB_RADIUS_METERS = Units.inchesToMeters(48.106087 / 2);
   public static final Point FEED_LEFT_POSE = Point.ofRed(new Pose2d(15.75, 3.0, Rotation2d.kZero));
   public static final Point FEED_RIGHT_POSE =

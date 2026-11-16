@@ -1,44 +1,42 @@
 package frc.robot.autos;
 
 import com.team581.trailblazer3.model.AutoSegment;
-import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.config.CompAutoField;
 
 /** Drives straight out of the right trench toward the alliance wall. */
-final class TrailblazerTrenchAuto extends TrailblazerAuto {
+final class TrailblazerTrenchAuto extends TrailblazerAuto<TrailblazerTrenchAuto.State> {
+  enum State {
+    LEAVE_TRENCH,
+    DONE
+  }
+
   private static final double TRAVEL_METERS = 2.0;
 
   static final Pose2d START = CompAutoField.RIGHT_TRENCH_START;
   static final Pose2d END = CompAutoField.offset(START, -TRAVEL_METERS, 0.0);
 
   static final AutoSegment LEAVE_TRENCH_SEGMENT =
-      Trailblazer.segment("leave-right-trench")
-          .withLimits(MotionLimits.robotMaximum())
-          .stopAt(END)
-          .build();
-
-  static Pose2d start(Alliance alliance) {
-    return CompAutoField.pose(START, alliance);
-  }
+      Trailblazer.segment("leave-right-trench").stopAt(END).build();
 
   TrailblazerTrenchAuto(AutoContext context) {
-    super(START, context);
-    buildSteps()
-        .onStart(() -> {
-          robot.homeDeployInAutoRequest();
-          robot.homeShooterHoodRequest();
-        });
+    super(State.LEAVE_TRENCH, START, context, LEAVE_TRENCH_SEGMENT);
   }
 
-  TrailblazerTrenchAuto(Trailblazer trailblazer, Alliance alliance) {
-    super(START, trailblazer, alliance);
-    buildSteps();
+  @Override
+  protected void afterTransition(State newState) {
+    switch (newState) {
+      case LEAVE_TRENCH -> {
+        drive(LEAVE_TRENCH_SEGMENT);
+        AutoActions.homeSubsystems(robot);
+      }
+      case DONE -> stopDriving();
+    }
   }
 
-  private DriveStep buildSteps() {
-    return drive("leave_trench", LEAVE_TRENCH_SEGMENT);
+  @Override
+  protected State getNextState(State currentState) {
+    return currentState == State.LEAVE_TRENCH && atGoal() ? State.DONE : currentState;
   }
 }

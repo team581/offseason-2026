@@ -1,13 +1,12 @@
 package com.team581.trailblazer3.model;
 
+import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public record Goal(
-    String id,
     Pose2d pose,
     PassType passType,
     double withinMeters,
@@ -15,16 +14,7 @@ public record Goal(
     double maxOverrunMeters,
     FinishTolerance finishTolerance,
     Enum<?> marker,
-    HeadingPlan heading,
-    DynamicTarget dynamicTarget) {
-  public record DynamicTarget(
-      Supplier<TimestampedTarget<Pose2d>> supplier, TargetLossPolicy lossPolicy) {
-    public DynamicTarget {
-      Objects.requireNonNull(supplier);
-      Objects.requireNonNull(lossPolicy);
-    }
-  }
-
+    HeadingPlan heading) {
   public enum PassType {
     STOP,
     THROUGH,
@@ -47,9 +37,6 @@ public record Goal(
   }
 
   public Goal {
-    if (id != null && id.isBlank()) {
-      throw new IllegalArgumentException("Blank goal ID");
-    }
     if (!Double.isFinite(pose.getX())
         || !Double.isFinite(pose.getY())
         || !Double.isFinite(pose.getRotation().getRadians())) {
@@ -107,7 +94,6 @@ public record Goal(
 
   private static Goal create(Pose2d pose, PassType type, double speed, double overrun) {
     return new Goal(
-        null,
         pose,
         type,
         0.25,
@@ -115,31 +101,7 @@ public record Goal(
         overrun,
         new FinishTolerance(0.03, Math.toRadians(2), 0.10, 0.10, 0.10),
         null,
-        null,
         null);
-  }
-
-  public static Goal through(
-      Supplier<TimestampedTarget<Pose2d>> supplier, TargetLossPolicy policy) {
-    return through(Translation2d.kZero).tracking(supplier, policy);
-  }
-
-  public static Goal stop(Supplier<TimestampedTarget<Pose2d>> supplier, TargetLossPolicy policy) {
-    return stop(Pose2d.kZero).tracking(supplier, policy);
-  }
-
-  public Goal tracking(Supplier<TimestampedTarget<Pose2d>> supplier, TargetLossPolicy policy) {
-    return new Goal(
-        id,
-        pose,
-        passType,
-        withinMeters,
-        passSpeed,
-        maxOverrunMeters,
-        finishTolerance,
-        marker,
-        heading,
-        new DynamicTarget(supplier, policy));
   }
 
   public Goal face(Rotation2d target) {
@@ -150,29 +112,30 @@ public record Goal(
     return heading(HeadingPlan.faceDegrees(degrees));
   }
 
-  public Goal faceHard(Rotation2d target) {
-    return heading(HeadingPlan.to(target).hardGate());
-  }
-
-  public Goal faceHardDegrees(double degrees) {
-    return heading(HeadingPlan.faceDegrees(degrees).hardGate());
-  }
-
   public Goal facePoint(Translation2d fieldTarget) {
     return heading(HeadingPlan.facePoint(fieldTarget));
+  }
+
+  public Goal facePoint(Translation2d fieldTarget, Rotation2d mechanismOffset) {
+    return heading(HeadingPlan.facePoint(fieldTarget, mechanismOffset));
+  }
+
+  /** Aims the rear-mounted shooter ({@code 180 deg} robot offset) at the alliance Hub. */
+  public Goal faceHub() {
+    return faceHub(Rotation2d.k180deg);
+  }
+
+  /** Aims a robot mechanism at {@code mechanismOffset} toward the alliance Hub. */
+  public Goal faceHub(Rotation2d mechanismOffset) {
+    return facePoint(FieldUtil.BLUE_HUB_TRANSLATION, mechanismOffset);
   }
 
   public Goal faceTravel() {
     return heading(HeadingPlan.faceTravel());
   }
 
-  public Goal finishWithin(double positionMeters, double headingDegrees) {
-    return finish(positionMeters, Rotation2d.fromDegrees(headingDegrees), 0.10);
-  }
-
   public Goal heading(HeadingPlan keyframe) {
     return new Goal(
-        id,
         pose,
         passType,
         withinMeters,
@@ -180,13 +143,11 @@ public record Goal(
         maxOverrunMeters,
         finishTolerance,
         marker,
-        keyframe,
-        dynamicTarget);
+        keyframe);
   }
 
   public Goal passSpeed(double metersPerSecond) {
     return new Goal(
-        id,
         pose,
         passType,
         withinMeters,
@@ -194,39 +155,16 @@ public record Goal(
         maxOverrunMeters,
         finishTolerance,
         marker,
-        heading,
-        dynamicTarget);
+        heading);
   }
 
   public Goal flip(FieldGeometry field) {
-    var transformed = dynamicTarget == null ? withPose(field.flipPose(pose)) : this;
-    if (dynamicTarget != null
-        && dynamicTarget.lossPolicy() instanceof TargetLossPolicy.FallbackNominal fallback) {
-      transformed =
-          transformed.tracking(
-              dynamicTarget.supplier(),
-              TargetLossPolicy.fallbackNominal(field.flipPose(fallback.nominalPose())));
-    }
+    var transformed = withPose(field.flipPose(pose));
     return heading == null ? transformed : transformed.heading(heading.flip(field));
-  }
-
-  public Goal withId(String goalId) {
-    return new Goal(
-        goalId,
-        pose,
-        passType,
-        withinMeters,
-        passSpeed,
-        maxOverrunMeters,
-        finishTolerance,
-        marker,
-        heading,
-        dynamicTarget);
   }
 
   public Goal withPose(Pose2d target) {
     return new Goal(
-        id,
         target,
         passType,
         withinMeters,
@@ -234,40 +172,17 @@ public record Goal(
         maxOverrunMeters,
         finishTolerance,
         marker,
-        heading,
-        dynamicTarget);
+        heading);
   }
 
   public Goal within(double meters) {
     return new Goal(
-        id,
-        pose,
-        passType,
-        meters,
-        passSpeed,
-        maxOverrunMeters,
-        finishTolerance,
-        marker,
-        heading,
-        dynamicTarget);
+        pose, passType, meters, passSpeed, maxOverrunMeters, finishTolerance, marker, heading);
   }
 
   public Goal mark(Enum<?> event) {
-    return marker(event);
-  }
-
-  public Goal marker(Enum<?> event) {
     return new Goal(
-        id,
-        pose,
-        passType,
-        withinMeters,
-        passSpeed,
-        maxOverrunMeters,
-        finishTolerance,
-        event,
-        heading,
-        dynamicTarget);
+        pose, passType, withinMeters, passSpeed, maxOverrunMeters, finishTolerance, event, heading);
   }
 
   public Goal clockwise() {
@@ -294,16 +209,7 @@ public record Goal(
 
   public Goal finish(FinishTolerance tolerance) {
     return new Goal(
-        id,
-        pose,
-        passType,
-        withinMeters,
-        passSpeed,
-        maxOverrunMeters,
-        tolerance,
-        marker,
-        heading,
-        dynamicTarget);
+        pose, passType, withinMeters, passSpeed, maxOverrunMeters, tolerance, marker, heading);
   }
 
   private HeadingPlan baseHeadingPlan() {
@@ -311,7 +217,7 @@ public record Goal(
       return heading;
     }
     if (passType == PassType.STOP) {
-      return HeadingPlan.face(pose.getRotation());
+      return HeadingPlan.to(pose.getRotation());
     }
     throw new IllegalStateException("Set a heading before configuring turn direction or gate");
   }

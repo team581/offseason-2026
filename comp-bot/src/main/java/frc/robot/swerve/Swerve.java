@@ -111,8 +111,19 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
           .withDeadband(0)
           .withRotationalDeadband(0);
+
+  /** Requests Blue-alliance field-centric translation while aiming at a Blue-alliance heading. */
+  private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnaps =
+      new SwerveRequest.FieldCentricFacingAngle()
+          .withDriveRequestType(DriveRequestType.Velocity)
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withDeadband(0)
+          .withRotationalDeadband(0)
+          .withHeadingPID(
+              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
+
   private ChassisSpeeds trajectoryCommand;
-  private @Nullable ChassisSpeeds lastEnabledTrajectoryCommand;
   private boolean logCalibrationCommands;
   private Rotation2d trajectoryModuleDirection;
   private final SwerveRequest.PointWheelsAt trajectoryAlignment =
@@ -173,7 +184,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void alignTrajectoryModules(Rotation2d robotRelativeDirection) {
     trajectoryCommand = new ChassisSpeeds();
-    lastEnabledTrajectoryCommand = null;
     trajectoryModuleDirection = robotRelativeDirection;
   }
 
@@ -228,7 +238,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   public void clearTrajectoryCommand() {
     trajectoryCommand = null;
-    lastEnabledTrajectoryCommand = null;
     trajectoryModuleDirection = null;
   }
 
@@ -325,12 +334,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     return SwerveGoalStatus.WRONG_ANGLE;
   }
 
-  public ChassisSpeeds getLastAppliedFieldSpeeds() {
-    return lastEnabledTrajectoryCommand != null
-        ? lastEnabledTrajectoryCommand
-        : fieldRelativeSpeeds;
-  }
-
   public ChassisSpeeds getRequestedSpeeds() {
     if (DriverStation.isAutonomousEnabled()
         || (DriverStation.isDisabled() && trajectoryCommand != null)) {
@@ -352,10 +355,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public boolean isNear(double angle, double tolerance) {
     return MathUtil.isNear(
         drivetrainState.Pose.getRotation().getDegrees(), angle, tolerance, -180.0, 180.0);
-  }
-
-  public boolean isOdometryValid() {
-    return drivetrain.isOdometryValid();
   }
 
   public void normalDriveRequest() {
@@ -416,10 +415,27 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
         DogLog.log("Trailblazer3/Calibration/AligningModules", trajectoryModuleDirection != null);
       }
       if (trajectoryModuleDirection != null) {
-        lastEnabledTrajectoryCommand = null;
         drivetrain.setControl(trajectoryAlignment.withModuleDirection(trajectoryModuleDirection));
+      } else if (DriverStation.isAutonomousEnabled()
+          && (currentState == SwerveState.WARMUP_SCORE
+              || currentState == SwerveState.SCORE
+              || currentState == SwerveState.WARMUP_FEED
+              || currentState == SwerveState.FEED)) {
+        if (ableToXSwerve) {
+          DogLog.timestamp("Swerve/XSwerveActive");
+          drivetrain.setControl(xRequest);
+        } else {
+          DogLog.timestamp("Swerve/TryingToAim");
+          boolean scoring =
+              currentState == SwerveState.WARMUP_SCORE || currentState == SwerveState.SCORE;
+          drivetrain.setControl(
+              fieldCentricSnaps
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(scoring ? scoringAngleRotation : feedingAngleRotation)
+                  .withTargetRateFeedforward(scoring ? scoringFeedForward : feedingFeedForward));
+        }
       } else {
-        lastEnabledTrajectoryCommand = DriverStation.isAutonomousEnabled() ? speeds : null;
         drivetrain.setControl(
             trajectory
                 .withVelocityX(speeds.vxMetersPerSecond)
@@ -427,8 +443,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 .withRotationalRate(speeds.omegaRadiansPerSecond));
       }
     } else {
-      lastEnabledTrajectoryCommand = null;
-
       switch (currentState) {
         case MANUAL -> {
           var speeds = getRequestedSpeeds();
@@ -688,7 +702,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     currentMaxAngularRateRotation = Rotation2d.fromRotations(currentMaxAngularRate);
     teleopDriveSource.setMaxVelocity(currentMaxLinearRate, currentMaxAngularRateRotation);
 
-    drivePerspectiveSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
+    double maxAngularRateRadPerSec = Units.rotationsToRadians(currentMaxAngularRate);
+    drivePerspectiveSnaps.withMaxAbsRotationalRate(maxAngularRateRadPerSec);
+    fieldCentricSnaps.withMaxAbsRotationalRate(maxAngularRateRadPerSec);
 
     Optional<Rotation2d> targetRotation = Optional.empty();
     switch (getState()) {
@@ -726,5 +742,6 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       }
     }
     drivePerspectiveSnaps.withCenterOfRotation(centerOfRotation);
+    fieldCentricSnaps.withCenterOfRotation(centerOfRotation);
   }
 }

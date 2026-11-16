@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.runtime;
 
+import static java.util.Objects.requireNonNull;
+
 import com.team581.trailblazer3.math.DrivetrainLimits;
 import com.team581.trailblazer3.math.HeadingPlanner;
 import com.team581.trailblazer3.math.PathBuilder;
@@ -11,311 +13,75 @@ import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.FieldClearance;
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.HeadingPlan;
-import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
-import com.team581.trailblazer3.model.RobotStateSnapshot;
-import com.team581.trailblazer3.model.TargetLossPolicy;
-import com.team581.trailblazer3.model.TickInput;
 import com.team581.trailblazer3.model.TickResult;
-import com.team581.trailblazer3.model.TickResult.ChassisAccelerations;
-import com.team581.trailblazer3.model.TickResult.GoalPassageStatus;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
-import com.team581.trailblazer3.model.TimestampedTarget;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.DoubleUnaryOperator;
+import java.util.function.DoubleSupplier;
 
+/** Physics-limited sequential path follower for static autonomous segments. */
 public final class Trailblazer {
-  public record MotionTelemetry(
-      double maxSpeed,
-      double availableAcceleration,
-      double maxBraking,
-      double maxAngularSpeed,
-      double maxAngularAcceleration,
-      double profileSpeed,
-      double profileAcceleration,
-      double commandedAcceleration,
-      double distanceRemaining,
-      double positionError,
-      double dwellSeconds) {}
-
-  public enum Ownership {
-    NONE,
-    ROTATION,
-    TRANSLATION_AND_ROTATION
-  }
-
   private record Barrier(double progress, boolean closed) {}
 
   private static final double CORRIDOR = 0.30;
-
   private static final double RELATCH_DWELL = 0.15;
-
   private static final double MAX_TICK_INTERVAL = 0.10;
-
-  private static final double MAX_SNAPSHOT_AGE_SECONDS = 0.10;
-
-  private static final double MAX_SNAPSHOT_FUTURE_SKEW_SECONDS = 0.025;
+  private static final TickResult IDLE_RESULT =
+      new TickResult(
+          new ChassisSpeeds(), RuntimeStatus.IDLE, false, LimitingFactor.NONE, 0, 0.0, "");
 
   /** Samples discrete poses along a path geometry with planned per-goal headings for previews. */
   public static Pose2d[] sampleSegmentPoses(
       Pose2d startPose, PathBuilder.Path geometry, List<Goal> goals, double stepMeters) {
-    if (geometry == null || goals == null || goals.isEmpty() || !(stepMeters > 0)) {
+    if (geometry == null
+        || goals == null
+        || goals.isEmpty()
+        || !Double.isFinite(stepMeters)
+        || stepMeters <= 0) {
       return new Pose2d[0];
     }
-    return sampleSegmentPoses(startPose, geometry, goals, null, 0.0, stepMeters, new double[5]);
-  }
-
-  public static AutoSegment.Builder segment() {
-    return new AutoSegment.Builder("segment");
+    return sampleSegmentPoses(startPose, geometry, goals, 0.0, stepMeters, new double[5]);
   }
 
   public static AutoSegment.Builder segment(String id) {
     return new AutoSegment.Builder(id);
   }
 
-  private static String corruptSnapshotFault(RobotStateSnapshot snapshot) {
-    var pose = snapshot.measuredPose();
-    if (!Double.isFinite(pose.getTranslation().getNorm())
-        || !Double.isFinite(pose.getRotation().getRadians())) {
-      return "Measured pose is nonfinite";
-    }
-    if (!finite(snapshot.measuredFieldSpeeds())
-        || snapshot.appliedFieldSpeeds().filter(speed -> !finite(speed)).isPresent()) {
-      return "Measured or applied chassis velocity is nonfinite";
-    }
-    if (!validPower(snapshot.swerveSupplyCurrentLimitAmps().orElse(1))
-        || !validPower(snapshot.restingBatteryVoltageVolts().orElse(12))) {
-      return "Invalid drivetrain power limits";
-    }
-    return null;
-  }
-
-  private static double distanceToSegment(
-      Translation2d point, Translation2d start, Translation2d end) {
-    var delta = end.minus(start);
-    double squared = delta.dot(delta);
-    double fraction =
-        squared > 1e-12 ? MathUtil.clamp(point.minus(start).dot(delta) / squared, 0, 1) : 0;
-    return point.getDistance(start.plus(delta.times(fraction)));
-  }
-
-  private static boolean evaluateFixedSpan(
-      PathBuilder.Path geometry,
-      FieldClearance clearance,
-      double[] sampleScratch,
-      double[] spanState,
-      boolean escapeNonDecreasing,
-      boolean checkEscape,
-      double escapeWindow,
-      double required,
-      double safeTarget,
-      double segStart,
-      double anchor,
-      double spanEnd,
-      double holdUntil,
-      double currentHeading,
-      double startCos,
-      double startSin,
-      double diff,
-      double spanEndHeading,
-      int headingIntervals,
-      double headingAllowance) {
-    double minPath = spanState[0];
-    double minBeyondEscape = spanState[1];
-    double prevNominal = spanState[2];
-    double escapeEndClearance = spanState[3];
-    for (double progress = segStart; ; ) {
-      geometry.sampleInto(progress, sampleScratch);
-      double px = sampleScratch[0];
-      double py = sampleScratch[1];
-      boolean holdingNow = progress < holdUntil - 1e-9;
-      double pointClearance;
-      if (holdingNow) {
-        pointClearance = clearance.clearance(px, py, startCos, startSin);
-      } else {
-        double angleBound = clearance.minimumAngleClearance(px, py);
-        if ((!checkEscape || progress > escapeWindow + 1e-9) && angleBound > safeTarget + 0.02) {
-          minPath = Math.min(minPath, angleBound);
-          if (progress > escapeWindow + 1e-9) {
-            minBeyondEscape = Math.min(minBeyondEscape, angleBound);
-          }
-          if (progress >= spanEnd - 1e-9) {
-            break;
-          }
-          double remaining = spanEnd - progress;
-          double step = Math.min(0.25, Math.min((angleBound - safeTarget) / 2.0, remaining));
-          minPath = Math.min(minPath, angleBound - step);
-          if (progress > escapeWindow + 1e-9) {
-            minBeyondEscape = Math.min(minBeyondEscape, angleBound - step);
-          }
-          progress = Math.min(spanEnd, progress + Math.max(step, 1e-6));
-          continue;
-        }
-        pointClearance =
-            angleBound >= safeTarget && angleBound > 0.0
-                ? angleBound
-                : Math.max(
-                    angleBound,
-                    sweptClearanceAt(
-                        clearance,
-                        px,
-                        py,
-                        currentHeading,
-                        diff,
-                        headingIntervals,
-                        headingAllowance));
-      }
-      minPath = Math.min(minPath, pointClearance);
-      if (checkEscape && progress <= escapeWindow + 1e-9) {
-        double turnStart = holdUntil > segStart ? Math.min(holdUntil, anchor) : segStart;
-        double nominalAngle;
-        if (holdingNow) {
-          nominalAngle = currentHeading;
-        } else {
-          nominalAngle =
-              anchor > turnStart + 1e-9
-                  ? currentHeading
-                      + MathUtil.clamp((progress - turnStart) / (anchor - turnStart), 0, 1) * diff
-                  : spanEndHeading;
-        }
-        double nominal =
-            clearance.clearance(px, py, Math.cos(nominalAngle), Math.sin(nominalAngle));
-        if (nominal < prevNominal - 1e-6) {
-          escapeNonDecreasing = false;
-        }
-        prevNominal = nominal;
-        escapeEndClearance = nominal;
-      } else {
-        minBeyondEscape = Math.min(minBeyondEscape, pointClearance);
-      }
-      if (progress >= spanEnd - 1e-9) {
-        break;
-      }
-      if (pointClearance <= required && !checkEscape && progress > escapeWindow + 1e-9) {
-        break;
-      }
-      double remaining = spanEnd - progress;
-      double step;
-      if (holdingNow) {
-        double holdRemaining = holdUntil - progress;
-        if (checkEscape && progress < escapeWindow - 1e-9) {
-          holdRemaining = Math.min(holdRemaining, escapeWindow - progress);
-        }
-        step = Math.min(0.025, Math.min(holdRemaining, remaining));
-      } else if (checkEscape && progress < escapeWindow - 1e-9) {
-        step = Math.min(0.025, Math.min(escapeWindow - progress, remaining));
-      } else if (pointClearance > required + 0.02) {
-        // Translation by ds along arc length can reduce clearance by at most ds.
-        step = Math.min(0.25, Math.min((pointClearance - required) / 2.0, remaining));
-        minPath = Math.min(minPath, pointClearance - step);
-        minBeyondEscape = Math.min(minBeyondEscape, pointClearance - step);
-      } else {
-        step = Math.min(0.025, remaining);
-      }
-      progress = Math.min(spanEnd, progress + Math.max(step, 1e-6));
-    }
-    spanState[0] = minPath;
-    spanState[1] = minBeyondEscape;
-    spanState[2] = prevNominal;
-    spanState[3] = escapeEndClearance;
-    return escapeNonDecreasing;
-  }
-
-  private static double findEarliestSafeTurnStart(
-      PathBuilder.Path geometry,
-      FieldClearance clearance,
-      double[] sampleScratch,
-      double anchor,
-      double spanEnd,
-      double currentHeading,
-      double diff,
-      int headingIntervals,
-      double headingAllowance,
-      double target) {
-    if (spanEnd > anchor + 1e-9) {
-      int tailSteps = Math.max(1, (int) Math.ceil((spanEnd - anchor) / 0.025));
-      for (int i = tailSteps; i >= 1; i--) {
-        double s = anchor + ((spanEnd - anchor) * i) / tailSteps;
-        double clearanceAtS =
-            sweptOrBoundClearance(
-                geometry,
-                clearance,
-                sampleScratch,
-                s,
-                currentHeading,
-                diff,
-                headingIntervals,
-                headingAllowance,
-                target);
-        if (clearanceAtS < target || clearanceAtS <= 0.0) {
-          return -1.0;
-        }
-      }
-    }
-    int steps = Math.max(1, (int) Math.ceil(anchor / 0.025));
-    double earliestSafe = -1.0;
-    for (int i = steps; i >= 1; i--) {
-      double s = i == steps ? anchor : Math.min(anchor, i * 0.025);
-      double clearanceAtS =
-          sweptOrBoundClearance(
-              geometry,
-              clearance,
-              sampleScratch,
-              s,
-              currentHeading,
-              diff,
-              headingIntervals,
-              headingAllowance,
-              target);
-      if (clearanceAtS < target || clearanceAtS <= 0.0) {
-        break;
-      }
-      earliestSafe = s;
-    }
-    return earliestSafe;
-  }
-
   private static boolean finite(ChassisSpeeds speed) {
-    return Double.isFinite(speed.vxMetersPerSecond)
+    return speed != null
+        && Double.isFinite(speed.vxMetersPerSecond)
         && Double.isFinite(speed.vyMetersPerSecond)
         && Double.isFinite(speed.omegaRadiansPerSecond);
   }
 
-  private static String odometryDiagnostic(
-      RobotStateSnapshot snapshot, double now, String diagnostic) {
-    if (!snapshot.localizationValid()) {
-      return "ODOMETRY_UNREADY";
+  private static boolean finite(Pose2d pose) {
+    return pose != null
+        && Double.isFinite(pose.getX())
+        && Double.isFinite(pose.getY())
+        && Double.isFinite(pose.getRotation().getRadians());
+  }
+
+  private static HeadingPlan headingForGoal(Goal goal) {
+    if (goal.heading() != null) {
+      return goal.heading();
     }
-    double timestamp = snapshot.poseTimestampSeconds();
-    if (!Double.isFinite(timestamp) || timestamp - now > MAX_SNAPSHOT_FUTURE_SKEW_SECONDS) {
-      return "ODOMETRY_INVALID_TIMESTAMP";
-    }
-    if (timestamp < 0
-        || (timestamp == 0 && now > MAX_SNAPSHOT_AGE_SECONDS)
-        || now - timestamp > MAX_SNAPSHOT_AGE_SECONDS) {
-      return "ODOMETRY_STALE";
-    }
-    return diagnostic;
+    return goal.passType() == Goal.PassType.STOP ? HeadingPlan.to(goal.pose().getRotation()) : null;
   }
 
   private static double plannedHeadingAtRadians(
       Pose2d startPose,
       PathBuilder.Path geometry,
       List<Goal> goals,
-      HeadingPlan inheritedHeading,
       double firstTurnStartProgress,
       double s,
       double[] sampleScratch) {
@@ -324,13 +90,7 @@ public final class Trailblazer {
     boolean appliedDelay = false;
     for (int i = 0; i < goals.size(); i++) {
       var goal = goals.get(i);
-      var keyframe = goal.heading();
-      if (keyframe == null && i == 0 && inheritedHeading != null) {
-        keyframe = inheritedHeading;
-      }
-      if (keyframe == null && goal.passType() == Goal.PassType.STOP) {
-        keyframe = HeadingPlan.to(goal.pose().getRotation());
-      }
+      var keyframe = headingForGoal(goal);
       if (keyframe == null) {
         continue;
       }
@@ -365,12 +125,7 @@ public final class Trailblazer {
             anchor > turnStart + 1e-9
                 ? MathUtil.clamp((s - turnStart) / (anchor - turnStart), 0, 1)
                 : (s >= turnStart - 1e-9 ? 1.0 : 0.0);
-        double diff = MathUtil.angleModulus(target - current);
-        if (keyframe.direction() == HeadingPlan.TurnDirection.CW && diff > 0) {
-          diff -= 2 * Math.PI;
-        } else if (keyframe.direction() == HeadingPlan.TurnDirection.CCW && diff < 0) {
-          diff += 2 * Math.PI;
-        }
+        double diff = turnDelta(current, target, keyframe.direction());
         return current + fraction * diff;
       }
       current = target;
@@ -383,7 +138,6 @@ public final class Trailblazer {
       Pose2d startPose,
       PathBuilder.Path geometry,
       List<Goal> goals,
-      HeadingPlan initialInheritedHeading,
       double firstTurnStartProgress,
       double stepMeters,
       double[] sampleScratch) {
@@ -397,151 +151,89 @@ public final class Trailblazer {
       double py = sampleScratch[1];
       double headingRad =
           plannedHeadingAtRadians(
-              startPose,
-              geometry,
-              goals,
-              initialInheritedHeading,
-              firstTurnStartProgress,
-              s,
-              sampleScratch);
+              startPose, geometry, goals, firstTurnStartProgress, s, sampleScratch);
       poses[i] = new Pose2d(px, py, Rotation2d.fromRadians(headingRad));
     }
     return poses;
   }
 
-  private static double sweptClearanceAt(
+  private static boolean sweepClear(
       FieldClearance clearance,
-      double px,
-      double py,
-      double currentHeading,
+      double x,
+      double y,
+      double startHeading,
       double diff,
-      int headingIntervals,
-      double headingAllowance) {
-    double pointClearance = Double.POSITIVE_INFINITY;
-    for (int angleStep = 0; angleStep <= headingIntervals; angleStep++) {
-      double angle =
-          headingIntervals == 0
-              ? currentHeading
-              : currentHeading + (diff * angleStep) / headingIntervals;
-      pointClearance =
-          Math.min(pointClearance, clearance.clearance(px, py, Math.cos(angle), Math.sin(angle)));
+      int angleSteps) {
+    for (int step = 0; step <= angleSteps; step++) {
+      double angle = startHeading + (diff * step) / angleSteps;
+      if (clearance.clearance(x, y, Math.cos(angle), Math.sin(angle)) < clearance.margin()) {
+        return false;
+      }
     }
-    return pointClearance - headingAllowance;
-  }
-
-  private static double sweptOrBoundClearance(
-      PathBuilder.Path geometry,
-      FieldClearance clearance,
-      double[] sampleScratch,
-      double s,
-      double currentHeading,
-      double diff,
-      int headingIntervals,
-      double headingAllowance,
-      double target) {
-    geometry.sampleInto(s, sampleScratch);
-    double px = sampleScratch[0];
-    double py = sampleScratch[1];
-    double fastBound = clearance.minimumAngleClearance(px, py);
-    if (fastBound >= target && fastBound > 0.0) {
-      return fastBound;
-    }
-    return Math.max(
-        fastBound,
-        sweptClearanceAt(
-            clearance, px, py, currentHeading, diff, headingIntervals, headingAllowance));
+    return true;
   }
 
   private static Translation2d translation(ChassisSpeeds speed) {
     return new Translation2d(speed.vxMetersPerSecond, speed.vyMetersPerSecond);
   }
 
-  private static boolean validPower(double value) {
-    return Double.isFinite(value) && value > 0;
+  private static double turnDelta(
+      double fromRadians, double targetRadians, HeadingPlan.TurnDirection direction) {
+    double diff = MathUtil.angleModulus(targetRadians - fromRadians);
+    if (direction == HeadingPlan.TurnDirection.CW && diff > 0) {
+      diff -= 2 * Math.PI;
+    } else if (direction == HeadingPlan.TurnDirection.CCW && diff < 0) {
+      diff += 2 * Math.PI;
+    }
+    return diff;
   }
 
-  private final TimeSource clock;
+  private final DoubleSupplier clock;
   private final RobotDrivetrainSpec robot;
   private final EmpiricalDriveCalibration calibration;
   private final double nominalDt;
-  private final double squaredModuleRadii;
   private final Optional<FieldClearance> defaultFieldClearance;
-  private Optional<FieldClearance> fieldClearance;
-  private boolean marginWarning;
-  private final Map<String, GoalPassageStatus> statuses = new LinkedHashMap<>();
-  private Map<String, GoalPassageStatus> immutableStatuses = Map.of();
   private final Set<Enum<?>> passed = new LinkedHashSet<>();
-  private final Map<String, TimestampedTarget<Pose2d>> lastTargets = new HashMap<>();
-  private final Map<String, Pose2d> geometryTargets = new HashMap<>();
-  private final Set<String> openedGates = new LinkedHashSet<>();
   private final VelocityProfiler.Workspace profilerWorkspace = new VelocityProfiler.Workspace();
-  private final double[] clearanceSampleScratch = new double[5];
   private final double[] headingSampleScratch = new double[5];
-  private final double[] spanStateScratch = new double[4];
+
   private AutoSegment plan;
-  private boolean hasDynamicGoals;
-  private List<Goal> resolvedGoals;
-  private String headingId;
-  private double headingDwell;
-  private double targetDerivative;
-  private double referenceAlpha;
-  private boolean faceTravel;
-  private boolean singularAim;
-  private double gateWait;
-  private Pose2d assistPose;
-  private Rotation2d snapHeading;
-  private boolean assist;
-  private boolean pendingAssist;
-  private MotionLimits assistProfile;
-  private List<Goal> horizon;
+  private Optional<FieldClearance> activeClearance = Optional.empty();
+  private DrivetrainLimits limits;
+  private List<Goal> activeGoals = List.of();
+  private boolean[] openedGates = new boolean[0];
   private PathBuilder.Path path;
-  private int horizonStart;
+  private int remainingGoalStart;
   private int goalIndex;
   private long generation;
   private double highWater;
-  private double closest;
-
   private double dwell;
-
   private double offTrack;
   private double divergence;
-  private double activationTime;
+  private double lastTime = Double.NaN;
+  private boolean relatchRequested;
 
-  private double lastTime;
-
+  private int headingGoalIndex = -1;
+  private double headingDwell;
+  private double gateWait;
   private double targetHeading;
-
-  private double horizonTurnStartProgress;
-
-  private double horizonHoldHeadingRadians;
+  private double targetDerivative;
+  private double referenceAlpha;
+  private boolean faceTravel;
+  private double turnHoldProgress;
+  private double turnHoldHeadingRadians;
 
   private boolean terminalLatched;
-
-  private HeadingPlan inheritedHeading;
-
-  private boolean stopping;
-
-  private RuntimeStatus stopStatus;
-
-  private String stopDiagnostic;
+  private boolean stopPositionLatched;
+  private boolean stopHeadingLatched;
 
   private Pose2d rebuildStartPose = Pose2d.kZero;
-  private Translation2d lastPosition;
-
   private HeadingPlanner.State heading;
-
   private ChassisSpeeds previous;
-
-  private DrivetrainLimits nominalLimits;
-
-  private DrivetrainLimits limits;
-
-  private TickResult result = zero(RuntimeStatus.CANCELLED, "");
-
-  private MotionTelemetry telemetry;
+  private TickResult result = IDLE_RESULT;
 
   public Trailblazer(
-      TimeSource clock,
+      DoubleSupplier clock,
       RobotDrivetrainSpec robot,
       EmpiricalDriveCalibration calibration,
       double nominalDt) {
@@ -549,45 +241,31 @@ public final class Trailblazer {
   }
 
   public Trailblazer(
-      TimeSource clock,
+      DoubleSupplier clock,
       RobotDrivetrainSpec robot,
       EmpiricalDriveCalibration calibration,
       double nominalDt,
-      Optional<FieldClearance> fieldClearance) {
-    this.defaultFieldClearance = fieldClearance;
-    this.fieldClearance = fieldClearance;
+      Optional<FieldClearance> defaultFieldClearance) {
+    this.clock = requireNonNull(clock);
+    this.robot = requireNonNull(robot);
+    this.calibration = requireNonNull(calibration);
+    this.defaultFieldClearance = requireNonNull(defaultFieldClearance);
     if (!Double.isFinite(nominalDt) || nominalDt < 0.004 || nominalDt > 0.020) {
       throw new IllegalArgumentException("Nominal period must be within 4–20 ms");
     }
-    this.clock = clock;
-    this.robot = robot;
-    this.calibration = calibration;
     this.nominalDt = nominalDt;
-    double radiiSum = 0;
-    for (var module : robot.modulePositionsMeters()) {
-      radiiSum += module.dot(module);
-    }
-    this.squaredModuleRadii = radiiSum;
   }
 
   public void activate(AutoSegment motionPlan) {
-    activate(motionPlan, motionPlan.goals().get(0).id());
+    activate(motionPlan, defaultFieldClearance);
   }
 
   public void activate(AutoSegment motionPlan, FieldClearance clearance) {
-    activate(motionPlan, motionPlan.goals().get(0).id(), Optional.of(clearance));
-  }
-
-  public void activate(AutoSegment motionPlan, String startAtGoalId) {
-    activate(motionPlan, startAtGoalId, defaultFieldClearance);
+    activate(motionPlan, Optional.of(requireNonNull(clearance)));
   }
 
   public void activateWithoutClearance(AutoSegment motionPlan) {
-    activateWithoutClearance(motionPlan, motionPlan.goals().get(0).id());
-  }
-
-  public void activateWithoutClearance(AutoSegment motionPlan, String startAtGoalId) {
-    activate(motionPlan, startAtGoalId, Optional.empty());
+    activate(motionPlan, Optional.empty());
   }
 
   public boolean atGoal() {
@@ -595,12 +273,18 @@ public final class Trailblazer {
   }
 
   public void cancel() {
-    pendingAssist = false;
-    if (path != null && (result.status() == RuntimeStatus.RUNNING || atGoal())) {
-      stop(RuntimeStatus.CANCELLED, "Cancelled");
-    } else {
-      result = zero(RuntimeStatus.CANCELLED, "Cancelled");
-    }
+    plan = null;
+    path = null;
+    activeGoals = List.of();
+    openedGates = new boolean[0];
+    passed.clear();
+    previous = null;
+    heading = null;
+    lastTime = Double.NaN;
+    relatchRequested = false;
+    result =
+        new TickResult(
+            new ChassisSpeeds(), RuntimeStatus.IDLE, false, LimitingFactor.NONE, generation, 0, "");
   }
 
   public Optional<Pose2d> currentTargetPose() {
@@ -615,935 +299,445 @@ public final class Trailblazer {
             Rotation2d.fromRadians(targetHeading)));
   }
 
-  public void driveTo(Pose2d pose, MotionLimits profile) {
-    assistPose = pose;
-    snapHeading = null;
-    assistProfile = profile;
-    pendingAssist = true;
-  }
-
-  public boolean isFaulted() {
-    return result.status() == RuntimeStatus.FAULT;
-  }
-
   public TickResult lastResult() {
     return result;
   }
 
-  public Optional<MotionTelemetry> motionTelemetry() {
-    return Optional.ofNullable(telemetry);
-  }
-
   public double nowSeconds() {
-    return clock.getTimestampSeconds();
-  }
-
-  public Ownership ownership() {
-    if (pendingAssist) {
-      return snapHeading == null ? Ownership.TRANSLATION_AND_ROTATION : Ownership.ROTATION;
-    }
-    if (!assist || result.status() != RuntimeStatus.RUNNING || stopping) {
-      return Ownership.NONE;
-    }
-    return snapHeading == null ? Ownership.TRANSLATION_AND_ROTATION : Ownership.ROTATION;
+    return clock.getAsDouble();
   }
 
   public boolean passedMarker(Enum<?> marker) {
     return passed.contains(marker);
   }
 
-  public void preempt() {
-    cancel();
-  }
-
-  public boolean preempt(boolean translationIntervention, boolean rotationIntervention) {
-    var owner = ownership();
-    if (owner != Ownership.NONE
-        && (rotationIntervention
-            || (owner == Ownership.TRANSLATION_AND_ROTATION && translationIntervention))) {
-      cancel();
-      return true;
-    }
-    return false;
-  }
-
-  public boolean release() {
-    if (!atGoal() || horizonStart + horizon.size() >= plan.goals().size()) {
-      return false;
-    }
-    horizonStart += horizon.size();
-    startHorizon();
-    return true;
+  public void relatch() {
+    relatchRequested = true;
   }
 
   public Pose2d[] sampledPathPoses(double stepMeters) {
-    if (path == null || horizon == null || !(stepMeters > 0)) {
+    if (path == null || activeGoals.isEmpty() || !Double.isFinite(stepMeters) || stepMeters <= 0) {
       return new Pose2d[0];
     }
     return sampleSegmentPoses(
-        rebuildStartPose,
-        path,
-        horizon,
-        inheritedHeading,
-        horizonTurnStartProgress,
-        stepMeters,
-        headingSampleScratch);
+        rebuildStartPose, path, activeGoals, turnHoldProgress, stepMeters, headingSampleScratch);
   }
 
-  public void snapAngle(Rotation2d angle, MotionLimits profile) {
-    snapHeading = angle;
-    assistPose = null;
-    assistProfile = profile;
-    pendingAssist = true;
-  }
+  public TickResult update(
+      double nowSeconds, Pose2d measuredPose, ChassisSpeeds measuredFieldSpeeds) {
+    if (plan == null) {
+      result =
+          new TickResult(
+              new ChassisSpeeds(),
+              RuntimeStatus.IDLE,
+              false,
+              LimitingFactor.NONE,
+              generation,
+              0,
+              "");
+      return result;
+    }
+    if (atGoal() && activeGoals.get(activeGoals.size() - 1).passType() == Goal.PassType.STOP) {
+      return result;
+    }
+    if (!Double.isFinite(nowSeconds) || !finite(measuredPose) || !finite(measuredFieldSpeeds)) {
+      previous = null;
+      lastTime = Double.NaN;
+      return new TickResult(
+          new ChassisSpeeds(),
+          RuntimeStatus.RUNNING,
+          false,
+          LimitingFactor.NONE,
+          generation,
+          highWater,
+          "NONFINITE_STATE");
+    }
 
-  public TickResult update(RobotStateSnapshot snapshot) {
-    return update(
-        new TickInput(clock.getTimestampSeconds(), snapshot, Map.of(), Map.of(), Optional.empty()));
-  }
-
-  public TickResult update(TickInput input) {
-    double now = input.timestampSeconds();
-    if (!Double.isFinite(now)) {
-      result = zero(RuntimeStatus.FAULT, "Invalid tick interval");
-      return result;
-    }
-    var snapshot = input.robotState();
-    if (!snapshot.enabled()) {
-      pendingAssist = false;
-      result = zero(RuntimeStatus.DISABLED, "");
-      return result;
-    }
-    if (pendingAssist) {
-      var angle = snapHeading;
-      var target =
-          angle == null ? assistPose : new Pose2d(snapshot.measuredPose().getTranslation(), angle);
-      var goal = Goal.stop(target);
-      if (angle == null) {
-        goal = goal.heading(HeadingPlan.to(target.getRotation()).gate(HeadingPlan.GatePolicy.HARD));
-      }
-      activate(segment("assist").withLimits(assistProfile).addGoal(goal).build());
-      assist = true;
-      snapHeading = angle;
-    }
-    if (result.status() != RuntimeStatus.RUNNING
-        && !(atGoal()
-            && (stopping
-                || (path != null
-                    && horizon.get(horizon.size() - 1).passType()
-                        == Goal.PassType.FINISH_THROUGH)))) {
-      return result;
-    }
     boolean firstTick = Double.isNaN(lastTime);
-    if (!firstTick && now - lastTime < -1e-4) {
-      result = zero(RuntimeStatus.FAULT, "Invalid tick interval");
+    if (!firstTick && nowSeconds >= lastTime - 1e-4 && nowSeconds - lastTime < 1e-4) {
       return result;
     }
-    if (!firstTick && now - lastTime < 1e-4) {
-      return result;
+    boolean missedTick =
+        !firstTick && (nowSeconds < lastTime - 1e-4 || nowSeconds - lastTime > MAX_TICK_INTERVAL);
+    double dt = firstTick || missedTick ? nominalDt : (nowSeconds - lastTime);
+    lastTime = nowSeconds;
+
+    boolean reseed = missedTick || previous == null;
+    if (reseed) {
+      previous = measuredFieldSpeeds;
     }
-    double elapsed = firstTick ? nominalDt : now - lastTime;
-    if (!Double.isFinite(elapsed) || elapsed <= 0) {
-      result = zero(RuntimeStatus.FAULT, "Invalid tick interval");
-      return result;
+    if (path == null || reseed) {
+      double measuredHeading = measuredPose.getRotation().getRadians();
+      if (heading != null) {
+        measuredHeading =
+            heading.angle() + MathUtil.angleModulus(measuredHeading - heading.angle());
+      }
+      heading = new HeadingPlanner.State(measuredHeading, previous.omegaRadiansPerSecond);
+      referenceAlpha = 0.0;
     }
-    boolean missedTick = elapsed > MAX_TICK_INTERVAL;
-    double dt = missedTick ? nominalDt : elapsed;
-    lastTime = now;
-    var pose = snapshot.measuredPose();
-    var measuredSpeeds = snapshot.measuredFieldSpeeds();
-    String corruptFault = corruptSnapshotFault(snapshot);
-    if (corruptFault != null) {
-      result = zero(RuntimeStatus.FAULT, corruptFault);
-      return result;
+    if (path == null) {
+      headingGoalIndex = -1;
+      targetHeading = heading.angle();
     }
-    if (Double.isNaN(activationTime)) {
-      activationTime = now;
+    if (missedTick) {
+      dwell = 0;
+      headingDwell = 0;
+      offTrack = 0;
+      divergence = 0;
+      stopPositionLatched = false;
+      stopHeadingLatched = false;
     }
-    var measured = translation(measuredSpeeds);
-    try {
-      if (path == null || missedTick) {
-        previous = snapshot.appliedFieldSpeeds().orElse(measuredSpeeds);
-        double measuredHeading = pose.getRotation().getRadians();
-        if (path != null) {
-          measuredHeading =
-              heading.angle() + MathUtil.angleModulus(measuredHeading - heading.angle());
-        }
-        heading = new HeadingPlanner.State(measuredHeading, previous.omegaRadiansPerSecond);
-        referenceAlpha = 0;
-      }
-      if (path == null) {
-        headingId = null;
-        targetHeading = heading.angle();
-      }
-      if (missedTick) {
-        // The loop did not observe the robot during the gap, so restart dwell checks.
-        dwell = 0;
-        headingDwell = 0;
-        offTrack = 0;
-        divergence = 0;
-      }
-      if (stopping) {
-        return brake(pose, snapshot, dt);
-      }
-      if (!resolveGoals(
-          input,
-          path == null ? horizonStart : horizonStart + Math.min(goalIndex, horizon.size() - 1))) {
-        stop(RuntimeStatus.FAULT, "Dynamic goal target lost");
-        return brake(pose, snapshot, dt);
-      }
-      if (path == null) {
-        rebuild(pose, horizonStart);
-      } else if (goalIndex < horizon.size() && targetsMoved()) {
-        rebuild(pose, horizonStart + goalIndex);
-      }
-      String diagnostic =
-          missedTick ? "MISSED_TICK_RECOVERY" : (marginWarning ? "KEEPOUT_MARGIN_WARNING" : "");
-      if (snapshot.localizationResetOccurred() && goalIndex < horizon.size()) {
-        rebuild(pose, horizonStart + goalIndex);
+
+    String diagnostic = missedTick ? "MISSED_TICK_RECOVERY" : "";
+    if (path == null) {
+      rebuild(measuredPose, remainingGoalStart);
+    } else if (relatchRequested) {
+      relatchRequested = false;
+      rebuild(
+          measuredPose,
+          remainingGoalStart + Math.min(goalIndex, Math.max(0, activeGoals.size() - 1)));
+      if (diagnostic.isEmpty()) {
         diagnostic = "RELATCH";
       }
-      if (now - activationTime > (assist ? 3.0 : 14.5) && !atGoal()) {
-        stop(RuntimeStatus.FAULT, "Timed out");
+    }
+
+    double firstAllowed = goalIndex > 1 ? path.anchors().get(goalIndex - 2) : 0;
+    double lastAllowed =
+        goalIndex + 1 < activeGoals.size() ? path.anchors().get(goalIndex + 1) : path.length();
+    var projected =
+        path.project(
+            measuredPose.getTranslation(),
+            Math.max(firstAllowed, highWater - 0.60),
+            Math.min(lastAllowed, highWater + 1.50));
+    var measured = translation(measuredFieldSpeeds);
+    offTrack =
+        projected.distance() > CORRIDOR || highWater - projected.progress() > 0.55
+            ? offTrack + dt
+            : 0;
+    divergence = measured.getDistance(translation(previous)) > 1.0 ? divergence + dt : 0;
+    if (divergence >= RELATCH_DWELL) {
+      previous = measuredFieldSpeeds;
+      divergence = 0;
+    }
+    if (offTrack >= RELATCH_DWELL && !atGoal()) {
+      rebuild(
+          measuredPose,
+          remainingGoalStart + Math.min(goalIndex, Math.max(0, activeGoals.size() - 1)));
+      projected = path.project(measuredPose.getTranslation(), 0, 0);
+      diagnostic = "RELATCH";
+    }
+
+    var barrier = headingBarrier(measuredPose, measuredFieldSpeeds, projected, dt);
+    if (gateWait == -1.0) {
+      gateWait = 0.0;
+      if (diagnostic.isEmpty()) {
+        diagnostic = "HARD_GATE_BYPASSED";
       }
-      if (stopping) {
-        return brake(pose, snapshot, dt);
+    }
+    if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
+      highWater = Math.max(highWater, Math.min(projected.progress(), barrier.progress()));
+    }
+
+    RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
+    while (goalIndex < activeGoals.size()) {
+      var goal = activeGoals.get(goalIndex);
+      if (goal.passType() == Goal.PassType.STOP) {
+        break;
       }
-      double firstAllowed = goalIndex > 1 ? path.anchors().get(goalIndex - 2) : 0;
-      double lastAllowed =
-          goalIndex + 1 < horizon.size() ? path.anchors().get(goalIndex + 1) : path.length();
-      var projected =
-          path.project(
-              pose.getTranslation(),
-              Math.max(firstAllowed, highWater - 0.60),
-              Math.min(lastAllowed, highWater + 1.50));
-      if (snapHeading != null) {
-        offTrack = 0;
-      } else {
-        offTrack =
-            projected.distance() > CORRIDOR || highWater - projected.progress() > 0.55
-                ? offTrack + dt
-                : 0;
+      if (highWater + 1e-9 < path.anchors().get(goalIndex)
+          || (barrier.closed() && path.anchors().get(goalIndex) >= barrier.progress() - 1e-9)) {
+        break;
       }
-      divergence = measured.getDistance(translation(previous)) > 1.0 ? divergence + dt : 0;
-      if (divergence >= RELATCH_DWELL) {
-        previous = measuredSpeeds;
-        divergence = 0;
+      if (goal.marker() != null) {
+        passed.add(goal.marker());
       }
-      if (offTrack >= RELATCH_DWELL && !atGoal()) {
-        rebuild(pose, horizonStart + goalIndex);
-        projected = path.project(pose.getTranslation(), 0, 0);
-        diagnostic = "RELATCH";
+      goalIndex++;
+      if (goal.passType() == Goal.PassType.FINISH_THROUGH) {
+        status = RuntimeStatus.AT_GOAL;
       }
-      var barrier = headingBarrier(input, pose, measuredSpeeds, projected, dt);
-      if (stopping) {
-        return brake(pose, snapshot, dt);
-      }
-      if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
-        highWater = Math.max(highWater, Math.min(projected.progress(), barrier.progress()));
-      }
-      Set<Enum<?>> newMarkers = null;
-      RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
-      while (goalIndex < horizon.size()) {
-        var goal = horizon.get(goalIndex);
-        if (goal.passType() == Goal.PassType.STOP) {
-          break;
-        }
-        closest =
+    }
+
+    var terminal = activeGoals.get(activeGoals.size() - 1);
+    double progress = projected.progress();
+    double along = translation(previous).dot(projected.sample().tangent());
+    var downstreamSpans = collectDownstreamHeadingSpans(progress, barrier.progress());
+    var profile =
+        VelocityProfiler.profile(
+            path,
+            activeGoals,
+            progress,
+            along,
+            barrier.progress(),
+            (node, out) ->
+                RotationBudgetEstimator.estimateInto(
+                    limits,
+                    node,
+                    progress,
+                    faceTravel ? path.curvatureAt(node) : targetDerivative,
+                    heading.velocity(),
+                    referenceAlpha,
+                    targetHeading - heading.angle(),
+                    downstreamSpans,
+                    out),
+            limits,
+            dt,
+            profilerWorkspace);
+
+    double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
+    double headingBudgetSpeed =
+        Math.max(
+            profile.speed(),
             Math.min(
-                closest,
-                distanceToSegment(
-                    goal.pose().getTranslation(), lastPosition, pose.getTranslation()));
-        if (highWater + 1e-9 < path.anchors().get(goalIndex)
-            || (barrier.closed() && path.anchors().get(goalIndex) >= barrier.progress() - 1e-9)) {
-          break;
-        }
-        if (closest > Math.max(CORRIDOR, 2 * goal.withinMeters() + 0.15)) {
-          rebuild(pose, horizonStart + goalIndex);
-          projected = path.project(pose.getTranslation(), 0, 0);
-          diagnostic = "RELATCH";
-          barrier = headingBarrier(input, pose, measuredSpeeds, projected, 0);
-          break;
-        }
-        newMarkers = recordPass(goal, closest <= goal.withinMeters(), newMarkers);
-        goalIndex++;
-        closest = Double.POSITIVE_INFINITY;
-        if (goal.passType() == Goal.PassType.FINISH_THROUGH) {
-          status = RuntimeStatus.AT_GOAL;
-        }
-      }
-      lastPosition = pose.getTranslation();
-      var terminal = resolvedGoals.get(horizonStart + horizon.size() - 1);
-      double along = translation(previous).dot(projected.sample().tangent());
-      DoubleUnaryOperator motor =
-          speed ->
-              limits.acceleration(
-                  speed,
-                  snapshot.swerveSupplyCurrentLimitAmps(),
-                  snapshot.restingBatteryVoltageVolts());
-      double progress = projected.progress();
-      var downstreamSpans = collectDownstreamHeadingSpans(progress, barrier.progress());
-      var profile =
-          VelocityProfiler.profile(
-              path,
-              horizon,
-              plan.zones(),
-              progress,
-              along,
-              barrier.progress(),
-              (node, out) ->
-                  RotationBudgetEstimator.estimateInto(
-                      limits,
-                      node,
-                      progress,
-                      faceTravel ? path.curvatureAt(node) : targetDerivative,
-                      heading.velocity(),
-                      referenceAlpha,
-                      targetHeading - heading.angle(),
-                      downstreamSpans,
-                      out),
-              limits,
-              motor,
-              dt,
-              profilerWorkspace);
-      var driver =
-          snapHeading == null
-              ? Translation2d.kZero
-              : input.driverFieldVelocityMpS().orElse(Translation2d.kZero);
-      if (!Double.isFinite(driver.getNorm())) {
-        throw new IllegalArgumentException("Invalid driver field velocity");
-      }
-      if (driver.getNorm() > limits.maxSpeed()) {
-        driver = driver.times(limits.maxSpeed() / driver.getNorm());
-      }
-      double headingSpeed = snapHeading == null ? profile.speed() : driver.getNorm();
-      double headingBudgetSpeed;
-      if (snapHeading != null) {
-        headingBudgetSpeed = driver.getNorm();
-      } else {
-        double zoneCap = limits.maxSpeed();
-        var zones = plan.zones();
-        for (int i = 0; i < zones.size(); i++) {
-          var zone = zones.get(i);
-          if (progress >= zone.startMeters() && progress <= zone.endMeters()) {
-            zoneCap = Math.min(zoneCap, zone.maxSpeed());
-          }
-        }
-        double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
-        double translationEnvelope =
-            Math.min(
-                zoneCap,
+                limits.maxSpeed(),
                 Math.sqrt(
-                    2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier));
-        headingBudgetSpeed = Math.max(profile.speed(), translationEnvelope);
-      }
+                    2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier)));
+
+    var tolerance = terminal.finishTolerance();
+    boolean stopTerminalWindow =
+        terminal.passType() == Goal.PassType.STOP
+            && !barrier.closed()
+            && goalIndex >= activeGoals.size() - 1
+            && path.length() - progress <= Math.max(CORRIDOR, tolerance.positionMeters() + 0.05);
+    double headingError =
+        Math.abs(MathUtil.angleModulus(targetHeading - measuredPose.getRotation().getRadians()));
+    if (stopTerminalWindow
+        && Math.abs(targetDerivative * profile.speed()) <= 1e-3
+        && Math.abs(targetHeading - heading.angle()) < Math.PI / 2) {
+      stopHeadingLatched =
+          headingError <= (stopHeadingLatched ? 1.0 : 0.5) * tolerance.headingRadians()
+              || (headingError <= tolerance.headingRadians()
+                  && Math.abs(measuredFieldSpeeds.omegaRadiansPerSecond)
+                      <= tolerance.angularSpeed());
+    } else {
+      stopHeadingLatched = false;
+    }
+
+    double omega;
+    if (stopHeadingLatched) {
+      omega =
+          MathUtil.clamp(
+              0.0,
+              previous.omegaRadiansPerSecond - limits.maxAlpha() * dt,
+              previous.omegaRadiansPerSecond + limits.maxAlpha() * dt);
+      referenceAlpha = 0.0;
+      double unwrappedMeasured =
+          targetHeading
+              + MathUtil.angleModulus(measuredPose.getRotation().getRadians() - targetHeading);
+      heading = new HeadingPlanner.State(unwrappedMeasured, 0.0);
+    } else {
       var turn =
           HeadingPlanner.step(
               heading,
               targetHeading,
               targetDerivative,
-              pose.getRotation().getRadians(),
+              measuredPose.getRotation().getRadians(),
               previous.omegaRadiansPerSecond,
-              headingSpeed,
+              profile.speed(),
               headingBudgetSpeed,
               limits,
               dt);
       heading = turn.reference();
       referenceAlpha = turn.acceleration();
-      double traction = limits.availableTraction(heading.velocity(), referenceAlpha);
-      double omega = turn.command();
-      var tangent = path.sample(profile.tangentProgress());
-      double tau = Math.max(0.12, 4 * (limits.lag() + nominalDt / 2));
-      double crossTrackCap = Math.min(CORRIDOR / tau, 0.30 * limits.maxSpeed());
-      var demand =
-          tangent
-              .tangent()
-              .times(profile.speed())
-              .plus(
-                  projected
-                      .sample()
-                      .normal()
-                      .times(
-                          MathUtil.clamp(
-                              -projected.crossTrack() / tau, -crossTrackCap, crossTrackCap)));
-      var error = path.sample(barrier.progress()).position().minus(pose.getTranslation());
-      double distance = error.getNorm();
-      terminalLatched = distance <= (terminalLatched ? 0.12 : 0.08);
-      double beta =
-          terminalLatched || projected.progress() >= barrier.progress()
-              ? 1
-              : MathUtil.clamp(
-                  (0.25 - Math.max(barrier.progress() - projected.progress(), distance)) / 0.17,
-                  0,
-                  1);
-      double terminalSpeed =
-          Math.min(
-              limits.maxSpeed(),
-              Math.min(
-                  Math.sqrt(2 * Math.min(limits.braking(), traction) * distance),
-                  distance / (0.85 * tau)));
-      var terminalDemand =
-          distance > 1e-9 ? error.times(terminalSpeed / distance) : Translation2d.kZero;
-      demand = demand.times(1 - beta).plus(terminalDemand.times(beta));
-      var oldVelocity = translation(previous);
-      if (snapHeading != null) {
-        demand = driver;
-      } else if (profile.infeasible() && beta < 1) {
-        double arrest = Math.min(Math.min(limits.braking(), traction) * dt, oldVelocity.getNorm());
-        demand =
-            oldVelocity.getNorm() > 1e-9
-                ? oldVelocity.times(1 - arrest / oldVelocity.getNorm())
-                : Translation2d.kZero;
-      }
-      double acceleration = motor.applyAsDouble(oldVelocity.getNorm());
-      var limited =
-          VectorLimiter.project(
-              demand, oldVelocity, pose.getRotation(), omega, traction, acceleration, limits, dt);
-      if (limited.infeasible()) {
-        double maxDeltaOmega = limits.maxAlpha() * dt;
-        double prevOmega = previous.omegaRadiansPerSecond;
-        double[] omegaCandidates = {
-          prevOmega,
-          MathUtil.clamp(0.5 * prevOmega, prevOmega - maxDeltaOmega, prevOmega + maxDeltaOmega),
-          MathUtil.clamp(0.0, prevOmega - maxDeltaOmega, prevOmega + maxDeltaOmega)
-        };
-        for (double candidateOmega : omegaCandidates) {
-          if (Math.abs(candidateOmega - omega) <= 1e-9) {
-            continue;
-          }
-          var retry =
-              VectorLimiter.project(
-                  demand,
-                  oldVelocity,
-                  pose.getRotation(),
-                  candidateOmega,
-                  traction,
-                  acceleration,
-                  limits,
-                  dt);
-          if (!retry.infeasible()) {
-            omega = candidateOmega;
-            limited = retry;
-            break;
-          }
-        }
-      }
-      var velocity = limited.velocity();
-      var tolerance = terminal.finishTolerance();
-      if (terminal.passType() == Goal.PassType.STOP) {
-        boolean translationReady =
-            snapHeading != null
-                || (pose.getTranslation().getDistance(terminal.pose().getTranslation())
-                        <= tolerance.positionMeters()
-                    && measured.getNorm() <= tolerance.linearSpeed()
-                    && velocity.getNorm() <= tolerance.linearSpeed());
-        boolean ready =
-            !barrier.closed()
-                && !singularAim
-                && translationReady
-                && Math.abs(targetHeading - heading.angle()) < Math.PI / 2
-                && Math.abs(MathUtil.angleModulus(targetHeading - pose.getRotation().getRadians()))
-                    <= tolerance.headingRadians()
-                && Math.abs(measuredSpeeds.omegaRadiansPerSecond) <= tolerance.angularSpeed()
-                && Math.abs(omega) <= tolerance.angularSpeed()
-                && !limited.infeasible();
-        dwell = ready ? dwell + dt : 0;
-        if (ready
-            && dwell + 1e-9 >= tolerance.dwellSeconds()
-            && (snapHeading != null
-                || oldVelocity.getNorm() <= Math.min(limits.braking(), traction) * dt + 1e-9)
-            && Math.abs(previous.omegaRadiansPerSecond) <= limits.maxAlpha() * dt + 1e-9) {
-          newMarkers = recordPass(terminal, true, newMarkers);
-          status = RuntimeStatus.AT_GOAL;
-          if (snapHeading == null) {
-            velocity = Translation2d.kZero;
-          }
-          omega = 0;
-        }
-      }
-      double ffSpeed = Math.min(profile.speed(), velocity.getNorm());
-      double tangentFF =
-          beta < 1 && demand.minus(velocity).dot(tangent.tangent()) <= 1e-3
-              ? profile.tangentialAcceleration()
-              : 0;
-      var ff =
-          tangent
-              .tangent()
-              .times(tangentFF)
-              .plus(tangent.normal().times(tangent.curvature() * ffSpeed * ffSpeed));
-      telemetry =
-          new MotionTelemetry(
-              limits.maxSpeed(),
-              Math.min(traction, acceleration),
-              limits.braking(),
-              limits.maxOmega(),
-              limits.maxAlpha(),
-              profile.speed(),
-              profile.tangentialAcceleration(),
-              (velocity.getNorm() - oldVelocity.getNorm()) / dt,
-              Math.max(0, barrier.progress() - progress),
-              distance,
-              dwell);
-      previous = new ChassisSpeeds(velocity.getX(), velocity.getY(), omega);
-      boolean infeasible = limited.infeasible() || profile.infeasible();
-      result =
-          new TickResult(
-              previous,
-              new ChassisAccelerations(ff.getX(), ff.getY(), turn.acceleration()),
-              wheelForces(pose, ff, turn.acceleration()),
-              status,
-              infeasible,
-              profile.limitingFactor(),
-              limited.limitingFactor(),
-              newMarkers == null ? Set.of() : newMarkers,
-              immutableStatuses,
-              generation,
-              projected.progress(),
-              odometryDiagnostic(snapshot, now, diagnostic));
-    } catch (IllegalArgumentException invalid) {
-      stop(RuntimeStatus.FAULT, invalid.getMessage());
-      return brake(pose, snapshot, dt);
+      omega = turn.command();
     }
-    return result;
-  }
 
-  private void activate(
-      AutoSegment motionPlan, String startAtGoalId, Optional<FieldClearance> clearance) {
-    int index = 0;
-    while (index < motionPlan.goals().size()
-        && !motionPlan.goals().get(index).id().equals(startAtGoalId)) {
-      index++;
+    double traction = limits.availableTraction(heading.velocity(), referenceAlpha);
+    var tangent = path.sample(profile.tangentProgress());
+    double tau = Math.max(0.12, 4 * (limits.lag() + nominalDt / 2));
+    double crossTrackCap = Math.min(CORRIDOR / tau, 0.30 * limits.maxSpeed());
+    var demand =
+        tangent
+            .tangent()
+            .times(profile.speed())
+            .plus(
+                tangent
+                    .normal()
+                    .times(
+                        MathUtil.clamp(
+                            -projected.crossTrack() / tau, -crossTrackCap, crossTrackCap)));
+    var error = path.sample(barrier.progress()).position().minus(measuredPose.getTranslation());
+    double distance = error.getNorm();
+    double barrierGap = barrier.progress() - progress;
+    double goalDistance =
+        measuredPose.getTranslation().getDistance(terminal.pose().getTranslation());
+    if (stopTerminalWindow) {
+      stopPositionLatched =
+          goalDistance <= (stopPositionLatched ? 1.0 : 0.5) * tolerance.positionMeters()
+              || (goalDistance <= tolerance.positionMeters()
+                  && measured.getNorm() <= tolerance.linearSpeed());
+    } else {
+      stopPositionLatched = false;
     }
-    if (index == motionPlan.goals().size()) {
-      throw new IllegalArgumentException("Unknown starting goal " + startAtGoalId);
-    }
-    plan = motionPlan;
-    boolean dynamic = false;
-    for (var goal : motionPlan.goals()) {
-      if (goal.dynamicTarget() != null) {
-        dynamic = true;
-        break;
-      }
-    }
-    hasDynamicGoals = dynamic;
-    resolvedGoals = motionPlan.goals();
-    fieldClearance = clearance;
-    assist = false;
-    pendingAssist = false;
-    snapHeading = null;
-    lastTargets.clear();
-    openedGates.clear();
-    inheritedHeading = null;
-    headingId = null;
-    highWater = 0;
-    horizonStart = index;
-    statuses.clear();
-    immutableStatuses = Map.of();
-    passed.clear();
-    for (var goal : motionPlan.goals().subList(0, index)) {
-      if (goal.marker() != null) {
-        passed.add(goal.marker());
-      }
-      if (goal.heading() != null) {
-        inheritedHeading = goal.heading().gate(HeadingPlan.GatePolicy.SOFT);
-        if (goal.heading().gate() == HeadingPlan.GatePolicy.HARD) {
-          openedGates.add(goal.id());
-        }
-      }
-    }
-    nominalLimits = DrivetrainLimits.derive(robot, calibration, nominalDt, plan.limits());
-    limits = nominalLimits;
-    startHorizon();
-  }
+    terminalLatched =
+        stopPositionLatched
+            || (barrierGap <= (terminalLatched ? 0.30 : 0.25)
+                && distance <= (terminalLatched ? 0.12 : 0.08));
+    double beta =
+        terminalLatched || barrierGap <= 0
+            ? 1
+            : MathUtil.clamp((0.25 - Math.max(barrierGap, distance)) / 0.17, 0, 1);
+    double terminalSpeed =
+        stopPositionLatched
+            ? 0.0
+            : Math.min(
+                limits.maxSpeed(),
+                Math.min(
+                    Math.sqrt(2 * Math.min(limits.braking(), traction) * distance),
+                    distance / tau));
+    var terminalDemand =
+        distance > 1e-9 && terminalSpeed > 0.0
+            ? error.times(terminalSpeed / distance)
+            : Translation2d.kZero;
+    demand = demand.times(1 - beta).plus(terminalDemand.times(beta));
 
-  private TickResult brake(Pose2d pose, RobotStateSnapshot snapshot, double dt) {
-    var old = translation(previous);
-    double omega =
-        Math.copySign(
-            Math.max(0, Math.abs(previous.omegaRadiansPerSecond) - limits.maxAlpha() * dt),
-            previous.omegaRadiansPerSecond);
+    var oldVelocity = translation(previous);
+    double acceleration = limits.acceleration(oldVelocity.getNorm());
     var limited =
         VectorLimiter.project(
-            Translation2d.kZero,
-            old,
-            pose.getRotation(),
+            demand,
+            oldVelocity,
+            measuredPose.getRotation(),
             omega,
-            limits.availableTraction(omega, 0),
-            limits.acceleration(
-                old.getNorm(),
-                snapshot.swerveSupplyCurrentLimitAmps(),
-                snapshot.restingBatteryVoltageVolts()),
+            traction,
+            acceleration,
             limits,
             dt);
-    var velocity = limited.velocity();
-    if (velocity.getNorm() < 1e-6 && Math.abs(omega) < 1e-6) {
-      result = zero(stopStatus, stopDiagnostic);
-    } else {
-      previous = new ChassisSpeeds(velocity.getX(), velocity.getY(), omega);
-      result =
-          new TickResult(
-              previous,
-              new ChassisAccelerations(0, 0, 0),
-              List.of(),
-              RuntimeStatus.RUNNING,
-              limited.infeasible(),
-              LimitingFactor.NONE,
-              LimitingFactor.VECTOR_SLEW_LIMIT,
-              Set.of(),
-              immutableStatuses,
-              generation,
-              highWater,
-              stopDiagnostic);
+    if (limited.infeasible() && omega != previous.omegaRadiansPerSecond) {
+      var retry =
+          VectorLimiter.project(
+              demand,
+              oldVelocity,
+              measuredPose.getRotation(),
+              previous.omegaRadiansPerSecond,
+              traction,
+              acceleration,
+              limits,
+              dt);
+      if (!retry.infeasible()) {
+        omega = previous.omegaRadiansPerSecond;
+        limited = retry;
+      }
     }
+    var velocity = limited.velocity();
+
+    if (terminal.passType() == Goal.PassType.STOP) {
+      boolean ready =
+          !barrier.closed()
+              && goalIndex >= activeGoals.size() - 1
+              && path.length() - progress <= Math.max(CORRIDOR, tolerance.positionMeters() + 0.05)
+              && goalDistance <= tolerance.positionMeters()
+              && measured.getNorm() <= tolerance.linearSpeed()
+              && velocity.getNorm() <= tolerance.linearSpeed()
+              && Math.abs(targetHeading - heading.angle()) < Math.PI / 2
+              && headingError <= tolerance.headingRadians()
+              && Math.abs(measuredFieldSpeeds.omegaRadiansPerSecond) <= tolerance.angularSpeed()
+              && Math.abs(omega) <= tolerance.angularSpeed()
+              && !limited.infeasible();
+      dwell = ready ? dwell + dt : 0;
+      if (ready
+          && dwell + 1e-9 >= tolerance.dwellSeconds()
+          && oldVelocity.getNorm() <= Math.min(limits.braking(), traction) * dt + 1e-9
+          && Math.abs(previous.omegaRadiansPerSecond) <= limits.maxAlpha() * dt + 1e-9) {
+        if (terminal.marker() != null) {
+          passed.add(terminal.marker());
+        }
+        status = RuntimeStatus.AT_GOAL;
+        velocity = Translation2d.kZero;
+        omega = 0;
+      }
+    }
+
+    if (activeClearance.isPresent()
+        && activeClearance.orElseThrow().clearance(measuredPose) < 0.0
+        && diagnostic.isEmpty()) {
+      diagnostic = "KEEPOUT_VIOLATION";
+    }
+
+    previous = new ChassisSpeeds(velocity.getX(), velocity.getY(), omega);
+    boolean infeasible = limited.infeasible() || (beta < 1.0 - 1e-6 && profile.infeasible());
+    LimitingFactor limiter =
+        infeasible
+            ? LimitingFactor.INFEASIBLE
+            : (limited.limitingFactor() != LimitingFactor.NONE
+                ? limited.limitingFactor()
+                : profile.limitingFactor());
+    result =
+        new TickResult(previous, status, infeasible, limiter, generation, progress, diagnostic);
     return result;
   }
 
-  private void checkClearance(
-      Pose2d pose, PathBuilder.Path geometry, List<Goal> goals, boolean recovery) {
-    if (fieldClearance.isEmpty() || snapHeading != null) {
-      return;
-    }
-    var clearance = fieldClearance.orElseThrow();
-    double brake = Math.min(limits.braking(), limits.friction());
-    var velocity = translation(previous);
-    var arrest = pose.getTranslation().plus(velocity.times(velocity.getNorm() / (2 * brake)));
-    double minArrest = Double.POSITIVE_INFINITY;
-    int checks = Math.max(1, (int) Math.ceil(pose.getTranslation().getDistance(arrest) / 0.025));
-    double startX = pose.getX();
-    double startY = pose.getY();
-    double arrestDx = arrest.getX() - startX;
-    double arrestDy = arrest.getY() - startY;
-    double startCos = pose.getRotation().getCos();
-    double startSin = pose.getRotation().getSin();
-    for (int i = 0; i <= checks; i++) {
-      double t = (double) i / checks;
-      minArrest =
-          Math.min(
-              minArrest,
-              clearance.clearance(
-                  startX + t * arrestDx, startY + t * arrestDy, startCos, startSin));
-    }
+  public TickResult update(Pose2d measuredPose, ChassisSpeeds measuredFieldSpeeds) {
+    return update(clock.getAsDouble(), measuredPose, measuredFieldSpeeds);
+  }
 
-    double pathLength = geometry.length();
-    double startNominal = clearance.clearance(startX, startY, startCos, startSin);
-    double prevNominal = startNominal;
-    double escapeEndClearance = startNominal;
-    boolean escapeNonDecreasing = true;
-    double escapeWindow = Math.min(0.15, pathLength);
-    boolean checkEscape = startNominal <= 0;
-    double required = recovery ? 0 : clearance.margin();
-    double safeTarget = Math.max(required, clearance.margin());
-    double minPath = minArrest;
-    double minBeyondEscape = Double.POSITIVE_INFINITY;
-    double bandRadians = Math.toRadians(3.0);
-    double cosBand = Math.cos(bandRadians);
-    double sinBand = Math.sin(bandRadians);
-    double cornerRadius = Math.hypot(clearance.halfLength(), clearance.halfWidth());
-
-    double segStart = 0;
-    double currentHeading = pose.getRotation().getRadians();
-    boolean hasAnyKeyframe = false;
-    for (int goalIdx = 0; goalIdx < goals.size(); goalIdx++) {
-      var goal = goals.get(goalIdx);
-      var keyframe = goal.heading();
-      if (keyframe == null && goalIdx == 0 && inheritedHeading != null) {
-        keyframe = inheritedHeading;
-      }
-      if (keyframe == null && goal.passType() == Goal.PassType.STOP) {
-        keyframe = HeadingPlan.to(goal.pose().getRotation());
-      }
-      if (keyframe == null) {
-        continue;
-      }
-      hasAnyKeyframe = true;
-      double anchor =
-          MathUtil.clamp(
-              geometry.anchors().get(goalIdx) + keyframe.offsetMeters(), segStart, pathLength);
-      double spanEnd = goalIdx == goals.size() - 1 ? pathLength : anchor;
-      double targetHeadingRad = currentHeading;
-      boolean fixedHeading = true;
-      if (keyframe.target() instanceof HeadingPlan.Target.Fixed fixed) {
-        targetHeadingRad = fixed.angle().getRadians();
-      } else {
-        fixedHeading = false;
-      }
-      double diff = MathUtil.angleModulus(targetHeadingRad - currentHeading);
-      if (keyframe.direction() == HeadingPlan.TurnDirection.CW && diff > 0) {
-        diff -= 2 * Math.PI;
-      } else if (keyframe.direction() == HeadingPlan.TurnDirection.CCW && diff < 0) {
-        diff += 2 * Math.PI;
-      }
-      double spanEndHeading = currentHeading + diff;
-
-      if (fixedHeading) {
-        double turn = Math.abs(diff);
-        int headingIntervals = (int) Math.ceil(turn / Math.toRadians(5.0));
-        double headingAllowance =
-            headingIntervals == 0 ? 0.0 : cornerRadius * turn / (2.0 * headingIntervals);
-        boolean canDelayTurn = segStart <= 1e-9 && Math.abs(diff) > 1e-6 && anchor > 1e-3;
-        double savedMinPath = minPath;
-        double savedMinBeyondEscape = minBeyondEscape;
-        double savedPrevNominal = prevNominal;
-        double savedEscapeEnd = escapeEndClearance;
-        boolean savedEscapeNonDecreasing = escapeNonDecreasing;
-        spanStateScratch[0] = minPath;
-        spanStateScratch[1] = minBeyondEscape;
-        spanStateScratch[2] = prevNominal;
-        spanStateScratch[3] = escapeEndClearance;
-        escapeNonDecreasing =
-            evaluateFixedSpan(
-                geometry,
-                clearance,
-                clearanceSampleScratch,
-                spanStateScratch,
-                escapeNonDecreasing,
-                checkEscape,
-                escapeWindow,
-                required,
-                safeTarget,
-                segStart,
-                anchor,
-                spanEnd,
-                0.0,
-                currentHeading,
-                startCos,
-                startSin,
-                diff,
-                spanEndHeading,
-                headingIntervals,
-                headingAllowance);
-        minPath = spanStateScratch[0];
-        minBeyondEscape = spanStateScratch[1];
-        prevNominal = spanStateScratch[2];
-        escapeEndClearance = spanStateScratch[3];
-
-        if (canDelayTurn) {
-          boolean immediateEscaping =
-              checkEscape
-                  && startNominal >= -0.03
-                  && escapeNonDecreasing
-                  && escapeEndClearance > Math.max(0.0, startNominal) + 1e-4
-                  && minArrest >= -0.03
-                  && (spanEnd <= escapeWindow + 1e-9 || minBeyondEscape > 0);
-          boolean immediateSafe =
-              immediateEscaping || (minPath > 0 && (recovery || minPath >= clearance.margin()));
-          if (!immediateSafe) {
-            double candidate =
-                findEarliestSafeTurnStart(
-                    geometry,
-                    clearance,
-                    clearanceSampleScratch,
-                    anchor,
-                    spanEnd,
-                    currentHeading,
-                    diff,
-                    headingIntervals,
-                    headingAllowance,
-                    clearance.margin());
-            if (candidate < 0 && recovery) {
-              candidate =
-                  findEarliestSafeTurnStart(
-                      geometry,
-                      clearance,
-                      clearanceSampleScratch,
-                      anchor,
-                      spanEnd,
-                      currentHeading,
-                      diff,
-                      headingIntervals,
-                      headingAllowance,
-                      1e-4);
-            }
-            if (candidate > 0) {
-              spanStateScratch[0] = savedMinPath;
-              spanStateScratch[1] = savedMinBeyondEscape;
-              spanStateScratch[2] = savedPrevNominal;
-              spanStateScratch[3] = savedEscapeEnd;
-              boolean delayedNonDecreasing =
-                  evaluateFixedSpan(
-                      geometry,
-                      clearance,
-                      clearanceSampleScratch,
-                      spanStateScratch,
-                      savedEscapeNonDecreasing,
-                      checkEscape,
-                      escapeWindow,
-                      required,
-                      safeTarget,
-                      segStart,
-                      anchor,
-                      spanEnd,
-                      candidate,
-                      currentHeading,
-                      startCos,
-                      startSin,
-                      diff,
-                      spanEndHeading,
-                      headingIntervals,
-                      headingAllowance);
-              double delayedMinPath = spanStateScratch[0];
-              double delayedMinBeyondEscape = spanStateScratch[1];
-              double delayedEscapeEnd = spanStateScratch[3];
-              boolean delayedEscaping =
-                  checkEscape
-                      && startNominal >= -0.03
-                      && delayedNonDecreasing
-                      && delayedEscapeEnd > Math.max(0.0, startNominal) + 1e-4
-                      && minArrest >= -0.03
-                      && (spanEnd <= escapeWindow + 1e-9 || delayedMinBeyondEscape > 0);
-              boolean delayedSafe =
-                  delayedEscaping
-                      || (delayedMinPath > 0 && (recovery || delayedMinPath >= clearance.margin()));
-              if (delayedSafe) {
-                minPath = delayedMinPath;
-                minBeyondEscape = delayedMinBeyondEscape;
-                prevNominal = spanStateScratch[2];
-                escapeEndClearance = delayedEscapeEnd;
-                escapeNonDecreasing = delayedNonDecreasing;
-                horizonTurnStartProgress = candidate;
-                horizonHoldHeadingRadians = currentHeading;
-              }
-            }
-          }
-        }
-      } else {
-        int intervals = Math.max(1, (int) Math.ceil((spanEnd - segStart) / 0.025));
-        for (int i = 0; i <= intervals; i++) {
-          double s = segStart + ((spanEnd - segStart) * i) / intervals;
-          geometry.sampleInto(s, clearanceSampleScratch);
-          double headingRad =
-              plannedHeadingAtRadians(
-                  pose, geometry, goals, inheritedHeading, 0.0, s, headingSampleScratch);
-          double cos = Math.cos(headingRad);
-          double sin = Math.sin(headingRad);
-          double px = clearanceSampleScratch[0];
-          double py = clearanceSampleScratch[1];
-          double nominal = clearance.clearance(px, py, cos, sin);
-          double localMin = nominal;
-          if (s > escapeWindow || startNominal > 0) {
-            localMin =
-                Math.min(
-                    localMin,
-                    clearance.clearance(
-                        px, py, cos * cosBand - sin * sinBand, sin * cosBand + cos * sinBand));
-            localMin =
-                Math.min(
-                    localMin,
-                    clearance.clearance(
-                        px, py, cos * cosBand + sin * sinBand, sin * cosBand - cos * sinBand));
-          }
-          if (s <= escapeWindow + 1e-9) {
-            if (nominal < prevNominal - 1e-6) {
-              escapeNonDecreasing = false;
-            }
-            prevNominal = nominal;
-            escapeEndClearance = nominal;
-          } else {
-            minBeyondEscape = Math.min(minBeyondEscape, localMin);
-          }
-          minPath = Math.min(minPath, localMin);
-        }
-      }
-      currentHeading = spanEndHeading;
-      segStart = spanEnd;
-    }
-
-    if (!hasAnyKeyframe) {
-      for (double progress = 0; ; ) {
-        geometry.sampleInto(progress, clearanceSampleScratch);
-        double px = clearanceSampleScratch[0];
-        double py = clearanceSampleScratch[1];
-        double pointClearance = clearance.clearance(px, py, startCos, startSin);
-        minPath = Math.min(minPath, pointClearance);
-        if (progress <= escapeWindow + 1e-9) {
-          if (pointClearance < prevNominal - 1e-6) {
-            escapeNonDecreasing = false;
-          }
-          prevNominal = pointClearance;
-          escapeEndClearance = pointClearance;
-        } else {
-          minBeyondEscape = Math.min(minBeyondEscape, pointClearance);
-        }
-        if (progress >= pathLength - 1e-9) {
-          break;
-        }
-        double remaining = pathLength - progress;
-        double step;
-        if (checkEscape && progress < escapeWindow - 1e-9) {
-          step = Math.min(0.025, Math.min(escapeWindow - progress, remaining));
-        } else if (pointClearance > required + 0.02) {
-          step = Math.min(0.25, Math.min((pointClearance - required) / 2.0, remaining));
-          minPath = Math.min(minPath, pointClearance - step);
-          if (progress > escapeWindow + 1e-9) {
-            minBeyondEscape = Math.min(minBeyondEscape, pointClearance - step);
-          }
-        } else {
-          step = Math.min(0.025, remaining);
-        }
-        progress = Math.min(pathLength, progress + Math.max(step, 1e-6));
-      }
-    }
-
-    if (pathLength <= escapeWindow + 1e-9) {
-      minBeyondEscape = escapeEndClearance;
-    }
-    boolean escapingWall =
-        startNominal <= 0
-            && startNominal >= -0.03
-            && escapeNonDecreasing
-            && escapeEndClearance > Math.max(0.0, startNominal) + 1e-4
-            && minArrest >= -0.03
-            && minBeyondEscape > 0;
-    if (!escapingWall && (minPath <= 0 || (!recovery && minPath < clearance.margin()))) {
-      throw new IllegalArgumentException("Path footprint intersects a keepout or required margin");
-    }
-    marginWarning = minPath < clearance.margin();
-    limits =
-        marginWarning
-            ? DrivetrainLimits.derive(robot, calibration, nominalDt, plan.limits(), 0.60)
-            : nominalLimits;
+  private void activate(AutoSegment motionPlan, Optional<FieldClearance> clearance) {
+    plan = requireNonNull(motionPlan);
+    activeClearance = requireNonNull(clearance);
+    limits = DrivetrainLimits.derive(robot, calibration, nominalDt, plan.limits());
+    activeGoals = plan.goals();
+    openedGates = new boolean[activeGoals.size()];
+    passed.clear();
+    path = null;
+    remainingGoalStart = 0;
+    goalIndex = 0;
+    highWater = 0;
+    dwell = 0;
+    offTrack = 0;
+    divergence = 0;
+    lastTime = Double.NaN;
+    relatchRequested = false;
+    headingGoalIndex = -1;
+    headingDwell = 0;
+    gateWait = 0;
+    turnHoldProgress = 0;
+    turnHoldHeadingRadians = 0;
+    terminalLatched = false;
+    stopPositionLatched = false;
+    stopHeadingLatched = false;
+    rebuildStartPose = Pose2d.kZero;
+    result =
+        new TickResult(
+            new ChassisSpeeds(),
+            RuntimeStatus.RUNNING,
+            false,
+            LimitingFactor.NONE,
+            generation,
+            0,
+            "");
   }
 
   private List<RotationBudgetEstimator.HeadingSpan> collectDownstreamHeadingSpans(
       double progress, double barrierProgress) {
-    if (horizon == null || path == null) {
+    if (path == null || activeGoals.isEmpty()) {
       return List.of();
     }
     List<RotationBudgetEstimator.HeadingSpan> spans = null;
     boolean appliedDelay = false;
     double spanStart = progress;
     double prevAngle = targetHeading;
-    for (int i = goalIndex; i < horizon.size(); i++) {
-      var goal = resolvedGoals.get(horizonStart + i);
-      var keyframe = goal.heading();
-      if (keyframe == null && goal.passType() == Goal.PassType.STOP) {
-        keyframe = HeadingPlan.to(goal.pose().getRotation());
-      }
+    for (int i = goalIndex; i < activeGoals.size(); i++) {
+      var goal = activeGoals.get(i);
+      var keyframe = headingForGoal(goal);
       if (keyframe == null) {
         continue;
       }
       if (!appliedDelay) {
         appliedDelay = true;
-        if (horizonTurnStartProgress > spanStart && headingId == null) {
-          spanStart = Math.min(barrierProgress, horizonTurnStartProgress);
+        if (turnHoldProgress > spanStart && headingGoalIndex < 0) {
+          spanStart = Math.min(barrierProgress, turnHoldProgress);
         }
       }
       double anchor =
           MathUtil.clamp(
               path.anchors().get(i) + keyframe.offsetMeters(), spanStart, barrierProgress);
-      if (goal.id().equals(headingId)) {
+      if (remainingGoalStart + i == headingGoalIndex) {
         spanStart = anchor;
         continue;
       }
       double targetAngle = prevAngle;
       if (keyframe.target() instanceof HeadingPlan.Target.Fixed fixed) {
-        double diff = MathUtil.angleModulus(fixed.angle().getRadians() - prevAngle);
-        if (keyframe.direction() == HeadingPlan.TurnDirection.CW && diff > 0) {
-          diff -= 2 * Math.PI;
-        } else if (keyframe.direction() == HeadingPlan.TurnDirection.CCW && diff < 0) {
-          diff += 2 * Math.PI;
-        }
-        targetAngle = prevAngle + diff;
+        targetAngle =
+            prevAngle + turnDelta(prevAngle, fixed.angle().getRadians(), keyframe.direction());
       } else if (keyframe.target() instanceof HeadingPlan.Target.Travel) {
         var sample = path.sample(anchor);
         if (sample.tangent().getNorm() > 1e-6) {
@@ -1572,88 +766,100 @@ public final class Trailblazer {
     return spans == null ? List.of() : spans;
   }
 
+  private double computeInitialTurnHold(Pose2d pose, PathBuilder.Path geometry, List<Goal> goals) {
+    if (activeClearance.isEmpty()) {
+      return 0.0;
+    }
+    var clearance = activeClearance.orElseThrow();
+    for (int i = 0; i < goals.size(); i++) {
+      var goal = goals.get(i);
+      var keyframe = headingForGoal(goal);
+      if (keyframe == null) {
+        continue;
+      }
+      if (!(keyframe.target() instanceof HeadingPlan.Target.Fixed fixed)) {
+        return 0.0;
+      }
+      double startHeading = pose.getRotation().getRadians();
+      double diff = turnDelta(startHeading, fixed.angle().getRadians(), keyframe.direction());
+      if (Math.abs(diff) <= 1e-4) {
+        return 0.0;
+      }
+      double anchor =
+          MathUtil.clamp(
+              geometry.anchors().get(i) + keyframe.offsetMeters(), 0.0, geometry.length());
+      int angleSteps = Math.max(1, (int) Math.ceil(Math.abs(diff) / Math.toRadians(10.0)));
+      if (sweepClear(clearance, pose.getX(), pose.getY(), startHeading, diff, angleSteps)) {
+        return 0.0;
+      }
+      for (double s = 0.025; s <= anchor + 1e-9; s += 0.025) {
+        double sampleS = Math.min(s, anchor);
+        geometry.sampleInto(sampleS, headingSampleScratch);
+        if (sweepClear(
+            clearance,
+            headingSampleScratch[0],
+            headingSampleScratch[1],
+            startHeading,
+            diff,
+            angleSteps)) {
+          return sampleS;
+        }
+      }
+      return 0.0;
+    }
+    return 0.0;
+  }
+
   private Barrier headingBarrier(
-      TickInput input,
-      Pose2d pose,
-      ChassisSpeeds measured,
-      PathBuilder.Projection projection,
-      double dt) {
+      Pose2d pose, ChassisSpeeds measured, PathBuilder.Projection projection, double dt) {
     double activation = 0;
-    double terminal = path.anchors().get(horizon.size() - 1);
+    double terminal = path.anchors().get(activeGoals.size() - 1);
     targetDerivative = 0;
     faceTravel = false;
-    singularAim = false;
-    if (horizonTurnStartProgress > 0
-        && highWater < horizonTurnStartProgress - 1e-4
-        && projection.progress() < horizonTurnStartProgress - 1e-4) {
+    if (turnHoldProgress > 0
+        && highWater < turnHoldProgress - 1e-4
+        && projection.progress() < turnHoldProgress - 1e-4) {
       targetHeading =
-          heading.angle() + MathUtil.angleModulus(horizonHoldHeadingRadians - heading.angle());
-      headingId = null;
+          heading.angle() + MathUtil.angleModulus(turnHoldHeadingRadians - heading.angle());
+      headingGoalIndex = -1;
       headingDwell = 0;
       gateWait = 0;
       return nextClosedGate(0, 0, terminal);
     }
-    for (int i = 0; i < horizon.size(); i++) {
-      var goal = resolvedGoals.get(horizonStart + i);
-      var keyframe = goal.heading();
-      boolean usingInherited = false;
-      if (keyframe == null && goal.passType() == Goal.PassType.STOP) {
-        keyframe = HeadingPlan.to(goal.pose().getRotation());
-      }
-      if (keyframe == null && i == 0 && inheritedHeading != null) {
-        keyframe = inheritedHeading;
-        usingInherited = true;
-      }
+    for (int i = 0; i < activeGoals.size(); i++) {
+      var goal = activeGoals.get(i);
+      var keyframe = headingForGoal(goal);
       if (keyframe == null) {
         continue;
       }
-      if (!usingInherited) {
-        inheritedHeading = null;
-      }
       double anchor =
           MathUtil.clamp(path.anchors().get(i) + keyframe.offsetMeters(), activation, terminal);
+      int globalIndex = remainingGoalStart + i;
       if (projection.progress() < activation) {
         break;
       }
       if (projection.progress() > anchor
-          && i < horizon.size() - 1
-          && (keyframe.gate() != HeadingPlan.GatePolicy.HARD || openedGates.contains(goal.id()))) {
+          && i < activeGoals.size() - 1
+          && (keyframe.gate() != HeadingPlan.GatePolicy.HARD || openedGates[globalIndex])) {
         activation = anchor;
         continue;
       }
       var sample = projection.sample();
-      boolean entering = !goal.id().equals(headingId);
+      boolean entering = globalIndex != headingGoalIndex;
       double raw = entering ? pose.getRotation().getRadians() : targetHeading;
       if (keyframe.target() instanceof HeadingPlan.Target.Fixed fixed) {
         raw = fixed.angle().getRadians();
       } else if (keyframe.target() instanceof HeadingPlan.Target.Travel) {
         faceTravel = true;
-        singularAim = sample.tangent().getNorm() == 0;
-        if (!singularAim) {
+        if (sample.tangent().getNorm() > 0) {
           raw = sample.tangent().getAngle().getRadians();
           targetDerivative = sample.curvature();
         }
-      } else if (keyframe.target() instanceof HeadingPlan.Target.Point
-          || keyframe.target() instanceof HeadingPlan.Target.DynamicPoint) {
-        Translation2d aim;
-        Rotation2d offset;
-        if (keyframe.target() instanceof HeadingPlan.Target.Point fixed) {
-          aim = fixed.target();
-          offset = fixed.mechanismOffset();
-        } else {
-          var dynamic = (HeadingPlan.Target.DynamicPoint) keyframe.target();
-          var target =
-              input.resolvedAimTargets().containsKey(goal.id())
-                  ? input.resolvedAimTargets().get(goal.id())
-                  : dynamic.supplier().get();
-          aim = target == null || !target.fresh(input.timestampSeconds()) ? null : target.value();
-          offset = dynamic.mechanismOffset();
-        }
-        var delta = aim == null ? Translation2d.kZero : aim.minus(sample.position());
+      } else if (keyframe.target() instanceof HeadingPlan.Target.Point fixed) {
+        var delta = fixed.target().minus(sample.position());
         double range = delta.getNorm();
-        singularAim = !Double.isFinite(range) || range < 0.25;
-        if (!singularAim) {
-          raw = delta.getAngle().getRadians() - offset.getRadians();
+        if (Double.isFinite(range) && range >= 0.25) {
+          raw = delta.getAngle().getRadians() - fixed.mechanismOffset().getRadians();
           targetDerivative =
               MathUtil.clamp((range - 0.25) / 0.15, 0, 1)
                   * (-delta.getX() * sample.tangent().getY()
@@ -1662,33 +868,26 @@ public final class Trailblazer {
         }
       }
       if (entering) {
-        double difference = MathUtil.angleModulus(raw - heading.angle());
-        if (keyframe.direction() == HeadingPlan.TurnDirection.CW && difference > 0) {
-          difference -= 2 * Math.PI;
-        } else if (keyframe.direction() == HeadingPlan.TurnDirection.CCW && difference < 0) {
-          difference += 2 * Math.PI;
-        }
-        targetHeading = heading.angle() + difference;
-        headingId = goal.id();
+        targetHeading = heading.angle() + turnDelta(heading.angle(), raw, keyframe.direction());
+        headingGoalIndex = globalIndex;
         headingDwell = 0;
         gateWait = 0;
       } else {
         targetHeading += MathUtil.angleModulus(raw - targetHeading);
       }
       if (keyframe.gate() == HeadingPlan.GatePolicy.HARD) {
-        if (openedGates.contains(goal.id()) && projection.progress() < anchor) {
+        if (openedGates[globalIndex] && projection.progress() < anchor) {
           double dropoutError =
               Math.abs(MathUtil.angleModulus(targetHeading - pose.getRotation().getRadians()));
           if (dropoutError > 2.0 * keyframe.toleranceRadians()) {
-            openedGates.remove(goal.id());
+            openedGates[globalIndex] = false;
             headingDwell = 0;
           }
         }
-        if (!openedGates.contains(goal.id())) {
+        if (!openedGates[globalIndex]) {
           double distance = pose.getTranslation().getDistance(path.sample(anchor).position());
           boolean ready =
-              !singularAim
-                  && distance <= 0.25
+              distance <= 0.25
                   && Math.abs(
                           MathUtil.angleModulus(targetHeading - pose.getRotation().getRadians()))
                       <= keyframe.toleranceRadians()
@@ -1696,17 +895,19 @@ public final class Trailblazer {
                   && Math.abs(targetHeading - heading.angle()) < Math.PI / 2;
           headingDwell = ready ? headingDwell + dt : 0;
           if (ready && headingDwell + 1e-9 >= keyframe.dwellSeconds()) {
-            openedGates.add(goal.id());
+            openedGates[globalIndex] = true;
           } else {
             gateWait = distance <= 0.25 ? gateWait + dt : 0;
-            if ((projection.progress() > anchor && distance > 0.25) || gateWait > 3) {
-              stop(RuntimeStatus.FAULT, "Missed or stalled heading gate " + goal.id());
+            if ((projection.progress() > anchor && distance > 0.25) || gateWait > 3.0) {
+              openedGates[globalIndex] = true;
+              gateWait = -1.0;
+            } else {
+              return new Barrier(anchor, true);
             }
-            return new Barrier(anchor, true);
           }
         }
       }
-      if (projection.progress() <= anchor || i == horizon.size() - 1) {
+      if (projection.progress() <= anchor || i == activeGoals.size() - 1) {
         return nextClosedGate(i + 1, anchor, terminal);
       }
       activation = anchor;
@@ -1715,15 +916,14 @@ public final class Trailblazer {
   }
 
   private Barrier nextClosedGate(int from, double activation, double terminal) {
-    for (int i = from; i < horizon.size(); i++) {
-      var goal = horizon.get(i);
-      var keyframe = goal.heading();
+    for (int i = from; i < activeGoals.size(); i++) {
+      var keyframe = activeGoals.get(i).heading();
       if (keyframe == null) {
         continue;
       }
       double anchor =
           MathUtil.clamp(path.anchors().get(i) + keyframe.offsetMeters(), activation, terminal);
-      if (keyframe.gate() == HeadingPlan.GatePolicy.HARD && !openedGates.contains(goal.id())) {
+      if (keyframe.gate() == HeadingPlan.GatePolicy.HARD && !openedGates[remainingGoalStart + i]) {
         return new Barrier(anchor, true);
       }
       activation = anchor;
@@ -1732,176 +932,29 @@ public final class Trailblazer {
   }
 
   private void rebuild(Pose2d pose, int from) {
-    int end = from;
-    while (end < resolvedGoals.size() - 1
-        && resolvedGoals.get(end).passType() == Goal.PassType.THROUGH) {
-      end++;
-    }
-    marginWarning = false;
-    limits = nominalLimits;
-    horizonTurnStartProgress = 0.0;
-    horizonHoldHeadingRadians = pose.getRotation().getRadians();
-    var candidate = resolvedGoals.subList(from, end + 1);
+    var candidate = plan.goals().subList(from, plan.goals().size());
     var geometry =
         PathBuilder.build(
             pose.getTranslation(),
             candidate,
             Math.min(limits.braking(), limits.friction()),
-            fieldClearance.orElse(null));
+            activeClearance.orElse(null));
     if (geometry.length() > 100) {
       throw new IllegalArgumentException("Path exceeds profile capacity");
     }
-    checkClearance(pose, geometry, candidate, path != null && !assist);
-    horizonStart = from;
-    horizon = List.copyOf(candidate);
+    remainingGoalStart = from;
+    activeGoals = candidate;
     rebuildStartPose = pose;
-    geometryTargets.clear();
-    for (var goal : candidate) {
-      geometryTargets.put(goal.id(), goal.pose());
-    }
     path = geometry;
     goalIndex = 0;
     generation++;
     highWater = 0;
-    closest = Double.POSITIVE_INFINITY;
     offTrack = 0;
     dwell = 0;
     terminalLatched = false;
-    lastPosition = pose.getTranslation();
-  }
-
-  private Set<Enum<?>> recordPass(Goal goal, boolean within, Set<Enum<?>> newMarkers) {
-    statuses.put(
-        goal.id(),
-        within
-            ? GoalPassageStatus.PASSED_WITHIN_TOLERANCE
-            : GoalPassageStatus.PASSED_OUTSIDE_TOLERANCE);
-    immutableStatuses = Map.copyOf(statuses);
-    if (goal.marker() != null && passed.add(goal.marker())) {
-      if (newMarkers == null) {
-        newMarkers = new LinkedHashSet<>();
-      }
-      newMarkers.add(goal.marker());
-    }
-    return newMarkers;
-  }
-
-  private boolean resolveGoals(TickInput input, int from) {
-    if (!hasDynamicGoals) {
-      resolvedGoals = plan.goals();
-      return true;
-    }
-    var resolved = new ArrayList<>(plan.goals());
-    for (int index = from; index < resolved.size(); index++) {
-      var goal = resolved.get(index);
-      var dynamic = goal.dynamicTarget();
-      if (dynamic != null) {
-        var target =
-            input.resolvedGoalTargets().containsKey(goal.id())
-                ? input.resolvedGoalTargets().get(goal.id())
-                : dynamic.supplier().get();
-        double now = input.timestampSeconds();
-        Pose2d value;
-        if (target != null
-            && target.fresh(now)
-            && Double.isFinite(target.value().getTranslation().getNorm())
-            && Double.isFinite(target.value().getRotation().getRadians())) {
-          lastTargets.put(goal.id(), target);
-          value = target.value();
-        } else if (dynamic.lossPolicy() instanceof TargetLossPolicy.FallbackNominal fallback) {
-          value = fallback.nominalPose();
-        } else if (dynamic.lossPolicy() instanceof TargetLossPolicy.HoldLastValid hold
-            && lastTargets.containsKey(goal.id())
-            && now - lastTargets.get(goal.id()).timestampSeconds() <= hold.graceSeconds()) {
-          value = lastTargets.get(goal.id()).value();
-        } else {
-          return false;
-        }
-        resolved.set(index, goal.withPose(value));
-      }
-      if (goal.passType() != Goal.PassType.THROUGH) {
-        break;
-      }
-    }
-    resolvedGoals = List.copyOf(resolved);
-    return true;
-  }
-
-  private void startHorizon() {
-    path = null;
-    telemetry = null;
-    rebuildStartPose = Pose2d.kZero;
-    marginWarning = false;
-    horizonTurnStartProgress = 0.0;
-    horizonHoldHeadingRadians = 0.0;
-    lastTime = Double.NaN;
-    activationTime = Double.NaN;
-    stopping = false;
-    headingDwell = 0;
-    gateWait = 0;
-    result = zero(RuntimeStatus.RUNNING, "");
-  }
-
-  private void stop(RuntimeStatus status, String diagnostic) {
-    stopping = true;
-    stopStatus = status;
-    stopDiagnostic = diagnostic;
-  }
-
-  private boolean targetsMoved() {
-    for (int i = goalIndex; i < horizon.size(); i++) {
-      var goal = resolvedGoals.get(horizonStart + i);
-      if (geometryTargets.get(goal.id()).getTranslation().getDistance(goal.pose().getTranslation())
-          > 0.01) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private List<Translation2d> wheelForces(Pose2d pose, Translation2d acceleration, double alpha) {
-    var modules = robot.modulePositionsMeters();
-    if (modules.isEmpty()) {
-      return List.of();
-    }
-    double torque = robot.yawMoiKgMetersSq() * alpha / squaredModuleRadii;
-    double cap = robot.massKg() * limits.friction() / 4;
-    double massQuarter = robot.massKg() / 4;
-    double baseFx = acceleration.getX() * massQuarter;
-    double baseFy = acceleration.getY() * massQuarter;
-    double cos = pose.getRotation().getCos();
-    double sin = pose.getRotation().getSin();
-    Translation2d[] forces = new Translation2d[modules.size()];
-    for (int i = 0; i < modules.size(); i++) {
-      var m = modules.get(i);
-      double rx = m.getX() * cos - m.getY() * sin;
-      double ry = m.getX() * sin + m.getY() * cos;
-      double fx = baseFx - ry * torque;
-      double fy = baseFy + rx * torque;
-      double norm = Math.hypot(fx, fy);
-      if (norm > cap) {
-        double scale = cap / norm;
-        fx *= scale;
-        fy *= scale;
-      }
-      forces[i] = new Translation2d(fx, fy);
-    }
-    return List.of(forces);
-  }
-
-  private TickResult zero(RuntimeStatus status, String diagnostic) {
-    return new TickResult(
-        new ChassisSpeeds(),
-        new ChassisAccelerations(0, 0, 0),
-        List.of(),
-        status,
-        false,
-        LimitingFactor.NONE,
-        LimitingFactor.NONE,
-        Set.of(),
-        immutableStatuses,
-        generation,
-        highWater,
-        diagnostic);
+    stopPositionLatched = false;
+    stopHeadingLatched = false;
+    turnHoldHeadingRadians = pose.getRotation().getRadians();
+    turnHoldProgress = computeInitialTurnHold(pose, geometry, candidate);
   }
 }

@@ -88,7 +88,7 @@ public final class PathBuilder {
       double cy = closest.position().getY();
       double tx = closest.tangent().getX();
       double ty = closest.tangent().getY();
-      double crossTrack = (px - cx) * (-ty) + (py - cy) * tx;
+      double crossTrack = (px - cx) * -ty + (py - cy) * tx;
       return new Projection(bestProgress, closest, crossTrack, Math.hypot(px - cx, py - cy));
     }
   }
@@ -228,7 +228,7 @@ public final class PathBuilder {
     for (int i = 0; i < count - 1; i++) {
       var goal = goals.get(i);
       if (lengths[i + 1] <= EPSILON) {
-        throw new IllegalArgumentException("Duplicate waypoint at " + goal.id());
+        throw new IllegalArgumentException("Duplicate waypoint at goal-" + i);
       }
       if (lengths[i] <= EPSILON) {
         continue;
@@ -239,10 +239,10 @@ public final class PathBuilder {
         continue;
       }
       if (Math.PI - magnitude <= EPSILON || goal.withinMeters() == 0) {
-        throw new IllegalArgumentException("Corner requires a stop at " + goal.id());
+        throw new IllegalArgumentException("Corner requires a stop at goal-" + i);
       }
       if (magnitude >= 3 * Math.PI / 4) {
-        warnings.add("NEAR_REVERSAL_CORNER " + goal.id());
+        warnings.add("NEAR_REVERSAL_CORNER goal-" + i);
       }
       double deviation = Math.max(0.5 * goal.withinMeters(), goal.withinMeters() - 0.05);
       double sine = Math.sin(magnitude / 4);
@@ -250,6 +250,57 @@ public final class PathBuilder {
       tangents[i] =
           Math.min(radius * Math.tan(magnitude / 2), 0.85 * Math.min(lengths[i], lengths[i + 1]));
       turns[i] = turn;
+    }
+    if (clearance != null) {
+      for (int i = 0; i < count - 1; i++) {
+        if (turns[i] == 0) {
+          continue;
+        }
+        var bisectorVec = directions[i + 1].minus(directions[i]);
+        double bNorm = bisectorVec.getNorm();
+        if (bNorm <= EPSILON) {
+          continue;
+        }
+        var bisector = bisectorVec.div(bNorm);
+        var goal = goals.get(i);
+        double cosH;
+        double sinH;
+        if (goal.heading() != null
+            && goal.heading().target() instanceof HeadingPlan.Target.Fixed fixed) {
+          cosH = fixed.angle().getCos();
+          sinH = fixed.angle().getSin();
+        } else {
+          var avgDir = directions[i].plus(directions[i + 1]);
+          double avgNorm = avgDir.getNorm();
+          cosH = avgNorm > EPSILON ? avgDir.getX() / avgNorm : directions[i].getX();
+          sinH = avgNorm > EPSILON ? avgDir.getY() / avgNorm : directions[i].getY();
+        }
+        double tanQuarter = Math.tan(Math.abs(turns[i]) / 4.0);
+        double tOrig = tangents[i];
+        var arcMid = points[i + 1].plus(bisector.times(tOrig * tanQuarter));
+        double midClearance = clearance.clearance(arcMid.getX(), arcMid.getY(), cosH, sinH);
+        double vertexClearance =
+            clearance.clearance(points[i + 1].getX(), points[i + 1].getY(), cosH, sinH);
+        if (midClearance < clearance.margin()
+            && vertexClearance > midClearance + 1e-3
+            && tOrig > 0.02) {
+          double lo = 0.02;
+          double hi = tOrig;
+          for (int iter = 0; iter < 6; iter++) {
+            double mid = 0.5 * (lo + hi);
+            var probe = points[i + 1].plus(bisector.times(mid * tanQuarter));
+            if (clearance.clearance(probe.getX(), probe.getY(), cosH, sinH) >= clearance.margin()) {
+              lo = mid;
+            } else {
+              hi = mid;
+            }
+          }
+          if (lo < tOrig - 1e-4) {
+            tangents[i] = lo;
+            warnings.add("CORNER_FILLET_CLAMPED goal-" + i);
+          }
+        }
+      }
     }
     for (int i = 0; i < count; i++) {
       double used = tangents[i] + (i == 0 ? 0 : tangents[i - 1]);
@@ -274,7 +325,7 @@ public final class PathBuilder {
       } else {
         double radius = tangents[i] / Math.tan(Math.abs(turns[i]) / 2);
         if (radius <= EPSILON) {
-          throw new IllegalArgumentException("Unresolved fillet at " + goals.get(i).id());
+          throw new IllegalArgumentException("Unresolved fillet at goal-" + i);
         }
         double length = radius * Math.abs(turns[i]);
         pieces.add(
@@ -291,7 +342,15 @@ public final class PathBuilder {
     }
     var terminal = goals.get(count - 1);
     if (terminal.passType() == Goal.PassType.FINISH_THROUGH) {
-      if (lengths[count - 1] <= EPSILON || braking <= 0) {
+      Translation2d finishDir =
+          lengths[count - 1] > EPSILON
+              ? directions[count - 1]
+              : (count >= 2 && lengths[count - 2] > EPSILON
+                  ? directions[count - 2]
+                  : new Translation2d(
+                      terminal.pose().getRotation().getCos(),
+                      terminal.pose().getRotation().getSin()));
+      if (finishDir.getNorm() <= EPSILON || braking <= 0) {
         throw new IllegalArgumentException(
             "finishThrough requires a direction and braking capacity");
       }
@@ -309,7 +368,7 @@ public final class PathBuilder {
         int steps = Math.max(1, (int) Math.ceil(overrun / 0.05));
         for (int s = 1; s <= steps; s++) {
           double step = s == steps ? overrun : s * 0.05;
-          var probe = entry.plus(directions[count - 1].times(step));
+          var probe = entry.plus(finishDir.times(step));
           double dist =
               fixedHeading != null
                   ? clearance.clearance(
@@ -326,9 +385,9 @@ public final class PathBuilder {
         overrun = safe;
       }
       if (overrun < desired - 1e-6) {
-        warnings.add("CRUISE_OVERRUN_LIMITED " + terminal.id());
+        warnings.add("CRUISE_OVERRUN_LIMITED goal-" + (count - 1));
       }
-      pieces.add(new Piece(progress, overrun, entry, directions[count - 1], 0));
+      pieces.add(new Piece(progress, overrun, entry, finishDir, 0));
       progress += overrun;
     }
     return new Path(origin, pieces, anchors, progress, warnings);

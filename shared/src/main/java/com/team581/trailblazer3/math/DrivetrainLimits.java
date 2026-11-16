@@ -4,7 +4,6 @@ import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import edu.wpi.first.math.MathUtil;
-import java.util.OptionalDouble;
 
 public record DrivetrainLimits(
     RobotDrivetrainSpec robot,
@@ -26,15 +25,6 @@ public record DrivetrainLimits(
       EmpiricalDriveCalibration calibration,
       double nominalDt,
       MotionLimits caps) {
-    return derive(robot, calibration, nominalDt, caps, 1.0);
-  }
-
-  public static DrivetrainLimits derive(
-      RobotDrivetrainSpec robot,
-      EmpiricalDriveCalibration calibration,
-      double nominalDt,
-      MotionLimits caps,
-      double scale) {
     var modulePositions = robot.modulePositionsMeters();
     if (modulePositions.isEmpty()) {
       throw new IllegalArgumentException("At least one module position is required");
@@ -53,11 +43,11 @@ public record DrivetrainLimits(
             * robot.driveMotor().KvRadPerSecPerVolt
             * robot.wheelRadiusMeters()
             / robot.driveGearRatio();
-    double wheelSpeed = 0.91 * free * scale;
+    double wheelSpeed = 0.91 * free;
     double max = Math.min(wheelSpeed, caps.maxVelocityMetersPerSecond());
-    double friction = calibration.frictionLimit() * scale;
+    double friction = calibration.frictionLimit();
     double lag = calibration.driveResponseLagSeconds();
-    double raw = motorAccel(robot, free, 0, OptionalDouble.empty(), OptionalDouble.empty()) / 0.90;
+    double raw = motorAccel(robot, free, 0) / 0.90;
     double steerEffectiveVoltage =
         Math.max(
             0,
@@ -69,8 +59,7 @@ public record DrivetrainLimits(
         max,
         wheelSpeed,
         free,
-        Math.min(
-            calibration.maxBrakingDeceleration() * scale, caps.maxBrakingMetersPerSecondSquared()),
+        Math.min(calibration.maxBrakingDeceleration(), caps.maxBrakingMetersPerSecondSquared()),
         friction,
         0.85 * friction,
         Math.min(0.85 * wheelSpeed / radius, caps.maxAngularVelocityRadiansPerSecond()),
@@ -89,22 +78,15 @@ public record DrivetrainLimits(
         caps.maxAccelerationMetersPerSecondSquared());
   }
 
-  public double acceleration(double speed, OptionalDouble supply, OptionalDouble restingVoltage) {
-    return Math.min(
-        accelerationCeiling, motorAccel(robot, freeSpeed, speed, supply, restingVoltage));
+  public double acceleration(double speed) {
+    return Math.min(accelerationCeiling, motorAccel(robot, freeSpeed, speed));
   }
 
-  private static double motorAccel(
-      RobotDrivetrainSpec robot,
-      double freeSpeed,
-      double speed,
-      OptionalDouble supply,
-      OptionalDouble restingVoltage) {
+  private static double motorAccel(RobotDrivetrainSpec robot, double freeSpeed, double speed) {
     var motor = robot.driveMotor();
-    double nominal = motor.nominalVoltageVolts;
-    double voltage = restingVoltage.orElse(nominal);
+    double voltage = motor.nominalVoltageVolts;
     double emf =
-        robot.staticFrictionVolts() + (nominal - robot.staticFrictionVolts()) * speed / freeSpeed;
+        robot.staticFrictionVolts() + (voltage - robot.staticFrictionVolts()) * speed / freeSpeed;
     double resistance = motor.rOhms;
     double batteryResistance = 0.018;
     double inverterEfficiency = 0.95;
@@ -112,13 +94,6 @@ public record DrivetrainLimits(
         Math.min(
             robot.slipCurrentAmps(),
             Math.max(0, voltage - emf) / (resistance + 4 * batteryResistance / inverterEfficiency));
-    if (supply.isPresent()) {
-      double ceiling = supply.getAsDouble();
-      double bus = Math.max(7, voltage - 4 * ceiling * batteryResistance);
-      double power = inverterEfficiency * bus * ceiling;
-      current =
-          Math.min(current, 2 * power / (emf + Math.sqrt(emf * emf + 4 * resistance * power)));
-    }
     return 0.90
         * 4
         * 0.90

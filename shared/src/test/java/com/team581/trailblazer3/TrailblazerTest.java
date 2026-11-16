@@ -2,6 +2,7 @@ package com.team581.trailblazer3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,12 +15,9 @@ import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.HeadingPlan;
 import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
-import com.team581.trailblazer3.model.RobotStateSnapshot;
-import com.team581.trailblazer3.model.TargetLossPolicy;
-import com.team581.trailblazer3.model.TickInput;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
-import com.team581.trailblazer3.model.TimestampedTarget;
 import com.team581.trailblazer3.runtime.Trailblazer;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -27,8 +25,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 
@@ -41,15 +37,18 @@ final class TrailblazerTest {
   private static final class Simulation {
     double time;
     final double dt;
-    boolean enabled = true;
-    boolean reset;
     Pose2d pose = Pose2d.kZero;
     ChassisSpeeds speed = new ChassisSpeeds();
-    Optional<Translation2d> driver = Optional.empty();
+    final double maxAccel;
     final Trailblazer planner;
 
     Simulation(double dt) {
+      this(dt, new EmpiricalDriveCalibration(5, 3, 0.040));
+    }
+
+    Simulation(double dt, EmpiricalDriveCalibration calibration) {
       this.dt = dt;
+      this.maxAccel = calibration.frictionLimit();
       var robot =
           new RobotDrivetrainSpec(
               45,
@@ -66,37 +65,20 @@ final class TrailblazerTest {
               DCMotor.getKrakenX44Foc(1),
               80,
               0.20);
-      planner = new Trailblazer(() -> time, robot, new EmpiricalDriveCalibration(5, 3, 0.040), dt);
+      planner = new Trailblazer(() -> time, robot, calibration, dt);
     }
 
     void step() {
       var previousSpeed = speed;
-      var result =
-          planner.update(
-              new TickInput(
-                  time,
-                  new RobotStateSnapshot(
-                      time,
-                      pose,
-                      speed,
-                      true,
-                      reset,
-                      Optional.empty(),
-                      java.util.OptionalDouble.empty(),
-                      java.util.OptionalDouble.empty(),
-                      enabled),
-                  Map.of(),
-                  Map.of(),
-                  driver));
-      assertFalse(result.status() == RuntimeStatus.FAULT, result.diagnostic());
-      reset = false;
+      var result = planner.update(time, pose, speed);
+      assertNotEquals("KEEPOUT_VIOLATION", result.diagnostic());
       speed = result.commandedFieldSpeeds();
-      if (enabled && result.status() == RuntimeStatus.RUNNING) {
+      if (result.status() == RuntimeStatus.RUNNING) {
         assertTrue(
             Math.hypot(
                     speed.vxMetersPerSecond - previousSpeed.vxMetersPerSecond,
                     speed.vyMetersPerSecond - previousSpeed.vyMetersPerSecond)
-                <= 5 * dt + 1e-8);
+                <= maxAccel * dt + 1e-8);
       }
       pose =
           new Pose2d(
@@ -148,51 +130,7 @@ final class TrailblazerTest {
   }
 
   @Test
-  void buildsImmediatelyWhenInitialOdometryIsUnready() {
-    var sim = new Simulation(0.020);
-    sim.time = 1450.0;
-    sim.planner.activate(Trailblazer.segment("warmup").stopAt(2.0, 0.0, 0.0).build());
-
-    for (int i = 0; i < 5; i++) {
-      var res =
-          sim.planner.update(
-              new TickInput(
-                  sim.time,
-                  new RobotStateSnapshot(
-                      0.0,
-                      sim.pose,
-                      sim.speed,
-                      false,
-                      false,
-                      Optional.empty(),
-                      java.util.OptionalDouble.empty(),
-                      java.util.OptionalDouble.empty(),
-                      true),
-                  Map.of(),
-                  Map.of(),
-                  Optional.empty()));
-      assertEquals(RuntimeStatus.RUNNING, res.status());
-      assertEquals("ODOMETRY_UNREADY", res.diagnostic());
-      assertTrue(res.commandedFieldSpeeds().vxMetersPerSecond > 0);
-      assertEquals(0.0, res.commandedFieldSpeeds().vyMetersPerSecond);
-      assertEquals(0.0, res.commandedFieldSpeeds().omegaRadiansPerSecond);
-      sim.speed = res.commandedFieldSpeeds();
-      sim.pose = pose(sim.pose.getX() + sim.speed.vxMetersPerSecond * sim.dt, 0, 0);
-      sim.time += sim.dt;
-    }
-
-    sim.untilGoal();
-    assertEquals(2.0, sim.pose.getX(), 0.05);
-  }
-
-  @Test
-  void clearanceGatedTurnDelaysRotationUntilClearAndRejectsImpossibleTurn() {
-    var throughGoal = Goal.through(pose(2, 1, 90));
-    assertTrue(throughGoal.heading() != null);
-    assertTrue(throughGoal.heading().target() instanceof HeadingPlan.Target.Fixed);
-    var fixedTarget = (HeadingPlan.Target.Fixed) throughGoal.heading().target();
-    assertEquals(90.0, fixedTarget.angle().getDegrees(), 1e-6);
-
+  void clearanceGatedTurnDelaysRotationUntilClearAndLogsKeepoutViolation() {
     var robot =
         new RobotDrivetrainSpec(
             55.0,
@@ -228,10 +166,8 @@ final class TrailblazerTest {
     Pose2d currentPose = pose(2.0, 0.50, 180);
     ChassisSpeeds currentSpeeds = new ChassisSpeeds();
     for (int i = 0; i < 300 && !validPlanner.atGoal(); i++) {
-      var res =
-          validPlanner.update(
-              RobotStateSnapshot.measured(time[0], currentPose, currentSpeeds, true));
-      assertFalse(res.status() == RuntimeStatus.FAULT, res.diagnostic());
+      var res = validPlanner.update(time[0], currentPose, currentSpeeds);
+      assertNotEquals("KEEPOUT_VIOLATION", res.diagnostic());
       currentSpeeds = res.commandedFieldSpeeds();
       if (i == 0) {
         assertEquals(0.0, currentSpeeds.omegaRadiansPerSecond);
@@ -249,43 +185,87 @@ final class TrailblazerTest {
     assertTrue(validPlanner.atGoal());
     assertEquals(1.0, currentPose.getRotation().getCos(), 1e-2);
 
-    var invalidPlanner =
-        new Trailblazer(() -> 0.0, robot, new EmpiricalDriveCalibration(4.5, 2.5, 0.04), 0.02);
-    invalidPlanner.activate(
-        Trailblazer.segment("impossible-parallel-turn")
+    // Turning parallel to the wall logs KEEPOUT_VIOLATION without stopping the auto.
+    time[0] = 0.0;
+    var parallelPlanner =
+        new Trailblazer(() -> time[0], robot, new EmpiricalDriveCalibration(4.5, 2.5, 0.04), 0.02);
+    parallelPlanner.activate(
+        Trailblazer.segment("parallel-turn")
             .stopAt(pose(5.0, 0.50, 0), Goal::counterClockwise)
             .build(),
         clearance);
-    var rejected =
-        invalidPlanner.update(
-            RobotStateSnapshot.measured(0.0, pose(2.0, 0.50, 180), new ChassisSpeeds(), true));
-    assertEquals(RuntimeStatus.FAULT, rejected.status());
+    Pose2d parallelPose = pose(2.0, 0.50, 180);
+    ChassisSpeeds parallelSpeeds = new ChassisSpeeds();
+    boolean sawKeepoutWarning = false;
+    for (int i = 0; i < 40; i++) {
+      var tick = parallelPlanner.update(time[0], parallelPose, parallelSpeeds);
+      assertEquals(RuntimeStatus.RUNNING, tick.status());
+      if ("KEEPOUT_VIOLATION".equals(tick.diagnostic())) {
+        sawKeepoutWarning = true;
+      }
+      parallelSpeeds = tick.commandedFieldSpeeds();
+      parallelPose =
+          new Pose2d(
+              parallelPose.getX() + parallelSpeeds.vxMetersPerSecond * 0.02,
+              parallelPose.getY() + parallelSpeeds.vyMetersPerSecond * 0.02,
+              parallelPose
+                  .getRotation()
+                  .plus(Rotation2d.fromRadians(parallelSpeeds.omegaRadiansPerSecond * 0.02)));
+      time[0] += 0.02;
+    }
+    assertTrue(sawKeepoutWarning);
   }
 
   @Test
-  void dynamicRebuildAccumulatesDriftAgainstOriginalSnapshot() {
+  void closedLoopSegmentStartingAndEndingAtSamePoseDrivesFullLoop() {
     var sim = new Simulation(0.020);
-    double[] targetX = {1};
-    int[] calls = {0};
+    Pose2d loopOrigin = pose(1.0, 1.0, 40.0);
+    sim.pose = loopOrigin;
     sim.planner.activate(
-        Trailblazer.segment("drift")
-            .addGoal(
-                Goal.stop(
-                    () -> {
-                      calls[0]++;
-                      return new TimestampedTarget<>(pose(targetX[0], 0, 0), sim.time, true);
-                    },
-                    TargetLossPolicy.controlledStop()))
+        Trailblazer.segment("closed-loop")
+            .through(3.0, 1.0, g -> g.faceDegrees(0))
+            .through(4.0, 2.5, g -> g.faceDegrees(90).mark(Marker.INTERMEDIATE))
+            .through(2.0, 2.5, g -> g.faceDegrees(180))
+            .stopAt(loopOrigin, g -> g.mark(Marker.FINISH))
             .build());
-    sim.step();
-    long firstGeneration = sim.planner.lastResult().geometryGeneration();
-    targetX[0] += 0.006;
-    sim.step();
-    assertEquals(firstGeneration, sim.planner.lastResult().geometryGeneration());
-    targetX[0] += 0.006;
-    sim.step();
-    assertEquals(firstGeneration + 1, sim.planner.lastResult().geometryGeneration());
-    assertEquals(3, calls[0]);
+
+    double maxProgress = 0;
+    double deadline = sim.time + 12.0;
+    while (!sim.planner.atGoal() && sim.time < deadline) {
+      sim.step();
+      var res = sim.planner.lastResult();
+      assertFalse(res.infeasible(), () -> "Unexpected infeasible at progress=" + res.progress());
+      maxProgress = Math.max(maxProgress, res.progress());
+    }
+    assertTrue(sim.planner.atGoal());
+    assertTrue(maxProgress > 4.0, "Closed loop aborted early at maxProgress=" + maxProgress);
+    assertTrue(sim.planner.passedMarker(Marker.INTERMEDIATE));
+    assertTrue(sim.planner.passedMarker(Marker.FINISH));
+    assertEquals(1.0, sim.pose.getX(), 0.05);
+    assertEquals(1.0, sim.pose.getY(), 0.05);
+  }
+
+  @Test
+  void faceHubAimsRearShooterOnBothAlliancesAndSettlesAtStop() {
+    var field =
+        new FieldGeometry(
+            FieldUtil.FIELD_LENGTH_X, FieldUtil.FIELD_WIDTH_Y, FieldSymmetry.ROTATIONAL_180);
+    var blueSegment =
+        Trailblazer.segment("face-hub-stop").stopAt(3.35, 2.58, Goal::faceHub).build();
+    for (var alliance : Alliance.values()) {
+      var sim = new Simulation(0.020);
+      Pose2d start = pose(4.65, 2.58, 180.0);
+      sim.pose = alliance == Alliance.Blue ? start : field.flipPose(start);
+      sim.planner.activate(blueSegment.forAlliance(alliance, field));
+      sim.untilGoal();
+      Translation2d hub =
+          alliance == Alliance.Blue
+              ? FieldUtil.BLUE_HUB_TRANSLATION
+              : FieldUtil.HUB_POSE.redPose().getTranslation();
+      Rotation2d expectedHeading =
+          hub.minus(sim.pose.getTranslation()).getAngle().plus(Rotation2d.k180deg);
+      assertEquals(0.0, sim.pose.getRotation().minus(expectedHeading).getDegrees(), 2.5);
+    }
   }
 
   @Test
@@ -307,7 +287,7 @@ final class TrailblazerTest {
     var sim = new Simulation(0.020);
     sim.planner.activate(
         Trailblazer.segment("finish-through")
-            .addGoal(Goal.finishThrough(new Translation2d(1.5, 0), 0.8, 1.5).marker(Marker.FINISH))
+            .addGoal(Goal.finishThrough(new Translation2d(1.5, 0), 0.8, 1.5).mark(Marker.FINISH))
             .build());
     sim.untilGoal();
     assertTrue(sim.planner.passedMarker(Marker.FINISH));
@@ -326,7 +306,7 @@ final class TrailblazerTest {
     sim.planner.activate(
         Trailblazer.segment("gate")
             .addGoal(
-                Goal.through(new Translation2d(0.50, 0)).heading(hold).marker(Marker.INTERMEDIATE))
+                Goal.through(new Translation2d(0.50, 0)).heading(hold).mark(Marker.INTERMEDIATE))
             .addGoal(Goal.stop(pose(1.50, 0, 180)))
             .build());
     sim.step();
@@ -336,20 +316,86 @@ final class TrailblazerTest {
   }
 
   @Test
-  void launchesAtBothEndsOfSupportedLoopRangeAndDisableRequiresReactivation() {
+  void launchesAtBothEndsOfSupportedLoopRangeAndCancelStopsOutput() {
     for (double dt : new double[] {0.004, 0.020}) {
       var sim = new Simulation(dt);
-      sim.planner.activate(
-          Trailblazer.segment("straight").addGoal(Goal.stop(pose(0.6, 0, 0))).build());
+      sim.planner.activate(Trailblazer.segment("straight").stopAt(0.6, 0, 0).build());
       sim.step();
       assertTrue(sim.speed.vxMetersPerSecond > 0);
-      sim.enabled = false;
-      sim.step();
-      assertEquals(RuntimeStatus.DISABLED, sim.planner.lastResult().status());
-      sim.enabled = true;
-      sim.step();
-      assertEquals(RuntimeStatus.DISABLED, sim.planner.lastResult().status());
+      sim.planner.cancel();
+      var idle = sim.planner.update(sim.time, sim.pose, sim.speed);
+      assertEquals(RuntimeStatus.IDLE, idle.status());
+      assertEquals(0.0, idle.commandedFieldSpeeds().vxMetersPerSecond);
+      assertEquals(0.0, idle.commandedFieldSpeeds().vyMetersPerSecond);
+      assertEquals(0.0, idle.commandedFieldSpeeds().omegaRadiansPerSecond);
     }
+  }
+
+  @Test
+  void multiCornerSweepExitsFilletsWithoutInfeasibleChatter() {
+    var sim = new Simulation(0.020, new EmpiricalDriveCalibration(4.0, 1.6, 0.070));
+    sim.pose = pose(1.0, 1.0, 90.0);
+    sim.planner.activate(
+        Trailblazer.segment("sweep")
+            .withLimits(MotionLimits.robotMaximum())
+            .through(3.0, 1.0, 0.35, g -> g.faceDegrees(90))
+            .through(4.5, 2.5, 0.35, g -> g.faceDegrees(60))
+            .through(3.5, 3.8, 0.35, g -> g.faceDegrees(180))
+            .through(2.0, 3.5, 0.35, g -> g.faceDegrees(180))
+            .stopAt(pose(0.8, 2.5, 180))
+            .build());
+
+    double deadline = sim.time + 12.0;
+    while (!sim.planner.atGoal() && sim.time < deadline) {
+      sim.step();
+      var res = sim.planner.lastResult();
+      assertFalse(
+          res.infeasible(), () -> "Corner exit triggered infeasible at progress=" + res.progress());
+    }
+    assertTrue(sim.planner.atGoal());
+  }
+
+  @Test
+  void nonfiniteStateCommandsZeroAndRecoversNextTick() {
+    var sim = new Simulation(0.020);
+    sim.planner.activate(Trailblazer.segment("recover").stopAt(2.0, 0.0, 0.0).build());
+    sim.step();
+    assertTrue(sim.speed.vxMetersPerSecond > 0);
+
+    var bad =
+        sim.planner.update(
+            sim.time, new Pose2d(Double.NaN, 0.0, Rotation2d.kZero), new ChassisSpeeds());
+    assertEquals(RuntimeStatus.RUNNING, bad.status());
+    assertEquals("NONFINITE_STATE", bad.diagnostic());
+    assertEquals(0.0, bad.commandedFieldSpeeds().vxMetersPerSecond);
+
+    sim.time += sim.dt;
+    sim.untilGoal();
+    assertEquals(2.0, sim.pose.getX(), 0.05);
+  }
+
+  @Test
+  void pathBuilderClampsCornerFilletNearKeepout() {
+    var field = new FieldGeometry(12.0, 7.0, FieldSymmetry.ROTATIONAL_180);
+    var keepout =
+        List.of(
+            new Translation2d(2.0, 0.0),
+            new Translation2d(4.0, 0.0),
+            new Translation2d(4.0, 1.2),
+            new Translation2d(2.0, 1.2));
+    var clearance = new FieldClearance(field, 0.30, 0.30, 0.05, List.of(keepout));
+    var segment =
+        Trailblazer.segment("corner-clamp")
+            .through(3.0, 1.8, 1.5, g -> g.faceDegrees(0.0))
+            .stopAt(6.0, 0.0, 0.0)
+            .build();
+    var built = PathBuilder.build(new Translation2d(0.0, 0.0), segment.goals(), 3.0, clearance);
+    assertTrue(
+        built.warnings().contains("CORNER_FILLET_CLAMPED goal-0"), built.warnings().toString());
+    var filletMid = built.sample(built.anchors().get(0)).position();
+    assertTrue(
+        clearance.clearance(filletMid.getX(), filletMid.getY(), 1.0, 0.0)
+            >= clearance.margin() - 1e-2);
   }
 
   @Test
@@ -364,7 +410,7 @@ final class TrailblazerTest {
   }
 
   @Test
-  void resumesAfterMissedTicksWithFreshOrStaleOdometry() {
+  void resumesSmoothlyAfterMissedLoopTicks() {
     var sim = new Simulation(0.020);
     sim.planner.activate(Trailblazer.segment("straight").stopAt(pose(2, 0, 0)).build());
     sim.step();
@@ -381,44 +427,22 @@ final class TrailblazerTest {
       assertTrue(sim.speed.vxMetersPerSecond <= 5 * sim.dt + 1e-9);
       sim.step();
     }
-    sim.time += 0.2;
-    var stale =
-        sim.planner.update(RobotStateSnapshot.measured(sim.time - 0.15, sim.pose, sim.speed, true));
-    assertEquals(RuntimeStatus.RUNNING, stale.status());
-    assertEquals("ODOMETRY_STALE", stale.diagnostic());
-    assertTrue(stale.commandedFieldSpeeds().vxMetersPerSecond > 0);
-  }
-
-  @Test
-  void rotationSnapLeavesTranslationWithDriverAndRespectsPreemption() {
-    var sim = new Simulation(0.020);
-    sim.planner.snapAngle(Rotation2d.kCCW_90deg, MotionLimits.robotMaximum());
-    assertEquals(Trailblazer.Ownership.ROTATION, sim.planner.ownership());
-    assertFalse(sim.planner.preempt(true, false));
-    sim.driver = Optional.of(new Translation2d(0.65, 0));
     sim.untilGoal();
-    assertEquals(Trailblazer.Ownership.NONE, sim.planner.ownership());
-    assertTrue(sim.pose.getX() > 0.25);
-    sim.planner.driveTo(pose(1, 1, 90), MotionLimits.robotMaximum());
-    assertTrue(sim.planner.preempt(true, false));
-    assertEquals(Trailblazer.Ownership.NONE, sim.planner.ownership());
+    assertEquals(2.0, sim.pose.getX(), 0.05);
   }
 
   @Test
-  void roundsCornerAndReleasesIntermediateStop() {
+  void roundsCornerAndStopsWithinTolerance() {
     var sim = new Simulation(0.020);
     sim.planner.activate(
         Trailblazer.segment("corner")
-            .addGoal(Goal.through(new Translation2d(1.0, 0)).within(0.30))
-            .addGoal(Goal.stop(pose(1.0, 1.0, 0)).marker(Marker.INTERMEDIATE))
-            .addGoal(Goal.stop(pose(2.0, 1.0, 0)).marker(Marker.FINISH))
+            .through(1.0, 0.0, 0.30)
+            .stopAt(pose(1.0, 1.0, 0), g -> g.mark(Marker.FINISH))
             .build());
     sim.untilGoal();
-    assertTrue(sim.planner.passedMarker(Marker.INTERMEDIATE));
-    assertFalse(sim.planner.passedMarker(Marker.FINISH));
-    assertTrue(sim.planner.release());
-    sim.untilGoal();
     assertTrue(sim.planner.passedMarker(Marker.FINISH));
+    assertEquals(1.0, sim.pose.getX(), 0.05);
+    assertEquals(1.0, sim.pose.getY(), 0.05);
   }
 
   @Test
@@ -433,18 +457,120 @@ final class TrailblazerTest {
               random.nextDouble() * 10 - 5);
       sim.planner.activate(
           Trailblazer.segment("perturbation")
-              .addGoal(Goal.stop(pose(4, 0, 0)).marker(Marker.FINISH))
+              .addGoal(Goal.stop(pose(4, 0, 0)).mark(Marker.FINISH))
               .build());
       while (sim.time < 0.8) {
         sim.step();
       }
       sim.pose = pose(sim.pose.getX(), sim.pose.getY() + 0.25, sim.pose.getRotation().getDegrees());
-      sim.reset = true;
+      sim.planner.relatch();
       sim.step();
       assertEquals(2, sim.planner.lastResult().geometryGeneration());
       sim.untilGoal();
       assertTrue(sim.planner.passedMarker(Marker.FINISH));
     }
+  }
+
+  @Test
+  void stopPocketSettlesCleanlyUnderLaggedCoupledPlant() {
+    var calibration = new EmpiricalDriveCalibration(8.5, 6.0, 0.055);
+    var sim = new Simulation(0.020, calibration);
+    sim.pose = pose(6.0, 2.57, 180.0);
+    var targetPose = pose(3.35, 2.57, -131.1);
+    sim.planner.activate(
+        Trailblazer.segment("stop-pocket")
+            .withLimits(MotionLimits.robotMaximum())
+            .through(4.65, 2.57, g -> g.faceDegrees(180.0))
+            .stopAt(targetPose)
+            .build());
+
+    // First-order lagged drivetrain with azimuth-coupling kick when reversing small commands.
+    double alpha = sim.dt / 0.065;
+    double prevCmdVx = 0.0;
+    double prevCmdVy = 0.0;
+    boolean inPocket = false;
+    double latchedVxSign = 0.0;
+    double latchedVySign = 0.0;
+    double latchedOmegaSign = 0.0;
+    int postPocketCommandReversals = 0;
+
+    double deadline = sim.time + 8.0;
+    while (!sim.planner.atGoal() && sim.time < deadline) {
+      var res = sim.planner.update(sim.time, sim.pose, sim.speed);
+      assertFalse(
+          res.infeasible(),
+          () -> "Stop pocket flagged infeasible at t=" + sim.time + " pose=" + sim.pose);
+
+      var cmd = res.commandedFieldSpeeds();
+      boolean insideHalfTolerance =
+          sim.pose.getTranslation().getDistance(targetPose.getTranslation()) <= 0.015
+              && Math.abs(sim.pose.getRotation().minus(targetPose.getRotation()).getDegrees())
+                  <= 1.0;
+      if (insideHalfTolerance) {
+        inPocket = true;
+      }
+      if (inPocket && res.status() == RuntimeStatus.RUNNING) {
+        double vxSign =
+            Math.abs(cmd.vxMetersPerSecond) > 1e-4 ? Math.signum(cmd.vxMetersPerSecond) : 0.0;
+        double vySign =
+            Math.abs(cmd.vyMetersPerSecond) > 1e-4 ? Math.signum(cmd.vyMetersPerSecond) : 0.0;
+        double omSign =
+            Math.abs(cmd.omegaRadiansPerSecond) > 1e-4
+                ? Math.signum(cmd.omegaRadiansPerSecond)
+                : 0.0;
+        if (vxSign != 0.0 && latchedVxSign != 0.0 && vxSign != latchedVxSign) {
+          postPocketCommandReversals++;
+        }
+        if (vySign != 0.0 && latchedVySign != 0.0 && vySign != latchedVySign) {
+          postPocketCommandReversals++;
+        }
+        if (omSign != 0.0 && latchedOmegaSign != 0.0 && omSign != latchedOmegaSign) {
+          postPocketCommandReversals++;
+        }
+        if (vxSign != 0.0) {
+          latchedVxSign = vxSign;
+        }
+        if (vySign != 0.0) {
+          latchedVySign = vySign;
+        }
+        if (omSign != 0.0) {
+          latchedOmegaSign = omSign;
+        }
+      }
+
+      double coupleKick =
+          (Math.abs(cmd.vxMetersPerSecond - prevCmdVx)
+                  + Math.abs(cmd.vyMetersPerSecond - prevCmdVy))
+              * (Math.hypot(cmd.vxMetersPerSecond, cmd.vyMetersPerSecond) > 1e-4 ? 0.12 : 0.0);
+      double nextVx =
+          sim.speed.vxMetersPerSecond
+              + alpha * (cmd.vxMetersPerSecond - sim.speed.vxMetersPerSecond);
+      double nextVy =
+          sim.speed.vyMetersPerSecond
+              + alpha * (cmd.vyMetersPerSecond - sim.speed.vyMetersPerSecond);
+      double nextOmega =
+          sim.speed.omegaRadiansPerSecond
+              + alpha * (cmd.omegaRadiansPerSecond - sim.speed.omegaRadiansPerSecond)
+              + Math.copySign(coupleKick, cmd.omegaRadiansPerSecond);
+      prevCmdVx = cmd.vxMetersPerSecond;
+      prevCmdVy = cmd.vyMetersPerSecond;
+
+      sim.speed = new ChassisSpeeds(nextVx, nextVy, nextOmega);
+      sim.pose =
+          new Pose2d(
+              sim.pose.getX() + sim.speed.vxMetersPerSecond * sim.dt,
+              sim.pose.getY() + sim.speed.vyMetersPerSecond * sim.dt,
+              sim.pose
+                  .getRotation()
+                  .plus(Rotation2d.fromRadians(sim.speed.omegaRadiansPerSecond * sim.dt)));
+      sim.time += sim.dt;
+    }
+
+    assertTrue(sim.planner.atGoal(), () -> "Planner failed to settle at " + sim.pose);
+    assertEquals(0, postPocketCommandReversals);
+    assertTrue(sim.pose.getTranslation().getDistance(targetPose.getTranslation()) <= 0.03);
+    assertTrue(
+        Math.abs(sim.pose.getRotation().minus(targetPose.getRotation()).getDegrees()) <= 2.0);
   }
 
   @Test

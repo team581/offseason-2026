@@ -137,13 +137,11 @@ final class TrailblazerCalibrationAuto {
   private void checkRun(SwerveDriveState drive, double now) {
     if (now - startTime >= 14.5) {
       abort(acquiredHub ? "Calibration time limit" : "No fresh alliance hub tag pose", now);
-    } else if (phase != Phase.HOME_OUTWARD
-        && phase != Phase.RETRACT
-        && (now - drive.Timestamp > 0.10
-            || !Double.isFinite(drive.Timestamp)
-            || !Double.isFinite(drive.Pose.getX())
-            || !Double.isFinite(drive.Pose.getY())
-            || !Double.isFinite(drive.Pose.getRotation().getRadians()))) {
+    } else if (now - drive.Timestamp > 0.10
+        || !Double.isFinite(drive.Timestamp)
+        || !Double.isFinite(drive.Pose.getX())
+        || !Double.isFinite(drive.Pose.getY())
+        || !Double.isFinite(drive.Pose.getRotation().getRadians())) {
       abort("Invalid or stale drivetrain odometry", now);
     } else if (resetPose != null) {
       var offset = drive.Pose.relativeTo(resetPose);

@@ -1,13 +1,10 @@
 package com.team581.trailblazer3.math;
 
 import com.team581.trailblazer3.model.Goal;
-import com.team581.trailblazer3.model.SpeedZone;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import edu.wpi.first.math.MathUtil;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.DoubleFunction;
-import java.util.function.DoubleUnaryOperator;
 
 public final class VelocityProfiler {
   @FunctionalInterface
@@ -16,11 +13,7 @@ public final class VelocityProfiler {
   }
 
   public record Result(
-      double speed,
-      double tangentProgress,
-      double tangentialAcceleration,
-      boolean infeasible,
-      LimitingFactor limitingFactor) {}
+      double speed, double tangentProgress, boolean infeasible, LimitingFactor limitingFactor) {}
 
   /** Reusable scratch buffers avoiding per-tick primitive and enum array allocations. */
   public static final class Workspace {
@@ -47,42 +40,11 @@ public final class VelocityProfiler {
   public static Result profile(
       PathBuilder.Path path,
       List<Goal> goals,
-      List<SpeedZone> zones,
-      double measured,
-      double startSpeed,
-      double barrier,
-      DoubleFunction<RotationBudgetEstimator.Budget> budgets,
-      DrivetrainLimits limits,
-      DoubleUnaryOperator motor,
-      double dt) {
-    return profile(
-        path,
-        goals,
-        zones,
-        measured,
-        startSpeed,
-        barrier,
-        (node, out) -> {
-          var budget = budgets.apply(node);
-          out[0] = budget.speed();
-          out[1] = budget.traction();
-        },
-        limits,
-        motor,
-        dt,
-        new Workspace());
-  }
-
-  public static Result profile(
-      PathBuilder.Path path,
-      List<Goal> goals,
-      List<SpeedZone> zones,
       double measured,
       double startSpeed,
       double barrier,
       NodeBudgetEvaluator budgets,
       DrivetrainLimits limits,
-      DoubleUnaryOperator motor,
       double dt,
       Workspace workspace) {
     if (path.length() <= 1e-9 || measured >= barrier - 1e-9) {
@@ -90,7 +52,6 @@ public final class VelocityProfiler {
       return new Result(
           0,
           barrier,
-          0,
           overspeed,
           overspeed ? LimitingFactor.INFEASIBLE : LimitingFactor.GOAL_DECELERATION);
     }
@@ -100,8 +61,7 @@ public final class VelocityProfiler {
     int intervals = (int) Math.ceil(path.length() / 0.05);
     var pieces = path.pieces();
     var anchors = path.anchors();
-    int zoneCount = zones.size();
-    int maxRaw = intervals + 3 + pieces.size() + anchors.size() + 2 * zoneCount;
+    int maxRaw = intervals + 3 + pieces.size() + anchors.size();
     workspace.ensureCapacity(maxRaw);
 
     double[] s = workspace.rawNodes;
@@ -126,15 +86,6 @@ public final class VelocityProfiler {
         s[rawCount++] = anchor;
       }
     }
-    for (int i = 0; i < zoneCount; i++) {
-      var zone = zones.get(i);
-      if (zone.startMeters() > measured && zone.startMeters() < barrier) {
-        s[rawCount++] = zone.startMeters();
-      }
-      if (zone.endMeters() > measured && zone.endMeters() < barrier) {
-        s[rawCount++] = zone.endMeters();
-      }
-    }
     Arrays.sort(s, 0, rawCount);
     int n = 0;
     for (int i = 0; i < rawCount; i++) {
@@ -150,7 +101,6 @@ public final class VelocityProfiler {
       return new Result(
           0,
           barrier,
-          0,
           overspeed,
           overspeed ? LimitingFactor.INFEASIBLE : LimitingFactor.GOAL_DECELERATION);
     }
@@ -166,15 +116,6 @@ public final class VelocityProfiler {
       u[i] = budgetScratch[0] * budgetScratch[0];
       traction[i] = budgetScratch[1];
       factors[i] = LimitingFactor.TOP_SPEED;
-      for (int j = 0; j < zoneCount; j++) {
-        var zone = zones.get(j);
-        if (s[i] >= zone.startMeters()
-            && s[i] <= zone.endMeters()
-            && zone.maxSpeed() * zone.maxSpeed() < u[i]) {
-          u[i] = zone.maxSpeed() * zone.maxSpeed();
-          factors[i] = LimitingFactor.ZONE_SPEED_CAP;
-        }
-      }
     }
     int segmentCount = n - 1;
     for (int i = 0; i < segmentCount; i++) {
@@ -219,10 +160,11 @@ public final class VelocityProfiler {
         factors[i] = factors[i + 1];
       }
     }
+    double ceilingAtMeasured = u[0];
     double braking = Math.min(limits.braking(), traction[0]);
     double positiveStart = Math.max(0, startSpeed);
     double maxFeasibleStart = Math.sqrt(Math.max(0, u[0])) + braking * dt + 1e-4;
-    boolean infeasible = startSpeed < -1e-6 || positiveStart > maxFeasibleStart;
+    boolean infeasible = startSpeed < -(braking * dt + 1e-4) || positiveStart > maxFeasibleStart;
     u[0] = Math.min(u[0], positiveStart * positiveStart);
     for (int i = 0; i < n - 1; i++) {
       double ds = s[i + 1] - s[i];
@@ -234,11 +176,11 @@ public final class VelocityProfiler {
         continue;
       }
       double lower = u[i];
-      double upper = Math.min(u[i + 1], lower + 2 * ds * motor.applyAsDouble(Math.sqrt(lower)));
-      if (upper - lower > 2 * ds * motor.applyAsDouble(Math.sqrt(upper))) {
+      double upper = Math.min(u[i + 1], lower + 2 * ds * limits.acceleration(Math.sqrt(lower)));
+      if (upper - lower > 2 * ds * limits.acceleration(Math.sqrt(upper))) {
         for (int iteration = 0; iteration < 4; iteration++) {
           double midpoint = (lower + upper) / 2;
-          if (midpoint - u[i] <= 2 * ds * motor.applyAsDouble(Math.sqrt(midpoint))) {
+          if (midpoint - u[i] <= 2 * ds * limits.acceleration(Math.sqrt(midpoint))) {
             lower = midpoint;
           } else {
             upper = midpoint;
@@ -254,7 +196,7 @@ public final class VelocityProfiler {
     double speed = Math.sqrt(u[0]);
     double deceleration = Math.min(limits.braking(), traction[0]);
     if (deceleration <= 1e-6) {
-      return new Result(0, measured, 0, true, LimitingFactor.INFEASIBLE);
+      return new Result(0, measured, true, LimitingFactor.INFEASIBLE);
     }
     double lag = dt + limits.lag();
     double taper = Math.max(0.30, u[0] / (2 * deceleration));
@@ -262,7 +204,7 @@ public final class VelocityProfiler {
     double lateral = u[0] * curvature[0];
     double available =
         Math.min(
-            motor.applyAsDouble(speed),
+            limits.acceleration(speed),
             Math.sqrt(Math.max(0, traction[0] * traction[0] - lateral * lateral)));
     double evaluation = Math.min(barrier, measured + speed * lead + 0.5 * available * lead * lead);
     int interval = 0;
@@ -270,17 +212,20 @@ public final class VelocityProfiler {
       interval++;
     }
     double ds = s[interval + 1] - s[interval];
-    double delta = u[interval + 1] - u[interval];
     double target =
         ds <= 1e-9
             ? u[interval]
             : MathUtil.interpolate(u[interval], u[interval + 1], (evaluation - s[interval]) / ds);
+    LimitingFactor limitingFactor = factors[interval + 1];
+    if (target > ceilingAtMeasured) {
+      target = ceilingAtMeasured;
+      limitingFactor = factors[0];
+    }
     return new Result(
-        Math.sqrt(target),
+        Math.sqrt(Math.max(0, target)),
         Math.min(barrier, measured + 0.5 * speed * lag),
-        ds <= 1e-9 ? 0 : delta / (2 * ds),
         infeasible,
-        infeasible ? LimitingFactor.INFEASIBLE : factors[interval + 1]);
+        infeasible ? LimitingFactor.INFEASIBLE : limitingFactor);
   }
 
   private static double frictionRoot(double u, double ds, double curvature, double traction) {

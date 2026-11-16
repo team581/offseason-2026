@@ -5,14 +5,18 @@ import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import frc.robot.config.CompAutoField;
 
 /**
  * Leaves the trench perimeter and rotates 180 degrees counterclockwise while strafing toward the
  * interior of the field.
  */
-final class TrailblazerTrenchRotationAuto extends TrailblazerAuto {
+final class TrailblazerTrenchRotationAuto
+    extends TrailblazerAuto<TrailblazerTrenchRotationAuto.State> {
+  enum State {
+    DRIVE_AND_TURN,
+    DONE
+  }
+
   private static final Pose2d START = TrailblazerTrenchAuto.END;
   // Positive blue-field Y is left as seen from the driver station, toward the field interior.
   private static final Pose2d END =
@@ -21,21 +25,20 @@ final class TrailblazerTrenchRotationAuto extends TrailblazerAuto {
   static final AutoSegment SEGMENT =
       Trailblazer.segment("trench-rotation").stopAt(END, Goal::counterClockwise).build();
 
-  static Pose2d start(Alliance alliance) {
-    return CompAutoField.pose(START, alliance);
-  }
-
   TrailblazerTrenchRotationAuto(AutoContext context) {
-    super(START, context);
-    buildSteps();
+    super(State.DRIVE_AND_TURN, START, context, SEGMENT);
   }
 
-  TrailblazerTrenchRotationAuto(Trailblazer trailblazer, Alliance alliance) {
-    super(START, trailblazer, alliance);
-    buildSteps();
+  @Override
+  protected void afterTransition(State newState) {
+    switch (newState) {
+      case DRIVE_AND_TURN -> drive(SEGMENT);
+      case DONE -> stopDriving();
+    }
   }
 
-  private void buildSteps() {
-    drive("drive_and_turn", SEGMENT);
+  @Override
+  protected State getNextState(State currentState) {
+    return currentState == State.DRIVE_AND_TURN && atGoal() ? State.DONE : currentState;
   }
 }

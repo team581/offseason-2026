@@ -17,13 +17,13 @@ public enum AutoSelection implements AutoSelectionBase {
   TRAILBLAZER_3_CALIBRATE_BRAKING("TB3 Calibrate Braking");
 
   private final String displayName;
-  private final @Nullable Function<AutoContext, TrailblazerAuto> factory;
+  private final @Nullable Function<AutoContext, TrailblazerAuto<?>> factory;
 
   AutoSelection(String displayName) {
     this(displayName, null);
   }
 
-  AutoSelection(String displayName, @Nullable Function<AutoContext, TrailblazerAuto> factory) {
+  AutoSelection(String displayName, @Nullable Function<AutoContext, TrailblazerAuto<?>> factory) {
     this.displayName = displayName;
     this.factory = factory;
   }
@@ -33,7 +33,7 @@ public enum AutoSelection implements AutoSelectionBase {
     return displayName;
   }
 
-  Optional<TrailblazerAuto> create(AutoContext context) {
+  Optional<TrailblazerAuto<?>> create(AutoContext context) {
     return factory == null ? Optional.empty() : Optional.of(factory.apply(context));
   }
 }

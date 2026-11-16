@@ -10,39 +10,26 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List<SpeedZone> zones) {
-  public AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
-    this(id, limits, goals, List.of());
-  }
-
+public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
   public AutoSegment {
     Objects.requireNonNull(limits);
-    zones = List.copyOf(zones);
-    if (zones.size() > 128) {
-      throw new IllegalArgumentException("Too many speed zones");
-    }
     if (id == null || id.isBlank() || goals.isEmpty() || goals.size() > 128) {
       throw new IllegalArgumentException("Invalid plan ID or goal count");
     }
-    var ids = new HashSet<String>();
     var markers = new HashSet<Enum<?>>();
-    var normalized = new ArrayList<Goal>();
-    for (Goal goal : goals) {
-      var named = goal.id() == null ? goal.withId("goal-" + normalized.size()) : goal;
-      if (!ids.add(named.id()) || (named.marker() != null && !markers.add(named.marker()))) {
-        throw new IllegalArgumentException("Repeated goal ID or marker at " + named.id());
+    for (int i = 0; i < goals.size(); i++) {
+      var goal = goals.get(i);
+      if (goal.marker() != null && !markers.add(goal.marker())) {
+        throw new IllegalArgumentException("Repeated goal marker " + goal.marker());
       }
-      normalized.add(named);
-    }
-    goals = List.copyOf(normalized);
-    if (goals.get(goals.size() - 1).passType() == Goal.PassType.THROUGH) {
-      throw new IllegalArgumentException("Final goal must use stop or finishThrough");
-    }
-    for (var goal : goals.subList(0, goals.size() - 1)) {
-      if (goal.passType() == Goal.PassType.FINISH_THROUGH) {
-        throw new IllegalArgumentException("finishThrough must be the last goal");
+      if (i < goals.size() - 1 && goal.passType() != Goal.PassType.THROUGH) {
+        throw new IllegalArgumentException("Intermediate goals must pass through");
+      }
+      if (i == goals.size() - 1 && goal.passType() == Goal.PassType.THROUGH) {
+        throw new IllegalArgumentException("Final goal must use stop or finishThrough");
       }
     }
+    goals = List.copyOf(goals);
   }
 
   public AutoSegment forAlliance(Alliance alliance, FieldGeometry field) {
@@ -50,14 +37,13 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
     Objects.requireNonNull(field);
     return alliance == Alliance.Blue
         ? this
-        : new AutoSegment(id, limits, goals.stream().map(goal -> goal.flip(field)).toList(), zones);
+        : new AutoSegment(id, limits, goals.stream().map(goal -> goal.flip(field)).toList());
   }
 
   public static final class Builder {
     private final String id;
     private MotionLimits limits = MotionLimits.robotMaximum();
     private final List<Goal> goals = new ArrayList<>();
-    private final List<SpeedZone> zones = new ArrayList<>();
 
     public Builder(String id) {
       this.id = id;
@@ -68,13 +54,8 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
       return this;
     }
 
-    public Builder addZone(SpeedZone zone) {
-      zones.add(zone);
-      return this;
-    }
-
     public AutoSegment build() {
-      return new AutoSegment(id, limits, goals, zones);
+      return new AutoSegment(id, limits, goals);
     }
 
     public Builder finishThrough(Pose2d pose, double speed) {
@@ -83,10 +64,6 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
 
     public Builder finishThrough(Translation2d point, double speed) {
       return addGoal(Goal.finishThrough(point, speed));
-    }
-
-    public Builder finishThrough(Translation2d point, double speed, double overrun) {
-      return addGoal(Goal.finishThrough(point, speed, overrun));
     }
 
     public Builder finishThrough(Translation2d point, double speed, UnaryOperator<Goal> configure) {
@@ -113,16 +90,8 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
           Goal.stop(new Pose2d(xMeters, yMeters, Rotation2d.fromDegrees(headingDegrees))));
     }
 
-    public Builder stopAt(
-        double xMeters, double yMeters, double headingDegrees, UnaryOperator<Goal> configure) {
-      return addGoal(
-          Objects.requireNonNull(configure)
-              .apply(
-                  Goal.stop(new Pose2d(xMeters, yMeters, Rotation2d.fromDegrees(headingDegrees)))));
-    }
-
-    public Builder stopAt(double xMeters, double yMeters, Rotation2d heading) {
-      return addGoal(Goal.stop(new Pose2d(xMeters, yMeters, heading)));
+    public Builder stopAt(double xMeters, double yMeters, UnaryOperator<Goal> configure) {
+      return stopAt(new Translation2d(xMeters, yMeters), configure);
     }
 
     public Builder stopAt(Pose2d pose) {
@@ -131,6 +100,11 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
 
     public Builder stopAt(Pose2d pose, UnaryOperator<Goal> configure) {
       return addGoal(Objects.requireNonNull(configure).apply(Goal.stop(pose)));
+    }
+
+    public Builder stopAt(Translation2d point, UnaryOperator<Goal> configure) {
+      return addGoal(
+          Objects.requireNonNull(configure).apply(Goal.stop(new Pose2d(point, Rotation2d.kZero))));
     }
 
     public Builder through(double xMeters, double yMeters) {
@@ -160,15 +134,6 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals, List
 
     public Builder through(Pose2d pose, double blendRadiusMeters) {
       return addGoal(Goal.through(pose).within(blendRadiusMeters));
-    }
-
-    public Builder through(Pose2d pose, double blendRadiusMeters, UnaryOperator<Goal> configure) {
-      return addGoal(
-          Objects.requireNonNull(configure).apply(Goal.through(pose).within(blendRadiusMeters)));
-    }
-
-    public Builder through(Pose2d pose, UnaryOperator<Goal> configure) {
-      return addGoal(Objects.requireNonNull(configure).apply(Goal.through(pose)));
     }
 
     public Builder through(Translation2d point) {

@@ -1,9 +1,9 @@
 package com.team581.trailblazer3.model;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public record HeadingPlan(
     Target target,
@@ -25,17 +25,6 @@ public record HeadingPlan(
   }
 
   public sealed interface Target {
-    record DynamicPoint(
-        Supplier<TimestampedTarget<Translation2d>> supplier, Rotation2d mechanismOffset)
-        implements Target {
-      public DynamicPoint {
-        Objects.requireNonNull(supplier);
-        if (!Double.isFinite(mechanismOffset.getRadians())) {
-          throw new IllegalArgumentException("Invalid aim offset");
-        }
-      }
-    }
-
     record Fixed(Rotation2d angle) implements Target {
       public Fixed {
         if (!Double.isFinite(angle.getRadians())) {
@@ -43,8 +32,6 @@ public record HeadingPlan(
         }
       }
     }
-
-    record Hold() implements Target {}
 
     record Point(Translation2d target, Rotation2d mechanismOffset) implements Target {
       public Point {
@@ -72,10 +59,6 @@ public record HeadingPlan(
     }
   }
 
-  public static HeadingPlan face(Rotation2d angle) {
-    return to(angle);
-  }
-
   public static HeadingPlan faceDegrees(double degrees) {
     return to(Rotation2d.fromDegrees(degrees));
   }
@@ -88,16 +71,12 @@ public record HeadingPlan(
     return of(new Target.Travel());
   }
 
-  public static HeadingPlan hold() {
-    return of(new Target.Hold());
-  }
-
   public static HeadingPlan facePoint(Translation2d point) {
-    return of(new Target.Point(point, Rotation2d.kZero));
+    return facePoint(point, Rotation2d.kZero);
   }
 
-  public static HeadingPlan facePointDynamic(Supplier<TimestampedTarget<Translation2d>> supplier) {
-    return of(new Target.DynamicPoint(supplier, Rotation2d.kZero));
+  public static HeadingPlan facePoint(Translation2d point, Rotation2d mechanismOffset) {
+    return of(new Target.Point(point, mechanismOffset));
   }
 
   private static HeadingPlan of(Target target) {
@@ -142,14 +121,6 @@ public record HeadingPlan(
     return gate(GatePolicy.HARD);
   }
 
-  public HeadingPlan shortestTurn() {
-    return direction(TurnDirection.SHORTEST);
-  }
-
-  public HeadingPlan softGate() {
-    return gate(GatePolicy.SOFT);
-  }
-
   public HeadingPlan tolerance(Rotation2d tolerance) {
     return new HeadingPlan(
         target,
@@ -161,19 +132,12 @@ public record HeadingPlan(
         dwellSeconds);
   }
 
-  public HeadingPlan withinDegrees(double toleranceDegrees) {
-    return tolerance(Rotation2d.fromDegrees(toleranceDegrees));
-  }
-
   public HeadingPlan flip(FieldGeometry field) {
     Target flipped = target;
     if (target instanceof Target.Fixed fixed) {
       flipped =
           new Target.Fixed(
-              field
-                  .flipPose(
-                      new edu.wpi.first.math.geometry.Pose2d(Translation2d.kZero, fixed.angle()))
-                  .getRotation());
+              field.flipPose(new Pose2d(Translation2d.kZero, fixed.angle())).getRotation());
     } else if (target instanceof Target.Point aim) {
       flipped = new Target.Point(field.flipPoint(aim.target()), aim.mechanismOffset());
     }

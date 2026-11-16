@@ -1,5 +1,7 @@
 package frc.robot.config;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.FieldClearance;
@@ -27,24 +29,29 @@ public final class CompAutoField {
           FIELD.widthMeters() - RIGHT_TRENCH_START.getY(),
           Rotation2d.k180deg);
 
-  private static final double TRENCH_HALF_WIDTH_METERS = Units.inchesToMeters(48.94 / 2);
+  private static final double TRENCH_WIDTH_METERS = Units.inchesToMeters(48.94);
   private static final double TRENCH_HALF_DEPTH_METERS = Units.inchesToMeters(47.0 / 2);
+  private static final double TRENCH_BUMP_BARRIER_WIDTH_METERS = Units.inchesToMeters(12.0);
+  private static final double BUMP_WIDTH_METERS = Units.inchesToMeters(73.0);
+  private static final double HUB_HALF_WIDTH_METERS = Units.inchesToMeters(47.0 / 2);
+  private static final double HUB_NET_EXTENSION_X_METERS = Units.inchesToMeters(10.26);
+  private static final double HUB_NET_HALF_WIDTH_Y_METERS = Units.inchesToMeters(58.41 / 2);
+  private static final double BLUE_CLIMB_MAX_X_METERS =
+      FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(608.375814);
+  private static final double BLUE_CLIMB_MIN_Y_METERS =
+      FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(193.718750);
+  private static final double BLUE_CLIMB_MAX_Y_METERS =
+      FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(146.718750);
   private static final double CLEARANCE_MARGIN_METERS = 0.04;
 
-  public static final FieldClearance RIGHT_TRENCH_CLEARANCE =
-      trenchClearance(RIGHT_TRENCH_START.getTranslation());
-
-  public static final FieldClearance LEFT_TRENCH_CLEARANCE =
-      trenchClearance(LEFT_TRENCH_START.getTranslation());
+  public static final double RIGHT_TRENCH_Y_METERS = RIGHT_TRENCH_START.getY();
+  public static final double RIGHT_BUMP_CENTER_Y_METERS =
+      TRENCH_WIDTH_METERS + TRENCH_BUMP_BARRIER_WIDTH_METERS + BUMP_WIDTH_METERS / 2.0;
 
   public static final FieldClearance CLEARANCE = fullFieldClearance();
 
   public static FieldClearance clearance(Alliance alliance) {
     return CLEARANCE.forAlliance(alliance);
-  }
-
-  public static Pose2d forAlliance(Pose2d bluePose, Alliance alliance) {
-    return pose(bluePose, alliance);
   }
 
   public static Pose2d offset(Pose2d base, double dxMeters, double dyMeters) {
@@ -73,27 +80,51 @@ public final class CompAutoField {
     return blue.forAlliance(alliance, FIELD);
   }
 
+  private static List<Translation2d> flipPolygon(List<Translation2d> bluePolygon) {
+    return bluePolygon.stream().map(FIELD::flipPoint).collect(toImmutableList());
+  }
+
   private static FieldClearance fullFieldClearance() {
-    double rightLow = RIGHT_TRENCH_START.getY() - TRENCH_HALF_WIDTH_METERS;
-    double rightHigh = RIGHT_TRENCH_START.getY() + TRENCH_HALF_WIDTH_METERS;
-    double leftLow = LEFT_TRENCH_START.getY() - TRENCH_HALF_WIDTH_METERS;
-    double leftHigh = LEFT_TRENCH_START.getY() + TRENCH_HALF_WIDTH_METERS;
-    double blueNear = RIGHT_TRENCH_START.getX() - TRENCH_HALF_DEPTH_METERS;
-    double blueFar = RIGHT_TRENCH_START.getX() + TRENCH_HALF_DEPTH_METERS;
-    double redNear = FIELD.lengthMeters() - blueFar;
-    double redFar = FIELD.lengthMeters() - blueNear;
+    double blueObstacleX = RIGHT_TRENCH_START.getX();
+    double blueNear = blueObstacleX - TRENCH_HALF_DEPTH_METERS;
+    double blueFar = blueObstacleX + TRENCH_HALF_DEPTH_METERS;
+    double rightBarrierLowY = TRENCH_WIDTH_METERS;
+    double rightBarrierHighY = TRENCH_WIDTH_METERS + TRENCH_BUMP_BARRIER_WIDTH_METERS;
+    double leftBarrierHighY = FIELD.widthMeters() - TRENCH_WIDTH_METERS;
+    double leftBarrierLowY = leftBarrierHighY - TRENCH_BUMP_BARRIER_WIDTH_METERS;
+    double hubCenterY = FIELD.widthMeters() / 2.0;
+
+    var blueRightBarrier = rectangle(blueNear, rightBarrierLowY, blueFar, rightBarrierHighY);
+    var blueLeftBarrier = rectangle(blueNear, leftBarrierLowY, blueFar, leftBarrierHighY);
+    var blueHub =
+        ImmutableList.of(
+            new Translation2d(
+                blueObstacleX - HUB_HALF_WIDTH_METERS, hubCenterY - HUB_HALF_WIDTH_METERS),
+            new Translation2d(
+                blueObstacleX + HUB_HALF_WIDTH_METERS + HUB_NET_EXTENSION_X_METERS,
+                hubCenterY - HUB_NET_HALF_WIDTH_Y_METERS),
+            new Translation2d(
+                blueObstacleX + HUB_HALF_WIDTH_METERS + HUB_NET_EXTENSION_X_METERS,
+                hubCenterY + HUB_NET_HALF_WIDTH_Y_METERS),
+            new Translation2d(
+                blueObstacleX - HUB_HALF_WIDTH_METERS, hubCenterY + HUB_HALF_WIDTH_METERS));
+    var blueClimbTower =
+        rectangle(0.0, BLUE_CLIMB_MIN_Y_METERS, BLUE_CLIMB_MAX_X_METERS, BLUE_CLIMB_MAX_Y_METERS);
+
     return new FieldClearance(
         FIELD,
         CompTrailblazer.BUMPER_HALF_SIZE_METERS,
         CompTrailblazer.BUMPER_HALF_SIZE_METERS,
         CLEARANCE_MARGIN_METERS,
         ImmutableList.of(
-            rectangle(blueNear, -1, blueFar, rightLow),
-            rectangle(blueNear, rightHigh, blueFar, leftLow),
-            rectangle(blueNear, leftHigh, blueFar, FIELD.widthMeters() + 1),
-            rectangle(redNear, -1, redFar, rightLow),
-            rectangle(redNear, rightHigh, redFar, leftLow),
-            rectangle(redNear, leftHigh, redFar, FIELD.widthMeters() + 1)));
+            blueRightBarrier,
+            blueLeftBarrier,
+            blueHub,
+            blueClimbTower,
+            flipPolygon(blueRightBarrier),
+            flipPolygon(blueLeftBarrier),
+            flipPolygon(blueHub),
+            flipPolygon(blueClimbTower)));
   }
 
   private static List<Translation2d> rectangle(
@@ -103,20 +134,6 @@ public final class CompAutoField {
         new Translation2d(right, bottom),
         new Translation2d(right, top),
         new Translation2d(left, top));
-  }
-
-  private static FieldClearance trenchClearance(Translation2d trenchCenter) {
-    double low = trenchCenter.getY() - TRENCH_HALF_WIDTH_METERS;
-    double high = trenchCenter.getY() + TRENCH_HALF_WIDTH_METERS;
-    double near = trenchCenter.getX() - TRENCH_HALF_DEPTH_METERS;
-    double far = trenchCenter.getX() + TRENCH_HALF_DEPTH_METERS;
-    return new FieldClearance(
-        FIELD,
-        CompTrailblazer.BUMPER_HALF_SIZE_METERS,
-        CompTrailblazer.BUMPER_HALF_SIZE_METERS,
-        CLEARANCE_MARGIN_METERS,
-        ImmutableList.of(
-            rectangle(near, -1, far, low), rectangle(near, high, far, FIELD.widthMeters() + 1)));
   }
 
   private CompAutoField() {}

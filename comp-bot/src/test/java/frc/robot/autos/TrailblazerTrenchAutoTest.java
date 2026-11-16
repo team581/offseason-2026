@@ -2,10 +2,10 @@ package frc.robot.autos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.team581.trailblazer3.model.AutoSegment;
-import com.team581.trailblazer3.model.RobotStateSnapshot;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import edu.wpi.first.hal.HAL;
@@ -13,22 +13,99 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.Hardware;
 import frc.robot.config.CompAutoField;
 import frc.robot.config.CompTrailblazer;
+import frc.robot.conveyor.Conveyor;
+import frc.robot.deploy.Deploy;
+import frc.robot.feeder.Feeder;
+import frc.robot.health.HealthManager;
+import frc.robot.hub_activity.HubActivity;
+import frc.robot.imu.Imu;
+import frc.robot.intake.Intake;
+import frc.robot.localization.Localization;
+import frc.robot.power_manager.PowerManager;
+import frc.robot.robot_manager.RobotManager;
+import frc.robot.robot_manager.hopper_manager.HopperManager;
+import frc.robot.shooter.Shooter;
+import frc.robot.shooter_hood.ShooterHood;
+import frc.robot.swerve.Swerve;
+import frc.robot.vision.CameraConfigs;
+import frc.robot.vision.Vision;
+import frc.robot.vision.limelight.Limelight;
+import frc.robot.vision.limelight.LimelightState;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 final class TrailblazerTrenchAutoTest {
+  private static final class Holder {
+    static final RobotManager ROBOT_MANAGER = createRobotManager();
+
+    private static RobotManager createRobotManager() {
+      assertTrue(HAL.initialize(500, 0));
+      var hardware = new Hardware();
+      var shooterLimelight = new Limelight("shooter", LimelightState.TAGS, CameraConfigs.SHOOTER);
+      var leftLimelight = new Limelight("left", LimelightState.TAGS, CameraConfigs.LEFT);
+      var rightLimelight = new Limelight("right", LimelightState.TAGS, CameraConfigs.RIGHT);
+      var health = new HealthManager(shooterLimelight, leftLimelight, rightLimelight);
+      var imu = new Imu(hardware.drivetrain);
+      var swerve = new Swerve(hardware.drivetrain, health, hardware.driverController);
+      imu.setDriveStateSupplier(swerve::getDriveState);
+      var shooterHood = new ShooterHood(hardware.shooterHoodMotor);
+      var shooter =
+          new Shooter(
+              hardware.shooterTopLeftMotor,
+              hardware.shooterTopRightMotor,
+              hardware.shooterBottomLeftMotor,
+              hardware.shooterBottomRightMotor);
+      var intake = new Intake(hardware.intakeLeftMotor, hardware.intakeRightMotor);
+      var deploy = new Deploy(hardware.deployDifferentialMechanism);
+      var vision = new Vision(imu, shooterLimelight, leftLimelight, rightLimelight);
+      var localization = new Localization(swerve, hardware.drivetrain, vision, imu);
+      var feeder = new Feeder(hardware.feederTopMotor, hardware.feederBottomMotor);
+      var conveyor = new Conveyor(hardware.conveyorTopMotor, hardware.conveyorBottomMotor);
+      var hubActivity = new HubActivity();
+      var powerManager =
+          new PowerManager(shooter, intake, deploy, shooterHood, feeder, conveyor, swerve);
+      var hopperManager =
+          new HopperManager(
+              deploy, intake, conveyor, feeder, hardware.hopperCANRange, hardware.towerSensor);
+      return new RobotManager(
+          hopperManager,
+          shooterHood,
+          localization,
+          swerve,
+          shooter,
+          vision,
+          hardware.driverController,
+          health,
+          hubActivity,
+          hardware,
+          powerManager);
+    }
+  }
+
+  private enum SequenceState {
+    DRIVE_LEG,
+    WAIT_READY,
+    SHORT_PAUSE,
+    DONE
+  }
+
+  private enum SingleDriveState {
+    DRIVE,
+    DONE
+  }
+
   private enum TestMarker {
     MIDPOINT
   }
 
   private static TickResult stepKinematics(
       Trailblazer planner, double[] time, Pose2d[] pose, ChassisSpeeds[] speeds) {
-    var result = planner.update(RobotStateSnapshot.measured(time[0], pose[0], speeds[0], true));
+    var result = planner.update(time[0], pose[0], speeds[0]);
     var cmd = result.commandedFieldSpeeds();
     double dt = 0.02;
     pose[0] =
@@ -41,151 +118,183 @@ final class TrailblazerTrenchAutoTest {
     return result;
   }
 
+  static AutoContext testContext(Trailblazer planner, Alliance alliance) {
+    var robot = Holder.ROBOT_MANAGER;
+    robot.idleRequest();
+    robot.cancelIntakeRequest();
+    robot.hopperManager.setWantsSafeStow(false);
+    robot.powerManager.idleRequest();
+    return new AutoContext(robot, planner, alliance);
+  }
+
   @Test
   void autoPreparedWhileDisabledCommandsTowardAllianceWallAfterWaiting() {
     assertTrue(HAL.initialize(500, 0));
     double[] time = {0};
     var planner = CompTrailblazer.create(() -> time[0]);
     for (var alliance : Alliance.values()) {
-      var rightAuto = new TrailblazerTrenchAuto(planner, alliance);
-      var rightStart = TrailblazerTrenchAuto.start(alliance);
+      var rightAuto = new TrailblazerTrenchAuto(testContext(planner, alliance));
+      var rightStart = rightAuto.startPose().orElseThrow();
       assertTrue(rightAuto.isNearStartPose(rightStart));
       assertFalse(rightAuto.isNearStartPose(Pose2d.kZero));
 
       var rightWheelTarget = rightAuto.initialDisabledWheelTarget(rightStart);
       assertTrue(rightWheelTarget.isPresent());
       double expectedDir = alliance == Alliance.Red ? 1.0 : -1.0;
-      assertTrue(expectedDir * rightWheelTarget.orElseThrow().vxMetersPerSecond > 0);
+      assertEquals(expectedDir, rightWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
       assertEquals(0.0, rightWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
 
       rightAuto.periodic();
       time[0] += 30;
-      var rightResult =
-          planner.update(
-              RobotStateSnapshot.measured(time[0], rightStart, new ChassisSpeeds(), true));
+      var rightResult = planner.update(time[0], rightStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, rightResult.status());
       assertTrue(
           rightResult.commandedFieldSpeeds().vxMetersPerSecond * rightStart.getRotation().getCos()
               > 0);
       time[0] += 0.02;
-      planner.preempt();
-      planner.update(RobotStateSnapshot.measured(time[0], rightStart, new ChassisSpeeds(), false));
+      planner.cancel();
       time[0] += 0.02;
 
-      var leftStart = CompAutoField.pose(CompAutoField.LEFT_TRENCH_START, alliance);
       var leftAuto =
-          new TrailblazerAuto(CompAutoField.LEFT_TRENCH_START, planner, alliance) {
-            {
-              drive("leave_left_trench", LeftTrenchAuto.LEAVE_TRENCH_SEGMENT);
+          new TrailblazerAuto<>(
+              SingleDriveState.DRIVE,
+              CompAutoField.LEFT_TRENCH_START,
+              testContext(planner, alliance),
+              LeftTrenchAuto.LEAVE_TRENCH_SEGMENT) {
+            @Override
+            protected void afterTransition(SingleDriveState newState) {
+              if (newState == SingleDriveState.DRIVE) {
+                drive(LeftTrenchAuto.LEAVE_TRENCH_SEGMENT);
+              } else {
+                stopDriving();
+              }
+            }
+
+            @Override
+            protected SingleDriveState getNextState(SingleDriveState currentState) {
+              return currentState == SingleDriveState.DRIVE && atGoal()
+                  ? SingleDriveState.DONE
+                  : currentState;
             }
           };
+      var leftStart = leftAuto.startPose().orElseThrow();
       assertTrue(leftAuto.isNearStartPose(leftStart));
       var leftWheelTarget = leftAuto.initialDisabledWheelTarget(leftStart);
       assertTrue(leftWheelTarget.isPresent());
-      assertTrue(expectedDir * leftWheelTarget.orElseThrow().vxMetersPerSecond > 0);
+      assertEquals(expectedDir, leftWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
       assertEquals(0.0, leftWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
 
       leftAuto.periodic();
-      var leftResult =
-          planner.update(
-              RobotStateSnapshot.measured(time[0], leftStart, new ChassisSpeeds(), true));
+      var leftResult = planner.update(time[0], leftStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, leftResult.status());
       assertTrue(
           leftResult.commandedFieldSpeeds().vxMetersPerSecond * leftStart.getRotation().getCos()
               > 0);
       time[0] += 0.02;
-      planner.preempt();
-      planner.update(RobotStateSnapshot.measured(time[0], leftStart, new ChassisSpeeds(), false));
+      planner.cancel();
       time[0] += 0.02;
     }
   }
 
   @Test
-  void sequentialDslRunsStepsMarkersWaitsAndNestedBranchesInOrder() {
+  void stateMachineAutoRunsTransitionsMarkersAndTimeoutsInOrder() {
     assertTrue(HAL.initialize(500, 0));
     double[] time = {10.0};
     var planner = CompTrailblazer.create(() -> time[0]);
     Pose2d[] pose = {CompAutoField.pose(1.0, 0.30, 0.0)};
     ChassisSpeeds[] speeds = {new ChassisSpeeds()};
     List<String> log = new ArrayList<>();
-    AtomicBoolean ready = new AtomicBoolean(false);
+    boolean[] ready = {false};
     AtomicInteger waitLoops = new AtomicInteger(0);
 
     AutoSegment leg1 =
         Trailblazer.segment("leg1")
             .maxSpeed(3.0)
-            .through(2.0, 0.30, g -> g.within(0.20).mark(TestMarker.MIDPOINT))
+            .through(2.0, 0.30, 0.20, g -> g.mark(TestMarker.MIDPOINT))
             .stopAt(2.5, 0.30, 0.0)
             .build();
 
     var auto =
-        new TrailblazerAuto(CompAutoField.pose(1.0, 0.30, 0.0), planner, Alliance.Blue) {
-          {
-            action("setup", () -> log.add("setup"));
-            branch(
-                "outer",
-                () -> true,
-                () -> {
-                  action("outer_true", () -> log.add("outer_true"));
-                  branch(
-                      "inner",
-                      () -> false,
-                      () -> log.add("inner_true"),
-                      () -> {
-                        drive("drive_leg1", leg1)
-                            .withoutClearance()
-                            .onStart(() -> log.add("drive_start"))
-                            .onMarker(TestMarker.MIDPOINT, () -> log.add("midpoint"));
-                        waitFor("wait_ready", 1.0, ready::get)
-                            .onStart(() -> {
-                              // Even if ready becomes true inside onStart, periodic() must wait
-                              // at least one full tick before exiting the WaitStep.
-                              ready.set(true);
-                              log.add("wait_start");
-                            })
-                            .everyLoop(waitLoops::incrementAndGet);
-                        waitSeconds("short_pause", 0.04);
-                      });
-                },
-                () -> log.add("outer_false"));
-            action("done", () -> log.add("done"));
+        new TrailblazerAuto<SequenceState>(
+            SequenceState.DRIVE_LEG,
+            CompAutoField.pose(1.0, 0.30, 0.0),
+            testContext(planner, Alliance.Blue),
+            leg1) {
+          boolean loggedMidpoint = false;
+
+          @Override
+          protected void afterTransition(SequenceState newState) {
+            switch (newState) {
+              case DRIVE_LEG -> {
+                log.add("drive_start");
+                driveWithoutClearance(leg1);
+              }
+              case WAIT_READY -> {
+                log.add("wait_start");
+                stopDriving();
+                ready[0] = true;
+              }
+              case SHORT_PAUSE -> stopDriving();
+              case DONE -> log.add("done");
+            }
+          }
+
+          @Override
+          protected SequenceState getNextState(SequenceState currentState) {
+            return switch (currentState) {
+              case DRIVE_LEG -> atGoal() ? SequenceState.WAIT_READY : currentState;
+              case WAIT_READY -> ready[0] ? SequenceState.SHORT_PAUSE : currentState;
+              case SHORT_PAUSE -> timeout(0.04) ? SequenceState.DONE : currentState;
+              case DONE -> currentState;
+            };
+          }
+
+          @Override
+          protected void whileInState(SequenceState state) {
+            if (state == SequenceState.DRIVE_LEG
+                && !loggedMidpoint
+                && passedMarker(TestMarker.MIDPOINT)) {
+              loggedMidpoint = true;
+              log.add("midpoint");
+            } else if (state == SequenceState.WAIT_READY) {
+              waitLoops.incrementAndGet();
+            }
           }
         };
 
-    // Tick 0 enters setup -> outer -> inner -> drive_leg1 and stays on drive_leg1.
+    // Tick 0 initializes DRIVE_LEG and calls whileInState without advancing prematurely.
     auto.periodic();
-    assertEquals(List.of("setup", "outer_true", "drive_start"), log);
-    assertEquals("drive_leg1", auto.currentStepName());
+    assertEquals(List.of("drive_start"), log);
+    assertEquals("DRIVE_LEG", auto.currentStepName());
     stepKinematics(planner, time, pose, speeds);
-    assertFalse(planner.isFaulted(), planner.lastResult().diagnostic());
+    assertNotEquals("KEEPOUT_VIOLATION", planner.lastResult().diagnostic());
 
     int steps = 0;
-    while (!"wait_ready".equals(auto.currentStepName()) && steps++ < 250) {
+    while (auto.getState() != SequenceState.WAIT_READY && steps++ < 250) {
       auto.periodic();
-      if (!"wait_ready".equals(auto.currentStepName())) {
+      if (auto.getState() != SequenceState.WAIT_READY) {
         stepKinematics(planner, time, pose, speeds);
-        assertFalse(planner.isFaulted(), planner.lastResult().diagnostic());
+        assertNotEquals("KEEPOUT_VIOLATION", planner.lastResult().diagnostic());
       }
     }
-    // WaitStep just entered on this tick with ready=true set in onStart; it must NOT finish yet.
-    assertEquals("wait_ready", auto.currentStepName());
+    // Entering WAIT_READY sets ready[0]=true inside afterTransition AFTER getNextState checked it.
+    assertEquals(SequenceState.WAIT_READY, auto.getState());
     assertEquals(1, waitLoops.get());
     assertTrue(log.contains("midpoint"));
     stepKinematics(planner, time, pose, speeds);
 
-    // Next tick sees ready == true and chains immediately into short_pause.
+    // Next tick sees ready[0] == true and transitions into SHORT_PAUSE.
     auto.periodic();
-    assertEquals("short_pause", auto.currentStepName());
+    assertEquals(SequenceState.SHORT_PAUSE, auto.getState());
     stepKinematics(planner, time, pose, speeds);
 
-    for (int i = 0; i < 6 && !auto.isFinished(); i++) {
+    for (int i = 0; i < 6 && auto.getState() != SequenceState.DONE; i++) {
       auto.periodic();
       stepKinematics(planner, time, pose, speeds);
     }
-    assertTrue(auto.isFinished());
+    assertEquals(SequenceState.DONE, auto.getState());
     assertEquals("DONE", auto.currentStepName());
-    assertEquals(
-        List.of("setup", "outer_true", "drive_start", "midpoint", "wait_start", "done"), log);
+    assertEquals(List.of("drive_start", "midpoint", "wait_start", "done"), log);
     assertTrue(auto.isNearStartPose(CompAutoField.pose(1.1, 0.30, 5.0)));
     assertFalse(auto.isNearStartPose(Pose2d.kZero));
   }
