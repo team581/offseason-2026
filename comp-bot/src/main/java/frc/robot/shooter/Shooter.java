@@ -85,8 +85,8 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
   private double feederBasedFeedForward = 0.0;
   private boolean ballsInTower = false;
 
-  private boolean atGoal = false;
-  private boolean atGoalDebounced = false;
+  private ShooterGoalStatus goalStatus = ShooterGoalStatus.IDLE;
+  private ShooterGoalStatus goalStatusDebounced = ShooterGoalStatus.IDLE;
 
   private boolean turboMode = false;
 
@@ -181,14 +181,6 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
                 supplyCurrentLimit));
   }
 
-  public boolean atGoal() {
-    return atGoal;
-  }
-
-  public boolean atGoalDebounced() {
-    return atGoalDebounced;
-  }
-
   public void feedRequest(double distance) {
     this.feedDistance = distance;
     setStateFromRequest(ShooterState.FEED);
@@ -198,6 +190,14 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()
         ? ShooterConfig.FEEDING_TOF_REGRESSION_MODEL.calculate(distance)
         : ShooterConfig.DISTANCE_TO_FEED_TOF.get(distance);
+  }
+
+  public ShooterGoalStatus getGoalStatus() {
+    return goalStatus;
+  }
+
+  public ShooterGoalStatus getGoalStatusDebounced() {
+    return goalStatusDebounced;
   }
 
   public double getScoreTimeOfFlight(double distance) {
@@ -251,18 +251,19 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     this.ballsInTower = ballsInTower || !DSOptions.USE_TOWER_SENSOR.getAsBoolean();
   }
 
-  private boolean calculateAtGoal() {
+  private ShooterGoalStatus calculateGoalStatus() {
     return switch (getState()) {
-      case IDLE -> false;
-      case PREPARE_SCORE ->
-          MathUtil.isNear(topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE);
-      case SCORE ->
-          MathUtil.isNear(
-              topRightMotorRpm, shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
-      case PREPARE_FEED, FEED ->
-          MathUtil.isNear(topRightMotorRpm, feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
-      default -> true;
+      case IDLE -> ShooterGoalStatus.IDLE;
+      case PREPARE_SCORE -> getRpmStatus(shootingRpm, ShooterConfig.RPM_TOLERANCE);
+      case SCORE -> getRpmStatus(shootingRpm, ShooterConfig.RPM_TOLERANCE_ACTIVELY_SHOOTING);
+      case PREPARE_FEED, FEED -> getRpmStatus(feedingRpm, ShooterConfig.RPM_TOLERANCE_FEEDING);
     };
+  }
+
+  private ShooterGoalStatus getRpmStatus(double goalRpm, double tolerance) {
+    return MathUtil.isNear(goalRpm, topRightMotorRpm, tolerance)
+        ? ShooterGoalStatus.READY
+        : ShooterGoalStatus.WRONG_SPEED;
   }
 
   @Override
@@ -291,8 +292,11 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     bottomRightSupplyCurrent = bottomRightSupplyCurrentSignal.getValueAsDouble();
     topRightTorqueCurrent = topRightTorqueCurrentSignal.getValueAsDouble();
 
-    atGoal = calculateAtGoal();
-    atGoalDebounced = atGoalDebouncer.calculate(atGoal);
+    goalStatus = calculateGoalStatus();
+    goalStatusDebounced =
+        atGoalDebouncer.calculate(goalStatus == ShooterGoalStatus.READY)
+            ? ShooterGoalStatus.READY
+            : goalStatus;
 
     switch (getState()) {
       case SCORE, FEED -> {
@@ -327,7 +331,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/GoalShootingRPM", shootingRpm);
     DogLog.log("Shooter/GoalFeedingRPM", feedingRpm);
     DogLog.log("Shooter/FeederBasedFeedForward", feederBasedFeedForward);
-    DogLog.log("Shooter/AtGoal", atGoal);
+    DogLog.log("Shooter/GoalStatus", goalStatus);
 
     DogLog.log("Shooter/TopLeft/SupplyCurrent", topLeftSupplyCurrent);
     DogLog.log("Shooter/TopRight/SupplyCurrent", topRightSupplyCurrent);

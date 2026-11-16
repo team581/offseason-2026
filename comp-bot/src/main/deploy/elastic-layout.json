@@ -790,16 +790,13 @@
                 "x": 0,
                 "width": 128,
                 "y": 0,
-                "title": "ShooterAtGoal",
-                "type": "Boolean Box",
+                "title": "ShooterGoalStatus",
+                "type": "Text Display",
                 "properties": {
-                  "true_color": 4283215696,
                   "period": 0.06,
-                  "false_color": 4294198070,
-                  "false_icon": "None",
-                  "data_type": "boolean",
-                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/ShooterAtGoal",
-                  "true_icon": "None"
+                  "show_submit_button": false,
+                  "data_type": "string",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/ShooterGoalStatus"
                 },
                 "height": 128
               },
@@ -807,16 +804,13 @@
                 "x": 0,
                 "width": 128,
                 "y": 0,
-                "title": "ShooterHoodAtGoal",
-                "type": "Boolean Box",
+                "title": "ShooterHoodGoalStatus",
+                "type": "Text Display",
                 "properties": {
-                  "true_color": 4283215696,
                   "period": 0.06,
-                  "false_color": 4294198070,
-                  "false_icon": "None",
-                  "data_type": "boolean",
-                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/ShooterHoodAtGoal",
-                  "true_icon": "None"
+                  "show_submit_button": false,
+                  "data_type": "string",
+                  "topic": "/Robot/RobotManager/Scoring/ScoreTransition/ShooterHoodGoalStatus"
                 },
                 "height": 128
               }
@@ -869,16 +863,13 @@
                 "x": 0,
                 "width": 128,
                 "y": 0,
-                "title": "ShooterAtGoal",
-                "type": "Boolean Box",
+                "title": "ShooterGoalStatus",
+                "type": "Text Display",
                 "properties": {
-                  "true_color": 4283215696,
                   "period": 0.06,
-                  "false_color": 4294198070,
-                  "false_icon": "None",
-                  "data_type": "boolean",
-                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterAtGoal",
-                  "true_icon": "None"
+                  "show_submit_button": false,
+                  "data_type": "string",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterGoalStatus"
                 },
                 "height": 128
               },
@@ -886,16 +877,13 @@
                 "x": 0,
                 "width": 128,
                 "y": 0,
-                "title": "ShooterHoodAtGoal",
-                "type": "Boolean Box",
+                "title": "ShooterHoodGoalStatus",
+                "type": "Text Display",
                 "properties": {
-                  "true_color": 4283215696,
                   "period": 0.06,
-                  "false_color": 4294198070,
-                  "false_icon": "None",
-                  "data_type": "boolean",
-                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterHoodAtGoal",
-                  "true_icon": "None"
+                  "show_submit_button": false,
+                  "data_type": "string",
+                  "topic": "/Robot/RobotManager/Feeding/FeedTransition/ShooterHoodGoalStatus"
                 },
                 "height": 128
               }

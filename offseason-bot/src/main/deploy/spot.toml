@@ -1,0 +1,46 @@
+#:schema https://spot.frc581.com/spot-config.schema.json
+
+[cameras.left]
+serial = "CHANGE-ME-left"
+required = true
+mode = "640x480@120"
+controls = { auto_exposure = "manual", exposure_time_absolute = 50, gain = 1 }
+mount = { x = -0.068656, y = 0.380299, z = 0.339588, roll = 0.0, pitch = -20.0, yaw = 90.0 }
+
+[cameras.left.calibrations."640x480"]
+fx = 486.55838051801857
+fy = 486.16465888574663
+cx = 337.6271914886429
+cy = 225.24805759907935
+distortion = [-0.08920277156193215, 0.11395782994918846, -0.0006177016452474246, 0.0009343239247063074, -0.10225560729122123]
+rms = 0.21671275699622275
+
+[cameras.right]
+serial = "CHANGE-ME-right"
+required = false
+mode = "640x480@120"
+controls = { auto_exposure = "manual", exposure_time_absolute = 50, gain = 1 }
+mount = { x = -0.17145, y = -0.378714, z = 0.317068, roll = 0.0, pitch = -20.0, yaw = -90.0 }
+
+[cameras.right.calibrations."640x480"]
+fx = 485.22714440524544
+fy = 485.2050152053196
+cx = 324.50469689213844
+cy = 207.89836185791006
+distortion = [-0.09948349064143425, 0.13412293525870608, -0.00017105212871407996, -0.00030704710075745117, -0.11360614859723724]
+rms = 0.3706733892173063
+
+[cameras.back]
+serial = "CHANGE-ME-back"
+required = true
+mode = "640x480@120"
+controls = { auto_exposure = "manual", exposure_time_absolute = 50, gain = 1 }
+mount = { x = -0.318389, y = 0.08255, z = 0.342468, roll = 0.0, pitch = -20.0, yaw = 180.0 }
+
+[cameras.back.calibrations."640x480"]
+fx = 483.88491184025906
+fy = 484.0609635967046
+cx = 317.21924295163484
+cy = 229.6139649853779
+distortion = [-0.09008365908050343, 0.11766416986235285, -6.909192424976172e-05, 0.0006376038435928551, -0.10975139602898693]
+rms = 0.6121536906691766

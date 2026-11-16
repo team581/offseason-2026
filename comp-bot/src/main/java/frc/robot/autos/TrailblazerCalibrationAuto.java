@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.deploy.DeployGoalStatus;
 import frc.robot.deploy.DeployState;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.vision.Vision;
@@ -147,7 +148,7 @@ final class TrailblazerCalibrationAuto {
     } else if (resetPose != null) {
       var offset = drive.Pose.relativeTo(resetPose);
       if (robot.hopperManager.deploy.getState() != DeployState.STOW
-          || !robot.hopperManager.deploy.atGoal(DeployState.STOW)) {
+          || robot.hopperManager.deploy.getGoalStatus(DeployState.STOW) != DeployGoalStatus.READY) {
         abort("Deploy left the retracted position", now);
       } else if (offset.getX() < -0.35
           || offset.getX() > 2.0
@@ -278,7 +279,7 @@ final class TrailblazerCalibrationAuto {
         }
       }
       case RETRACT -> {
-        if (deploy.atGoal(DeployState.STOW)) {
+        if (deploy.getGoalStatus(DeployState.STOW) == DeployGoalStatus.READY) {
           transition(Phase.ACQUIRE_HUB, now);
         } else if (elapsed >= 2.0) {
           abort("Deploy did not retract", now);

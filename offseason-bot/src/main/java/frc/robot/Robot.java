@@ -5,16 +5,12 @@ import com.team581.Base581Robot;
 import com.team581.controller.ControllerBindings;
 import com.team581.math.MathHelpers;
 import com.team581.math.PoseErrorTolerance;
+import com.team581.spot.Spot;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
-import com.team581.vision.spot.SpotVisionIO;
-import com.team581.vision.spot.VisionProcessor.CaptureState;
-import com.team581.vision.spot.data.Profile;
+import com.team581.util.AprilTags;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
@@ -39,7 +35,6 @@ import frc.robot.testing.TestManager;
 import frc.robot.turret.Turret;
 import frc.robot.vision.Vision;
 import frc.robot.vision.VisionConfig;
-import java.util.Optional;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -57,33 +52,20 @@ public class Robot extends Base581Robot {
                       Swerve.ORIGINAL_HEADING_PID.getD())),
               imu.bumpCrossingTracker));
 
-  private final Profile visionProfile = VisionConfig.profile();
   private final Vision vision =
       new Vision(
-          new SpotVisionIO(
-              NetworkTableInstance.getDefault(), visionProfile, VisionConfig.cameraConfig()),
-          visionProfile,
-          new Vision.CaptureSource() {
-            @Override
-            public CaptureState current(double now) {
-              var state = hardware.drivetrain.getState();
-              return new CaptureState(
-                  state.Pose,
-                  MathHelpers.getLinearVelocity(state.Speeds),
-                  state.Speeds.omegaRadiansPerSecond,
-                  Math.toRadians(imu.getRoll()),
-                  Math.toRadians(imu.getPitch()),
-                  0.);
-            }
-
-            @Override
-            public Optional<Pose2d> poseAt(double time) {
-              return hardware.drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(time));
-            }
+          new Spot(VisionConfig.spotConfig(), AprilTags.FIELD_LAYOUT),
+          VisionConfig.CAMERAS,
+          time -> hardware.drivetrain.samplePoseAt(Utils.fpgaToCurrentTime(time)),
+          () -> {
+            var speeds = hardware.drivetrain.getState().Speeds;
+            return new Vision.Motion(
+                MathHelpers.getLinearVelocity(speeds),
+                speeds.omegaRadiansPerSecond,
+                Math.toRadians(Math.hypot(imu.getRoll(), imu.getPitch())));
           },
           Timer::getFPGATimestamp,
-          () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean(),
-          DriverStation::getAlliance);
+          () -> DSOptions.USE_VISION.getAsBoolean() && !DSOptions.PIT_FUNCTIONALITY.getAsBoolean());
   final HealthManager health = new HealthManager(vision);
   private final Swerve swerve =
       new Swerve(hardware.drivetrain, health, hardware.driverController, trailblazer);
@@ -117,7 +99,6 @@ public class Robot extends Base581Robot {
           swerve,
           shooter,
           turret,
-          vision,
           hardware.driverController,
           health,
           hubActivity,

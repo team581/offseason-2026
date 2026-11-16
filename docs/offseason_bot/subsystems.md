@@ -207,20 +207,7 @@ stateDiagram-v2
 
 - Use Spot vision coprocessor (replaces Limelights)
 - 4 static chassis-mounted cameras (`left`, `right`, `front`, `back`)
-- Tag Tracking:
-  - Broad mode: Track all field tags for pose estimation
-  - Hub mode: Filter only active alliance Hub tags for fast, accurate target tracking
-
-```mermaid
-stateDiagram-v2
-    [*] --> TAGS
-    TAGS --> WAITING_FOR_HUB_TAGS: Hub Target Requested
-    WAITING_FOR_HUB_TAGS --> HUB_TAGS: Fresh Hub Tags Acquired
-    HUB_TAGS --> WAITING_FOR_HUB_TAGS: Hub Tags Lost / Stale
-    WAITING_FOR_HUB_TAGS --> TAGS: Broad Mode / Alliance Changed
-    HUB_TAGS --> TAGS: Broad Mode Requested
-```
-
+- Track all field tags for pose estimation
 - Rejection Filters:
   - Reject on high robot tilt, field boundaries, high ambiguity, or large pose jumps
   - Compensate for capture latency using odometry history
