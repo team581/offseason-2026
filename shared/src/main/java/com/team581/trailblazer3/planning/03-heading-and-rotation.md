@@ -60,7 +60,7 @@ public record HeadingKeyframe(
 
 #### Heading Target Modes
 
-1. **Fixed Angle (`fixed(Rotation2d)`):** Target an absolute field heading (e.g. $0^\circ, 90^\circ, -180^\circ$) with $\theta^{*\prime}(s) = 0$. Once $s_{meas} \ge s_{act}$, set $\theta^* = \theta_{end}$ directly (paced in time by §3.2 under §5's speed-dependent rotation share $\rho(v)$, avoiding $s_{anchor} = s_{act}$ singularities and loose-stop Zeno deadlocks).
+1. **Fixed Angle (`Goal.faceDegrees(...)` or `Goal.face(Rotation2d)`):** Target an absolute field heading (0° along field +X, positive angles counterclockwise), transformed for the active alliance. The target changes at activation with $\theta^{*\prime}(s) = 0$; the chassis command ramps under §3.2. Soft targets do not hold translation for heading readiness. Use segment angular speed and acceleration ceilings to pace turns that should be gentler than the robot maximum.
 2. **Face Travel (`faceTravel()`):** Continuously align the chassis with the velocity vector tangent, with spatial derivative $\theta^{*\prime}(s) = 0$ on straight lines and $\theta^{*\prime}(s) = \sigma_{turn,k}/r_k$ on fillet arcs:
 
    ```math

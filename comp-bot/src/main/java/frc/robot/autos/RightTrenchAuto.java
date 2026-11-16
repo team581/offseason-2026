@@ -2,9 +2,12 @@ package frc.robot.autos;
 
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.Goal;
+import com.team581.trailblazer3.model.HeadingPlan;
+import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.config.CompAutoField;
@@ -31,47 +34,88 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
     DONE
   }
 
-  private static final double TRENCH_Y = CompAutoField.RIGHT_TRENCH_Y_METERS;
-  private static final double BUMP_LANE_Y = CompAutoField.RIGHT_BUMP_CENTER_Y_METERS + 0.10;
-  private static final double BUMP_CREST_X = 4.65;
-  private static final double SHOOT_X = 3.35;
-  private static final Translation2d SHOOT_POINT = new Translation2d(SHOOT_X, BUMP_LANE_Y);
+  // RightNormalAuto in the TB1 archive was authored on red. Store its nominal route in
+  // the blue frame expected by TrailblazerAuto, then let the normal alliance flip handle red.
+  private static final double RED_TRENCH_Y = FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY();
+  private static final double RED_BUMP_Y = FieldUtil.RED_OUTPOST_BUMP_CENTER.getY() - 0.13;
+  private static final double RED_SHOOT_X = 13.576;
+  private static final Translation2d SHOOT_POINT =
+      bluePose(RED_SHOOT_X, RED_BUMP_Y, 0).getTranslation();
 
-  static final Pose2d START = CompAutoField.pose(4.441, 0.469, 90.0);
+  static final Pose2d START = bluePose(12.1, 7.6, -90);
 
   static final AutoSegment CYCLE_1_SEGMENT =
-      Trailblazer.segment("right-trench-cycle-1")
-          .through(6.200, TRENCH_Y, 0.65, g -> g.faceDegrees(75.0))
-          .through(8.150, 2.000, 0.95, g -> g.faceDegrees(90.0).mark(Marker.PRIORITIZE_INTAKE))
-          .through(7.800, 3.450, 0.95, g -> g.faceDegrees(165.0))
-          .through(6.000, BUMP_LANE_Y, 0.65, g -> g.faceDegrees(180.0).mark(Marker.PREPARE_BUMP))
-          .through(BUMP_CREST_X, BUMP_LANE_Y, g -> g.faceDegrees(180.0))
-          .stopAt(SHOOT_POINT, Goal::faceHub)
-          .build();
+      finishCycle(
+          Trailblazer.segment("right-trench-cycle-1")
+              .through(bluePose(10.489, RED_TRENCH_Y, -90), 0.75)
+              .through(bluePoint(8.744, 6.049), 0.30)
+              .addGoal(sweep(8.316, 4.945, -90, 0.35).mark(Marker.PRIORITIZE_INTAKE))
+              .through(bluePoint(8.856, 4.445), 0.20)
+              .through(bluePose(9.356, 4.245, 0), 0.20)
+              .through(bluePoint(9.756, 4.545), 0.30)
+              .through(bluePose(10.15, RED_BUMP_Y, 0), 0.20)
+              .addGoal(sweep(10.6, RED_BUMP_Y, 0, 0.30).mark(Marker.PREPARE_BUMP)));
 
   static final AutoSegment CYCLE_2_SEGMENT =
-      Trailblazer.segment("right-trench-cycle-2")
-          .through(3.120, 0.900, 0.35)
-          .through(3.850, TRENCH_Y, 0.22, g -> g.faceDegrees(0.0).mark(Marker.START_INTAKE))
-          .through(6.200, TRENCH_Y, 0.40, g -> g.faceDegrees(0.0))
-          .through(8.000, 1.950, 0.95, g -> g.faceDegrees(90.0))
-          .through(7.650, 3.450, 0.95, g -> g.faceDegrees(165.0))
-          .through(6.000, BUMP_LANE_Y, 0.65, g -> g.faceDegrees(180.0).mark(Marker.PREPARE_BUMP))
-          .through(BUMP_CREST_X, BUMP_LANE_Y, g -> g.faceDegrees(180.0))
-          .stopAt(SHOOT_POINT, Goal::faceHub)
-          .build();
+      finishCycle(
+          returnToTrench("right-trench-cycle-2", 0.30)
+              .through(bluePoint(10.628, 7.2), 0.40)
+              .through(bluePoint(9.140, 5.653), 0.40)
+              .through(bluePose(8.500, 4.81, -120), 0.40)
+              .through(bluePoint(8.456, 4.6), 0.20)
+              .through(bluePoint(9.156, 4.445), 0.20)
+              .through(bluePoint(9.556, 4.445), 0.20)
+              .through(bluePoint(10.356, 4.045), 0.30)
+              .through(bluePoint(9.556, 5.145), 0.20)
+              .addGoal(sweep(10.5, RED_BUMP_Y, 0, 0.20).mark(Marker.PREPARE_BUMP)));
 
   static final AutoSegment CYCLE_3_SEGMENT =
-      Trailblazer.segment("right-trench-cycle-3")
-          .through(3.120, 0.900, 0.35)
-          .through(3.850, TRENCH_Y, 0.22, g -> g.faceDegrees(0.0).mark(Marker.START_INTAKE))
-          .through(6.150, TRENCH_Y, 0.35, g -> g.faceDegrees(0.0))
-          .through(7.700, 1.900, 0.95, g -> g.faceDegrees(90.0))
-          .through(7.450, 3.350, 0.95, g -> g.faceDegrees(165.0))
-          .through(6.000, BUMP_LANE_Y, 0.65, g -> g.faceDegrees(180.0).mark(Marker.PREPARE_BUMP))
-          .through(BUMP_CREST_X, BUMP_LANE_Y, g -> g.faceDegrees(180.0))
-          .stopAt(SHOOT_POINT, Goal::faceHub)
-          .build();
+      finishCycle(
+          returnToTrench("right-trench-cycle-3", 0.20)
+              .through(bluePoint(9.6, 6.353), 0.40)
+              .through(bluePoint(8.7, 5.593), 0.30)
+              .through(bluePose(8.600, 4.31, -90), 0.30)
+              .through(bluePoint(9.31, 4.3), 0.30)
+              .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30)
+              .addGoal(sweep(10.6, RED_BUMP_Y, 0, 0.30).mark(Marker.PREPARE_BUMP)));
+
+  private static Translation2d bluePoint(double redX, double redY) {
+    return bluePose(redX, redY, 0).getTranslation();
+  }
+
+  private static Pose2d bluePose(double redX, double redY, double redDegrees) {
+    return CompAutoField.FIELD.flipPose(CompAutoField.pose(redX, redY, redDegrees));
+  }
+
+  private static AutoSegment finishCycle(AutoSegment.Builder builder) {
+    return builder
+        .withLimits(
+            MotionLimits.robotMaximum()
+                .withMaxAngularSpeedDegrees(210)
+                .withMaxAngularAccelerationDegrees(320))
+        .addGoal(
+            sweep(13.25, RED_BUMP_Y, 0, 0.25)
+                .heading(HeadingPlan.to(Rotation2d.k180deg).before(0.25)))
+        .stopAt(SHOOT_POINT, Goal::faceHub)
+        .build();
+  }
+
+  private static AutoSegment.Builder returnToTrench(String name, double exitWithin) {
+    // The archive repeats the 13.2 m waypoint to change heading. TB3 separates heading
+    // from translation, so keep one copy of the point.
+    return Trailblazer.segment(name)
+        .through(bluePose(13.2, RED_TRENCH_Y, 180), 0.30)
+        .addGoal(sweep(12.5, RED_TRENCH_Y, 180, 0.30).mark(Marker.START_INTAKE))
+        .through(bluePose(11.5, RED_TRENCH_Y, 180), exitWithin)
+        // Keep the bumper parallel to the trench until it clears the neutral-side post.
+        .addGoal(
+            sweep(10.83, RED_TRENCH_Y, 180, 0.04)
+                .heading(HeadingPlan.to(Rotation2d.kZero).after(0.15)));
+  }
+
+  private static Goal sweep(double redX, double redY, double redDegrees, double within) {
+    return Goal.through(bluePose(redX, redY, redDegrees)).within(within);
+  }
 
   static Pose2d shootPose(Alliance alliance) {
     return CompAutoField.pose(

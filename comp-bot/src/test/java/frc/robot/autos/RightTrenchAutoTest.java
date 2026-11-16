@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 final class RightTrenchAutoTest {
   @Test
-  void allSegmentsBuildCleanlyWithoutPathWarnings() {
+  void allSegmentsBuildWithOnlyTheArchivedCycleTwoSwitchbackWarning() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     for (var alliance : Alliance.values()) {
       var clearance = CompAutoField.clearance(alliance);
@@ -44,7 +44,7 @@ final class RightTrenchAutoTest {
                 CompTrailblazer.CALIBRATION.maxBrakingDeceleration(),
                 clearance);
         assertEquals(
-            ImmutableList.of(),
+            i == 1 ? ImmutableList.of("NEAR_REVERSAL_CORNER goal-10") : ImmutableList.of(),
             built.warnings(),
             alliance + " cycle " + (i + 1) + " warnings: " + built.warnings());
         assertThat(built.length() > 1.0)
@@ -100,7 +100,11 @@ final class RightTrenchAutoTest {
         if (result.infeasible()) {
           infeasibleTicks++;
         }
+        double previousOmega = speeds.omegaRadiansPerSecond;
         speeds = result.commandedFieldSpeeds();
+        assertThat(Math.abs(speeds.omegaRadiansPerSecond - previousOmega))
+            .withFailMessage("%s %s angular command jumped at %.2f s", alliance, state, time[0])
+            .isLessThanOrEqualTo(Math.toRadians(320) * dt + 1e-6);
         peakSpeedMps = Math.max(peakSpeedMps, MathHelpers.getLinearVelocity(speeds));
         pose =
             new Pose2d(
@@ -160,7 +164,8 @@ final class RightTrenchAutoTest {
               RightTrenchAuto.State.INTAKE_CYCLE_3,
               RightTrenchAuto.State.SHOOT_3,
               RightTrenchAuto.State.DONE);
-      assertThat(driveSeconds < 17.0)
+      // The restored route adds the archived sweeps and switchback.
+      assertThat(driveSeconds < 20.0)
           .withFailMessage("%s pure drive time too slow: %s s", alliance, driveSeconds)
           .isTrue();
     }

@@ -395,7 +395,8 @@ public final class Trailblazer {
       rebuild(measuredPose, remainingGoalStart);
     } else if (relatchRequested) {
       relatchRequested = false;
-      rebuild(measuredPose, remainingGoalStart + Math.clamp(0, activeGoals.size() - 1, goalIndex));
+      int lastGoalIndex = Math.max(0, activeGoals.size() - 1);
+      rebuild(measuredPose, remainingGoalStart + Math.min(goalIndex, lastGoalIndex));
       if (diagnostic.isEmpty()) {
         diagnostic = "RELATCH";
       }
@@ -420,7 +421,8 @@ public final class Trailblazer {
       divergence = 0;
     }
     if (offTrack >= RELATCH_DWELL && !atGoal()) {
-      rebuild(measuredPose, remainingGoalStart + Math.clamp(0, activeGoals.size() - 1, goalIndex));
+      int lastGoalIndex = Math.max(0, activeGoals.size() - 1);
+      rebuild(measuredPose, remainingGoalStart + Math.min(goalIndex, lastGoalIndex));
       projected = path.project(measuredPose.getTranslation(), 0, 0);
       diagnostic = "RELATCH";
     }
@@ -433,7 +435,8 @@ public final class Trailblazer {
       }
     }
     if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
-      highWater = Math.clamp(projected.progress(), highWater, barrier.progress());
+      double progressBeforeBarrier = Math.min(projected.progress(), barrier.progress());
+      highWater = Math.max(highWater, progressBeforeBarrier);
     }
 
     RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
@@ -482,11 +485,10 @@ public final class Trailblazer {
             profilerWorkspace);
 
     double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
-    double headingBudgetSpeed =
-        Math.clamp(
-            limits.maxSpeed(),
-            profile.speed(),
-            Math.sqrt(2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier));
+    double brakingSpeed =
+        Math.sqrt(2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier);
+    double cappedBrakingSpeed = Math.min(limits.maxSpeed(), brakingSpeed);
+    double headingBudgetSpeed = Math.max(profile.speed(), cappedBrakingSpeed);
 
     var tolerance = terminal.finishTolerance();
     boolean stopTerminalWindow =
