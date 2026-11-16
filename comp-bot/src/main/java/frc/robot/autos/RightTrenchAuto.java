@@ -48,9 +48,9 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
       finishCycle(
           Trailblazer.segment("right-trench-cycle-1")
               .through(bluePose(10.489, RED_TRENCH_Y, -90), 0.75)
-              .through(bluePoint(8.744, 6.049), 0.30)
-              .addGoal(sweep(8.316, 4.945, -90, 0.35).mark(Marker.PRIORITIZE_INTAKE))
-              .through(bluePoint(8.856, 4.445), 0.20)
+              .through(bluePose(8.744, 6.049, -115), 0.30)
+              .addGoal(sweep(8.316, 4.945, -115, 0.35).mark(Marker.PRIORITIZE_INTAKE))
+              .through(bluePose(8.856, 4.445, -40), 0.20)
               .through(bluePose(9.356, 4.245, 0), 0.20)
               .through(bluePoint(9.756, 4.545), 0.30)
               .through(bluePose(10.15, RED_BUMP_Y, 0), 0.20)
@@ -59,8 +59,8 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   static final AutoSegment CYCLE_2_SEGMENT =
       finishCycle(
           returnToTrench("right-trench-cycle-2", 0.30)
-              .through(bluePoint(10.628, 7.2), 0.40)
-              .through(bluePoint(9.140, 5.653), 0.40)
+              .through(bluePose(10.628, 7.2, -140), 0.40)
+              .through(bluePose(9.140, 5.653, -130), 0.40)
               .through(bluePose(8.500, 4.81, -120), 0.40)
               .through(bluePoint(8.456, 4.6), 0.20)
               .through(bluePoint(9.156, 4.445), 0.20)
@@ -72,8 +72,8 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   static final AutoSegment CYCLE_3_SEGMENT =
       finishCycle(
           returnToTrench("right-trench-cycle-3", 0.20)
-              .through(bluePoint(9.6, 6.353), 0.40)
-              .through(bluePoint(8.7, 5.593), 0.30)
+              .through(bluePose(9.6, 6.353, -130), 0.40)
+              .through(bluePose(8.7, 5.593, -90), 0.30)
               .through(bluePose(8.600, 4.31, -90), 0.30)
               .through(bluePoint(9.31, 4.3), 0.30)
               .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30)
@@ -101,16 +101,16 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   }
 
   private static AutoSegment.Builder returnToTrench(String name, double exitWithin) {
-    // The archive repeats the 13.2 m waypoint to change heading. TB3 separates heading
-    // from translation, so keep one copy of the point.
+    // The archive repeats 13.2 m for its 180° heading. Use a single 160° entry point
+    // and approach the 179° trench heading on the next leg.
     return Trailblazer.segment(name)
-        .through(bluePose(13.2, RED_TRENCH_Y, 180), 0.30)
-        .addGoal(sweep(12.5, RED_TRENCH_Y, 180, 0.30).mark(Marker.START_INTAKE))
-        .through(bluePose(11.5, RED_TRENCH_Y, 180), exitWithin)
+        .through(bluePose(13.2, RED_TRENCH_Y, 160), 0.30)
+        .addGoal(sweep(12.5, RED_TRENCH_Y, 179, 0.30).mark(Marker.START_INTAKE))
+        .through(bluePose(11.5, RED_TRENCH_Y, 179), exitWithin)
         // Keep the bumper parallel to the trench until it clears the neutral-side post.
         .addGoal(
-            sweep(10.83, RED_TRENCH_Y, 180, 0.04)
-                .heading(HeadingPlan.to(Rotation2d.kZero).after(0.15)));
+            sweep(10.83, RED_TRENCH_Y, 179, 0.04)
+                .heading(HeadingPlan.to(Rotation2d.fromDegrees(-1)).after(0.15)));
   }
 
   private static Goal sweep(double redX, double redY, double redDegrees, double within) {
