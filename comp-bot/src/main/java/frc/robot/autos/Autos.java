@@ -42,6 +42,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private @Nullable AutoSelection previewSelection;
   private @Nullable Alliance previewAlliance;
   private @Nullable TrailblazerAuto previewAuto;
+  private @Nullable TrailblazerAuto stagedAuto;
 
   private boolean hasEnabledAuto = false;
   private boolean wasAutonomousEnabled = false;
@@ -103,6 +104,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     }
 
     if (TrailblazerCalibrationAuto.Test.fromSelection(state) != null) {
+      stagedAuto = null;
       previewAuto = null;
       previewSelection = state;
       previewAlliance = autoAlliance;
@@ -148,13 +150,16 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
         actualPose = expectedStart.orElseThrow();
         robotManager.localization.resetPose(actualPose);
       }
-      // Pre-point swerve steer modules along the launch direction while DS inhibits drive output.
-      previewAuto
-          .initialDisabledWheelTarget(actualPose)
-          .ifPresentOrElse(
-              robotManager.swerve::setTrajectoryCommand,
-              robotManager.swerve::clearTrajectoryCommand);
+      if (!DriverStation.isAutonomous()) {
+        stagedAuto = null;
+        robotManager.swerve.clearTrajectoryCommand();
+      } else if (!previewAuto.equals(stagedAuto)) {
+        stagedAuto = previewAuto;
+        robotManager.swerve.setTrajectoryCommand(
+            previewAuto.initialDisabledWheelTarget(actualPose).orElseGet(ChassisSpeeds::new));
+      }
     } else {
+      stagedAuto = null;
       robotManager.swerve.clearTrajectoryCommand();
     }
 
@@ -304,6 +309,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     }
 
     boolean firstTick = !wasAutonomousEnabled || activeAuto == null;
+    long activationStart = firstTick ? LoopTiming.start() : 0;
     if (firstTick) {
       // Discard any pre-match disabled resetPose calls before autonomous begins.
       robotManager.localization.consumePoseReset();
@@ -329,7 +335,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     }
 
     if (firstTick) {
-      long activationStart = LoopTiming.start();
       activeAuto.periodic();
       LoopTiming.end("Scheduler/Autos/Activate", activationStart);
     } else if (!trailblazer.isFaulted()) {
@@ -352,6 +357,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     DogLog.log(
         "Trailblazer3/OdometryAgeMs",
         odometryReady ? (now - drive.Timestamp) * 1000.0 : Double.NaN);
+    DogLog.log("Trailblazer3/OdometryReady", odometryReady);
     boolean midRunPoseReset = !firstTick && robotManager.localization.consumePoseReset();
     var snapshot =
         new RobotStateSnapshot(
@@ -368,6 +374,9 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     TickResult result = updateTrailblazerForActiveTick(now, snapshot);
     long outputStart = LoopTiming.start();
     robotManager.swerve.setTrajectoryCommand(result.commandedFieldSpeeds());
+    if (firstTick) {
+      LoopTiming.end("Scheduler/Autos/ActivationThroughFirstOutput", activationStart);
+    }
 
     boolean forceFullLog =
         firstTick

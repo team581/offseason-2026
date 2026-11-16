@@ -26,7 +26,11 @@ final class TrailblazerTrenchAuto extends TrailblazerAuto {
 
   TrailblazerTrenchAuto(AutoContext context) {
     super(START, context);
-    buildSteps();
+    buildSteps()
+        .onStart(() -> {
+          robot.homeDeployInAutoRequest();
+          robot.homeShooterHoodRequest();
+        });
   }
 
   TrailblazerTrenchAuto(Trailblazer trailblazer, Alliance alliance) {
@@ -34,7 +38,7 @@ final class TrailblazerTrenchAuto extends TrailblazerAuto {
     buildSteps();
   }
 
-  private void buildSteps() {
-    drive("leave_trench", LEAVE_TRENCH_SEGMENT);
+  private DriveStep buildSteps() {
+    return drive("leave_trench", LEAVE_TRENCH_SEGMENT);
   }
 }

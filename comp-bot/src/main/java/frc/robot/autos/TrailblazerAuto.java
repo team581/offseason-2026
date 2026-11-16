@@ -8,6 +8,7 @@ import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.FieldClearance;
 import com.team581.trailblazer3.model.Goal;
+import com.team581.trailblazer3.model.RobotStateSnapshot;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -35,8 +36,6 @@ public abstract class TrailblazerAuto {
     private final AutoSegment allianceSegment;
     private @Nullable FieldClearance allianceClearance;
     private boolean disableClearance = false;
-    private Optional<ChassisSpeeds> cachedInitialWheelTarget = Optional.empty();
-    private boolean initialWheelTargetCached = false;
     private Runnable onStartAction;
     private Runnable everyLoopAction;
     private final List<MarkerTrigger> markerTriggers = new ArrayList<>();
@@ -101,6 +100,16 @@ public abstract class TrailblazerAuto {
       return this;
     }
 
+    private void activate() {
+      if (disableClearance) {
+        trailblazer.activateWithoutClearance(allianceSegment);
+      } else if (allianceClearance != null) {
+        trailblazer.activate(allianceSegment, allianceClearance);
+      } else {
+        trailblazer.activate(allianceSegment);
+      }
+    }
+
     private Step asStep() {
       return new Step() {
         @Override
@@ -109,13 +118,7 @@ public abstract class TrailblazerAuto {
           for (var trigger : markerTriggers) {
             trigger.fired = false;
           }
-          if (disableClearance) {
-            trailblazer.activateWithoutClearance(allianceSegment);
-          } else if (allianceClearance != null) {
-            trailblazer.activate(allianceSegment, allianceClearance);
-          } else {
-            trailblazer.activate(allianceSegment);
-          }
+          activate();
           if (onStartAction != null) {
             onStartAction.run();
           }
@@ -168,25 +171,6 @@ public abstract class TrailblazerAuto {
           }
         }
       };
-    }
-
-    private Optional<ChassisSpeeds> initialWheelTarget(Pose2d currentPose) {
-      if (allianceStartPose.isPresent() && initialWheelTargetCached) {
-        return cachedInitialWheelTarget;
-      }
-      var target = allianceSegment.goals().get(0).pose().getTranslation();
-      var origin = allianceStartPose.orElse(currentPose).getTranslation();
-      var delta = target.minus(origin);
-      double norm = delta.getNorm();
-      var computed =
-          norm > 1e-4
-              ? Optional.of(new ChassisSpeeds(delta.getX() / norm, delta.getY() / norm, 0.0))
-              : Optional.<ChassisSpeeds>empty();
-      if (allianceStartPose.isPresent()) {
-        cachedInitialWheelTarget = computed;
-        initialWheelTargetCached = true;
-      }
-      return computed;
     }
   }
 
@@ -411,14 +395,17 @@ public abstract class TrailblazerAuto {
     return startedRunning;
   }
 
-  /**
-   * Computes a unit-speed field-relative velocity pointing toward the initial launch direction,
-   * used while disabled to pre-point swerve modules before autonomous begins.
-   */
+  /** Calculates the first drive demand without entering any auto steps or firing callbacks. */
   public final Optional<ChassisSpeeds> initialDisabledWheelTarget(Pose2d currentPose) {
-    return firstDriveStep == null
-        ? Optional.empty()
-        : firstDriveStep.initialWheelTarget(currentPose);
+    if (firstDriveStep == null) {
+      return Optional.empty();
+    }
+    firstDriveStep.activate();
+    double now = trailblazer.nowSeconds();
+    var stopped = new ChassisSpeeds();
+    var result = trailblazer.update(RobotStateSnapshot.measured(now, currentPose, stopped, true));
+    trailblazer.update(RobotStateSnapshot.measured(now, currentPose, stopped, false));
+    return Optional.of(result.commandedFieldSpeeds());
   }
 
   /** Returns {@code true} when every step in the routine has completed. */
@@ -574,7 +561,7 @@ public abstract class TrailblazerAuto {
   protected final DriveStep drive(String stepName, AutoSegment blueSegment) {
     var step = new DriveStep(stepName, blueSegment);
     if (pendingBranchSteps == null) {
-      if (firstDriveStep == null) {
+      if (steps.isEmpty()) {
         firstDriveStep = step;
       }
       driveSteps.add(step);

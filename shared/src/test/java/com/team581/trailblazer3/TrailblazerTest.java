@@ -148,6 +148,44 @@ final class TrailblazerTest {
   }
 
   @Test
+  void buildsImmediatelyWhenInitialOdometryIsUnready() {
+    var sim = new Simulation(0.020);
+    sim.time = 1450.0;
+    sim.planner.activate(Trailblazer.segment("warmup").stopAt(2.0, 0.0, 0.0).build());
+
+    for (int i = 0; i < 5; i++) {
+      var res =
+          sim.planner.update(
+              new TickInput(
+                  sim.time,
+                  new RobotStateSnapshot(
+                      0.0,
+                      sim.pose,
+                      sim.speed,
+                      false,
+                      false,
+                      Optional.empty(),
+                      java.util.OptionalDouble.empty(),
+                      java.util.OptionalDouble.empty(),
+                      true),
+                  Map.of(),
+                  Map.of(),
+                  Optional.empty()));
+      assertEquals(RuntimeStatus.RUNNING, res.status());
+      assertEquals("ODOMETRY_UNREADY", res.diagnostic());
+      assertTrue(res.commandedFieldSpeeds().vxMetersPerSecond > 0);
+      assertEquals(0.0, res.commandedFieldSpeeds().vyMetersPerSecond);
+      assertEquals(0.0, res.commandedFieldSpeeds().omegaRadiansPerSecond);
+      sim.speed = res.commandedFieldSpeeds();
+      sim.pose = pose(sim.pose.getX() + sim.speed.vxMetersPerSecond * sim.dt, 0, 0);
+      sim.time += sim.dt;
+    }
+
+    sim.untilGoal();
+    assertEquals(2.0, sim.pose.getX(), 0.05);
+  }
+
+  @Test
   void clearanceGatedTurnDelaysRotationUntilClearAndRejectsImpossibleTurn() {
     var throughGoal = Goal.through(pose(2, 1, 90));
     assertTrue(throughGoal.heading() != null);
@@ -326,7 +364,7 @@ final class TrailblazerTest {
   }
 
   @Test
-  void resumesAfterMissedTicksWithFreshOdometryAndStillRejectsStaleOdometry() {
+  void resumesAfterMissedTicksWithFreshOrStaleOdometry() {
     var sim = new Simulation(0.020);
     sim.planner.activate(Trailblazer.segment("straight").stopAt(pose(2, 0, 0)).build());
     sim.step();
@@ -346,8 +384,9 @@ final class TrailblazerTest {
     sim.time += 0.2;
     var stale =
         sim.planner.update(RobotStateSnapshot.measured(sim.time - 0.15, sim.pose, sim.speed, true));
-    assertEquals(RuntimeStatus.FAULT, stale.status());
-    assertEquals(0, stale.commandedFieldSpeeds().vxMetersPerSecond);
+    assertEquals(RuntimeStatus.RUNNING, stale.status());
+    assertEquals("ODOMETRY_STALE", stale.diagnostic());
+    assertTrue(stale.commandedFieldSpeeds().vxMetersPerSecond > 0);
   }
 
   @Test
@@ -422,40 +461,5 @@ final class TrailblazerTest {
     assertTrue(sim.speed.omegaRadiansPerSecond < 0);
     sim.untilGoal();
     assertEquals(90, sim.pose.getRotation().getDegrees(), 2);
-  }
-
-  @Test
-  void waitsBrieflyForInitialOdometryBeforeFirstBuild() {
-    var sim = new Simulation(0.020);
-    sim.time = 1450.0;
-    sim.planner.activate(Trailblazer.segment("warmup").stopAt(2.0, 0.0, 0.0).build());
-
-    for (int i = 0; i < 5; i++) {
-      var res =
-          sim.planner.update(
-              new TickInput(
-                  sim.time,
-                  new RobotStateSnapshot(
-                      0.0,
-                      sim.pose,
-                      sim.speed,
-                      false,
-                      false,
-                      Optional.empty(),
-                      java.util.OptionalDouble.empty(),
-                      java.util.OptionalDouble.empty(),
-                      true),
-                  Map.of(),
-                  Map.of(),
-                  Optional.empty()));
-      assertEquals(RuntimeStatus.RUNNING, res.status());
-      assertEquals(0.0, res.commandedFieldSpeeds().vxMetersPerSecond);
-      assertEquals(0.0, res.commandedFieldSpeeds().vyMetersPerSecond);
-      assertEquals(0.0, res.commandedFieldSpeeds().omegaRadiansPerSecond);
-      sim.time += sim.dt;
-    }
-
-    sim.untilGoal();
-    assertEquals(2.0, sim.pose.getX(), 0.05);
   }
 }

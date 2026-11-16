@@ -69,8 +69,6 @@ public final class Trailblazer {
 
   private static final double MAX_SNAPSHOT_FUTURE_SKEW_SECONDS = 0.025;
 
-  private static final double SNAPSHOT_GRACE_SECONDS = 0.50;
-
   /** Samples discrete poses along a path geometry with planned per-goal headings for previews. */
   public static Pose2d[] sampleSegmentPoses(
       Pose2d startPose, PathBuilder.Path geometry, List<Goal> goals, double stepMeters) {
@@ -88,14 +86,7 @@ public final class Trailblazer {
     return new AutoSegment.Builder(id);
   }
 
-  private static String corruptSnapshotFault(RobotStateSnapshot snapshot, double now) {
-    double timestamp = snapshot.poseTimestampSeconds();
-    if (!Double.isFinite(timestamp)) {
-      return "Odometry timestamp is nonfinite";
-    }
-    if (now - timestamp < -MAX_SNAPSHOT_FUTURE_SKEW_SECONDS) {
-      return "Odometry timestamp is ahead of the planner clock";
-    }
+  private static String corruptSnapshotFault(RobotStateSnapshot snapshot) {
     var pose = snapshot.measuredPose();
     if (!Double.isFinite(pose.getTranslation().getNorm())
         || !Double.isFinite(pose.getRotation().getRadians())) {
@@ -303,6 +294,23 @@ public final class Trailblazer {
         && Double.isFinite(speed.omegaRadiansPerSecond);
   }
 
+  private static String odometryDiagnostic(
+      RobotStateSnapshot snapshot, double now, String diagnostic) {
+    if (!snapshot.localizationValid()) {
+      return "ODOMETRY_UNREADY";
+    }
+    double timestamp = snapshot.poseTimestampSeconds();
+    if (!Double.isFinite(timestamp) || timestamp - now > MAX_SNAPSHOT_FUTURE_SKEW_SECONDS) {
+      return "ODOMETRY_INVALID_TIMESTAMP";
+    }
+    if (timestamp < 0
+        || (timestamp == 0 && now > MAX_SNAPSHOT_AGE_SECONDS)
+        || now - timestamp > MAX_SNAPSHOT_AGE_SECONDS) {
+      return "ODOMETRY_STALE";
+    }
+    return diagnostic;
+  }
+
   private static double plannedHeadingAtRadians(
       Pose2d startPose,
       PathBuilder.Path geometry,
@@ -448,19 +456,6 @@ public final class Trailblazer {
     return new Translation2d(speed.vxMetersPerSecond, speed.vyMetersPerSecond);
   }
 
-  private static String unreadyOrStaleFault(RobotStateSnapshot snapshot, double now) {
-    if (!snapshot.localizationValid()) {
-      return "Localization reported an invalid pose";
-    }
-    double timestamp = snapshot.poseTimestampSeconds();
-    if (timestamp < 0
-        || (timestamp == 0 && now > MAX_SNAPSHOT_AGE_SECONDS)
-        || now - timestamp > MAX_SNAPSHOT_AGE_SECONDS) {
-      return "Odometry sample is older than 100 ms";
-    }
-    return null;
-  }
-
   private static boolean validPower(double value) {
     return Double.isFinite(value) && value > 0;
   }
@@ -521,8 +516,6 @@ public final class Trailblazer {
   private double horizonHoldHeadingRadians;
 
   private boolean terminalLatched;
-
-  private double unhealthySnapshotSeconds;
 
   private HeadingPlan inheritedHeading;
 
@@ -603,7 +596,6 @@ public final class Trailblazer {
 
   public void cancel() {
     pendingAssist = false;
-    unhealthySnapshotSeconds = 0;
     if (path != null && (result.status() == RuntimeStatus.RUNNING || atGoal())) {
       stop(RuntimeStatus.CANCELLED, "Cancelled");
     } else {
@@ -719,7 +711,6 @@ public final class Trailblazer {
     var snapshot = input.robotState();
     if (!snapshot.enabled()) {
       pendingAssist = false;
-      unhealthySnapshotSeconds = 0;
       result = zero(RuntimeStatus.DISABLED, "");
       return result;
     }
@@ -761,24 +752,11 @@ public final class Trailblazer {
     lastTime = now;
     var pose = snapshot.measuredPose();
     var measuredSpeeds = snapshot.measuredFieldSpeeds();
-    String corruptFault = corruptSnapshotFault(snapshot, now);
+    String corruptFault = corruptSnapshotFault(snapshot);
     if (corruptFault != null) {
       result = zero(RuntimeStatus.FAULT, corruptFault);
       return result;
     }
-    String staleFault = unreadyOrStaleFault(snapshot, now);
-    if (staleFault != null) {
-      if (path == null) {
-        unhealthySnapshotSeconds += dt;
-        if (unhealthySnapshotSeconds <= SNAPSHOT_GRACE_SECONDS) {
-          result = holdDuringSnapshotGrace(dt);
-          return result;
-        }
-      }
-      result = zero(RuntimeStatus.FAULT, staleFault);
-      return result;
-    }
-    unhealthySnapshotSeconds = 0;
     if (Double.isNaN(activationTime)) {
       activationTime = now;
     }
@@ -1121,7 +1099,7 @@ public final class Trailblazer {
               immutableStatuses,
               generation,
               projected.progress(),
-              diagnostic);
+              odometryDiagnostic(snapshot, now, diagnostic));
     } catch (IllegalArgumentException invalid) {
       stop(RuntimeStatus.FAULT, invalid.getMessage());
       return brake(pose, snapshot, dt);
@@ -1736,36 +1714,6 @@ public final class Trailblazer {
     return new Barrier(path.length(), false);
   }
 
-  private TickResult holdDuringSnapshotGrace(double dt) {
-    var oldVelocity = previous == null ? Translation2d.kZero : translation(previous);
-    double prevOmega = previous == null ? 0.0 : previous.omegaRadiansPerSecond;
-    double decel =
-        limits == null
-            ? calibration.maxBrakingDeceleration()
-            : Math.min(limits.braking(), limits.friction());
-    double maxAlpha = limits == null ? 4.0 : limits.maxAlpha();
-    double oldSpeed = oldVelocity.getNorm();
-    var nextVelocity =
-        oldSpeed > 1e-9
-            ? oldVelocity.times(Math.max(0.0, 1.0 - Math.min(oldSpeed, decel * dt) / oldSpeed))
-            : Translation2d.kZero;
-    double nextOmega = Math.copySign(Math.max(0.0, Math.abs(prevOmega) - maxAlpha * dt), prevOmega);
-    previous = new ChassisSpeeds(nextVelocity.getX(), nextVelocity.getY(), nextOmega);
-    return new TickResult(
-        previous,
-        new ChassisAccelerations(0, 0, 0),
-        List.of(),
-        RuntimeStatus.RUNNING,
-        false,
-        LimitingFactor.NONE,
-        LimitingFactor.VECTOR_SLEW_LIMIT,
-        Set.of(),
-        immutableStatuses,
-        generation,
-        highWater,
-        "Waiting for fresh odometry snapshot");
-  }
-
   private Barrier nextClosedGate(int from, double activation, double terminal) {
     for (int i = from; i < horizon.size(); i++) {
       var goal = horizon.get(i);
@@ -1886,7 +1834,6 @@ public final class Trailblazer {
     marginWarning = false;
     horizonTurnStartProgress = 0.0;
     horizonHoldHeadingRadians = 0.0;
-    unhealthySnapshotSeconds = 0;
     lastTime = Double.NaN;
     activationTime = Double.NaN;
     stopping = false;

@@ -73,6 +73,8 @@ Add the complete representative fixture suite and seeded disturbances in [06](06
 
 Done when valid scenarios complete (`PASSED_WITHIN_TOLERANCE`), invalid/unreachable scenarios produce their expected failure status, markers are recorded as passed once cleanly across relatches and mid-plan starts, and repeat runs with the same inputs reproduce results within documented numerical tolerances.
 
+Track the runtime checks that can wait, brake, or fault on clock errors, malformed inputs, target loss, heading gates, clearance, profile capacity, and timeouts. Review these individually when robot evidence shows a need. Odometry age and readiness now produce diagnostics while finite motion inputs continue through the existing path.
+
 ### Step 5 — Define 2027 robot adapter contract & testbed qualification
 
 Define the clean **2027 drivetrain, localization, and operator-input integration contract** (zero-deadband closed-loop consumer accepting `ChassisSpeeds` + `ChassisAccelerations` / optional `WheelForces`, monotonic `TimeSource` timestamp normalization, optional instantaneous drive supply-current ceiling, and pre-mapped Blue-origin `driverFieldVelocityMpS` for shared-axis assists; note module azimuth-drive odometry coupling $k_{couple} = N_{ring}/N_{pinion}$ in the robot odometry checklist), and run an **isolated test-mode harness on a carpet testbed** to validate core physics before 2027 bringup without modifying legacy 2026 competition autos.

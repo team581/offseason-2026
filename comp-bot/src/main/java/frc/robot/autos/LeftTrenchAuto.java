@@ -17,6 +17,10 @@ final class LeftTrenchAuto extends TrailblazerAuto {
 
   LeftTrenchAuto(AutoContext context) {
     super(CompAutoField.LEFT_TRENCH_START, context);
-    drive("leave_left_trench", LEAVE_TRENCH_SEGMENT);
+    drive("leave_left_trench", LEAVE_TRENCH_SEGMENT)
+        .onStart(() -> {
+          robot.homeDeployInAutoRequest();
+          robot.homeShooterHoodRequest();
+        });
   }
 }

@@ -55,7 +55,7 @@ final class TrailblazerTrenchAutoTest {
       var rightWheelTarget = rightAuto.initialDisabledWheelTarget(rightStart);
       assertTrue(rightWheelTarget.isPresent());
       double expectedDir = alliance == Alliance.Red ? 1.0 : -1.0;
-      assertEquals(expectedDir, rightWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
+      assertTrue(expectedDir * rightWheelTarget.orElseThrow().vxMetersPerSecond > 0);
       assertEquals(0.0, rightWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
 
       rightAuto.periodic();
@@ -82,7 +82,7 @@ final class TrailblazerTrenchAutoTest {
       assertTrue(leftAuto.isNearStartPose(leftStart));
       var leftWheelTarget = leftAuto.initialDisabledWheelTarget(leftStart);
       assertTrue(leftWheelTarget.isPresent());
-      assertEquals(expectedDir, leftWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
+      assertTrue(expectedDir * leftWheelTarget.orElseThrow().vxMetersPerSecond > 0);
       assertEquals(0.0, leftWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
 
       leftAuto.periodic();

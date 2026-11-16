@@ -121,9 +121,11 @@ public record TickResult(
   - Validate that `startAtGoalId` exists, build the horizon from current pose through the next terminal goal via `startAtGoalId`, mark all strictly preceding goals as skipped/completed, **pre-populate their markers as passed** (`passedMarker == true`), mark any `HARD` heading gates strictly preceding `startAtGoalId` as already passed, and inherit the latest `HeadingKeyframe` target angle as `SOFT` if none activates immediately.
 - Latch completion until restart.
 - On cancellation, hand off through a seeded controller or use a controlled stop.
-- Fault on invalid input, stale localization, or invalid or excessive `dt` without advancing events.
+- Use finite pose and velocity immediately at startup and during tracking. Report old, unready, or mistimed odometry through telemetry. Fault on inputs that prevent finite motion calculations.
 - Report faults and timeouts as failure.
-- Inhibit output while disabled.
+- The selected auto **must** stage its initial drivetrain demand during disabled autonomous preparation, before its first segment. Physical output stays inhibited until enable. Refresh staged requests on selection or alliance changes. Issue later requests at their authored steps or markers.
+- For the 2026 trench autos, stage the initial swerve demand while disabled. On the first enabled loop, the drive step requests deploy and shooter hood homing through the existing RobotManager APIs and the planner issues its first live drive command.
+- Build paths and return the first command in the same enabled update. Apply the existing planner latency target of `min(1.0 ms, 20% of the nominal loop period)` to starts, replans, and tracking. Keep the enabled loop free of blocking waits and I/O. Disabled planner warmup is optional.
 - Require reactivation before resuming after disable.
 
 ---
