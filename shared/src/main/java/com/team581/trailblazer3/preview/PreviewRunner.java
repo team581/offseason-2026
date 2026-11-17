@@ -3,6 +3,7 @@ package com.team581.trailblazer3.preview;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
+import com.team581.autos.Point;
 import com.team581.trailblazer3.math.DrivetrainLimits;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.AutoSegment;
@@ -106,9 +107,13 @@ public final class PreviewRunner {
       double clearanceHalfSizeMeters) {}
 
   private record ExtractedAuto(
-      Pose2d blueStartPose, List<NamedSegment> blueSegments, List<DiagnosticEntry> diagnostics) {}
+      Pose2d startPose, List<NamedSegment> segments, List<DiagnosticEntry> diagnostics) {}
 
-  private record NamedSegment(String fieldName, AutoSegment segment) {}
+  private record NamedSegment(String fieldName, AutoSegment segment, AutoSegment authoredSegment) {
+    private NamedSegment(String fieldName, AutoSegment segment) {
+      this(fieldName, segment, segment);
+    }
+  }
 
   public static final FieldGeometry FIELD_2026 =
       new FieldGeometry(
@@ -300,24 +305,30 @@ public final class PreviewRunner {
     Alliance alliance = "Red".equalsIgnoreCase(request.alliance()) ? Alliance.Red : Alliance.Blue;
     String allianceName = alliance == Alliance.Red ? "Red" : "Blue";
     RobotProfile profile = robotProfile(request.robotConfigId());
-    FieldClearance clearance = buildClearance(profile, alliance);
+    boolean homeField =
+        autoClass.getName().startsWith("frc.robot.autos.") && Point.useClampedAutoPoints(alliance);
+    FieldClearance clearance =
+        homeField ? homeFieldClearance(autoClass, profile) : buildClearance(profile, alliance);
 
     var capturedLines = new IdentityHashMap<AutoSegment, List<Integer>>();
     ExtractedAuto extracted =
         AutoSegment.Builder.captureGoalSources(
-            autoClass.getName(), capturedLines::put, () -> extractAuto(autoClass, profile));
+            autoClass.getName(),
+            capturedLines::put,
+            () -> extractAuto(autoClass, profile, homeField));
     List<DiagnosticEntry> diagnostics = new ArrayList<>(extracted.diagnostics());
 
     List<Map.Entry<String, String>> knownPairs = new ArrayList<>();
-    for (NamedSegment ns : extracted.blueSegments()) {
+    for (NamedSegment ns : extracted.segments()) {
       knownPairs.add(Map.entry(ns.fieldName(), ns.segment().id()));
     }
     List<SegmentDescriptor> segmentDescriptors =
         SourceSpanAnalyzer.analyze(request.sourceText(), knownPairs);
 
-    // Direct callers can supply already-initialized classes. Keep source analysis for those.
+    // An auto can mix already-initialized segments with segments built during extraction.
     Map<String, List<Integer>> waypointLinesByField = new LinkedHashMap<>();
-    if (capturedLines.isEmpty()) {
+    if (extracted.segments().stream()
+        .anyMatch(segment -> !capturedLines.containsKey(segment.authoredSegment()))) {
       for (var rawSeg : SourceSpanAnalyzer.parseRawSegments(request.sourceText())) {
         waypointLinesByField.put(rawSeg.fieldName(), rawSeg.waypointLines());
       }
@@ -341,8 +352,8 @@ public final class PreviewRunner {
     if (!"WHOLE_AUTO".equals(requestedScope)
         && targetSegmentId != null
         && !targetSegmentId.isBlank()) {
-      for (int i = 0; i < extracted.blueSegments().size(); i++) {
-        NamedSegment ns = extracted.blueSegments().get(i);
+      for (int i = 0; i < extracted.segments().size(); i++) {
+        NamedSegment ns = extracted.segments().get(i);
         if (ns.segment().id().equals(targetSegmentId) || ns.fieldName().equals(targetSegmentId)) {
           targetSegmentIndex = i;
           break;
@@ -353,26 +364,26 @@ public final class PreviewRunner {
     String effectiveScope = targetSegmentIndex >= 0 ? "SEGMENT" : "WHOLE_AUTO";
     String activeSegmentId =
         targetSegmentIndex >= 0
-            ? extracted.blueSegments().get(targetSegmentIndex).segment().id()
+            ? extracted.segments().get(targetSegmentIndex).segment().id()
             : "WHOLE_AUTO";
 
     Pose2d allianceAutoStart =
-        alliance == Alliance.Blue
-            ? extracted.blueStartPose()
-            : FIELD_2026.flipPose(extracted.blueStartPose());
+        alliance == Alliance.Blue || homeField
+            ? extracted.startPose()
+            : FIELD_2026.flipPose(extracted.startPose());
 
     // Determine which segments to execute and seed initial pose
     Pose2d entryPose = allianceAutoStart;
     int firstSegIdx = 0;
-    int lastSegIdx = extracted.blueSegments().size() - 1;
+    int lastSegIdx = extracted.segments().size() - 1;
     if (targetSegmentIndex >= 0) {
       firstSegIdx = targetSegmentIndex;
       lastSegIdx = targetSegmentIndex;
       // Chain preceding segments to seed segment N's starting pose from segment N-1's end pose
       for (int i = 0; i < targetSegmentIndex; i++) {
         checkCancelled.run();
-        AutoSegment priorSeg =
-            extracted.blueSegments().get(i).segment().forAlliance(alliance, FIELD_2026);
+        var prior = extracted.segments().get(i).segment();
+        AutoSegment priorSeg = homeField ? prior : prior.forAlliance(alliance, FIELD_2026);
         try {
           var priorPath =
               PathBuilder.build(
@@ -414,11 +425,12 @@ public final class PreviewRunner {
 
     for (int segIdx = firstSegIdx; segIdx <= lastSegIdx; segIdx++) {
       checkCancelled.run();
-      NamedSegment namedSeg = extracted.blueSegments().get(segIdx);
-      AutoSegment segment = namedSeg.segment().forAlliance(alliance, FIELD_2026);
+      NamedSegment namedSeg = extracted.segments().get(segIdx);
+      AutoSegment segment =
+          homeField ? namedSeg.segment() : namedSeg.segment().forAlliance(alliance, FIELD_2026);
       String segId = segment.id();
       List<Goal> goals = segment.goals();
-      var captured = capturedLines.get(namedSeg.segment());
+      var captured = capturedLines.get(namedSeg.authoredSegment());
       List<Integer> wpLines =
           captured != null
               ? captured
@@ -900,7 +912,8 @@ public final class PreviewRunner {
         sourceSpan != null ? sourceSpan.endLine() : null);
   }
 
-  private static ExtractedAuto extractAuto(Class<?> autoClass, RobotProfile profile) {
+  private static ExtractedAuto extractAuto(
+      Class<?> autoClass, RobotProfile profile, boolean homeField) {
     List<DiagnosticEntry> diagnostics = new ArrayList<>();
     Map<String, AutoSegment> staticSegmentsByField = new LinkedHashMap<>();
     Pose2d discoveredStartPose = null;
@@ -944,10 +957,16 @@ public final class PreviewRunner {
         Trailblazer dummyTb =
             new Trailblazer(() -> 0.0, profile.spec(), profile.calibration(), DT_SECONDS);
         Constructor<?> ctxCtor =
-            autoContextClass.getDeclaredConstructor(
-                robotManagerClass, Trailblazer.class, Alliance.class);
+            homeField
+                ? autoContextClass.getDeclaredConstructor(
+                    robotManagerClass, Trailblazer.class, Alliance.class, boolean.class)
+                : autoContextClass.getDeclaredConstructor(
+                    robotManagerClass, Trailblazer.class, Alliance.class);
         ctxCtor.setAccessible(true);
-        Object ctx = ctxCtor.newInstance(dummyRobot, dummyTb, Alliance.Blue);
+        Object ctx =
+            homeField
+                ? ctxCtor.newInstance(dummyRobot, dummyTb, Alliance.Red, true)
+                : ctxCtor.newInstance(dummyRobot, dummyTb, Alliance.Blue);
         Object autoInstance = autoCtor.newInstance(ctx);
 
         Method startPoseMethod = tbAutoBaseClass.getDeclaredMethod("startPose");
@@ -979,13 +998,24 @@ public final class PreviewRunner {
               if (matchedFieldName == null) {
                 matchedFieldName = seg.id();
               }
-              orderedSegments.add(new NamedSegment(matchedFieldName, seg));
+              var authored = staticSegmentsByField.getOrDefault(matchedFieldName, seg);
+              orderedSegments.add(new NamedSegment(matchedFieldName, seg, authored));
             }
           }
         }
       }
-    } catch (Throwable ignored) {
-      // Fallback to static fields or methods below
+    } catch (Throwable ex) {
+      if (homeField) {
+        throw new IllegalArgumentException("Could not construct the auto in home-field mode", ex);
+      }
+      // Fallback to static fields or methods below.
+    }
+
+    if (homeField) {
+      return new ExtractedAuto(
+          discoveredStartPose == null ? Pose2d.kZero : discoveredStartPose,
+          orderedSegments,
+          diagnostics);
     }
 
     // Add any static AutoSegment fields that weren't already in orderedSegments
@@ -1045,6 +1075,27 @@ public final class PreviewRunner {
       out.add(FIELD_2026.flipPoint(pt));
     }
     return List.copyOf(out);
+  }
+
+  private static FieldClearance homeFieldClearance(Class<?> autoClass, RobotProfile profile) {
+    try {
+      var fieldClass =
+          Class.forName("frc.robot.config.CompAutoField", true, autoClass.getClassLoader());
+      var clearance =
+          (FieldClearance)
+              fieldClass
+                  .getMethod("clearance", Alliance.class, boolean.class)
+                  .invoke(null, Alliance.Red, true);
+      return new FieldClearance(
+          FIELD_2026,
+          profile.clearanceHalfSizeMeters(),
+          profile.clearanceHalfSizeMeters(),
+          clearance.margin(),
+          clearance.keepouts());
+    } catch (ReflectiveOperationException ex) {
+      throw new IllegalArgumentException(
+          "Home-field preview requires the comp-bot field model", ex);
+    }
   }
 
   private static List<Translation2d> rectangle(
