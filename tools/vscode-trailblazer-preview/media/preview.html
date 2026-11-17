@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'none'; img-src {{cspSource}} data:; style-src {{cspSource}}; script-src 'nonce-{{nonce}}';"
+		/>
+		<link rel="stylesheet" href="{{stylesheet}}" />
+	</head>
+	<body data-field-image="{{fieldImage}}">
+		<header class="top-bar">
+			<div id="diagnostics-strip" class="diagnostics-strip" role="status" aria-live="polite"></div>
+			<div class="controls-row">
+				<div class="pill-group" role="group" aria-label="Scope">
+					<button id="mode-cursor" type="button" aria-pressed="true">Cursor</button>
+					<button id="mode-whole" type="button" aria-pressed="false">Whole Auto</button>
+				</div>
+				<div id="segment-pills" class="pill-group" role="group" aria-label="Segments"></div>
+				<div class="pill-group" role="group" aria-label="Diff">
+					<button id="btn-diff" type="button" aria-pressed="false">Diff</button>
+				</div>
+				<div class="pill-group" role="group" aria-label="Alliance">
+					<button id="alliance-blue" type="button" data-alliance="Blue" aria-pressed="true">Blue</button>
+					<button id="alliance-red" type="button" data-alliance="Red" aria-pressed="false">Red</button>
+				</div>
+				<div class="pill-group" role="group" aria-label="Robot">
+					<button type="button" data-robot="581" aria-pressed="true">581</button>
+					<button type="button" data-robot="9991" aria-pressed="false">9991</button>
+					<button type="button" data-robot="9981" aria-pressed="false">9981</button>
+				</div>
+				<div class="pill-group" role="group" aria-label="View">
+					<button id="btn-fit" type="button">Fit</button>
+					<button id="btn-refresh" type="button" aria-label="Refresh">↻</button>
+				</div>
+				<div class="metrics-group">
+					<span id="stale-badge" class="badge badge-stale" hidden>STALE</span>
+					<span id="diff-delta-badge" class="badge badge-diff" hidden>Δ 0.00 s</span>
+					<span id="slowdown-badge" class="badge badge-limiter">TOP_SPEED · 100%</span>
+					<span id="speed-readout" class="metric-pill">0.00 m/s</span>
+					<span id="duration-readout" class="metric-pill metric-duration">0.00 s</span>
+				</div>
+			</div>
+		</header>
+		<main class="canvas-stage">
+			<canvas
+				id="field-canvas"
+				width="960"
+				height="540"
+				tabindex="0"
+				aria-label="2026 Field Trajectory Preview"
+			></canvas>
+		</main>
+		<footer class="timeline-bar" id="timeline-bar">
+			<button id="btn-play" type="button" class="play-btn" aria-pressed="false" aria-label="Play">▶</button>
+			<div
+				id="timeline-track"
+				class="timeline-track"
+				tabindex="0"
+				role="slider"
+				aria-label="Timeline"
+				aria-valuemin="0"
+				aria-valuemax="0"
+				aria-valuenow="0"
+			>
+				<canvas id="timeline-canvas" width="900" height="32"></canvas>
+			</div>
+		</footer>
+		<script nonce="{{nonce}}" src="{{script}}"></script>
+	</body>
+</html>

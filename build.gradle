@@ -124,7 +124,7 @@ spotless {
 		target '**/*.json'
 		simple().indentWithSpaces(2)
 
-		targetExclude('.pathplanner/**')
+		targetExclude('.pathplanner/**', '**/node_modules/**', 'tools/vscode-trailblazer-preview/**')
 	}
 }
 

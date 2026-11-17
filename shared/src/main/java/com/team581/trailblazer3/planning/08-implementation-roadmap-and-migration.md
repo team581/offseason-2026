@@ -10,7 +10,7 @@ Use TB3’s own namespace and the math/runtime separation in [architecture overv
 
 Referenced legacy code may remain; deletion is dependency cleanup, not a milestone. Keep the repository compiling and normal driving intact.
 
-The VS Code app and its warm-JVM worker are out of scope. Begin that work only when explicitly requested.
+The [VS Code preview app specs](../../../../../../../../tools/vscode-trailblazer-preview/README.md#specs) cover the editor preview and its Java worker.
 
 ## 2. Requirement ownership
 

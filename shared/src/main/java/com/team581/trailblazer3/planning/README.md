@@ -4,7 +4,7 @@ Trailblazer 3 is a clean-sheet Java path-planning and motion-control library bui
 
 ---
 
-**Implementation scope.** Follow the [Trailblazer 3 roadmap](08-implementation-roadmap-and-migration.md), including the temporary headless verification and shared regression tests. The [VS Code preview app and warm-JVM worker](deferred/vs-code-preview-app.md) are deferred. Begin that work only when explicitly requested.
+**Implementation scope.** Follow the [Trailblazer 3 roadmap](08-implementation-roadmap-and-migration.md), including the temporary headless verification and shared regression tests. See the [VS Code preview app specs](../../../../../../../../tools/vscode-trailblazer-preview/README.md#specs) for the editor preview and its Java worker.
 
 ## 1. Trailblazer 1 vs. Alternatives
 

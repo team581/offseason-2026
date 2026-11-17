@@ -11,6 +11,15 @@
       "desktop": false,
       "name": "WPILib roboRIO Debug",
       "type": "wpilib"
+    },
+    {
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/tools/vscode-trailblazer-preview",
+        "${workspaceFolder}"
+      ],
+      "request": "launch",
+      "name": "Run Trailblazer Preview Extension",
+      "type": "extensionHost"
     }
   ],
   "version": "0.2.0"

@@ -1,0 +1,246 @@
+:root {
+	--ink: var(--vscode-editor-foreground, #e5e7eb);
+	--bg: var(--vscode-editor-background, #0d1117);
+	--panel-bg: var(--vscode-sideBar-background, #161b22);
+	--line: var(--vscode-panel-border, #30363d);
+	--accent: var(--vscode-button-background, #1f6feb);
+	--accent-fg: var(--vscode-button-foreground, #ffffff);
+	--muted: var(--vscode-descriptionForeground, #8b949e);
+	--error-bg: rgba(248, 81, 73, 0.18);
+	--error-fg: #ff7b72;
+	--warn-bg: rgba(210, 153, 34, 0.2);
+	--warn-fg: #f2cc60;
+	--ok-fg: #3fb950;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	color: var(--ink);
+	background: var(--bg);
+	font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, system-ui, sans-serif);
+	font-size: 11px;
+	display: flex;
+	flex-direction: column;
+	user-select: none;
+}
+
+.top-bar {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 6px 10px;
+	background: var(--panel-bg);
+	border-bottom: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.diagnostics-strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.diagnostics-strip:empty {
+	display: none;
+}
+
+.diag-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 10.5px;
+	font-weight: 600;
+	cursor: pointer;
+	border: 1px solid transparent;
+}
+
+.diag-pill[data-severity='ERROR'] {
+	background: var(--error-bg);
+	color: var(--error-fg);
+	border-color: rgba(248, 81, 73, 0.45);
+}
+
+.diag-pill[data-severity='WARNING'] {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: rgba(210, 153, 34, 0.45);
+}
+
+.controls-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.pill-group {
+	display: inline-flex;
+	align-items: center;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.pill-group:empty {
+	display: none;
+}
+
+button {
+	color: var(--ink);
+	background: transparent;
+	border: 0;
+	padding: 3px 7px;
+	font-size: 11px;
+	font-weight: 500;
+	cursor: pointer;
+	line-height: 1.3;
+}
+
+button:hover {
+	background: rgba(128, 128, 128, 0.16);
+}
+
+button[aria-pressed='true'] {
+	background: var(--accent);
+	color: var(--accent-fg);
+}
+
+button[data-alliance='Red'][aria-pressed='true'] {
+	background: #cf222e;
+	color: #ffffff;
+}
+
+button[data-alliance='Blue'][aria-pressed='true'] {
+	background: #1f6feb;
+	color: #ffffff;
+}
+
+.metrics-group {
+	margin-left: auto;
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 5px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-variant-numeric: tabular-nums;
+}
+
+.badge {
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 10.5px;
+	font-weight: 600;
+	border: 1px solid var(--line);
+}
+
+.badge-stale {
+	background: var(--error-bg);
+	color: var(--error-fg);
+	border-color: rgba(248, 81, 73, 0.5);
+}
+
+.badge-diff {
+	background: rgba(217, 70, 239, 0.16);
+	color: #e879f9;
+	border-color: rgba(217, 70, 239, 0.45);
+}
+
+.badge-diff[data-faster='true'] {
+	background: rgba(63, 185, 80, 0.18);
+	color: var(--ok-fg);
+	border-color: rgba(63, 185, 80, 0.45);
+}
+
+.badge-diff[data-slower='true'] {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: rgba(210, 153, 34, 0.45);
+}
+
+.badge-limiter {
+	background: rgba(128, 128, 128, 0.12);
+	color: var(--ink);
+}
+
+.metric-pill {
+	padding: 2px 6px;
+	border-radius: 3px;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	font-weight: 600;
+}
+
+.metric-duration {
+	color: #38bdf8;
+}
+
+.canvas-stage {
+	flex: 1 1 auto;
+	position: relative;
+	min-height: 180px;
+	overflow: hidden;
+	background: #0b0e14;
+}
+
+#field-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	outline: none;
+}
+
+.timeline-bar {
+	height: 40px;
+	flex-shrink: 0;
+	background: var(--panel-bg);
+	border-top: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 18px;
+	outline: none;
+}
+
+.play-btn {
+	width: 28px;
+	height: 28px;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	padding: 0;
+	font-size: 11px;
+}
+
+.timeline-track {
+	flex: 1 1 auto;
+	height: 30px;
+	position: relative;
+	cursor: crosshair;
+	border-radius: 4px;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	outline: none;
+}
+
+#timeline-canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
