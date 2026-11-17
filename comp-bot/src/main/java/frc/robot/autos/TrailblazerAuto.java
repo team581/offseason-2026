@@ -6,6 +6,7 @@ import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.state_machines.StateMachine;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -30,14 +31,21 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   private static final double ADVISORY_START_POS_TOLERANCE_METERS = 0.25;
   private static final double ADVISORY_START_HEADING_TOLERANCE_DEGREES = 15.0;
 
+  private static void logAuthoredWaypoints(AutoSegment segment) {
+    DogLog.log(
+        "Trailblazer3/AuthoredWaypoints/" + segment.id(),
+        segment.goals().stream().map(goal -> goal.pose()).toArray(Pose2d[]::new));
+  }
+
   protected final RobotManager robot;
   protected final Trailblazer trailblazer;
   protected final Alliance alliance;
   private final Optional<Pose2d> allianceStartPose;
-  private final List<AutoSegment> alliancePreviewSegments;
 
+  private final List<AutoSegment> alliancePreviewSegments;
   private boolean startedRunning = false;
   private @Nullable S trackedState;
+
   private double stateStartSeconds = Double.NaN;
 
   /** Creates an auto without a fixed field starting pose (such as {@link DoNothingAuto}). */
@@ -163,15 +171,16 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   /** Activates a Blue-alliance {@link AutoSegment} with default alliance bumper clearance. */
   protected final void drive(AutoSegment blueSegment) {
-    trailblazer.activate(
-        CompAutoField.segment(requireNonNull(blueSegment), alliance),
-        CompAutoField.clearance(alliance));
+    var segment = CompAutoField.segment(requireNonNull(blueSegment), alliance);
+    trailblazer.activate(segment, CompAutoField.clearance(alliance));
+    logAuthoredWaypoints(segment);
   }
 
   /** Activates a Blue-alliance {@link AutoSegment} without keepout clearance checking. */
   protected final void driveWithoutClearance(AutoSegment blueSegment) {
-    trailblazer.activateWithoutClearance(
-        CompAutoField.segment(requireNonNull(blueSegment), alliance));
+    var segment = CompAutoField.segment(requireNonNull(blueSegment), alliance);
+    trailblazer.activateWithoutClearance(segment);
+    logAuthoredWaypoints(segment);
   }
 
   /** Returns whether the robot has passed {@code marker} in the active segment. */
