@@ -62,8 +62,8 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   static final AutoSegment CYCLE_2_SEGMENT =
       finishCycle(
           returnToTrench("right-trench-cycle-2", 0.30)
-              .through(bluePose(10.428, 7.0, -140), 0.40, 15)
-              .through(bluePose(9.140, 5.653, -130), 0.40, 15)
+              .through(bluePose(10.228, 6.8, -140), 0.40, 10)
+              .through(bluePose(9.040, 5.553, -135), 0.40, 10)
               .through(bluePose(8.300, 4.81, -100), 0.50, 25)
               .through(bluePose(9.156, 4.255, -10), 0.40, 15)
               .through(bluePose(10.556, 4.045, 0), 0.20, 15)
@@ -76,7 +76,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
           returnToTrench("right-trench-cycle-3", 0.20)
               .through(bluePose(9.6, 6.353, -130), 0.40, 25)
               .through(bluePose(8.7, 5.593, -90), 0.30, 25)
-              .through(bluePose(8.600, 4.31, -90), 0.30, 25)
+              .through(bluePose(8.600, 4.31, -70), 0.30, 25)
               .through(bluePose(9.31, 4.3, 32), 0.30, 25)
               .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30, 25)
               .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30, 25)
@@ -108,14 +108,12 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
 
   /** Starts another intake cycle with the shared trench entry, intake marker, and exit guide. */
   private static AutoSegment.Builder returnToTrench(String name, double exitWithin) {
-    // The archive repeats 13.2 m for its 180° heading. Use a single 160° entry point
-    // and use fixed heading tracking through the trench so the bumper stays parallel.
+    // Settle at the trench entrance, then hold the same heading to the exit.
     return Trailblazer.segment(name)
-        .through(bluePose(13.2, RED_TRENCH_Y, 160), 0.30)
-        .through(bluePose(12.5, RED_TRENCH_Y, 179), 0.30, 5.0)
+        .through(bluePose(13.2, RED_TRENCH_Y, 175), 0.35, 15)
+        .through(bluePose(12.5, RED_TRENCH_Y, 179), 0.20, 5)
         .mark(Marker.START_INTAKE)
-        .through(bluePose(10.9, RED_TRENCH_Y, 179), exitWithin, 20.0);
-    // Keep the bumper parallel to the trench until it clears the neutral-side post.
+        .through(bluePose(10.9, RED_TRENCH_Y, 179), exitWithin, 15);
   }
 
   /** Returns the stop pose with the rear shooter aimed at the hub on the selected alliance. */

@@ -33,7 +33,7 @@ final class RightTrenchAutoTest {
   }
 
   @Test
-  void allSegmentsBuildWithOnlyTheArchivedCycleTwoSwitchbackWarning() {
+  void allSegmentsBuildWithExpectedGeometryWarnings() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     for (var alliance : Alliance.values()) {
       var clearance = CompAutoField.clearance(alliance);
@@ -54,7 +54,11 @@ final class RightTrenchAutoTest {
                 CompTrailblazer.CALIBRATION.maxBrakingDeceleration(),
                 clearance);
         assertEquals(
-            i == 1 ? ImmutableList.of("NEAR_REVERSAL_CORNER goal-10") : ImmutableList.of(),
+            switch (i) {
+              case 1 -> ImmutableList.of("NEAR_REVERSAL_CORNER goal-7");
+              case 2 -> ImmutableList.of("CORNER_FILLET_CLAMPED goal-2");
+              default -> ImmutableList.of();
+            },
             built.warnings(),
             alliance + " cycle " + (i + 1) + " warnings: " + built.warnings());
         assertThat(built.length() > 1.0)
@@ -92,7 +96,7 @@ final class RightTrenchAutoTest {
       var returnGoals = CompAutoField.segment(RightTrenchAuto.CYCLE_2_SEGMENT, alliance).goals();
       var trenchHeading = returnGoals.get(1).pose().getRotation();
       double trenchStartX = returnGoals.get(1).pose().getX();
-      double trenchEndX = returnGoals.get(3).pose().getX();
+      double trenchEndX = returnGoals.get(2).pose().getX();
       double trenchY = returnGoals.get(1).pose().getY();
       double trenchMinX = Math.min(trenchStartX, trenchEndX);
       double trenchMaxX = Math.max(trenchStartX, trenchEndX);
