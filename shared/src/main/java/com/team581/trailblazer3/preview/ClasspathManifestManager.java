@@ -182,8 +182,7 @@ public final class ClasspathManifestManager {
               .start();
       String output = new String(proc.getInputStream().readAllBytes(), UTF_8);
       int code = proc.waitFor();
-      checkState(
-          code == 0, "Gradle classpath manifest refresh failed (exit " + code + "): " + output);
+      checkState(code == 0, "Gradle classpath manifest refresh failed (exit %s): %s", code, output);
     } catch (IOException | InterruptedException e) {
       if (e instanceof InterruptedException) {
         Thread.currentThread().interrupt();

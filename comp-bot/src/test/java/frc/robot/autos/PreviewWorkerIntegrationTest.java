@@ -135,7 +135,7 @@ final class PreviewWorkerIntegrationTest {
         double elapsedMs = (System.nanoTime() - t0) / 1_000_000.0;
 
         assertThat(workerResp.ok())
-            .withFailMessage("Worker failed: " + workerResp.errorMessage())
+            .withFailMessage("Worker failed: %s", workerResp.errorMessage())
             .isTrue();
         assertThat(elapsedMs).isLessThan(3000.0);
         PreviewResult workerResult = workerResp.result();

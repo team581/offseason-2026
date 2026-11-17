@@ -93,12 +93,12 @@ final class PreviewTest {
     long t0 = System.nanoTime();
     Optional<ClasspathManifest> loaded = ClasspathManifestManager.loadIfValid(tempDir);
     double loadMs = (System.nanoTime() - t0) / 1_000_000.0;
-    assertThat(loaded.isPresent()).isTrue();
+    assertThat(loaded).isPresent();
     assertThat(loadMs).isLessThan(100.0);
 
     // Modifying build.gradle invalidates the cached manifest
     Files.writeString(buildGradle, "// v2 modified\n", UTF_8);
-    assertThat(ClasspathManifestManager.loadIfValid(tempDir).isEmpty()).isTrue();
+    assertThat(ClasspathManifestManager.loadIfValid(tempDir)).isEmpty();
   }
 
   @Test
@@ -145,7 +145,7 @@ final class PreviewTest {
     assertEquals("cycle-1", decoded.activeSegmentId());
     assertEquals("Blue", decoded.alliance());
     assertEquals("581", decoded.robotConfigId());
-    assertThat(decoded.totalDurationSeconds() > 0.1).isTrue();
+    assertThat(decoded.totalDurationSeconds()).isGreaterThan(0.1);
     assertEquals(22.0 * 0.0254, decoded.robotFootprint().wheelBaseMeters(), 1e-5);
     assertEquals(23.5 * 0.0254, decoded.robotFootprint().trackWidthMeters(), 1e-5);
     assertEquals(28.0 * 0.0254, decoded.robotFootprint().bumperLengthMeters(), 1e-5);
@@ -409,7 +409,7 @@ final class PreviewTest {
     assertThat(wp1.headingToleranceDegrees()).isNotNull();
     assertEquals(25.0, wp1.headingToleranceDegrees(), 1e-4);
     assertEquals("INTAKE_READY", wp1.marker());
-    assertThat(wp1.closestPassMeters() <= wp1.withinMeters() + 0.05).isTrue();
+    assertThat(wp1.closestPassMeters()).isLessThanOrEqualTo(wp1.withinMeters() + 0.05);
 
     // Alliance flip verification
     WaypointEntry redWp1 = red.waypoints().get(1);
@@ -417,7 +417,7 @@ final class PreviewTest {
     assertEquals(PreviewRunner.FIELD_2026.widthMeters() - wp1.y(), redWp1.y(), 1e-4);
     assertThat(redWp1.targetHeadingDegrees()).isNotNull();
     assertEquals(65.0, redWp1.targetHeadingDegrees(), 1e-4);
-    assertThat(blue.keepouts().hardPolygons().isEmpty()).isFalse();
-    assertThat(blue.keepouts().marginPolygons().isEmpty()).isFalse();
+    assertThat(blue.keepouts().hardPolygons()).isNotEmpty();
+    assertThat(blue.keepouts().marginPolygons()).isNotEmpty();
   }
 }

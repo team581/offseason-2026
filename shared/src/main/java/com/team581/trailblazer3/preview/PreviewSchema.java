@@ -318,7 +318,9 @@ public final class PreviewSchema {
       int version = root.get("schemaVersion").asInt(-1);
       checkArgument(
           version == SCHEMA_VERSION,
-          "Unsupported schemaVersion " + version + " (expected " + SCHEMA_VERSION + ")");
+          "Unsupported schemaVersion %s (expected %s)",
+          version,
+          SCHEMA_VERSION);
       return MAPPER.treeToValue(root, PreviewResult.class);
     } catch (IOException e) {
       throw new IllegalArgumentException("Invalid preview JSON payload", e);

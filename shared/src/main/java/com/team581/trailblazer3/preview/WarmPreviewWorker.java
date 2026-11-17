@@ -683,7 +683,7 @@ public final class WarmPreviewWorker {
     latestRequestId.set(requireNonNull(requestId));
   }
 
-  private List<DiagnosticEntry> compileToOverlay(
+  private ImmutableList<DiagnosticEntry> compileToOverlay(
       String className,
       @Nullable Path sourcePath,
       String sourceText,
@@ -751,7 +751,7 @@ public final class WarmPreviewWorker {
                 null,
                 1));
       }
-      return errors;
+      return ImmutableList.copyOf(errors);
     }
   }
 

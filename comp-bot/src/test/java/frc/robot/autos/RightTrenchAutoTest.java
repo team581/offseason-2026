@@ -187,7 +187,7 @@ final class RightTrenchAutoTest {
           assertThat(Math.abs(pose.getRotation().minus(trenchHeading).getDegrees()))
               .withFailMessage("%s %s heading in trench at %s", alliance, state, pose)
               .isLessThanOrEqualTo(5.0);
-          if (MathUtil.isNear(pose.getX(), (trenchMinX + trenchMaxX) / 2, 0.10)) {
+          if (MathUtil.isNear(pose.getX(), MathHelpers.average(trenchMinX, trenchMaxX), 0.10)) {
             trenchHeadingChecked.add(state);
           }
         }

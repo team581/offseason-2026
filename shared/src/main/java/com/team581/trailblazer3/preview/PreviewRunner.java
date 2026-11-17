@@ -618,7 +618,7 @@ public final class PreviewRunner {
               new DiagnosticEntry(
                   sev,
                   diagCode,
-                  diagCode + " @ " + ("%.2fs").formatted(simTime),
+                  diagCode + " @ " + "%.2fs".formatted(simTime),
                   segId,
                   null,
                   PreviewSchema.round6(simTime),
@@ -629,7 +629,7 @@ public final class PreviewRunner {
               new DiagnosticEntry(
                   "WARNING",
                   "INFEASIBLE",
-                  "INFEASIBLE @ " + ("%.2fs").formatted(simTime),
+                  "INFEASIBLE @ " + "%.2fs".formatted(simTime),
                   segId,
                   null,
                   PreviewSchema.round6(simTime),
