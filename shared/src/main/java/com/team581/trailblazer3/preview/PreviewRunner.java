@@ -3,7 +3,6 @@ package com.team581.trailblazer3.preview;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
-import com.team581.autos.Point;
 import com.team581.trailblazer3.math.DrivetrainLimits;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.AutoSegment;
@@ -305,17 +304,12 @@ public final class PreviewRunner {
     Alliance alliance = "Red".equalsIgnoreCase(request.alliance()) ? Alliance.Red : Alliance.Blue;
     String allianceName = alliance == Alliance.Red ? "Red" : "Blue";
     RobotProfile profile = robotProfile(request.robotConfigId());
-    boolean homeField =
-        autoClass.getName().startsWith("frc.robot.autos.") && Point.useClampedAutoPoints(alliance);
-    FieldClearance clearance =
-        homeField ? homeFieldClearance(autoClass, profile) : buildClearance(profile, alliance);
+    FieldClearance clearance = buildClearance(profile, alliance);
 
     var capturedLines = new IdentityHashMap<AutoSegment, List<Integer>>();
     ExtractedAuto extracted =
         AutoSegment.Builder.captureGoalSources(
-            autoClass.getName(),
-            capturedLines::put,
-            () -> extractAuto(autoClass, profile, homeField));
+            autoClass.getName(), capturedLines::put, () -> extractAuto(autoClass, profile));
     List<DiagnosticEntry> diagnostics = new ArrayList<>(extracted.diagnostics());
 
     List<Map.Entry<String, String>> knownPairs = new ArrayList<>();
@@ -368,7 +362,7 @@ public final class PreviewRunner {
             : "WHOLE_AUTO";
 
     Pose2d allianceAutoStart =
-        alliance == Alliance.Blue || homeField
+        alliance == Alliance.Blue
             ? extracted.startPose()
             : FIELD_2026.flipPose(extracted.startPose());
 
@@ -383,7 +377,7 @@ public final class PreviewRunner {
       for (int i = 0; i < targetSegmentIndex; i++) {
         checkCancelled.run();
         var prior = extracted.segments().get(i).segment();
-        AutoSegment priorSeg = homeField ? prior : prior.forAlliance(alliance, FIELD_2026);
+        AutoSegment priorSeg = prior.forAlliance(alliance, FIELD_2026);
         try {
           var priorPath =
               PathBuilder.build(
@@ -426,8 +420,7 @@ public final class PreviewRunner {
     for (int segIdx = firstSegIdx; segIdx <= lastSegIdx; segIdx++) {
       checkCancelled.run();
       NamedSegment namedSeg = extracted.segments().get(segIdx);
-      AutoSegment segment =
-          homeField ? namedSeg.segment() : namedSeg.segment().forAlliance(alliance, FIELD_2026);
+      AutoSegment segment = namedSeg.segment().forAlliance(alliance, FIELD_2026);
       String segId = segment.id();
       List<Goal> goals = segment.goals();
       var captured = capturedLines.get(namedSeg.authoredSegment());
@@ -912,8 +905,7 @@ public final class PreviewRunner {
         sourceSpan != null ? sourceSpan.endLine() : null);
   }
 
-  private static ExtractedAuto extractAuto(
-      Class<?> autoClass, RobotProfile profile, boolean homeField) {
+  private static ExtractedAuto extractAuto(Class<?> autoClass, RobotProfile profile) {
     List<DiagnosticEntry> diagnostics = new ArrayList<>();
     Map<String, AutoSegment> staticSegmentsByField = new LinkedHashMap<>();
     Pose2d discoveredStartPose = null;
@@ -957,16 +949,10 @@ public final class PreviewRunner {
         Trailblazer dummyTb =
             new Trailblazer(() -> 0.0, profile.spec(), profile.calibration(), DT_SECONDS);
         Constructor<?> ctxCtor =
-            homeField
-                ? autoContextClass.getDeclaredConstructor(
-                    robotManagerClass, Trailblazer.class, Alliance.class, boolean.class)
-                : autoContextClass.getDeclaredConstructor(
-                    robotManagerClass, Trailblazer.class, Alliance.class);
+            autoContextClass.getDeclaredConstructor(
+                robotManagerClass, Trailblazer.class, Alliance.class);
         ctxCtor.setAccessible(true);
-        Object ctx =
-            homeField
-                ? ctxCtor.newInstance(dummyRobot, dummyTb, Alliance.Red, true)
-                : ctxCtor.newInstance(dummyRobot, dummyTb, Alliance.Blue);
+        Object ctx = ctxCtor.newInstance(dummyRobot, dummyTb, Alliance.Blue);
         Object autoInstance = autoCtor.newInstance(ctx);
 
         Method startPoseMethod = tbAutoBaseClass.getDeclaredMethod("startPose");
@@ -1005,17 +991,7 @@ public final class PreviewRunner {
         }
       }
     } catch (Throwable ex) {
-      if (homeField) {
-        throw new IllegalArgumentException("Could not construct the auto in home-field mode", ex);
-      }
       // Fallback to static fields or methods below.
-    }
-
-    if (homeField) {
-      return new ExtractedAuto(
-          discoveredStartPose == null ? Pose2d.kZero : discoveredStartPose,
-          orderedSegments,
-          diagnostics);
     }
 
     // Add any static AutoSegment fields that weren't already in orderedSegments
@@ -1075,27 +1051,6 @@ public final class PreviewRunner {
       out.add(FIELD_2026.flipPoint(pt));
     }
     return List.copyOf(out);
-  }
-
-  private static FieldClearance homeFieldClearance(Class<?> autoClass, RobotProfile profile) {
-    try {
-      var fieldClass =
-          Class.forName("frc.robot.config.CompAutoField", true, autoClass.getClassLoader());
-      var clearance =
-          (FieldClearance)
-              fieldClass
-                  .getMethod("clearance", Alliance.class, boolean.class)
-                  .invoke(null, Alliance.Red, true);
-      return new FieldClearance(
-          FIELD_2026,
-          profile.clearanceHalfSizeMeters(),
-          profile.clearanceHalfSizeMeters(),
-          clearance.margin(),
-          clearance.keepouts());
-    } catch (ReflectiveOperationException ex) {
-      throw new IllegalArgumentException(
-          "Home-field preview requires the comp-bot field model", ex);
-    }
   }
 
   private static List<Translation2d> rectangle(

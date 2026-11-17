@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 final class RightTrenchAutoTest {
   private static AutoSegment intakeSegment(RightTrenchAuto.State state) {
@@ -75,26 +75,25 @@ final class RightTrenchAutoTest {
     }
   }
 
-  @CsvSource({"Blue, false", "Red, false", "Red, true"})
+  @EnumSource(Alliance.class)
   @ParameterizedTest
-  void drivesFullThreeCycleSequenceCleanly(Alliance alliance, boolean clamped) {
+  void drivesFullThreeCycleSequenceCleanly(Alliance alliance) {
     assertThat(HAL.initialize(500, 0)).isTrue();
     double dt = 0.020;
     double[] time = {0.0};
     var planner = CompTrailblazer.create(() -> time[0]);
     var robot = TrailblazerTrenchAutoTest.testContext(planner, alliance).robot();
-    var context = new AutoContext(robot, planner, alliance, clamped);
+    var context = new AutoContext(robot, planner, alliance);
     var auto = new RightTrenchAuto(context);
     var start = auto.startPose().orElseThrow();
     var expectedShoot = RightTrenchAuto.shootPose(alliance);
     var tracker = robot.localization.imu.bumpCrossingTracker;
-    var clearance = CompAutoField.clearance(alliance, clamped);
+    var clearance = CompAutoField.clearance(alliance);
     assertThat(auto.previewPath(start).length > 50)
         .withFailMessage("%s preview path too sparse", alliance)
         .isTrue();
 
-    var launchGoals =
-        CompAutoField.segment(RightTrenchAuto.CYCLE_1_SEGMENT, alliance, clamped).goals();
+    var launchGoals = CompAutoField.segment(RightTrenchAuto.CYCLE_1_SEGMENT, alliance).goals();
     double launchAnchor =
         PathBuilder.build(
                 start.getTranslation(),
@@ -103,8 +102,7 @@ final class RightTrenchAutoTest {
                 clearance)
             .anchors()
             .get(0);
-    var returnGoals =
-        CompAutoField.segment(RightTrenchAuto.CYCLE_2_SEGMENT, alliance, clamped).goals();
+    var returnGoals = CompAutoField.segment(RightTrenchAuto.CYCLE_2_SEGMENT, alliance).goals();
     double trenchStartX = returnGoals.get(1).pose().getX();
     double trenchEndX = returnGoals.get(2).pose().getX();
     double trenchY = returnGoals.get(1).pose().getY();
@@ -150,7 +148,7 @@ final class RightTrenchAutoTest {
           referencePath =
               PathBuilder.build(
                   pose.getTranslation(),
-                  CompAutoField.segment(intakeSegment(state), alliance, clamped).goals(),
+                  CompAutoField.segment(intakeSegment(state), alliance).goals(),
                   CompTrailblazer.CALIBRATION.maxBrakingDeceleration(),
                   clearance);
         }
@@ -328,7 +326,7 @@ final class RightTrenchAutoTest {
 
     assertThat(driveSeconds)
         .withFailMessage("%s pure drive time too slow: %s s", alliance, driveSeconds)
-        .isLessThanOrEqualTo(clamped ? 21.78 : 21.12);
+        .isLessThanOrEqualTo(21.12);
   }
 
   @Test

@@ -122,7 +122,7 @@ Register one entry in `comp-bot/src/main/java/frc/robot/autos/AutoSelection.java
 MY_NEW_AUTO("My New Auto", MyNewAuto::new),
 ```
 
-The Red VS Code preview uses the same `ClampedAutoPoints` feature flag as the robot. With the flag enabled, Red shows the home-field route, including the shifted left-trench leave. With it disabled, Red shows the full-field route. Blue shows the full field. If you change the flag's default in `Point.java`, rebuild with `./gradlew :comp-bot:writePreviewClasspathManifest` and reload the VS Code window to restart the preview worker.
+The VS Code preview uses full-field geometry for both alliances.
 
 Everything else (`SendableChooser`, telemetry `Autos/Step`, pose preview, Red/Blue flipping, disabled swerve launch wheel pre-alignment, and pre-match diagnostics) works automatically. Built-in empirical calibration autos (`TB3 Calibrate Lag`, `TB3 Calibrate Traction`, and `TB3 Calibrate Braking`) are also registered in `AutoSelection`.
 

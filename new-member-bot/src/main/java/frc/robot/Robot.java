@@ -5,7 +5,6 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
-import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import dev.doglog.DogLog;
@@ -19,7 +18,6 @@ import edu.wpi.first.wpilibj.event.BooleanEvent;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import frc.robot.autos.Autos;
 import frc.robot.autos.BumpCrossingFollower;
-import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
@@ -154,12 +152,6 @@ public class Robot extends TimedRobot {
       DogLog.logFault("Battery voltage low", AlertType.kWarning);
     } else {
       DogLog.clearFault("Battery voltage low");
-    }
-
-    if (FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() && !FmsUtil.isRedAlliance()) {
-      DogLog.logFault("Clamped auto points are enabled but current alliance is blue");
-    } else {
-      DogLog.clearFault("Clamped auto points are enabled but current alliance is blue");
     }
   }
 

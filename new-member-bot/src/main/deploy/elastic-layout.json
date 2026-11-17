@@ -434,19 +434,6 @@
                 "x": 0,
                 "width": 128,
                 "y": 0,
-                "title": "ClampedAutoPoints",
-                "type": "Toggle Switch",
-                "properties": {
-                  "period": 0.06,
-                  "data_type": "boolean",
-                  "topic": "/Tunable/FeatureFlags/ClampedAutoPoints"
-                },
-                "height": 128
-              },
-              {
-                "x": 0,
-                "width": 128,
-                "y": 0,
                 "title": "ClusterMap",
                 "type": "Toggle Switch",
                 "properties": {

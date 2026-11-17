@@ -1,6 +1,5 @@
 package frc.robot.config;
 
-import com.team581.autos.Point;
 import com.team581.config.FeatureFlag;
 import java.util.function.BooleanSupplier;
 
@@ -18,8 +17,6 @@ public class FeatureFlags {
       FeatureFlag.of("CancelInProgressShot", true);
 
   public static final BooleanSupplier UNBEACH_AUTO_IRL = FeatureFlag.of("UnbeachAutoIRL", true);
-
-  public static final BooleanSupplier CLAMPED_AUTO_POINTS = Point.CLAMPED_POINTS_FEATURE_FLAG;
 
   public static final BooleanSupplier DYNAMIC_CENTER_OF_ROTATION =
       FeatureFlag.of("DynamicCenterOfRotation", true);

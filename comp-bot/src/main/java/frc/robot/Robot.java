@@ -4,14 +4,11 @@ import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
 import com.team581.util.FieldUtil;
-import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.profiling.LoopTiming;
-import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
 import frc.robot.config.CompTrailblazer;
-import frc.robot.config.FeatureFlags;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
@@ -129,12 +126,6 @@ public class Robot extends Base581Robot {
     long loopStart = LoopTiming.start();
 
     super.robotPeriodic();
-
-    if (FeatureFlags.CLAMPED_AUTO_POINTS.getAsBoolean() && !FmsUtil.isRedAlliance()) {
-      DogLog.logFault("Clamped auto points are enabled but current alliance is blue");
-    } else {
-      DogLog.clearFault("Clamped auto points are enabled but current alliance is blue");
-    }
 
     LoopTiming.end("Scheduler/RobotPeriodicExecution", loopStart);
   }

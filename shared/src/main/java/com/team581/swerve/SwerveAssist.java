@@ -1,6 +1,5 @@
 package com.team581.swerve;
 
-import com.team581.autos.Point;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
 import com.team581.util.FieldUtil;
@@ -16,9 +15,6 @@ import edu.wpi.first.math.util.Units;
 import java.util.function.DoubleSupplier;
 
 public class SwerveAssist {
-  // Home field has modified red depot trench, and no red depot bump
-  private static final boolean USE_HOME_FIELD = Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean();
-
   // General swerve assist values
   private static final double TRENCH_ASSIST_VELOCITY_THRESHOLD = 0.75;
   private static final Rotation2d TRENCH_ASSIST_VELOCITY_ANGLE_TOLERANCE =
@@ -46,10 +42,7 @@ public class SwerveAssist {
     var robotTranslation = robotPose.getTranslation();
 
     // Check if in bump assist zone
-    var notInZone =
-        USE_HOME_FIELD
-            ? !FieldUtil.getCurrentHomeFieldBumpAssistZone(robotTranslation)
-            : FieldUtil.getCurrentBumpAssistZone(robotTranslation).isEmpty();
+    var notInZone = FieldUtil.getCurrentBumpAssistZone(robotTranslation).isEmpty();
     if (notInZone) {
       return false;
     } else {
@@ -72,28 +65,17 @@ public class SwerveAssist {
     var robotTranslation = robotPose.getTranslation();
 
     // Check if in trench assist zone
-    var notInZone =
-        USE_HOME_FIELD
-            ? FieldUtil.getCurrentHomeFieldTrenchAssistZone(robotTranslation).isEmpty()
-            : FieldUtil.getCurrentTrenchAssistZone(robotTranslation).isEmpty();
+    var notInZone = FieldUtil.getCurrentTrenchAssistZone(robotTranslation).isEmpty();
     if (notInZone) {
       return false;
     } else {
-      return USE_HOME_FIELD
-          ? ableToSwerveAssist(
-              robotPose,
-              fieldRelativeSpeeds,
-              TRENCH_ASSIST_VELOCITY_THRESHOLD,
-              FieldUtil.getClosestHomeFieldAllianceZoneTrenchMidpoint(robotTranslation),
-              FieldUtil.getClosestHomeFieldNeutralZoneTrenchMidpoint(robotTranslation),
-              TRENCH_ASSIST_VELOCITY_ANGLE_TOLERANCE)
-          : ableToSwerveAssist(
-              robotPose,
-              fieldRelativeSpeeds,
-              TRENCH_ASSIST_VELOCITY_THRESHOLD,
-              FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation),
-              FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotTranslation),
-              TRENCH_ASSIST_VELOCITY_ANGLE_TOLERANCE);
+      return ableToSwerveAssist(
+          robotPose,
+          fieldRelativeSpeeds,
+          TRENCH_ASSIST_VELOCITY_THRESHOLD,
+          FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation),
+          FieldUtil.getClosestNeutralZoneTrenchMidpoint(robotTranslation),
+          TRENCH_ASSIST_VELOCITY_ANGLE_TOLERANCE);
     }
   }
 
@@ -108,11 +90,8 @@ public class SwerveAssist {
 
     // Check if we are close to a wall
     var closestWallTranslation =
-        USE_HOME_FIELD
-            ? MathHelpers.getClosestPointOnRectanglePerimeter(
-                robotPose.getTranslation(), FieldUtil.HOME_FIELD_FIELD_BOUNDS)
-            : MathHelpers.getClosestPointOnRectanglePerimeter(
-                robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+        MathHelpers.getClosestPointOnRectanglePerimeter(
+            robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
     // If the closest wall is a driver station wall, the y component will be equal to the robot's
     var closestWallIsADriverStationWall =
         Math.abs(robotPose.getY() - closestWallTranslation.getY()) < 1e-5;
@@ -135,11 +114,8 @@ public class SwerveAssist {
       Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
     // Check if we are driving fast enough in the direction of the intake parallel with the wall
     var closestWallTranslation =
-        USE_HOME_FIELD
-            ? MathHelpers.getClosestPointOnRectanglePerimeter(
-                robotPose.getTranslation(), FieldUtil.HOME_FIELD_FIELD_BOUNDS)
-            : MathHelpers.getClosestPointOnRectanglePerimeter(
-                robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
+        MathHelpers.getClosestPointOnRectanglePerimeter(
+            robotPose.getTranslation(), FieldUtil.FIELD_BOUNDS);
     // If the closest wall is a driver station wall, the y component will be equal to the robot's
     var closestWallIsADriverStationWall =
         Math.abs(robotPose.getY() - closestWallTranslation.getY()) < 1e-5;
@@ -183,9 +159,7 @@ public class SwerveAssist {
     double wantedYVelocity =
         SWERVE_ASSIST_PID_CONTROLLER.calculate(
             robotTranslation.getY(),
-            USE_HOME_FIELD
-                ? FieldUtil.getClosestHomeFieldAllianceZoneTrenchMidpoint(robotTranslation).getY()
-                : FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
+            FieldUtil.getClosestAllianceZoneTrenchMidpoint(robotTranslation).getY());
     if (FmsUtil.isRedAlliance()) {
       wantedYVelocity *= -1.0;
     }
@@ -210,11 +184,7 @@ public class SwerveAssist {
       Translation2d robotTranslation, ChassisSpeeds fieldRelativeSpeeds, boolean enteredCorner) {
     // get direction toward wall, then apply offset of snap round angle in that direction
     var closestWallTranslation =
-        USE_HOME_FIELD
-            ? MathHelpers.getClosestPointOnRectanglePerimeter(
-                robotTranslation, FieldUtil.HOME_FIELD_FIELD_BOUNDS)
-            : MathHelpers.getClosestPointOnRectanglePerimeter(
-                robotTranslation, FieldUtil.FIELD_BOUNDS);
+        MathHelpers.getClosestPointOnRectanglePerimeter(robotTranslation, FieldUtil.FIELD_BOUNDS);
     // If the closest wall is a driver station wall, the y component will be equal to the robot's
     var closestWallIsADriverStationWall =
         Math.abs(robotTranslation.getY() - closestWallTranslation.getY()) < 1e-5;

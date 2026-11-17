@@ -40,7 +40,6 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   protected final RobotManager robot;
   protected final Trailblazer trailblazer;
   protected final Alliance alliance;
-  private final boolean clamped;
   private final Optional<Pose2d> allianceStartPose;
 
   private final List<AutoSegment> alliancePreviewSegments;
@@ -65,12 +64,11 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
     this.robot = requireNonNull(context.robot());
     this.trailblazer = requireNonNull(context.trailblazer());
     this.alliance = requireNonNull(context.alliance());
-    this.clamped = context.clamped();
     this.allianceStartPose =
         blueStartPose == null ? Optional.empty() : Optional.of(fieldPose(blueStartPose));
     this.alliancePreviewSegments =
         Arrays.stream(bluePreviewSegments)
-            .map(segment -> CompAutoField.segment(requireNonNull(segment), alliance, clamped))
+            .map(segment -> CompAutoField.segment(requireNonNull(segment), alliance))
             .toList();
   }
 
@@ -131,7 +129,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   /** Samples the stitched preview polyline across all preview segments for AdvantageScope. */
   public final Pose2d[] previewPath(Pose2d fallbackStartPose) {
     Pose2d cursor = allianceStartPose.orElse(fallbackStartPose);
-    var clearance = CompAutoField.clearance(alliance, clamped);
+    var clearance = CompAutoField.clearance(alliance);
     var poses = new ArrayList<Pose2d>();
     for (var segment : alliancePreviewSegments) {
       var goals = segment.goals();
@@ -171,20 +169,20 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   /** Activates a Blue-alliance {@link AutoSegment} with default alliance bumper clearance. */
   protected final void drive(AutoSegment blueSegment) {
-    var segment = CompAutoField.segment(requireNonNull(blueSegment), alliance, clamped);
-    trailblazer.activate(segment, CompAutoField.clearance(alliance, clamped));
+    var segment = CompAutoField.segment(requireNonNull(blueSegment), alliance);
+    trailblazer.activate(segment, CompAutoField.clearance(alliance));
     logAuthoredWaypoints(segment);
   }
 
   /** Activates a Blue-alliance {@link AutoSegment} without keepout clearance checking. */
   protected final void driveWithoutClearance(AutoSegment blueSegment) {
-    var segment = CompAutoField.segment(requireNonNull(blueSegment), alliance, clamped);
+    var segment = CompAutoField.segment(requireNonNull(blueSegment), alliance);
     trailblazer.activateWithoutClearance(segment);
     logAuthoredWaypoints(segment);
   }
 
   protected final Pose2d fieldPose(Pose2d bluePose) {
-    return CompAutoField.pose(bluePose, alliance, clamped);
+    return CompAutoField.pose(bluePose, alliance);
   }
 
   /** Returns whether the robot has passed {@code marker} in the active segment. */

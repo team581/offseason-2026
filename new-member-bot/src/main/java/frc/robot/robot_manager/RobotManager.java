@@ -1,6 +1,5 @@
 package frc.robot.robot_manager;
 
-import com.team581.autos.Point;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
@@ -413,12 +412,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     isMoving = velocity > 0.2 || !MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 0.2);
 
-    // If using clamped points FF we are using the HOME FIELD
     nearTrench =
         !trenchOverride
-            && ((Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
-                    ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
-                    : FieldUtil.inTrench(robotPose.getTranslation()))
+            && (FieldUtil.inTrench(robotPose.getTranslation())
                 || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
     Pose2d robotPoseUsedForScoring =

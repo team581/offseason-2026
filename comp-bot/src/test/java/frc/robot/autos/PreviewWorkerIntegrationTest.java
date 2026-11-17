@@ -5,14 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.team581.autos.Point;
 import com.team581.trailblazer3.preview.PreviewRunner;
 import com.team581.trailblazer3.preview.PreviewRunner.PreviewRequest;
 import com.team581.trailblazer3.preview.PreviewSchema.PreviewResult;
 import com.team581.trailblazer3.preview.WarmPreviewWorker;
 import com.team581.trailblazer3.preview.WarmPreviewWorker.WorkerResponse;
 import edu.wpi.first.hal.HAL;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.config.CompAutoField;
 import java.nio.file.Files;
@@ -121,7 +119,7 @@ final class PreviewWorkerIntegrationTest {
   }
 
   @Test
-  void homeFieldPreviewUsesRobotWaypointsAndStillFollowsEdits() throws Exception {
+  void redPreviewUsesRobotWaypointsAndFollowsEdits() throws Exception {
     Path root = resolveRepoRoot();
     Path sourceFile = root.resolve("comp-bot/src/main/java/frc/robot/autos/RightTrenchAuto.java");
     String source = Files.readString(sourceFile);
@@ -132,82 +130,34 @@ final class PreviewWorkerIntegrationTest {
     request.put("alliance", "Red");
     request.put("robotConfigId", "581");
     request.put("sourceContent", source);
-    boolean originalFlag = Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean();
-    var topic =
-        NetworkTableInstance.getDefault()
-            .getBooleanTopic("/Tunable/FeatureFlags/ClampedAutoPoints");
-    try (var flag = topic.publish()) {
-      try {
-        flag.set(false);
-        var fullField = worker.executeRequest("full-field", request, () -> {}).result();
+    var response = worker.executeRequest("red-full-field", request, () -> {});
+    assertThat(response.ok()).withFailMessage("%s", response.errorMessage()).isTrue();
+    var preview = response.result();
+    assertThat(preview.diagnostics())
+        .noneMatch(diagnostic -> diagnostic.severity().equals("ERROR"));
+    var robotGoal =
+        CompAutoField.segment(RightTrenchAuto.CYCLE_1_SEGMENT, Alliance.Red).goals().get(2);
+    assertEquals(robotGoal.pose().getX(), preview.waypoints().get(2).x(), 1e-6);
 
-        flag.set(true);
-        Path leftSourceFile = sourceFile.resolveSibling("LeftTrenchAuto.java");
-        var leftRequest = request.deepCopy();
-        leftRequest.put("sourceFile", leftSourceFile.toString());
-        leftRequest.put("sourceContent", Files.readString(leftSourceFile));
-        var left = worker.executeRequest("left-home-field", leftRequest, () -> {});
-        assertThat(left.ok()).withFailMessage("%s", left.errorMessage()).isTrue();
-        assertThat(left.result().diagnostics())
-            .noneMatch(diagnostic -> diagnostic.severity().equals("ERROR"));
-        assertThat(left.result().waypoints())
-            .singleElement()
-            .satisfies(waypoint -> assertEquals("leave-left-trench", waypoint.segmentId()));
-        assertEquals(
-            CompAutoField.pose(CompAutoField.HOME_LEFT_TRENCH_START, Alliance.Red, true).getY(),
-            left.result().startPose().y(),
-            1e-6);
+    int cycleTwoOffset = source.indexOf("Trailblazer.segment(\"right-trench-cycle-2\")");
+    int returnOffset = source.indexOf("13.2, RED_TRENCH_Y", cycleTwoOffset);
+    int returnLine =
+        (int) source.substring(0, returnOffset).chars().filter(c -> c == '\n').count() + 1;
+    var returnWaypoint =
+        preview.waypoints().stream()
+            .filter(waypoint -> waypoint.segmentId().equals("right-trench-cycle-2"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(returnLine, returnWaypoint.sourceLine());
 
-        var response = worker.executeRequest("home-field", request, () -> {});
-        assertThat(response.ok()).withFailMessage("%s", response.errorMessage()).isTrue();
-        var home = response.result();
-        assertThat(home.diagnostics())
-            .noneMatch(diagnostic -> diagnostic.severity().equals("ERROR"));
-        var fullWaypoint = fullField.waypoints().get(2);
-        var homeWaypoint = home.waypoints().get(2);
-        var robotGoal =
-            CompAutoField.segment(RightTrenchAuto.CYCLE_1_SEGMENT, Alliance.Red, true)
-                .goals()
-                .get(2);
-        assertEquals(robotGoal.pose().getX(), homeWaypoint.x(), 1e-6);
-        assertThat(homeWaypoint.x()).isGreaterThan(fullWaypoint.x());
-        assertThat(homeWaypoint.sourceLine()).isNotNull();
-
-        int cycleTwoOffset = source.indexOf("Trailblazer.segment(\"right-trench-cycle-2\")");
-        int returnOffset = source.indexOf("13.2, RED_TRENCH_Y", cycleTwoOffset);
-        int returnLine =
-            (int) source.substring(0, returnOffset).chars().filter(c -> c == '\n').count() + 1;
-        var homeReturn =
-            home.waypoints().stream()
-                .filter(waypoint -> waypoint.segmentId().equals("right-trench-cycle-2"))
-                .findFirst()
-                .orElseThrow();
-        assertEquals(returnLine, homeReturn.sourceLine());
-
-        request.put(
-            "sourceContent",
-            source.substring(0, returnOffset)
-                + "13.25"
-                + source.substring(returnOffset + "13.2".length()));
-        var edited = worker.executeRequest("edited", request, () -> {}).result();
-        assertEquals(homeReturn.x() + 0.05, edited.waypoints().get(homeReturn.index()).x(), 1e-6);
-
-        request.put("sourceContent", source);
-        request.put("alliance", "Blue");
-        var blue = worker.executeRequest("blue-with-flag-enabled", request, () -> {}).result();
-        assertEquals(
-            RightTrenchAuto.CYCLE_1_SEGMENT.goals().get(2).pose().getX(),
-            blue.waypoints().get(2).x(),
-            1e-6);
-
-        flag.set(false);
-        request.put("alliance", "Red");
-        var restored = worker.executeRequest("full-field-restored", request, () -> {}).result();
-        assertEquals(fullField.waypoints(), restored.waypoints());
-      } finally {
-        flag.set(originalFlag);
-      }
-    }
+    request.put(
+        "sourceContent",
+        source.substring(0, returnOffset)
+            + "13.25"
+            + source.substring(returnOffset + "13.2".length()));
+    var edited = worker.executeRequest("edited", request, () -> {}).result();
+    assertEquals(
+        returnWaypoint.x() + 0.05, edited.waypoints().get(returnWaypoint.index()).x(), 1e-6);
   }
 
   @Test

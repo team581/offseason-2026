@@ -23,7 +23,6 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   }
 
   public enum State {
-    LEAVE_TRENCH,
     INTAKE_CYCLE_1,
     SHOOT_1,
     INTAKE_CYCLE_2,
@@ -114,23 +113,10 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
         HeadingPlan.to(Rotation2d.k180deg).before(0.25).tolerance(Rotation2d.fromDegrees(12)));
   }
 
-  private final AutoSegment homeLeaveSegment;
   private boolean preparingBump;
 
-  /** Creates the full-field left route or the shifted trench leave for the practice field. */
   public LeftTrenchAuto(AutoContext context) {
-    this(context, LeftTrenchLeaveAuto.homeLeaveSegment());
-  }
-
-  private LeftTrenchAuto(AutoContext context, AutoSegment homeLeaveSegment) {
-    super(
-        context.clamped() ? State.LEAVE_TRENCH : State.INTAKE_CYCLE_1,
-        context.clamped() ? CompAutoField.HOME_LEFT_TRENCH_START : START,
-        context,
-        context.clamped()
-            ? new AutoSegment[] {homeLeaveSegment}
-            : new AutoSegment[] {CYCLE_1_SEGMENT, CYCLE_2_SEGMENT, CYCLE_3_SEGMENT});
-    this.homeLeaveSegment = homeLeaveSegment;
+    super(State.INTAKE_CYCLE_1, START, context, CYCLE_1_SEGMENT, CYCLE_2_SEGMENT, CYCLE_3_SEGMENT);
   }
 
   private void prepareForBump() {
@@ -151,10 +137,6 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   protected void afterTransition(State newState) {
     preparingBump = false;
     switch (newState) {
-      case LEAVE_TRENCH -> {
-        drive(homeLeaveSegment);
-        AutoActions.homeSubsystems(robot);
-      }
       case INTAKE_CYCLE_1 -> {
         drive(CYCLE_1_SEGMENT);
         AutoActions.startFirstIntakeCycle(robot);
@@ -182,7 +164,6 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   @Override
   protected State getNextState(State currentState) {
     return switch (currentState) {
-      case LEAVE_TRENCH -> atGoal() ? State.DONE : currentState;
       case INTAKE_CYCLE_1 -> readyToShoot() ? State.SHOOT_1 : currentState;
       case SHOOT_1 -> AutoActions.finishedShooting(this) ? State.INTAKE_CYCLE_2 : currentState;
       case INTAKE_CYCLE_2 -> readyToShoot() ? State.SHOOT_2 : currentState;
@@ -212,7 +193,7 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
         }
       }
       case SHOOT_1, SHOOT_2, SHOOT_3 -> robot.prepareScoreRequest();
-      case LEAVE_TRENCH, DONE -> {}
+      case DONE -> {}
     }
   }
 }

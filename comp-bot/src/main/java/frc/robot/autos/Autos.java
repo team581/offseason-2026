@@ -2,7 +2,6 @@ package frc.robot.autos;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.autos.AutoChooser;
-import com.team581.autos.Point;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.FmsUtil;
@@ -32,7 +31,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private Alliance autoAlliance = currentAlliance();
   private @Nullable AutoSelection previewSelection;
   private @Nullable Alliance previewAlliance;
-  private boolean previewClamped;
   private @Nullable TrailblazerAuto<?> previewAuto;
   private @Nullable TrailblazerAuto<?> stagedAuto;
 
@@ -48,16 +46,13 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     this.calibration = new TrailblazerCalibrationAuto(robotManager, vision);
   }
 
-  private TrailblazerAuto<?> createAuto(AutoSelection state, boolean clamped) {
-    return state
-        .create(new AutoContext(robotManager, trailblazer, autoAlliance, clamped))
-        .orElseThrow();
+  private TrailblazerAuto<?> createAuto(AutoSelection state) {
+    return state.create(new AutoContext(robotManager, trailblazer, autoAlliance)).orElseThrow();
   }
 
-  private @Nullable TrailblazerAuto<?> matchingPreview(AutoSelection state, boolean clamped) {
+  private @Nullable TrailblazerAuto<?> matchingPreview(AutoSelection state) {
     return previewSelection == state
             && previewAlliance == autoAlliance
-            && previewClamped == clamped
             && previewAuto != null
             && !previewAuto.hasStartedRunning()
         ? previewAuto
@@ -65,13 +60,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   }
 
   private TrailblazerAuto<?> prepareAuto(AutoSelection state) {
-    boolean clamped = Point.useClampedAutoPoints(autoAlliance);
-    var preview = matchingPreview(state, clamped);
+    var preview = matchingPreview(state);
     if (preview != null) {
       return preview;
     }
-    preview = createAuto(state, clamped);
-    previewClamped = clamped;
+    preview = createAuto(state);
     previewSelection = state;
     previewAlliance = autoAlliance;
     previewAuto = preview;
@@ -156,9 +149,8 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     if (firstTick) {
       Alliance latestAlliance = currentAlliance();
       autoAlliance = latestAlliance;
-      boolean clamped = Point.useClampedAutoPoints(autoAlliance);
-      var preview = matchingPreview(state, clamped);
-      activeAuto = preview != null ? preview : createAuto(state, clamped);
+      var preview = matchingPreview(state);
+      activeAuto = preview != null ? preview : createAuto(state);
       previewAuto = null;
       stagedAuto = null;
       if (preview == null
