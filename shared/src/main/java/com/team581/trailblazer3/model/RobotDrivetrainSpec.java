@@ -6,6 +6,21 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import java.util.List;
 
+/**
+ * Physical inputs for the drivetrain model.
+ *
+ * @param massKg weigh the complete robot, including battery and bumpers, in kg
+ * @param yawMoiKgMetersSq vertical-axis inertia from a CAD mass-properties report, in kg·m²
+ * @param wheelRadiusMeters loaded rolling radius; measure travel / wheel radians, in meters
+ * @param driveGearRatio motor revolutions per wheel revolution; multiply the drive gear stages
+ * @param steerGearRatio motor revolutions per azimuth revolution; multiply the steer gear stages
+ * @param modulePositionsMeters module centers relative to robot center, from CAD, in meters
+ * @param driveMotor WPILib model for the drive motor and control mode; supplies Kv, Kt, resistance,
+ *     free current, and nominal voltage
+ * @param steerMotor WPILib model for the steer motor and control mode
+ * @param slipCurrentAmps per-drive-motor current where the wheel starts slipping; measure on carpet
+ * @param staticFrictionVolts voltage needed to start wheel motion; measure with a slow voltage ramp
+ */
 public record RobotDrivetrainSpec(
     double massKg,
     double yawMoiKgMetersSq,

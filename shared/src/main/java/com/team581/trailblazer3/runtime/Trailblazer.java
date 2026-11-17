@@ -1,6 +1,7 @@
 package com.team581.trailblazer3.runtime;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.team581.trailblazer3.config.TrailblazerConfig.translationResponseSeconds;
 import static com.team581.trailblazer3.math.HeadingSchedule.turnDelta;
 import static java.util.Objects.requireNonNull;
 
@@ -197,7 +198,7 @@ public final class Trailblazer {
   private final double[] headingSampleScratch = new double[5];
   private final List<HeadingArrival> headingArrivals = new ArrayList<>();
 
-  private AutoSegment plan;
+  private List<Goal> goals = ImmutableList.of();
   private Optional<FieldClearance> activeClearance = Optional.empty();
   private DrivetrainLimits limits;
   private List<Goal> activeGoals = ImmutableList.of();
@@ -285,7 +286,7 @@ public final class Trailblazer {
 
   /** Clears the active segment, marker state, and drive command. */
   public void cancel() {
-    plan = null;
+    goals = ImmutableList.of();
     path = null;
     activeGoals = ImmutableList.of();
     openedGates = new boolean[0];
@@ -354,7 +355,7 @@ public final class Trailblazer {
    */
   public TickResult update(
       double nowSeconds, Pose2d measuredPose, ChassisSpeeds measuredFieldSpeeds) {
-    if (plan == null) {
+    if (goals.isEmpty()) {
       result =
           new TickResult(
               new ChassisSpeeds(),
@@ -575,7 +576,7 @@ public final class Trailblazer {
 
     double traction = limits.availableTraction(heading.velocity(), referenceAlpha);
     var tangent = path.sample(profile.tangentProgress());
-    double tau = Math.max(0.12, 4 * (limits.lag() + nominalDt / 2));
+    double tau = translationResponseSeconds(limits.lag(), nominalDt);
     double crossTrackCap = Math.min(CORRIDOR / tau, 0.30 * limits.maxSpeed());
     var demand =
         tangent
@@ -704,10 +705,11 @@ public final class Trailblazer {
   }
 
   private void activate(AutoSegment motionPlan, Optional<FieldClearance> clearance) {
-    plan = requireNonNull(motionPlan);
+    requireNonNull(motionPlan);
+    goals = motionPlan.goals();
     activeClearance = requireNonNull(clearance);
-    limits = DrivetrainLimits.derive(robot, calibration, nominalDt, plan.limits());
-    activeGoals = plan.goals();
+    limits = DrivetrainLimits.derive(robot, calibration, nominalDt, motionPlan.limits());
+    activeGoals = goals;
     openedGates = new boolean[activeGoals.size()];
     passed.clear();
     headingArrivals.clear();
@@ -745,7 +747,7 @@ public final class Trailblazer {
     if (path == null || activeGoals.isEmpty()) {
       return ImmutableList.of();
     }
-    List<RotationBudgetEstimator.HeadingSpan> spans = null;
+    var spans = new ArrayList<RotationBudgetEstimator.HeadingSpan>();
     boolean appliedDelay = false;
     double spanStart = progress;
     double prevAngle = targetHeading;
@@ -789,15 +791,12 @@ public final class Trailblazer {
       }
       double delta = targetAngle - prevAngle;
       if (!HeadingSchedule.applies(goal) && Math.abs(delta) > 0.01) {
-        if (spans == null) {
-          spans = new ArrayList<>();
-        }
         spans.add(new RotationBudgetEstimator.HeadingSpan(spanStart, anchor, delta));
       }
       prevAngle = targetAngle;
       spanStart = anchor;
     }
-    return spans == null ? ImmutableList.of() : spans;
+    return List.copyOf(spans);
   }
 
   private double computeInitialTurnHold(Pose2d pose, PathBuilder.Path geometry, List<Goal> goals) {
@@ -997,7 +996,7 @@ public final class Trailblazer {
   }
 
   private void rebuild(Pose2d pose, int from) {
-    var candidate = plan.goals().subList(from, plan.goals().size());
+    var candidate = goals.subList(from, goals.size());
     var geometry =
         PathBuilder.build(
             pose.getTranslation(),

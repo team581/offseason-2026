@@ -3,13 +3,14 @@ package com.team581.trailblazer3.preview;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
+import com.team581.trailblazer3.config.Field2026;
+import com.team581.trailblazer3.config.TrailblazerConfig;
 import com.team581.trailblazer3.math.DrivetrainLimits;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.FieldClearance;
 import com.team581.trailblazer3.model.FieldGeometry;
-import com.team581.trailblazer3.model.FieldSymmetry;
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.HeadingPlan;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
@@ -66,6 +67,7 @@ import org.jspecify.annotations.Nullable;
  * {@link Trailblazer} follower in single-segment or whole-auto mode across {@code Blue}/{@code Red}
  * alliances and robot configurations ({@code 581}, {@code 9991}, {@code 9981}).
  */
+@SuppressWarnings("EmptyCatch")
 public final class PreviewRunner {
   /** Parameters for a single preview execution. */
   public record PreviewRequest(
@@ -114,27 +116,10 @@ public final class PreviewRunner {
     }
   }
 
-  public static final FieldGeometry FIELD_2026 =
-      new FieldGeometry(
-          FieldUtil.FIELD_LENGTH_X, FieldUtil.FIELD_WIDTH_Y, FieldSymmetry.ROTATIONAL_180);
+  public static final FieldGeometry FIELD_2026 = Field2026.FIELD_2026;
 
   private static final double DT_SECONDS = 0.020;
   private static final double MAX_SEGMENT_SIM_SECONDS = 25.0;
-  private static final double CLEARANCE_MARGIN_METERS = 0.04;
-
-  private static final double TRENCH_WIDTH_METERS = Units.inchesToMeters(48.94);
-  private static final double TRENCH_HALF_DEPTH_METERS = Units.inchesToMeters(47.0 / 2.0);
-  private static final double TRENCH_BUMP_BARRIER_WIDTH_METERS = Units.inchesToMeters(12.0);
-  private static final double HUB_HALF_WIDTH_METERS = Units.inchesToMeters(47.0 / 2.0);
-  private static final double HUB_NET_EXTENSION_X_METERS = Units.inchesToMeters(10.26);
-  private static final double HUB_NET_HALF_WIDTH_Y_METERS = Units.inchesToMeters(58.41 / 2.0);
-  private static final double BLUE_CLIMB_MAX_X_METERS =
-      FieldUtil.FIELD_LENGTH_X - Units.inchesToMeters(608.375814);
-  private static final double BLUE_CLIMB_MIN_Y_METERS =
-      FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(193.718750);
-  private static final double BLUE_CLIMB_MAX_Y_METERS =
-      FieldUtil.FIELD_WIDTH_Y - Units.inchesToMeters(146.718750);
-
   private static final List<String> KEEPOUT_NAMES =
       List.of(
           "blue-right-barrier",
@@ -148,48 +133,7 @@ public final class PreviewRunner {
 
   /** Builds the 2026 field clearance model for the given robot profile and alliance. */
   public static FieldClearance buildClearance(RobotProfile profile, Alliance alliance) {
-    double blueObstacleX = FieldUtil.BLUE_OUTPOST_TRENCH_CENTER.getX();
-    double blueNear = blueObstacleX - TRENCH_HALF_DEPTH_METERS;
-    double blueFar = blueObstacleX + TRENCH_HALF_DEPTH_METERS;
-    double rightBarrierLowY = TRENCH_WIDTH_METERS;
-    double rightBarrierHighY = TRENCH_WIDTH_METERS + TRENCH_BUMP_BARRIER_WIDTH_METERS;
-    double leftBarrierHighY = FIELD_2026.widthMeters() - TRENCH_WIDTH_METERS;
-    double leftBarrierLowY = leftBarrierHighY - TRENCH_BUMP_BARRIER_WIDTH_METERS;
-    double hubCenterY = FIELD_2026.widthMeters() / 2.0;
-
-    var blueRightBarrier = rectangle(blueNear, rightBarrierLowY, blueFar, rightBarrierHighY);
-    var blueLeftBarrier = rectangle(blueNear, leftBarrierLowY, blueFar, leftBarrierHighY);
-    var blueHub =
-        ImmutableList.of(
-            new Translation2d(
-                blueObstacleX - HUB_HALF_WIDTH_METERS, hubCenterY - HUB_HALF_WIDTH_METERS),
-            new Translation2d(
-                blueObstacleX + HUB_HALF_WIDTH_METERS + HUB_NET_EXTENSION_X_METERS,
-                hubCenterY - HUB_NET_HALF_WIDTH_Y_METERS),
-            new Translation2d(
-                blueObstacleX + HUB_HALF_WIDTH_METERS + HUB_NET_EXTENSION_X_METERS,
-                hubCenterY + HUB_NET_HALF_WIDTH_Y_METERS),
-            new Translation2d(
-                blueObstacleX - HUB_HALF_WIDTH_METERS, hubCenterY + HUB_HALF_WIDTH_METERS));
-    var blueClimbTower =
-        rectangle(0.0, BLUE_CLIMB_MIN_Y_METERS, BLUE_CLIMB_MAX_X_METERS, BLUE_CLIMB_MAX_Y_METERS);
-
-    var blueClearance =
-        new FieldClearance(
-            FIELD_2026,
-            profile.clearanceHalfSizeMeters(),
-            profile.clearanceHalfSizeMeters(),
-            CLEARANCE_MARGIN_METERS,
-            ImmutableList.of(
-                blueRightBarrier,
-                blueLeftBarrier,
-                blueHub,
-                blueClimbTower,
-                flipPolygon(blueRightBarrier),
-                flipPolygon(blueLeftBarrier),
-                flipPolygon(blueHub),
-                flipPolygon(blueClimbTower)));
-    return blueClearance.forAlliance(alliance);
+    return Field2026.clearance(profile.clearanceHalfSizeMeters()).forAlliance(alliance);
   }
 
   /** Returns the {@link RobotProfile} for {@code 581}, {@code 9991}, or {@code 9981}. */
@@ -220,7 +164,7 @@ public final class PreviewRunner {
         yield new RobotProfile(
             "9991",
             spec,
-            new EmpiricalDriveCalibration(8.5, 6.0, 0.055),
+            TrailblazerConfig.OFFSEASON,
             modX * 2.0,
             modY * 2.0,
             modX + bumperSideThickness,
@@ -250,7 +194,7 @@ public final class PreviewRunner {
         yield new RobotProfile(
             "9981",
             spec,
-            new EmpiricalDriveCalibration(8.0, 5.5, 0.060),
+            TrailblazerConfig.NEW_MEMBER,
             modX * 2.0,
             modY * 2.0,
             modX + bumperSideThickness,
@@ -280,7 +224,7 @@ public final class PreviewRunner {
         yield new RobotProfile(
             "581",
             spec,
-            new EmpiricalDriveCalibration(8.5, 6.0, 0.055),
+            TrailblazerConfig.COMP,
             modX * 2.0,
             modY * 2.0,
             modX + bumperSideThickness,
@@ -319,7 +263,6 @@ public final class PreviewRunner {
     List<SegmentDescriptor> segmentDescriptors =
         SourceSpanAnalyzer.analyze(request.sourceText(), knownPairs);
 
-    // An auto can mix already-initialized segments with segments built during extraction.
     Map<String, List<Integer>> waypointLinesByField = new LinkedHashMap<>();
     if (extracted.segments().stream()
         .anyMatch(segment -> !capturedLines.containsKey(segment.authoredSegment()))) {
@@ -330,7 +273,6 @@ public final class PreviewRunner {
 
     var waypointSpans = SourceSpanAnalyzer.waypointSpans(request.sourceText());
 
-    // Resolve scope and activeSegmentId
     String requestedScope = request.scope().toUpperCase(Locale.ROOT);
     String targetSegmentId = request.segmentId();
     if (!"WHOLE_AUTO".equals(requestedScope)) {
@@ -366,14 +308,13 @@ public final class PreviewRunner {
             ? extracted.startPose()
             : FIELD_2026.flipPose(extracted.startPose());
 
-    // Determine which segments to execute and seed initial pose
     Pose2d entryPose = allianceAutoStart;
     int firstSegIdx = 0;
     int lastSegIdx = extracted.segments().size() - 1;
     if (targetSegmentIndex >= 0) {
       firstSegIdx = targetSegmentIndex;
       lastSegIdx = targetSegmentIndex;
-      // Chain preceding segments to seed segment N's starting pose from segment N-1's end pose
+
       for (int i = 0; i < targetSegmentIndex; i++) {
         checkCancelled.run();
         var prior = extracted.segments().get(i).segment();
@@ -390,15 +331,14 @@ public final class PreviewRunner {
           entryPose =
               sampled.length > 0
                   ? sampled[sampled.length - 1]
-                  : terminalGoalPose(priorSeg.goals().get(priorSeg.goals().size() - 1), entryPose);
+                  : terminalGoalPose(priorSeg.goals().get(priorSeg.goals().size() - 1));
         } catch (RuntimeException ignored) {
           var goals = priorSeg.goals();
-          entryPose = terminalGoalPose(goals.get(goals.size() - 1), entryPose);
+          entryPose = terminalGoalPose(goals.get(goals.size() - 1));
         }
       }
     }
 
-    long planStartNs = System.nanoTime();
     List<MathPieceEntry> mathPieces = new ArrayList<>();
     List<Double> mathAnchors = new ArrayList<>();
     List<SampledMathPose> sampledMathPoses = new ArrayList<>();
@@ -475,7 +415,7 @@ public final class PreviewRunner {
               line = wpLines.get(gIdx) > 0 ? wpLines.get(gIdx) : segDeclLine;
             }
           } catch (NumberFormatException ignored) {
-            // keep segDeclLine
+
           }
         }
         diagnostics.add(
@@ -519,7 +459,6 @@ public final class PreviewRunner {
       }
       planMsAccum += (System.nanoTime() - segPlanStart) / 1_000_000.0;
 
-      // Closed-loop simulation of this segment
       long segSimStart = System.nanoTime();
       double[] clock = {simTime};
       DoubleSupplier clockSupplier = () -> clock[0];
@@ -694,7 +633,6 @@ public final class PreviewRunner {
         }
       }
 
-      // Build WaypointEntry list for this segment
       for (int g = 0; g < goals.size(); g++) {
         Goal goal = goals.get(g);
         int line = g < wpLines.size() ? wpLines.get(g) : -1;
@@ -794,7 +732,6 @@ public final class PreviewRunner {
       }
       hardPolygons.add(new KeepoutPolygon(id, hardPts));
 
-      // Expand convex CCW polygon outward by clearance margin
       int n = poly.size();
       double[] nx = new double[n];
       double[] ny = new double[n];
@@ -931,12 +868,12 @@ public final class PreviewRunner {
           }
         }
       } catch (ReflectiveOperationException ignored) {
-        // continue
+
       }
     }
 
     List<NamedSegment> orderedSegments = new ArrayList<>();
-    // Try instantiating TrailblazerAuto(AutoContext) to capture super(...) startPose and segments
+
     try {
       ClassLoader cl = autoClass.getClassLoader();
       Class<?> autoContextClass = Class.forName("frc.robot.autos.AutoContext", true, cl);
@@ -991,10 +928,9 @@ public final class PreviewRunner {
         }
       }
     } catch (Throwable ex) {
-      // Fallback to static fields or methods below.
+
     }
 
-    // Add any static AutoSegment fields that weren't already in orderedSegments
     for (Map.Entry<String, AutoSegment> entry : staticSegmentsByField.entrySet()) {
       boolean alreadyPresent =
           orderedSegments.stream()
@@ -1006,7 +942,6 @@ public final class PreviewRunner {
       }
     }
 
-    // If no segments found yet, check zero-arg static methods returning AutoSegment
     if (orderedSegments.isEmpty()) {
       for (Method method : autoClass.getDeclaredMethods()) {
         if (Modifier.isStatic(method.getModifiers())
@@ -1019,7 +954,7 @@ public final class PreviewRunner {
               orderedSegments.add(new NamedSegment(method.getName(), seg));
             }
           } catch (ReflectiveOperationException ignored) {
-            // ignore
+
           }
         }
       }
@@ -1043,23 +978,6 @@ public final class PreviewRunner {
     }
 
     return new ExtractedAuto(discoveredStartPose, orderedSegments, diagnostics);
-  }
-
-  private static List<Translation2d> flipPolygon(List<Translation2d> bluePolygon) {
-    List<Translation2d> out = new ArrayList<>(bluePolygon.size());
-    for (Translation2d pt : bluePolygon) {
-      out.add(FIELD_2026.flipPoint(pt));
-    }
-    return List.copyOf(out);
-  }
-
-  private static List<Translation2d> rectangle(
-      double left, double bottom, double right, double top) {
-    return ImmutableList.of(
-        new Translation2d(left, bottom),
-        new Translation2d(right, bottom),
-        new Translation2d(right, top),
-        new Translation2d(left, top));
   }
 
   private static Rotation2d resolveHeadingTarget(
@@ -1090,7 +1008,7 @@ public final class PreviewRunner {
     return goal.pose().getRotation();
   }
 
-  private static Pose2d terminalGoalPose(Goal terminal, Pose2d fallbackStart) {
+  private static Pose2d terminalGoalPose(Goal terminal) {
     if (terminal.heading() != null) {
       if (terminal.heading().target() instanceof HeadingPlan.Target.Fixed fixed) {
         return new Pose2d(terminal.pose().getTranslation(), fixed.angle());

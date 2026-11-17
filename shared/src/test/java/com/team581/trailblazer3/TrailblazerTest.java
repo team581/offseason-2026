@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.google.common.collect.ImmutableList;
+import com.team581.trailblazer3.math.DrivetrainLimits;
+import com.team581.trailblazer3.math.HeadingPlanner;
+import com.team581.trailblazer3.math.HeadingSchedule;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.FieldClearance;
@@ -16,6 +19,7 @@ import com.team581.trailblazer3.model.HeadingPlan;
 import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
+import com.team581.trailblazer3.preview.PreviewRunner;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -186,7 +190,6 @@ final class TrailblazerTest {
     assertThat(validPlanner.atGoal()).isTrue();
     assertEquals(1.0, currentPose.getRotation().getCos(), 1e-2);
 
-    // Turning parallel to the wall logs KEEPOUT_VIOLATION without stopping the auto.
     time[0] = 0.0;
     var parallelPlanner =
         new Trailblazer(() -> time[0], robot, new EmpiricalDriveCalibration(4.5, 2.5, 0.04), 0.02);
@@ -321,6 +324,47 @@ final class TrailblazerTest {
     assertThat(sim.planner.passedMarker(Marker.INTERMEDIATE)).isFalse();
     sim.untilGoal();
     assertThat(sim.planner.passedMarker(Marker.INTERMEDIATE)).isTrue();
+  }
+
+  @Test
+  void headingControllersUseTheRobotsEmpiricalGains() {
+    var robot = PreviewRunner.robotProfile("581").spec();
+    var goals =
+        ImmutableList.of(
+            Goal.through(pose(1, 0, 0)).headingTolerance(Rotation2d.fromDegrees(5)),
+            Goal.stop(pose(2, 0, 0)));
+    var path = PathBuilder.build(Translation2d.kZero, goals, 3);
+    var schedule = HeadingSchedule.build(path, goals, 0, 0, null).get(0);
+    var measured = new Pose2d(0.5, 0, Rotation2d.fromRadians(-0.01));
+    for (var calibration :
+        ImmutableList.of(
+            new EmpiricalDriveCalibration(5, 3, 0.04, 0, 0),
+            new EmpiricalDriveCalibration(5, 3, 0.04, 2, 0),
+            new EmpiricalDriveCalibration(5, 3, 0.04, 0, 0.2))) {
+      var limits = DrivetrainLimits.derive(robot, calibration, 0.02, MotionLimits.robotMaximum());
+      var spatial = HeadingPlanner.track(schedule, 0.5, 0, 0, measured, -0.1, 0, limits, 0.02);
+      if (calibration.headingP() == 0 && calibration.headingD() == 0) {
+        assertEquals(0, spatial.command(), 1e-12);
+      } else {
+        assertThat(spatial.command()).isPositive();
+      }
+      var heading =
+          HeadingPlanner.step(
+              new HeadingPlanner.State(0, 0),
+              0,
+              0,
+              measured.getRotation().getRadians(),
+              0,
+              0,
+              0,
+              limits,
+              0.02);
+      if (calibration.headingP() == 0) {
+        assertEquals(0, heading.command(), 1e-12);
+      } else {
+        assertThat(heading.command()).isPositive();
+      }
+    }
   }
 
   @Test
@@ -595,7 +639,6 @@ final class TrailblazerTest {
             .stopAt(targetPose)
             .build());
 
-    // First-order lagged drivetrain with azimuth-coupling kick when reversing small commands.
     double alpha = sim.dt / 0.065;
     double prevCmdVx = 0.0;
     double prevCmdVy = 0.0;

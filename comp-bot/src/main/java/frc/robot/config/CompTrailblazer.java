@@ -2,6 +2,7 @@ package frc.robot.config;
 
 import com.ctre.phoenix6.Utils;
 import com.google.common.collect.ImmutableList;
+import com.team581.trailblazer3.config.TrailblazerConfig;
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import com.team581.trailblazer3.runtime.Trailblazer;
@@ -14,9 +15,8 @@ import java.util.function.DoubleSupplier;
 
 public final class CompTrailblazer {
   static final double BUMPER_HALF_SIZE_METERS = Units.inchesToMeters(35.0 / 2);
-  // Carpet swerve baseline for Kraken X60 FOC modules; refine with calibration autos on carpet.
-  public static final EmpiricalDriveCalibration CALIBRATION =
-      new EmpiricalDriveCalibration(8.5, 6.0, 0.055);
+
+  public static final EmpiricalDriveCalibration CALIBRATION = TrailblazerConfig.COMP;
 
   public static Trailblazer create() {
     return create(Utils::getCurrentTimeSeconds);

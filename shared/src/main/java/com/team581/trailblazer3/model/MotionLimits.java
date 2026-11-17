@@ -2,7 +2,15 @@ package com.team581.trailblazer3.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-/** Optional ceilings in SI units. Positive infinity delegates a ceiling to the robot model. */
+/**
+ * Optional segment caps. Choose lower values for a gentler route; infinity uses the robot model.
+ *
+ * @param maxVelocityMetersPerSecond translation speed cap, in m/s
+ * @param maxAccelerationMetersPerSecondSquared translation acceleration cap, in m/s²
+ * @param maxBrakingMetersPerSecondSquared braking magnitude cap, in m/s²
+ * @param maxAngularVelocityRadiansPerSecond chassis rotation speed cap, in rad/s
+ * @param maxAngularAccelerationRadiansPerSecondSquared chassis rotation acceleration cap, in rad/s²
+ */
 public record MotionLimits(
     double maxVelocityMetersPerSecond,
     double maxAccelerationMetersPerSecondSquared,

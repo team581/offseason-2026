@@ -1,12 +1,33 @@
 package com.team581.trailblazer3.math;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
+import com.team581.trailblazer3.config.TrailblazerConfig;
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.MotionLimits;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import edu.wpi.first.math.MathUtil;
 
+/**
+ * Calculated limits. Recompute from the robot spec, calibration, period, and segment caps.
+ *
+ * @param robot source drivetrain dimensions and motor data
+ * @param maxSpeed wheel-speed limit capped by the segment, in m/s
+ * @param maxWheelSpeed 0.91 times calculated free speed, in m/s
+ * @param freeSpeed (nominal voltage - static friction voltage) * motor Kv * wheel radius / drive
+ *     ratio
+ * @param braking measured deceleration capped by the segment, in m/s²
+ * @param friction measured traction acceleration, in m/s²
+ * @param lateral 0.85 times traction for cornering, in m/s²
+ * @param maxOmega 0.85 * wheel-speed limit / largest module radius, capped by the segment, in rad/s
+ * @param maxAlpha 0.85 * mass * min(motor launch acceleration / 0.90, traction) * radius / yaw
+ *     inertia, capped by the segment, in rad/s²
+ * @param turnRate min(half modeled steer free speed, 0.50 / (lag + period / 2)), in rad/s
+ * @param lag measured drive response lag, in seconds
+ * @param moduleRadius largest distance from robot center to a module, in meters
+ * @param inertiaShare min(1, 4 * yaw inertia / (mass * sum(module radius²)))
+ * @param accelerationCeiling segment acceleration cap, in m/s²; infinity uses the motor model
+ * @param headingP heading-error gain from empirical calibration, in 1/s
+ * @param headingD angular-speed-error gain from empirical calibration, dimensionless
+ */
 public record DrivetrainLimits(
     RobotDrivetrainSpec robot,
     double maxSpeed,
@@ -21,86 +42,20 @@ public record DrivetrainLimits(
     double lag,
     double moduleRadius,
     double inertiaShare,
-    double accelerationCeiling) {
+    double accelerationCeiling,
+    double headingP,
+    double headingD) {
   public static DrivetrainLimits derive(
       RobotDrivetrainSpec robot,
       EmpiricalDriveCalibration calibration,
       double nominalDt,
       MotionLimits caps) {
-    var modulePositions = robot.modulePositionsMeters();
-    checkArgument(!modulePositions.isEmpty(), "At least one module position is required");
-    double radius = 0.0;
-    double squaredRadii = 0.0;
-    for (int i = 0; i < modulePositions.size(); i++) {
-      var position = modulePositions.get(i);
-      double normSq = position.dot(position);
-      squaredRadii += normSq;
-      radius = Math.max(radius, Math.sqrt(normSq));
-    }
-    double voltage = robot.driveMotor().nominalVoltageVolts;
-    double free =
-        (voltage - robot.staticFrictionVolts())
-            * robot.driveMotor().KvRadPerSecPerVolt
-            * robot.wheelRadiusMeters()
-            / robot.driveGearRatio();
-    double wheelSpeed = 0.91 * free;
-    double max = Math.min(wheelSpeed, caps.maxVelocityMetersPerSecond());
-    double friction = calibration.frictionLimit();
-    double lag = calibration.driveResponseLagSeconds();
-    double raw = motorAccel(robot, free, 0) / 0.90;
-    double steerEffectiveVoltage =
-        Math.max(
-            0,
-            robot.steerMotor().nominalVoltageVolts
-                - Math.min(
-                    robot.staticFrictionVolts(), 0.5 * robot.steerMotor().nominalVoltageVolts));
-    return new DrivetrainLimits(
-        robot,
-        max,
-        wheelSpeed,
-        free,
-        Math.min(calibration.maxBrakingDeceleration(), caps.maxBrakingMetersPerSecondSquared()),
-        friction,
-        0.85 * friction,
-        Math.min(0.85 * wheelSpeed / radius, caps.maxAngularVelocityRadiansPerSecond()),
-        Math.min(
-            0.85 * robot.massKg() * Math.min(raw, friction) * radius / robot.yawMoiKgMetersSq(),
-            caps.maxAngularAccelerationRadiansPerSecondSquared()),
-        Math.min(
-            0.5
-                * steerEffectiveVoltage
-                * robot.steerMotor().KvRadPerSecPerVolt
-                / robot.steerGearRatio(),
-            0.50 / (lag + nominalDt / 2)),
-        lag,
-        radius,
-        Math.min(1, 4 * robot.yawMoiKgMetersSq() / (robot.massKg() * squaredRadii)),
-        caps.maxAccelerationMetersPerSecondSquared());
+    return TrailblazerConfig.deriveLimits(robot, calibration, nominalDt, caps);
   }
 
   public double acceleration(double speed) {
-    return Math.min(accelerationCeiling, motorAccel(robot, freeSpeed, speed));
-  }
-
-  private static double motorAccel(RobotDrivetrainSpec robot, double freeSpeed, double speed) {
-    var motor = robot.driveMotor();
-    double voltage = motor.nominalVoltageVolts;
-    double emf =
-        robot.staticFrictionVolts() + (voltage - robot.staticFrictionVolts()) * speed / freeSpeed;
-    double resistance = motor.rOhms;
-    double batteryResistance = 0.018;
-    double inverterEfficiency = 0.95;
-    double current =
-        Math.min(
-            robot.slipCurrentAmps(),
-            Math.max(0, voltage - emf) / (resistance + 4 * batteryResistance / inverterEfficiency));
-    return 0.90
-        * 4
-        * 0.90
-        * robot.driveGearRatio()
-        * motor.KtNMPerAmp
-        * Math.max(0, current - motor.freeCurrentAmps)
-        / (robot.massKg() * robot.wheelRadiusMeters());
+    return Math.min(
+        accelerationCeiling, TrailblazerConfig.motorAcceleration(robot, freeSpeed, speed));
   }
 
   public double availableTraction(double omega, double alpha) {

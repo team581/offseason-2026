@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.math;
 
+import static com.team581.trailblazer3.config.TrailblazerConfig.headingGain;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -48,7 +50,7 @@ public final class HeadingPlanner {
         reference.velocity()
             + MathUtil.clamp(desired - reference.velocity(), -alphaLimit * dt, alphaLimit * dt);
     double nextAngle = reference.angle() + (reference.velocity() + nextOmega) * dt / 2;
-    double gain = Math.min(8, 1 / (3 * (limits.lag() + dt / 2)));
+    double gain = headingGain(limits.headingP(), limits.lag(), dt);
     double demand =
         MathUtil.clamp(
             nextOmega + gain * MathUtil.angleModulus(nextAngle - measuredAngle),
@@ -60,30 +62,6 @@ public final class HeadingPlanner {
                 demand - previousOmega, -limits.maxAlpha() * dt, limits.maxAlpha() * dt);
     return new Result(
         new State(nextAngle, nextOmega), command, (nextOmega - reference.velocity()) / dt);
-  }
-
-  /**
-   * Steps heading tracking using {@code translationSpeed} for both tangent rate and friction share.
-   */
-  public static Result step(
-      State reference,
-      double target,
-      double derivative,
-      double measuredAngle,
-      double previousOmega,
-      double translationSpeed,
-      DrivetrainLimits limits,
-      double dt) {
-    return step(
-        reference,
-        target,
-        derivative,
-        measuredAngle,
-        previousOmega,
-        translationSpeed,
-        translationSpeed,
-        limits,
-        dt);
   }
 
   /** Tracks a heading reference at measured path progress, with drive response compensation. */
@@ -105,14 +83,15 @@ public final class HeadingPlanner {
             (previousSpeed - speed) / Math.max(dt, limits.lag()),
             -limits.braking(),
             limits.acceleration(speed));
-    // Look ahead in the feedforward only. The feedback compares poses at the same progress.
+
     double lead = 2 * limits.lag() + dt / 2;
     double futureSpeed = Math.max(0, speed + lead * acceleration);
     var future = schedule.sample(progress + lead * (speed + futureSpeed) / 2);
     double demand =
         future.slope() * futureSpeed
-            + 8 * MathUtil.angleModulus(yaw.angle() - measuredPose.getRotation().getRadians())
-            + 0.4 * (rate - measuredOmega);
+            + limits.headingP()
+                * MathUtil.angleModulus(yaw.angle() - measuredPose.getRotation().getRadians())
+            + limits.headingD() * (rate - measuredOmega);
     double command =
         MathUtil.clamp(
             MathUtil.clamp(demand, -limits.maxOmega(), limits.maxOmega()),
