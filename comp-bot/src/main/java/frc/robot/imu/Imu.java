@@ -54,7 +54,7 @@ public class Imu extends BaseImuSubsystem {
     super.beforePeriodic();
 
     // We only use bump crossing in auto
-    if (DriverStation.isAutonomous()) {
+    if (DriverStation.isAutonomousEnabled()) {
       bumpCrossingTracker.beforePeriodic();
     }
   }
@@ -107,8 +107,10 @@ public class Imu extends BaseImuSubsystem {
     super.periodic();
 
     // We only use bump crossing in auto
-    if (DriverStation.isAutonomous()) {
+    if (DriverStation.isAutonomousEnabled()) {
       bumpCrossingTracker.periodic();
+    } else {
+      bumpCrossingTracker.cancelCrossing();
     }
 
     bumpCrossingTracker.log();

@@ -5,7 +5,6 @@ import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -65,7 +64,7 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private double directionalTilt = 0.0;
   private boolean isFlat = true;
   private boolean isFlatFallbackDebounced = false;
-  private Point landingPoint = new Point(Pose2d.kZero, Pose2d.kZero);
+  private Runnable landingAction = () -> {};
 
   private Rotation3d robotRelativeImuState = Rotation3d.kZero;
 
@@ -82,17 +81,19 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   }
 
   public void bumpCrossRequest(Point landingPoint, Rotation2d crossingDirection) {
-    this.landingPoint = landingPoint;
-    this.crossingDirection = crossingDirection;
-    DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
-    setStateFromRequest(BumpCrossingState.FLAT_ABOUT_TO_CROSS);
+    startCrossing(crossingDirection, () -> poseResetConsumer.accept(landingPoint.getTranslation()));
+  }
+
+  public void cancelCrossing() {
+    landingAction = () -> {};
+    setStateFromRequest(BumpCrossingState.FLAT_NOT_CROSSING);
   }
 
   @Override
   public BumpCrossingState getNextState(BumpCrossingState currentState) {
     // Fallback
     if (currentState == BumpCrossingState.CROSSING_UPHILL && isFlatFallbackDebounced) {
-      poseResetConsumer.accept(landingPoint.getTranslation());
+      landingAction.run();
       DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/FallbackDebounced");
       return BumpCrossingState.FLAT_NOT_CROSSING;
     }
@@ -129,6 +130,11 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     };
   }
 
+  public boolean isOnBump() {
+    return getState() == BumpCrossingState.CROSSING_UPHILL
+        || getState() == BumpCrossingState.CROSSING_DOWNHILL;
+  }
+
   public void log() {
     log(true);
   }
@@ -146,8 +152,20 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     DogLog.log("Imu/BumpCrossing/IsFlatFallbackDebounced", isFlatFallbackDebounced);
   }
 
+  /** Tracks IMU tilt while the trajectory follower controls motion and localization. */
+  public void trackCrossing(Rotation2d crossingDirection) {
+    startCrossing(crossingDirection, () -> {});
+  }
+
+  private void startCrossing(Rotation2d crossingDirection, Runnable landingAction) {
+    this.landingAction = landingAction;
+    this.crossingDirection = crossingDirection;
+    DogLog.timestamp("Imu/BumpCrossing/CrossRequest");
+    setStateFromRequest(BumpCrossingState.FLAT_ABOUT_TO_CROSS);
+  }
+
   private BumpCrossingState stuckInStateTimeout() {
-    poseResetConsumer.accept(landingPoint.getTranslation());
+    landingAction.run();
     DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/StuckInStateTimeout");
     return BumpCrossingState.FLAT_NOT_CROSSING;
   }
@@ -156,8 +174,8 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   protected void beforeTransition(BumpCrossingState oldState, BumpCrossingState newState) {
     if (oldState == BumpCrossingState.CROSSING_DOWNHILL
         && newState == BumpCrossingState.FLAT_NOT_CROSSING) {
-      // We just crossed, reset pose
-      poseResetConsumer.accept(landingPoint.getTranslation());
+      // Run any landing action supplied by the caller.
+      landingAction.run();
       DogLog.timestamp("Imu/BumpCrossing/FinishedCrossing/NormalSequence");
     }
   }
