@@ -47,46 +47,40 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   static final AutoSegment CYCLE_1_SEGMENT =
       finishCycle(
           Trailblazer.segment("right-trench-cycle-1")
-              .through(bluePose(10.489, RED_TRENCH_Y, -90), 0.75)
-              .through(bluePose(8.744, 6.049, -115), 0.30)
-              .through(bluePose(8.316, 4.945, -115), 0.35)
+              // Hold the launch heading through the wall-side opening.
+              .through(bluePose(10.089, RED_TRENCH_Y, -90), 0.15, 15)
+              .through(bluePose(8.744, 6.049, -115), 0.30, 5)
+              .through(bluePose(8.016, 4.945, -115), 0.55, 35)
               .mark(Marker.PRIORITIZE_INTAKE)
-              .through(bluePose(8.856, 4.445, -40), 0.20)
-              .through(bluePose(9.356, 4.245, 0), 0.20)
-              .through(bluePoint(9.756, 4.545), 0.30)
-              .through(bluePose(10.15, RED_BUMP_Y, 0), 0.20)
-              .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30)
+              .through(bluePose(8.856, 4.445, -40), 0.20, 30)
+              .through(bluePose(9.356, 4.245, 0), 0.20, 35)
+              .through(bluePose(9.756, 4.545, 35), 0.30, 15)
+              .through(bluePose(10.15, RED_BUMP_Y, 0), 0.20, 15)
+              .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30, 5)
               .mark(Marker.PREPARE_BUMP));
 
   static final AutoSegment CYCLE_2_SEGMENT =
       finishCycle(
           returnToTrench("right-trench-cycle-2", 0.30)
-              .through(bluePose(10.628, 7.2, -140), 0.40)
-              .through(bluePose(9.140, 5.653, -130), 0.40)
-              .through(bluePose(8.500, 4.81, -120), 0.40)
-              .through(bluePoint(8.456, 4.6), 0.20)
-              .through(bluePoint(9.156, 4.445), 0.20)
-              .through(bluePoint(9.556, 4.445), 0.20)
-              .through(bluePoint(10.356, 4.045), 0.30)
-              .through(bluePoint(9.556, 5.145), 0.20)
-              .through(bluePose(10.5, RED_BUMP_Y, 0), 0.20)
+              .through(bluePose(10.428, 7.0, -140), 0.40, 15)
+              .through(bluePose(9.140, 5.653, -130), 0.40, 15)
+              .through(bluePose(8.300, 4.81, -100), 0.50, 25)
+              .through(bluePose(9.156, 4.255, -10), 0.40, 15)
+              .through(bluePose(10.556, 4.045, 0), 0.20, 15)
+              .through(bluePose(9.556, 5.145, 15), 0.20, 25)
+              .through(bluePose(10.5, RED_BUMP_Y, 0), 0.20, 25)
               .mark(Marker.PREPARE_BUMP));
 
   static final AutoSegment CYCLE_3_SEGMENT =
       finishCycle(
           returnToTrench("right-trench-cycle-3", 0.20)
-              .through(bluePose(9.6, 6.353, -130), 0.40)
-              .through(bluePose(8.7, 5.593, -90), 0.30)
-              .through(bluePose(8.600, 4.31, -90), 0.30)
-              .through(bluePoint(9.31, 4.3), 0.30)
-              .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30)
-              .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30)
+              .through(bluePose(9.6, 6.353, -130), 0.40, 25)
+              .through(bluePose(8.7, 5.593, -90), 0.30, 25)
+              .through(bluePose(8.600, 4.31, -90), 0.30, 25)
+              .through(bluePose(9.31, 4.3, 32), 0.30, 25)
+              .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30, 25)
+              .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30, 25)
               .mark(Marker.PREPARE_BUMP));
-
-  /** Converts an archived red-alliance field point in meters to the blue authoring frame. */
-  private static Translation2d bluePoint(double redX, double redY) {
-    return bluePose(redX, redY, 0).getTranslation();
-  }
 
   /** Converts a red-alliance pose in meters and degrees to the blue authoring frame. */
   private static Pose2d bluePose(double redX, double redY, double redDegrees) {
@@ -103,7 +97,11 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
         .through(
             bluePose(13.25, RED_BUMP_Y, 0),
             0.25,
-            goal -> goal.heading(HeadingPlan.to(Rotation2d.k180deg).before(0.25)))
+            goal ->
+                goal.heading(
+                    HeadingPlan.to(Rotation2d.k180deg)
+                        .before(0.25)
+                        .tolerance(Rotation2d.fromDegrees(12))))
         .stopAt(SHOOT_POINT, Goal::faceHub)
         .build();
   }
@@ -111,17 +109,13 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   /** Starts another intake cycle with the shared trench entry, intake marker, and exit guide. */
   private static AutoSegment.Builder returnToTrench(String name, double exitWithin) {
     // The archive repeats 13.2 m for its 180° heading. Use a single 160° entry point
-    // and approach the 179° trench heading on the next leg.
+    // and use fixed heading tracking through the trench so the bumper stays parallel.
     return Trailblazer.segment(name)
         .through(bluePose(13.2, RED_TRENCH_Y, 160), 0.30)
-        .through(bluePose(12.5, RED_TRENCH_Y, 179), 0.30)
+        .through(bluePose(12.5, RED_TRENCH_Y, 179), 0.30, 5.0)
         .mark(Marker.START_INTAKE)
-        .through(bluePose(11.5, RED_TRENCH_Y, 179), exitWithin)
-        // Keep the bumper parallel to the trench until it clears the neutral-side post.
-        .through(
-            bluePose(10.83, RED_TRENCH_Y, 179),
-            0.04,
-            goal -> goal.heading(HeadingPlan.to(Rotation2d.fromDegrees(-1)).after(0.15)));
+        .through(bluePose(10.9, RED_TRENCH_Y, 179), exitWithin, 20.0);
+    // Keep the bumper parallel to the trench until it clears the neutral-side post.
   }
 
   /** Returns the stop pose with the rear shooter aimed at the hub on the selected alliance. */
