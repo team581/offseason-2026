@@ -3,6 +3,7 @@ package frc.robot.config;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.collect.ImmutableList;
+import com.team581.autos.Point;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.FieldClearance;
 import com.team581.trailblazer3.model.FieldGeometry;
@@ -50,10 +51,22 @@ public final class CompAutoField {
   public static final double RIGHT_BUMP_CENTER_Y_METERS =
       TRENCH_WIDTH_METERS + TRENCH_BUMP_BARRIER_WIDTH_METERS + BUMP_WIDTH_METERS / 2.0;
 
-  public static final FieldClearance CLEARANCE = fullFieldClearance();
+  private static final double HOME_DEPOT_SHIFT_Y =
+      FieldUtil.HOME_FIELD_RED_DEPOT_TRENCH_CENTER.getY()
+          - (FIELD.widthMeters() - LEFT_TRENCH_START.getY());
+
+  public static final Pose2d HOME_LEFT_TRENCH_START =
+      offset(LEFT_TRENCH_START, 0, -HOME_DEPOT_SHIFT_Y);
+
+  public static final FieldClearance CLEARANCE = fieldClearance(0);
+  private static final FieldClearance HOME_CLEARANCE = fieldClearance(HOME_DEPOT_SHIFT_Y);
 
   public static FieldClearance clearance(Alliance alliance) {
-    return CLEARANCE.forAlliance(alliance);
+    return clearance(alliance, false);
+  }
+
+  public static FieldClearance clearance(Alliance alliance, boolean clamped) {
+    return (clamped ? HOME_CLEARANCE : CLEARANCE).forAlliance(alliance);
   }
 
   public static Pose2d offset(Pose2d base, double dxMeters, double dyMeters) {
@@ -75,18 +88,32 @@ public final class CompAutoField {
   }
 
   public static Pose2d pose(Pose2d blue, Alliance alliance) {
-    return alliance == Alliance.Blue ? blue : FIELD.flipPose(blue);
+    return pose(blue, alliance, false);
+  }
+
+  public static Pose2d pose(Pose2d blue, Alliance alliance, boolean clamped) {
+    var fieldPose = alliance == Alliance.Blue ? blue : FIELD.flipPose(blue);
+    return clamped ? Point.clampToHomeField(fieldPose) : fieldPose;
   }
 
   public static AutoSegment segment(AutoSegment blue, Alliance alliance) {
-    return blue.forAlliance(alliance, FIELD);
+    return segment(blue, alliance, false);
   }
 
-  private static List<Translation2d> flipPolygon(List<Translation2d> bluePolygon) {
-    return bluePolygon.stream().map(FIELD::flipPoint).collect(toImmutableList());
+  public static AutoSegment segment(AutoSegment blue, Alliance alliance, boolean clamped) {
+    var fieldSegment = blue.forAlliance(alliance, FIELD);
+    if (!clamped) {
+      return fieldSegment;
+    }
+    return new AutoSegment(
+        fieldSegment.id(),
+        fieldSegment.limits(),
+        fieldSegment.goals().stream()
+            .map(goal -> goal.withPose(Point.clampToHomeField(goal.pose())))
+            .toList());
   }
 
-  private static FieldClearance fullFieldClearance() {
+  private static FieldClearance fieldClearance(double redDepotShiftY) {
     double blueObstacleX = RIGHT_TRENCH_START.getX();
     double blueNear = blueObstacleX - TRENCH_HALF_DEPTH_METERS;
     double blueFar = blueObstacleX + TRENCH_HALF_DEPTH_METERS;
@@ -124,9 +151,15 @@ public final class CompAutoField {
             blueHub,
             blueClimbTower,
             flipPolygon(blueRightBarrier),
-            flipPolygon(blueLeftBarrier),
+            flipPolygon(blueLeftBarrier).stream()
+                .map(vertex -> vertex.plus(new Translation2d(0, redDepotShiftY)))
+                .toList(),
             flipPolygon(blueHub),
             flipPolygon(blueClimbTower)));
+  }
+
+  private static List<Translation2d> flipPolygon(List<Translation2d> bluePolygon) {
+    return bluePolygon.stream().map(FIELD::flipPoint).collect(toImmutableList());
   }
 
   private static List<Translation2d> rectangle(

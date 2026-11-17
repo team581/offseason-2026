@@ -262,7 +262,7 @@ public class FieldUtil {
 
   // HOME FIELD ONLY; Modified field util for home field
   private static final double HOME_FIELD_RED_DEPOT_WALL_OFFSET = Units.inchesToMeters(229.0);
-  private static final Pose2d HOME_FIELD_RED_DEPOT_TRENCH_CENTER =
+  public static final Pose2d HOME_FIELD_RED_DEPOT_TRENCH_CENTER =
       new Pose2d(
           RED_DEPOT_TRENCH_CENTER.getX(),
           FIELD_WIDTH_Y - HOME_FIELD_RED_DEPOT_WALL_OFFSET,

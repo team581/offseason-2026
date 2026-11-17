@@ -11,6 +11,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.function.BooleanSupplier;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
@@ -24,7 +25,13 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
           // Half of robot width + bumpers + 15" buffer
           new Translation2d(8.246 + Units.inchesToMeters(17.25 + 15.0), 1.645));
 
-  private static Pose2d clamp(Pose2d input) {
+  /** Returns whether an auto uses the Red home-field layout. */
+  public static boolean useClampedAutoPoints(Alliance alliance) {
+    return alliance == Alliance.Red && CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean();
+  }
+
+  /** Clamps a field-relative pose to the home practice area while preserving its heading. */
+  public static Pose2d clampToHomeField(Pose2d input) {
     return new Pose2d(CLAMPED_AREA.nearest(input.getTranslation()), input.getRotation());
   }
 
@@ -40,7 +47,7 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
     var result = FmsUtil.isRedAlliance() ? redPose : bluePose;
 
     if (CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()) {
-      return clamp(result);
+      return clampToHomeField(result);
     }
 
     return result;
