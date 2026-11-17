@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.runtime.Trailblazer;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -161,11 +162,11 @@ final class TrailblazerTrenchAutoTest {
               SingleDriveState.DRIVE,
               CompAutoField.LEFT_TRENCH_START,
               testContext(planner, alliance),
-              LeftTrenchAuto.LEAVE_TRENCH_SEGMENT) {
+              LeftTrenchLeaveAuto.LEAVE_TRENCH_SEGMENT) {
             @Override
             protected void afterTransition(SingleDriveState newState) {
               if (newState == SingleDriveState.DRIVE) {
-                drive(LeftTrenchAuto.LEAVE_TRENCH_SEGMENT);
+                drive(LeftTrenchLeaveAuto.LEAVE_TRENCH_SEGMENT);
               } else {
                 stopDriving();
               }
@@ -196,6 +197,22 @@ final class TrailblazerTrenchAutoTest {
       planner.cancel();
       time[0] += 0.02;
     }
+  }
+
+  @Test
+  void homeFieldLeftTrenchUsesShiftedOpening() {
+    var planner = CompTrailblazer.create(() -> 0);
+    var robot = testContext(planner, Alliance.Red).robot();
+    var auto = new LeftTrenchLeaveAuto(new AutoContext(robot, planner, Alliance.Red, true));
+    var start = auto.startPose().orElseThrow();
+    assertEquals(FieldUtil.HOME_FIELD_RED_DEPOT_TRENCH_CENTER.getY(), start.getY(), 1e-9);
+    assertThat(auto.previewPath(start)).hasSizeGreaterThan(10);
+    assertThat(auto.initialDisabledWheelTarget(start).orElseThrow().vxMetersPerSecond).isPositive();
+
+    auto.periodic();
+    var result = planner.update(0, start, new ChassisSpeeds());
+    assertEquals(TickResult.RuntimeStatus.RUNNING, result.status());
+    assertThat(result.commandedFieldSpeeds().vxMetersPerSecond).isPositive();
   }
 
   @Test
