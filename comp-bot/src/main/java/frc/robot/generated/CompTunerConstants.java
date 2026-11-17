@@ -104,7 +104,10 @@ public class CompTunerConstants {
 
     // These are only used for simulation
     private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.0005);
-    private static final MomentOfInertia kDriveInertia = KilogramSquareMeters.of(0.001);
+    // Phoenix models each wheel independently. Reflect one quarter of the 61.2 kg robot
+    // mass at the wheel so the simulated velocity loop sees the drivetrain load (J = m r²).
+    private static final MomentOfInertia kDriveInertia =
+        KilogramSquareMeters.of(61.2 / 4 * Math.pow(kWheelRadius.in(Meters), 2));
     // Simulated voltage necessary to overcome friction
     private static final Voltage kSteerFrictionVoltage = Volts.of(0.2);
     private static final Voltage kDriveFrictionVoltage = Volts.of(0.2);
