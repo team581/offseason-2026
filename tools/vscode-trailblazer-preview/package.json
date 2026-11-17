@@ -1,7 +1,7 @@
 {
 	"name": "trailblazer-preview",
 	"displayName": "Trailblazer 3 Auto Preview",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Split-screen preview of Trailblazer 3 autonomous routines and path segments",
 	"categories": [
 		"Visualization"

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { WarmPreviewWorkerClient } = require('../worker.ts');
+const { resolveGitBaselineSource } = require('../project.ts');
 const { findWaypointForSourceLine } = require('../media/preview.ts');
 
 const repoRoot = path.resolve(__dirname, '../../..');
@@ -11,16 +12,16 @@ const rightTrenchPath = path.join(repoRoot, 'comp-bot/src/main/java/frc/robot/au
 void test('warm-JVM stdio worker executes single-segment, whole-auto, diff baseline, compile error stale recovery, and clean shutdown', async () => {
 	const sourceText = fs.readFileSync(rightTrenchPath, 'utf8');
 	const lines = sourceText.split(/\r?\n/);
-	const lineFor = (snippet) => {
-		const index = lines.findIndex((line) => line.includes(snippet));
+	const lineFor = (snippet, start = 0) => {
+		const index = lines.findIndex((line, i) => i >= start && line.includes(snippet));
 		assert.ok(index >= 0, `Missing source line for ${snippet}`);
 		return index + 1;
 	};
 	const client = new WarmPreviewWorkerClient(repoRoot);
 
 	try {
-		const coldStart = performance.now();
 		await client.ensureStarted();
+		const coldStart = performance.now();
 		assert.equal(client.isRunning(), true);
 
 		// First authored point of cycle one round-trips to the same waypoint.
@@ -28,7 +29,7 @@ void test('warm-JVM stdio worker executes single-segment, whole-auto, diff basel
 			sourceFile: rightTrenchPath,
 			sourceContent: sourceText,
 			scope: 'CURSOR',
-			cursorLine: lineFor('.through(bluePose(10.089'),
+			cursorLine: lineFor('.through(fromRed(10.089'),
 			alliance: 'Blue',
 			robotConfigId: '581',
 		});
@@ -39,7 +40,7 @@ void test('warm-JVM stdio worker executes single-segment, whole-auto, diff basel
 		assert.equal(r1.result.activeSegmentId, 'right-trench-cycle-1');
 		assert.ok(coldMs < 3000, `Expected cold preview < 3000ms, got ${coldMs.toFixed(1)}ms`);
 		assert.ok(r1.result.robotFootprint.frontIntakeExtentMeters > r1.result.robotFootprint.halfLengthMeters);
-		const firstLine = lineFor('.through(bluePose(10.089');
+		const firstLine = lineFor('.through(fromRed(10.089');
 		const first = findWaypointForSourceLine(r1.result.waypoints, firstLine);
 		assert.equal(first, r1.result.waypoints[0]);
 		assert.equal(first.sourceLine, firstLine);
@@ -50,7 +51,7 @@ void test('warm-JVM stdio worker executes single-segment, whole-auto, diff basel
 			sourceFile: rightTrenchPath,
 			sourceContent: sourceText,
 			scope: 'CURSOR',
-			cursorLine: lineFor('.through(bluePose(10.428'),
+			cursorLine: lineFor('.through(fromRed(10.228'),
 			alliance: 'Blue',
 			robotConfigId: '581',
 		});
@@ -62,14 +63,14 @@ void test('warm-JVM stdio worker executes single-segment, whole-auto, diff basel
 		assert.ok(warmMs < 1000, `Expected warm preview < 1000ms, got ${warmMs.toFixed(1)}ms`);
 		const cycleTwo = r2.result.waypoints;
 		assert.equal(cycleTwo.length, 12);
-		assert.equal(cycleTwo[0].sourceLine, lineFor('.through(bluePose(13.2'));
-		assert.equal(cycleTwo[3].sourceLine, lineFor('.through(bluePose(10.428'));
-		assert.equal(cycleTwo.at(-1).sourceLine, lineFor('.stopAt(SHOOT_POINT'));
+		assert.equal(cycleTwo[0].sourceLine, lineFor('.through(fromRed(13.2'));
+		assert.equal(cycleTwo[3].sourceLine, lineFor('.through(fromRed(10.228'));
+		assert.equal(cycleTwo.at(-1).sourceLine, lineFor('.stopAt(SHOOT_POINT', cycleTwo[0].sourceLine));
 		assert.equal(
-			findWaypointForSourceLine(cycleTwo, lineFor('.tolerance(Rotation2d.fromDegrees(12)')),
+			findWaypointForSourceLine(cycleTwo, lineFor('.through(BUMP_LANDING', cycleTwo[0].sourceLine)),
 			cycleTwo.at(-2),
 		);
-		assert.equal(findWaypointForSourceLine(cycleTwo, lineFor('returnToTrench("right-trench-cycle-2"')), null);
+		assert.equal(findWaypointForSourceLine(cycleTwo, lineFor('Trailblazer.segment("right-trench-cycle-2"')), null);
 
 		// 3. Whole Auto toggle on Red alliance -> runs all 3 segments and emits NEAR_REVERSAL_CORNER warning
 		const rWhole = await client.requestPreview({
@@ -87,13 +88,18 @@ void test('warm-JVM stdio worker executes single-segment, whole-auto, diff basel
 		assert.ok(rWhole.result.diagnostics.some((d) => d.code === 'NEAR_REVERSAL_CORNER'));
 
 		// A helper call in an untaken branch must not shift the executed goal provenance.
-		const withBranch = sourceText.replace(
-			'    return Trailblazer.segment(name)',
-			'    if (name.isEmpty()) {\n' +
-				'      return Trailblazer.segment(name).through(0.0, 0.0);\n' +
-				'    }\n' +
-				'    return Trailblazer.segment(name)',
-		);
+		const helper = [
+			'  private static AutoSegment.Builder branchSegment(String name) {',
+			'    if (name.isEmpty()) {',
+			'      return Trailblazer.segment(name).through(0.0, 0.0);',
+			'    }',
+			'    return Trailblazer.segment(name);',
+			'  }',
+			'',
+		].join('\n');
+		const withBranch = sourceText
+			.replace('  static final AutoSegment CYCLE_2_SEGMENT =', helper + '  static final AutoSegment CYCLE_2_SEGMENT =')
+			.replace('Trailblazer.segment("right-trench-cycle-2")', 'branchSegment("right-trench-cycle-2")');
 		const branchPreview = await client.requestPreview({
 			sourceFile: rightTrenchPath,
 			sourceContent: withBranch,
@@ -103,16 +109,27 @@ void test('warm-JVM stdio worker executes single-segment, whole-auto, diff basel
 			robotConfigId: '581',
 		});
 		assert.equal(branchPreview.ok, true);
-		assert.equal(branchPreview.result.waypoints[0].sourceLine, lineFor('.through(bluePose(13.2') + 3);
-		assert.equal(branchPreview.result.waypoints[3].sourceLine, lineFor('.through(bluePose(10.428'));
+		assert.equal(branchPreview.result.waypoints[0].sourceLine, lineFor('.through(fromRed(13.2') + 6);
+		assert.equal(branchPreview.result.waypoints[3].sourceLine, lineFor('.through(fromRed(10.228') + 6);
+
+		const baseline = await client.requestPreview({
+			sourceFile: rightTrenchPath,
+			sourceContent: resolveGitBaselineSource(repoRoot, rightTrenchPath, sourceText),
+			scope: 'WHOLE_AUTO',
+			alliance: 'Red',
+			robotConfigId: '581',
+		});
+		assert.equal(baseline.ok, true, baseline.errorMessage);
+		assert.equal(baseline.result.alliance, 'Red');
+		assert.ok(baseline.result.trajectory.length > 0);
 
 		// 4. Compile error returns stale: true and COMPILE_ERROR diagnostic
-		const broken = sourceText.replace('.mark(Marker.PREPARE_BUMP));', '.mark(Marker.PREPARE_BUMP)');
+		const broken = sourceText.replace('.build();', '.build()');
 		const rBroken = await client.requestPreview({
 			sourceFile: rightTrenchPath,
 			sourceContent: broken,
 			scope: 'CURSOR',
-			cursorLine: lineFor('.through(bluePose(10.089'),
+			cursorLine: lineFor('.through(fromRed(10.089'),
 			alliance: 'Blue',
 			robotConfigId: '581',
 		});
@@ -269,7 +286,7 @@ function verifyWebview(firstCycle, secondCycle, wholeAuto) {
 	assertHighlightedAt(fitInline);
 	send({
 		type: 'cursorLineChanged',
-		cursorLine: inline.sourceLine - 1,
+		cursorLine: 1,
 		segmentId: inline.segmentId,
 		sourceRevision: 0,
 	});

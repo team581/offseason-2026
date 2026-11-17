@@ -33,49 +33,31 @@ void test('resolves cursor line to active segment and resolves Git branch baseli
 		['right-trench-cycle-1', 'right-trench-cycle-2', 'right-trench-cycle-3'],
 	);
 
-	// Inside CYCLE_1_SEGMENT (line 52)
-	assert.deepEqual(resolveCursorTarget(segments, 52, false, null), {
-		scope: 'SEGMENT',
-		segmentId: 'right-trench-cycle-1',
-	});
-
-	// Inside CYCLE_2_SEGMENT (line 66)
-	assert.deepEqual(resolveCursorTarget(segments, 66, false, null), {
-		scope: 'SEGMENT',
-		segmentId: 'right-trench-cycle-2',
-	});
-
-	// Inside CYCLE_3_SEGMENT (line 80)
-	assert.deepEqual(resolveCursorTarget(segments, 80, false, null), {
-		scope: 'SEGMENT',
-		segmentId: 'right-trench-cycle-3',
-	});
-
-	// Inside case INTAKE_CYCLE_2 -> drive(CYCLE_2_SEGMENT) (line 145)
-	assert.deepEqual(resolveCursorTarget(segments, 145, false, null), {
+	const lines = source.split(/\r?\n/);
+	const lineFor = (snippet) => {
+		const index = lines.findIndex((line) => line.includes(snippet));
+		assert.ok(index >= 0, `Missing source line for ${snippet}`);
+		return index + 1;
+	};
+	for (const segment of segments) {
+		assert.deepEqual(resolveCursorTarget(segments, segment.declarationStartLine, false, null), {
+			scope: 'SEGMENT',
+			segmentId: segment.id,
+		});
+	}
+	assert.deepEqual(resolveCursorTarget(segments, lineFor('drive(CYCLE_2_SEGMENT)'), false, null), {
 		scope: 'SEGMENT',
 		segmentId: 'right-trench-cycle-2',
 	});
-
-	// Inside shared helper returnToTrench (line 116) while coming from cycle 3
-	assert.deepEqual(resolveCursorTarget(segments, 116, false, 'right-trench-cycle-3'), {
-		scope: 'SEGMENT',
-		segmentId: 'right-trench-cycle-3',
+	assert.deepEqual(resolveCursorTarget(segments, lineFor('public final class RightTrenchAuto'), false, null), {
+		scope: 'WHOLE_AUTO',
+		segmentId: null,
 	});
-
-	// Outside any segment (line 20, class header) -> WHOLE_AUTO
-	assert.deepEqual(resolveCursorTarget(segments, 20, false, null), {
+	assert.deepEqual(resolveCursorTarget(segments, segments[1].declarationStartLine, true, segments[1].id), {
 		scope: 'WHOLE_AUTO',
 		segmentId: null,
 	});
 
-	// Pinned Whole Auto ignores cursor movement inside CYCLE_2_SEGMENT
-	assert.deepEqual(resolveCursorTarget(segments, 66, true, 'right-trench-cycle-2'), {
-		scope: 'WHOLE_AUTO',
-		segmentId: null,
-	});
-
-	// Git baseline source resolution returns valid Java source for tracked auto file
 	const baseline = resolveGitBaselineSource(repoRoot, rightTrenchPath, source);
 	assert.ok(typeof baseline === 'string' && baseline.includes('class RightTrenchAuto'));
 });

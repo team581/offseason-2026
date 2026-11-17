@@ -494,13 +494,20 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.workspace.onDidSaveTextDocument((doc) => {
 			if (!activeSession || !vscode.workspace.isTrusted) return;
-			if (doc.uri.fsPath !== activeSession.filePath) return;
+			const isAuto = doc.uri.fsPath === activeSession.filePath;
+			if (!isAuto) {
+				const relative = path.relative(activeSession.workspaceRoot, doc.uri.fsPath);
+				if (relative.startsWith('..') || !relative.split(path.sep).join('/').includes('/src/main/java/')) return;
+				activeSession.baselineCache.clear();
+			}
 			if (editTimer) {
 				clearTimeout(editTimer);
 				editTimer = null;
 			}
-			activeSession.sourceText = doc.getText();
-			activeSession.segments = analyzeJavaSourceSpans(activeSession.sourceText);
+			if (isAuto) {
+				activeSession.sourceText = doc.getText();
+				activeSession.segments = analyzeJavaSourceSpans(activeSession.sourceText);
+			}
 			void runPreview(activeSession, true);
 		}),
 	);

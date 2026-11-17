@@ -1,5 +1,6 @@
 import { type ChildProcessWithoutNullStreams, execFileSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
@@ -112,6 +113,35 @@ export async function generateManifestViaGradle(workspaceRoot: string): Promise<
 	return manifest;
 }
 
+/** Captures saved Java dependencies and Gradle inputs without depending on compiled class timestamps. */
+function runtimeSources(workspaceRoot: string): Map<string, string> {
+	const sources = new Map<string, string>();
+	const add = (file: string) => {
+		if (fs.existsSync(file)) sources.set(file, createHash('sha256').update(fs.readFileSync(file)).digest('hex'));
+	};
+	const walk = (dir: string) => {
+		if (!fs.existsSync(dir)) return;
+		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+			const file = path.join(dir, entry.name);
+			if (entry.isDirectory()) walk(file);
+			else if (/\.(java|json)$/.test(entry.name)) add(file);
+		}
+	};
+	for (const project of ['', 'shared', 'comp-bot', 'offseason-bot', 'new-member-bot']) {
+		const root = path.join(workspaceRoot, project);
+		for (const file of ['build.gradle', 'settings.gradle', 'gradle.properties']) add(path.join(root, file));
+		walk(path.join(root, 'src/main/java'));
+		walk(path.join(root, 'vendordeps'));
+	}
+	return sources;
+}
+
+function sourcesMatch(current: Map<string, string>, previous: Map<string, string>, overlay: string | null): boolean {
+	return [...new Set([...current.keys(), ...previous.keys()])].every(
+		(file) => file === overlay || current.get(file) === previous.get(file),
+	);
+}
+
 interface PendingRequest {
 	id: string;
 	resolve: (response: WorkerResponse) => void;
@@ -126,6 +156,7 @@ export class WarmPreviewWorkerClient {
 	private rl: readline.Interface | null = null;
 	private startingPromise: Promise<void> | null = null;
 	private disposed = false;
+	private sources = new Map<string, string>();
 	private requestCounter = 0;
 	private activePending: PendingRequest | null = null;
 	public readonly workspaceRoot: string;
@@ -140,18 +171,18 @@ export class WarmPreviewWorkerClient {
 		return this.child !== null && this.child.exitCode === null && !this.child.killed;
 	}
 
-	/** Pre-warms the Java 21 JDK stdio worker in the background. */
-	public async ensureStarted(): Promise<void> {
-		if (this.disposed) {
-			throw new Error('Preview worker client has been disposed');
-		}
-		if (this.isRunning()) {
+	/** Builds saved dependencies before starting; only the requested auto may use a source overlay. */
+	public async ensureStarted(overlaySourceFile?: string): Promise<void> {
+		if (this.disposed) throw new Error('Preview worker client has been disposed');
+		if (this.startingPromise) await this.startingPromise;
+		if (this.disposed) throw new Error('Preview worker client has been disposed');
+		const current = runtimeSources(this.workspaceRoot);
+		const overlay = overlaySourceFile ? path.resolve(this.workspaceRoot, overlaySourceFile) : null;
+		if (this.isRunning() && sourcesMatch(current, this.sources, overlay)) {
+			this.sources = current;
 			return;
 		}
-		if (this.startingPromise) {
-			return this.startingPromise;
-		}
-		this.startingPromise = this.spawnWorker();
+		this.startingPromise = this.spawnWorker(overlay);
 		try {
 			await this.startingPromise;
 		} finally {
@@ -172,7 +203,7 @@ export class WarmPreviewWorkerClient {
 			superseded.reject(new Error(`Superseded by ${reqId}`));
 		}
 
-		await this.ensureStarted();
+		await this.ensureStarted(params.sourceFile);
 		if (requestNumber !== this.requestCounter) {
 			throw new Error(`Superseded by req-${this.requestCounter}`);
 		}
@@ -203,6 +234,10 @@ export class WarmPreviewWorkerClient {
 			this.activePending.reject(new Error('Worker disposed'));
 			this.activePending = null;
 		}
+		this.stopWorker();
+	}
+
+	private stopWorker(): void {
 		if (this.rl) {
 			this.rl.close();
 			this.rl = null;
@@ -224,12 +259,20 @@ export class WarmPreviewWorkerClient {
 		}
 	}
 
-	private async spawnWorker(): Promise<void> {
+	private async spawnWorker(overlay: string | null): Promise<void> {
+		const stamp = path.join(this.workspaceRoot, '.gradle/trailblazer-preview/runtime-sources.json');
+		let builtSources = new Map<string, string>();
+		try {
+			builtSources = new Map(JSON.parse(fs.readFileSync(stamp, 'utf8')));
+		} catch {}
 		let manifest = readCachedManifest(this.workspaceRoot);
-		if (!manifest) {
+		if (!manifest || !sourcesMatch(runtimeSources(this.workspaceRoot), builtSources, overlay)) {
 			manifest = await generateManifestViaGradle(this.workspaceRoot);
+			fs.writeFileSync(stamp, JSON.stringify([...runtimeSources(this.workspaceRoot)]));
 		}
 		if (this.disposed) return;
+		this.stopWorker();
+		this.sources = runtimeSources(this.workspaceRoot);
 
 		const javaBin = resolveJavaExecutable(this.getJavaHomeOverride?.());
 		const cpSeparator = process.platform === 'win32' ? ';' : ':';
@@ -316,6 +359,7 @@ export class WarmPreviewWorkerClient {
 			});
 
 			proc.on('exit', (code) => {
+				if (this.child !== proc) return;
 				this.child = null;
 				if (!settled) {
 					settled = true;
