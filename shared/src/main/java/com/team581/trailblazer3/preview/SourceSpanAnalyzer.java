@@ -3,6 +3,7 @@ package com.team581.trailblazer3.preview;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.preview.PreviewSchema.SegmentDescriptor;
 import com.team581.trailblazer3.preview.PreviewSchema.SourceSpan;
 import java.util.ArrayList;
@@ -219,7 +220,7 @@ public final class SourceSpanAnalyzer {
       }
     }
 
-    for (String kind : List.of("STATE_BRANCH", "HELPER_METHOD")) {
+    for (String kind : ImmutableList.of("STATE_BRANCH", "HELPER_METHOD")) {
       var matches =
           segments.stream()
               .filter(segment ->
