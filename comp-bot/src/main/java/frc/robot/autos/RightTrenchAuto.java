@@ -54,9 +54,9 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
       Trailblazer.segment("right-trench-cycle-1")
           .withLimits(CYCLE_LIMITS)
           // Hold the launch heading through the wall-side opening.
-          .through(bluePose(10.089, RED_TRENCH_Y, -90), 0.15, 15)
-          .through(bluePose(8.744, 6.049, -115), 0.30, 5)
-          .through(bluePose(8.016, 4.945, -115), 0.55, 35)
+          .through(bluePose(10.089, RED_TRENCH_Y, -90), 0.25, 15)
+          .through(bluePose(8.744, 6.049, -115), 0.30, 15)
+          .through(bluePose(8.716, 4.945, -90), 0.55, 35)
           .mark(Marker.PRIORITIZE_INTAKE)
           .through(bluePose(8.856, 4.445, -40), 0.20, 30)
           .through(bluePose(9.356, 4.245, 0), 0.20, 35)
