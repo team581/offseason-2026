@@ -24,7 +24,10 @@ public final class VelocityProfiler {
     private LimitingFactor[] factors = new LimitingFactor[256];
     private double[] curvature = new double[256];
     private double[] traction = new double[256];
-    private final double[] budgetScratch = new double[2];
+    private double[] yawSlope = new double[256];
+    private double[] yawLeft = new double[256];
+    private double[] yawRight = new double[256];
+    private final double[] budgetScratch = new double[5];
 
     private void ensureCapacity(int needed) {
       if (needed <= rawNodes.length) {
@@ -36,6 +39,9 @@ public final class VelocityProfiler {
       factors = new LimitingFactor[nextCapacity];
       curvature = new double[nextCapacity];
       traction = new double[nextCapacity];
+      yawSlope = new double[nextCapacity];
+      yawLeft = new double[nextCapacity];
+      yawRight = new double[nextCapacity];
     }
   }
 
@@ -46,6 +52,7 @@ public final class VelocityProfiler {
       double startSpeed,
       double barrier,
       NodeBudgetEvaluator budgets,
+      List<HeadingSchedule> headingSchedules,
       DrivetrainLimits limits,
       double dt,
       Workspace workspace) {
@@ -62,6 +69,9 @@ public final class VelocityProfiler {
     var pieces = path.pieces();
     var anchors = path.anchors();
     int maxRaw = intervals + 3 + pieces.size() + anchors.size();
+    for (var schedule : headingSchedules) {
+      maxRaw += schedule.nodeCount();
+    }
     workspace.ensureCapacity(maxRaw);
 
     double[] s = workspace.rawNodes;
@@ -84,6 +94,14 @@ public final class VelocityProfiler {
       double anchor = anchors.get(i);
       if (anchor > measured && anchor < barrier) {
         s[rawCount++] = anchor;
+      }
+    }
+    for (var schedule : headingSchedules) {
+      for (int i = 0; i < schedule.nodeCount(); i++) {
+        double node = schedule.node(i);
+        if (node > measured && node < barrier) {
+          s[rawCount++] = node;
+        }
       }
     }
     Arrays.sort(s, 0, rawCount);
@@ -112,7 +130,14 @@ public final class VelocityProfiler {
     double[] budgetScratch = workspace.budgetScratch;
 
     for (int i = 0; i < n; i++) {
+      Arrays.fill(budgetScratch, 2, 5, 0);
       budgets.evaluate(s[i], budgetScratch);
+      for (var schedule : headingSchedules) {
+        schedule.constrain(s[i], path, limits, budgetScratch);
+      }
+      workspace.yawSlope[i] = budgetScratch[2];
+      workspace.yawLeft[i] = budgetScratch[3];
+      workspace.yawRight[i] = budgetScratch[4];
       u[i] = budgetScratch[0] * budgetScratch[0];
       traction[i] = budgetScratch[1];
       factors[i] = LimitingFactor.TOP_SPEED;
@@ -127,12 +152,15 @@ public final class VelocityProfiler {
             Math.min(
                 Math.min(Math.min(traction[i], traction[i + 1]), limits.lateral()) / k,
                 turn * turn);
-        if (cap < u[i]) {
-          u[i] = cap;
+        double first = yawCornerCap(Math.min(cap, u[i]), k, i, traction[i], workspace, limits);
+        double second =
+            yawCornerCap(Math.min(cap, u[i + 1]), k, i + 1, traction[i + 1], workspace, limits);
+        if (first < u[i]) {
+          u[i] = first;
           factors[i] = LimitingFactor.CORNER_CENTRIPETAL;
         }
-        if (cap < u[i + 1]) {
-          u[i + 1] = cap;
+        if (second < u[i + 1]) {
+          u[i + 1] = second;
           factors[i + 1] = LimitingFactor.CORNER_CENTRIPETAL;
         }
       }
@@ -155,6 +183,7 @@ public final class VelocityProfiler {
           Math.min(
               u[i + 1] + 2 * ds * limits.braking(),
               frictionRoot(u[i + 1], ds, curvature[i], Math.min(traction[i], traction[i + 1])));
+      backward = coupledReach(workspace, limits, i, u[i + 1], Math.min(u[i], backward), false);
       if (backward < u[i]) {
         u[i] = backward;
         factors[i] = factors[i + 1];
@@ -172,6 +201,7 @@ public final class VelocityProfiler {
           Math.min(
               u[i + 1],
               frictionRoot(u[i], ds, curvature[i], Math.min(traction[i], traction[i + 1])));
+      u[i + 1] = coupledReach(workspace, limits, i, u[i], u[i + 1], true);
       if (u[i + 1] <= u[i]) {
         continue;
       }
@@ -228,6 +258,46 @@ public final class VelocityProfiler {
         infeasible ? LimitingFactor.INFEASIBLE : limitingFactor);
   }
 
+  private static double coupledReach(
+      Workspace w, DrivetrainLimits limits, int i, double from, double cap, boolean accelerating) {
+    if (cap <= from
+        || (w.yawSlope[i] == 0
+            && w.yawSlope[i + 1] == 0
+            && w.yawRight[i] == 0
+            && w.yawLeft[i + 1] == 0)) {
+      return cap;
+    }
+    double low = from;
+    double high = cap;
+    double ds = w.rawNodes[i + 1] - w.rawNodes[i];
+    for (int k = 0; k < 10; k++) {
+      double u = k == 0 ? cap : (low + high) / 2;
+      double a = (u - from) / (2 * ds);
+      if (!accelerating) {
+        a = -a;
+      }
+      double left = accelerating ? from : u;
+      double right = accelerating ? u : from;
+      if (yawFits(left, a, w.curvature[i], w.yawSlope[i], w.yawRight[i], w.traction[i], limits)
+          && yawFits(
+              right,
+              a,
+              w.curvature[i],
+              w.yawSlope[i + 1],
+              w.yawLeft[i + 1],
+              w.traction[i + 1],
+              limits)) {
+        if (k == 0) {
+          return cap;
+        }
+        low = u;
+      } else {
+        high = u;
+      }
+    }
+    return low;
+  }
+
   private static double frictionRoot(double u, double ds, double curvature, double traction) {
     double stretch = 1 + 4 * ds * ds * curvature * curvature;
     return (u
@@ -236,6 +306,41 @@ public final class VelocityProfiler {
                 * Math.sqrt(
                     Math.max(0, stretch * traction * traction - curvature * curvature * u * u)))
         / stretch;
+  }
+
+  private static double yawCornerCap(
+      double cap, double curvature, int i, double traction, Workspace w, DrivetrainLimits limits) {
+    if (yawFits(cap, 0, curvature, w.yawSlope[i], w.yawLeft[i], traction, limits)
+        && yawFits(cap, 0, curvature, w.yawSlope[i], w.yawRight[i], traction, limits)) {
+      return cap;
+    }
+    double low = 0;
+    double high = cap;
+    for (int k = 0; k < 10; k++) {
+      double mid = (low + high) / 2;
+      if (yawFits(mid, 0, curvature, w.yawSlope[i], w.yawLeft[i], traction, limits)
+          && yawFits(mid, 0, curvature, w.yawSlope[i], w.yawRight[i], traction, limits)) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
+  }
+
+  private static boolean yawFits(
+      double u,
+      double a,
+      double curvature,
+      double slope,
+      double bend,
+      double traction,
+      DrivetrainLimits limits) {
+    double alpha = bend * u + slope * a;
+    double omega = slope * Math.sqrt(u);
+    return Math.abs(alpha) <= limits.maxAlpha() + 1e-9
+        && Math.hypot(a, curvature * u)
+            <= Math.min(traction, limits.availableTraction(omega, alpha)) + 1e-9;
   }
 
   private VelocityProfiler() {}

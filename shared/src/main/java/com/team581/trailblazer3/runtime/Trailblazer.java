@@ -1,11 +1,13 @@
 package com.team581.trailblazer3.runtime;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.team581.trailblazer3.math.HeadingSchedule.turnDelta;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.math.DrivetrainLimits;
 import com.team581.trailblazer3.math.HeadingPlanner;
+import com.team581.trailblazer3.math.HeadingSchedule;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.math.RotationBudgetEstimator;
 import com.team581.trailblazer3.math.VectorLimiter;
@@ -33,7 +35,12 @@ import java.util.function.DoubleSupplier;
 
 /** Physics-limited sequential path follower for static autonomous segments. */
 public final class Trailblazer {
+  /** Measured heading error at a through point's heading anchor. */
+  public record HeadingArrival(int goalIndex, double errorRadians, boolean withinTolerance) {}
+
   private record Barrier(double progress, boolean closed) {}
+
+  private record HeadingPassage(int goal, double progress, HeadingPlan keyframe) {}
 
   private static final double CORRIDOR = 0.30;
   private static final double RELATCH_DWELL = 0.15;
@@ -180,17 +187,6 @@ public final class Trailblazer {
     return new Translation2d(speed.vxMetersPerSecond, speed.vyMetersPerSecond);
   }
 
-  private static double turnDelta(
-      double fromRadians, double targetRadians, HeadingPlan.TurnDirection direction) {
-    double diff = MathUtil.angleModulus(targetRadians - fromRadians);
-    if (direction == HeadingPlan.TurnDirection.CW && diff > 0) {
-      diff -= 2 * Math.PI;
-    } else if (direction == HeadingPlan.TurnDirection.CCW && diff < 0) {
-      diff += 2 * Math.PI;
-    }
-    return diff;
-  }
-
   private final DoubleSupplier clock;
   private final RobotDrivetrainSpec robot;
   private final EmpiricalDriveCalibration calibration;
@@ -199,6 +195,7 @@ public final class Trailblazer {
   private final Set<Enum<?>> passed = new LinkedHashSet<>();
   private final VelocityProfiler.Workspace profilerWorkspace = new VelocityProfiler.Workspace();
   private final double[] headingSampleScratch = new double[5];
+  private final List<HeadingArrival> headingArrivals = new ArrayList<>();
 
   private AutoSegment plan;
   private Optional<FieldClearance> activeClearance = Optional.empty();
@@ -223,6 +220,11 @@ public final class Trailblazer {
   private double targetDerivative;
   private double referenceAlpha;
   private boolean faceTravel;
+  private List<HeadingSchedule> pathHeadings = ImmutableList.of();
+  private List<HeadingPassage> headingPassages = ImmutableList.of();
+  private int nextHeadingPassage;
+  private double previousHeadingProgress;
+  private Rotation2d previousMeasuredHeading = Rotation2d.kZero;
   private double turnHoldProgress;
   private double turnHoldHeadingRadians;
 
@@ -310,6 +312,11 @@ public final class Trailblazer {
             headingSampleScratch[0],
             headingSampleScratch[1],
             Rotation2d.fromRadians(targetHeading)));
+  }
+
+  /** Returns heading passage measurements for the current segment, in passage order. */
+  public ImmutableList<HeadingArrival> headingArrivals() {
+    return ImmutableList.copyOf(headingArrivals);
   }
 
   /** Returns the most recent stored follower result. */
@@ -457,6 +464,10 @@ public final class Trailblazer {
     if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
       double progressBeforeBarrier = Math.min(projected.progress(), barrier.progress());
       highWater = Math.max(highWater, progressBeforeBarrier);
+      if (recordHeadingArrivals(progressBeforeBarrier, measuredPose.getRotation(), barrier)
+          && diagnostic.isEmpty()) {
+        diagnostic = "HEADING_TOLERANCE_MISS";
+      }
     }
 
     RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
@@ -482,28 +493,16 @@ public final class Trailblazer {
     double progress = projected.progress();
     double along = translation(previous).dot(projected.sample().tangent());
     var downstreamSpans = collectDownstreamHeadingSpans(progress, barrier.progress());
+    HeadingSchedule spatial = null;
+    for (var section : pathHeadings) {
+      if (progress >= section.start() && progress < section.end() && !barrier.closed()) {
+        spatial = section;
+        break;
+      }
+    }
     var profile =
-        VelocityProfiler.profile(
-            path,
-            activeGoals,
-            progress,
-            along,
-            barrier.progress(),
-            (node, out) ->
-                RotationBudgetEstimator.estimateInto(
-                    limits,
-                    node,
-                    progress,
-                    faceTravel ? path.curvatureAt(node) : targetDerivative,
-                    heading.velocity(),
-                    referenceAlpha,
-                    targetHeading - heading.angle(),
-                    downstreamSpans,
-                    out),
-            limits,
-            dt,
-            profilerWorkspace);
-
+        profileTranslation(
+            progress, along, barrier.progress(), downstreamSpans, spatial != null, dt);
     double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
     double brakingSpeed =
         Math.sqrt(2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier);
@@ -542,6 +541,21 @@ public final class Trailblazer {
           targetHeading
               + MathUtil.angleModulus(measuredPose.getRotation().getRadians() - targetHeading);
       heading = new HeadingPlanner.State(unwrappedMeasured, 0.0);
+    } else if (spatial != null) {
+      var turn =
+          HeadingPlanner.track(
+              spatial,
+              progress,
+              measured.dot(projected.sample().tangent()),
+              along,
+              measuredPose,
+              measuredFieldSpeeds.omegaRadiansPerSecond,
+              previous.omegaRadiansPerSecond,
+              limits,
+              dt);
+      heading = turn.reference();
+      referenceAlpha = turn.acceleration();
+      omega = turn.command();
     } else {
       var turn =
           HeadingPlanner.step(
@@ -696,6 +710,7 @@ public final class Trailblazer {
     activeGoals = plan.goals();
     openedGates = new boolean[activeGoals.size()];
     passed.clear();
+    headingArrivals.clear();
     path = null;
     remainingGoalStart = 0;
     goalIndex = 0;
@@ -773,7 +788,7 @@ public final class Trailblazer {
         }
       }
       double delta = targetAngle - prevAngle;
-      if (Math.abs(delta) > 0.01) {
+      if (!HeadingSchedule.applies(goal) && Math.abs(delta) > 0.01) {
         if (spans == null) {
           spans = new ArrayList<>();
         }
@@ -950,6 +965,37 @@ public final class Trailblazer {
     return new Barrier(path.length(), false);
   }
 
+  private VelocityProfiler.Result profileTranslation(
+      double progress,
+      double speed,
+      double barrier,
+      List<RotationBudgetEstimator.HeadingSpan> spans,
+      boolean scheduled,
+      double dt) {
+    return VelocityProfiler.profile(
+        path,
+        activeGoals,
+        progress,
+        speed,
+        barrier,
+        (node, out) -> {
+          RotationBudgetEstimator.estimateInto(
+              limits,
+              node,
+              progress,
+              faceTravel ? path.curvatureAt(node) : targetDerivative,
+              scheduled ? 0 : heading.velocity(),
+              scheduled ? 0 : referenceAlpha,
+              scheduled ? 0 : targetHeading - heading.angle(),
+              spans,
+              out);
+        },
+        pathHeadings,
+        limits,
+        dt,
+        profilerWorkspace);
+  }
+
   private void rebuild(Pose2d pose, int from) {
     var candidate = plan.goals().subList(from, plan.goals().size());
     var geometry =
@@ -973,5 +1019,59 @@ public final class Trailblazer {
     stopHeadingLatched = false;
     turnHoldHeadingRadians = pose.getRotation().getRadians();
     turnHoldProgress = computeInitialTurnHold(pose, geometry, candidate);
+    var passages = new ArrayList<HeadingPassage>();
+    double precedingAnchor = 0;
+    double terminal = path.anchors().get(activeGoals.size() - 1);
+    for (int i = 0; i < candidate.size(); i++) {
+      var goal = candidate.get(i);
+      var keyframe = headingForGoal(goal);
+      if (keyframe == null) {
+        continue;
+      }
+      double anchor =
+          MathUtil.clamp(
+              path.anchors().get(i) + keyframe.offsetMeters(), precedingAnchor, terminal);
+      if (HeadingSchedule.applies(goal)) {
+        passages.add(new HeadingPassage(from + i, anchor, keyframe));
+      }
+      precedingAnchor = anchor;
+    }
+    headingPassages = passages;
+    nextHeadingPassage = 0;
+    previousHeadingProgress = 0;
+    previousMeasuredHeading = pose.getRotation();
+    pathHeadings =
+        HeadingSchedule.build(
+            path,
+            candidate,
+            turnHoldHeadingRadians,
+            turnHoldProgress,
+            activeClearance.orElse(null));
+  }
+
+  private boolean recordHeadingArrivals(double progress, Rotation2d measured, Barrier barrier) {
+    boolean missed = false;
+    while (nextHeadingPassage < headingPassages.size()) {
+      var passage = headingPassages.get(nextHeadingPassage);
+      if (progress + 1e-9 < passage.progress()
+          || (barrier.closed() && barrier.progress() <= passage.progress() + 1e-9)) {
+        break;
+      }
+      double advance = progress - previousHeadingProgress;
+      var atAnchor =
+          advance > 1e-9
+              ? previousMeasuredHeading.interpolate(
+                  measured, (passage.progress() - previousHeadingProgress) / advance)
+              : measured;
+      var fixed = (HeadingPlan.Target.Fixed) passage.keyframe().target();
+      double error = fixed.angle().minus(atAnchor).getRadians();
+      boolean within = Math.abs(error) <= passage.keyframe().toleranceRadians() + 1e-9;
+      headingArrivals.add(new HeadingArrival(passage.goal(), error, within));
+      missed |= !within;
+      nextHeadingPassage++;
+    }
+    previousHeadingProgress = progress;
+    previousMeasuredHeading = measured;
+    return missed;
   }
 }

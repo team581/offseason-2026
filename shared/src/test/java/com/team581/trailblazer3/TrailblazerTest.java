@@ -324,6 +324,87 @@ final class TrailblazerTest {
   }
 
   @Test
+  void headingToleranceSlowsOnlyTheApproachWhenTheTurnNeedsMoreTime() {
+    var rotating = new Simulation(0.02);
+    var straight = new Simulation(0.02);
+    var limits =
+        MotionLimits.robotMaximum()
+            .withMaxAngularSpeedDegrees(100)
+            .withMaxAngularAccelerationDegrees(180);
+    rotating.planner.activate(
+        Trailblazer.segment("short-turn")
+            .withLimits(limits)
+            .through(pose(1.2, 0, 170), 0.2, g -> g.headingTolerance(Rotation2d.fromDegrees(8)))
+            .stopAt(pose(4, 0, 170))
+            .build());
+    straight.planner.activate(
+        Trailblazer.segment("straight")
+            .withLimits(limits)
+            .through(new Translation2d(1.2, 0), 0.2)
+            .stopAt(pose(4, 0, 0))
+            .build());
+
+    double peakBeforeAnchor = 0;
+    while (rotating.planner.headingArrivals().isEmpty() && rotating.time < 6) {
+      rotating.step();
+      straight.step();
+      assertThat(rotating.planner.lastResult().infeasible()).isFalse();
+      peakBeforeAnchor = Math.max(peakBeforeAnchor, rotating.speed.vxMetersPerSecond);
+    }
+    assertThat(rotating.planner.headingArrivals())
+        .hasSize(1)
+        .allMatch(Trailblazer.HeadingArrival::withinTolerance);
+    assertThat(straight.pose.getX()).isGreaterThan(rotating.pose.getX() + 0.25);
+    double peakAfterAnchor = 0;
+    while (rotating.pose.getX() < 3 && rotating.time < 6) {
+      rotating.step();
+      peakAfterAnchor = Math.max(peakAfterAnchor, rotating.speed.vxMetersPerSecond);
+    }
+    assertThat(peakAfterAnchor).isGreaterThan(peakBeforeAnchor + 0.25);
+  }
+
+  @Test
+  void headingToleranceUsesShiftedAnchorWithoutSlowingFeasibleTranslation() {
+    var rotating = new Simulation(0.02);
+    var straight = new Simulation(0.02);
+    var limits = MotionLimits.robotMaximum().withMaxSpeed(1.5).withMaxAcceleration(1);
+    var tolerance = Rotation2d.fromDegrees(6);
+    rotating.planner.activate(
+        Trailblazer.segment("heading-band")
+            .withLimits(limits)
+            .through(
+                pose(3, 0, 20),
+                0.2,
+                g -> g.heading(HeadingPlan.faceDegrees(20).before(0.5).tolerance(tolerance)))
+            .through(pose(4, 0, 35), 0.2, g -> g.headingTolerance(tolerance))
+            .stopAt(pose(6, 0, 35))
+            .build());
+    straight.planner.activate(
+        Trailblazer.segment("straight")
+            .withLimits(limits)
+            .through(new Translation2d(3, 0), 0.2)
+            .through(new Translation2d(4, 0), 0.2)
+            .stopAt(pose(6, 0, 0))
+            .build());
+
+    while (rotating.pose.getX() < 4.05 && rotating.time < 6) {
+      rotating.step();
+      straight.step();
+      assertEquals(
+          straight.speed.vxMetersPerSecond,
+          rotating.speed.vxMetersPerSecond,
+          1e-8,
+          rotating.pose + " at " + rotating.time + ": " + rotating.planner.lastResult());
+      if (rotating.planner.lastResult().progress() >= 2.5 && rotating.pose.getX() < 3) {
+        assertThat(rotating.planner.headingArrivals()).hasSize(1);
+      }
+    }
+    assertThat(rotating.planner.headingArrivals())
+        .hasSize(2)
+        .allMatch(Trailblazer.HeadingArrival::withinTolerance);
+  }
+
+  @Test
   void launchesAtBothEndsOfSupportedLoopRangeAndCancelStopsOutput() {
     for (double dt : new double[] {0.004, 0.020}) {
       var sim = new Simulation(dt);

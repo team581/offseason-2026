@@ -11,8 +11,9 @@
 - **Trailblazer 3:** Heading is a separate schedule $\theta^*(s)$ along the path:
   1. **Target Modes:** Face a fixed angle (`fixed`), face the direction of travel (`faceTravel`), continuously aim at a scoring or field target (`facePoint`), or keep current heading (`hold`).
   2. **Explicit Turn Direction:** Choose `SHORTEST`, `CW`, or `CCW` to control rotation direction.
-  3. **Soft vs. Hard Gates:** `SOFT` permits passage without heading readiness; `HARD` brakes to a hold until measured readiness. Both respect shared motion limits.
-  4. **Shared Wheel Budget:** `RotationBudgetEstimator` reserves per-node rotational wheel-speed and traction budgets ($v_{max, eff, k}, a_{fric, eff, k}$) ahead of speed profiling, while `HeadingPlanner` bounds current-tick rotation without starving `SOFT` translation.
+  3. **Heading at passage:** A through point can set its own angular tolerance. Points with this tolerance use the arrival planning in §2.2.
+  4. **Soft vs. Hard Gates:** `SOFT` permits passage if measured heading misses. `HARD` brakes to a hold until measured readiness.
+  5. **Shared Wheel Budget:** Translation and rotation share wheel speed and traction. Check the combined motion when planning and when sending commands.
 
 ---
 
@@ -41,7 +42,7 @@ public record HeadingKeyframe(
     HeadingTarget target,       // Target orientation rule: fixed, faceTravel, facePoint, hold
     TurnDirection direction,    // Rotation direction constraint: SHORTEST, CW, CCW
     GatePolicy gate,            // Impact on translational speed: SOFT vs HARD
-    Rotation2d tolerance,       // Arrival angular tolerance (e.g. ±2.5 deg)
+    Rotation2d tolerance,       // Angular tolerance for this keyframe (e.g. ±2.5 deg)
     double angularSpeedTolerance, // rad/s
     double dwellSeconds
 ) {}
@@ -60,7 +61,9 @@ public record HeadingKeyframe(
 
 #### Heading Target Modes
 
-1. **Fixed Angle (`Goal.faceDegrees(...)` or `Goal.face(Rotation2d)`):** Target an absolute field heading (0° along field +X, positive angles counterclockwise), transformed for the active alliance. The target changes at activation with $\theta^{*\prime}(s) = 0$; the chassis command ramps under §3.2. Soft targets do not hold translation for heading readiness. Use segment angular speed and acceleration ceilings to pace turns that should be gentler than the robot maximum.
+1. **Fixed Angle (`Goal.faceDegrees(...)` or `Goal.face(Rotation2d)`):** Target an absolute field heading (0° along field +X, positive angles counterclockwise), transformed for the active alliance. An explicit through-point tolerance uses §2.2 to plan the turn.
+
+   For other fixed headings, the target changes at activation and the chassis command ramps under §3.2.
 2. **Face Travel (`faceTravel()`):** Continuously align the chassis with the velocity vector tangent, with spatial derivative $\theta^{*\prime}(s) = 0$ on straight lines and $\theta^{*\prime}(s) = \sigma_{turn,k}/r_k$ on fillet arcs:
 
    ```math
@@ -85,6 +88,35 @@ public record HeadingKeyframe(
 - `CCW`: Choose the counter-clockwise target branch.
 
 Example: rotating from $0^\circ$ to $175^\circ$ with `CCW` sweeps the intake toward balls on the right.
+
+### 2.2 Angular Tolerance at Through Points
+
+- A fixed-heading through point can set an angular tolerance independently of its position tolerance. A point authored at `-40° ± 8°` accepts headings from `-48°` to `-32°` on the chosen turn branch.
+- Use `.through(pose, positionToleranceMeters, headingToleranceDegrees)` for a pose through point. Use `HeadingPlan.tolerance(angle)` when configuring a shifted heading anchor.
+- Through points without an explicit angular tolerance keep their current heading behavior, and translation-only points add no heading target.
+- At the normal through-point passage, plan for position and heading to be inside their tolerances at the same time. Heading may enter its band earlier as long as it is still inside at passage.
+- With `.before(d)` or `.after(d)`, meet the angular tolerance at the shifted path anchor. Position is still checked at the through point, and the offset sets the heading deadline in meters along the path.
+- Look ahead across multiple points to choose where turns start, where they cross each angular band, and how much angular velocity carries through. Respect the turn direction, angular speed and acceleration limits, and any required clearance throughout the maneuver.
+
+#### Plan translation and rotation on the same schedule
+
+1. Fit a continuous heading curve to arc length on the existing XY path. Use room inside the heading bands to distribute the turn and carry angular velocity through adjacent points.
+2. At each path sample, a translation speed \(v\) implies yaw rate \(\theta'v\). Each wheel's velocity is the vector sum of tangent travel and its rotation about the center. Use the most restrictive wheel or yaw limit as the local speed ceiling.
+3. During the forward and backward speed passes, constrain yaw acceleration \(\theta''v^2 + \theta'a\) and the combined yaw and translation traction. A close turn lowers the speed envelope where needed, with braking propagated upstream. A speed setting is an upper bound.
+4. Track heading against measured path progress so a change in translation timing does not shift the heading at passage. Record measured error at the anchor. A `SOFT` miss reports `HEADING_TOLERANCE_MISS`; hard gates retain their existing behavior.
+
+#### Scenarios
+
+- **Turn fits at full pace.** The robot can reach the angular band by starting the turn earlier and carrying angular velocity through the point. Translation keeps its original speed profile.
+- **Heading needed before the bump.** With `.before(0.25)`, the robot reaches the angular band 25 cm before the waypoint along the path. Any clearance constraint through the approach still applies.
+- **Turn needs more time.** Trench clearance limits how early the robot can turn, so the planner slows the approach enough to meet the heading deadline.
+
+#### Non-goals
+
+- Circular fillets in the heading curve or a prescribed curve shape.
+- Exact simultaneous first entry into both tolerance bands.
+- Changes to XY path geometry, stop settling, or the existing hard-gate policy.
+- A guarantee of the globally fastest path. The planner searches a bounded set of heading profiles on the existing route.
 
 ---
 
@@ -122,7 +154,7 @@ d=\mathrm{angleModulus}(\theta^*_{raw,0}-\theta_{ref})\in[-\pi,\pi)
    \theta^*_{unwrapped,n} = \theta^*_{unwrapped,n-1} + \mathrm{angleModulus}\left(\theta^*_{raw,n} - \theta^*_{unwrapped,n-1}\right)
    ```
 
-Direction chooses the planned branch; bounded arrest and small overshoot corrections may require reversal.
+Direction chooses the planned branch. Braking and small overshoot corrections may require reversal.
 
 ### 3.2 Rotational Command Formulation & Reference State Evolution
 
@@ -167,7 +199,7 @@ Direction chooses the planned branch; bounded arrest and small overshoot correct
 
 ## 4. Translation-Rotation Coupling: Hard vs. Soft Gates
 
-- **Soft Gate (`GatePolicy.SOFT`):** Heading readiness does not gate passage. Shared wheel/traction limits can still slow translation.
+- **Soft Gate (`GatePolicy.SOFT`):** A measured heading miss allows passage. The planner still budgets for explicit angular tolerances and shared wheel and traction limits.
 
 - **Hard Gate (`GatePolicy.HARD`):** Passage requires measured angle and angular speed within tolerance for the declared dwell. Mechanism readiness remains the caller's responsibility.
 

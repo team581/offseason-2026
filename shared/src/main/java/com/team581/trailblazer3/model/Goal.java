@@ -221,6 +221,16 @@ public record Goal(
         pose, passType, meters, passSpeed, maxOverrunMeters, finishTolerance, marker, heading);
   }
 
+  /** Sets an angular passage tolerance on a fixed-heading through point. */
+  public Goal headingTolerance(Rotation2d tolerance) {
+    checkArgument(
+        passType == PassType.THROUGH
+            && heading != null
+            && heading.target() instanceof HeadingPlan.Target.Fixed,
+        "Angular passage tolerance requires a fixed-heading through point");
+    return heading(heading.tolerance(tolerance));
+  }
+
   /** Returns a copy with an event marker that the follower records when the goal passes. */
   public Goal mark(Enum<?> event) {
     return new Goal(

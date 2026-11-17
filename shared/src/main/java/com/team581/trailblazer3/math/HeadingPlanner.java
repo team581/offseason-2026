@@ -1,6 +1,7 @@
 package com.team581.trailblazer3.math;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 public final class HeadingPlanner {
@@ -83,6 +84,41 @@ public final class HeadingPlanner {
         translationSpeed,
         limits,
         dt);
+  }
+
+  /** Tracks a heading reference at measured path progress, with drive response compensation. */
+  public static Result track(
+      HeadingSchedule schedule,
+      double progress,
+      double measuredSpeed,
+      double previousSpeed,
+      Pose2d measuredPose,
+      double measuredOmega,
+      double previousOmega,
+      DrivetrainLimits limits,
+      double dt) {
+    double speed = Math.max(0, measuredSpeed);
+    var yaw = schedule.sample(progress);
+    double rate = yaw.slope() * speed;
+    double acceleration =
+        MathUtil.clamp(
+            (previousSpeed - speed) / Math.max(dt, limits.lag()),
+            -limits.braking(),
+            limits.acceleration(speed));
+    // Look ahead in the feedforward only. The feedback compares poses at the same progress.
+    double lead = 2 * limits.lag() + dt / 2;
+    double futureSpeed = Math.max(0, speed + lead * acceleration);
+    var future = schedule.sample(progress + lead * (speed + futureSpeed) / 2);
+    double demand =
+        future.slope() * futureSpeed
+            + 8 * MathUtil.angleModulus(yaw.angle() - measuredPose.getRotation().getRadians())
+            + 0.4 * (rate - measuredOmega);
+    double command =
+        MathUtil.clamp(
+            MathUtil.clamp(demand, -limits.maxOmega(), limits.maxOmega()),
+            previousOmega - limits.maxAlpha() * dt,
+            previousOmega + limits.maxAlpha() * dt);
+    return new Result(new State(yaw.angle(), rate), command, (command - previousOmega) / dt);
   }
 
   private HeadingPlanner() {}

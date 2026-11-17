@@ -10,7 +10,10 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import org.jspecify.annotations.Nullable;
 
 /** An immutable sequence of through goals followed by a stop or moving handoff. */
 public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
@@ -66,9 +69,32 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
    * finishThrough} when the segment should finish at a moving handoff.
    */
   public static final class Builder {
+    private record SourceCapture(
+        String className, BiConsumer<AutoSegment, List<Integer>> consumer) {}
+
+    private static final ThreadLocal<SourceCapture> SOURCE_CAPTURE = new ThreadLocal<>();
+
+    /** Collects authored goal lines during desktop preview without capturing robot builds. */
+    public static <T> T captureGoalSources(
+        String className, BiConsumer<AutoSegment, List<Integer>> consumer, Supplier<T> build) {
+      SourceCapture previous = SOURCE_CAPTURE.get();
+      SOURCE_CAPTURE.set(new SourceCapture(className, consumer));
+      try {
+        return build.get();
+      } finally {
+        if (previous == null) {
+          SOURCE_CAPTURE.remove();
+        } else {
+          SOURCE_CAPTURE.set(previous);
+        }
+      }
+    }
+
     private final String id;
     private MotionLimits limits = MotionLimits.robotMaximum();
     private final List<Goal> goals = new ArrayList<>();
+    private final @Nullable List<Integer> goalLines =
+        SOURCE_CAPTURE.get() == null ? null : new ArrayList<>();
 
     /** Starts a builder with a nonblank segment ID and the robot’s default motion limits. */
     public Builder(String id) {
@@ -83,12 +109,29 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      */
     public Builder addGoal(Goal goal) {
       goals.add(goal);
+      SourceCapture capture = goalLines != null ? SOURCE_CAPTURE.get() : null;
+      if (goalLines != null && capture != null) {
+        goalLines.add(
+            StackWalker.getInstance()
+                .walk(frames ->
+                    frames
+                        .dropWhile(frame -> frame.getClassName().equals(Builder.class.getName()))
+                        .findFirst()
+                        .filter(frame -> frame.getClassName().equals(capture.className()))
+                        .map(StackWalker.StackFrame::getLineNumber)
+                        .orElse(-1)));
+      }
       return this;
     }
 
     /** Snapshots the segment and validates that only its final goal is terminal. */
     public AutoSegment build() {
-      return new AutoSegment(id, limits, goals);
+      AutoSegment segment = new AutoSegment(id, limits, goals);
+      SourceCapture capture = goalLines != null ? SOURCE_CAPTURE.get() : null;
+      if (goalLines != null && capture != null && goalLines.size() == goals.size()) {
+        capture.consumer().accept(segment, List.copyOf(goalLines));
+      }
+      return segment;
     }
 
     /** Ends the segment at the given pose and handoff speed in meters per second. */
@@ -217,6 +260,16 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      */
     public Builder through(Pose2d pose, double blendRadiusMeters) {
       return addGoal(Goal.through(pose).within(blendRadiusMeters));
+    }
+
+    /**
+     * Adds a pose through point with position tolerance in meters and heading tolerance in degrees.
+     */
+    public Builder through(Pose2d pose, double blendRadiusMeters, double headingToleranceDegrees) {
+      return addGoal(
+          Goal.through(pose)
+              .within(blendRadiusMeters)
+              .headingTolerance(Rotation2d.fromDegrees(headingToleranceDegrees)));
     }
 
     /** Applies the configurator after setting the pose heading and given positional tolerance. */

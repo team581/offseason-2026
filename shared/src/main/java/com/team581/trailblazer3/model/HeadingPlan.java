@@ -15,7 +15,8 @@ public record HeadingPlan(
     GatePolicy gate,
     double toleranceRadians,
     double angularSpeedTolerance,
-    double dwellSeconds) {
+    double dwellSeconds,
+    boolean explicitTolerance) {
   /** Chooses how the follower unwraps a heading target when the keyframe becomes active. */
   public enum TurnDirection {
     SHORTEST,
@@ -67,6 +68,26 @@ public record HeadingPlan(
         "Invalid heading keyframe");
   }
 
+  /** Creates a keyframe with gate readiness thresholds and legacy heading scheduling. */
+  public HeadingPlan(
+      Target target,
+      double offsetMeters,
+      TurnDirection direction,
+      GatePolicy gate,
+      double toleranceRadians,
+      double angularSpeedTolerance,
+      double dwellSeconds) {
+    this(
+        target,
+        offsetMeters,
+        direction,
+        gate,
+        toleranceRadians,
+        angularSpeedTolerance,
+        dwellSeconds,
+        false);
+  }
+
   /** Creates a fixed field heading in degrees, counterclockwise from +X. */
   public static HeadingPlan faceDegrees(double degrees) {
     return to(Rotation2d.fromDegrees(degrees));
@@ -102,7 +123,14 @@ public record HeadingPlan(
   /** Places the heading anchor this many meters before the waypoint along the path. */
   public HeadingPlan before(double meters) {
     return new HeadingPlan(
-        target, -meters, direction, gate, toleranceRadians, angularSpeedTolerance, dwellSeconds);
+        target,
+        -meters,
+        direction,
+        gate,
+        toleranceRadians,
+        angularSpeedTolerance,
+        dwellSeconds,
+        explicitTolerance);
   }
 
   /** Places the heading anchor this many meters after the waypoint along the path. */
@@ -119,13 +147,21 @@ public record HeadingPlan(
         policy,
         toleranceRadians,
         angularSpeedTolerance,
-        dwellSeconds);
+        dwellSeconds,
+        explicitTolerance);
   }
 
   /** Returns a copy with the given turn direction. */
   public HeadingPlan direction(TurnDirection turn) {
     return new HeadingPlan(
-        target, offsetMeters, turn, gate, toleranceRadians, angularSpeedTolerance, dwellSeconds);
+        target,
+        offsetMeters,
+        turn,
+        gate,
+        toleranceRadians,
+        angularSpeedTolerance,
+        dwellSeconds,
+        explicitTolerance);
   }
 
   /** Requests the clockwise branch when acquiring the target. */
@@ -143,7 +179,10 @@ public record HeadingPlan(
     return gate(GatePolicy.HARD);
   }
 
-  /** Returns a copy with the given maximum heading error for gate readiness. */
+  /**
+   * Returns a copy with the given maximum heading error for through-point planning and gate
+   * readiness.
+   */
   public HeadingPlan tolerance(Rotation2d tolerance) {
     return new HeadingPlan(
         target,
@@ -152,7 +191,8 @@ public record HeadingPlan(
         gate,
         tolerance.getRadians(),
         angularSpeedTolerance,
-        dwellSeconds);
+        dwellSeconds,
+        true);
   }
 
   /** Transforms the target and turn direction for the supplied field symmetry. */
@@ -181,6 +221,7 @@ public record HeadingPlan(
         gate,
         toleranceRadians,
         angularSpeedTolerance,
-        dwellSeconds);
+        dwellSeconds,
+        explicitTolerance);
   }
 }
