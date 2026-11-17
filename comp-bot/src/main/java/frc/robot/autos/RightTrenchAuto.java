@@ -24,12 +24,14 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
 
   public enum State {
     INTAKE_CYCLE_1,
+    CROSS_BUMP_TO_SHOOT_1,
     SHOOT_1,
     INTAKE_CYCLE_2,
+    CROSS_BUMP_TO_SHOOT_2,
     SHOOT_2,
     INTAKE_CYCLE_3,
-    SHOOT_3,
-    DONE
+    CROSS_BUMP_TO_SHOOT_3,
+    SHOOT_3
   }
 
   private static final double RED_TRENCH_Y = FieldUtil.RED_OUTPOST_TRENCH_CENTER.getY();
@@ -38,7 +40,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   private static final Translation2d SHOOT_POINT =
       fromRed(RED_SHOOT_X, RED_BUMP_Y, 0).getTranslation();
 
-  private static final Pose2d BUMP_LANDING = fromRed(13.25, RED_BUMP_Y, 0);
+  private static final Pose2d BUMP_LANDING = fromRed(13.16, RED_BUMP_Y, 0);
 
   static final Pose2d START = fromRed(12.1, 7.6, -90);
 
@@ -114,30 +116,16 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
         alliance);
   }
 
-  private boolean preparingBump;
+  private final AutoSegment scoreSegment;
 
   /** Creates the three-cycle right-trench state machine for the given robot context. */
   public RightTrenchAuto(AutoContext context) {
     super(State.INTAKE_CYCLE_1, START, context, CYCLE_1_SEGMENT, CYCLE_2_SEGMENT, CYCLE_3_SEGMENT);
-  }
-
-  private void prepareForBump() {
-    if (!preparingBump) {
-      preparingBump = true;
-
-      var tiltDirection = fieldPose(BUMP_LANDING).getRotation().plus(Rotation2d.k180deg);
-      robot.localization.imu.bumpCrossingTracker.trackCrossing(tiltDirection);
-    }
-    AutoActions.prepareForBumpShot(robot, SHOOT_POINT);
-  }
-
-  private boolean readyToShoot() {
-    return atGoal() && !robot.localization.imu.bumpCrossingTracker.isOnBump();
+    scoreSegment = AutoActions.scoreSegment(CYCLE_1_SEGMENT);
   }
 
   @Override
   protected void afterTransition(State newState) {
-    preparingBump = false;
     switch (newState) {
       case INTAKE_CYCLE_1 -> {
         drive(CYCLE_1_SEGMENT);
@@ -151,14 +139,20 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
         drive(CYCLE_3_SEGMENT);
         AutoActions.startNextCycle(robot);
       }
-      case SHOOT_1, SHOOT_2, SHOOT_3 -> {
-        robot.localization.imu.bumpCrossingTracker.cancelCrossing();
-        stopDriving();
-        AutoActions.startScoring(robot);
+      case CROSS_BUMP_TO_SHOOT_1 -> {
+        robot.powerManager.idleRequest();
+        robot.cancelIntakeRequest();
+        AutoActions.requestBumpCrossing(this, BUMP_LANDING);
       }
-      case DONE -> {
-        stopDriving();
+      case CROSS_BUMP_TO_SHOOT_2 -> AutoActions.requestBumpCrossing(this, BUMP_LANDING);
+      case CROSS_BUMP_TO_SHOOT_3 -> {
         robot.idleRequest();
+        AutoActions.requestBumpCrossing(this, BUMP_LANDING);
+      }
+      case SHOOT_1 -> stopDriving();
+      case SHOOT_2, SHOOT_3 -> {
+        robot.cancelIntakeRequest();
+        stopDriving();
       }
     }
   }
@@ -166,13 +160,21 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   @Override
   protected State getNextState(State currentState) {
     return switch (currentState) {
-      case INTAKE_CYCLE_1 -> readyToShoot() ? State.SHOOT_1 : currentState;
+      case INTAKE_CYCLE_1 ->
+          passedMarker(Marker.PREPARE_BUMP) ? State.CROSS_BUMP_TO_SHOOT_1 : currentState;
+      case CROSS_BUMP_TO_SHOOT_1 ->
+          AutoActions.finishedBumpCrossing(robot) ? State.SHOOT_1 : currentState;
       case SHOOT_1 -> AutoActions.finishedShooting(this) ? State.INTAKE_CYCLE_2 : currentState;
-      case INTAKE_CYCLE_2 -> readyToShoot() ? State.SHOOT_2 : currentState;
+      case INTAKE_CYCLE_2 ->
+          passedMarker(Marker.PREPARE_BUMP) ? State.CROSS_BUMP_TO_SHOOT_2 : currentState;
+      case CROSS_BUMP_TO_SHOOT_2 ->
+          AutoActions.finishedBumpCrossing(robot) ? State.SHOOT_2 : currentState;
       case SHOOT_2 -> AutoActions.finishedShooting(this) ? State.INTAKE_CYCLE_3 : currentState;
-      case INTAKE_CYCLE_3 -> readyToShoot() ? State.SHOOT_3 : currentState;
-      case SHOOT_3 -> AutoActions.finishedShooting(this) ? State.DONE : currentState;
-      case DONE -> currentState;
+      case INTAKE_CYCLE_3 ->
+          passedMarker(Marker.PREPARE_BUMP) ? State.CROSS_BUMP_TO_SHOOT_3 : currentState;
+      case CROSS_BUMP_TO_SHOOT_3 ->
+          AutoActions.finishedBumpCrossing(robot) ? State.SHOOT_3 : currentState;
+      case SHOOT_3 -> currentState;
     };
   }
 
@@ -183,19 +185,15 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
         if (passedMarker(Marker.PRIORITIZE_INTAKE)) {
           robot.powerManager.prioritizeIntakeRequest();
         }
-        if (passedMarker(Marker.PREPARE_BUMP)) {
-          prepareForBump();
-        }
       }
       case INTAKE_CYCLE_2, INTAKE_CYCLE_3 -> {
-        if (passedMarker(Marker.PREPARE_BUMP)) {
-          prepareForBump();
-        } else if (passedMarker(Marker.START_INTAKE)) {
+        if (passedMarker(Marker.START_INTAKE)) {
           robot.intakeAutoRequest();
         }
       }
-      case SHOOT_1, SHOOT_2, SHOOT_3 -> robot.prepareScoreRequest();
-      case DONE -> {}
+      case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 ->
+          AutoActions.whileCrossingBump(this, BUMP_LANDING);
+      case SHOOT_1, SHOOT_2, SHOOT_3 -> AutoActions.scoreInPlace(this, scoreSegment);
     }
   }
 }

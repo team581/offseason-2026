@@ -166,7 +166,10 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     var pose = robotManager.localization.getPose();
     var measuredSpeeds = robotManager.swerve.getFieldRelativeSpeeds();
     TickResult result = trailblazer.update(Utils.getCurrentTimeSeconds(), pose, measuredSpeeds);
-    robotManager.swerve.setTrajectoryCommand(result.commandedFieldSpeeds());
+    var command =
+        AutoActions.applyBumpCrossingOverride(
+            result, robotManager.localization.imu.bumpCrossingTracker.getState(), autoAlliance);
+    robotManager.swerve.setTrajectoryCommand(command);
     telemetry.logActive(state, auto, result, firstTick);
   }
 }

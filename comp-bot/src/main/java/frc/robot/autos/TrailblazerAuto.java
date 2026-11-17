@@ -195,6 +195,6 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
       trackedState = getState();
       stateStartSeconds = now;
     }
-    return (now - stateStartSeconds) >= durationSeconds;
+    return (now - stateStartSeconds) > durationSeconds;
   }
 }
