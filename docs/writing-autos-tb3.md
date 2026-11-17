@@ -1,151 +1,92 @@
-# Writing autonomous routines with Trailblazer 3
+# Writing TB3 autos
 
-This guide explains how to write, register, and test a new autonomous routine in `comp-bot`.
+## Coordinates
 
-## Three golden rules
-
-1. **Always write coordinates in Blue alliance.**
-   Every point, pose, heading, path, and keepout obstacle is authored from the Blue driver station point of view (`x = 0` at the Blue alliance wall, `+X` pointing downfield, `0°` facing `+X` away from the Blue wall, `180°` facing the Blue wall). `TrailblazerAuto` and `CompAutoField` automatically flip everything for Red alliance.
-2. **Write each auto as a Team 581 `StateMachine<S>`.**
-   Define an `enum State` for your auto phases and implement standard `afterTransition`, `getNextState`, and `whileInState` methods on `TrailblazerAuto<State>`, matching subsystems and in-season autos.
-3. **You do not need ruler-perfect placement on the carpet.**
-   If you place the robot 15 cm off the tape mark, Trailblazer 3 replans live from the robot's actual pose as soon as auto starts. Before enabling, `Autos/AtExpectedStartPose` on the dashboard gives drivers a friendly sanity check without ever blocking autonomous.
-
-## Anatomy of a simple auto
-
-Here is a complete real auto (`comp-bot/src/main/java/frc/robot/autos/LeftTrenchAuto.java`):
+- Use `CompAutoField.fromBlue(x, y, degrees)` or `fromRed(x, y, degrees)` in any auto.
+- Both return a pose in the blue authoring frame. `TrailblazerAuto` converts it to the active alliance.
+- Distances are meters. Headings are counterclockwise from field +X.
+- `CompAutoField.pose(x, y, degrees)` remains a blue-frame shortcut.
+- For a position without heading, use `pose.getTranslation()`.
 
 ```java
-package frc.robot.autos;
+import static frc.robot.config.CompAutoField.fromRed;
 
-import com.team581.trailblazer3.model.AutoSegment;
-import com.team581.trailblazer3.runtime.Trailblazer;
-import frc.robot.config.CompAutoField;
-
-/** Drives straight out of the left (depot-side) trench toward the alliance wall. */
-final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> {
-  enum State {
-    LEAVE_TRENCH,
-    DONE
-  }
-
-  private static final double TRAVEL_METERS = 2.0;
-
-  static final AutoSegment LEAVE_TRENCH_SEGMENT =
-      Trailblazer.segment("leave-left-trench")
-          .stopAt(CompAutoField.offset(CompAutoField.LEFT_TRENCH_START, -TRAVEL_METERS, 0.0))
-          .build();
-
-  LeftTrenchAuto(AutoContext context) {
-    super(State.LEAVE_TRENCH, CompAutoField.LEFT_TRENCH_START, context, LEAVE_TRENCH_SEGMENT);
-  }
-
-  @Override
-  protected void afterTransition(State newState) {
-    switch (newState) {
-      case LEAVE_TRENCH -> {
-        drive(LEAVE_TRENCH_SEGMENT);
-        AutoActions.homeSubsystems(robot);
-      }
-      case DONE -> stopDriving();
-    }
-  }
-
-  @Override
-  protected State getNextState(State currentState) {
-    return currentState == State.LEAVE_TRENCH && atGoal() ? State.DONE : currentState;
-  }
-}
+static final Pose2d START = fromRed(12.1, 7.6, -90);
+static final AutoSegment SEGMENT =
+    Trailblazer.segment("example")
+        .through(fromRed(10.089, 7.0, -90), 0.25, 15)
+        .mark(Marker.START_INTAKE)
+        .stopAt(fromRed(9.0, 6.0, 0))
+        .build();
 ```
 
-How it works:
+## State machine
 
-- `super(State.LEAVE_TRENCH, CompAutoField.LEFT_TRENCH_START, context, LEAVE_TRENCH_SEGMENT)` sets the initial state, tells the dashboard where to place the robot on the carpet, and registers preview segments for `Autos/PreviewPath` and disabled wheel pre-alignment. If an auto has no fixed start pose (like `DoNothingAuto`), call `super(State.IDLE, context);`.
-- `drive(LEAVE_TRENCH_SEGMENT)` flips the Blue segment to the active alliance and activates Trailblazer with `CompAutoField.CLEARANCE` (use `driveWithoutClearance(segment)` to opt out).
-- `atGoal()`, `passedMarker(marker)`, `timeout(seconds)`, and `stopDriving()` work inside standard `getNextState`, `whileInState`, and `afterTransition` hooks.
-- `robot` (`RobotManager`) is guaranteed non-null on every `TrailblazerAuto`.
+- Extend `TrailblazerAuto<State>` and define an `enum State`.
+- Pass the initial state, start pose, context, and ordered preview segments to `super(...)`.
+- For an auto without a fixed start, use `super(initialState, context)`.
+- `collectInputs`: read sensors needed by the auto.
+- `getNextState`: choose transitions with `atGoal()`, `passedMarker(...)`, and `timeout(seconds)`.
+- `afterTransition`: start segments with `drive(segment)` and run one-time actions.
+- `whileInState`: send repeated mechanism requests.
+- `stopDriving()` cancels the follower.
+- Register the auto in `AutoSelection` with `MY_AUTO("My Auto", MyAuto::new)`.
 
-### Shared 2026 mechanism helpers (`AutoActions`)
+## Waypoints
 
-Reuse common 2026 mechanism requests and completion conditions from `frc.robot.autos.AutoActions` across autos instead of duplicating subsystem calls:
+| Call | Use |
+|---|---|
+| `through(x, y)` | Pass a position; default corner tolerance is 0.25 m |
+| `through(pose, meters)` | Pass near a pose with that corner tolerance |
+| `through(pose, meters, degrees)` | Also set heading passage tolerance |
+| `stopAt(pose)` | Stop and settle at a pose |
+| `stopAt(point, Goal::faceHub)` | Stop with the rear shooter facing the Hub |
+| `finishThrough(point, speed)` | Finish while moving at that speed in m/s |
+| `mark(Marker.NAME)` | Attach an event to the preceding waypoint |
 
-```java
-AutoActions.startFirstIntakeCycle(robot);
-AutoActions.prepareForBumpShot(robot, SHOOT_POINT);
-AutoActions.startScoring(robot);
-AutoActions.finishedShooting(this);
-AutoActions.startNextCycle(robot);
+- A pose sets heading. A translation sets position only.
+- A corner tolerance allows rounding; it does not move the authored waypoint.
+- A callback can set `faceDegrees`, `facePoint`, `faceTravel`, `clockwise`, or `counterClockwise`.
+- Use `g -> g.faceDegrees(90).hardGate()` to require heading readiness before passage.
+- Set segment caps with `maxSpeed`, `maxAcceleration`, `maxBraking`, or `withLimits`.
+- Keep bump preparation, tracker calls, and shooting transitions in the auto.
+
+## Tuning
+
+Edit `shared/src/main/java/com/team581/trailblazer3/config/TrailblazerConfig.java`.
+
+- `COMP`, `OFFSEASON`, `NEW_MEMBER`: traction in m/s², braking in m/s², response lag in seconds, heading P, and heading D.
+- `headingP`, `headingD` belong to each robot's `EmpiricalDriveCalibration`; tune tracking and damping there.
+- `HEADING_RESPONSE_MULTIPLIER`: lag-based gain used outside spatial heading tracking, capped by the robot's `headingP`.
+- `TRANSLATION_RESPONSE_MULTIPLIER`, `MIN_TRANSLATION_RESPONSE_SECONDS`: translation correction response; effective P is `1 / max(minimum, multiplier * (lag + period / 2))`.
+- Measure traction, braking, and lag on carpet first. If tracking errors remain, check heading gains and translation response there.
+- `deriveLimits(...)` in the config computes speed, acceleration, rotation, and steering limits from the robot specs.
+- See [parameter meanings and derivations](../shared/src/main/java/com/team581/trailblazer3/planning/07-empirical-calibration-routine.md).
+- Robot dimensions and motor data stay in `CompTrailblazer`; field keepouts live in `trailblazer3/config/Field2026`.
+
+## Compare changes
+
+```sh
+python3 tools/compare_tb3.py
+python3 tools/compare_tb3.py --auto LeftTrenchAuto --auto RightTrenchAuto
+python3 tools/compare_tb3.py --ref main --robot 581 --output /tmp/tb3-times.json
+./gradlew :shared:test :comp-bot:test --tests 'frc.robot.autos.*'
 ```
 
-## Building paths with `Trailblazer.segment()`
+- Requires Python 3.12+ and the project's Java 21 JDK.
+- Default: compare every `TrailblazerAuto` subclass, on both alliances, against `HEAD` for robot 581.
+- Repeat `--auto` or `--robot` to choose cases.
+- Uses the VS Code preview worker with seed 581, one JVM per revision, and cached branch builds.
+- Builds both revisions, so edits to shared follower/config code are included.
+- Shows drive time and its delta. Shooting waits and bump sensor timing are not simulated by the preview.
+- Also compares trajectories, paths, waypoints, markers, headings, and diagnostics; excludes source locations and build timings.
+- Exit code is nonzero for changed output or a failed preview. Check the bump/state machine tests too.
+- Cached branch copies are under `.gradle/trailblazer-compare`; delete that directory to clear them.
 
-Each path is a chain of waypoints starting from wherever the robot currently is:
+## On the robot
 
-### Waypoints
-
-- `.through(point)` / `.through(x, y)`: Drive through a point using the default `0.25 m` corner blend radius.
-- `.through(x, y, blendRadius)` / `.through(pose, blendRadius)`: Override how wide `PathBuilder` rounds that corner (`0.50`–`0.95 m` for fast neutral-zone sweeps). Trailblazer automatically clamps fillets against keepouts and ignores `within` on straight segments.
-- `.finishThrough(point, speedMps)`: Drive straight through a point (such as picking up game pieces on the fly) at `speedMps`.
-- `.stopAt(pose)` / `.stopAt(x, y, headingDeg)` / `.stopAt(x, y, Goal::faceHub)`: Come to a smooth stop at the target pose or point while facing a fixed angle or the alliance Hub.
-
-### Headings & turn gates
-
-Add a lambda `g -> g...` or method reference (such as `Goal::faceHub` or `Goal::counterClockwise`) as the last argument to any waypoint:
-
-- `g.faceHub()` (or `Goal::faceHub`): Aims the rear-mounted shooter (`FieldUtil.BLUE_HUB_TRANSLATION` with `180°` offset) at the active alliance's Hub (use `g.faceHub(offset)` for a different mechanism angle).
-- `g.faceDegrees(180)` / `g.face(rot)`: Turn smoothly toward that angle (SOFT gate — does not pause forward motion).
-- `g.clockwise()` / `g.counterClockwise()` (or `Goal::clockwise` / `Goal::counterClockwise`): Force turn direction around the circle (Trailblazer also automatically delays initial rotation until clear of nearby walls/keepouts).
-- `g.hardGate()` / `g.faceHardDegrees(90)`: Must finish turning within tolerance before passing this waypoint (HARD gate — great right before entering a tight slot).
-- `g.facePoint(CompAutoField.point(4.6, 4.0))`: Aim the front of the robot toward a field point.
-- `g.faceTravel()`: Rotate to point the front of the robot along the direction of travel.
-- `g.mark(MyMarker.FOO)`: Marks a waypoint so `passedMarker(MyMarker.FOO)` returns `true` in `getNextState` / `whileInState`.
-
-### Speed limits
-
-- `.maxSpeed(2.5)`: Simple speed cap in m/s with comp-bot default acceleration/braking.
-- `.withLimits(MotionLimits.maxSpeed(3.0).withMaxAcceleration(3.5).withMaxBraking(4.0))`: Full customization when you need gentler acceleration or braking.
-
-### Useful globals & `CompAutoField` helpers
-
-- `FieldUtil.BLUE_HUB_TRANSLATION` — Shared Blue-alliance Hub `Translation2d` (`HUB_POSE.bluePose().getTranslation()`)
-- `CompAutoField.point(x, y)` — `Translation2d` shortcut
-- `CompAutoField.pose(x, y, deg)` — `Pose2d` shortcut
-- `CompAutoField.offset(basePose, dx, dy)` — shifts a known landmark pose by `(dx, dy)` meters
-- `CompAutoField.offsetWithHeading(basePose, dx, dy, deg)` — shifts a pose and overrides heading
-- Keepout clearance: `CompAutoField.CLEARANCE` (full-field default)
-
-## Adding your auto to the dashboard
-
-Register one entry in `comp-bot/src/main/java/frc/robot/autos/AutoSelection.java`:
-
-```java
-MY_NEW_AUTO("My New Auto", MyNewAuto::new),
-```
-
-The VS Code preview uses full-field geometry for both alliances.
-
-Everything else (`SendableChooser`, telemetry `Autos/Step`, pose preview, Red/Blue flipping, disabled swerve launch wheel pre-alignment, and pre-match diagnostics) works automatically. Built-in empirical calibration autos (`TB3 Calibrate Lag`, `TB3 Calibrate Traction`, and `TB3 Calibrate Braking`) are also registered in `AutoSelection`.
-
-## Testing your auto
-
-### Run headless unit tests
-
-```powershell
-.\gradlew.bat :comp-bot:test
-```
-
-### Run interactive WPILib / AdvantageScope simulation
-
-```powershell
-.\gradlew.bat :comp-bot:simulateJava
-```
-
-Watch these DogLog / SmartDashboard keys while testing:
-
-- `Autos/SelectedAutoName` — Currently chosen auto
-- `Autos/Step` — Current `State` name (`IDLE` before enable, `DONE` when finished)
-- `Autos/AtExpectedStartPose` — `true` if the robot sits within `0.25 m` and `15°` of the starting mark
-- `Autos/PreviewPath` & `Trailblazer3/PlannedPath` — Stitched preview path and active segment polyline
-- `Trailblazer3/TargetPose` — Live moving target pose
-- `Trailblazer3/Status` & `Trailblazer3/Diagnostic` — Live follower state and any flagged issue (`RELATCH`, `KEEPOUT_VIOLATION`, `HARD_GATE_BYPASSED`, etc.)
-- `ResetPoseForAuto` (`DSOptions`) — Seeds pose in sim / pre-match auto before the first enable (never resets pose back after auto finishes)
+- The follower starts from measured pose. The expected start pose is advisory.
+- `Autos/AtExpectedStartPose`: within 0.25 m and 15° of the expected start.
+- `Autos/Step`: auto state; `Trailblazer3/Status` and `Diagnostic`: follower state and issues.
+- `Autos/PreviewPath`, `Trailblazer3/PlannedPath`, `Trailblazer3/TargetPose`: route and target.
+- Use `:comp-bot:simulateJava` for interactive simulation.
