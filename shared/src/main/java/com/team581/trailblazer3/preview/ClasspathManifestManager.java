@@ -1,20 +1,23 @@
 package com.team581.trailblazer3.preview;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -73,20 +76,21 @@ public final class ClasspathManifestManager {
           filesToHash.add(p);
         }
       }
-      for (String sub : List.of(".", "shared", "comp-bot", "offseason-bot", "new-member-bot")) {
+      for (String sub :
+          ImmutableList.of(".", "shared", "comp-bot", "offseason-bot", "new-member-bot")) {
         Path vendorDir = workspaceRoot.resolve(sub).resolve("vendordeps");
         if (Files.isDirectory(vendorDir)) {
           try (Stream<Path> stream = Files.list(vendorDir)) {
             stream
                 .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".json"))
-                .sorted(Comparator.comparing(Path::toString))
+                .sorted(comparing(Path::toString))
                 .forEach(filesToHash::add);
           }
         }
       }
       for (Path file : filesToHash) {
         String relPath = workspaceRoot.relativize(file).toString().replace('\\', '/');
-        digest.update(relPath.getBytes(StandardCharsets.UTF_8));
+        digest.update(relPath.getBytes(UTF_8));
         digest.update((byte) 0);
         digest.update(Files.readAllBytes(file));
         digest.update((byte) 0);
@@ -154,7 +158,7 @@ public final class ClasspathManifestManager {
   /** Invokes {@code ./gradlew writePreviewClasspathManifest} in {@code workspaceRoot}. */
   public static void refreshViaGradle(Path workspaceRoot) {
     requireNonNull(workspaceRoot);
-    boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("win");
+    boolean isWindows = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
     Path wrapper = workspaceRoot.resolve(isWindows ? "gradlew.bat" : "gradlew");
     List<String> command =
         isWindows
@@ -165,7 +169,7 @@ public final class ClasspathManifestManager {
                 "writePreviewClasspathManifest",
                 "--console=plain",
                 "-q")
-            : List.of(
+            : ImmutableList.of(
                 wrapper.toAbsolutePath().toString(),
                 "writePreviewClasspathManifest",
                 "--console=plain",
@@ -176,12 +180,10 @@ public final class ClasspathManifestManager {
               .directory(workspaceRoot.toFile())
               .redirectErrorStream(true)
               .start();
-      String output = new String(proc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      String output = new String(proc.getInputStream().readAllBytes(), UTF_8);
       int code = proc.waitFor();
-      if (code != 0) {
-        throw new IllegalStateException(
-            "Gradle classpath manifest refresh failed (exit " + code + "): " + output);
-      }
+      checkState(
+          code == 0, "Gradle classpath manifest refresh failed (exit " + code + "): " + output);
     } catch (IOException | InterruptedException e) {
       if (e instanceof InterruptedException) {
         Thread.currentThread().interrupt();

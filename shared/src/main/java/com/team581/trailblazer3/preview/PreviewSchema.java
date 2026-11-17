@@ -312,14 +312,13 @@ public final class PreviewSchema {
     requireNonNull(json);
     try {
       JsonNode root = MAPPER.readTree(json);
-      if (root == null || !root.isObject() || !root.has("schemaVersion")) {
-        throw new IllegalArgumentException("Missing schemaVersion in preview payload");
-      }
+      checkArgument(
+          root != null && root.isObject() && root.has("schemaVersion"),
+          "Missing schemaVersion in preview payload");
       int version = root.get("schemaVersion").asInt(-1);
-      if (version != SCHEMA_VERSION) {
-        throw new IllegalArgumentException(
-            "Unsupported schemaVersion " + version + " (expected " + SCHEMA_VERSION + ")");
-      }
+      checkArgument(
+          version == SCHEMA_VERSION,
+          "Unsupported schemaVersion " + version + " (expected " + SCHEMA_VERSION + ")");
       return MAPPER.treeToValue(root, PreviewResult.class);
     } catch (IOException e) {
       throw new IllegalArgumentException("Invalid preview JSON payload", e);

@@ -1,10 +1,15 @@
 package com.team581.trailblazer3.preview;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.preview.ClasspathManifestManager.ClasspathManifest;
@@ -28,13 +33,11 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -157,7 +160,7 @@ public final class WarmPreviewWorker {
     if (compiler == null) {
       String errJson =
           MAPPER.writeValueAsString(
-              Map.of(
+              ImmutableMap.of(
                   "type",
                   "error",
                   "code",
@@ -293,7 +296,7 @@ public final class WarmPreviewWorker {
     synchronized (protocolOut) {
       protocolOut.println(
           MAPPER.writeValueAsString(
-              Map.of(
+              ImmutableMap.of(
                   "type",
                   "ready",
                   "javaVersion",
@@ -311,8 +314,7 @@ public final class WarmPreviewWorker {
         });
     Future<?> activeFuture = null;
 
-    try (BufferedReader reader =
-        new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
         String trimmed = line.trim();
@@ -330,7 +332,8 @@ public final class WarmPreviewWorker {
         if ("shutdown".equals(method) || "exit".equals(method)) {
           synchronized (protocolOut) {
             protocolOut.println(
-                MAPPER.writeValueAsString(Map.of("id", id, "type", "shutdown", "ok", true)));
+                MAPPER.writeValueAsString(
+                    ImmutableMap.of("id", id, "type", "shutdown", "ok", true)));
             protocolOut.flush();
           }
           break;
@@ -338,7 +341,7 @@ public final class WarmPreviewWorker {
         if ("ping".equals(method)) {
           synchronized (protocolOut) {
             protocolOut.println(
-                MAPPER.writeValueAsString(Map.of("id", id, "type", "pong", "ok", true)));
+                MAPPER.writeValueAsString(ImmutableMap.of("id", id, "type", "pong", "ok", true)));
             protocolOut.flush();
           }
           continue;
@@ -380,8 +383,8 @@ public final class WarmPreviewWorker {
                           false,
                           true,
                           "INTERNAL_ERROR",
-                          String.valueOf(t.getMessage()),
-                          List.of(),
+                          t.getMessage(),
+                          ImmutableList.of(),
                           null,
                           null);
                   synchronized (protocolOut) {
@@ -418,7 +421,7 @@ public final class WarmPreviewWorker {
     var warmPath =
         PathBuilder.build(
             new Translation2d(1.0, 1.0),
-            List.of(Goal.stop(new Pose2d(2.0, 1.0, Rotation2d.kZero))),
+            ImmutableList.of(Goal.stop(new Pose2d(2.0, 1.0, Rotation2d.kZero))),
             profile.calibration().maxBrakingDeceleration(),
             clearance);
     warmPath.sample(0.5);
@@ -434,7 +437,7 @@ public final class WarmPreviewWorker {
 
   private static List<String> defaultSourceRoots(Path workspaceRoot) {
     List<String> roots = new ArrayList<>();
-    for (String sub : List.of("comp-bot", "shared", "offseason-bot", "new-member-bot")) {
+    for (String sub : ImmutableList.of("comp-bot", "shared", "offseason-bot", "new-member-bot")) {
       Path src = workspaceRoot.resolve(sub).resolve("src/main/java");
       if (Files.isDirectory(src)) {
         roots.add(src.toAbsolutePath().toString());
@@ -448,7 +451,7 @@ public final class WarmPreviewWorker {
       return;
     }
     try (Stream<Path> walk = Files.walk(dir)) {
-      walk.sorted(Comparator.reverseOrder())
+      walk.sorted(reverseOrder())
           .forEach(p -> {
             try {
               Files.deleteIfExists(p);
@@ -464,7 +467,7 @@ public final class WarmPreviewWorker {
   private static String sha256Hex(String input) {
     try {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
-      return HexFormat.of().formatHex(md.digest(input.getBytes(StandardCharsets.UTF_8)));
+      return HexFormat.of().formatHex(md.digest(input.getBytes(UTF_8)));
     } catch (NoSuchAlgorithmException e) {
       return Integer.toHexString(input.hashCode());
     }
@@ -497,10 +500,9 @@ public final class WarmPreviewWorker {
   public WarmPreviewWorker(Path workspaceRoot) {
     this.workspaceRoot = requireNonNull(workspaceRoot).toAbsolutePath().normalize();
     this.compiler = resolveSystemCompiler();
-    if (this.compiler == null) {
-      throw new IllegalStateException(
-          "Java 21 JDK with javac is required (ToolProvider.getSystemJavaCompiler() returned null)");
-    }
+    checkState(
+        this.compiler != null,
+        "Java 21 JDK with javac is required (ToolProvider.getSystemJavaCompiler() returned null)");
   }
 
   /** Executes a preview request (compiling overlay if source is provided) and returns response. */
@@ -530,7 +532,7 @@ public final class WarmPreviewWorker {
       }
       if (sourceText.isEmpty() && Files.isRegularFile(sourcePath)) {
         try {
-          sourceText = Files.readString(sourcePath, StandardCharsets.UTF_8);
+          sourceText = Files.readString(sourcePath);
         } catch (IOException e) {
           return new WorkerResponse(
               requestId,
@@ -539,7 +541,7 @@ public final class WarmPreviewWorker {
               true,
               "SOURCE_READ_ERROR",
               "Failed to read source file: " + e.getMessage(),
-              List.of(
+              ImmutableList.of(
                   new DiagnosticEntry(
                       "ERROR",
                       "SOURCE_READ_ERROR",
@@ -569,7 +571,7 @@ public final class WarmPreviewWorker {
           true,
           "MISSING_AUTO_CLASS",
           "Could not determine auto class name",
-          List.of(
+          ImmutableList.of(
               new DiagnosticEntry(
                   "ERROR", "MISSING_AUTO_CLASS", "MISSING_AUTO_CLASS", null, null, null, null)),
           null,
@@ -580,7 +582,7 @@ public final class WarmPreviewWorker {
       sourcePath = findSourceFileForClass(resolvedClassName).orElse(null);
       if (sourcePath != null && Files.isRegularFile(sourcePath)) {
         try {
-          sourceText = Files.readString(sourcePath, StandardCharsets.UTF_8);
+          sourceText = Files.readString(sourcePath);
         } catch (IOException ignored) {
           // Proceed without source text
         }
@@ -667,7 +669,8 @@ public final class WarmPreviewWorker {
           true,
           "RUNTIME_ERROR",
           msg,
-          List.of(new DiagnosticEntry("ERROR", "RUNTIME_ERROR", msg, null, null, null, null)),
+          ImmutableList.of(
+              new DiagnosticEntry("ERROR", "RUNTIME_ERROR", msg, null, null, null, null)),
           null,
           null);
     } finally {
@@ -689,7 +692,7 @@ public final class WarmPreviewWorker {
       throws IOException {
     DiagnosticCollector<JavaFileObject> collector = new DiagnosticCollector<>();
     try (StandardJavaFileManager fileManager =
-        compiler.getStandardFileManager(collector, Locale.ROOT, StandardCharsets.UTF_8)) {
+        compiler.getStandardFileManager(collector, Locale.ROOT, UTF_8)) {
       URI uri =
           sourcePath != null
               ? sourcePath.toUri()
@@ -719,10 +722,11 @@ public final class WarmPreviewWorker {
 
       StringWriter compilerOut = new StringWriter();
       JavaCompiler.CompilationTask task =
-          compiler.getTask(compilerOut, fileManager, collector, options, null, List.of(fileObject));
+          compiler.getTask(
+              compilerOut, fileManager, collector, options, null, ImmutableList.of(fileObject));
       boolean success = Boolean.TRUE.equals(task.call());
       if (success) {
-        return List.of();
+        return ImmutableList.of();
       }
 
       List<DiagnosticEntry> errors = new ArrayList<>();

@@ -53,7 +53,9 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
@@ -154,7 +156,7 @@ public final class PreviewRunner {
     var blueRightBarrier = rectangle(blueNear, rightBarrierLowY, blueFar, rightBarrierHighY);
     var blueLeftBarrier = rectangle(blueNear, leftBarrierLowY, blueFar, leftBarrierHighY);
     var blueHub =
-        List.of(
+        ImmutableList.of(
             new Translation2d(
                 blueObstacleX - HUB_HALF_WIDTH_METERS, hubCenterY - HUB_HALF_WIDTH_METERS),
             new Translation2d(
@@ -202,7 +204,7 @@ public final class PreviewRunner {
                 Units.inchesToMeters(2.0),
                 7.846153846153847,
                 11.314285714285717,
-                List.of(
+                ImmutableList.of(
                     new Translation2d(modX, modY),
                     new Translation2d(modX, -modY),
                     new Translation2d(-modX, modY),
@@ -232,7 +234,7 @@ public final class PreviewRunner {
                 Units.inchesToMeters(2.0),
                 7.673684210526316,
                 12.1,
-                List.of(
+                ImmutableList.of(
                     new Translation2d(modX, modY),
                     new Translation2d(modX, -modY),
                     new Translation2d(-modX, modY),
@@ -262,7 +264,7 @@ public final class PreviewRunner {
                 Units.inchesToMeters(2.0),
                 7.673684210526316,
                 12.1,
-                List.of(
+                ImmutableList.of(
                     new Translation2d(modX, modY),
                     new Translation2d(modX, -modY),
                     new Translation2d(-modX, modY),
@@ -324,7 +326,7 @@ public final class PreviewRunner {
     var waypointSpans = SourceSpanAnalyzer.waypointSpans(request.sourceText());
 
     // Resolve scope and activeSegmentId
-    String requestedScope = request.scope().toUpperCase();
+    String requestedScope = request.scope().toUpperCase(Locale.ROOT);
     String targetSegmentId = request.segmentId();
     if (!"WHOLE_AUTO".equals(requestedScope)) {
       if ((targetSegmentId == null || targetSegmentId.isBlank()) && request.cursorLine() > 0) {
@@ -420,9 +422,9 @@ public final class PreviewRunner {
       List<Integer> wpLines =
           captured != null
               ? captured
-              : waypointLinesByField.getOrDefault(namedSeg.fieldName(), List.of());
+              : waypointLinesByField.getOrDefault(namedSeg.fieldName(), ImmutableList.of());
       if (wpLines.size() != goals.size()) {
-        wpLines = List.of();
+        wpLines = ImmutableList.of();
       }
       Integer segDeclLine =
           segIdx < segmentDescriptors.size()
@@ -616,7 +618,7 @@ public final class PreviewRunner {
               new DiagnosticEntry(
                   sev,
                   diagCode,
-                  diagCode + " @ " + String.format("%.2fs", simTime),
+                  diagCode + " @ " + ("%.2fs").formatted(simTime),
                   segId,
                   null,
                   PreviewSchema.round6(simTime),
@@ -627,7 +629,7 @@ public final class PreviewRunner {
               new DiagnosticEntry(
                   "WARNING",
                   "INFEASIBLE",
-                  "INFEASIBLE @ " + String.format("%.2fs", simTime),
+                  "INFEASIBLE @ " + ("%.2fs").formatted(simTime),
                   segId,
                   null,
                   PreviewSchema.round6(simTime),
@@ -915,7 +917,7 @@ public final class PreviewRunner {
             staticSegmentsByField.put(field.getName(), seg);
           }
         } else if (Pose2d.class.isAssignableFrom(field.getType()) && discoveredStartPose == null) {
-          String name = field.getName().toUpperCase();
+          String name = field.getName().toUpperCase(Locale.ROOT);
           if (name.contains("START")) {
             Object val = field.get(null);
             if (val instanceof Pose2d pose) {
@@ -967,7 +969,8 @@ public final class PreviewRunner {
               String matchedFieldName = null;
               for (Map.Entry<String, AutoSegment> entry : staticSegmentsByField.entrySet()) {
                 if (!matchedFields.contains(entry.getKey())
-                    && (entry.getValue() == seg || entry.getValue().id().equals(seg.id()))) {
+                    && (Objects.equals(entry.getValue(), seg)
+                        || entry.getValue().id().equals(seg.id()))) {
                   matchedFieldName = entry.getKey();
                   matchedFields.add(matchedFieldName);
                   break;
@@ -1046,7 +1049,7 @@ public final class PreviewRunner {
 
   private static List<Translation2d> rectangle(
       double left, double bottom, double right, double top) {
-    return List.of(
+    return ImmutableList.of(
         new Translation2d(left, bottom),
         new Translation2d(right, bottom),
         new Translation2d(right, top),

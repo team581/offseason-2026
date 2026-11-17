@@ -2,6 +2,7 @@ package com.team581.trailblazer3.preview;
 
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Splitter;
 import com.team581.trailblazer3.preview.PreviewSchema.SegmentDescriptor;
 import com.team581.trailblazer3.preview.PreviewSchema.SourceSpan;
 import java.util.ArrayList;
@@ -393,7 +394,7 @@ public final class SourceSpanAnalyzer {
       }
       String rawStates = m.group(1);
       List<String> stateNames = new ArrayList<>();
-      for (String part : rawStates.split(",")) {
+      for (String part : Splitter.on(',').split(rawStates)) {
         String trimmed = part.trim();
         int dot = trimmed.lastIndexOf('.');
         if (dot >= 0) {

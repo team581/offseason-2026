@@ -1,14 +1,13 @@
 package com.team581.trailblazer3.preview;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.preview.ClasspathManifestManager.ClasspathManifest;
 import com.team581.trailblazer3.preview.PreviewRunner.PreviewRequest;
@@ -23,7 +22,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -82,25 +80,25 @@ final class PreviewTest {
       throws IOException {
     Path buildGradle = tempDir.resolve("build.gradle");
     Path settingsGradle = tempDir.resolve("settings.gradle");
-    Files.writeString(buildGradle, "// v1\n", StandardCharsets.UTF_8);
-    Files.writeString(settingsGradle, "rootProject.name = 'test'\n", StandardCharsets.UTF_8);
+    Files.writeString(buildGradle, "// v1\n", UTF_8);
+    Files.writeString(settingsGradle, "rootProject.name = 'test'\n", UTF_8);
     Path dummyClasses = tempDir.resolve("classes");
     Files.createDirectories(dummyClasses);
 
     ClasspathManifest written =
         ClasspathManifestManager.writeManifest(
-            tempDir, List.of(dummyClasses.toString()), "", List.of());
-    assertNotNull(written.buildFilesHash());
+            tempDir, ImmutableList.of(dummyClasses.toString()), "", ImmutableList.of());
+    assertThat(written.buildFilesHash()).isNotNull();
 
     long t0 = System.nanoTime();
     Optional<ClasspathManifest> loaded = ClasspathManifestManager.loadIfValid(tempDir);
     double loadMs = (System.nanoTime() - t0) / 1_000_000.0;
-    assertTrue(loaded.isPresent());
+    assertThat(loaded.isPresent()).isTrue();
     assertThat(loadMs).isLessThan(100.0);
 
     // Modifying build.gradle invalidates the cached manifest
-    Files.writeString(buildGradle, "// v2 modified\n", StandardCharsets.UTF_8);
-    assertTrue(ClasspathManifestManager.loadIfValid(tempDir).isEmpty());
+    Files.writeString(buildGradle, "// v2 modified\n", UTF_8);
+    assertThat(ClasspathManifestManager.loadIfValid(tempDir).isEmpty()).isTrue();
   }
 
   @Test
@@ -147,7 +145,7 @@ final class PreviewTest {
     assertEquals("cycle-1", decoded.activeSegmentId());
     assertEquals("Blue", decoded.alliance());
     assertEquals("581", decoded.robotConfigId());
-    assertTrue(decoded.totalDurationSeconds() > 0.1);
+    assertThat(decoded.totalDurationSeconds() > 0.1).isTrue();
     assertEquals(22.0 * 0.0254, decoded.robotFootprint().wheelBaseMeters(), 1e-5);
     assertEquals(23.5 * 0.0254, decoded.robotFootprint().trackWidthMeters(), 1e-5);
     assertEquals(28.0 * 0.0254, decoded.robotFootprint().bumperLengthMeters(), 1e-5);
@@ -188,7 +186,7 @@ final class PreviewTest {
     assertThat(elapsedMs).isLessThan(50.0);
 
     // Whole auto runs both segments in sequence across all 3 robot configs
-    for (String robotId : List.of("581", "9991", "9981")) {
+    for (String robotId : ImmutableList.of("581", "9991", "9981")) {
       var wholeReq =
           new PreviewRequest(
               SampleTwoCycleAuto.class.getName(),
@@ -247,7 +245,7 @@ final class PreviewTest {
     List<SegmentDescriptor> descriptors =
         SourceSpanAnalyzer.analyze(
             source,
-            List.of(
+            ImmutableList.of(
                 Map.entry("CYCLE_1_SEGMENT", "cycle-1"), Map.entry("CYCLE_2_SEGMENT", "cycle-2")));
     assertEquals(2, descriptors.size());
 
@@ -273,13 +271,13 @@ final class PreviewTest {
   @Test
   void warmWorkerOverlayCompilesReloadsEditedStaticSegmentAndHandlesCompileErrorsAndCancellation(
       @TempDir Path tempDir) throws Exception {
-    Files.writeString(tempDir.resolve("build.gradle"), "// test", StandardCharsets.UTF_8);
+    Files.writeString(tempDir.resolve("build.gradle"), "// test", UTF_8);
     String sysCp = System.getProperty("java.class.path", "");
     ClasspathManifestManager.writeManifest(
         tempDir,
         List.of(sysCp.split(java.util.regex.Pattern.quote(java.io.File.pathSeparator))),
         System.getProperty("java.library.path", ""),
-        List.of());
+        ImmutableList.of());
 
     WarmPreviewWorker worker = new WarmPreviewWorker(tempDir);
     String sourceV1 =
@@ -305,8 +303,8 @@ final class PreviewTest {
     paramsV1.put("robotConfigId", "581");
 
     WorkerResponse resp1 = worker.executeRequest("req-1", paramsV1, () -> {});
-    assertTrue(resp1.ok());
-    assertNotNull(resp1.result());
+    assertThat(resp1.ok()).isTrue();
+    assertThat(resp1.result()).isNotNull();
     assertEquals(3.0, resp1.result().waypoints().get(0).x(), 1e-4);
 
     // Edit static final AutoSegment stopAt coordinate from 3.0 to 4.25 and warm-refresh
@@ -320,8 +318,8 @@ final class PreviewTest {
     long warmStart = System.nanoTime();
     WorkerResponse resp2 = worker.executeRequest("req-2", paramsV2, () -> {});
     double warmMs = (System.nanoTime() - warmStart) / 1_000_000.0;
-    assertTrue(resp2.ok());
-    assertNotNull(resp2.result());
+    assertThat(resp2.ok()).isTrue();
+    assertThat(resp2.result()).isNotNull();
     assertEquals(4.25, resp2.result().waypoints().get(0).x(), 1e-4);
     assertThat(warmMs).isLessThan(1000.0);
 
@@ -330,30 +328,29 @@ final class PreviewTest {
     var paramsBroken = MAPPER.createObjectNode();
     paramsBroken.put("sourceContent", brokenSource);
     WorkerResponse respBroken = worker.executeRequest("req-3", paramsBroken, () -> {});
-    assertFalse(respBroken.ok());
-    assertTrue(respBroken.stale());
+    assertThat(respBroken.ok()).isFalse();
+    assertThat(respBroken.stale()).isTrue();
     assertEquals("COMPILE_ERROR", respBroken.errorCode());
     assertThat(respBroken.diagnostics()).isNotEmpty();
 
     // Superseded request cancellation
     worker.setLatestRequestId("req-5");
-    assertThrows(
-        CancellationException.class,
-        () ->
+    assertThatThrownBy(() ->
             worker.executeRequest(
                 "req-4",
                 paramsV2,
                 () -> {
                   throw new CancellationException("Superseded");
-                }));
+                }))
+        .isInstanceOf(CancellationException.class);
   }
 
   @Test
   void warmWorkerVerifiesCompilerAndReportsSimulatedJreFailure(@TempDir Path tempDir) {
-    assertNotNull(WarmPreviewWorker.resolveSystemCompiler());
+    assertThat(WarmPreviewWorker.resolveSystemCompiler()).isNotNull();
     System.setProperty("trailblazer.preview.simulateMissingCompiler", "true");
     try {
-      assertNull(WarmPreviewWorker.resolveSystemCompiler());
+      assertThat(WarmPreviewWorker.resolveSystemCompiler()).isNull();
       IllegalStateException ex =
           assertThrows(IllegalStateException.class, () -> new WarmPreviewWorker(tempDir));
       assertThat(ex.getMessage()).contains("Java 21 JDK with javac is required");
@@ -398,29 +395,29 @@ final class PreviewTest {
     // Waypoint 0: position-only through waypoint
     WaypointEntry wp0 = blue.waypoints().get(0);
     assertEquals(0.35, wp0.withinMeters(), 1e-6);
-    assertFalse(wp0.hasHeadingTarget());
-    assertNull(wp0.targetHeadingDegrees());
-    assertNull(wp0.headingToleranceDegrees());
+    assertThat(wp0.hasHeadingTarget()).isFalse();
+    assertThat(wp0.targetHeadingDegrees()).isNull();
+    assertThat(wp0.headingToleranceDegrees()).isNull();
 
     // Waypoint 1: through waypoint with within(0.30), heading -115 deg, and headingTolerance(25
     // deg)
     WaypointEntry wp1 = blue.waypoints().get(1);
     assertEquals(0.30, wp1.withinMeters(), 1e-6);
-    assertTrue(wp1.hasHeadingTarget());
-    assertNotNull(wp1.targetHeadingDegrees());
+    assertThat(wp1.hasHeadingTarget()).isTrue();
+    assertThat(wp1.targetHeadingDegrees()).isNotNull();
     assertEquals(-115.0, wp1.targetHeadingDegrees(), 1e-4);
-    assertNotNull(wp1.headingToleranceDegrees());
+    assertThat(wp1.headingToleranceDegrees()).isNotNull();
     assertEquals(25.0, wp1.headingToleranceDegrees(), 1e-4);
     assertEquals("INTAKE_READY", wp1.marker());
-    assertTrue(wp1.closestPassMeters() <= wp1.withinMeters() + 0.05);
+    assertThat(wp1.closestPassMeters() <= wp1.withinMeters() + 0.05).isTrue();
 
     // Alliance flip verification
     WaypointEntry redWp1 = red.waypoints().get(1);
     assertEquals(PreviewRunner.FIELD_2026.lengthMeters() - wp1.x(), redWp1.x(), 1e-4);
     assertEquals(PreviewRunner.FIELD_2026.widthMeters() - wp1.y(), redWp1.y(), 1e-4);
-    assertNotNull(redWp1.targetHeadingDegrees());
+    assertThat(redWp1.targetHeadingDegrees()).isNotNull();
     assertEquals(65.0, redWp1.targetHeadingDegrees(), 1e-4);
-    assertFalse(blue.keepouts().hardPolygons().isEmpty());
-    assertFalse(blue.keepouts().marginPolygons().isEmpty());
+    assertThat(blue.keepouts().hardPolygons().isEmpty()).isFalse();
+    assertThat(blue.keepouts().marginPolygons().isEmpty()).isFalse();
   }
 }

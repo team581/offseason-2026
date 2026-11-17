@@ -2,10 +2,9 @@ package frc.robot.autos;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.preview.PreviewRunner;
 import com.team581.trailblazer3.preview.PreviewRunner.PreviewRequest;
 import com.team581.trailblazer3.preview.PreviewSchema.PreviewResult;
@@ -14,7 +13,6 @@ import com.team581.trailblazer3.preview.WarmPreviewWorker.WorkerResponse;
 import edu.wpi.first.hal.HAL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -26,8 +24,7 @@ final class PreviewWorkerIntegrationTest {
     if (Files.isRegularFile(cwd.resolve("settings.gradle"))) {
       return cwd;
     }
-    if (cwd.getParent() != null
-        && Files.isRegularFile(cwd.getParent().resolve("settings.gradle"))) {
+    if (cwd.getParent() != null && Files.isRegularFile(cwd.resolveSibling("settings.gradle"))) {
       return cwd.getParent();
     }
     return cwd;
@@ -55,8 +52,8 @@ final class PreviewWorkerIntegrationTest {
     p1.put("alliance", "Blue");
     p1.put("robotConfigId", "581");
     WorkerResponse r1 = worker.executeRequest("cur-1", p1, () -> {});
-    assertTrue(r1.ok());
-    assertNotNull(r1.result());
+    assertThat(r1.ok()).isTrue();
+    assertThat(r1.result()).isNotNull();
     assertEquals("SEGMENT", r1.result().scope());
     assertEquals("right-trench-cycle-1", r1.result().activeSegmentId());
 
@@ -72,8 +69,8 @@ final class PreviewWorkerIntegrationTest {
     long warmStart = System.nanoTime();
     WorkerResponse r2 = worker.executeRequest("cur-2", p2, () -> {});
     double warmMs = (System.nanoTime() - warmStart) / 1_000_000.0;
-    assertTrue(r2.ok());
-    assertNotNull(r2.result());
+    assertThat(r2.ok()).isTrue();
+    assertThat(r2.result()).isNotNull();
     assertEquals("SEGMENT", r2.result().scope());
     assertEquals("right-trench-cycle-2", r2.result().activeSegmentId());
     assertThat(warmMs).isLessThan(1000.0);
@@ -92,8 +89,8 @@ final class PreviewWorkerIntegrationTest {
     p3.put("alliance", "Blue");
     p3.put("robotConfigId", "581");
     WorkerResponse r3 = worker.executeRequest("cur-3", p3, () -> {});
-    assertTrue(r3.ok());
-    assertNotNull(r3.result());
+    assertThat(r3.ok()).isTrue();
+    assertThat(r3.result()).isNotNull();
     assertEquals("SEGMENT", r3.result().scope());
     assertEquals("right-trench-cycle-3", r3.result().activeSegmentId());
 
@@ -106,8 +103,8 @@ final class PreviewWorkerIntegrationTest {
     pWhole.put("alliance", "Blue");
     pWhole.put("robotConfigId", "581");
     WorkerResponse rWhole = worker.executeRequest("cur-whole", pWhole, () -> {});
-    assertTrue(rWhole.ok());
-    assertNotNull(rWhole.result());
+    assertThat(rWhole.ok()).isTrue();
+    assertThat(rWhole.result()).isNotNull();
     assertEquals("WHOLE_AUTO", rWhole.result().scope());
     assertEquals("WHOLE_AUTO", rWhole.result().activeSegmentId());
   }
@@ -118,13 +115,13 @@ final class PreviewWorkerIntegrationTest {
     Path root = resolveRepoRoot();
     WarmPreviewWorker worker = new WarmPreviewWorker(root);
 
-    for (String autoSimpleName : List.of("RightTrenchAuto", "LeftTrenchAuto")) {
+    for (String autoSimpleName : ImmutableList.of("RightTrenchAuto", "LeftTrenchAuto")) {
       Path sourceFile =
           root.resolve("comp-bot/src/main/java/frc/robot/autos/" + autoSimpleName + ".java");
       String sourceText = Files.readString(sourceFile);
       Class<?> autoClass = Class.forName("frc.robot.autos." + autoSimpleName);
 
-      for (String alliance : List.of("Blue", "Red")) {
+      for (String alliance : ImmutableList.of("Blue", "Red")) {
         var params = MAPPER.createObjectNode();
         params.put("sourceFile", sourceFile.toString());
         params.put("scope", "WHOLE_AUTO");
@@ -137,10 +134,12 @@ final class PreviewWorkerIntegrationTest {
             worker.executeRequest("parity-" + autoSimpleName + "-" + alliance, params, () -> {});
         double elapsedMs = (System.nanoTime() - t0) / 1_000_000.0;
 
-        assertTrue(workerResp.ok(), "Worker failed: " + workerResp.errorMessage());
+        assertThat(workerResp.ok())
+            .withFailMessage("Worker failed: " + workerResp.errorMessage())
+            .isTrue();
         assertThat(elapsedMs).isLessThan(3000.0);
         PreviewResult workerResult = workerResp.result();
-        assertNotNull(workerResult);
+        assertThat(workerResult).isNotNull();
 
         PreviewRequest directReq =
             new PreviewRequest(
