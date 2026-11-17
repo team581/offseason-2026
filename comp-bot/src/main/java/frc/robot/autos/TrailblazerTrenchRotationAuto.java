@@ -5,6 +5,7 @@ import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.config.CompAutoField;
 
 /**
  * Leaves the trench perimeter and rotates 180 degrees counterclockwise while strafing toward the
@@ -17,7 +18,7 @@ final class TrailblazerTrenchRotationAuto
     DONE
   }
 
-  private static final Pose2d START = TrailblazerTrenchAuto.END;
+  private static final Pose2d START = CompAutoField.RIGHT_TRENCH_EXIT;
   // Positive blue-field Y is left as seen from the driver station, toward the field interior.
   private static final Pose2d END =
       new Pose2d(START.getX(), START.getY() + 3.0, START.getRotation().plus(Rotation2d.k180deg));

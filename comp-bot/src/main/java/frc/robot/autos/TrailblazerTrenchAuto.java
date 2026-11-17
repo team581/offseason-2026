@@ -12,10 +12,8 @@ final class TrailblazerTrenchAuto extends TrailblazerAuto<TrailblazerTrenchAuto.
     DONE
   }
 
-  private static final double TRAVEL_METERS = 2.0;
-
   static final Pose2d START = CompAutoField.RIGHT_TRENCH_START;
-  static final Pose2d END = CompAutoField.offset(START, -TRAVEL_METERS, 0.0);
+  static final Pose2d END = CompAutoField.RIGHT_TRENCH_EXIT;
 
   static final AutoSegment LEAVE_TRENCH_SEGMENT =
       Trailblazer.segment("leave-right-trench").stopAt(END).build();

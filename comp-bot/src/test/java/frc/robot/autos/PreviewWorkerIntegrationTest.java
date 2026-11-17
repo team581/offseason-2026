@@ -80,12 +80,15 @@ final class PreviewWorkerIntegrationTest {
     assertEquals(expectedShoot.getX(), r2.result().startPose().x(), 1e-3);
     assertEquals(expectedShoot.getY(), r2.result().startPose().y(), 1e-3);
 
-    // Cursor inside case INTAKE_CYCLE_3 -> drive(CYCLE_3_SEGMENT) (line 149)
+    // Cursor on the drive call in case INTAKE_CYCLE_3.
+    var sourceLines = sourceText.lines().map(String::strip).toList();
+    int cycleThreeDriveLine = sourceLines.indexOf("drive(CYCLE_3_SEGMENT);") + 1;
+    assertThat(cycleThreeDriveLine).isPositive();
     var p3 = MAPPER.createObjectNode();
     p3.put("sourceFile", rightTrenchFile.toString());
     p3.put("sourceContent", sourceText);
     p3.put("scope", "CURSOR");
-    p3.put("cursorLine", 149);
+    p3.put("cursorLine", cycleThreeDriveLine);
     p3.put("alliance", "Blue");
     p3.put("robotConfigId", "581");
     WorkerResponse r3 = worker.executeRequest("cur-3", p3, () -> {});
@@ -110,12 +113,12 @@ final class PreviewWorkerIntegrationTest {
   }
 
   @Test
-  void workerAndRunnerProduceIdenticalSchemaOutputForRightTrenchAndLeftTrenchOnBothAlliances()
-      throws Exception {
+  void workerAndRunnerProduceIdenticalSchemaOutputForTrenchAutosOnBothAlliances() throws Exception {
     Path root = resolveRepoRoot();
     WarmPreviewWorker worker = new WarmPreviewWorker(root);
 
-    for (String autoSimpleName : ImmutableList.of("RightTrenchAuto", "LeftTrenchAuto")) {
+    for (String autoSimpleName :
+        ImmutableList.of("RightTrenchAuto", "LeftTrenchAuto", "TrailblazerTrenchRotationAuto")) {
       Path sourceFile =
           root.resolve("comp-bot/src/main/java/frc/robot/autos/" + autoSimpleName + ".java");
       String sourceText = Files.readString(sourceFile);
