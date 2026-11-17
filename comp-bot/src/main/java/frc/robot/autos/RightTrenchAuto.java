@@ -15,10 +15,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.config.CompAutoField;
 import frc.robot.shooter.ShooterConfig;
 
-/**
- * Three-cycle right-trench autonomous: sweeps neutral zone fuel across three loops through the
- * right trench and returns over the right bump to score into the Hub.
- */
 public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State> {
   public enum Marker {
     PRIORITIZE_INTAKE,
