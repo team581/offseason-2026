@@ -100,7 +100,7 @@ public final class HeadingSchedule {
     if (clearance != null && !section.clears(path, clearance)) {
       section = new HeadingSchedule(from, initial, anchors, false);
     }
-    // The existing clearance tracker still handles a geometrically incompatible section.
+
     if (clearance == null || section.clears(path, clearance)) {
       sections.add(section);
     }
@@ -137,7 +137,7 @@ public final class HeadingSchedule {
         double idealFromLeft = angle[i - 1] + (slope[i - 1] + slope[i]) * left / 2;
         double idealFromRight = angle[i + 1] - (slope[i] + slope[i + 1]) * right / 2;
         double weight = 1 / (1 + Math.pow(right / left, 3));
-        // Keep room for tracking error in both narrow and wide bands.
+
         double margin =
             Math.min(
                 0.82 * anchor.tolerance(), Math.max(0, anchor.tolerance() - Math.toRadians(1.7)));

@@ -1,54 +1,10 @@
 package com.team581.trailblazer3.math;
 
-import com.google.common.collect.ImmutableList;
 import edu.wpi.first.math.MathUtil;
 import java.util.List;
 
 public final class RotationBudgetEstimator {
-  public record Budget(double speed, double traction) {}
-
   public record HeadingSpan(double startProgress, double endProgress, double deltaRadians) {}
-
-  public static Budget estimate(
-      DrivetrainLimits limits,
-      double derivative,
-      double distanceAhead,
-      double referenceOmega,
-      double referenceAlpha,
-      double angleRemaining) {
-    return estimate(
-        limits,
-        Math.max(0, distanceAhead),
-        0,
-        derivative,
-        referenceOmega,
-        referenceAlpha,
-        angleRemaining,
-        ImmutableList.of());
-  }
-
-  public static Budget estimate(
-      DrivetrainLimits limits,
-      double nodeProgress,
-      double measuredProgress,
-      double derivative,
-      double referenceOmega,
-      double referenceAlpha,
-      double angleRemaining,
-      List<HeadingSpan> downstreamSpans) {
-    double[] out = new double[2];
-    estimateInto(
-        limits,
-        nodeProgress,
-        measuredProgress,
-        derivative,
-        referenceOmega,
-        referenceAlpha,
-        angleRemaining,
-        downstreamSpans,
-        out);
-    return new Budget(out[0], out[1]);
-  }
 
   /**
    * Zero-allocation overload writing {@code [speed, traction]} into {@code outSpeedAndTraction}.

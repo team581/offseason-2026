@@ -78,7 +78,6 @@ public final class SourceSpanAnalyzer {
     List<HelperMethodSpan> helpers = parseHelperMethods(lines);
     List<SwitchCaseSpan> cases = parseSwitchCases(lines);
 
-    // Map state name -> field name based on drive(FIELD_NAME) inside any case block
     Map<String, Set<String>> stateToFields = new LinkedHashMap<>();
     for (SwitchCaseSpan c : cases) {
       Matcher driveMatcher = DRIVE_CALL.matcher(c.text());
@@ -97,7 +96,7 @@ public final class SourceSpanAnalyzer {
       String segmentId = entry.getValue();
       RawSegmentSpan raw = rawByField.get(fieldName);
       if (raw == null) {
-        // Fallback match by literal segment ID
+
         for (RawSegmentSpan candidate : rawByField.values()) {
           if (segmentId.equals(candidate.literalSegmentId())) {
             raw = candidate;
@@ -114,7 +113,6 @@ public final class SourceSpanAnalyzer {
         related.add(new SourceSpan("DECLARATION", fieldName, startLine, endLine));
       }
 
-      // Attach helper methods called by this segment declaration
       for (HelperMethodSpan helper : helpers) {
         Pattern callPattern = Pattern.compile("\\b" + Pattern.quote(helper.name()) + "\\s*\\(");
         if (callPattern.matcher(bodyText).find()) {
@@ -123,7 +121,6 @@ public final class SourceSpanAnalyzer {
         }
       }
 
-      // Attach switch case blocks whose state drives this segment
       for (SwitchCaseSpan caseSpan : cases) {
         boolean matchesSegment = false;
         String matchedState = "";
@@ -214,7 +211,6 @@ public final class SourceSpanAnalyzer {
       return Optional.empty();
     }
 
-    // 1. Direct match inside a segment declaration
     for (SegmentDescriptor seg : segments) {
       if (seg.declarationStartLine() > 0
           && cursorLine >= seg.declarationStartLine()
@@ -223,58 +219,27 @@ public final class SourceSpanAnalyzer {
       }
     }
 
-    // 2. Match inside state branches first (more specific than shared helpers)
-    List<SegmentDescriptor> stateMatches = new ArrayList<>();
-    for (SegmentDescriptor seg : segments) {
-      for (SourceSpan span : seg.relatedSpans()) {
-        if ("STATE_BRANCH".equals(span.kind())
-            && cursorLine >= span.startLine()
-            && cursorLine <= span.endLine()) {
-          stateMatches.add(seg);
-          break;
-        }
+    for (String kind : List.of("STATE_BRANCH", "HELPER_METHOD")) {
+      var matches =
+          segments.stream()
+              .filter(segment ->
+                  segment.relatedSpans().stream()
+                      .anyMatch(span ->
+                          kind.equals(span.kind())
+                              && cursorLine >= span.startLine()
+                              && cursorLine <= span.endLine()))
+              .toList();
+      if (!matches.isEmpty()) {
+        return Optional.of(
+            matches.stream()
+                .filter(segment ->
+                    segment.id().equals(previousSegmentId)
+                        || segment.fieldName().equals(previousSegmentId))
+                .findFirst()
+                .orElseGet(() -> matches.get(0))
+                .id());
       }
     }
-    if (stateMatches.size() == 1) {
-      return Optional.of(stateMatches.get(0).id());
-    }
-    if (stateMatches.size() > 1) {
-      if (previousSegmentId != null) {
-        for (SegmentDescriptor seg : stateMatches) {
-          if (seg.id().equals(previousSegmentId) || seg.fieldName().equals(previousSegmentId)) {
-            return Optional.of(seg.id());
-          }
-        }
-      }
-      return Optional.of(stateMatches.get(0).id());
-    }
-
-    // 3. Match inside helper methods
-    List<SegmentDescriptor> helperMatches = new ArrayList<>();
-    for (SegmentDescriptor seg : segments) {
-      for (SourceSpan span : seg.relatedSpans()) {
-        if ("HELPER_METHOD".equals(span.kind())
-            && cursorLine >= span.startLine()
-            && cursorLine <= span.endLine()) {
-          helperMatches.add(seg);
-          break;
-        }
-      }
-    }
-    if (helperMatches.size() == 1) {
-      return Optional.of(helperMatches.get(0).id());
-    }
-    if (helperMatches.size() > 1) {
-      if (previousSegmentId != null) {
-        for (SegmentDescriptor seg : helperMatches) {
-          if (seg.id().equals(previousSegmentId) || seg.fieldName().equals(previousSegmentId)) {
-            return Optional.of(seg.id());
-          }
-        }
-      }
-      return Optional.of(helperMatches.get(0).id());
-    }
-
     return Optional.empty();
   }
 
@@ -467,7 +432,7 @@ public final class SourceSpanAnalyzer {
   }
 
   static List<WaypointSpan> waypointSpans(String source) {
-    // Preserve offsets and line breaks while ignoring parentheses in comments and literals.
+
     String code =
         Pattern.compile(
                 "//[^\\r\\n]*|/\\*[\\s\\S]*?\\*/|\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'")

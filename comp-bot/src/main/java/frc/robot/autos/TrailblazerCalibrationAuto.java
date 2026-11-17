@@ -17,6 +17,7 @@ import frc.robot.deploy.DeployGoalStatus;
 import frc.robot.deploy.DeployState;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.vision.Vision;
+import java.util.Optional;
 
 final class TrailblazerCalibrationAuto {
   private enum Phase {
@@ -36,12 +37,12 @@ final class TrailblazerCalibrationAuto {
     TRACTION(3.0, 5.0, 9.0),
     BRAKING(1.6, 3.2, 8.0);
 
-    static Test fromSelection(AutoSelection selection) {
+    static Optional<Test> fromSelection(AutoSelection selection) {
       return switch (selection) {
-        case TRAILBLAZER_3_CALIBRATE_LAG -> LAG;
-        case TRAILBLAZER_3_CALIBRATE_TRACTION -> TRACTION;
-        case TRAILBLAZER_3_CALIBRATE_BRAKING -> BRAKING;
-        default -> null;
+        case TRAILBLAZER_3_CALIBRATE_LAG -> Optional.of(LAG);
+        case TRAILBLAZER_3_CALIBRATE_TRACTION -> Optional.of(TRACTION);
+        case TRAILBLAZER_3_CALIBRATE_BRAKING -> Optional.of(BRAKING);
+        default -> Optional.empty();
       };
     }
 
@@ -94,7 +95,7 @@ final class TrailblazerCalibrationAuto {
   private final BaseStatusSignal[] supplyCurrent = new BaseStatusSignal[MODULE_COUNT];
 
   private final BaseStatusSignal[] imuSignals;
-  private Phase phase;
+  private Phase phase = Phase.DONE;
   private double startTime;
   private double phaseStart;
   private double lastHubTimestamp;
@@ -256,13 +257,12 @@ final class TrailblazerCalibrationAuto {
     });
     double hubFrameAge = fpgaNow - lastHubTimestamp;
     boolean hubVisible = hubFrameAge >= 0 && hubFrameAge <= HUB_FRAME_MAX_AGE;
-    // Keep the first valid sighting for startup. Later gaps are recorded for log analysis.
+
     acquiredHub |= hubVisible || RobotBase.isSimulation();
     if (phase != Phase.DONE && phase != Phase.ABORTED) {
       checkRun(drive, now);
     }
 
-    // Keep commands in the same zero-deadband, velocity-only path used by Trailblazer.
     var command = new ChassisSpeeds();
     boolean align = false;
     double elapsed = now - phaseStart;

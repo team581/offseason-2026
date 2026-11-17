@@ -19,14 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
-/**
- * State-machine base class for Trailblazer 3 autonomous routines.
- *
- * <p>Each auto defines an {@code enum State} and implements standard Team 581 {@link StateMachine}
- * hooks ({@link #afterTransition}, {@link #getNextState}, and {@link #whileInState}). All
- * coordinates are authored in the canonical Blue-alliance frame and automatically flipped for the
- * active alliance.
- */
+/** Auto state machine with alliance conversion, previews, and an injected clock. */
 public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S> {
   private static final double ADVISORY_START_POS_TOLERANCE_METERS = 0.25;
   private static final double ADVISORY_START_HEADING_TOLERANCE_DEGREES = 15.0;
@@ -44,7 +37,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   private final List<AutoSegment> alliancePreviewSegments;
   private boolean startedRunning = false;
-  private @Nullable S trackedState;
+  private S trackedState;
 
   private double stateStartSeconds = Double.NaN;
 
@@ -61,11 +54,11 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
       AutoSegment... bluePreviewSegments) {
     super(requireNonNull(initialState));
     requireNonNull(context);
+    this.trackedState = initialState;
     this.robot = requireNonNull(context.robot());
     this.trailblazer = requireNonNull(context.trailblazer());
     this.alliance = requireNonNull(context.alliance());
-    this.allianceStartPose =
-        blueStartPose == null ? Optional.empty() : Optional.of(fieldPose(blueStartPose));
+    this.allianceStartPose = Optional.ofNullable(blueStartPose).map(this::fieldPose);
     this.alliancePreviewSegments =
         Arrays.stream(bluePreviewSegments)
             .map(segment -> CompAutoField.segment(requireNonNull(segment), alliance))
@@ -198,7 +191,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   @Override
   protected final boolean timeout(double durationSeconds) {
     double now = trailblazer.nowSeconds();
-    if (getState() != trackedState) {
+    if (getState() != trackedState || Double.isNaN(stateStartSeconds)) {
       trackedState = getState();
       stateStartSeconds = now;
     }

@@ -47,7 +47,6 @@ final class PreviewWorkerIntegrationTest {
 
     var sourceLines = sourceText.lines().map(String::strip).toList();
 
-    // Cursor inside CYCLE_1_SEGMENT.
     var p1 = MAPPER.createObjectNode();
     p1.put("sourceFile", rightTrenchFile.toString());
     p1.put("sourceContent", sourceText);
@@ -61,8 +60,6 @@ final class PreviewWorkerIntegrationTest {
     assertEquals("SEGMENT", r1.result().scope());
     assertEquals("right-trench-cycle-1", r1.result().activeSegmentId());
 
-    // Cursor inside CYCLE_2_SEGMENT -> warm refresh < 1.0 s and seeded from CYCLE_1 shoot
-    // pose
     var p2 = MAPPER.createObjectNode();
     p2.put("sourceFile", rightTrenchFile.toString());
     p2.put("sourceContent", sourceText);
@@ -78,13 +75,12 @@ final class PreviewWorkerIntegrationTest {
     assertEquals("SEGMENT", r2.result().scope());
     assertEquals("right-trench-cycle-2", r2.result().activeSegmentId());
     assertThat(warmMs).isLessThan(1000.0);
-    // CYCLE_2_SEGMENT starts at shootPose(Blue), not START
+
     var expectedShoot =
         RightTrenchAuto.shootPose(edu.wpi.first.wpilibj.DriverStation.Alliance.Blue);
     assertEquals(expectedShoot.getX(), r2.result().startPose().x(), 1e-3);
     assertEquals(expectedShoot.getY(), r2.result().startPose().y(), 1e-3);
 
-    // Cursor on the drive call in case INTAKE_CYCLE_3.
     int cycleThreeDriveLine = sourceLines.indexOf("drive(CYCLE_3_SEGMENT);") + 1;
     assertThat(cycleThreeDriveLine).isPositive();
     var p3 = MAPPER.createObjectNode();
@@ -100,7 +96,6 @@ final class PreviewWorkerIntegrationTest {
     assertEquals("SEGMENT", r3.result().scope());
     assertEquals("right-trench-cycle-3", r3.result().activeSegmentId());
 
-    // Cursor on the class header -> WHOLE_AUTO
     var pWhole = MAPPER.createObjectNode();
     pWhole.put("sourceFile", rightTrenchFile.toString());
     pWhole.put("sourceContent", sourceText);
@@ -216,8 +211,6 @@ final class PreviewWorkerIntegrationTest {
                 workerResult.buildIdentity());
         PreviewResult directResult = PreviewRunner.run(autoClass, directReq, () -> {});
 
-        // Verify parity across math path, waypoints, trajectory samples, slowdown factors, and
-        // diagnostics
         assertEquals(directResult.schemaVersion(), workerResult.schemaVersion());
         assertEquals(directResult.autoClass(), workerResult.autoClass());
         assertEquals(directResult.scope(), workerResult.scope());

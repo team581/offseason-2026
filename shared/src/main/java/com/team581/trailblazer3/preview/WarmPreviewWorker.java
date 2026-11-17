@@ -49,6 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -67,6 +68,7 @@ import org.jspecify.annotations.Nullable;
  * try-with-resources}, cancels superseded {@code requestId} runs, and executes the exact robot
  * {@code PathBuilder} and closed-loop {@code Trailblazer} code.
  */
+@SuppressWarnings("EmptyCatch")
 public final class WarmPreviewWorker {
   /**
    * Disposable child classloader that loads freshly compiled classes from the isolated overlay
@@ -135,12 +137,6 @@ public final class WarmPreviewWorker {
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) {
       return code;
-    }
-  }
-
-  private static final class Pattern {
-    static String quote(String s) {
-      return java.util.regex.Pattern.quote(s);
     }
   }
 
@@ -278,7 +274,6 @@ public final class WarmPreviewWorker {
       return;
     }
 
-    // Stdio JSON-RPC worker mode
     Thread prewarmThread =
         new Thread(
             () -> {
@@ -286,7 +281,7 @@ public final class WarmPreviewWorker {
                 prewarmRuntime();
                 worker.ensureClasspathManifest();
               } catch (Throwable ignored) {
-                // Handled per request
+
               }
             },
             "trailblazer-preview-prewarm");
@@ -373,7 +368,7 @@ public final class WarmPreviewWorker {
                   }
                 }
               } catch (CancellationException ignored) {
-                // Superseded by newer request; discard output per spec
+
               } catch (Throwable t) {
                 try {
                   WorkerResponse errResp =
@@ -394,7 +389,7 @@ public final class WarmPreviewWorker {
                     }
                   }
                 } catch (IOException ignored) {
-                  // ignore
+
                 }
               }
             });
@@ -409,12 +404,12 @@ public final class WarmPreviewWorker {
     try {
       HAL.initialize(500, 0);
     } catch (Throwable ignored) {
-      // Continue if JNI path is loaded via manifest or already initialized
+
     }
     try {
       DogLog.setEnabled(false);
     } catch (Throwable ignored) {
-      // Ignore if DogLog is not initialized
+
     }
     var profile = PreviewRunner.robotProfile("581");
     var clearance = PreviewRunner.buildClearance(profile, Alliance.Blue);
@@ -456,11 +451,11 @@ public final class WarmPreviewWorker {
             try {
               Files.deleteIfExists(p);
             } catch (IOException ignored) {
-              // ignore
+
             }
           });
     } catch (IOException ignored) {
-      // ignore
+
     }
   }
 
@@ -584,7 +579,7 @@ public final class WarmPreviewWorker {
         try {
           sourceText = Files.readString(sourcePath);
         } catch (IOException ignored) {
-          // Proceed without source text
+
         }
       }
     }
@@ -782,22 +777,20 @@ public final class WarmPreviewWorker {
       cachedManifest = valid.orElseThrow();
       return cachedManifest;
     }
-    // Check if current process classpath already has the project classes (e.g. launched via
-    // Gradle/tests)
+
     String sysCp = System.getProperty("java.class.path", "");
     if (!sysCp.isBlank() && Files.exists(workspaceRoot.resolve("build.gradle"))) {
       List<String> entries = List.of(sysCp.split(Pattern.quote(File.pathSeparator)));
       List<String> sourceRoots = defaultSourceRoots(workspaceRoot);
       String jniDir = System.getProperty("java.library.path", "");
       try {
-        // If build.gradle exists and we had a previous manifest whose hash changed, refresh via
-        // Gradle
+
         if (cachedManifest != null && Files.isRegularFile(workspaceRoot.resolve("gradlew"))) {
           cachedManifest = ClasspathManifestManager.loadOrRefresh(workspaceRoot);
           return cachedManifest;
         }
       } catch (RuntimeException ignored) {
-        // Fallback to writing current process classpath
+
       }
       cachedManifest =
           ClasspathManifestManager.writeManifest(workspaceRoot, entries, jniDir, sourceRoots);

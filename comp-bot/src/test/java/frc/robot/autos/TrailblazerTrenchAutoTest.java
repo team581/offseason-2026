@@ -199,6 +199,19 @@ final class TrailblazerTrenchAutoTest {
   }
 
   @Test
+  void mixedRedAndBlueAuthoringKeepsTheSelectedAllianceCoordinates() {
+    var blue = CompAutoField.fromBlue(2.0, 3.0, 45);
+    var red = CompAutoField.fromRed(12.0, 6.0, -90);
+    var segment = Trailblazer.segment("mixed-frames").through(blue).stopAt(red).build();
+
+    assertEquals(blue, CompAutoField.segment(segment, Alliance.Blue).goals().get(0).pose());
+    var redGoal = CompAutoField.segment(segment, Alliance.Red).goals().get(1).pose();
+    assertEquals(12.0, redGoal.getX(), 1e-12);
+    assertEquals(6.0, redGoal.getY(), 1e-12);
+    assertEquals(-90, redGoal.getRotation().getDegrees(), 1e-12);
+  }
+
+  @Test
   void stateMachineAutoRunsTransitionsMarkersAndTimeoutsInOrder() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     double[] time = {10.0};
@@ -264,7 +277,6 @@ final class TrailblazerTrenchAutoTest {
           }
         };
 
-    // Tick 0 initializes DRIVE_LEG and calls whileInState without advancing prematurely.
     auto.periodic();
     assertEquals(ImmutableList.of("drive_start"), log);
     assertEquals("DRIVE_LEG", auto.currentStepName());
@@ -279,13 +291,12 @@ final class TrailblazerTrenchAutoTest {
         assertNotEquals("KEEPOUT_VIOLATION", planner.lastResult().diagnostic());
       }
     }
-    // Entering WAIT_READY sets ready[0]=true inside afterTransition AFTER getNextState checked it.
+
     assertEquals(SequenceState.WAIT_READY, auto.getState());
     assertEquals(1, waitLoops.get());
     assertThat(log).contains("midpoint");
     stepKinematics(planner, time, pose, speeds);
 
-    // Next tick sees ready[0] == true and transitions into SHORT_PAUSE.
     auto.periodic();
     assertEquals(SequenceState.SHORT_PAUSE, auto.getState());
     stepKinematics(planner, time, pose, speeds);

@@ -96,7 +96,6 @@ final class PreviewTest {
     assertThat(loaded).isPresent();
     assertThat(loadMs).isLessThan(100.0);
 
-    // Modifying build.gradle invalidates the cached manifest
     Files.writeString(buildGradle, "// v2 modified\n", UTF_8);
     assertThat(ClasspathManifestManager.loadIfValid(tempDir)).isEmpty();
   }
@@ -179,13 +178,11 @@ final class PreviewTest {
     PreviewResult seg2 = PreviewRunner.run(SampleTwoCycleAuto.class, seg2Req, () -> {});
     double elapsedMs = (System.nanoTime() - t0) / 1_000_000.0;
 
-    // CYCLE_1_SEGMENT ends at (4.8, 2.6, 45 deg)
     assertEquals(4.8, seg2.startPose().x(), 1e-4);
     assertEquals(2.6, seg2.startPose().y(), 1e-4);
     assertEquals(45.0, seg2.startPose().headingDegrees(), 1e-3);
     assertThat(elapsedMs).isLessThan(50.0);
 
-    // Whole auto runs both segments in sequence across all 3 robot configs
     for (String robotId : ImmutableList.of("581", "9991", "9981")) {
       var wholeReq =
           new PreviewRequest(
@@ -249,22 +246,21 @@ final class PreviewTest {
                 Map.entry("CYCLE_1_SEGMENT", "cycle-1"), Map.entry("CYCLE_2_SEGMENT", "cycle-2")));
     assertEquals(2, descriptors.size());
 
-    // Line 5 is inside CYCLE_1_SEGMENT declaration
     assertEquals(
         Optional.of("cycle-1"), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 5, null));
-    // Line 8 is inside CYCLE_2_SEGMENT declaration
+
     assertEquals(
         Optional.of("cycle-2"), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 8, null));
-    // Line 14 is inside onlyCycle2 helper (only called by CYCLE_2_SEGMENT)
+
     assertEquals(
         Optional.of("cycle-2"), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 14, null));
-    // Line 19 is inside case CYCLE_1 -> drive(CYCLE_1_SEGMENT)
+
     assertEquals(
         Optional.of("cycle-1"), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 19, null));
-    // Line 22 is inside case CYCLE_2 -> drive(CYCLE_2_SEGMENT)
+
     assertEquals(
         Optional.of("cycle-2"), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 22, null));
-    // Line 2 is outside any segment -> empty (defaults to WHOLE_AUTO)
+
     assertEquals(Optional.empty(), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 2, null));
   }
 
@@ -307,7 +303,6 @@ final class PreviewTest {
     assertThat(resp1.result()).isNotNull();
     assertEquals(3.0, resp1.result().waypoints().get(0).x(), 1e-4);
 
-    // Edit static final AutoSegment stopAt coordinate from 3.0 to 4.25 and warm-refresh
     String sourceV2 = sourceV1.replace(".stopAt(3.0, 1.0, 0.0)", ".stopAt(4.25, 1.0, 0.0)");
     var paramsV2 = MAPPER.createObjectNode();
     paramsV2.put("sourceContent", sourceV2);
@@ -323,7 +318,6 @@ final class PreviewTest {
     assertEquals(4.25, resp2.result().waypoints().get(0).x(), 1e-4);
     assertThat(warmMs).isLessThan(1000.0);
 
-    // Introduce a syntax error -> stale = true, COMPILE_ERROR diagnostic returned
     String brokenSource = sourceV2.replace(".build();", ".build(");
     var paramsBroken = MAPPER.createObjectNode();
     paramsBroken.put("sourceContent", brokenSource);
@@ -333,7 +327,6 @@ final class PreviewTest {
     assertEquals("COMPILE_ERROR", respBroken.errorCode());
     assertThat(respBroken.diagnostics()).isNotEmpty();
 
-    // Superseded request cancellation
     worker.setLatestRequestId("req-5");
     assertThatThrownBy(() ->
             worker.executeRequest(
@@ -392,15 +385,13 @@ final class PreviewTest {
     PreviewResult red = PreviewRunner.run(SampleTwoCycleAuto.class, redReq, () -> {});
 
     assertEquals(3, blue.waypoints().size());
-    // Waypoint 0: position-only through waypoint
+
     WaypointEntry wp0 = blue.waypoints().get(0);
     assertEquals(0.35, wp0.withinMeters(), 1e-6);
     assertThat(wp0.hasHeadingTarget()).isFalse();
     assertThat(wp0.targetHeadingDegrees()).isNull();
     assertThat(wp0.headingToleranceDegrees()).isNull();
 
-    // Waypoint 1: through waypoint with within(0.30), heading -115 deg, and headingTolerance(25
-    // deg)
     WaypointEntry wp1 = blue.waypoints().get(1);
     assertEquals(0.30, wp1.withinMeters(), 1e-6);
     assertThat(wp1.hasHeadingTarget()).isTrue();
@@ -411,7 +402,6 @@ final class PreviewTest {
     assertEquals("INTAKE_READY", wp1.marker());
     assertThat(wp1.closestPassMeters()).isLessThanOrEqualTo(wp1.withinMeters() + 0.05);
 
-    // Alliance flip verification
     WaypointEntry redWp1 = red.waypoints().get(1);
     assertEquals(PreviewRunner.FIELD_2026.lengthMeters() - wp1.x(), redWp1.x(), 1e-4);
     assertEquals(PreviewRunner.FIELD_2026.widthMeters() - wp1.y(), redWp1.y(), 1e-4);

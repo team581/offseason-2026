@@ -51,23 +51,9 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
   }
 
   /**
-   * Builds a segment in traversal order. Field coordinates are in meters. Author reusable autos in
-   * the blue frame and apply {@link AutoSegment#forAlliance} before activation.
-   *
-   * <p>Use {@code through} for an intermediate point the robot should drive near while continuing
-   * along the route. At a corner, the planner can round off the waypoint and slow the robot for the
-   * turn. The positional tolerance gives the planner room to round the corner. It measures distance
-   * from the waypoint in meters.
-   *
-   * <p>A coordinate or translation overload adds only a position. A pose overload also adds a
-   * heading target, so the chassis can turn while driving independently of its direction of travel.
-   * Use a callback to set a custom heading and chain {@code mark} to attach a marker. For example,
-   * {@code through(x, y, 0.35, g -> g.faceDegrees(90)).mark(MyMarker.INTAKE)} lets the caller check
-   * whether the robot has passed the waypoint with {@code passedMarker(MyMarker.INTAKE)}. The
-   * caller decides what action to take when the marker passes.
-   *
-   * <p>Use {@code stopAt} when the segment should finish after settling at a pose. Use {@code
-   * finishThrough} when the segment should finish at a moving handoff.
+   * Builds goals in traversal order, in blue-field meters. A pose also sets heading. Use {@code
+   * through} to keep moving, {@code stopAt} to settle, and {@code finishThrough} for a moving
+   * handoff. Call {@code mark} after a waypoint to attach an event.
    */
   public static final class Builder {
     private record SourceCapture(
@@ -185,8 +171,7 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
 
     /** Ends at a stop with an absolute field heading in degrees, counterclockwise from +X. */
     public Builder stopAt(double xMeters, double yMeters, double headingDegrees) {
-      return addGoal(
-          Goal.stop(new Pose2d(xMeters, yMeters, Rotation2d.fromDegrees(headingDegrees))));
+      return stopAt(new Pose2d(xMeters, yMeters, Rotation2d.fromDegrees(headingDegrees)));
     }
 
     /** Configures and appends a stop at the given coordinates with a default heading of 0°. */
@@ -212,7 +197,7 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
 
     /** Drives near these coordinates and continues, with 0.25 m of room to round the corner. */
     public Builder through(double xMeters, double yMeters) {
-      return addGoal(Goal.through(new Translation2d(xMeters, yMeters)));
+      return through(new Translation2d(xMeters, yMeters));
     }
 
     /**
@@ -226,7 +211,7 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      * @return this builder
      */
     public Builder through(double xMeters, double yMeters, double blendRadiusMeters) {
-      return addGoal(Goal.through(new Translation2d(xMeters, yMeters)).within(blendRadiusMeters));
+      return through(new Translation2d(xMeters, yMeters), blendRadiusMeters);
     }
 
     /**
@@ -235,15 +220,12 @@ public record AutoSegment(String id, MotionLimits limits, List<Goal> goals) {
      */
     public Builder through(
         double xMeters, double yMeters, double blendRadiusMeters, UnaryOperator<Goal> configure) {
-      return addGoal(
-          requireNonNull(configure)
-              .apply(Goal.through(new Translation2d(xMeters, yMeters)).within(blendRadiusMeters)));
+      return through(new Translation2d(xMeters, yMeters), blendRadiusMeters, configure);
     }
 
     /** Configures a through waypoint initialized with the default 0.25 m positional tolerance. */
     public Builder through(double xMeters, double yMeters, UnaryOperator<Goal> configure) {
-      return addGoal(
-          requireNonNull(configure).apply(Goal.through(new Translation2d(xMeters, yMeters))));
+      return through(new Translation2d(xMeters, yMeters), configure);
     }
 
     /**

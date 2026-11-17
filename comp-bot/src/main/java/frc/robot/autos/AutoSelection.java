@@ -3,7 +3,6 @@ package frc.robot.autos;
 import com.team581.autos.AutoSelectionBase;
 import java.util.Optional;
 import java.util.function.Function;
-import org.jspecify.annotations.Nullable;
 
 /** Competition and characterization autonomous routines shown on the driver station chooser. */
 public enum AutoSelection implements AutoSelectionBase {
@@ -19,15 +18,16 @@ public enum AutoSelection implements AutoSelectionBase {
   TRAILBLAZER_3_CALIBRATE_BRAKING("TB3 Calibrate Braking");
 
   private final String displayName;
-  private final @Nullable Function<AutoContext, TrailblazerAuto<?>> factory;
+  private final Optional<Function<AutoContext, TrailblazerAuto<?>>> factory;
 
   AutoSelection(String displayName) {
-    this(displayName, null);
+    this.displayName = displayName;
+    this.factory = Optional.empty();
   }
 
-  AutoSelection(String displayName, @Nullable Function<AutoContext, TrailblazerAuto<?>> factory) {
+  AutoSelection(String displayName, Function<AutoContext, TrailblazerAuto<?>> factory) {
     this.displayName = displayName;
-    this.factory = factory;
+    this.factory = Optional.of(factory);
   }
 
   @Override
@@ -36,6 +36,6 @@ public enum AutoSelection implements AutoSelectionBase {
   }
 
   Optional<TrailblazerAuto<?>> create(AutoContext context) {
-    return factory == null ? Optional.empty() : Optional.of(factory.apply(context));
+    return factory.map(create -> create.apply(context));
   }
 }

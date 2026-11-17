@@ -1,5 +1,7 @@
 package frc.robot.autos;
 
+import static frc.robot.config.CompAutoField.fromRed;
+
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.HeadingPlan;
@@ -9,7 +11,6 @@ import com.team581.util.FieldUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import frc.robot.config.CompAutoField;
 
 /**
  * Three-cycle left-trench autonomous: sweeps neutral zone fuel across three loops through the left
@@ -32,16 +33,15 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
     DONE
   }
 
-  // Left-side waypoints are authored in the red frame and converted to blue for TB3.
   private static final double RED_TRENCH_Y = FieldUtil.RED_DEPOT_TRENCH_CENTER.getY();
   private static final double RED_BUMP_Y = FieldUtil.RED_DEPOT_BUMP_CENTER.getY() + 0.13;
   private static final double RED_SHOOT_X = 13.576;
   private static final Translation2d SHOOT_POINT =
-      bluePose(RED_SHOOT_X, RED_BUMP_Y, 0).getTranslation();
+      fromRed(RED_SHOOT_X, RED_BUMP_Y, 0).getTranslation();
 
-  private static final Pose2d BUMP_LANDING = bluePose(13.25, RED_BUMP_Y, 0);
+  private static final Pose2d BUMP_LANDING = fromRed(13.25, RED_BUMP_Y, 0);
 
-  static final Pose2d START = bluePose(12.1, 0.469, 90);
+  static final Pose2d START = fromRed(12.1, 0.469, 90);
 
   private static final MotionLimits CYCLE_LIMITS =
       MotionLimits.robotMaximum()
@@ -51,16 +51,15 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   static final AutoSegment CYCLE_1_SEGMENT =
       Trailblazer.segment("left-trench-cycle-1")
           .withLimits(CYCLE_LIMITS)
-          // Hold the launch heading through the wall-side opening.
-          .through(bluePose(10.089, RED_TRENCH_Y, 90), 0.15, 15)
-          .through(bluePose(8.744, 2.020, 115), 0.30, 5)
-          .through(bluePose(8.016, 3.124, 115), 0.55, 35)
+          .through(fromRed(10.089, RED_TRENCH_Y, 90), 0.15, 15)
+          .through(fromRed(8.744, 2.020, 115), 0.30, 5)
+          .through(fromRed(8.016, 3.124, 115), 0.55, 35)
           .mark(Marker.PRIORITIZE_INTAKE)
-          .through(bluePose(8.856, 3.624, 40), 0.20, 30)
-          .through(bluePose(9.356, 3.824, 0), 0.20, 35)
-          .through(bluePose(9.756, 3.524, -35), 0.30, 15)
-          .through(bluePose(10.15, RED_BUMP_Y, 0), 0.20, 15)
-          .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30, 5)
+          .through(fromRed(8.856, 3.624, 40), 0.20, 30)
+          .through(fromRed(9.356, 3.824, 0), 0.20, 35)
+          .through(fromRed(9.756, 3.524, -35), 0.30, 15)
+          .through(fromRed(10.15, RED_BUMP_Y, 0), 0.20, 15)
+          .through(fromRed(10.6, RED_BUMP_Y, 0), 0.30, 5)
           .mark(Marker.PREPARE_BUMP)
           .through(BUMP_LANDING, 0.25, LeftTrenchAuto::holdBumpHeading)
           .stopAt(SHOOT_POINT, Goal::faceHub)
@@ -69,17 +68,17 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   static final AutoSegment CYCLE_2_SEGMENT =
       Trailblazer.segment("left-trench-cycle-2")
           .withLimits(CYCLE_LIMITS)
-          .through(bluePose(13.2, RED_TRENCH_Y, -175), 0.35, 15)
-          .through(bluePose(12.5, RED_TRENCH_Y, -179), 0.20, 5)
+          .through(fromRed(13.2, RED_TRENCH_Y, -175), 0.35, 15)
+          .through(fromRed(12.5, RED_TRENCH_Y, -179), 0.20, 5)
           .mark(Marker.START_INTAKE)
-          .through(bluePose(10.9, RED_TRENCH_Y, -179), 0.30, 15)
-          .through(bluePose(10.228, 1.269, 140), 0.40, 10)
-          .through(bluePose(9.040, 2.516, 135), 0.40, 10)
-          .through(bluePose(8.300, 3.259, 100), 0.50, 25)
-          .through(bluePose(9.156, 3.814, 10), 0.40, 15)
-          .through(bluePose(10.556, 4.024, 0), 0.20, 15)
-          .through(bluePose(9.556, 2.924, -15), 0.20, 25)
-          .through(bluePose(10.5, RED_BUMP_Y, 0), 0.20, 25)
+          .through(fromRed(10.9, RED_TRENCH_Y, -179), 0.30, 15)
+          .through(fromRed(10.228, 1.269, 140), 0.40, 10)
+          .through(fromRed(9.040, 2.516, 135), 0.40, 10)
+          .through(fromRed(8.300, 3.259, 100), 0.50, 25)
+          .through(fromRed(9.156, 3.814, 10), 0.40, 15)
+          .through(fromRed(10.556, 4.024, 0), 0.20, 15)
+          .through(fromRed(9.556, 2.924, -15), 0.20, 25)
+          .through(fromRed(10.5, RED_BUMP_Y, 0), 0.20, 25)
           .mark(Marker.PREPARE_BUMP)
           .through(BUMP_LANDING, 0.25, LeftTrenchAuto::holdBumpHeading)
           .stopAt(SHOOT_POINT, Goal::faceHub)
@@ -88,25 +87,20 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   static final AutoSegment CYCLE_3_SEGMENT =
       Trailblazer.segment("left-trench-cycle-3")
           .withLimits(CYCLE_LIMITS)
-          .through(bluePose(13.2, RED_TRENCH_Y, -175), 0.35, 15)
-          .through(bluePose(12.5, RED_TRENCH_Y, -179), 0.20, 5)
+          .through(fromRed(13.2, RED_TRENCH_Y, -175), 0.35, 15)
+          .through(fromRed(12.5, RED_TRENCH_Y, -179), 0.20, 5)
           .mark(Marker.START_INTAKE)
-          .through(bluePose(10.9, RED_TRENCH_Y, -179), 0.20, 15)
-          .through(bluePose(9.6, 1.716, 130), 0.40, 25)
-          .through(bluePose(8.7, 2.476, 90), 0.30, 25)
-          .through(bluePose(8.600, 3.759, 70), 0.30, 25)
-          .through(bluePose(9.31, 3.769, -32), 0.30, 25)
-          .through(bluePose(9.7, RED_BUMP_Y, 0), 0.30, 25)
-          .through(bluePose(10.6, RED_BUMP_Y, 0), 0.30, 25)
+          .through(fromRed(10.9, RED_TRENCH_Y, -179), 0.20, 15)
+          .through(fromRed(9.6, 1.716, 130), 0.40, 25)
+          .through(fromRed(8.7, 2.476, 90), 0.30, 25)
+          .through(fromRed(8.600, 3.759, 70), 0.30, 25)
+          .through(fromRed(9.31, 3.769, -32), 0.30, 25)
+          .through(fromRed(9.7, RED_BUMP_Y, 0), 0.30, 25)
+          .through(fromRed(10.6, RED_BUMP_Y, 0), 0.30, 25)
           .mark(Marker.PREPARE_BUMP)
           .through(BUMP_LANDING, 0.25, LeftTrenchAuto::holdBumpHeading)
           .stopAt(SHOOT_POINT, Goal::faceHub)
           .build();
-
-  /** Converts a red-alliance pose in meters and degrees to the blue authoring frame. */
-  private static Pose2d bluePose(double redX, double redY, double redDegrees) {
-    return CompAutoField.FIELD.flipPose(CompAutoField.pose(redX, redY, redDegrees));
-  }
 
   private static Goal holdBumpHeading(Goal goal) {
     return goal.heading(
@@ -122,7 +116,7 @@ public final class LeftTrenchAuto extends TrailblazerAuto<LeftTrenchAuto.State> 
   private void prepareForBump() {
     if (!preparingBump) {
       preparingBump = true;
-      // The tracker projects body-up tilt. Use the uphill sign from the legacy bump autos.
+
       var tiltDirection = fieldPose(BUMP_LANDING).getRotation().plus(Rotation2d.k180deg);
       robot.localization.imu.bumpCrossingTracker.trackCrossing(tiltDirection);
     }

@@ -20,7 +20,6 @@ public final class FieldClearance {
   private final double margin;
   private final List<List<Translation2d>> keepouts;
 
-  // Precomputed primitive geometry avoids Stream/List/Translation2d heap churn in clearance checks.
   private final double[][] polyX;
   private final double[][] polyY;
   private final double[][] edgeNx;
@@ -199,7 +198,7 @@ public final class FieldClearance {
         transformed.add(field.flipPoint(vertex));
       }
       if (field.symmetry() == FieldSymmetry.MIRROR_X) {
-        // Mirroring across X flips polygon winding from CCW to CW; reverse to stay convex-CCW.
+
         reverse(transformed);
       }
       flipped.add(transformed);

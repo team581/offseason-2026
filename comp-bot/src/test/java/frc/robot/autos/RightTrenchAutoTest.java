@@ -225,7 +225,7 @@ final class RightTrenchAutoTest {
           .withFailMessage("%s %s angular command jumped at %.2f s", alliance, state, time[0])
           .isLessThanOrEqualTo(Math.toRadians(320) * dt + 1e-6);
       previousCommandOmega = command.omegaRadiansPerSecond;
-      // Stress yaw at twice the configured lag during the first intake.
+
       double translationResponse =
           state == RightTrenchAuto.State.INTAKE_CYCLE_1
               ? -Math.expm1(-dt / CompTrailblazer.CALIBRATION.driveResponseLagSeconds())

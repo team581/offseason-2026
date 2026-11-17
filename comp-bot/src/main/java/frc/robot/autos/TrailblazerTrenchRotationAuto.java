@@ -19,7 +19,7 @@ final class TrailblazerTrenchRotationAuto
   }
 
   private static final Pose2d START = CompAutoField.RIGHT_TRENCH_EXIT;
-  // Positive blue-field Y is left as seen from the driver station, toward the field interior.
+
   private static final Pose2d END =
       new Pose2d(START.getX(), START.getY() + 3.0, START.getRotation().plus(Rotation2d.k180deg));
 
