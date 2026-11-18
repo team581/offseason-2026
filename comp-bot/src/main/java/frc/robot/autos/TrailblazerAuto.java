@@ -41,7 +41,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   private double stateStartSeconds = Double.NaN;
 
-  /** Creates an auto without a fixed field starting pose (such as {@link DoNothingAuto}). */
+  /** Creates an auto without a fixed field starting pose. */
   protected TrailblazerAuto(S initialState, AutoContext context) {
     this(initialState, null, context);
   }

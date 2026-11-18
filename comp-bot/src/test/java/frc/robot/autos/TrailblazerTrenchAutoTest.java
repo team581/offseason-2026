@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.runtime.Trailblazer;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -196,6 +197,16 @@ final class TrailblazerTrenchAutoTest {
       planner.cancel();
       time[0] += 0.02;
     }
+  }
+
+  @Test
+  void doNothingProvidesTheAllianceStartingPoseForDisabledReset() {
+    var planner = CompTrailblazer.create();
+    var blueAuto = new DoNothingAuto(testContext(planner, Alliance.Blue));
+    var redAuto = new DoNothingAuto(testContext(planner, Alliance.Red));
+
+    assertThat(blueAuto.startPose()).hasValue(Pose2d.kZero);
+    assertThat(redAuto.startPose()).hasValue(FieldUtil.pathflip(Pose2d.kZero));
   }
 
   @Test
