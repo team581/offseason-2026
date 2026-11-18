@@ -17,9 +17,17 @@ public final class VelocityProfiler {
   public record Result(
       double speed, double tangentProgress, boolean infeasible, LimitingFactor limitingFactor) {}
 
-  /** Reusable scratch buffers avoiding per-tick primitive and enum array allocations. */
+  /** Reuses the fixed path grid, its heading limits, and per-tick scratch buffers. */
   public static final class Workspace {
+    private static final int HEADING_BUDGET_WIDTH = 4;
+
+    private PathBuilder.Path fixedPath;
+    private DrivetrainLimits fixedLimits;
+    private List<HeadingSchedule> fixedSchedules = List.of();
+    private double[] fixedNodes = new double[0];
+    private double[] headingBudgets = new double[0];
     private double[] rawNodes = new double[256];
+    private int[] sourceNodes = new int[256];
     private double[] u = new double[256];
     private LimitingFactor[] factors = new LimitingFactor[256];
     private double[] curvature = new double[256];
@@ -28,7 +36,33 @@ public final class VelocityProfiler {
     private double[] yawLeft = new double[256];
     private double[] yawRight = new double[256];
     private final double[] budgetScratch = new double[5];
+    private final double[] fixedBudgetScratch = new double[5];
     private final double[] geometryScratch = new double[5];
+
+    private void applyHeadingBudgets(
+        int node, PathBuilder.Path path, List<HeadingSchedule> schedules, DrivetrainLimits limits) {
+      int source = sourceNodes[node];
+      if (source < 0) {
+        for (var schedule : schedules) {
+          schedule.constrain(rawNodes[node], path, limits, budgetScratch, geometryScratch);
+        }
+        return;
+      }
+      int offset = source * HEADING_BUDGET_WIDTH;
+      if (Double.isNaN(headingBudgets[offset])) {
+        fixedBudgetScratch[0] = Double.POSITIVE_INFINITY;
+        Arrays.fill(fixedBudgetScratch, 2, 5, 0);
+        for (var schedule : schedules) {
+          schedule.constrain(rawNodes[node], path, limits, fixedBudgetScratch, geometryScratch);
+        }
+        headingBudgets[offset] = fixedBudgetScratch[0];
+        System.arraycopy(fixedBudgetScratch, 2, headingBudgets, offset + 1, 3);
+      }
+      if (headingBudgets[offset] != Double.POSITIVE_INFINITY) {
+        budgetScratch[0] = Math.min(budgetScratch[0], headingBudgets[offset]);
+        System.arraycopy(headingBudgets, offset + 1, budgetScratch, 2, 3);
+      }
+    }
 
     private void ensureCapacity(int needed) {
       if (needed <= rawNodes.length) {
@@ -36,6 +70,7 @@ public final class VelocityProfiler {
       }
       int nextCapacity = Math.max(needed, rawNodes.length * 2);
       rawNodes = new double[nextCapacity];
+      sourceNodes = new int[nextCapacity];
       u = new double[nextCapacity];
       factors = new LimitingFactor[nextCapacity];
       curvature = new double[nextCapacity];
@@ -43,6 +78,65 @@ public final class VelocityProfiler {
       yawSlope = new double[nextCapacity];
       yawLeft = new double[nextCapacity];
       yawRight = new double[nextCapacity];
+    }
+
+    private void prepareFixedNodes(
+        PathBuilder.Path path, List<HeadingSchedule> schedules, DrivetrainLimits limits) {
+      if (path == fixedPath && limits == fixedLimits && fixedSchedules.equals(schedules)) {
+        return;
+      }
+      int intervals = (int) Math.ceil(path.length() / 0.05);
+      int count = intervals + 1 + path.pieces().size() + path.anchors().size();
+      for (var schedule : schedules) {
+        count += schedule.nodeCount();
+      }
+      var nodes = new double[count];
+      int next = 0;
+      for (int i = 0; i <= intervals; i++) {
+        nodes[next++] = path.length() * i / intervals;
+      }
+      for (var piece : path.pieces()) {
+        nodes[next++] = piece.end();
+      }
+      for (double anchor : path.anchors()) {
+        nodes[next++] = anchor;
+      }
+      for (var schedule : schedules) {
+        for (int i = 0; i < schedule.nodeCount(); i++) {
+          nodes[next++] = schedule.node(i);
+        }
+      }
+      Arrays.sort(nodes);
+      ensureCapacity(count + 2);
+      fixedPath = path;
+      fixedLimits = limits;
+      fixedSchedules = List.copyOf(schedules);
+      fixedNodes = nodes;
+      headingBudgets = new double[schedules.isEmpty() ? 0 : count * HEADING_BUDGET_WIDTH];
+      Arrays.fill(headingBudgets, Double.NaN);
+    }
+
+    private int selectNodes(double measured, double barrier) {
+      // Keep the live endpoints and collapse nearby nodes in the same order as the sorted grid.
+      rawNodes[0] = measured;
+      sourceNodes[0] = -1;
+      int count = 1;
+      for (int i = 0; i < fixedNodes.length; i++) {
+        double node = fixedNodes[i];
+        if (node >= barrier) {
+          break;
+        }
+        if (node - rawNodes[count - 1] > 1e-9) {
+          rawNodes[count] = node;
+          sourceNodes[count++] = i;
+        }
+      }
+      if (barrier - rawNodes[count - 1] > 1e-9) {
+        count++;
+      }
+      rawNodes[count - 1] = barrier;
+      sourceNodes[count - 1] = -1;
+      return count;
     }
   }
 
@@ -66,55 +160,9 @@ public final class VelocityProfiler {
           overspeed ? LimitingFactor.INFEASIBLE : LimitingFactor.GOAL_DECELERATION);
     }
     checkArgument(path.length() <= 100, "Path exceeds profile capacity");
-    int intervals = (int) Math.ceil(path.length() / 0.05);
-    var pieces = path.pieces();
-    var anchors = path.anchors();
-    int maxRaw = intervals + 3 + pieces.size() + anchors.size();
-    for (var schedule : headingSchedules) {
-      maxRaw += schedule.nodeCount();
-    }
-    workspace.ensureCapacity(maxRaw);
-
+    workspace.prepareFixedNodes(path, headingSchedules, limits);
+    int n = workspace.selectNodes(measured, barrier);
     double[] s = workspace.rawNodes;
-    int rawCount = 0;
-    for (int i = 0; i <= intervals; i++) {
-      double sNode = path.length() * i / intervals;
-      if (sNode > measured && sNode < barrier) {
-        s[rawCount++] = sNode;
-      }
-    }
-    s[rawCount++] = measured;
-    s[rawCount++] = barrier;
-    for (int i = 0; i < pieces.size(); i++) {
-      double end = pieces.get(i).end();
-      if (end > measured && end < barrier) {
-        s[rawCount++] = end;
-      }
-    }
-    for (int i = 0; i < anchors.size(); i++) {
-      double anchor = anchors.get(i);
-      if (anchor > measured && anchor < barrier) {
-        s[rawCount++] = anchor;
-      }
-    }
-    for (var schedule : headingSchedules) {
-      for (int i = 0; i < schedule.nodeCount(); i++) {
-        double node = schedule.node(i);
-        if (node > measured && node < barrier) {
-          s[rawCount++] = node;
-        }
-      }
-    }
-    Arrays.sort(s, 0, rawCount);
-    int n = 0;
-    for (int i = 0; i < rawCount; i++) {
-      double value = s[i];
-      if (n == 0 || value - s[n - 1] > 1e-9) {
-        s[n++] = value;
-      } else if (value == barrier) {
-        s[n - 1] = barrier;
-      }
-    }
     if (n < 2) {
       boolean overspeed = startSpeed > limits.braking() * dt + 1e-3;
       return new Result(
@@ -133,8 +181,8 @@ public final class VelocityProfiler {
     for (int i = 0; i < n; i++) {
       Arrays.fill(budgetScratch, 2, 5, 0);
       budgets.evaluate(s[i], budgetScratch);
-      for (var schedule : headingSchedules) {
-        schedule.constrain(s[i], path, limits, budgetScratch, workspace.geometryScratch);
+      if (!headingSchedules.isEmpty()) {
+        workspace.applyHeadingBudgets(i, path, headingSchedules, limits);
       }
       workspace.yawSlope[i] = budgetScratch[2];
       workspace.yawLeft[i] = budgetScratch[3];
@@ -166,6 +214,7 @@ public final class VelocityProfiler {
         }
       }
     }
+    var anchors = path.anchors();
     for (int i = 0; i < goals.size(); i++) {
       int node = Arrays.binarySearch(s, 0, n, anchors.get(i));
       if (node >= 0) {

@@ -25,6 +25,14 @@ import org.jspecify.annotations.Nullable;
 public class Autos extends StateMachineSubsystem<AutoSelection> {
   private record Preview(AutoSelection selection, Alliance alliance, TrailblazerAuto<?> auto) {}
 
+  private record StagedLaunch(TrailblazerAuto<?> auto, Pose2d pose) {
+    boolean matches(TrailblazerAuto<?> candidate, Pose2d currentPose) {
+      return auto == candidate
+          && pose.getTranslation().getDistance(currentPose.getTranslation()) <= 0.025
+          && Math.abs(pose.getRotation().minus(currentPose.getRotation()).getDegrees()) <= 3.0;
+    }
+  }
+
   private static final int WARMUP_TICKS = 32;
 
   private static final double WARMUP_PERIOD_SECONDS = 0.020;
@@ -33,25 +41,31 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     return FmsUtil.isRedAlliance() ? Alliance.Red : Alliance.Blue;
   }
 
+  private static boolean isStationaryForLaunch(ChassisSpeeds speeds) {
+    return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) <= 0.10
+        && Math.abs(speeds.omegaRadiansPerSecond) <= Math.toRadians(10.0);
+  }
+
   private final AutoChooser<AutoSelection> autoChooser =
       new AutoChooser<>(AutoSelection.values(), AutoSelection.DO_NOTHING);
   private final RobotManager robotManager;
   private final Trailblazer trailblazer;
+
   private final TrailblazerCalibrationAuto calibration;
-
   private final AutoTelemetry telemetry;
+
   private Alliance autoAlliance = currentAlliance();
-
   private Optional<Preview> preview = Optional.empty();
-  private Optional<TrailblazerAuto<?>> stagedAuto = Optional.empty();
 
+  private Optional<StagedLaunch> stagedLaunch = Optional.empty();
   private boolean hasEnabledAuto = false;
   private boolean wasAutonomousEnabled = false;
-  private Optional<TrailblazerAuto<?>> activeAuto = Optional.empty();
 
+  private Optional<TrailblazerAuto<?>> activeAuto = Optional.empty();
   private @Nullable Trailblazer warmupFollower;
   private Pose2d warmupPose = Pose2d.kZero;
   private ChassisSpeeds warmupSpeeds = new ChassisSpeeds();
+
   private int warmupTicks;
 
   public Autos(RobotManager robotManager, Trailblazer trailblazer, Vision vision) {
@@ -93,12 +107,12 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       trailblazer.cancel();
       activeAuto = Optional.empty();
       wasAutonomousEnabled = false;
-      stagedAuto = Optional.empty();
+      stagedLaunch = Optional.empty();
       telemetry.endRun();
     }
 
     if (TrailblazerCalibrationAuto.Test.fromSelection(state).isPresent()) {
-      stagedAuto = Optional.empty();
+      stagedLaunch = Optional.empty();
       preview = Optional.empty();
       robotManager.swerve.clearTrajectoryCommand();
       telemetry.logCalibrationIdle(state, transitionedFromAuto);
@@ -117,23 +131,44 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
             || DriverStation.isFMSAttached())) {
       actualPose = expectedStart.orElseThrow();
       robotManager.localization.resetPose(actualPose);
-      stagedAuto = Optional.empty();
     }
 
-    if (!DriverStation.isDisabled() || !DriverStation.isAutonomous()) {
-      stagedAuto = Optional.empty();
+    if (!DriverStation.isDisabled()
+        || !DriverStation.isAutonomous()
+        || !state.stagesLaunch()
+        || !isStationaryForLaunch(robotManager.swerve.getFieldRelativeSpeeds())) {
+      stagedLaunch = Optional.empty();
       robotManager.swerve.clearTrajectoryCommand();
-    } else if (stagedAuto.filter(auto::equals).isEmpty()) {
-      stagedAuto = Optional.of(auto);
-      auto.initialDisabledWheelTarget(actualPose)
-          .ifPresentOrElse(
-              robotManager.swerve::setTrajectoryCommand,
-              robotManager.swerve::clearTrajectoryCommand);
+    } else {
+      stageLaunch(auto, actualPose);
     }
 
     telemetry.logIdle(state, auto, actualPose, transitionedFromAuto);
     if (DriverStation.isDisabled() && RobotBase.isReal()) {
       warmUpFollower(auto, expectedStart.orElse(actualPose));
+    }
+  }
+
+  private void stageLaunch(TrailblazerAuto<?> auto, Pose2d pose) {
+    if (stagedLaunch.isPresent() && stagedLaunch.orElseThrow().matches(auto, pose)) {
+      return;
+    }
+    stagedLaunch = Optional.of(new StagedLaunch(auto, pose));
+    robotManager.swerve.clearTrajectoryCommand();
+    long start = LoopTiming.start();
+    try {
+      var launch = auto.previewLaunchCommand(CompTrailblazer.create(), pose);
+      if (launch.isPresent()) {
+        var command = launch.orElseThrow();
+        robotManager.swerve.setTrajectoryCommand(command);
+        DogLog.log("Trailblazer3/StagedLaunchFieldSpeeds", command);
+      } else {
+        DogLog.log("Trailblazer3/StagedLaunchFieldSpeeds", new ChassisSpeeds());
+      }
+    } catch (IllegalArgumentException exception) {
+      DogLog.log("Trailblazer3/StagedLaunchError", exception.toString());
+    } finally {
+      LoopTiming.end("Scheduler/Autos/StageLaunch", start);
     }
   }
 
@@ -204,7 +239,7 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       var prepared = matchingPreview(state);
       activeAuto = Optional.of(prepared.orElseGet(() -> createAuto(state)));
       preview = Optional.empty();
-      stagedAuto = Optional.empty();
+      stagedLaunch = Optional.empty();
       if (prepared.isEmpty()
           && !hasEnabledAuto
           && DSOptions.RESET_POSE_FOR_AUTO.getAsBoolean()

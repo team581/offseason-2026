@@ -104,6 +104,12 @@ final class TrailblazerTrenchAutoTest {
     MIDPOINT
   }
 
+  private static void assertLaunchMatches(ChassisSpeeds staged, ChassisSpeeds live) {
+    assertEquals(live.vxMetersPerSecond, staged.vxMetersPerSecond, 1e-9);
+    assertEquals(live.vyMetersPerSecond, staged.vyMetersPerSecond, 1e-9);
+    assertEquals(live.omegaRadiansPerSecond, staged.omegaRadiansPerSecond, 1e-9);
+  }
+
   private static TickResult stepKinematics(
       Trailblazer planner, double[] time, Pose2d[] pose, ChassisSpeeds[] speeds) {
     var result = planner.update(time[0], pose[0], speeds[0]);
@@ -139,16 +145,17 @@ final class TrailblazerTrenchAutoTest {
       assertThat(rightAuto.isNearStartPose(rightStart)).isTrue();
       assertThat(rightAuto.isNearStartPose(Pose2d.kZero)).isFalse();
 
-      var rightWheelTarget = rightAuto.initialDisabledWheelTarget(rightStart);
-      assertThat(rightWheelTarget).isPresent();
-      double expectedDir = alliance == Alliance.Red ? 1.0 : -1.0;
-      assertEquals(expectedDir, rightWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
-      assertEquals(0.0, rightWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
+      var stagingFollower = CompTrailblazer.create(() -> time[0]);
+      var rightLaunch = rightAuto.previewLaunchCommand(stagingFollower, rightStart).orElseThrow();
+      assertThat(rightAuto.previewLaunchCommand(stagingFollower, Pose2d.kZero)).isEmpty();
+      assertThat(rightAuto.hasStartedRunning()).isFalse();
+      assertEquals(TickResult.RuntimeStatus.IDLE, planner.lastResult().status());
 
       rightAuto.periodic();
       time[0] += 30;
       var rightResult = planner.update(time[0], rightStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, rightResult.status());
+      assertLaunchMatches(rightLaunch, rightResult.commandedFieldSpeeds());
       assertThat(
               rightResult.commandedFieldSpeeds().vxMetersPerSecond
                   * rightStart.getRotation().getCos())
@@ -181,14 +188,12 @@ final class TrailblazerTrenchAutoTest {
           };
       var leftStart = leftAuto.startPose().orElseThrow();
       assertThat(leftAuto.isNearStartPose(leftStart)).isTrue();
-      var leftWheelTarget = leftAuto.initialDisabledWheelTarget(leftStart);
-      assertThat(leftWheelTarget).isPresent();
-      assertEquals(expectedDir, leftWheelTarget.orElseThrow().vxMetersPerSecond, 1e-6);
-      assertEquals(0.0, leftWheelTarget.orElseThrow().vyMetersPerSecond, 1e-6);
+      var leftLaunch = leftAuto.previewLaunchCommand(stagingFollower, leftStart).orElseThrow();
 
       leftAuto.periodic();
       var leftResult = planner.update(time[0], leftStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, leftResult.status());
+      assertLaunchMatches(leftLaunch, leftResult.commandedFieldSpeeds());
       assertThat(
               leftResult.commandedFieldSpeeds().vxMetersPerSecond
                   * leftStart.getRotation().getCos())

@@ -56,7 +56,7 @@ final class RightTrenchAutoTest {
                 clearance);
         assertEquals(
             switch (i) {
-              case 1, 2 -> ImmutableList.of("CORNER_FILLET_CLAMPED goal-2");
+              case 2 -> ImmutableList.of("CORNER_FILLET_CLAMPED goal-2");
               default -> ImmutableList.of();
             },
             built.warnings(),
@@ -97,7 +97,6 @@ final class RightTrenchAutoTest {
     var visited = new ArrayList<String>();
     var shootingTimes = new ArrayList<Double>();
     var trenchReturns = new HashSet<String>();
-    var blueTrenchHeading = RightTrenchAuto.CYCLE_2_SEGMENT.goals().get(1).pose().getRotation();
 
     SimHooks.pauseTiming();
     DriverStation.silenceJoystickConnectionWarning(true);
@@ -188,9 +187,18 @@ final class RightTrenchAutoTest {
             && (step.equals("INTAKE_CYCLE_2") || step.equals("INTAKE_CYCLE_3"))
             && FieldUtil.inTrench(pose.getTranslation())) {
           var bluePose = CompAutoField.pose(pose, alliance);
-          assertThat(Math.abs(bluePose.getRotation().minus(blueTrenchHeading).getDegrees()))
+          var trenchGoals =
+              (step.equals("INTAKE_CYCLE_2")
+                      ? RightTrenchAuto.CYCLE_2_SEGMENT
+                      : RightTrenchAuto.CYCLE_3_SEGMENT)
+                  .goals();
+          var entryHeading = trenchGoals.get(1).pose().getRotation();
+          double exitOffset =
+              trenchGoals.get(2).pose().getRotation().minus(entryHeading).getDegrees();
+          double yawOffset = bluePose.getRotation().minus(entryHeading).getDegrees();
+          assertThat(yawOffset)
               .as("%s %s heading inside the trench at %s", alliance, step, pose)
-              .isLessThan(5.0);
+              .isBetween(Math.min(0.0, exitOffset) - 5.0, Math.max(0.0, exitOffset) + 5.0);
           trenchReturns.add(step);
         }
         if (step.equals("SHOOT_3") && time[0] - stepStart > 0.5 && !displacedDuringFinalShot) {

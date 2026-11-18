@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.team581.trailblazer3.math.PathBuilder;
 import com.team581.trailblazer3.model.AutoSegment;
+import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.state_machines.StateMachine;
 import dev.doglog.DogLog;
@@ -73,20 +74,6 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   /** Returns whether {@link #periodic} has started executing on this routine. */
   public final boolean hasStartedRunning() {
     return startedRunning;
-  }
-
-  /** Computes a unit-speed field-relative velocity for disabled swerve module pre-alignment. */
-  public final Optional<ChassisSpeeds> initialDisabledWheelTarget(Pose2d currentPose) {
-    if (alliancePreviewSegments.isEmpty()) {
-      return Optional.empty();
-    }
-    var target = alliancePreviewSegments.get(0).goals().get(0).pose().getTranslation();
-    var origin = allianceStartPose.orElse(currentPose).getTranslation();
-    var delta = target.minus(origin);
-    double norm = delta.getNorm();
-    return norm > 1e-4
-        ? Optional.of(new ChassisSpeeds(delta.getX() / norm, delta.getY() / norm, 0.0))
-        : Optional.empty();
   }
 
   /** Advisory check used for dashboard diagnostics before enabling; never aborts autonomous. */
@@ -200,5 +187,21 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   final Optional<AutoSegment> initialPreviewSegment() {
     return alliancePreviewSegments.stream().findFirst();
+  }
+
+  /** Computes the first live drive command from rest without advancing the auto. */
+  final Optional<ChassisSpeeds> previewLaunchCommand(Trailblazer stagingFollower, Pose2d pose) {
+    var segment = initialPreviewSegment();
+    if (segment.isEmpty() || !isNearStartPose(pose)) {
+      return Optional.empty();
+    }
+    stagingFollower.cancel();
+    stagingFollower.activate(segment.orElseThrow(), CompAutoField.clearance(alliance));
+    var result = stagingFollower.update(0.0, pose, new ChassisSpeeds());
+    return result.status() == RuntimeStatus.RUNNING
+            && result.diagnostic().isEmpty()
+            && !result.infeasible()
+        ? Optional.of(result.commandedFieldSpeeds())
+        : Optional.empty();
   }
 }

@@ -55,6 +55,7 @@ final class AutoTelemetry {
     if (result.status() == RuntimeStatus.RUNNING) {
       DogLog.log("Trailblazer3/CommandFieldSpeeds", command);
       DogLog.log("Trailblazer3/MeasuredFieldSpeeds", measuredSpeeds);
+      DogLog.log("Trailblazer3/LimitingFactor", result.limitingFactor().name());
     }
     if (result.geometryGeneration() != lastLoggedGeneration) {
       lastLoggedGeneration = result.geometryGeneration();
