@@ -12,6 +12,7 @@ import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
+import com.team581.util.FieldUtil;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -24,6 +25,7 @@ import frc.robot.config.CompAutoField;
 import frc.robot.config.CompTrailblazer;
 import frc.robot.robot_manager.RobotState;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,9 +56,7 @@ final class RightTrenchAutoTest {
                 clearance);
         assertEquals(
             switch (i) {
-              case 1 ->
-                  ImmutableList.of("NEAR_REVERSAL_CORNER goal-7", "CORNER_FILLET_CLAMPED goal-2");
-              case 2 -> ImmutableList.of("CORNER_FILLET_CLAMPED goal-2");
+              case 1, 2 -> ImmutableList.of("CORNER_FILLET_CLAMPED goal-2");
               default -> ImmutableList.of();
             },
             built.warnings(),
@@ -96,6 +96,8 @@ final class RightTrenchAutoTest {
     boolean correctedFinalShotPosition = false;
     var visited = new ArrayList<String>();
     var shootingTimes = new ArrayList<Double>();
+    var trenchReturns = new HashSet<String>();
+    var blueTrenchHeading = RightTrenchAuto.CYCLE_2_SEGMENT.goals().get(1).pose().getRotation();
 
     SimHooks.pauseTiming();
     DriverStation.silenceJoystickConnectionWarning(true);
@@ -182,6 +184,15 @@ final class RightTrenchAutoTest {
         }
         pose = nextPose;
         assertThat(clearance.clearance(pose)).as("%s %s at %s", alliance, step, pose).isPositive();
+        if (right
+            && (step.equals("INTAKE_CYCLE_2") || step.equals("INTAKE_CYCLE_3"))
+            && FieldUtil.inTrench(pose.getTranslation())) {
+          var bluePose = CompAutoField.pose(pose, alliance);
+          assertThat(Math.abs(bluePose.getRotation().minus(blueTrenchHeading).getDegrees()))
+              .as("%s %s heading inside the trench at %s", alliance, step, pose)
+              .isLessThan(5.0);
+          trenchReturns.add(step);
+        }
         if (step.equals("SHOOT_3") && time[0] - stepStart > 0.5 && !displacedDuringFinalShot) {
           pose = new Pose2d(shoot.getX() + 0.35 * direction, shoot.getY(), pose.getRotation());
           displacedDuringFinalShot = true;
@@ -201,6 +212,9 @@ final class RightTrenchAutoTest {
               "CROSS_BUMP_TO_SHOOT_3",
               "SHOOT_3");
       assertThat(shootingTimes).hasSize(2);
+      if (right) {
+        assertThat(trenchReturns).contains("INTAKE_CYCLE_2", "INTAKE_CYCLE_3");
+      }
       assertThat(shootingTimes.get(0)).isBetween(2.0, 2.0 + dt + 1e-6);
       assertThat(shootingTimes.get(1)).isBetween(3.25, 3.25 + dt + 1e-6);
       assertThat(time[0] - stepStart).isGreaterThan(3.5);

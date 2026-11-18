@@ -197,4 +197,8 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
     }
     return (now - stateStartSeconds) > durationSeconds;
   }
+
+  final Optional<AutoSegment> initialPreviewSegment() {
+    return alliancePreviewSegments.stream().findFirst();
+  }
 }

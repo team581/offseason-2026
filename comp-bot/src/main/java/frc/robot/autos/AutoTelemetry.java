@@ -6,6 +6,7 @@ import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.profiling.DiagnosticCadence;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import org.jspecify.annotations.Nullable;
 
 final class AutoTelemetry {
@@ -32,7 +33,12 @@ final class AutoTelemetry {
   }
 
   void logActive(
-      AutoSelection state, TrailblazerAuto<?> auto, TickResult result, boolean firstTick) {
+      AutoSelection state,
+      TrailblazerAuto<?> auto,
+      TickResult result,
+      ChassisSpeeds command,
+      ChassisSpeeds measuredSpeeds,
+      boolean firstTick) {
     if (firstTick) {
       lastLoggedStatus = null;
       lastLoggedGeneration = -1;
@@ -46,6 +52,10 @@ final class AutoTelemetry {
 
     DogLog.log("Autos/Step", auto.currentStepName());
     DogLog.log("Trailblazer3/Status", result.status().name());
+    if (result.status() == RuntimeStatus.RUNNING) {
+      DogLog.log("Trailblazer3/CommandFieldSpeeds", command);
+      DogLog.log("Trailblazer3/MeasuredFieldSpeeds", measuredSpeeds);
+    }
     if (result.geometryGeneration() != lastLoggedGeneration) {
       lastLoggedGeneration = result.geometryGeneration();
       DogLog.log("Trailblazer3/PlannedPath", trailblazer.sampledPathPoses(0.10));

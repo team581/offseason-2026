@@ -301,7 +301,7 @@ public final class Trailblazer {
   }
 
   /**
-   * Returns the path position at recorded progress and the active target heading, when available.
+   * Returns the path position at recorded progress and the heading controller's current reference.
    */
   public Optional<Pose2d> currentTargetPose() {
     if (path == null || heading == null) {
@@ -312,7 +312,7 @@ public final class Trailblazer {
         new Pose2d(
             headingSampleScratch[0],
             headingSampleScratch[1],
-            Rotation2d.fromRadians(targetHeading)));
+            Rotation2d.fromRadians(heading.angle())));
   }
 
   /** Returns heading passage measurements for the current segment, in passage order. */

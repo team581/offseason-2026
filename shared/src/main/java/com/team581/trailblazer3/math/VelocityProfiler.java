@@ -28,6 +28,7 @@ public final class VelocityProfiler {
     private double[] yawLeft = new double[256];
     private double[] yawRight = new double[256];
     private final double[] budgetScratch = new double[5];
+    private final double[] geometryScratch = new double[5];
 
     private void ensureCapacity(int needed) {
       if (needed <= rawNodes.length) {
@@ -133,7 +134,7 @@ public final class VelocityProfiler {
       Arrays.fill(budgetScratch, 2, 5, 0);
       budgets.evaluate(s[i], budgetScratch);
       for (var schedule : headingSchedules) {
-        schedule.constrain(s[i], path, limits, budgetScratch);
+        schedule.constrain(s[i], path, limits, budgetScratch, workspace.geometryScratch);
       }
       workspace.yawSlope[i] = budgetScratch[2];
       workspace.yawLeft[i] = budgetScratch[3];
@@ -195,7 +196,27 @@ public final class VelocityProfiler {
     double maxFeasibleStart = Math.sqrt(Math.max(0, u[0])) + braking * dt + 1e-4;
     boolean infeasible = startSpeed < -(braking * dt + 1e-4) || positiveStart > maxFeasibleStart;
     u[0] = Math.min(u[0], positiveStart * positiveStart);
-    for (int i = 0; i < n - 1; i++) {
+    double speed = Math.sqrt(u[0]);
+    double deceleration = Math.min(limits.braking(), traction[0]);
+    if (deceleration <= 1e-6) {
+      return new Result(0, measured, true, LimitingFactor.INFEASIBLE);
+    }
+    double lag = dt + limits.lag();
+    double taper = Math.max(0.30, u[0] / (2 * deceleration));
+    double lead = lag * Math.min(1, (barrier - measured) / taper);
+    double lateral = u[0] * curvature[0];
+    double available =
+        Math.min(
+            limits.acceleration(speed),
+            Math.sqrt(Math.max(0, traction[0] * traction[0] - lateral * lateral)));
+    double evaluation = Math.min(barrier, measured + speed * lead + 0.5 * available * lead * lead);
+    int interval = 0;
+    while (interval < n - 2 && s[interval + 1] < evaluation) {
+      interval++;
+    }
+    // The full backward pass accounts for downstream braking. The forward pass only needs
+    // to propagate acceleration to the two nodes used in the command interpolation.
+    for (int i = 0; i <= interval; i++) {
       double ds = s[i + 1] - s[i];
       u[i + 1] =
           Math.min(
@@ -222,24 +243,6 @@ public final class VelocityProfiler {
         factors[i + 1] = LimitingFactor.MOTOR_ACCELERATION;
       }
       u[i + 1] = upper;
-    }
-    double speed = Math.sqrt(u[0]);
-    double deceleration = Math.min(limits.braking(), traction[0]);
-    if (deceleration <= 1e-6) {
-      return new Result(0, measured, true, LimitingFactor.INFEASIBLE);
-    }
-    double lag = dt + limits.lag();
-    double taper = Math.max(0.30, u[0] / (2 * deceleration));
-    double lead = lag * Math.min(1, (barrier - measured) / taper);
-    double lateral = u[0] * curvature[0];
-    double available =
-        Math.min(
-            limits.acceleration(speed),
-            Math.sqrt(Math.max(0, traction[0] * traction[0] - lateral * lateral)));
-    double evaluation = Math.min(barrier, measured + speed * lead + 0.5 * available * lead * lead);
-    int interval = 0;
-    while (interval < n - 2 && s[interval + 1] < evaluation) {
-      interval++;
     }
     double ds = s[interval + 1] - s[interval];
     double target =

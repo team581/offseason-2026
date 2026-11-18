@@ -16,7 +16,7 @@ import java.util.function.DoubleSupplier;
 
 public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   /** Debounce interval for normal downhill-to-flat crossings. */
-  public static final double FLAT_DEBOUNCE_SECONDS = 0.08;
+  public static final double FLAT_DEBOUNCE_SECONDS = 0.04;
 
   private static final double FLAT_FALLBACK_DEBOUNCE_SECONDS = 0.75;
   private static final double STUCK_IN_STATE_TIMEOUT_DURATION = 2.5;

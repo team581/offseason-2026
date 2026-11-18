@@ -5,7 +5,6 @@ import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.HeadingPlan;
 import com.team581.trailblazer3.model.HeadingPlan.TurnDirection;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,17 +109,21 @@ public final class HeadingSchedule {
 
   private final double[] angle;
   private final double[] slope;
+  private final boolean[] holdAfter;
 
   private HeadingSchedule(double start, double initial, List<Anchor> anchors, boolean smooth) {
     s = new double[anchors.size() + 1];
     angle = new double[s.length];
     slope = new double[s.length];
+    holdAfter = new boolean[s.length];
     s[0] = start;
     angle[0] = initial;
     for (int i = 1; i < s.length; i++) {
       var anchor = anchors.get(i - 1);
       s[i] = anchor.progress();
       angle[i] = anchor.angle();
+      // Compare the authored angles before smoothing moves them within their tolerances.
+      holdAfter[i] = i < anchors.size() && Math.abs(anchor.angle() - anchors.get(i).angle()) < 1e-9;
     }
     for (int sweep = 0; smooth && sweep < 12; sweep++) {
       updateSlopes();
@@ -205,7 +208,40 @@ public final class HeadingSchedule {
     }
   }
 
-  void constrain(double progress, PathBuilder.Path path, DrivetrainLimits limits, double[] budget) {
+  /** Limits yaw rate when approaching an anchor followed by a repeated heading. */
+  double brakeForHeadingHold(
+      double progress,
+      double heading,
+      double linearSpeed,
+      double demand,
+      double maxAlpha,
+      double lag) {
+    int next = 1;
+    while (next < s.length && s[next] <= progress) {
+      next++;
+    }
+    if (next == s.length || !holdAfter[next]) {
+      return demand;
+    }
+    double direction = Math.signum(angle[next] - angle[next - 1]);
+    if (demand * direction <= 0) {
+      return demand;
+    }
+    double remaining = Math.max(0, direction * (angle[next] - heading));
+    double endRate = Math.abs(slope[next]) * linearSpeed;
+    // Budget both the lag distance and the angle swept braking from demand to endRate.
+    double brakingLead = maxAlpha * lag;
+    double base = endRate + brakingLead;
+    double cap = Math.sqrt(base * base + 2 * maxAlpha * remaining) - brakingLead;
+    return direction * Math.min(Math.abs(demand), cap);
+  }
+
+  void constrain(
+      double progress,
+      PathBuilder.Path path,
+      DrivetrainLimits limits,
+      double[] budget,
+      double[] geometry) {
     if (progress < start() || progress > end()) {
       return;
     }
@@ -217,11 +253,14 @@ public final class HeadingSchedule {
     if (gradient < 1e-9 && curvature < 1e-9) {
       return;
     }
-    var geometry = path.sample(progress);
-    var tangent = geometry.tangent().rotateBy(Rotation2d.fromRadians(-yaw.angle()));
+    path.sampleInto(progress, geometry);
+    double cos = Math.cos(yaw.angle());
+    double sin = Math.sin(yaw.angle());
+    double tangentX = geometry[2] * cos + geometry[3] * sin;
+    double tangentY = geometry[3] * cos - geometry[2] * sin;
     for (var module : limits.robot().modulePositionsMeters()) {
-      double x = tangent.getX() - yaw.slope() * module.getY();
-      double y = tangent.getY() + yaw.slope() * module.getX();
+      double x = tangentX - yaw.slope() * module.getY();
+      double y = tangentY + yaw.slope() * module.getX();
       budget[0] = Math.min(budget[0], limits.maxWheelSpeed() / Math.hypot(x, y));
     }
     if (gradient > 1e-9) {

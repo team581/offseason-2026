@@ -84,14 +84,18 @@ public final class HeadingPlanner {
             -limits.braking(),
             limits.acceleration(speed));
 
-    double lead = 2 * limits.lag() + dt / 2;
+    double yawLag = 2 * limits.lag();
+    double lead = yawLag + dt / 2;
     double futureSpeed = Math.max(0, speed + lead * acceleration);
     var future = schedule.sample(progress + lead * (speed + futureSpeed) / 2);
+    double error = MathUtil.angleModulus(yaw.angle() - measuredPose.getRotation().getRadians());
     double demand =
         future.slope() * futureSpeed
-            + limits.headingP()
-                * MathUtil.angleModulus(yaw.angle() - measuredPose.getRotation().getRadians())
+            + limits.headingP() * error
             + limits.headingD() * (rate - measuredOmega);
+    demand =
+        schedule.brakeForHeadingHold(
+            progress, yaw.angle() - error, futureSpeed, demand, limits.maxAlpha(), yawLag);
     double command =
         MathUtil.clamp(
             MathUtil.clamp(demand, -limits.maxOmega(), limits.maxOmega()),
