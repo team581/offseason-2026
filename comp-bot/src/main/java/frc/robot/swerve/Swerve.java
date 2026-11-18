@@ -12,6 +12,7 @@ import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
 import com.team581.swerve.SwerveAssist;
 import com.team581.swerve.XboxControllerDriveSource;
+import com.team581.trailblazer3.model.TickResult.VelocityStep;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import com.team581.util.profiling.DiagnosticCadence;
@@ -111,6 +112,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
           .withDeadband(0)
           .withRotationalDeadband(0);
+  private final InterpolatedTrajectoryRequest interpolatedTrajectory =
+      new InterpolatedTrajectoryRequest();
 
   /** Requests Blue-alliance field-centric translation while aiming at a Blue-alliance heading. */
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnaps =
@@ -183,7 +186,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void alignTrajectoryModules(Rotation2d robotRelativeDirection) {
-    trajectoryCommand = new ChassisSpeeds();
+    setTrajectoryCommand(new ChassisSpeeds());
     trajectoryModuleDirection = robotRelativeDirection;
   }
 
@@ -239,6 +242,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   public void clearTrajectoryCommand() {
     trajectoryCommand = null;
     trajectoryModuleDirection = null;
+    interpolatedTrajectory.clear();
   }
 
   public boolean driverStillDecidingSotm() {
@@ -374,8 +378,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void setTrajectoryCommand(ChassisSpeeds speeds) {
+    setTrajectoryCommand(speeds, Optional.empty());
+  }
+
+  public void setTrajectoryCommand(ChassisSpeeds speeds, Optional<VelocityStep> step) {
     trajectoryCommand = speeds;
     trajectoryModuleDirection = null;
+    if (step.isPresent()) {
+      interpolatedTrajectory.setStep(step.orElseThrow(), speeds);
+    } else {
+      interpolatedTrajectory.clear();
+    }
   }
 
   public void setUseLooseTolerance(boolean value) {
@@ -433,6 +446,8 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                   .withTargetDirection(scoring ? scoringAngleRotation : feedingAngleRotation)
                   .withTargetRateFeedforward(scoring ? scoringFeedForward : feedingFeedForward));
         }
+      } else if (DriverStation.isAutonomousEnabled() && interpolatedTrajectory.hasStep()) {
+        drivetrain.setControl(interpolatedTrajectory);
       } else {
         drivetrain.setControl(
             trajectory

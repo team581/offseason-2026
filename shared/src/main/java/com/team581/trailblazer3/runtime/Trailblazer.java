@@ -22,6 +22,7 @@ import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
+import com.team581.trailblazer3.model.TickResult.VelocityStep;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -686,6 +687,7 @@ public final class Trailblazer {
       diagnostic = "KEEPOUT_VIOLATION";
     }
 
+    var velocityStep = new VelocityStep(previous, nowSeconds, dt);
     previous = new ChassisSpeeds(velocity.getX(), velocity.getY(), omega);
     boolean infeasible = limited.infeasible() || (beta < 1.0 - 1e-6 && profile.infeasible());
     LimitingFactor limiter =
@@ -695,7 +697,15 @@ public final class Trailblazer {
                 ? limited.limitingFactor()
                 : profile.limitingFactor());
     result =
-        new TickResult(previous, status, infeasible, limiter, generation, progress, diagnostic);
+        new TickResult(
+            previous,
+            status,
+            infeasible,
+            limiter,
+            generation,
+            progress,
+            diagnostic,
+            Optional.of(velocityStep));
     return result;
   }
 

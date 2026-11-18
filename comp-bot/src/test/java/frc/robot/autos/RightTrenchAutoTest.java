@@ -133,7 +133,9 @@ final class RightTrenchAutoTest {
 
         var result = planner.update(time[0], pose, speeds);
         var crossingState = tracker.getState();
-        var command = AutoActions.applyBumpCrossingOverride(result, crossingState, alliance);
+        var command =
+            AutoActions.bumpCrossingOverride(result, crossingState, alliance)
+                .orElseGet(result::commandedFieldSpeeds);
         if (step.startsWith("CROSS_BUMP")) {
           assertEquals(direction * 4.0, command.vxMetersPerSecond);
           assertEquals(result.commandedFieldSpeeds().vyMetersPerSecond, command.vyMetersPerSecond);
@@ -245,7 +247,9 @@ final class RightTrenchAutoTest {
     var result =
         new TickResult(planned, RuntimeStatus.RUNNING, false, LimitingFactor.NONE, 1, 0, "");
     for (var state : BumpCrossingState.values()) {
-      var command = AutoActions.applyBumpCrossingOverride(result, state, alliance);
+      var override = AutoActions.bumpCrossingOverride(result, state, alliance);
+      assertEquals(state != BumpCrossingState.FLAT_NOT_CROSSING, override.isPresent());
+      var command = override.orElse(planned);
       double expectedX =
           state == BumpCrossingState.FLAT_NOT_CROSSING
               ? planned.vxMetersPerSecond

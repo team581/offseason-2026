@@ -268,10 +268,13 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     long followerStart = LoopTiming.start();
     TickResult result = trailblazer.update(Utils.getCurrentTimeSeconds(), pose, measuredSpeeds);
     LoopTiming.end("Scheduler/Autos/FollowerUpdate", followerStart);
-    var command =
-        AutoActions.applyBumpCrossingOverride(
+    var planned = result.commandedFieldSpeeds();
+    var bumpOverride =
+        AutoActions.bumpCrossingOverride(
             result, robotManager.localization.imu.bumpCrossingTracker.getState(), autoAlliance);
-    robotManager.swerve.setTrajectoryCommand(command);
+    var command = bumpOverride.orElse(planned);
+    robotManager.swerve.setTrajectoryCommand(
+        command, bumpOverride.isPresent() ? Optional.empty() : result.velocityStep());
     long telemetryStart = LoopTiming.start();
     telemetry.logActive(state, auto, result, command, measuredSpeeds, firstTick);
     LoopTiming.end("Scheduler/Autos/Telemetry", telemetryStart);

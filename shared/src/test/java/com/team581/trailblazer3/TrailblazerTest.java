@@ -555,6 +555,34 @@ final class TrailblazerTest {
   }
 
   @Test
+  void publishesTheVelocityAndTimeUsedToLimitEachStep() {
+    var follower = new Simulation(0.020).planner;
+    follower.activate(Trailblazer.segment("velocity-step").stopAt(3, 0, 0).build());
+
+    var measuredSpeeds = new ChassisSpeeds(0.4, 0, 0);
+    var first = follower.update(1, Pose2d.kZero, measuredSpeeds);
+    var firstStep = first.velocityStep().orElseThrow();
+    assertEquals(0.4, firstStep.startingFieldSpeeds().vxMetersPerSecond, 1e-9);
+    assertEquals(1, firstStep.timestampSeconds(), 1e-9);
+    assertEquals(0.020, firstStep.durationSeconds(), 1e-9);
+
+    var secondStep =
+        follower.update(1.017, Pose2d.kZero, measuredSpeeds).velocityStep().orElseThrow();
+    assertEquals(
+        first.commandedFieldSpeeds().vxMetersPerSecond,
+        secondStep.startingFieldSpeeds().vxMetersPerSecond,
+        1e-9);
+    assertEquals(0.017, secondStep.durationSeconds(), 1e-9);
+
+    var recovered = follower.update(1.2, Pose2d.kZero, measuredSpeeds).velocityStep().orElseThrow();
+    assertEquals(0.4, recovered.startingFieldSpeeds().vxMetersPerSecond, 1e-9);
+    assertEquals(0.020, recovered.durationSeconds(), 1e-9);
+
+    follower.cancel();
+    assertThat(follower.update(1.22, Pose2d.kZero, measuredSpeeds).velocityStep()).isEmpty();
+  }
+
+  @Test
   void rejectsExactReversalWithoutStop() {
     assertThatThrownBy(() ->
             PathBuilder.build(

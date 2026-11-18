@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.robot_manager.RobotManager;
+import java.util.Optional;
 
 /** Shared 2026 mechanism actions and transition conditions for autonomous state machines. */
 public final class AutoActions {
@@ -69,18 +70,19 @@ public final class AutoActions {
     robot.prepareScoreRequest();
   }
 
-  static ChassisSpeeds applyBumpCrossingOverride(
+  static Optional<ChassisSpeeds> bumpCrossingOverride(
       TickResult result, BumpCrossingState crossingState, Alliance alliance) {
-    var planned = result.commandedFieldSpeeds();
     if (crossingState == BumpCrossingState.FLAT_NOT_CROSSING
         || result.diagnostic().equals("NONFINITE_STATE")) {
-      return planned;
+      return Optional.empty();
     }
     // TB1 forced only field X during the crossing. Keep the follower's centering and heading.
-    return new ChassisSpeeds(
-        alliance == Alliance.Red ? BUMP_CROSSING_SPEED_MPS : -BUMP_CROSSING_SPEED_MPS,
-        planned.vyMetersPerSecond,
-        planned.omegaRadiansPerSecond);
+    var planned = result.commandedFieldSpeeds();
+    return Optional.of(
+        new ChassisSpeeds(
+            alliance == Alliance.Red ? BUMP_CROSSING_SPEED_MPS : -BUMP_CROSSING_SPEED_MPS,
+            planned.vyMetersPerSecond,
+            planned.omegaRadiansPerSecond));
   }
 
   static boolean finishedBumpCrossing(RobotManager robot) {
