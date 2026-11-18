@@ -2,12 +2,14 @@ package frc.robot.autos;
 
 import com.ctre.phoenix6.Utils;
 import com.team581.autos.AutoChooser;
+import com.team581.math.MathHelpers;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.FmsUtil;
 import com.team581.util.profiling.LoopTiming;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -19,6 +21,7 @@ import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.util.scheduling.SubsystemPriority;
 import frc.robot.vision.Vision;
+import java.util.Objects;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
@@ -27,9 +30,10 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
 
   private record StagedLaunch(TrailblazerAuto<?> auto, Pose2d pose) {
     boolean matches(TrailblazerAuto<?> candidate, Pose2d currentPose) {
-      return auto == candidate
+      return Objects.equals(auto, candidate)
           && pose.getTranslation().getDistance(currentPose.getTranslation()) <= 0.025
-          && Math.abs(pose.getRotation().minus(currentPose.getRotation()).getDegrees()) <= 3.0;
+          && MathUtil.isNear(
+              0, pose.getRotation().minus(currentPose.getRotation()).getDegrees(), 3.0);
     }
   }
 
@@ -42,8 +46,8 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   }
 
   private static boolean isStationaryForLaunch(ChassisSpeeds speeds) {
-    return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) <= 0.10
-        && Math.abs(speeds.omegaRadiansPerSecond) <= Math.toRadians(10.0);
+    return MathHelpers.getLinearVelocity(speeds) <= 0.10
+        && MathUtil.isNear(0, speeds.omegaRadiansPerSecond, Math.toRadians(10.0));
   }
 
   private final AutoChooser<AutoSelection> autoChooser =

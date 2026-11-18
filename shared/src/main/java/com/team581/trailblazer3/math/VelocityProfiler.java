@@ -2,11 +2,13 @@ package com.team581.trailblazer3.math;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.model.Goal;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import edu.wpi.first.math.MathUtil;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public final class VelocityProfiler {
   @FunctionalInterface
@@ -23,7 +25,7 @@ public final class VelocityProfiler {
 
     private PathBuilder.Path fixedPath;
     private DrivetrainLimits fixedLimits;
-    private List<HeadingSchedule> fixedSchedules = List.of();
+    private List<HeadingSchedule> fixedSchedules = ImmutableList.of();
     private double[] fixedNodes = new double[0];
     private double[] headingBudgets = new double[0];
     private double[] rawNodes = new double[256];
@@ -82,7 +84,9 @@ public final class VelocityProfiler {
 
     private void prepareFixedNodes(
         PathBuilder.Path path, List<HeadingSchedule> schedules, DrivetrainLimits limits) {
-      if (path == fixedPath && limits == fixedLimits && fixedSchedules.equals(schedules)) {
+      if (Objects.equals(path, fixedPath)
+          && Objects.equals(limits, fixedLimits)
+          && fixedSchedules.equals(schedules)) {
         return;
       }
       int intervals = (int) Math.ceil(path.length() / 0.05);
