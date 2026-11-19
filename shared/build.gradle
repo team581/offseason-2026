@@ -28,7 +28,7 @@ dependencies {
 	implementation 'org.hipparchus:hipparchus-geometry:4.0.3'
 
 	// https://central.sonatype.com/artifact/org.hipparchus/hipparchus-fitting
-	implementation 'org.hipparchus:hipparchus-fitting:4.0.3'
+	implementation 'org.hipparchus:hipparchus-fitting:4.1'
 }
 
 ext.wpilibVersion = "2026.+"
