@@ -96,12 +96,13 @@ public final class HeadingSchedule {
       return;
     }
     var section = new HeadingSchedule(from, initial, anchors, true);
-    if (clearance != null && !section.clears(path, clearance)) {
-      section = new HeadingSchedule(from, initial, anchors, false);
-    }
-
     if (clearance == null || section.clears(path, clearance)) {
       sections.add(section);
+      return;
+    }
+    var linear = new HeadingSchedule(from, initial, anchors, false);
+    if (linear.clears(path, clearance)) {
+      sections.add(linear);
     }
   }
 
