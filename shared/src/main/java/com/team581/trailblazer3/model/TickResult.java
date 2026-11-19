@@ -1,5 +1,7 @@
 package com.team581.trailblazer3.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public record TickResult(
@@ -40,12 +42,11 @@ public record TickResult(
       double startTime,
       long sequence) {
     public VelocityStep {
-      if (!Double.isFinite(durationSeconds)
-          || durationSeconds < 0
-          || (durationSeconds > 0 && (!Double.isFinite(startTime) || sequence <= 0))) {
-        throw new IllegalArgumentException(
-            "A ramp requires a duration, planner timestamp and sequence");
-      }
+      checkArgument(
+          Double.isFinite(durationSeconds)
+              && durationSeconds >= 0
+              && !(durationSeconds > 0 && (!Double.isFinite(startTime) || sequence <= 0)),
+          "A ramp requires a duration, planner timestamp and sequence");
     }
 
     public VelocityStep(ChassisSpeeds start, double durationSeconds) {

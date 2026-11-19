@@ -3,6 +3,7 @@ package frc.robot.autos;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.team581.math.MathHelpers;
 import com.team581.signals.Signals;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
@@ -218,8 +219,8 @@ final class AutoTelemetry {
 
   private void logMotion(ChassisSpeeds command, ChassisSpeeds measured) {
     long timestamp = RobotController.getFPGATime();
-    double commandedSpeed = Math.hypot(command.vxMetersPerSecond, command.vyMetersPerSecond);
-    double measuredSpeed = Math.hypot(measured.vxMetersPerSecond, measured.vyMetersPerSecond);
+    double commandedSpeed = MathHelpers.getLinearVelocity(command);
+    double measuredSpeed = MathHelpers.getLinearVelocity(measured);
     if (!Double.isFinite(commandedSpeed)
         || !Double.isFinite(measuredSpeed)
         || !Double.isFinite(command.omegaRadiansPerSecond)
