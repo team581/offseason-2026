@@ -153,6 +153,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
     DogLog.log("Trailblazer3/WaitingForPath", "");
   }
 
+  // TODO: remove if we decide against replanning paths if pose is off
   private Plan preparePath(AutoSegment blueSegment, AutoSegment fieldSegment, Pose2d start) {
     try {
       var plan = trailblazer.prepare(fieldSegment, CompAutoField.clearance(alliance), start);
