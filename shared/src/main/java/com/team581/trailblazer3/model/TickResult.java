@@ -1,7 +1,6 @@
 package com.team581.trailblazer3.model;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import java.util.Optional;
 
 public record TickResult(
     ChassisSpeeds commandedFieldSpeeds,
@@ -11,7 +10,8 @@ public record TickResult(
     long geometryGeneration,
     double progress,
     String diagnostic,
-    Optional<VelocityStep> velocityStep) {
+    VelocityStep velocityStep) {
+
   public TickResult(
       ChassisSpeeds commandedFieldSpeeds,
       RuntimeStatus status,
@@ -28,12 +28,41 @@ public record TickResult(
         geometryGeneration,
         progress,
         diagnostic,
-        Optional.empty());
+        new VelocityStep(commandedFieldSpeeds, 0));
   }
 
-  /** The interval over which the follower limited the change to commandedFieldSpeeds. */
+  /** Zero duration requests the endpoint immediately. */
   public record VelocityStep(
-      ChassisSpeeds startingFieldSpeeds, double timestampSeconds, double durationSeconds) {}
+      double startVx,
+      double startVy,
+      double startOmega,
+      double durationSeconds,
+      double startTime,
+      long sequence) {
+    public VelocityStep {
+      if (!Double.isFinite(durationSeconds)
+          || durationSeconds < 0
+          || (durationSeconds > 0 && (!Double.isFinite(startTime) || sequence <= 0))) {
+        throw new IllegalArgumentException(
+            "A ramp requires a duration, planner timestamp and sequence");
+      }
+    }
+
+    public VelocityStep(ChassisSpeeds start, double durationSeconds) {
+      this(start, durationSeconds, Double.NaN, 0);
+    }
+
+    public VelocityStep(
+        ChassisSpeeds start, double durationSeconds, double startTime, long sequence) {
+      this(
+          start.vxMetersPerSecond,
+          start.vyMetersPerSecond,
+          start.omegaRadiansPerSecond,
+          durationSeconds,
+          startTime,
+          sequence);
+    }
+  }
 
   public enum RuntimeStatus {
     IDLE,

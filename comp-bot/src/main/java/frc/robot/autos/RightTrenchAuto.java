@@ -193,7 +193,15 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
       }
       case CROSS_BUMP_TO_SHOOT_1, CROSS_BUMP_TO_SHOOT_2, CROSS_BUMP_TO_SHOOT_3 ->
           AutoActions.whileCrossingBump(this, BUMP_LANDING);
-      case SHOOT_1, SHOOT_2, SHOOT_3 -> AutoActions.scoreInPlace(this, scoreSegment);
+      case SHOOT_1 -> {
+        AutoActions.scoreInPlace(this, scoreSegment);
+        prepareNext(CYCLE_2_SEGMENT);
+      }
+      case SHOOT_2 -> {
+        AutoActions.scoreInPlace(this, scoreSegment);
+        prepareNext(CYCLE_3_SEGMENT);
+      }
+      case SHOOT_3 -> AutoActions.scoreInPlace(this, scoreSegment);
     }
   }
 }

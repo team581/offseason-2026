@@ -35,6 +35,7 @@ import frc.robot.vision.CameraConfigs;
 import frc.robot.vision.Vision;
 import frc.robot.vision.limelight.Limelight;
 import frc.robot.vision.limelight.LimelightState;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -131,7 +132,7 @@ final class TrailblazerTrenchAutoTest {
     robot.cancelIntakeRequest();
     robot.hopperManager.setWantsSafeStow(false);
     robot.powerManager.idleRequest();
-    return new AutoContext(robot, planner, alliance);
+    return new AutoContext(robot, planner, alliance, Runnable::run);
   }
 
   @Test
@@ -141,17 +142,20 @@ final class TrailblazerTrenchAutoTest {
     var planner = CompTrailblazer.create(() -> time[0]);
     for (var alliance : Alliance.values()) {
       var rightAuto = new TrailblazerTrenchAuto(testContext(planner, alliance));
-      var rightStart = rightAuto.startPose().orElseThrow();
+      var rightStart = rightAuto.startPose();
       assertThat(rightAuto.isNearStartPose(rightStart)).isTrue();
       assertThat(rightAuto.isNearStartPose(Pose2d.kZero)).isFalse();
 
-      var stagingFollower = CompTrailblazer.create(() -> time[0]);
-      var rightLaunch = rightAuto.previewLaunchCommand(stagingFollower, rightStart).orElseThrow();
-      assertThat(rightAuto.previewLaunchCommand(stagingFollower, Pose2d.kZero)).isEmpty();
+      rightAuto.prepareWhileDisabled(rightStart, true);
+      var rightLaunch = rightAuto.stagedLaunch(rightStart);
+      assertThat(rightLaunch).isNotEqualTo(new ChassisSpeeds());
+      assertThat(rightAuto.stagedLaunch(Pose2d.kZero)).isEqualTo(new ChassisSpeeds());
       assertThat(rightAuto.hasStartedRunning()).isFalse();
       assertEquals(TickResult.RuntimeStatus.IDLE, planner.lastResult().status());
 
+      rightAuto.robot.localization.resetPose(rightStart);
       rightAuto.periodic();
+      assertThat(planner.sampledPathPoses(Trailblazer.PATH_LOG_SPACING)).isNotEmpty();
       time[0] += 30;
       var rightResult = planner.update(time[0], rightStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, rightResult.status());
@@ -186,10 +190,13 @@ final class TrailblazerTrenchAutoTest {
                   : currentState;
             }
           };
-      var leftStart = leftAuto.startPose().orElseThrow();
+      var leftStart = leftAuto.startPose();
       assertThat(leftAuto.isNearStartPose(leftStart)).isTrue();
-      var leftLaunch = leftAuto.previewLaunchCommand(stagingFollower, leftStart).orElseThrow();
+      leftAuto.prepareWhileDisabled(leftStart, true);
+      var leftLaunch = leftAuto.stagedLaunch(leftStart);
+      assertThat(leftLaunch).isNotEqualTo(new ChassisSpeeds());
 
+      leftAuto.robot.localization.resetPose(leftStart);
       leftAuto.periodic();
       var leftResult = planner.update(time[0], leftStart, new ChassisSpeeds());
       assertEquals(TickResult.RuntimeStatus.RUNNING, leftResult.status());
@@ -210,8 +217,40 @@ final class TrailblazerTrenchAutoTest {
     var blueAuto = new DoNothingAuto(testContext(planner, Alliance.Blue));
     var redAuto = new DoNothingAuto(testContext(planner, Alliance.Red));
 
-    assertThat(blueAuto.startPose()).hasValue(Pose2d.kZero);
-    assertThat(redAuto.startPose()).hasValue(FieldUtil.pathflip(Pose2d.kZero));
+    assertThat(blueAuto.startPose()).isEqualTo(Pose2d.kZero);
+    assertThat(redAuto.startPose()).isEqualTo(FieldUtil.pathflip(Pose2d.kZero));
+  }
+
+  @Test
+  void failedLivePlanStopsTheAutoWithoutSubmittingMoreWork() {
+    assertThat(HAL.initialize(500, 0)).isTrue();
+    var work = new ArrayDeque<Runnable>();
+    var planner = CompTrailblazer.create();
+    var robot = testContext(planner, Alliance.Blue).robot();
+    var start = new Pose2d(2, 2, Rotation2d.kZero);
+    var reversal = Trailblazer.segment("reversal").through(3, 2, 0).stopAt(start).build();
+    var auto =
+        new TrailblazerAuto<>(
+            SingleDriveState.DRIVE,
+            start,
+            new AutoContext(robot, planner, Alliance.Blue, work::add),
+            reversal) {
+          @Override
+          protected void afterTransition(SingleDriveState state) {
+            drive(reversal);
+          }
+        };
+
+    robot.localization.resetPose(start);
+    auto.periodic();
+    work.removeFirst().run();
+    auto.periodic();
+    auto.periodic();
+
+    assertThat(auto.canDrive()).isFalse();
+    assertThat(work).isEmpty();
+    assertThat(planner.update(0, start, new ChassisSpeeds()).status())
+        .isEqualTo(TickResult.RuntimeStatus.IDLE);
   }
 
   @Test
@@ -225,6 +264,62 @@ final class TrailblazerTrenchAutoTest {
     assertEquals(12.0, redGoal.getX(), 1e-12);
     assertEquals(6.0, redGoal.getY(), 1e-12);
     assertEquals(-90, redGoal.getRotation().getDegrees(), 1e-12);
+  }
+
+  @Test
+  void shiftedStartWaitsForWorkerAndUsesPreparedGeometryOnFirstUpdate() {
+    assertThat(HAL.initialize(500, 0)).isTrue();
+    var work = new ArrayDeque<Runnable>();
+    var planner = CompTrailblazer.create();
+    var robot = testContext(planner, Alliance.Blue).robot();
+    var auto = new TrailblazerTrenchAuto(new AutoContext(robot, planner, Alliance.Blue, work::add));
+    var nominal = auto.startPose();
+    auto.prepareWhileDisabled(nominal, true);
+    work.removeFirst().run();
+
+    var shifted = CompAutoField.offset(nominal, 0.12, 0);
+    robot.localization.resetPose(shifted);
+    auto.periodic();
+    auto.periodic();
+    assertThat(work).hasSize(1);
+    assertThat(planner.update(0.0, shifted, new ChassisSpeeds()).status())
+        .isEqualTo(TickResult.RuntimeStatus.IDLE);
+
+    work.removeFirst().run();
+    var measured = CompAutoField.offset(shifted, 0.01, 0);
+    robot.localization.resetPose(measured);
+    auto.periodic();
+    assertThat(work).isEmpty();
+    assertThat(planner.sampledPathPoses(Trailblazer.PATH_LOG_SPACING)[0]).isEqualTo(shifted);
+
+    planner.relatch();
+    var first = planner.update(0.02, measured, new ChassisSpeeds());
+    assertThat(first.status()).isEqualTo(TickResult.RuntimeStatus.RUNNING);
+    assertThat(first.geometryGeneration()).isEqualTo(1);
+    assertThat(planner.sampledPathPoses(Trailblazer.PATH_LOG_SPACING)[0]).isEqualTo(shifted);
+  }
+
+  @Test
+  void stagesFirstSegmentWhileLaterSegmentsAreStillQueued() {
+    assertThat(HAL.initialize(500, 0)).isTrue();
+    var work = new ArrayDeque<Runnable>();
+    var planner = CompTrailblazer.create();
+    var robot = testContext(planner, Alliance.Blue).robot();
+    var auto = new RightTrenchAuto(new AutoContext(robot, planner, Alliance.Blue, work::add));
+    var start = auto.startPose();
+
+    auto.prepareWhileDisabled(start, true);
+    assertThat(auto.stagedLaunch(start)).isEqualTo(new ChassisSpeeds());
+    work.removeFirst().run();
+    assertThat(work).isNotEmpty();
+
+    var launch = auto.stagedLaunch(start);
+    assertThat(launch).isNotEqualTo(new ChassisSpeeds());
+    robot.localization.resetPose(start);
+    auto.periodic();
+    var enabled = planner.update(0, start, new ChassisSpeeds());
+    assertThat(enabled.status()).isEqualTo(TickResult.RuntimeStatus.RUNNING);
+    assertLaunchMatches(launch, enabled.commandedFieldSpeeds());
   }
 
   @Test

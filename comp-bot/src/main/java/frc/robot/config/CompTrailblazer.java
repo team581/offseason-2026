@@ -18,11 +18,18 @@ public final class CompTrailblazer {
 
   public static final EmpiricalDriveCalibration CALIBRATION = TrailblazerConfig.COMP;
 
+  public static final RobotDrivetrainSpec DRIVE_SPEC = driveSpec();
+
   public static Trailblazer create() {
     return create(Utils::getCurrentTimeSeconds);
   }
 
   public static Trailblazer create(DoubleSupplier time) {
+    return new Trailblazer(
+        time, DRIVE_SPEC, CALIBRATION, 0.020, Optional.of(CompAutoField.CLEARANCE));
+  }
+
+  private static RobotDrivetrainSpec driveSpec() {
     var frontLeft = CompTunerConstants.FrontLeft;
     var modules =
         ImmutableList.of(
@@ -30,21 +37,19 @@ public final class CompTrailblazer {
             CompTunerConstants.FrontRight,
             CompTunerConstants.BackLeft,
             CompTunerConstants.BackRight);
-    var robot =
-        new RobotDrivetrainSpec(
-            61.2,
-            5.20,
-            frontLeft.WheelRadius,
-            frontLeft.DriveMotorGearRatio,
-            frontLeft.SteerMotorGearRatio,
-            modules.stream()
-                .map(module -> new Translation2d(module.LocationX, module.LocationY))
-                .toList(),
-            DCMotor.getKrakenX60Foc(1),
-            DCMotor.getKrakenX44Foc(1),
-            frontLeft.SlipCurrent,
-            0.20);
-    return new Trailblazer(time, robot, CALIBRATION, 0.020, Optional.of(CompAutoField.CLEARANCE));
+    return new RobotDrivetrainSpec(
+        61.2,
+        5.20,
+        frontLeft.WheelRadius,
+        frontLeft.DriveMotorGearRatio,
+        frontLeft.SteerMotorGearRatio,
+        modules.stream()
+            .map(module -> new Translation2d(module.LocationX, module.LocationY))
+            .toList(),
+        DCMotor.getKrakenX60Foc(1),
+        DCMotor.getKrakenX44Foc(1),
+        frontLeft.SlipCurrent,
+        0.20);
   }
 
   private CompTrailblazer() {}

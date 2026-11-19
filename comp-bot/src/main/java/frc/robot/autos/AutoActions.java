@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.robot_manager.RobotManager;
-import java.util.Optional;
 
 /** Shared 2026 mechanism actions and transition conditions for autonomous state machines. */
 public final class AutoActions {
@@ -70,25 +69,28 @@ public final class AutoActions {
     robot.prepareScoreRequest();
   }
 
-  static Optional<ChassisSpeeds> bumpCrossingOverride(
+  static ChassisSpeeds bumpCrossingCommand(
       TickResult result, BumpCrossingState crossingState, Alliance alliance) {
-    if (crossingState == BumpCrossingState.FLAT_NOT_CROSSING
-        || result.diagnostic().equals("NONFINITE_STATE")) {
-      return Optional.empty();
+    if (!hasBumpCrossingOverride(result, crossingState)) {
+      return result.commandedFieldSpeeds();
     }
     // TB1 forced only field X during the crossing. Keep the follower's centering and heading.
     var planned = result.commandedFieldSpeeds();
-    return Optional.of(
-        new ChassisSpeeds(
-            alliance == Alliance.Red ? BUMP_CROSSING_SPEED_MPS : -BUMP_CROSSING_SPEED_MPS,
-            planned.vyMetersPerSecond,
-            planned.omegaRadiansPerSecond));
+    return new ChassisSpeeds(
+        alliance == Alliance.Red ? BUMP_CROSSING_SPEED_MPS : -BUMP_CROSSING_SPEED_MPS,
+        planned.vyMetersPerSecond,
+        planned.omegaRadiansPerSecond);
   }
 
   static boolean finishedBumpCrossing(RobotManager robot) {
     // TB1's shot marker was active as soon as its one-point crossing segment started.
     return robot.localization.imu.bumpCrossingTracker.getState()
         == BumpCrossingState.FLAT_NOT_CROSSING;
+  }
+
+  static boolean hasBumpCrossingOverride(TickResult result, BumpCrossingState crossingState) {
+    return crossingState != BumpCrossingState.FLAT_NOT_CROSSING
+        && !result.diagnostic().equals("NONFINITE_STATE");
   }
 
   static void requestBumpCrossing(TrailblazerAuto<?> auto, Pose2d blueLandingPose) {

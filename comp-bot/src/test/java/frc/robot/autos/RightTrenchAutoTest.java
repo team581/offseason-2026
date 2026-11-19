@@ -86,8 +86,8 @@ final class RightTrenchAutoTest {
     var shoot = goals.get(goals.size() - 1).pose().getTranslation();
     double direction = alliance == Alliance.Red ? 1 : -1;
     TrailblazerAuto<?> auto = right ? new RightTrenchAuto(context) : new LeftTrenchAuto(context);
-    Pose2d pose = auto.startPose().orElseThrow();
-    assertThat(auto.previewPath(pose)).hasSizeGreaterThan(50);
+    Pose2d pose = auto.startPose();
+    auto.prepareWhileDisabled(pose, true);
     ChassisSpeeds speeds = new ChassisSpeeds();
     String step = "";
     double stepStart = 0;
@@ -133,9 +133,7 @@ final class RightTrenchAutoTest {
 
         var result = planner.update(time[0], pose, speeds);
         var crossingState = tracker.getState();
-        var command =
-            AutoActions.bumpCrossingOverride(result, crossingState, alliance)
-                .orElseGet(result::commandedFieldSpeeds);
+        var command = AutoActions.bumpCrossingCommand(result, crossingState, alliance);
         if (step.startsWith("CROSS_BUMP")) {
           assertEquals(direction * 4.0, command.vxMetersPerSecond);
           assertEquals(result.commandedFieldSpeeds().vyMetersPerSecond, command.vyMetersPerSecond);
@@ -247,9 +245,7 @@ final class RightTrenchAutoTest {
     var result =
         new TickResult(planned, RuntimeStatus.RUNNING, false, LimitingFactor.NONE, 1, 0, "");
     for (var state : BumpCrossingState.values()) {
-      var override = AutoActions.bumpCrossingOverride(result, state, alliance);
-      assertEquals(state != BumpCrossingState.FLAT_NOT_CROSSING, override.isPresent());
-      var command = override.orElse(planned);
+      var command = AutoActions.bumpCrossingCommand(result, state, alliance);
       double expectedX =
           state == BumpCrossingState.FLAT_NOT_CROSSING
               ? planned.vxMetersPerSecond

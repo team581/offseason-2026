@@ -40,9 +40,85 @@ public final class Trailblazer {
   /** Measured heading error at a through point's heading anchor. */
   public record HeadingArrival(int goalIndex, double errorRadians, boolean withinTolerance) {}
 
+  /** Immutable geometry, limits, and visualization for a segment prepared off the control loop. */
+  public static final class PreparedSegment {
+    private final AutoSegment segment;
+    private final FieldClearance clearance;
+    private final DrivetrainLimits limits;
+    private final SegmentPath geometry;
+    private final Pose2d[] samples;
+    private final double entryClearance;
+    private final double bumperRadius;
+
+    private PreparedSegment(
+        AutoSegment segment,
+        FieldClearance clearance,
+        DrivetrainLimits limits,
+        SegmentPath geometry) {
+      this.segment = segment;
+      this.clearance = clearance;
+      this.limits = limits;
+      this.geometry = geometry;
+      entryClearance = clearance.clearance(geometry.start());
+      bumperRadius = Math.hypot(clearance.halfLength(), clearance.halfWidth());
+      samples =
+          sampleSegmentPoses(
+              geometry.start(),
+              geometry.path(),
+              segment.goals(),
+              geometry.turnHold(),
+              PATH_LOG_SPACING,
+              new double[5]);
+    }
+
+    /** Allows small entry offsets only when the original clearance covers the whole pose change. */
+    public boolean acceptsStart(Pose2d measured) {
+      if (!finite(measured)) {
+        return false;
+      }
+      var start = geometry.start();
+      double distance = start.getTranslation().getDistance(measured.getTranslation());
+      double turn = Math.abs(measured.getRotation().minus(start.getRotation()).getRadians());
+      if (distance <= 1e-9 && turn <= 1e-9) {
+        return true;
+      }
+      return distance <= 0.025
+          && turn <= Math.toRadians(3.0)
+          && entryClearance >= distance + bumperRadius * turn;
+    }
+
+    /** Planned pose at the terminal goal, before any moving-handoff braking extension. */
+    public Pose2d endPose() {
+      double terminal = geometry.path().anchors().get(segment.goals().size() - 1);
+      var heading =
+          plannedHeadingAtRadians(
+              geometry.start(),
+              geometry.path(),
+              segment.goals(),
+              geometry.turnHold(),
+              terminal,
+              new double[5]);
+      return new Pose2d(
+          geometry.path().sample(terminal).position(), Rotation2d.fromRadians(heading));
+    }
+
+    public Pose2d[] sampledPoses() {
+      return samples.clone();
+    }
+  }
+
   private record Barrier(double progress, boolean closed) {}
 
   private record HeadingPassage(int goal, double progress, HeadingPlan keyframe) {}
+
+  private record SegmentPath(
+      Pose2d start,
+      PathBuilder.Path path,
+      double turnHold,
+      List<HeadingSchedule> headings,
+      List<HeadingPassage> passages) {}
+
+  public static final double PATH_LOG_SPACING = 0.10;
 
   private static final double CORRIDOR = 0.30;
   private static final double RELATCH_DWELL = 0.15;
@@ -67,6 +143,83 @@ public final class Trailblazer {
   /** Starts a named segment with the robot’s default motion limits. */
   public static AutoSegment.Builder segment(String id) {
     return new AutoSegment.Builder(id);
+  }
+
+  private static SegmentPath buildPath(
+      Pose2d pose,
+      List<Goal> goals,
+      DrivetrainLimits limits,
+      FieldClearance clearance,
+      int from,
+      double[] sampleScratch) {
+    var path =
+        PathBuilder.build(
+            pose.getTranslation(), goals, Math.min(limits.braking(), limits.friction()), clearance);
+    checkArgument(path.length() <= 100, "Path exceeds profile capacity");
+    double turnHold = computeInitialTurnHold(pose, path, goals, clearance, sampleScratch);
+    var passages = new ArrayList<HeadingPassage>();
+    double precedingAnchor = 0;
+    double terminal = path.anchors().get(goals.size() - 1);
+    for (int i = 0; i < goals.size(); i++) {
+      var goal = goals.get(i);
+      var keyframe = headingForGoal(goal);
+      if (keyframe == null) {
+        continue;
+      }
+      double anchor =
+          MathUtil.clamp(
+              path.anchors().get(i) + keyframe.offsetMeters(), precedingAnchor, terminal);
+      if (HeadingSchedule.applies(goal)) {
+        passages.add(new HeadingPassage(from + i, anchor, keyframe));
+      }
+      precedingAnchor = anchor;
+    }
+    var headings =
+        HeadingSchedule.build(path, goals, pose.getRotation().getRadians(), turnHold, clearance);
+    return new SegmentPath(pose, path, turnHold, List.copyOf(headings), List.copyOf(passages));
+  }
+
+  private static double computeInitialTurnHold(
+      Pose2d pose,
+      PathBuilder.Path geometry,
+      List<Goal> goals,
+      FieldClearance clearance,
+      double[] sampleScratch) {
+    if (clearance == null) {
+      return 0.0;
+    }
+    for (int i = 0; i < goals.size(); i++) {
+      var goal = goals.get(i);
+      var keyframe = headingForGoal(goal);
+      if (keyframe == null) {
+        continue;
+      }
+      if (!(keyframe.target() instanceof HeadingPlan.Target.Fixed fixed)) {
+        return 0.0;
+      }
+      double startHeading = pose.getRotation().getRadians();
+      double diff = turnDelta(startHeading, fixed.angle().getRadians(), keyframe.direction());
+      if (Math.abs(diff) <= 1e-4) {
+        return 0.0;
+      }
+      double anchor =
+          MathUtil.clamp(
+              geometry.anchors().get(i) + keyframe.offsetMeters(), 0.0, geometry.length());
+      int angleSteps = Math.max(1, (int) Math.ceil(Math.abs(diff) / Math.toRadians(10.0)));
+      if (sweepClear(clearance, pose.getX(), pose.getY(), startHeading, diff, angleSteps)) {
+        return 0.0;
+      }
+      for (double s = 0.025; s <= anchor + 1e-9; s += 0.025) {
+        double sampleS = Math.min(s, anchor);
+        geometry.sampleInto(sampleS, sampleScratch);
+        if (sweepClear(
+            clearance, sampleScratch[0], sampleScratch[1], startHeading, diff, angleSteps)) {
+          return sampleS;
+        }
+      }
+      return 0.0;
+    }
+    return 0.0;
   }
 
   private static boolean finite(ChassisSpeeds speed) {
@@ -196,15 +349,16 @@ public final class Trailblazer {
   private final Optional<FieldClearance> defaultFieldClearance;
   private final Set<Enum<?>> passed = new LinkedHashSet<>();
   private final VelocityProfiler.Workspace profilerWorkspace = new VelocityProfiler.Workspace();
+
   private final double[] headingSampleScratch = new double[5];
   private final List<HeadingArrival> headingArrivals = new ArrayList<>();
-
   private List<Goal> goals = ImmutableList.of();
   private Optional<FieldClearance> activeClearance = Optional.empty();
   private DrivetrainLimits limits;
   private List<Goal> activeGoals = ImmutableList.of();
   private boolean[] openedGates = new boolean[0];
   private PathBuilder.Path path;
+  private PreparedSegment preparedSegment;
   private int remainingGoalStart;
   private int goalIndex;
   private long generation;
@@ -212,9 +366,10 @@ public final class Trailblazer {
   private double dwell;
   private double offTrack;
   private double divergence;
+
+  private long velocitySequence;
   private double lastTime = Double.NaN;
   private boolean relatchRequested;
-
   private int headingGoalIndex = -1;
   private double headingDwell;
   private double gateWait;
@@ -227,16 +382,18 @@ public final class Trailblazer {
   private int nextHeadingPassage;
   private double previousHeadingProgress;
   private Rotation2d previousMeasuredHeading = Rotation2d.kZero;
+
   private double turnHoldProgress;
   private double turnHoldHeadingRadians;
-
   private boolean terminalLatched;
+
   private boolean stopPositionLatched;
   private boolean stopHeadingLatched;
-
   private Pose2d rebuildStartPose = Pose2d.kZero;
   private HeadingPlanner.State heading;
+
   private ChassisSpeeds previous;
+
   private TickResult result = IDLE_RESULT;
 
   /** Creates a follower with a nominal period in seconds and no default field clearance. */
@@ -275,6 +432,15 @@ public final class Trailblazer {
     activate(motionPlan, Optional.of(requireNonNull(clearance)));
   }
 
+  /**
+   * Installs a prepared path after the caller has validated its entry against live localization.
+   */
+  public void activate(PreparedSegment prepared) {
+    activate(prepared.segment, Optional.of(prepared.clearance), prepared.limits);
+    installPath(prepared.geometry, goals, 0);
+    preparedSegment = prepared;
+  }
+
   /** Starts a segment with field clearance checks disabled. */
   public void activateWithoutClearance(AutoSegment motionPlan) {
     activate(motionPlan, Optional.empty());
@@ -289,6 +455,7 @@ public final class Trailblazer {
   public void cancel() {
     goals = ImmutableList.of();
     path = null;
+    preparedSegment = null;
     activeGoals = ImmutableList.of();
     openedGates = new boolean[0];
     passed.clear();
@@ -336,6 +503,15 @@ public final class Trailblazer {
     return passed.contains(marker);
   }
 
+  /** Builds a segment using immutable configuration, without touching live follower state. */
+  public PreparedSegment prepare(AutoSegment segment, FieldClearance clearance, Pose2d start) {
+    checkArgument(finite(start), "Invalid segment start pose");
+    var derived = DrivetrainLimits.derive(robot, calibration, nominalDt, segment.limits());
+    var geometry =
+        buildPath(start, segment.goals(), derived, requireNonNull(clearance), 0, new double[5]);
+    return new PreparedSegment(segment, clearance, derived, geometry);
+  }
+
   /** Requests rebuilding the remaining path from the measured pose on the next update. */
   public void relatch() {
     relatchRequested = true;
@@ -346,8 +522,15 @@ public final class Trailblazer {
     if (path == null || activeGoals.isEmpty() || !Double.isFinite(stepMeters) || stepMeters <= 0) {
       return new Pose2d[0];
     }
-    return sampleSegmentPoses(
-        rebuildStartPose, path, activeGoals, turnHoldProgress, stepMeters, headingSampleScratch);
+    return preparedSegment != null && stepMeters == PATH_LOG_SPACING
+        ? preparedSegment.sampledPoses()
+        : sampleSegmentPoses(
+            rebuildStartPose,
+            path,
+            activeGoals,
+            turnHoldProgress,
+            stepMeters,
+            headingSampleScratch);
   }
 
   /**
@@ -397,7 +580,7 @@ public final class Trailblazer {
     if (reseed) {
       previous = measuredFieldSpeeds;
     }
-    if (path == null || reseed) {
+    if (firstTick || path == null || reseed) {
       double measuredHeading = measuredPose.getRotation().getRadians();
       if (heading != null) {
         measuredHeading =
@@ -406,7 +589,7 @@ public final class Trailblazer {
       heading = new HeadingPlanner.State(measuredHeading, previous.omegaRadiansPerSecond);
       referenceAlpha = 0.0;
     }
-    if (path == null) {
+    if (firstTick || path == null) {
       headingGoalIndex = -1;
       targetHeading = heading.angle();
     }
@@ -421,7 +604,11 @@ public final class Trailblazer {
 
     String diagnostic = missedTick ? "MISSED_TICK_RECOVERY" : "";
     if (path == null) {
+      relatchRequested = false;
       rebuild(measuredPose, remainingGoalStart);
+    } else if (firstTick) {
+      previousMeasuredHeading = measuredPose.getRotation();
+      relatchRequested = false;
     } else if (relatchRequested) {
       relatchRequested = false;
       int lastGoalIndex = Math.max(0, activeGoals.size() - 1);
@@ -687,7 +874,7 @@ public final class Trailblazer {
       diagnostic = "KEEPOUT_VIOLATION";
     }
 
-    var velocityStep = new VelocityStep(previous, nowSeconds, dt);
+    var velocityStep = new VelocityStep(previous, dt, nowSeconds, ++velocitySequence);
     previous = new ChassisSpeeds(velocity.getX(), velocity.getY(), omega);
     boolean infeasible = limited.infeasible() || (beta < 1.0 - 1e-6 && profile.infeasible());
     LimitingFactor limiter =
@@ -698,14 +885,7 @@ public final class Trailblazer {
                 : profile.limitingFactor());
     result =
         new TickResult(
-            previous,
-            status,
-            infeasible,
-            limiter,
-            generation,
-            progress,
-            diagnostic,
-            Optional.of(velocityStep));
+            previous, status, infeasible, limiter, generation, progress, diagnostic, velocityStep);
     return result;
   }
 
@@ -715,15 +895,23 @@ public final class Trailblazer {
   }
 
   private void activate(AutoSegment motionPlan, Optional<FieldClearance> clearance) {
-    requireNonNull(motionPlan);
+    activate(
+        motionPlan,
+        clearance,
+        DrivetrainLimits.derive(robot, calibration, nominalDt, motionPlan.limits()));
+  }
+
+  private void activate(
+      AutoSegment motionPlan, Optional<FieldClearance> clearance, DrivetrainLimits derived) {
     goals = motionPlan.goals();
-    activeClearance = requireNonNull(clearance);
-    limits = DrivetrainLimits.derive(robot, calibration, nominalDt, motionPlan.limits());
+    activeClearance = clearance;
+    limits = derived;
     activeGoals = goals;
     openedGates = new boolean[activeGoals.size()];
     passed.clear();
     headingArrivals.clear();
     path = null;
+    preparedSegment = null;
     remainingGoalStart = 0;
     goalIndex = 0;
     highWater = 0;
@@ -807,50 +995,6 @@ public final class Trailblazer {
       spanStart = anchor;
     }
     return List.copyOf(spans);
-  }
-
-  private double computeInitialTurnHold(Pose2d pose, PathBuilder.Path geometry, List<Goal> goals) {
-    if (activeClearance.isEmpty()) {
-      return 0.0;
-    }
-    var clearance = activeClearance.orElseThrow();
-    for (int i = 0; i < goals.size(); i++) {
-      var goal = goals.get(i);
-      var keyframe = headingForGoal(goal);
-      if (keyframe == null) {
-        continue;
-      }
-      if (!(keyframe.target() instanceof HeadingPlan.Target.Fixed fixed)) {
-        return 0.0;
-      }
-      double startHeading = pose.getRotation().getRadians();
-      double diff = turnDelta(startHeading, fixed.angle().getRadians(), keyframe.direction());
-      if (Math.abs(diff) <= 1e-4) {
-        return 0.0;
-      }
-      double anchor =
-          MathUtil.clamp(
-              geometry.anchors().get(i) + keyframe.offsetMeters(), 0.0, geometry.length());
-      int angleSteps = Math.max(1, (int) Math.ceil(Math.abs(diff) / Math.toRadians(10.0)));
-      if (sweepClear(clearance, pose.getX(), pose.getY(), startHeading, diff, angleSteps)) {
-        return 0.0;
-      }
-      for (double s = 0.025; s <= anchor + 1e-9; s += 0.025) {
-        double sampleS = Math.min(s, anchor);
-        geometry.sampleInto(sampleS, headingSampleScratch);
-        if (sweepClear(
-            clearance,
-            headingSampleScratch[0],
-            headingSampleScratch[1],
-            startHeading,
-            diff,
-            angleSteps)) {
-          return sampleS;
-        }
-      }
-      return 0.0;
-    }
-    return 0.0;
   }
 
   private Barrier headingBarrier(
@@ -958,6 +1102,28 @@ public final class Trailblazer {
     return new Barrier(path.length(), false);
   }
 
+  private void installPath(SegmentPath geometry, List<Goal> candidate, int from) {
+    remainingGoalStart = from;
+    activeGoals = candidate;
+    rebuildStartPose = geometry.start();
+    path = geometry.path();
+    goalIndex = 0;
+    generation++;
+    highWater = 0;
+    offTrack = 0;
+    dwell = 0;
+    terminalLatched = false;
+    stopPositionLatched = false;
+    stopHeadingLatched = false;
+    turnHoldHeadingRadians = rebuildStartPose.getRotation().getRadians();
+    turnHoldProgress = geometry.turnHold();
+    headingPassages = geometry.passages();
+    nextHeadingPassage = 0;
+    previousHeadingProgress = 0;
+    previousMeasuredHeading = rebuildStartPose.getRotation();
+    pathHeadings = geometry.headings();
+  }
+
   private Barrier nextClosedGate(int from, double activation, double terminal) {
     for (int i = from; i < activeGoals.size(); i++) {
       var keyframe = activeGoals.get(i).heading();
@@ -1008,54 +1174,10 @@ public final class Trailblazer {
   private void rebuild(Pose2d pose, int from) {
     var candidate = goals.subList(from, goals.size());
     var geometry =
-        PathBuilder.build(
-            pose.getTranslation(),
-            candidate,
-            Math.min(limits.braking(), limits.friction()),
-            activeClearance.orElse(null));
-    checkArgument(geometry.length() <= 100, "Path exceeds profile capacity");
-    remainingGoalStart = from;
-    activeGoals = candidate;
-    rebuildStartPose = pose;
-    path = geometry;
-    goalIndex = 0;
-    generation++;
-    highWater = 0;
-    offTrack = 0;
-    dwell = 0;
-    terminalLatched = false;
-    stopPositionLatched = false;
-    stopHeadingLatched = false;
-    turnHoldHeadingRadians = pose.getRotation().getRadians();
-    turnHoldProgress = computeInitialTurnHold(pose, geometry, candidate);
-    var passages = new ArrayList<HeadingPassage>();
-    double precedingAnchor = 0;
-    double terminal = path.anchors().get(activeGoals.size() - 1);
-    for (int i = 0; i < candidate.size(); i++) {
-      var goal = candidate.get(i);
-      var keyframe = headingForGoal(goal);
-      if (keyframe == null) {
-        continue;
-      }
-      double anchor =
-          MathUtil.clamp(
-              path.anchors().get(i) + keyframe.offsetMeters(), precedingAnchor, terminal);
-      if (HeadingSchedule.applies(goal)) {
-        passages.add(new HeadingPassage(from + i, anchor, keyframe));
-      }
-      precedingAnchor = anchor;
-    }
-    headingPassages = passages;
-    nextHeadingPassage = 0;
-    previousHeadingProgress = 0;
-    previousMeasuredHeading = pose.getRotation();
-    pathHeadings =
-        HeadingSchedule.build(
-            path,
-            candidate,
-            turnHoldHeadingRadians,
-            turnHoldProgress,
-            activeClearance.orElse(null));
+        buildPath(
+            pose, candidate, limits, activeClearance.orElse(null), from, headingSampleScratch);
+    installPath(geometry, candidate, from);
+    preparedSegment = null;
   }
 
   private boolean recordHeadingArrivals(double progress, Rotation2d measured, Barrier barrier) {

@@ -38,17 +38,4 @@ public enum AutoSelection implements AutoSelectionBase {
   Optional<TrailblazerAuto<?>> create(AutoContext context) {
     return factory.map(create -> create.apply(context));
   }
-
-  /** Opt in only when the initial state immediately drives the first preview segment. */
-  boolean stagesLaunch() {
-    return switch (this) {
-      case RIGHT_TRENCH,
-          LEFT_TRENCH,
-          TRAILBLAZER_3_RIGHT_TRENCH,
-          TRAILBLAZER_3_LEFT_TRENCH,
-          TRAILBLAZER_3_TRENCH_ROTATION_TEST ->
-          true;
-      default -> false;
-    };
-  }
 }
