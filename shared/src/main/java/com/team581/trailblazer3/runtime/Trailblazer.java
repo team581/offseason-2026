@@ -23,6 +23,7 @@ import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
 import com.team581.trailblazer3.model.TickResult.VelocityStep;
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -515,6 +516,7 @@ public final class Trailblazer {
   public PreparedSegment prepare(AutoSegment segment, FieldClearance clearance, Pose2d start) {
     checkArgument(finite(start), "Invalid segment start pose");
     var derived = DrivetrainLimits.derive(robot, calibration, nominalDt, segment.limits());
+    DogLog.log("Trailblazer3/DerivedLimits", derived.toString());
     var geometry =
         buildPath(start, segment.goals(), derived, requireNonNull(clearance), 0, new double[5]);
     return new PreparedSegment(segment, clearance, derived, geometry);
