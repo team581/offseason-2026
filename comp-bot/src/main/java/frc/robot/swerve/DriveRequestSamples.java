@@ -54,7 +54,7 @@ public final class DriveRequestSamples {
       int status,
       Feedforwards forces) {
     long index = written;
-    if (index - read == rows.length) {
+    if (index - read >= rows.length) {
       dropped++;
       return;
     }

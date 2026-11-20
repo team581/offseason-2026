@@ -413,8 +413,11 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void setDirectTrajectoryCommand(ChassisSpeeds speeds, TrajectoryOwner owner) {
-    setTrajectoryCommand(speeds);
     trajectoryOwner = owner;
+    interpolatedTrajectory.setDirect(speeds);
+    trajectoryCommand = speeds;
+    hasTrajectoryCommand = true;
+    aligningTrajectoryModules = false;
   }
 
   public void setLogCalibrationCommands(boolean enabled) {
@@ -422,17 +425,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public void setTrajectoryCommand(ChassisSpeeds speeds) {
-    setTrajectoryCommand(speeds, new VelocityStep(speeds, 0));
+    setDirectTrajectoryCommand(speeds, TrajectoryOwner.DIRECT);
   }
 
   public void setTrajectoryCommand(ChassisSpeeds speeds, VelocityStep step) {
-    trajectoryOwner =
-        step.durationSeconds() > 0 ? TrajectoryOwner.INTERPOLATED : TrajectoryOwner.DIRECT;
-    if (step.durationSeconds() > 0) {
-      interpolatedTrajectory.setStep(step, speeds);
-    } else {
-      interpolatedTrajectory.setDirect(speeds);
+    if (step.durationSeconds() <= 0) {
+      setDirectTrajectoryCommand(speeds, TrajectoryOwner.DIRECT);
+      return;
     }
+    interpolatedTrajectory.setStep(step, speeds, Utils.getCurrentTimeSeconds());
+    trajectoryOwner =
+        interpolatedTrajectory.hasStep() ? TrajectoryOwner.INTERPOLATED : TrajectoryOwner.DIRECT;
     trajectoryCommand = speeds;
     hasTrajectoryCommand = true;
     aligningTrajectoryModules = false;
@@ -479,12 +482,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       if (aligningTrajectoryModules) {
         appliedOwner = TrajectoryOwner.ALIGN;
         drivetrain.setControl(trajectoryAlignment.withModuleDirection(trajectoryModuleDirection));
-      } else if (DriverStation.isAutonomousEnabled()
-          && (currentState == SwerveState.WARMUP_SCORE
-              || currentState == SwerveState.SCORE
-              || currentState == SwerveState.WARMUP_FEED
-              || currentState == SwerveState.FEED)) {
-        interpolatedTrajectory.setDirect(speeds);
+      } else if (DriverStation.isAutonomousEnabled() && currentState != SwerveState.MANUAL) {
+        if (interpolatedTrajectory.hasStep()) {
+          interpolatedTrajectory.setDirect(speeds);
+        }
         appliedOwner = ableToXSwerve ? TrajectoryOwner.X_SWERVE : TrajectoryOwner.AIM;
         if (ableToXSwerve) {
           DogLog.timestamp("Swerve/XSwerveActive");
@@ -515,7 +516,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       }
     } else {
       appliedOwner = TrajectoryOwner.TELEOP_OR_DISABLED;
-      if (interpolatedTrajectory.hasStep()) interpolatedTrajectory.setDirect(new ChassisSpeeds());
+      if (interpolatedTrajectory.hasStep()) {
+        interpolatedTrajectory.setDirect(new ChassisSpeeds());
+      }
       switch (currentState) {
         case MANUAL -> {
           var speeds = getRequestedSpeeds();
