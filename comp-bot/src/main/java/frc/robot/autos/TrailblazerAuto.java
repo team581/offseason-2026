@@ -16,14 +16,13 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.config.CompAutoField;
 import frc.robot.config.CompTrailblazer;
 import frc.robot.robot_manager.RobotManager;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-/** Auto state machine with alliance conversion, previews, and an injected clock. */
+/** Auto state machine with alliance conversion and asynchronous path preparation. */
 public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S> {
   private enum Drive implements DriveState {
     IDLE,
@@ -58,9 +57,8 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   private final List<AutoSegment> authoredSegments;
   private final Executor pathExecutor;
   private final Map<AutoSegment, Planning> paths = new HashMap<>();
-  private final List<CompletableFuture<Plan>> previewPaths = new ArrayList<>();
   private DriveState driveState = Drive.IDLE;
-  private boolean publishedPreview;
+  private boolean preparationQueued;
   private boolean startedRunning;
   private S trackedState;
   private double stateStartSeconds;
@@ -83,7 +81,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
     return getState().name();
   }
 
-  /** Returns whether {@link #periodic} has started executing on this routine. */
+  /** Returns whether the enabled loop has started executing on this routine. */
   public final boolean hasStartedRunning() {
     return startedRunning;
   }
@@ -101,6 +99,11 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   @Override
   public final void periodic() {
+    if (!startedRunning) {
+      startedRunning = true;
+      trackedState = getState();
+      stateStartSeconds = trailblazer.nowSeconds();
+    }
     if (driveState instanceof Waiting waiting) {
       continueDrive(waiting.segment(), robot.localization.getPose());
       if (driveState == Drive.FAILED) {
@@ -111,11 +114,6 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
       return;
     }
     double now = trailblazer.nowSeconds();
-    if (!startedRunning) {
-      startedRunning = true;
-      trackedState = getState();
-      stateStartSeconds = now;
-    }
     collectInputs();
     super.periodic();
     if (driveState == Drive.FAILED) {
@@ -134,21 +132,20 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   private void continueDrive(AutoSegment segment, Pose2d pose) {
     requestPath(segment, pose);
-    var plan = paths.get(segment).result();
-    if (!plan.isDone()) {
-      return;
-    }
-    var completed = plan.join();
-    if (completed instanceof Ready ready) {
-      if (!ready.segment().acceptsStart(pose)) {
-        return;
+    var completed = paths.get(segment).result().getNow(null);
+    if (completed instanceof Ready ready && ready.segment().acceptsStart(pose)) {
+      if (!trailblazer.isStaged(ready.segment())) {
+        trailblazer.activate(ready.segment());
       }
-      trailblazer.activate(ready.segment());
       driveState = Drive.IDLE;
     } else if (completed instanceof Failed failed) {
       trailblazer.cancel();
       driveState = Drive.FAILED;
       DogLog.log("Trailblazer3/PathPreparationFailure", failed.reason());
+    } else {
+      trailblazer.cancel();
+      DogLog.log("Trailblazer3/WaitingForPath", segment.id());
+      return;
     }
     DogLog.log("Trailblazer3/WaitingForPath", "");
   }
@@ -176,38 +173,13 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
     }
   }
 
-  private void publishPreview() {
-    if (publishedPreview || previewPaths.stream().anyMatch(path -> !path.isDone())) {
-      return;
-    }
-    var preview = new ArrayList<Pose2d>();
-    for (int i = 0; i < previewPaths.size(); i++) {
-      if (previewPaths.get(i).join() instanceof Ready ready) {
-        for (var sample : ready.segment().sampledPoses()) {
-          if (preview.isEmpty() || !preview.get(preview.size() - 1).equals(sample)) {
-            preview.add(sample);
-          }
-        }
-      } else {
-        var fieldSegment = CompAutoField.segment(authoredSegments.get(i), alliance);
-        fieldSegment.goals().forEach(goal -> preview.add(goal.pose()));
-      }
-    }
-    if (preview.isEmpty()) {
-      preview.add(allianceStartPose);
-    }
-    DogLog.log("Autos/PreviewPath", preview.toArray(Pose2d[]::new));
-    publishedPreview = true;
-  }
-
-  private void queuePreview(Pose2d start) {
+  private void queuePreparation(Pose2d start) {
     var nextStart = CompletableFuture.completedFuture(start);
     for (var blueSegment : authoredSegments) {
       var fieldSegment = CompAutoField.segment(blueSegment, alliance);
       var result =
           nextStart.thenApplyAsync(
               pose -> preparePath(blueSegment, fieldSegment, pose), pathExecutor);
-      previewPaths.add(result);
       paths.put(blueSegment, new Planning(result, false));
       nextStart =
           result.thenApply(plan ->
@@ -249,10 +221,8 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
     driveState = Drive.IDLE;
     if (authoredSegments.contains(blueSegment)) {
       driveState = new Waiting(blueSegment);
-      continueDrive(blueSegment, robot.localization.getPose());
-      if (driveState instanceof Waiting) {
-        trailblazer.cancel();
-        DogLog.log("Trailblazer3/WaitingForPath", segment.id());
+      if (startedRunning) {
+        continueDrive(blueSegment, robot.localization.getPose());
       }
     } else {
       trailblazer.activate(segment, CompAutoField.clearance(alliance));
@@ -303,35 +273,42 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   }
 
   final void discardPreparation() {
-    previewPaths.forEach(path -> path.cancel(false));
     paths.values().forEach(path -> path.result().cancel(false));
   }
 
-  final boolean hasPreparedPreview() {
-    return publishedPreview || !previewPaths.isEmpty();
+  final boolean hasQueuedPreparation() {
+    return preparationQueued;
   }
 
-  final void prepareWhileDisabled(Pose2d pose, boolean stageLaunch) {
-    if (!hasPreparedPreview()) {
-      queuePreview(stageLaunch && isNearStartPose(pose) ? pose : allianceStartPose);
+  final void prepareWhileDisabled(Pose2d pose, boolean autonomous, boolean stageLaunch) {
+    if (!preparationQueued) {
+      queuePreparation(stageLaunch && isNearStartPose(pose) ? pose : allianceStartPose);
+      preparationQueued = true;
     }
-    publishPreview();
-    if (stageLaunch && !authoredSegments.isEmpty() && isNearStartPose(pose)) {
-      requestPath(authoredSegments.get(0), pose);
+    if (!autonomous) {
+      return;
+    }
+    initializeState();
+    if (!(driveState instanceof Waiting waiting)) {
+      return;
+    }
+    var segment = waiting.segment();
+    if (stageLaunch && isNearStartPose(pose)) {
+      requestPath(segment, pose);
+    }
+    if (paths.get(segment).result().getNow(null) instanceof Ready ready
+        && !trailblazer.isStaged(ready.segment())) {
+      // Install geometry for telemetry while the live follower and auto state machine are paused.
+      trailblazer.activate(ready.segment());
     }
   }
 
   final ChassisSpeeds stagedLaunch(Pose2d pose) {
-    if (!authoredSegments.isEmpty() && isNearStartPose(pose)) {
-      var segment = authoredSegments.get(0);
-      if (paths.containsKey(segment)) {
-        var plan = paths.get(segment).result();
-        if (plan.isDone()
-            && plan.join() instanceof Ready ready
-            && ready.segment().acceptsStart(pose)) {
-          return ready.launch();
-        }
-      }
+    if (driveState instanceof Waiting waiting
+        && isNearStartPose(pose)
+        && paths.get(waiting.segment()).result().getNow(null) instanceof Ready ready
+        && ready.segment().acceptsStart(pose)) {
+      return ready.launch();
     }
     return new ChassisSpeeds();
   }

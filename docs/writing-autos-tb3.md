@@ -23,11 +23,11 @@ static final AutoSegment SEGMENT =
 ## State machine
 
 - Extend `TrailblazerAuto<State>` and define an `enum State`.
-- Pass the initial state, start pose, context, and ordered preview segments to `super(...)`.
+- Pass the initial state, start pose, context, and ordered segments to preplan to `super(...)`.
 - For an auto without a fixed start, use `super(initialState, context)`.
 - `collectInputs`: read sensors needed by the auto.
 - `getNextState`: choose transitions with `atGoal()`, `passedMarker(...)`, and `timeout(seconds)`.
-- `afterTransition`: start segments with `drive(segment)` and run one-time actions.
+- `afterTransition`: start segments with `drive(segment)` and issue one-time mechanism requests. The initial entry runs when the Driver Station is in autonomous mode, including while disabled.
 - `whileInState`: send repeated mechanism requests.
 - `stopDriving()` cancels the follower.
 - Register the auto in `AutoSelection` with `MY_AUTO("My Auto", MyAuto::new)`.
@@ -88,5 +88,5 @@ python3 tools/compare_tb3.py --ref main --robot 581 --output /tmp/tb3-times.json
 - The follower starts from measured pose. The expected start pose is advisory.
 - `Autos/AtExpectedStartPose`: within 0.25 m and 15° of the expected start.
 - `Autos/Step`: auto state; `Trailblazer3/Status` and `Diagnostic`: follower state and issues.
-- `Autos/PreviewPath`, `Trailblazer3/PlannedPath`, `Trailblazer3/TargetPose`: route and target.
+- `Trailblazer3/PlannedPath` shows the staged first segment while disabled and the active segment during auto. `Trailblazer3/TargetPose` shows the follower's current target.
 - Use `:comp-bot:simulateJava` for interactive simulation.

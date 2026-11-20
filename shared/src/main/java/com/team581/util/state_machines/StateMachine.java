@@ -38,16 +38,8 @@ public abstract class StateMachine<S extends Enum<S>> {
 
   /** Processes collecting inputs, state transitions, and state actions. */
   public void periodic() {
-    // The first time the robot boots up, we need to set the state from null to the initial state
-    // This also gives us an opportunity to run the state actions for the initial state
-    // Think of it as transitioning from the robot being off to initialState
-    if (!isInitialized) {
-      doTransition();
-      isInitialized = true;
-    }
-
+    initializeState();
     setStateFromRequest(getNextState(state));
-
     whileInState(state);
   }
 
@@ -96,6 +88,14 @@ public abstract class StateMachine<S extends Enum<S>> {
    */
   protected S getNextState(S currentState) {
     return currentState;
+  }
+
+  /** Runs the initial state's entry actions once, without processing further transitions. */
+  protected final void initializeState() {
+    if (!isInitialized) {
+      doTransition();
+      isInitialized = true;
+    }
   }
 
   /** Resets the timer used for {@link #timeout(double)}. */

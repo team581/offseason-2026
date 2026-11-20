@@ -23,7 +23,9 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.config.CompAutoField;
 import frc.robot.config.CompTrailblazer;
+import frc.robot.power_manager.PowerManagerState;
 import frc.robot.robot_manager.RobotState;
+import frc.robot.robot_manager.hopper_manager.HopperState;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -87,7 +89,14 @@ final class RightTrenchAutoTest {
     double direction = alliance == Alliance.Red ? 1 : -1;
     TrailblazerAuto<?> auto = right ? new RightTrenchAuto(context) : new LeftTrenchAuto(context);
     Pose2d pose = auto.startPose();
-    auto.prepareWhileDisabled(pose, true);
+    auto.prepareWhileDisabled(pose, false, false);
+    robot.hopperManager.idleRequest();
+    assertThat(robot.hopperManager.getState()).isNotEqualTo(HopperState.INTAKING);
+    assertThat(robot.powerManager.getState()).isEqualTo(PowerManagerState.IDLE);
+    auto.prepareWhileDisabled(pose, true, true);
+    robot.hopperManager.idleRequest();
+    assertThat(robot.hopperManager.getState()).isEqualTo(HopperState.INTAKING);
+    assertThat(robot.powerManager.getState()).isEqualTo(PowerManagerState.AUTO_FIRST_SEGMENT);
     ChassisSpeeds speeds = new ChassisSpeeds();
     String step = "";
     double stepStart = 0;
@@ -108,6 +117,11 @@ final class RightTrenchAutoTest {
         tracker.beforePeriodic();
 
         auto.periodic();
+        if (time[0] == 0) {
+          robot.hopperManager.idleRequest();
+          assertThat(robot.hopperManager.getState()).isEqualTo(HopperState.INTAKING);
+          assertThat(robot.powerManager.getState()).isEqualTo(PowerManagerState.AUTO_FIRST_SEGMENT);
+        }
         String nextStep = auto.currentStepName();
         if (!step.equals(nextStep)) {
           if (step.startsWith("SHOOT_")) {

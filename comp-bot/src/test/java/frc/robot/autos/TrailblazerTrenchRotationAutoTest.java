@@ -27,7 +27,7 @@ final class TrailblazerTrenchRotationAutoTest {
               TrailblazerTrenchAutoTest.testContext(planner, alliance));
       var start = auto.startPose();
       auto.robot.localization.resetPose(start);
-      auto.prepareWhileDisabled(start, true);
+      auto.prepareWhileDisabled(start, true, true);
       var pose = start;
       var speeds = new ChassisSpeeds();
       double overlapRadians = 0;

@@ -28,8 +28,6 @@ final class AutoTelemetry {
   private static final long ACCELERATION_MAX_WINDOW_MICROS = 120_000;
   private static final long MAX_MOTION_GAP_MICROS = 100_000;
 
-  private static final Pose2d[] EMPTY_PATH = new Pose2d[0];
-
   private static final String DRIVE = "Trailblazer3/DriveRequest/";
 
   /** Packed triples retain individual acquisition times, including repeated or invalid readings. */
@@ -270,11 +268,9 @@ final class AutoTelemetry {
     biasSamples = 0;
     motionSamples.clear();
     lastMotionStep = "";
-    lastLoggedGeneration = -1;
     lastLoggedStatus = RuntimeStatus.IDLE;
     lastLoggedDiagnostic = "";
     lastLoggedInfeasible = false;
-    DogLog.log("Trailblazer3/PlannedPath", EMPTY_PATH);
   }
 
   void logActive(
@@ -320,7 +316,6 @@ final class AutoTelemetry {
     if (firstTick) {
       motionSamples.clear();
       lastLoggedStatus = RuntimeStatus.IDLE;
-      lastLoggedGeneration = -1;
       lastLoggedDiagnostic = "";
       lastLoggedInfeasible = false;
     }
@@ -344,11 +339,7 @@ final class AutoTelemetry {
     } else {
       motionSamples.clear();
     }
-    if (result.geometryGeneration() != lastLoggedGeneration) {
-      lastLoggedGeneration = result.geometryGeneration();
-      DogLog.log(
-          "Trailblazer3/PlannedPath", trailblazer.sampledPathPoses(Trailblazer.PATH_LOG_SPACING));
-    }
+    logPlannedPath();
     if (DiagnosticCadence.shouldLogRoutine() || result.status() != lastLoggedStatus) {
       trailblazer
           .currentTargetPose()
@@ -367,7 +358,6 @@ final class AutoTelemetry {
 
   void logCalibrationIdle(AutoSelection state, boolean transitionedFromAuto) {
     if (transitionedFromAuto || lastLoggedSelection != state) {
-      DogLog.log("Autos/PreviewPath", EMPTY_PATH);
       DogLog.log("Autos/SelectedAutoName", state.toString());
       DogLog.log("Autos/Step", "CALIBRATION_IDLE");
       DogLog.log("Autos/AtExpectedStartPose", true);
@@ -392,6 +382,15 @@ final class AutoTelemetry {
       DogLog.log("Autos/AtExpectedStartPose", nearStart);
       lastLoggedSelection = state;
       lastNearStart = nearStart;
+    }
+  }
+
+  void logPlannedPath() {
+    long generation = trailblazer.pathGeneration();
+    if (generation != lastLoggedGeneration) {
+      lastLoggedGeneration = generation;
+      DogLog.log(
+          "Trailblazer3/PlannedPath", trailblazer.sampledPathPoses(Trailblazer.PATH_LOG_SPACING));
     }
   }
 

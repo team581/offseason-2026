@@ -432,9 +432,7 @@ public final class Trailblazer {
     activate(motionPlan, Optional.of(requireNonNull(clearance)));
   }
 
-  /**
-   * Installs a prepared path after the caller has validated its entry against live localization.
-   */
+  /** Installs a prepared path. The caller must validate its entry before driving. */
   public void activate(PreparedSegment prepared) {
     activate(prepared.segment, Optional.of(prepared.clearance), prepared.limits);
     installPath(prepared.geometry, goals, 0);
@@ -488,6 +486,11 @@ public final class Trailblazer {
     return ImmutableList.copyOf(headingArrivals);
   }
 
+  /** Reports whether this prepared path is installed and the follower has yet to tick. */
+  public boolean isStaged(PreparedSegment prepared) {
+    return prepared != null && preparedSegment == prepared && result.velocityStep().sequence() == 0;
+  }
+
   /** Returns the most recent stored follower result. */
   public TickResult lastResult() {
     return result;
@@ -501,6 +504,11 @@ public final class Trailblazer {
   /** Reports whether the active segment has recorded the given goal marker. */
   public boolean passedMarker(Enum<?> marker) {
     return passed.contains(marker);
+  }
+
+  /** Returns the installed geometry's generation, or -1 when there is no path. */
+  public long pathGeneration() {
+    return path == null ? -1 : generation;
   }
 
   /** Builds a segment using immutable configuration, without touching live follower state. */
