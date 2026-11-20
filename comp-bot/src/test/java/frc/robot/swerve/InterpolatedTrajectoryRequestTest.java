@@ -6,7 +6,7 @@ import com.ctre.phoenix6.swerve.utility.WheelForceCalculator.Feedforwards;
 import com.team581.trailblazer3.model.TickResult.VelocityStep;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import frc.robot.config.CompTrailblazer;
+import frc.robot.config.CompDriveConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -18,7 +18,7 @@ final class InterpolatedTrajectoryRequestTest {
 
   private static void assertWrench(
       Feedforwards forces, double expectedFx, double expectedFy, double expectedTorque) {
-    var positions = CompTrailblazer.DRIVE_SPEC.modulePositionsMeters();
+    var positions = CompDriveConfig.DRIVE_SPEC.modulePositionsMeters();
     double fx = 0;
     double fy = 0;
     double torque = 0;
@@ -340,7 +340,7 @@ final class InterpolatedTrajectoryRequestTest {
   @ParameterizedTest
   void wheelForcesProduceTheRequestedNetForceAndYawMoment(double alpha, double headingDeg) {
     var request = new InterpolatedTrajectoryRequest();
-    var spec = CompTrailblazer.DRIVE_SPEC;
+    var spec = CompDriveConfig.DRIVE_SPEC;
     var heading = Rotation2d.fromDegrees(headingDeg);
     var forces = request.forces(new ChassisSpeeds(3.2, -1.4, alpha), heading);
 

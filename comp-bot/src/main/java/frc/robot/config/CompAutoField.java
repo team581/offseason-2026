@@ -34,7 +34,7 @@ public final class CompAutoField {
       TRENCH_WIDTH_METERS + TRENCH_BUMP_BARRIER_WIDTH_METERS + BUMP_WIDTH_METERS / 2.0;
 
   public static final FieldClearance CLEARANCE =
-      Field2026.clearance(CompTrailblazer.BUMPER_HALF_SIZE_METERS);
+      Field2026.clearance(CompDriveConfig.BUMPER_HALF_SIZE_METERS);
 
   public static FieldClearance clearance(Alliance alliance) {
     return CLEARANCE.forAlliance(alliance);

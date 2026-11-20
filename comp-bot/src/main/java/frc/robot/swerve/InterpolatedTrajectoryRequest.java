@@ -10,7 +10,7 @@ import com.team581.trailblazer3.model.TickResult.VelocityStep;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import frc.robot.config.CompTrailblazer;
+import frc.robot.config.CompDriveConfig;
 
 /** The publisher owns the ramp timeline. Phoenix samples a single immutable ramp per callback. */
 final class InterpolatedTrajectoryRequest implements SwerveRequest {
@@ -255,7 +255,7 @@ final class InterpolatedTrajectoryRequest implements SwerveRequest {
   private long lastSequence = Long.MIN_VALUE;
 
   InterpolatedTrajectoryRequest() {
-    var spec = CompTrailblazer.DRIVE_SPEC;
+    var spec = CompDriveConfig.DRIVE_SPEC;
     var positions = spec.modulePositionsMeters();
     int count = positions.size();
     this.massPerWheel = spec.massKg() / count;

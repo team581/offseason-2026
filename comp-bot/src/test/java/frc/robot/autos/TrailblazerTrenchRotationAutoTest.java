@@ -11,7 +11,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import frc.robot.config.CompTrailblazer;
 import org.junit.jupiter.api.Test;
 
 final class TrailblazerTrenchRotationAutoTest {
@@ -21,7 +20,7 @@ final class TrailblazerTrenchRotationAutoTest {
     for (var alliance : Alliance.values()) {
       double dt = 0.020;
       double[] time = {0};
-      var planner = CompTrailblazer.create(() -> time[0]);
+      var planner = TestTrailblazer.create(() -> time[0]);
       var auto =
           new TrailblazerTrenchRotationAuto(
               TrailblazerTrenchAutoTest.testContext(planner, alliance));

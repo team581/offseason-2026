@@ -62,7 +62,7 @@ Edit `shared/src/main/java/com/team581/trailblazer3/config/TrailblazerConfig.jav
 - Measure traction, braking, and lag on carpet first. If tracking errors remain, check heading gains and translation response there.
 - `deriveLimits(...)` in the config computes speed, acceleration, rotation, and steering limits from the robot specs.
 - See [parameter meanings and derivations](../shared/src/main/java/com/team581/trailblazer3/planning/07-empirical-calibration-routine.md).
-- Robot dimensions and motor data stay in `CompTrailblazer`; field keepouts live in `trailblazer3/config/Field2026`.
+- Robot dimensions and motor data stay in `CompDriveConfig`; field keepouts live in `trailblazer3/config/Field2026`.
 
 ## Compare changes
 

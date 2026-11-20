@@ -1,33 +1,22 @@
 package frc.robot.config;
 
-import com.ctre.phoenix6.Utils;
 import com.google.common.collect.ImmutableList;
 import com.team581.trailblazer3.config.TrailblazerConfig;
 import com.team581.trailblazer3.model.EmpiricalDriveCalibration;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
-import com.team581.trailblazer3.runtime.Trailblazer;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import frc.robot.generated.CompTunerConstants;
-import java.util.Optional;
-import java.util.function.DoubleSupplier;
 
-public final class CompTrailblazer {
+public final class CompDriveConfig {
   static final double BUMPER_HALF_SIZE_METERS = Units.inchesToMeters(35.0 / 2);
+
+  public static final double FOLLOWER_PERIOD_SECONDS = 0.020;
 
   public static final EmpiricalDriveCalibration CALIBRATION = TrailblazerConfig.COMP;
 
   public static final RobotDrivetrainSpec DRIVE_SPEC = driveSpec();
-
-  public static Trailblazer create() {
-    return create(Utils::getCurrentTimeSeconds);
-  }
-
-  public static Trailblazer create(DoubleSupplier time) {
-    return new Trailblazer(
-        time, DRIVE_SPEC, CALIBRATION, 0.020, Optional.of(CompAutoField.CLEARANCE));
-  }
 
   private static RobotDrivetrainSpec driveSpec() {
     var frontLeft = CompTunerConstants.FrontLeft;
@@ -52,5 +41,5 @@ public final class CompTrailblazer {
         0.20);
   }
 
-  private CompTrailblazer() {}
+  private CompDriveConfig() {}
 }

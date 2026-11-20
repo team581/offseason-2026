@@ -7,7 +7,7 @@ import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import edu.wpi.first.math.MathUtil;
 
 /**
- * Calculated limits. Recompute from the robot spec, calibration, period, and segment caps.
+ * Calculated drivetrain limits with optional segment caps.
  *
  * @param robot source drivetrain dimensions and motor data
  * @param maxSpeed wheel-speed limit capped by the segment, in m/s
@@ -51,6 +51,27 @@ public record DrivetrainLimits(
       double nominalDt,
       MotionLimits caps) {
     return TrailblazerConfig.deriveLimits(robot, calibration, nominalDt, caps);
+  }
+
+  /** Applies segment caps to limits derived with the robot maximum profile. */
+  public DrivetrainLimits withCaps(MotionLimits caps) {
+    return new DrivetrainLimits(
+        robot,
+        Math.min(maxSpeed, caps.maxVelocityMetersPerSecond()),
+        maxWheelSpeed,
+        freeSpeed,
+        Math.min(braking, caps.maxBrakingMetersPerSecondSquared()),
+        friction,
+        lateral,
+        Math.min(maxOmega, caps.maxAngularVelocityRadiansPerSecond()),
+        Math.min(maxAlpha, caps.maxAngularAccelerationRadiansPerSecondSquared()),
+        turnRate,
+        lag,
+        moduleRadius,
+        inertiaShare,
+        Math.min(accelerationCeiling, caps.maxAccelerationMetersPerSecondSquared()),
+        headingP,
+        headingD);
   }
 
   public double acceleration(double speed) {

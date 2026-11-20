@@ -14,7 +14,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.config.CompAutoField;
-import frc.robot.config.CompTrailblazer;
 import frc.robot.robot_manager.RobotManager;
 import java.util.HashMap;
 import java.util.List;
@@ -156,9 +155,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
       var plan = trailblazer.prepare(fieldSegment, CompAutoField.clearance(alliance), start);
       var speeds = new ChassisSpeeds();
       if (blueSegment.equals(authoredSegments.get(0))) {
-        var stagingFollower = CompTrailblazer.create();
-        stagingFollower.activate(plan);
-        var result = stagingFollower.update(0.0, start, speeds);
+        var result = trailblazer.previewLaunch(plan);
         if (result.status() == RuntimeStatus.RUNNING
             && result.diagnostic().isEmpty()
             && !result.infeasible()) {

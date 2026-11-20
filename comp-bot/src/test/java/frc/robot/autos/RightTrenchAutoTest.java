@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.config.CompAutoField;
-import frc.robot.config.CompTrailblazer;
+import frc.robot.config.CompDriveConfig;
 import frc.robot.power_manager.PowerManagerState;
 import frc.robot.robot_manager.RobotState;
 import frc.robot.robot_manager.hopper_manager.HopperState;
@@ -54,7 +54,7 @@ final class RightTrenchAutoTest {
             PathBuilder.build(
                 cycleStarts.get(i).getTranslation(),
                 segment.goals(),
-                CompTrailblazer.CALIBRATION.maxBrakingDeceleration(),
+                CompDriveConfig.CALIBRATION.maxBrakingDeceleration(),
                 clearance);
         assertEquals(
             switch (i) {
@@ -76,7 +76,7 @@ final class RightTrenchAutoTest {
     assertThat(HAL.initialize(500, 0)).isTrue();
     double dt = 0.020;
     double[] time = {0};
-    var planner = CompTrailblazer.create(() -> time[0]);
+    var planner = TestTrailblazer.create(() -> time[0]);
     var context = TrailblazerTrenchAutoTest.testContext(planner, alliance);
     var robot = context.robot();
     var imu = robot.localization.imu;
@@ -162,9 +162,9 @@ final class RightTrenchAutoTest {
           correctedFinalShotPosition = true;
         }
         double translationResponse =
-            -Math.expm1(-dt / CompTrailblazer.CALIBRATION.driveResponseLagSeconds());
+            -Math.expm1(-dt / CompDriveConfig.CALIBRATION.driveResponseLagSeconds());
         double angularResponse =
-            -Math.expm1(-dt / (2 * CompTrailblazer.CALIBRATION.driveResponseLagSeconds()));
+            -Math.expm1(-dt / (2 * CompDriveConfig.CALIBRATION.driveResponseLagSeconds()));
         speeds =
             new ChassisSpeeds(
                 speeds.vxMetersPerSecond

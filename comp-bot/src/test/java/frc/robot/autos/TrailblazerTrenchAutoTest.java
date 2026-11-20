@@ -16,7 +16,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Hardware;
 import frc.robot.config.CompAutoField;
-import frc.robot.config.CompTrailblazer;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.deploy.DeployState;
@@ -150,7 +149,7 @@ final class TrailblazerTrenchAutoTest {
   void autoPreparedWhileDisabledCommandsTowardAllianceWallAfterWaiting() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     double[] time = {0};
-    var planner = CompTrailblazer.create(() -> time[0]);
+    var planner = TestTrailblazer.create(() -> time[0]);
     for (var alliance : Alliance.values()) {
       var rightAuto = new TrailblazerTrenchAuto(testContext(planner, alliance));
       var rightStart = rightAuto.startPose();
@@ -247,7 +246,7 @@ final class TrailblazerTrenchAutoTest {
 
   @Test
   void doNothingProvidesTheAllianceStartingPoseForDisabledReset() {
-    var planner = CompTrailblazer.create();
+    var planner = TestTrailblazer.create();
     var blueAuto = new DoNothingAuto(testContext(planner, Alliance.Blue));
     var redAuto = new DoNothingAuto(testContext(planner, Alliance.Red));
 
@@ -259,7 +258,7 @@ final class TrailblazerTrenchAutoTest {
   void failedLivePlanStopsTheAutoWithoutSubmittingMoreWork() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     var work = new ArrayDeque<Runnable>();
-    var planner = CompTrailblazer.create();
+    var planner = TestTrailblazer.create();
     var robot = testContext(planner, Alliance.Blue).robot();
     var start = new Pose2d(2, 2, Rotation2d.kZero);
     var reversal = Trailblazer.segment("reversal").through(3, 2, 0).stopAt(start).build();
@@ -304,7 +303,7 @@ final class TrailblazerTrenchAutoTest {
   void shiftedStartWaitsForWorkerAndUsesPreparedGeometryOnFirstUpdate() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     var work = new ArrayDeque<Runnable>();
-    var planner = CompTrailblazer.create();
+    var planner = TestTrailblazer.create();
     var robot = testContext(planner, Alliance.Blue).robot();
     var auto = new TrailblazerTrenchAuto(new AutoContext(robot, planner, Alliance.Blue, work::add));
     var nominal = auto.startPose();
@@ -340,7 +339,7 @@ final class TrailblazerTrenchAutoTest {
   void stagesFirstSegmentWhileLaterSegmentsAreStillQueued() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     var work = new ArrayDeque<Runnable>();
-    var planner = CompTrailblazer.create();
+    var planner = TestTrailblazer.create();
     var robot = testContext(planner, Alliance.Blue).robot();
     var auto = new RightTrenchAuto(new AutoContext(robot, planner, Alliance.Blue, work::add));
     var start = auto.startPose();
@@ -365,7 +364,7 @@ final class TrailblazerTrenchAutoTest {
   void stateMachineAutoRunsTransitionsMarkersAndTimeoutsInOrder() {
     assertThat(HAL.initialize(500, 0)).isTrue();
     double[] time = {10.0};
-    var planner = CompTrailblazer.create(() -> time[0]);
+    var planner = TestTrailblazer.create(() -> time[0]);
     Pose2d[] pose = {CompAutoField.pose(1.0, 0.30, 0.0)};
     ChassisSpeeds[] speeds = {new ChassisSpeeds()};
     List<String> log = new ArrayList<>();

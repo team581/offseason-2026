@@ -34,16 +34,8 @@ public final class TrailblazerConfig {
   /** Minimum translation response time in seconds; limits correction gain to 1 / this value. */
   public static final double MIN_TRANSLATION_RESPONSE_SECONDS = 0.12;
 
-  /**
-   * Calculates limits from robot specs and carpet measurements, then applies segment caps. The
-   * 0.91, 0.85, 0.90, and 0.50 factors are existing model margins, not measured robot properties.
-   * See {@link DrivetrainLimits} for each output's formula and units.
-   */
   public static DrivetrainLimits deriveLimits(
-      RobotDrivetrainSpec robot,
-      EmpiricalDriveCalibration calibration,
-      double nominalDt,
-      MotionLimits caps) {
+      RobotDrivetrainSpec robot, EmpiricalDriveCalibration calibration, double nominalDt) {
     var modulePositions = robot.modulePositionsMeters();
     checkArgument(!modulePositions.isEmpty(), "At least one module position is required");
     double radius = 0.0;
@@ -61,7 +53,6 @@ public final class TrailblazerConfig {
             * robot.wheelRadiusMeters()
             / robot.driveGearRatio();
     double wheelSpeed = 0.91 * free;
-    double max = Math.min(wheelSpeed, caps.maxVelocityMetersPerSecond());
     double friction = calibration.frictionLimit();
     double lag = calibration.driveResponseLagSeconds();
     double raw = motorAcceleration(robot, free, 0) / 0.90;
@@ -73,16 +64,14 @@ public final class TrailblazerConfig {
                     robot.staticFrictionVolts(), 0.5 * robot.steerMotor().nominalVoltageVolts));
     return new DrivetrainLimits(
         robot,
-        max,
+        wheelSpeed,
         wheelSpeed,
         free,
-        Math.min(calibration.maxBrakingDeceleration(), caps.maxBrakingMetersPerSecondSquared()),
+        calibration.maxBrakingDeceleration(),
         friction,
         0.85 * friction,
-        Math.min(0.85 * wheelSpeed / radius, caps.maxAngularVelocityRadiansPerSecond()),
-        Math.min(
-            0.85 * robot.massKg() * Math.min(raw, friction) * radius / robot.yawMoiKgMetersSq(),
-            caps.maxAngularAccelerationRadiansPerSecondSquared()),
+        0.85 * wheelSpeed / radius,
+        0.85 * robot.massKg() * Math.min(raw, friction) * radius / robot.yawMoiKgMetersSq(),
         Math.min(
             0.5
                 * steerEffectiveVoltage
@@ -92,9 +81,22 @@ public final class TrailblazerConfig {
         lag,
         radius,
         Math.min(1, 4 * robot.yawMoiKgMetersSq() / (robot.massKg() * squaredRadii)),
-        caps.maxAccelerationMetersPerSecondSquared(),
+        Double.POSITIVE_INFINITY,
         calibration.headingP(),
         calibration.headingD());
+  }
+
+  /**
+   * Calculates limits from robot specs and carpet measurements, then applies segment caps. The
+   * 0.91, 0.85, 0.90, and 0.50 factors are existing model margins, not measured robot properties.
+   * See {@link DrivetrainLimits} for each output's formula and units.
+   */
+  public static DrivetrainLimits deriveLimits(
+      RobotDrivetrainSpec robot,
+      EmpiricalDriveCalibration calibration,
+      double nominalDt,
+      MotionLimits caps) {
+    return deriveLimits(robot, calibration, nominalDt).withCaps(caps);
   }
 
   /** Heading P from a three-response-time correction, capped by the configured feedback gain. */

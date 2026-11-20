@@ -1,14 +1,17 @@
 package frc.robot;
 
+import com.ctre.phoenix6.Utils;
 import com.team581.Base581Robot;
 import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
+import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.FieldUtil;
 import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.profiling.LoopTiming;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
-import frc.robot.config.CompTrailblazer;
+import frc.robot.config.CompAutoField;
+import frc.robot.config.CompDriveConfig;
 import frc.robot.conveyor.Conveyor;
 import frc.robot.deploy.Deploy;
 import frc.robot.feeder.Feeder;
@@ -31,6 +34,7 @@ import frc.robot.vision.limelight.LimelightState;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public class Robot extends Base581Robot {
   private final Hardware hardware = new Hardware();
@@ -86,7 +90,16 @@ public class Robot extends Base581Robot {
           powerManager);
 
   @SuppressWarnings("unused") // Registers itself as a subsystem
-  private final Autos autos = new Autos(robotManager, CompTrailblazer.create(), vision);
+  private final Autos autos =
+      new Autos(
+          robotManager,
+          new Trailblazer(
+              Utils::getCurrentTimeSeconds,
+              CompDriveConfig.DRIVE_SPEC,
+              CompDriveConfig.CALIBRATION,
+              CompDriveConfig.FOLLOWER_PERIOD_SECONDS,
+              Optional.of(CompAutoField.CLEARANCE)),
+          vision);
 
   public Robot() {
     DiagnosticCadence.setEnabled(true);
