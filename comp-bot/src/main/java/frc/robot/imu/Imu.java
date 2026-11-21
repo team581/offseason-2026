@@ -43,6 +43,7 @@ public class Imu extends BaseImuSubsystem {
             this::getRobotHeading,
             translation ->
                 drivetrain.resetPose(new Pose2d(translation, driveState.Pose.getRotation())));
+    this.bumpCrossingTracker.warmUp();
   }
 
   public boolean accelerationLowEnoughToShoot() {

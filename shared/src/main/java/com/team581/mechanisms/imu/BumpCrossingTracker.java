@@ -159,6 +159,11 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
     startCrossing(crossingDirection, () -> {});
   }
 
+  /** Initializes the state machine at boot so its telemetry key is registered before enable. */
+  public void warmUp() {
+    initializeState();
+  }
+
   private void startCrossing(Rotation2d crossingDirection, Runnable landingAction) {
     this.landingAction = landingAction;
     this.crossingDirection = crossingDirection;

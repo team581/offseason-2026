@@ -61,6 +61,7 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
   private boolean startedRunning;
   private S trackedState;
   private double stateStartSeconds;
+  private String lastWaitingForPath = "";
 
   protected TrailblazerAuto(
       S initialState, Pose2d blueStartPose, AutoContext context, AutoSegment... blueSegments) {
@@ -143,10 +144,17 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
       DogLog.log("Trailblazer3/PathPreparationFailure", failed.reason());
     } else {
       trailblazer.cancel();
-      DogLog.log("Trailblazer3/WaitingForPath", segment.id());
+      logWaitingForPath(segment.id());
       return;
     }
-    DogLog.log("Trailblazer3/WaitingForPath", "");
+    logWaitingForPath("");
+  }
+
+  private void logWaitingForPath(String segmentId) {
+    if (!segmentId.equals(lastWaitingForPath)) {
+      DogLog.log("Trailblazer3/WaitingForPath", segmentId);
+      lastWaitingForPath = segmentId;
+    }
   }
 
   // TODO: remove if we decide against replanning paths if pose is off
@@ -271,6 +279,15 @@ public abstract class TrailblazerAuto<S extends Enum<S>> extends StateMachine<S>
 
   final void discardPreparation() {
     paths.values().forEach(path -> path.result().cancel(false));
+  }
+
+  final boolean hasPendingPathCalculations() {
+    for (var planning : paths.values()) {
+      if (!planning.result().isDone()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   final boolean hasQueuedPreparation() {
