@@ -50,9 +50,8 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
           .withMaxAngularAccelerationDegrees(320);
   static final AutoSegment CYCLE_1_SEGMENT =
       Trailblazer.segment("right-trench-cycle-1")
-          .withLimits(CYCLE_LIMITS)
           .through(fromRed(10.089, RED_TRENCH_Y, -90), 0.25, 15)
-          .through(fromRed(8.844, 6.049, -100), 0.30, 15)
+          .through(fromRed(8.844, 6.049, -100), 0.30, 10)
           .through(fromRed(8.816, 4.945, -60), 0.55, 14)
           .mark(Marker.PRIORITIZE_INTAKE)
           .through(fromRed(9.156, 4.445, -20), 0.25, 30)
@@ -67,12 +66,11 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
   // The three 179° anchors give the heading controller a hold through the trench.
   static final AutoSegment CYCLE_2_SEGMENT =
       Trailblazer.segment("right-trench-cycle-2")
-          .withLimits(CYCLE_LIMITS)
           .through(fromRed(13.2, RED_TRENCH_Y, 179), 0.35, 6)
           .through(fromRed(12.5, RED_TRENCH_Y, 179), 0.20, 5)
           .mark(Marker.START_INTAKE)
           .through(fromRed(10.9, RED_TRENCH_Y, -175), 0.30, 5)
-          .through(fromRed(10.228, 6.8, -140), 0.40, 25)
+          .through(fromRed(10.228, 6.8, -130), 0.40, 10)
           .through(fromRed(9.240, 5.553, -115), 0.40, 15)
           .through(fromRed(8.900, 4.81, -75), 0.50, 25)
           .through(fromRed(9.356, 4.255, -10), 0.40, 25)
@@ -86,12 +84,11 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
 
   static final AutoSegment CYCLE_3_SEGMENT =
       Trailblazer.segment("right-trench-cycle-3")
-          .withLimits(CYCLE_LIMITS)
           .through(fromRed(13.2, RED_TRENCH_Y, 179), 0.35, 6)
           .through(fromRed(12.5, RED_TRENCH_Y, 179), 0.20, 5)
           .mark(Marker.START_INTAKE)
           .through(fromRed(10.9, RED_TRENCH_Y, 179), 0.20, 5)
-          .through(fromRed(9.6, 6.353, -130), 0.40, 25)
+          .through(fromRed(9.6, 6.353, -135), 0.40, 15)
           .through(fromRed(8.8, 5.593, -90), 0.30, 25)
           .through(fromRed(8.800, 4.31, -70), 0.30, 25)
           .through(fromRed(9.31, 4.3, 32), 0.30, 25)
