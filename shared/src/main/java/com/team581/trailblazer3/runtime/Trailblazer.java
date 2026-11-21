@@ -24,7 +24,6 @@ import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
 import com.team581.trailblazer3.model.TickResult.VelocityStep;
-import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -116,6 +115,7 @@ public final class Trailblazer {
 
     private final Set<Enum<?>> passed = new LinkedHashSet<>();
     private final VelocityProfiler.Workspace profilerWorkspace = new VelocityProfiler.Workspace();
+    private final VectorLimiter.Workspace limiterWorkspace = new VectorLimiter.Workspace();
 
     private final double[] headingSampleScratch = new double[5];
     private final List<HeadingArrival> headingArrivals = new ArrayList<>();
@@ -135,6 +135,7 @@ public final class Trailblazer {
 
     private long velocitySequence;
     private double lastTime = Double.NaN;
+    private double filteredDt;
     private int headingGoalIndex = -1;
     private double headingDwell;
     private double gateWait;
@@ -163,6 +164,7 @@ public final class Trailblazer {
 
     private FollowerState(double nominalDt) {
       this.nominalDt = nominalDt;
+      this.filteredDt = nominalDt;
     }
 
     private void activate(
@@ -182,6 +184,7 @@ public final class Trailblazer {
       dwell = 0;
       divergence = 0;
       lastTime = Double.NaN;
+      filteredDt = nominalDt;
       headingGoalIndex = -1;
       headingDwell = 0;
       gateWait = 0;
@@ -222,6 +225,7 @@ public final class Trailblazer {
       previous = null;
       heading = null;
       lastTime = Double.NaN;
+      filteredDt = nominalDt;
       result =
           new TickResult(
               new ChassisSpeeds(),
@@ -430,6 +434,7 @@ public final class Trailblazer {
       previousHeadingProgress = 0;
       previousMeasuredHeading = rebuildStartPose.getRotation();
       pathHeadings = geometry.headings();
+      profilerWorkspace.prepare(path, pathHeadings, limits);
     }
 
     private boolean isStaged(PreparedSegment prepared) {
@@ -473,7 +478,8 @@ public final class Trailblazer {
         double barrier,
         List<RotationBudgetEstimator.HeadingSpan> spans,
         boolean scheduled,
-        double dt) {
+        double dt,
+        double lookaheadDt) {
       return VelocityProfiler.profile(
           path,
           activeGoals,
@@ -495,6 +501,7 @@ public final class Trailblazer {
           pathHeadings,
           limits,
           dt,
+          lookaheadDt,
           profilerWorkspace);
     }
 
@@ -589,6 +596,9 @@ public final class Trailblazer {
           !firstTick && (nowSeconds < lastTime - 1e-4 || nowSeconds - lastTime > MAX_TICK_INTERVAL);
       double dt = firstTick || missedTick ? nominalDt : (nowSeconds - lastTime);
       lastTime = nowSeconds;
+      if (!firstTick && !missedTick) {
+        filteredDt = Math.max(nominalDt, filteredDt + DT_FILTER_ALPHA * (dt - filteredDt));
+      }
 
       boolean reseed = missedTick || previous == null;
       if (reseed) {
@@ -681,9 +691,16 @@ public final class Trailblazer {
           break;
         }
       }
+      double lookaheadDt = Math.max(dt, filteredDt);
       var profile =
           profileTranslation(
-              progress, along, barrier.progress(), downstreamSpans, spatial != null, dt);
+              progress,
+              along,
+              barrier.progress(),
+              downstreamSpans,
+              spatial != null,
+              dt,
+              lookaheadDt);
       double remainingToBarrier = Math.max(0.0, barrier.progress() - progress);
       double brakingSpeed =
           Math.sqrt(2.0 * Math.min(limits.braking(), limits.friction()) * remainingToBarrier);
@@ -756,7 +773,7 @@ public final class Trailblazer {
 
       double traction = limits.availableTraction(heading.velocity(), referenceAlpha);
       var tangent = path.sample(profile.tangentProgress());
-      double tau = translationResponseSeconds(limits.lag(), nominalDt);
+      double tau = translationResponseSeconds(limits.lag(), filteredDt);
       double baseCrossTrackCap = Math.min(CORRIDOR / tau, 0.30 * limits.maxSpeed());
       double absCrossTrack = Math.abs(projected.crossTrack());
       double excess = Math.max(0.0, absCrossTrack - CORRIDOR);
@@ -808,7 +825,8 @@ public final class Trailblazer {
               traction,
               acceleration,
               limits,
-              dt);
+              dt,
+              limiterWorkspace);
       if (limited.infeasible() && omega != previous.omegaRadiansPerSecond) {
         double prevOmega = previous.omegaRadiansPerSecond;
         double zeroAlphaTraction = limits.availableTraction(prevOmega, 0.0);
@@ -836,7 +854,8 @@ public final class Trailblazer {
                 zeroAlphaTraction,
                 acceleration,
                 limits,
-                dt);
+                dt,
+                limiterWorkspace);
         if (!retry.infeasible()) {
           double bestOmega = prevOmega;
           double bestAlpha = 0.0;
@@ -872,7 +891,8 @@ public final class Trailblazer {
                     candTraction,
                     acceleration,
                     limits,
-                    dt);
+                    dt,
+                    limiterWorkspace);
             if (!candLimited.infeasible()) {
               lo = mid;
               bestOmega = candOmega;
@@ -957,7 +977,8 @@ public final class Trailblazer {
   public static final double PATH_LOG_SPACING = 0.10;
   private static final double CORRIDOR = 0.30;
   private static final double DIVERGENCE_DWELL = 0.15;
-  private static final double MAX_TICK_INTERVAL = 0.10;
+  private static final double DT_FILTER_ALPHA = 0.20;
+  private static final double MAX_TICK_INTERVAL = 0.25;
 
   private static final TickResult IDLE_RESULT =
       new TickResult(
@@ -1330,7 +1351,6 @@ public final class Trailblazer {
   public PreparedSegment prepare(AutoSegment segment, FieldClearance clearance, Pose2d start) {
     checkArgument(finite(start), "Invalid segment start pose");
     var derived = baseLimits.withCaps(segment.limits());
-    DogLog.log("Trailblazer3/DerivedLimits", derived.toString());
     var geometry =
         buildPath(start, segment.goals(), derived, requireNonNull(clearance), 0, new double[5]);
     return new PreparedSegment(segment, clearance, derived, geometry);

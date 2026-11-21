@@ -7,41 +7,36 @@ import edu.wpi.first.math.geometry.Translation2d;
 public final class VectorLimiter {
   public record Result(Translation2d velocity, boolean infeasible, LimitingFactor limitingFactor) {}
 
+  /** Reusable scratch buffers for zero-allocation calls to {@link #project}. */
+  public static final class Workspace {
+    private double[] cx = new double[0];
+    private double[] cy = new double[0];
+    private double[] cr = new double[0];
+    private final Search search = new Search();
+
+    private void ensureCapacity(int diskCount) {
+      if (cx.length < diskCount) {
+        cx = new double[diskCount];
+        cy = new double[diskCount];
+        cr = new double[diskCount];
+      }
+    }
+  }
+
   private static final class Search {
-    final double desiredX;
-    final double desiredY;
-    final double[] cx;
-    final double[] cy;
-    final double[] cr;
-    final int diskCount;
-    final double normalX;
-    final double normalY;
-    final double floor;
+    double desiredX;
+    double desiredY;
+    double[] cx;
+    double[] cy;
+    double[] cr;
+    int diskCount;
+    double normalX;
+    double normalY;
+    double floor;
     boolean hasBest;
     double bestX;
     double bestY;
-    double distance = Double.POSITIVE_INFINITY;
-
-    Search(
-        double desiredX,
-        double desiredY,
-        double[] cx,
-        double[] cy,
-        double[] cr,
-        int diskCount,
-        double normalX,
-        double normalY,
-        double floor) {
-      this.desiredX = desiredX;
-      this.desiredY = desiredY;
-      this.cx = cx;
-      this.cy = cy;
-      this.cr = cr;
-      this.diskCount = diskCount;
-      this.normalX = normalX;
-      this.normalY = normalY;
-      this.floor = floor;
-    }
+    double distance;
 
     void consider(double x, double y) {
       if (x * normalX + y * normalY < floor - EPSILON) {
@@ -60,6 +55,31 @@ public final class VectorLimiter {
         distance = error;
       }
     }
+
+    void reset(
+        double desiredX,
+        double desiredY,
+        double[] cx,
+        double[] cy,
+        double[] cr,
+        int diskCount,
+        double normalX,
+        double normalY,
+        double floor) {
+      this.desiredX = desiredX;
+      this.desiredY = desiredY;
+      this.cx = cx;
+      this.cy = cy;
+      this.cr = cr;
+      this.diskCount = diskCount;
+      this.normalX = normalX;
+      this.normalY = normalY;
+      this.floor = floor;
+      this.hasBest = false;
+      this.bestX = 0.0;
+      this.bestY = 0.0;
+      this.distance = Double.POSITIVE_INFINITY;
+    }
   }
 
   private static final double EPSILON = 1e-9;
@@ -73,6 +93,28 @@ public final class VectorLimiter {
       double motorAcceleration,
       DrivetrainLimits limits,
       double dt) {
+    return project(
+        desired,
+        previous,
+        heading,
+        omega,
+        traction,
+        motorAcceleration,
+        limits,
+        dt,
+        new Workspace());
+  }
+
+  public static Result project(
+      Translation2d desired,
+      Translation2d previous,
+      Rotation2d heading,
+      double omega,
+      double traction,
+      double motorAcceleration,
+      DrivetrainLimits limits,
+      double dt,
+      Workspace workspace) {
     double prevX = previous.getX();
     double prevY = previous.getY();
     double desiredX = desired.getX();
@@ -86,9 +128,10 @@ public final class VectorLimiter {
     var modules = limits.robot().modulePositionsMeters();
     int moduleCount = modules.size();
     int diskCount = 2 + moduleCount;
-    double[] cx = new double[diskCount];
-    double[] cy = new double[diskCount];
-    double[] cr = new double[diskCount];
+    workspace.ensureCapacity(diskCount);
+    double[] cx = workspace.cx;
+    double[] cy = workspace.cy;
+    double[] cr = workspace.cr;
     cx[0] = 0.0;
     cy[0] = 0.0;
     cr[0] = motorRadius;
@@ -108,7 +151,8 @@ public final class VectorLimiter {
       cr[i + 2] = maxWheel;
     }
 
-    var search = new Search(desiredX, desiredY, cx, cy, cr, diskCount, normalX, normalY, floor);
+    var search = workspace.search;
+    search.reset(desiredX, desiredY, cx, cy, cr, diskCount, normalX, normalY, floor);
     search.consider(desiredX, desiredY);
     if (search.hasBest) {
       return new Result(desired, false, LimitingFactor.NONE);

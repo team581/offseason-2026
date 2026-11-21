@@ -256,6 +256,70 @@ final class TrailblazerTest {
   }
 
   @Test
+  void curvedSegmentTracksWithoutRelatchingUnderSlowJitteryLoops() {
+    var robot = PreviewRunner.robotProfile("581").spec();
+    var calibration = com.team581.trailblazer3.config.TrailblazerConfig.COMP;
+    double nominalDt = 0.020;
+    var segment =
+        Trailblazer.segment("jitter-curve")
+            .through(pose(2.0, 0.0, 0.0), 0.25, 15)
+            .through(pose(3.2, -1.1, -60.0), 0.30, 10)
+            .through(pose(3.2, -2.2, -100.0), 0.55, 14)
+            .stopAt(pose(2.5, -2.8, -160.0))
+            .build();
+    var builtPath =
+        PathBuilder.build(
+            Translation2d.kZero,
+            segment.goals(),
+            Math.min(calibration.maxBrakingDeceleration(), calibration.frictionLimit()));
+    double[] jitterPattern = {0.035, 0.052, 0.041, 0.068, 0.032, 0.048, 0.145, 0.055, 0.038, 0.163};
+
+    double[] time = {0.0};
+    var planner = new Trailblazer(() -> time[0], robot, calibration, nominalDt);
+    planner.activate(segment);
+    Pose2d pose = Pose2d.kZero;
+    ChassisSpeeds measured = new ChassisSpeeds();
+    ChassisSpeeds command = new ChassisSpeeds();
+    double maxCrossTrack = 0.0;
+    int stepIdx = 0;
+    double lag = calibration.driveResponseLagSeconds();
+    double subStep = 0.004;
+    while (!planner.atGoal() && time[0] < 10.0) {
+      var res = planner.update(time[0], pose, measured);
+      assertNotEquals("MISSED_TICK_RECOVERY", res.diagnostic());
+      command = res.commandedFieldSpeeds();
+      double stepDt = jitterPattern[stepIdx % jitterPattern.length];
+      int subSteps = Math.max(1, (int) Math.round(stepDt / subStep));
+      double h = stepDt / subSteps;
+      double alpha = 1.0 - Math.exp(-h / lag);
+      for (int s = 0; s < subSteps; s++) {
+        measured =
+            new ChassisSpeeds(
+                measured.vxMetersPerSecond
+                    + alpha * (command.vxMetersPerSecond - measured.vxMetersPerSecond),
+                measured.vyMetersPerSecond
+                    + alpha * (command.vyMetersPerSecond - measured.vyMetersPerSecond),
+                measured.omegaRadiansPerSecond
+                    + alpha * (command.omegaRadiansPerSecond - measured.omegaRadiansPerSecond));
+        pose =
+            new Pose2d(
+                pose.getX() + measured.vxMetersPerSecond * h,
+                pose.getY() + measured.vyMetersPerSecond * h,
+                pose.getRotation()
+                    .plus(Rotation2d.fromRadians(measured.omegaRadiansPerSecond * h)));
+      }
+      double ct = builtPath.project(pose.getTranslation(), 0.0, builtPath.length()).distance();
+      maxCrossTrack = Math.max(maxCrossTrack, ct);
+      time[0] += stepDt;
+      stepIdx++;
+    }
+    assertThat(planner.atGoal()).isTrue();
+    assertThat(maxCrossTrack).isLessThan(0.35);
+    assertEquals(2.5, pose.getX(), 0.05);
+    assertEquals(-2.8, pose.getY(), 0.05);
+  }
+
+  @Test
   void faceHubAimsRearShooterOnBothAlliancesAndSettlesAtStop() {
     var field =
         new FieldGeometry(
@@ -568,13 +632,13 @@ final class TrailblazerTest {
     assertEquals(first.commandedFieldSpeeds().vxMetersPerSecond, second.startVx(), 1e-9);
     assertEquals(0.017, second.durationSeconds(), 1e-9);
 
-    var recovered = follower.update(1.2, Pose2d.kZero, measuredSpeeds).velocityStep();
+    var recovered = follower.update(1.3, Pose2d.kZero, measuredSpeeds).velocityStep();
     assertEquals(0.4, recovered.startVx(), 1e-9);
     assertEquals(0.020, recovered.durationSeconds(), 1e-9);
 
     follower.cancel();
     assertEquals(
-        0, follower.update(1.22, Pose2d.kZero, measuredSpeeds).velocityStep().durationSeconds());
+        0, follower.update(1.32, Pose2d.kZero, measuredSpeeds).velocityStep().durationSeconds());
   }
 
   @Test
@@ -617,7 +681,7 @@ final class TrailblazerTest {
     sim.planner.activate(Trailblazer.segment("straight").stopAt(pose(2, 0, 0)).build());
     sim.step();
     long generation = sim.planner.lastResult().geometryGeneration();
-    for (double delay : new double[] {0.123, 0.177, 0.126}) {
+    for (double delay : new double[] {0.263, 0.317, 0.276}) {
       sim.time += delay - sim.dt;
       sim.speed = new ChassisSpeeds();
       sim.step();

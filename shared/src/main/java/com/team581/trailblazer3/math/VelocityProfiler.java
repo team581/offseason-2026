@@ -41,6 +41,12 @@ public final class VelocityProfiler {
     private final double[] fixedBudgetScratch = new double[5];
     private final double[] geometryScratch = new double[5];
 
+    // Pre-computes the fixed path grid and heading budget buffers off the active enable tick.
+    public void prepare(
+        PathBuilder.Path path, List<HeadingSchedule> schedules, DrivetrainLimits limits) {
+      prepareFixedNodes(path, schedules, limits);
+    }
+
     private void applyHeadingBudgets(
         int node, PathBuilder.Path path, List<HeadingSchedule> schedules, DrivetrainLimits limits) {
       int source = sourceNodes[node];
@@ -154,6 +160,7 @@ public final class VelocityProfiler {
       List<HeadingSchedule> headingSchedules,
       DrivetrainLimits limits,
       double dt,
+      double lookaheadDt,
       Workspace workspace) {
     if (path.length() <= 1e-9 || measured >= barrier - 1e-9) {
       boolean overspeed = startSpeed > limits.braking() * dt + 1e-3;
@@ -254,7 +261,7 @@ public final class VelocityProfiler {
     if (deceleration <= 1e-6) {
       return new Result(0, measured, true, LimitingFactor.INFEASIBLE);
     }
-    double lag = dt + limits.lag();
+    double lag = lookaheadDt + limits.lag();
     double taper = Math.max(0.30, u[0] / (2 * deceleration));
     double lead = lag * Math.min(1, (barrier - measured) / taper);
     double lateral = u[0] * curvature[0];
@@ -312,6 +319,31 @@ public final class VelocityProfiler {
         Math.min(barrier, measured + 0.5 * speed * lag),
         infeasible,
         infeasible ? LimitingFactor.INFEASIBLE : limitingFactor);
+  }
+
+  public static Result profile(
+      PathBuilder.Path path,
+      List<Goal> goals,
+      double measured,
+      double startSpeed,
+      double barrier,
+      NodeBudgetEvaluator budgets,
+      List<HeadingSchedule> headingSchedules,
+      DrivetrainLimits limits,
+      double dt,
+      Workspace workspace) {
+    return profile(
+        path,
+        goals,
+        measured,
+        startSpeed,
+        barrier,
+        budgets,
+        headingSchedules,
+        limits,
+        dt,
+        dt,
+        workspace);
   }
 
   private static double coupledReach(
