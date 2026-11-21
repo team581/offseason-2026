@@ -600,11 +600,24 @@ public final class PreviewRunner {
             Pose2d before = currentPose;
             Translation2d deltaPos =
                 resolveVector(ev.dxMeters(), ev.dyMeters(), ev.frame(), before.getRotation());
+            Rotation2d dTheta = Rotation2d.fromDegrees(ev.dThetaDegrees());
             currentPose =
                 new Pose2d(
                     before.getX() + deltaPos.getX(),
                     before.getY() + deltaPos.getY(),
-                    before.getRotation().plus(Rotation2d.fromDegrees(ev.dThetaDegrees())));
+                    before.getRotation().plus(dTheta));
+            // Physical swerve modules keep their robot-relative wheel vectors across a pose snap,
+            // so their field-relative velocity rotates with the new estimated heading until lagged
+            // closed-loop commands steer them back.
+            if (Math.abs(ev.dThetaDegrees()) > 1e-9) {
+              Translation2d rotatedVel =
+                  new Translation2d(
+                          currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond)
+                      .rotateBy(dTheta);
+              currentSpeeds =
+                  new ChassisSpeeds(
+                      rotatedVel.getX(), rotatedVel.getY(), currentSpeeds.omegaRadiansPerSecond);
+            }
             appliedDisturbances.add(
                 new AppliedDisturbanceEntry(
                     ev.id(),

@@ -241,6 +241,52 @@ final class PreviewTest {
     assertEquals(1.85, offsetResult.trajectory().get(0).x(), 1e-6);
     assertEquals(2.20, offsetResult.trajectory().get(0).y(), 1e-6);
     assertThat(offsetResult.replannedPaths()).isNotEmpty();
+
+    var rotateJump =
+        new DisturbanceEvent(
+            "d-rot90",
+            true,
+            "VISION_JUMP",
+            "FIELD",
+            0.50,
+            0.0,
+            0.0,
+            0.0,
+            90.0,
+            0.0,
+            0.0,
+            0.0,
+            false);
+    var rotReq =
+        new PreviewRequest(
+            SampleTwoCycleAuto.class.getName(),
+            "SEGMENT",
+            "cycle-1",
+            0,
+            null,
+            "Blue",
+            "581",
+            581L,
+            "",
+            0.0,
+            new BuildIdentity("src", "cp", 1L),
+            ImmutableList.of(rotateJump));
+    PreviewResult rotResult = PreviewRunner.run(SampleTwoCycleAuto.class, rotReq, () -> {});
+    var preJump =
+        rotResult.trajectory().stream()
+            .filter(s -> Math.abs(s.timestampSeconds() - 0.48) < 1e-6)
+            .findFirst()
+            .orElseThrow();
+    var atJump =
+        rotResult.trajectory().stream()
+            .filter(s -> Math.abs(s.timestampSeconds() - 0.50) < 1e-6)
+            .findFirst()
+            .orElseThrow();
+    assertThat(preJump.vxMetersPerSec()).isGreaterThan(1.0);
+    assertThat(Math.abs(preJump.vyMetersPerSec())).isLessThan(0.1);
+    assertThat(Math.abs(atJump.vxMetersPerSec())).isLessThan(0.1);
+    assertThat(atJump.vyMetersPerSec()).isGreaterThan(1.0);
+    assertThat(rotResult.passedMarkers()).extracting(m -> m.marker()).contains("SCORE_READY");
   }
 
   @Test
