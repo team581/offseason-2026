@@ -84,7 +84,7 @@ public final class WarmPreviewWorker {
     public OverlayClassLoader(Map<String, byte[]> inMemoryClasses, ClassLoader parent) {
       super(new URL[0], parent);
       this.overlayDir = null;
-      this.inMemoryClasses = ImmutableMap.copyOf(inMemoryClasses);
+      this.inMemoryClasses = inMemoryClasses;
     }
 
     public OverlayClassLoader(Path overlayDir, ClassLoader parent) throws IOException {
@@ -474,7 +474,7 @@ public final class WarmPreviewWorker {
     }
   }
 
-  private static List<DisturbanceEvent> parseDisturbances(JsonNode params) {
+  private static ImmutableList<DisturbanceEvent> parseDisturbances(JsonNode params) {
     if (params == null || !params.has("disturbances") || !params.get("disturbances").isArray()) {
       return ImmutableList.of();
     }
@@ -489,7 +489,7 @@ public final class WarmPreviewWorker {
 
       }
     }
-    return list;
+    return ImmutableList.copyOf(list);
   }
 
   private static Map<String, byte[]> readCompiledClasses(Path overlayDir) throws IOException {
