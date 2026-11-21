@@ -10,10 +10,23 @@
     "datasourceTemplate": "custom.wpilib-vendordep",
     "managerFilePatterns": ["**/vendordeps/*.json"],
     "fileFormat": "json",
-    "matchStrings": ["jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }"]
+    "matchStrings": [
+      "jsonUrl ? { \"depName\": name, \"currentValue\": version, \"registryUrl\": jsonUrl }",
+      "name = \"Spot\" and jsonUrl = \"https://spot.frc581.com/vendordep.json\" ? javaDependencies[groupId = \"com.team581\" and artifactId = \"spot\"].{ \"depName\": \"Spot Java client\", \"currentValue\": version, \"registryUrl\": $$.jsonUrl }"
+    ]
   }],
   "timezone": "America/Los_Angeles",
   "packageRules": [
+    {
+      "matchDatasources": ["custom.wpilib-vendordep"],
+      "groupName": "Spot",
+      "matchDepNames": [
+        "Spot",
+        "Spot Java client"
+      ],
+      "matchManagers": ["custom.jsonata"],
+      "separateMajorMinor": false
+    },
     {
       "groupName": "error-prone",
       "matchSourceUrls": [

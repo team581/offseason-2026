@@ -2,7 +2,7 @@
   "javaDependencies": [{
     "groupId": "com.team581",
     "artifactId": "spot",
-    "version": "2026.0.0"
+    "version": "2026.1.0"
   }],
   "fileName": "Spot.json",
   "frcYear": "2026",
