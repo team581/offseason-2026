@@ -30,7 +30,6 @@ public abstract class Base581Robot extends TimedRobot {
   }
 
   static MultiSubscriber startVisionNtLogging(NetworkTableInstance nt, DataLog log) {
-    nt.startEntryDataLog(log, "/limelight-", "NT:/limelight-");
     nt.startEntryDataLog(log, "/Spot/", "NT:/Spot/");
     nt.startEntryDataLog(log, "/.schema/", "/.schema/");
     return new MultiSubscriber(nt, new String[] {"/.schema/"});
@@ -54,7 +53,8 @@ public abstract class Base581Robot extends TimedRobot {
             .withCaptureDs(true)
             .withNtPublish(GlobalConfig.IS_DEVELOPMENT)
             .withNtTunables(GlobalConfig.IS_DEVELOPMENT)
-            .withUseLogThread(false));
+            .withLogEntryQueueCapacity(4096)
+            .withUseLogThread(true));
 
     registerVisionNtLogging();
 

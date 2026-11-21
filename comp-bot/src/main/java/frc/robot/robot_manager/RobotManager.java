@@ -432,13 +432,24 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
             ? AimParameterUtil.getStaticScoringParameters(robotPoseUsedForScoring, speeds)
             : AimParameterUtil.getScoringParameters(robotPoseUsedForScoring, speeds);
 
-    feedingParameters =
-        getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()
-            ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
-            : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
+    boolean needFeedingParams =
+        !DriverStation.isAutonomous()
+            || getState() == RobotState.PREPARE_FEED
+            || getState() == RobotState.FEED
+            || getState() == RobotState.WARMUP_FEED;
+    if (needFeedingParams) {
+      feedingParameters =
+          getState() == RobotState.WARMUP_FEED || !swerve.driverWantsSotm()
+              ? AimParameterUtil.getStaticFeedingParameters(feedLocation, robotPose, speeds)
+              : AimParameterUtil.getFeedingParameters(feedLocation, robotPose, speeds);
+    }
 
-    fallbackFeedingParameters =
-        AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
+    if (getState() == RobotState.PREPARE_FALLBACK_FEED
+        || getState() == RobotState.FALLBACK_FEED
+        || !DriverStation.isAutonomous()) {
+      fallbackFeedingParameters =
+          AimParameterUtil.getFallbackFeedingParameters(robotPose.getRotation());
+    }
     isInAllianceZone =
         !health.isLocalizationHealthy()
             ? hubActivity.getTOFBasedHubActive()

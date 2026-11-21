@@ -7,7 +7,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.wpilibj.Timer;
 import java.util.function.DoubleUnaryOperator;
 
 public class ShootOnTheMove {
@@ -99,17 +98,7 @@ public class ShootOnTheMove {
   public double getPredictedVelocity(double measured, double commanded, String name) {
     double horizon = PREDICTION_HORIZON_SECONDS.getAsDouble();
     double tau = VELOCITY_TIME_CONSTANT_SECONDS.getAsDouble();
-    double predicted = predictVelocity(measured, commanded, horizon, tau);
-    String key = logPrefix + "/Prediction/" + name;
-    // These go to the WPILOG in both development and competition modes.
-    DogLog.log(key + "/TimestampSeconds", Timer.getFPGATimestamp());
-    DogLog.log(key + "/Measured", measured);
-    DogLog.log(key + "/Commanded", commanded);
-    DogLog.log(key + "/Predicted", predicted);
-    DogLog.log(key + "/Correction", predicted - measured);
-    DogLog.log(key + "/HorizonSeconds", horizon);
-    DogLog.log(key + "/TimeConstantSeconds", tau);
-    return predicted;
+    return predictVelocity(measured, commanded, horizon, tau);
   }
 
   public SeparatedVelocityCompensatedGoal getSeparatedVelocityCompensatedGoal(

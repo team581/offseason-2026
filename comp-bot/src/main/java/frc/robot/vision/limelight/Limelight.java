@@ -23,9 +23,11 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.util.scheduling.SubsystemPriority;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.OptionalDouble;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 public class Limelight extends StateMachineSubsystem<LimelightState> {
   private static final double USE_MT1_ROTATION_THRESHOLD_INCHES = 40;
@@ -81,6 +83,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
   private boolean latestEstimateTrusted = false;
   // Reused every loop to avoid allocating a new Matrix/Vector for stddevs.
   private final Vector<N3> reusableStdDevs = new Vector<>(N3.instance);
+  private int lastThrottle = Integer.MIN_VALUE;
+  private int lastPipelineIndex = Integer.MIN_VALUE;
+  private int lastImuMode = Integer.MIN_VALUE;
+  private int @Nullable [] lastFiducialFilters = null;
 
   public Limelight(String name, LimelightState initialState, CameraConfig config) {
     super(SubsystemPriority.VISION, initialState);
@@ -156,10 +162,10 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
         updatedLimelightPos = true;
       }
       if (config.model() == LimelightModel.FOUR) {
-        LimelightHelpers.SetThrottle(limelightTableName, 10);
+        setThrottleIfChanged(10);
       }
     } else {
-      LimelightHelpers.SetThrottle(limelightTableName, 0);
+      setThrottleIfChanged(0);
     }
     DogLog.log(stateKey, getState());
 
@@ -173,14 +179,14 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       DogLog.clearFault(noTagsFault);
     }
 
-    LimelightHelpers.setPipelineIndex(limelightTableName, getState().pipelineIndex);
+    setPipelineIndexIfChanged(getState().pipelineIndex);
     switch (getState()) {
       case TAGS -> {
-        LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, VALID_APRILTAGS);
+        setFiducialFiltersIfChanged(VALID_APRILTAGS);
         updateHealth(tagResult);
       }
       case HUB_TAGS -> {
-        LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, getActiveHubTags());
+        setFiducialFiltersIfChanged(getActiveHubTags());
         updateHealth(tagResult);
       }
       case OFF -> {}
@@ -188,7 +194,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
     DogLog.log(healthKey, cameraHealth);
 
-    LimelightHelpers.SetIMUMode(limelightTableName, 0);
+    setImuModeIfChanged(0);
   }
 
   public boolean seeingHubTag() {
@@ -298,6 +304,34 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   private Set<Integer> getActiveHubTagsSet() {
     return FmsUtil.isRedAlliance() ? RED_HUB_TAGS_SET : BLUE_HUB_TAGS_SET;
+  }
+
+  private void setFiducialFiltersIfChanged(int[] fiducials) {
+    if (!Arrays.equals(lastFiducialFilters, fiducials)) {
+      LimelightHelpers.SetFiducialIDFiltersOverride(limelightTableName, fiducials);
+      lastFiducialFilters = fiducials;
+    }
+  }
+
+  private void setImuModeIfChanged(int imuMode) {
+    if (lastImuMode != imuMode) {
+      LimelightHelpers.SetIMUMode(limelightTableName, imuMode);
+      lastImuMode = imuMode;
+    }
+  }
+
+  private void setPipelineIndexIfChanged(int pipelineIndex) {
+    if (lastPipelineIndex != pipelineIndex) {
+      LimelightHelpers.setPipelineIndex(limelightTableName, pipelineIndex);
+      lastPipelineIndex = pipelineIndex;
+    }
+  }
+
+  private void setThrottleIfChanged(int throttle) {
+    if (lastThrottle != throttle) {
+      LimelightHelpers.SetThrottle(limelightTableName, throttle);
+      lastThrottle = throttle;
+    }
   }
 
   private void updateHealth(boolean hasTargets) {
