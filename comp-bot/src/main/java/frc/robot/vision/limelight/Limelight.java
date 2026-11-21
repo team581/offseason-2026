@@ -246,7 +246,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       }
       return tagResult.empty();
     }
-
+    // here
     PoseEstimate mT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightTableName);
     latestEstimate = mT1Estimate;
 
@@ -272,7 +272,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     if (config.useMt2()) {
       PoseEstimate mT2Estimate =
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
-
+      // here
       if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, robotHeading)) {
         if (DiagnosticCadence.shouldLogHeavy()) {
           DogLog.log(rawPoseKey, Pose2d.kZero);
