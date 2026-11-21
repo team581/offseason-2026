@@ -49,7 +49,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
           .withMaxAngularSpeedDegrees(210)
           .withMaxAngularAccelerationDegrees(320);
   static final AutoSegment CYCLE_1_SEGMENT =
-      Trailblazer.segment("right-trench-cycle-1")
+      Trailblazer.segment("cycle-1")
           .through(fromRed(10.089, RED_TRENCH_Y, -90), 0.25, 15)
           .through(fromRed(8.844, 6.049, -100), 0.30, 10)
           .through(fromRed(8.816, 4.945, -60), 0.55, 14)
@@ -65,7 +65,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
 
   // The three 179° anchors give the heading controller a hold through the trench.
   static final AutoSegment CYCLE_2_SEGMENT =
-      Trailblazer.segment("right-trench-cycle-2")
+      Trailblazer.segment("cycle-2")
           .through(fromRed(13.2, RED_TRENCH_Y, 179), 0.35, 6)
           .through(fromRed(12.5, RED_TRENCH_Y, 179), 0.20, 5)
           .mark(Marker.START_INTAKE)
@@ -83,7 +83,7 @@ public final class RightTrenchAuto extends TrailblazerAuto<RightTrenchAuto.State
           .build();
 
   static final AutoSegment CYCLE_3_SEGMENT =
-      Trailblazer.segment("right-trench-cycle-3")
+      Trailblazer.segment("cycle-3")
           .through(fromRed(13.2, RED_TRENCH_Y, 179), 0.35, 6)
           .through(fromRed(12.5, RED_TRENCH_Y, 179), 0.20, 5)
           .mark(Marker.START_INTAKE)
