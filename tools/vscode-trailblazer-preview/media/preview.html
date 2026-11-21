@@ -183,28 +183,35 @@
 				</div>
 			</main>
 		</div>
-		<footer class="timeline-bar" id="timeline-bar">
-			<button id="btn-play" type="button" class="play-btn" aria-pressed="false" aria-label="Play" title="Play / Pause">
+		<footer class="timeline-bar" id="timeline-bar" aria-label="Timeline">
+			<button
+				id="btn-play"
+				type="button"
+				class="timeline-btn play-btn"
+				aria-pressed="false"
+				aria-label="Play"
+				title="Play (Space)"
+			>
 				<svg
 					id="icon-play"
 					viewBox="0 0 24 24"
-					width="15"
-					height="15"
-					fill="currentColor"
+					width="16"
+					height="16"
+					fill="none"
 					stroke="currentColor"
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					aria-hidden="true"
 				>
-					<polygon points="6 3 20 12 6 21 6 3" />
+					<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
 				</svg>
 				<svg
 					id="icon-pause"
 					viewBox="0 0 24 24"
-					width="15"
-					height="15"
-					fill="currentColor"
+					width="16"
+					height="16"
+					fill="none"
 					stroke="currentColor"
 					stroke-width="2"
 					stroke-linecap="round"
@@ -212,26 +219,82 @@
 					aria-hidden="true"
 					hidden
 				>
-					<rect x="6" y="4" width="4" height="16" rx="1" />
-					<rect x="14" y="4" width="4" height="16" rx="1" />
+					<rect x="14" y="3" width="5" height="18" rx="1" />
+					<rect x="5" y="3" width="5" height="18" rx="1" />
 				</svg>
 			</button>
-			<div class="timeline-scrubber">
-				<div id="timeline-alerts" class="timeline-alerts" aria-label="Diagnostics along timeline"></div>
-				<div
-					id="timeline-track"
-					class="timeline-track"
-					tabindex="0"
-					role="slider"
-					aria-label="Timeline"
-					aria-valuemin="0"
-					aria-valuemax="0"
-					aria-valuenow="0"
+			<div class="timeline-speed-anchor">
+				<button
+					id="btn-speed"
+					type="button"
+					class="timeline-btn speed-btn"
+					aria-haspopup="listbox"
+					aria-expanded="false"
+					aria-controls="speed-popover"
+					aria-label="Playback speed"
+					title="Playback speed ([ / ])"
 				>
-					<canvas id="timeline-canvas" width="900" height="20"></canvas>
+					<span id="speed-value">1x</span>
+					<svg
+						viewBox="0 0 24 24"
+						width="16"
+						height="16"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path d="m7 15 5 5 5-5" />
+						<path d="m7 9 5-5 5 5" />
+					</svg>
+				</button>
+				<div id="speed-popover" class="speed-popover" role="listbox" aria-label="Playback speed" hidden>
+					<button type="button" class="speed-option" role="option" data-speed="0.25" aria-selected="false">
+						0.25x
+					</button>
+					<button type="button" class="speed-option" role="option" data-speed="0.5" aria-selected="false">0.5x</button>
+					<button type="button" class="speed-option" role="option" data-speed="1" aria-selected="true">1x</button>
+					<button type="button" class="speed-option" role="option" data-speed="2" aria-selected="false">2x</button>
+					<button type="button" class="speed-option" role="option" data-speed="4" aria-selected="false">4x</button>
+					<button type="button" class="speed-option" role="option" data-speed="8" aria-selected="false">8x</button>
 				</div>
 			</div>
-			<span id="duration-readout" class="timeline-duration">0.00/0.00s</span>
+			<span id="cursor-time-wrap" class="timeline-cursor-time">
+				<button
+					id="btn-cursor-time"
+					type="button"
+					class="cursor-time-btn"
+					aria-label="Current time -, go to time"
+					title="Go to time"
+					disabled
+				>
+					-
+				</button>
+				<input id="input-cursor-time" type="text" class="cursor-time-input" aria-label="Go to time" hidden />
+			</span>
+			<div
+				id="timeline-slider"
+				class="timeline-slider"
+				tabindex="0"
+				role="slider"
+				aria-label="Time"
+				aria-valuemin="0"
+				aria-valuemax="0"
+				aria-valuenow="0"
+			>
+				<div id="timeline-scrubber" class="timeline-scrubber">
+					<div id="timeline-alerts" class="timeline-alerts" aria-label="Diagnostics along timeline"></div>
+					<div id="timeline-track" class="timeline-track">
+						<canvas id="timeline-canvas" width="900" height="8"></canvas>
+					</div>
+					<div id="timeline-hover-line" class="timeline-hover-line" hidden></div>
+					<div id="timeline-playhead" class="timeline-playhead"></div>
+					<div id="timeline-tooltip" class="timeline-tooltip" role="tooltip" hidden></div>
+				</div>
+			</div>
+			<span id="duration-readout" class="timeline-duration">-</span>
 		</footer>
 		<script nonce="{{nonce}}" src="{{script}}"></script>
 	</body>

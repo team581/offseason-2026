@@ -663,11 +663,11 @@ export interface TimelineRenderOptions {
 	pinnedTimeSeconds: number | null;
 }
 
-/** Renders the bottom hover-and-click timeline strip with heatmap bands, marker ticks, and cursor. */
+/** Renders the bottom timeline track with speed-heatmap bands and passed-marker ticks. */
 export function renderTimelineCanvas(canvas: HTMLCanvasElement, options: TimelineRenderOptions): void {
 	const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
 	const cssWidth = canvas.clientWidth || canvas.width || 900;
-	const cssHeight = canvas.clientHeight || canvas.height || 30;
+	const cssHeight = canvas.clientHeight || canvas.height || 8;
 	const backingW = Math.max(1, Math.round(cssWidth * dpr));
 	const backingH = Math.max(1, Math.round(cssHeight * dpr));
 	if (canvas.width !== backingW || canvas.height !== backingH) {
@@ -680,8 +680,7 @@ export function renderTimelineCanvas(canvas: HTMLCanvasElement, options: Timelin
 
 	ctx.save();
 	ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-	ctx.fillStyle = '#11161f';
-	ctx.fillRect(0, 0, cssWidth, cssHeight);
+	ctx.clearRect(0, 0, cssWidth, cssHeight);
 
 	const result = options.result;
 	if (!result || result.totalDurationSeconds <= 0 || result.trajectory.length === 0) {
@@ -698,8 +697,8 @@ export function renderTimelineCanvas(canvas: HTMLCanvasElement, options: Timelin
 		const x0 = (s.timestampSeconds / totalT) * cssWidth;
 		const x1 = Math.max(x0 + 1, (nextT / totalT) * cssWidth);
 		ctx.fillStyle = heatmapColor(s.heatmapNormalized);
-		ctx.globalAlpha = 0.42;
-		ctx.fillRect(x0, 4, x1 - x0, cssHeight - 8);
+		ctx.globalAlpha = 0.88;
+		ctx.fillRect(x0, 0, x1 - x0, cssHeight);
 	}
 	ctx.globalAlpha = 1;
 
@@ -708,31 +707,9 @@ export function renderTimelineCanvas(canvas: HTMLCanvasElement, options: Timelin
 	for (const marker of result.passedMarkers) {
 		const mx = (marker.timestampSeconds / totalT) * cssWidth;
 		ctx.beginPath();
-		ctx.moveTo(mx, 2);
-		ctx.lineTo(mx, cssHeight - 2);
+		ctx.moveTo(mx, 0);
+		ctx.lineTo(mx, cssHeight);
 		ctx.stroke();
-	}
-
-	const activeT = options.pinnedTimeSeconds ?? options.hoveredTimeSeconds;
-	if (activeT !== null && Number.isFinite(activeT)) {
-		const cx = Math.max(0, Math.min(cssWidth, (activeT / totalT) * cssWidth));
-		const isPinned = options.pinnedTimeSeconds !== null;
-		ctx.strokeStyle = isPinned ? '#38bdf8' : '#f8fafc';
-		ctx.lineWidth = isPinned ? 2.2 : 1.5;
-		ctx.beginPath();
-		ctx.moveTo(cx, 0);
-		ctx.lineTo(cx, cssHeight);
-		ctx.stroke();
-
-		if (isPinned) {
-			ctx.fillStyle = '#38bdf8';
-			ctx.beginPath();
-			ctx.moveTo(cx - 5, 0);
-			ctx.lineTo(cx + 5, 0);
-			ctx.lineTo(cx, 6);
-			ctx.closePath();
-			ctx.fill();
-		}
 	}
 
 	ctx.restore();

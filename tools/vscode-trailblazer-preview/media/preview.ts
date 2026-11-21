@@ -8,6 +8,7 @@ import {
 	boundsToViewport,
 	computeAutoCropBounds,
 	computeWaypointViewport,
+	heatmapColor,
 	interpolateViewport,
 	parsePreviewResult,
 	sampleTrajectoryAtTime,
@@ -23,10 +24,30 @@ import {
 	renderTimelineCanvas,
 } from './renderer.ts';
 
+export const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+
+export function formatTimelineTime(seconds: number): string {
+	if (!Number.isFinite(seconds) || seconds < 0) return '0:00.00';
+	const hundredths = Math.round(seconds * 100);
+	const minutes = Math.floor(hundredths / 6000);
+	const secs = ((hundredths % 6000) / 100).toFixed(2).padStart(5, '0');
+	return `${minutes}:${secs}`;
+}
+
+/** Parses `m:ss.cc` or raw seconds into seconds, or `undefined` if invalid. */
+export function parseTimelineTime(text: string): number | undefined {
+	const match = /^(?:(\d+):)?(\d+(?:\.\d*)?|\.\d+)$/u.exec(text.trim());
+	if (!match) return undefined;
+	const [, minutes = '0', seconds = '0'] = match;
+	const parsed = Number(minutes) * 60 + Number(seconds);
+	return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export class TimelineController {
 	public totalDurationSeconds = 0;
 	public hoveredTimeSeconds: number | null = null;
 	public pinnedTimeSeconds: number | null = null;
+	private speed = 1;
 	private playing = false;
 	private lastPlayTickMs = 0;
 
@@ -38,6 +59,25 @@ export class TimelineController {
 		if (this.hoveredTimeSeconds !== null && this.hoveredTimeSeconds > this.totalDurationSeconds) {
 			this.hoveredTimeSeconds = this.totalDurationSeconds;
 		}
+	}
+
+	public setSpeed(nextSpeed: number): void {
+		if (PLAYBACK_SPEEDS.includes(nextSpeed as (typeof PLAYBACK_SPEEDS)[number])) {
+			this.speed = nextSpeed;
+		}
+	}
+
+	public getSpeed(): number {
+		return this.speed;
+	}
+
+	public changeSpeed(direction: 1 | -1): number {
+		const idx = PLAYBACK_SPEEDS.indexOf(this.speed as (typeof PLAYBACK_SPEEDS)[number]);
+		const next = PLAYBACK_SPEEDS[idx + direction];
+		if (next !== undefined) {
+			this.speed = next;
+		}
+		return this.speed;
 	}
 
 	public hoverAtTime(timeSeconds: number): number {
@@ -52,6 +92,23 @@ export class TimelineController {
 
 	public clearHover(): void {
 		this.hoveredTimeSeconds = null;
+	}
+
+	public seekToTime(timeSeconds: number, nowMs?: number): number {
+		this.pinnedTimeSeconds = this.clampTime(timeSeconds);
+		if (this.playing && nowMs !== undefined) {
+			this.lastPlayTickMs = nowMs;
+		}
+		return this.pinnedTimeSeconds;
+	}
+
+	public seekToFraction(fraction: number, nowMs?: number): number {
+		return this.seekToTime(fraction * this.totalDurationSeconds, nowMs);
+	}
+
+	public seekByFractionDelta(fractionDelta: number, nowMs?: number): number {
+		const base = this.playheadTimeSeconds();
+		return this.seekToTime(base + fractionDelta * this.totalDurationSeconds, nowMs);
 	}
 
 	public clickAtTime(timeSeconds: number): number | null {
@@ -85,7 +142,7 @@ export class TimelineController {
 		return this.playing;
 	}
 
-	/** Toggles 1.0x real-time playback, restarting from 0.00 s if currently at the end. */
+	/** Toggles playback at the configured speed, restarting from 0.00 s if currently at the end. */
 	public togglePlay(nowMs: number): boolean {
 		if (this.playing) {
 			this.playing = false;
@@ -102,10 +159,10 @@ export class TimelineController {
 		return true;
 	}
 
-	/** Steps 1.0x real-time playback forward by `(nowMs - lastPlayTickMs) / 1000`. */
+	/** Steps playback forward by `(nowMs - lastPlayTickMs) / 1000 * speed`. */
 	public stepPlayback(nowMs: number): number {
 		if (!this.playing) return this.activeTimeSeconds();
-		const dtSec = Math.max(0, (nowMs - this.lastPlayTickMs) / 1000);
+		const dtSec = Math.max(0, (nowMs - this.lastPlayTickMs) / 1000) * this.speed;
 		this.lastPlayTickMs = nowMs;
 		const nextT = (this.pinnedTimeSeconds ?? 0) + dtSec;
 		if (nextT >= this.totalDurationSeconds) {
@@ -119,6 +176,10 @@ export class TimelineController {
 
 	public activeTimeSeconds(): number {
 		return this.pinnedTimeSeconds ?? this.hoveredTimeSeconds ?? this.totalDurationSeconds;
+	}
+
+	public playheadTimeSeconds(): number {
+		return this.pinnedTimeSeconds ?? this.totalDurationSeconds;
 	}
 
 	private clampTime(t: number): number {
@@ -218,6 +279,7 @@ interface SavedWebviewState {
 	diffMode?: boolean;
 	alliance?: 'Blue' | 'Red';
 	robotConfigId?: '581' | '9991' | '9981';
+	playbackSpeed?: number;
 }
 
 declare function acquireVsCodeApi(): {
@@ -248,6 +310,9 @@ function bootWebview() {
 	let robotConfigId: '581' | '9991' | '9981' = saved?.robotConfigId ?? '581';
 
 	const timeline = new TimelineController();
+	if (typeof saved?.playbackSpeed === 'number') {
+		timeline.setSpeed(saved.playbackSpeed);
+	}
 	const camera = new CameraAnimator();
 	let lastTransform: ScreenTransform | null = null;
 	let hasInitializedCamera = false;
@@ -280,6 +345,12 @@ function bootWebview() {
 	const playBtn = el<HTMLButtonElement>('#btn-play');
 	const iconPlay = el<SVGElement>('#icon-play');
 	const iconPause = el<SVGElement>('#icon-pause');
+	const speedBtn = el<HTMLButtonElement>('#btn-speed');
+	const speedValue = el<HTMLSpanElement>('#speed-value');
+	const speedPopover = el<HTMLDivElement>('#speed-popover');
+	const cursorTimeWrap = el<HTMLSpanElement>('#cursor-time-wrap');
+	const cursorTimeBtn = el<HTMLButtonElement>('#btn-cursor-time');
+	const cursorTimeInput = el<HTMLInputElement>('#input-cursor-time');
 	const optionsBtn = el<HTMLButtonElement>('#btn-options');
 	const optionsPopover = el<HTMLDivElement>('#options-popover');
 	const staleBadge = el<HTMLSpanElement>('#stale-badge');
@@ -287,13 +358,35 @@ function bootWebview() {
 	const slowdownBadge = el<HTMLSpanElement>('#slowdown-badge');
 	const speedReadout = el<HTMLSpanElement>('#speed-readout');
 	const durationReadout = el<HTMLSpanElement>('#duration-readout');
-	const timelineTrack = el<HTMLElement>('#timeline-track');
+	const timelineSlider = el<HTMLElement>('#timeline-slider');
+	const timelineScrubber = el<HTMLElement>('#timeline-scrubber');
+	const timelineHoverLine = el<HTMLDivElement>('#timeline-hover-line');
+	const timelinePlayhead = el<HTMLDivElement>('#timeline-playhead');
+	const timelineTooltip = el<HTMLDivElement>('#timeline-tooltip');
+
+	let timelineDiagnostics: DiagnosticEntry[] = [];
+	let editingCursorTime = false;
+	let cursorTimeEditInitial = '';
 
 	function setPlayButtonState(playing: boolean) {
 		playBtn.setAttribute('aria-pressed', String(playing));
 		playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-		iconPlay.toggleAttribute('hidden', playing);
-		iconPause.toggleAttribute('hidden', !playing);
+		playBtn.setAttribute('title', playing ? 'Pause (Space)' : 'Play (Space)');
+		iconPlay.toggleAttribute?.('hidden', playing);
+		iconPause.toggleAttribute?.('hidden', !playing);
+	}
+
+	function setSpeedPopoverOpen(open: boolean) {
+		speedPopover.hidden = !open;
+		speedBtn.setAttribute('aria-expanded', String(open));
+	}
+
+	function updateSpeedUI() {
+		const currentSpeed = timeline.getSpeed();
+		speedValue.textContent = `${currentSpeed}x`;
+		for (const opt of document.querySelectorAll<HTMLButtonElement>('.speed-option')) {
+			opt.setAttribute('aria-selected', String(Number(opt.dataset.speed) === currentSpeed));
+		}
 	}
 
 	function setOptionsPopoverOpen(open: boolean) {
@@ -317,7 +410,7 @@ function bootWebview() {
 	}
 
 	function persistState() {
-		vscode?.setState({ pinnedWholeAuto, diffMode, alliance, robotConfigId });
+		vscode?.setState({ pinnedWholeAuto, diffMode, alliance, robotConfigId, playbackSpeed: timeline.getSpeed() });
 	}
 
 	function updateControlsUI() {
@@ -366,7 +459,10 @@ function bootWebview() {
 
 		diagStrip.replaceChildren();
 		timelineAlerts.replaceChildren();
+		timelineDiagnostics = [];
 		const totalDuration = currentResult?.totalDurationSeconds ?? 0;
+		const timelineEntries: { diag: DiagnosticEntry; targetSuffix: string; onSelect: () => void }[] = [];
+
 		for (const d of diagnostics) {
 			const targetSuffix = d.targetGoal
 				? ` · ${d.targetGoal}`
@@ -377,7 +473,7 @@ function bootWebview() {
 						: '';
 			const onSelectDiag = () => {
 				if (d.timestampSeconds !== null && Number.isFinite(d.timestampSeconds)) {
-					timeline.clickAtTime(d.timestampSeconds);
+					timeline.seekToTime(d.timestampSeconds, performance.now());
 					updateTelemetryUI();
 					scheduleFrame();
 				}
@@ -387,17 +483,7 @@ function bootWebview() {
 			};
 
 			if (d.timestampSeconds !== null && Number.isFinite(d.timestampSeconds) && totalDuration > 0) {
-				const dot = document.createElement('button');
-				dot.type = 'button';
-				dot.className = 'timeline-alert-dot';
-				dot.dataset.severity = d.severity;
-				const pct = Math.max(0, Math.min(1, d.timestampSeconds / totalDuration)) * 100;
-				dot.style.left = `${pct.toFixed(3)}%`;
-				const label = `${d.code}${targetSuffix}${d.message ? ` — ${d.message}` : ''}`;
-				dot.title = label;
-				dot.setAttribute('aria-label', label);
-				dot.onclick = onSelectDiag;
-				timelineAlerts.append(dot);
+				timelineEntries.push({ diag: d, targetSuffix, onSelect: onSelectDiag });
 			} else {
 				const pill = document.createElement('button');
 				pill.type = 'button';
@@ -409,26 +495,189 @@ function bootWebview() {
 				diagStrip.append(pill);
 			}
 		}
+
+		timelineEntries.sort((a, b) => (a.diag.severity === b.diag.severity ? 0 : a.diag.severity === 'ERROR' ? 1 : -1));
+		timelineScrubber.dataset.hasAlerts = String(timelineEntries.length > 0);
+		for (const { diag: d, targetSuffix, onSelect } of timelineEntries) {
+			timelineDiagnostics.push(d);
+			const dot = document.createElement('button');
+			dot.type = 'button';
+			dot.className = 'timeline-alert-dot';
+			dot.dataset.severity = d.severity;
+			const pct = Math.max(0, Math.min(1, d.timestampSeconds! / totalDuration)) * 100;
+			if (dot.style) dot.style.left = `${pct.toFixed(3)}%`;
+			const label = `${d.code}${targetSuffix}${d.message ? ` — ${d.message}` : ''}`;
+			dot.title = label;
+			dot.setAttribute('aria-label', label);
+			dot.addEventListener?.('pointerdown', (ev: PointerEvent) => ev.stopPropagation());
+			dot.onclick = onSelect;
+			timelineAlerts.append(dot);
+		}
+	}
+
+	function createTooltipItem(
+		dotColor: string,
+		label: string,
+		rightMeta: string,
+		subText?: string,
+		divider = false,
+	): HTMLDivElement {
+		const item = document.createElement('div');
+		item.className = divider ? 'timeline-tooltip-item timeline-tooltip-divider' : 'timeline-tooltip-item';
+
+		const row = document.createElement('div');
+		row.className = 'timeline-tooltip-row';
+
+		const title = document.createElement('div');
+		title.className = 'timeline-tooltip-title';
+		const dot = document.createElement('span');
+		dot.className = 'timeline-tooltip-dot';
+		if (dot.style) dot.style.background = dotColor;
+		const text = document.createElement('span');
+		text.textContent = label;
+		title.append(dot, text);
+
+		const meta = document.createElement('span');
+		meta.className = 'timeline-tooltip-meta';
+		meta.textContent = rightMeta;
+
+		row.append(title, meta);
+		item.append(row);
+
+		if (subText) {
+			const sub = document.createElement('div');
+			sub.className = 'timeline-tooltip-sub';
+			sub.textContent = subText;
+			item.append(sub);
+		}
+		return item;
+	}
+
+	function updateTimelineHoverUI() {
+		const hoverT = timeline.hoveredTimeSeconds;
+		const total = currentResult?.totalDurationSeconds ?? 0;
+		if (!currentResult || total <= 0 || hoverT === null || !speedPopover.hidden) {
+			timelineHoverLine.hidden = true;
+			timelineTooltip.hidden = true;
+			return;
+		}
+
+		const hoverFraction = Math.max(0, Math.min(1, hoverT / total));
+		const hoverPct = hoverFraction * 100;
+		timelineHoverLine.hidden = false;
+		if (timelineHoverLine.style) {
+			timelineHoverLine.style.left = `${hoverPct.toFixed(3)}%`;
+		}
+
+		const scrubberRect = timelineScrubber.getBoundingClientRect();
+		const widthPx = scrubberRect.width || 1;
+		const hoverPx = hoverFraction * widthPx;
+		const slopPx = 4 + 3;
+		const hoveredAlerts = timelineDiagnostics
+			.filter((d) => {
+				if (d.timestampSeconds === null) return false;
+				const alertPx = Math.max(0, Math.min(1, d.timestampSeconds / total)) * widthPx;
+				return Math.abs(alertPx - hoverPx) <= slopPx;
+			})
+			.sort((a, b) => (a.timestampSeconds ?? 0) - (b.timestampSeconds ?? 0));
+
+		const sample = sampleTrajectoryAtTime(currentResult.trajectory, hoverT);
+		timelineTooltip.replaceChildren();
+		if (sample) {
+			const pct = Math.round(sample.slowdownRatio * 100);
+			timelineTooltip.append(
+				createTooltipItem(
+					heatmapColor(sample.heatmapNormalized),
+					sample.segmentId || 'Trajectory',
+					`${sample.achievedSpeedMetersPerSec.toFixed(2)} m/s`,
+					`${formatTimelineTime(hoverT)} · ${sample.limitingFactor} (${pct}%)`,
+				),
+			);
+		}
+
+		const maxListedAlerts = 5;
+		hoveredAlerts.slice(0, maxListedAlerts).forEach((d, index) => {
+			const dotColor = d.severity === 'ERROR' ? 'var(--error-fg)' : 'var(--warn-fg)';
+			const target = d.targetGoal ? ` · ${d.targetGoal}` : d.line ? ` · L${d.line}` : '';
+			const timeStr = d.timestampSeconds !== null ? formatTimelineTime(d.timestampSeconds) : '';
+			timelineTooltip.append(
+				createTooltipItem(
+					dotColor,
+					`${d.code}${target}`,
+					timeStr,
+					d.message || undefined,
+					Boolean(sample) || index > 0,
+				),
+			);
+		});
+		if (hoveredAlerts.length > maxListedAlerts) {
+			const more = document.createElement('div');
+			more.className = 'timeline-tooltip-sub';
+			more.textContent = `${hoveredAlerts.length - maxListedAlerts} more`;
+			timelineTooltip.append(more);
+		}
+
+		const hasContent = Boolean(sample) || hoveredAlerts.length > 0;
+		timelineTooltip.hidden = !hasContent;
+		if (hasContent && timelineTooltip.style) {
+			const tipW = timelineTooltip.offsetWidth || 160;
+			const half = tipW * 0.5;
+			const clampedPx = Math.max(Math.min(widthPx * 0.5, half - 8), Math.min(widthPx - half + 8, hoverPx));
+			timelineTooltip.style.left = `${clampedPx.toFixed(1)}px`;
+		}
+	}
+
+	function closeCursorTimeEditor() {
+		if (!editingCursorTime) return;
+		editingCursorTime = false;
+		cursorTimeInput.hidden = true;
+		cursorTimeInput.removeAttribute?.('aria-invalid');
+		cursorTimeBtn.hidden = false;
 	}
 
 	function updateTelemetryUI() {
 		setPlayButtonState(timeline.isPlaying());
+		updateSpeedUI();
 
 		if (!currentResult) {
-			durationReadout.textContent = '0.00/0.00s';
+			closeCursorTimeEditor();
+			cursorTimeBtn.textContent = '-';
+			cursorTimeBtn.disabled = true;
+			cursorTimeBtn.setAttribute('aria-label', 'Current time -, go to time');
+			if (cursorTimeWrap.style) cursorTimeWrap.style.width = '';
+			durationReadout.textContent = '-';
+			if (timelinePlayhead.style) timelinePlayhead.style.left = '0%';
+			timelineHoverLine.hidden = true;
+			timelineTooltip.hidden = true;
 			speedReadout.textContent = '0.00 m/s';
 			slowdownBadge.textContent = 'NONE · 100%';
 			return;
 		}
 		const total = currentResult.totalDurationSeconds;
 		const activeT = timeline.activeTimeSeconds();
+		const playheadT = timeline.playheadTimeSeconds();
+		const playheadPct = total > 0 ? Math.max(0, Math.min(100, (playheadT / total) * 100)) : 0;
 		const sample = sampleTrajectoryAtTime(currentResult.trajectory, activeT);
 
-		const isScrubbing = timeline.isPlaying() || timeline.isPinned() || timeline.hoveredTimeSeconds !== null;
-		durationReadout.textContent = `${activeT.toFixed(2)}/${total.toFixed(2)}s`;
-		timelineTrack.setAttribute('aria-valuemax', total.toFixed(2));
-		timelineTrack.setAttribute('aria-valuenow', activeT.toFixed(2));
+		const formattedActive = formatTimelineTime(activeT);
+		const formattedTotal = formatTimelineTime(total);
+		if (cursorTimeWrap.style) {
+			cursorTimeWrap.style.width = `max(3.5rem, calc(${formattedTotal.length}ch + 0.5rem))`;
+		}
+		cursorTimeBtn.textContent = formattedActive;
+		cursorTimeBtn.disabled = false;
+		cursorTimeBtn.setAttribute('aria-label', `Current time ${formattedActive}, go to time`);
+		durationReadout.textContent = formattedTotal;
 
+		if (timelinePlayhead.style) {
+			timelinePlayhead.style.left = `${playheadPct.toFixed(3)}%`;
+		}
+		timelineSlider.setAttribute('aria-valuemax', total.toFixed(2));
+		timelineSlider.setAttribute('aria-valuenow', activeT.toFixed(2));
+		timelineSlider.setAttribute('aria-valuetext', formattedActive);
+		updateTimelineHoverUI();
+
+		const isScrubbing = timeline.isPlaying() || timeline.isPinned() || timeline.hoveredTimeSeconds !== null;
 		if (sample && isScrubbing) {
 			speedReadout.textContent = `${sample.achievedSpeedMetersPerSec.toFixed(2)} m/s`;
 			const pct = Math.round(sample.slowdownRatio * 100);
@@ -553,6 +802,57 @@ function bootWebview() {
 		updateTelemetryUI();
 		scheduleFrame();
 	};
+	speedBtn.onclick = (ev: MouseEvent) => {
+		ev.stopPropagation();
+		setSpeedPopoverOpen(Boolean(speedPopover.hidden));
+	};
+	for (const opt of document.querySelectorAll<HTMLButtonElement>('.speed-option')) {
+		opt.onclick = () => {
+			const next = Number(opt.dataset.speed);
+			timeline.setSpeed(next);
+			setSpeedPopoverOpen(false);
+			updateSpeedUI();
+			persistState();
+		};
+	}
+	cursorTimeBtn.onclick = () => {
+		if (!currentResult || cursorTimeBtn.disabled) return;
+		editingCursorTime = true;
+		cursorTimeEditInitial = formatTimelineTime(timeline.activeTimeSeconds());
+		cursorTimeInput.value = cursorTimeEditInitial;
+		cursorTimeBtn.hidden = true;
+		cursorTimeInput.hidden = false;
+		cursorTimeInput.focus();
+		cursorTimeInput.select();
+	};
+	cursorTimeInput.addEventListener?.('input', () => {
+		cursorTimeInput.removeAttribute('aria-invalid');
+	});
+	cursorTimeInput.addEventListener?.('blur', () => {
+		if (!editingCursorTime) return;
+		const text = cursorTimeInput.value;
+		const parsed = text === cursorTimeEditInitial ? undefined : parseTimelineTime(text);
+		if (parsed !== undefined) {
+			timeline.seekToTime(parsed, performance.now());
+			updateTelemetryUI();
+			scheduleFrame();
+		}
+		closeCursorTimeEditor();
+	});
+	cursorTimeInput.addEventListener?.('keydown', (ev: KeyboardEvent) => {
+		if (ev.key === 'Enter') {
+			const parsed = parseTimelineTime(cursorTimeInput.value);
+			if (parsed === undefined) {
+				cursorTimeInput.setAttribute('aria-invalid', 'true');
+			} else {
+				cursorTimeInput.blur();
+			}
+		} else if (ev.key === 'Escape') {
+			ev.stopPropagation();
+			cursorTimeInput.value = cursorTimeEditInitial;
+			closeCursorTimeEditor();
+		}
+	});
 	for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-alliance]')) {
 		btn.onclick = () => {
 			const next = btn.dataset.alliance as 'Blue' | 'Red';
@@ -640,30 +940,103 @@ function bootWebview() {
 		{ passive: false },
 	);
 
-	// Hover-and-click timeline interaction (with horizontal padding away from panel edges)
 	const fractionFromPointer = (ev: MouseEvent | PointerEvent) => {
-		const rect = timelineCanvas.getBoundingClientRect();
+		const rect = timelineScrubber.getBoundingClientRect();
 		if (rect.width <= 0) return 0;
 		return Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
 	};
 
-	timelineTrack.addEventListener('pointermove', (ev: PointerEvent) => {
-		timeline.hoverAtFraction(fractionFromPointer(ev));
+	timelineSlider.addEventListener('pointerdown', (ev: PointerEvent) => {
+		if (ev.button !== 0) return;
+		ev.preventDefault();
+		timelineSlider.focus?.();
+		timelineSlider.setPointerCapture?.(ev.pointerId);
+		timeline.seekToFraction(fractionFromPointer(ev), performance.now());
 		updateTelemetryUI();
 		scheduleFrame();
 	});
-	timelineTrack.addEventListener('pointerleave', () => {
+	timelineSlider.addEventListener('pointermove', (ev: PointerEvent) => {
+		const frac = fractionFromPointer(ev);
+		timeline.hoverAtFraction(frac);
+		if (timelineSlider.hasPointerCapture?.(ev.pointerId)) {
+			timeline.seekToFraction(frac, performance.now());
+		}
+		updateTelemetryUI();
+		scheduleFrame();
+	});
+	timelineSlider.addEventListener('pointerleave', () => {
 		timeline.clearHover();
 		updateTelemetryUI();
 		scheduleFrame();
 	});
-	timelineTrack.addEventListener('click', (ev: MouseEvent) => {
-		timeline.clickAtFraction(fractionFromPointer(ev));
+	timelineSlider.addEventListener(
+		'wheel',
+		(ev: WheelEvent) => {
+			if (!currentResult || currentResult.totalDurationSeconds <= 0) return;
+			if (ev.deltaX === 0) return;
+			ev.preventDefault();
+			const rect = timelineScrubber.getBoundingClientRect();
+			const width = rect.width || 1;
+			const natural =
+				(ev as WheelEvent & { webkitDirectionInvertedFromDevice?: boolean }).webkitDirectionInvertedFromDevice ?? true;
+			const delta = natural ? -ev.deltaX : ev.deltaX;
+			timeline.seekByFractionDelta(delta / width, performance.now());
+			updateTelemetryUI();
+			scheduleFrame();
+		},
+		{ passive: false },
+	);
+	timelineSlider.addEventListener('keydown', (ev: KeyboardEvent) => {
+		if (!currentResult || currentResult.totalDurationSeconds <= 0) return;
+		const current = timeline.activeTimeSeconds();
+		if (ev.key === 'ArrowLeft') {
+			ev.preventDefault();
+			timeline.seekToTime(current - 0.5, performance.now());
+		} else if (ev.key === 'ArrowRight') {
+			ev.preventDefault();
+			timeline.seekToTime(current + 0.5, performance.now());
+		} else if (ev.key === ',') {
+			ev.preventDefault();
+			timeline.seekToTime(current - 0.02, performance.now());
+		} else if (ev.key === '.') {
+			ev.preventDefault();
+			timeline.seekToTime(current + 0.02, performance.now());
+		} else if (ev.key === 'Home') {
+			ev.preventDefault();
+			timeline.seekToTime(0, performance.now());
+		} else if (ev.key === 'End') {
+			ev.preventDefault();
+			timeline.seekToTime(currentResult.totalDurationSeconds, performance.now());
+		} else if (ev.key === ' ' || ev.key === 'k' || ev.key === 'K') {
+			ev.preventDefault();
+			timeline.togglePlay(performance.now());
+		} else if (ev.key === '[' || ev.key === '<') {
+			ev.preventDefault();
+			timeline.changeSpeed(-1);
+			persistState();
+		} else if (ev.key === ']' || ev.key === '>') {
+			ev.preventDefault();
+			timeline.changeSpeed(1);
+			persistState();
+		} else {
+			return;
+		}
 		updateTelemetryUI();
 		scheduleFrame();
 	});
+	window.addEventListener('click', (ev: MouseEvent) => {
+		if (speedPopover.hidden) return;
+		const target = ev.target as Node | null;
+		if (target && !speedPopover.contains(target) && !speedBtn.contains(target)) {
+			setSpeedPopoverOpen(false);
+		}
+	});
 	window.addEventListener('keydown', (ev: KeyboardEvent) => {
 		if (ev.key === 'Escape') {
+			if (!speedPopover.hidden) {
+				setSpeedPopoverOpen(false);
+				return;
+			}
 			if (!optionsPopover.hidden) {
 				setOptionsPopoverOpen(false);
 				return;
