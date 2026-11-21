@@ -238,13 +238,33 @@ final class InterpolatedTrajectoryRequest implements SwerveRequest {
         startVx, startVy, endVx, endVy, new AxisTiming(duration, grace, linearRate));
   }
 
+  /** Pre-warms ramp construction, sampling, and force feedforwards off the main loop. */
+  static void warmUp() {
+    var warmupRequest = new InterpolatedTrajectoryRequest();
+    var velocity = new ChassisSpeeds();
+    var accel = new ChassisSpeeds();
+    var start = new ChassisSpeeds();
+    for (int i = 0; i < 400; i++) {
+      double t = i * CompDriveConfig.FOLLOWER_PERIOD_SECONDS;
+      var end = new ChassisSpeeds(0.17 + (i % 15) * 0.2, ((i % 3) - 1) * 0.05, (i % 5) * 0.1);
+      warmupRequest.setStep(
+          new VelocityStep(start, CompDriveConfig.FOLLOWER_PERIOD_SECONDS, t, i + 1L),
+          end,
+          t + 0.002);
+      warmupRequest.sample(t + 0.010, velocity, accel);
+      warmupRequest.forces(accel, Rotation2d.fromRadians((i % 8) * 0.3));
+      start = end;
+    }
+    warmupRequest.setDirect(new ChassisSpeeds());
+    warmupRequest.sample(0.0, velocity, accel);
+  }
+
   private final double massPerWheel;
   private final double[] torqueCoeffX;
   private final double[] torqueCoeffY;
   private final Feedforwards wheelForces;
   private final SwerveRequest.ApplyRobotSpeeds request =
       new SwerveRequest.ApplyRobotSpeeds().withDriveRequestType(DriveRequestType.Velocity);
-  final DriveRequestSamples samples = new DriveRequestSamples("timestamped_velocity_and_force");
   private final ChassisSpeeds velocity = new ChassisSpeeds();
 
   private final ChassisSpeeds acceleration = new ChassisSpeeds();
@@ -291,30 +311,11 @@ final class InterpolatedTrajectoryRequest implements SwerveRequest {
         -velocity.vxMetersPerSecond * sin + velocity.vyMetersPerSecond * cos;
     robotVelocity.omegaRadiansPerSecond = velocity.omegaRadiansPerSecond;
     computeForcesInto(acceleration, cos, sin, wheelForces);
-    var status =
-        request
-            .withSpeeds(robotVelocity)
-            .withWheelForceFeedforwardsX(wheelForces.x_newtons)
-            .withWheelForceFeedforwardsY(wheelForces.y_newtons)
-            .apply(parameters, modules);
-    double linearShift = 0;
-    double angularShift = 0;
-    if (active.hasStep()) {
-      double plannedEnd = active.step.startTime() + active.step.durationSeconds();
-      linearShift = (active.startTime + active.linear.timing().duration()) - plannedEnd;
-      angularShift = (active.startTime + active.angular.timing().duration()) - plannedEnd;
-    }
-    samples.capture(
-        parameters.timestamp,
-        active.step.sequence(),
-        velocity,
-        acceleration,
-        linearShift,
-        angularShift,
-        heading.getRadians(),
-        status.value,
-        wheelForces);
-    return status;
+    return request
+        .withSpeeds(robotVelocity)
+        .withWheelForceFeedforwardsX(wheelForces.x_newtons)
+        .withWheelForceFeedforwardsY(wheelForces.y_newtons)
+        .apply(parameters, modules);
   }
 
   private void computeForcesInto(
