@@ -18,10 +18,13 @@
   "timezone": "America/Los_Angeles",
   "packageRules": [
     {
-      "groupName": "Spot",
-      "matchManagers": ["custom.jsonata"],
       "matchDatasources": ["custom.wpilib-vendordep"],
-      "matchDepNames": ["Spot", "Spot Java client"],
+      "groupName": "Spot",
+      "matchDepNames": [
+        "Spot",
+        "Spot Java client"
+      ],
+      "matchManagers": ["custom.jsonata"],
       "separateMajorMinor": false
     },
     {
