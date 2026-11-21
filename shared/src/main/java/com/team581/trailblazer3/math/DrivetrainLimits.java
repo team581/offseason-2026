@@ -9,24 +9,54 @@ import edu.wpi.first.math.MathUtil;
 /**
  * Calculated drivetrain limits with optional segment caps.
  *
- * @param robot source drivetrain dimensions and motor data
- * @param maxSpeed wheel-speed limit capped by the segment, in m/s
- * @param maxWheelSpeed 0.91 times calculated free speed, in m/s
- * @param freeSpeed (nominal voltage - static friction voltage) * motor Kv * wheel radius / drive
- *     ratio
- * @param braking measured deceleration capped by the segment, in m/s²
- * @param friction measured traction acceleration, in m/s²
- * @param lateral 0.85 times traction for cornering, in m/s²
- * @param maxOmega 0.85 * wheel-speed limit / largest module radius, capped by the segment, in rad/s
- * @param maxAlpha 0.85 * mass * min(motor launch acceleration / 0.90, traction) * radius / yaw
- *     inertia, capped by the segment, in rad/s²
- * @param turnRate min(half modeled steer free speed, 0.50 / (lag + period / 2)), in rad/s
- * @param lag measured drive response lag, in seconds
- * @param moduleRadius largest distance from robot center to a module, in meters
- * @param inertiaShare min(1, 4 * yaw inertia / (mass * sum(module radius²)))
- * @param accelerationCeiling segment acceleration cap, in m/s²; infinity uses the motor model
- * @param headingP heading-error gain from empirical calibration, in 1/s
- * @param headingD angular-speed-error gain from empirical calibration, dimensionless
+ * @param robot source physical drivetrain specs (dimensions, mass, inertia, gear ratios, and motor
+ *     models); not a derived scalar limit
+ * @param maxSpeed maximum chassis translation speed allowed on this segment, in m/s; {@code
+ *     min(maxWheelSpeed, segment cap)}, bounding how fast the robot center can translate across the
+ *     field
+ * @param maxWheelSpeed usable top wheel surface speed, in m/s; {@code 0.91 * freeSpeed}, reserving
+ *     a 9% voltage/load margin so swerve modules can still steer and combine translation with
+ *     rotation without saturating
+ * @param freeSpeed theoretical unloaded top wheel surface speed, in m/s; {@code (nominal voltage -
+ *     static friction voltage) * motor Kv * wheel radius / drive ratio}, representing the drive
+ *     motors' zero-load speed at nominal battery voltage and setting the back-EMF scale for motor
+ *     acceleration
+ * @param braking maximum linear deceleration magnitude, in m/s²; {@code min(measured braking,
+ *     segment cap)}, bounding how hard the robot can slow down for corners, goals, or barriers
+ *     without skidding or overshooting
+ * @param friction carpet traction acceleration envelope, in m/s²; measured acceleration limit
+ *     before the tires break traction and slip (shared across translation, cornering, and rotation)
+ * @param lateral maximum cornering (centripetal) acceleration, in m/s²; {@code 0.85 * friction},
+ *     capping path corner speed ({@code v² * curvature <= lateral}) with a 15% traction margin so
+ *     the robot does not slide wide in turns
+ * @param maxOmega maximum chassis yaw rotation speed around the robot center, in rad/s; {@code
+ *     min(0.85 * maxWheelSpeed / moduleRadius, segment cap)}, keeping the outermost module within
+ *     85% of {@code maxWheelSpeed} during pure spinning
+ * @param maxAlpha maximum chassis yaw angular acceleration, in rad/s²; {@code min(0.85 * mass *
+ *     min(motor launch acceleration / 0.90, friction) * moduleRadius / yaw inertia, segment cap)},
+ *     bounding how quickly the robot can spin up or slow its rotation given its yaw inertia, module
+ *     lever arm, and available motor/tire force
+ * @param turnRate maximum path-direction change rate for curved paths, in rad/s; {@code min(0.5 *
+ *     modeled steer free speed, 0.50 / (lag + period / 2))}, capping corner speed ({@code v *
+ *     curvature <= turnRate}) so the swerve steer modules and drive response lag can keep up with
+ *     tight turns
+ * @param lag measured first-order drive response time constant, in seconds; characterizes how long
+ *     wheel speed takes to respond to a velocity command, used for lookahead prediction and
+ *     feedback gain sizing
+ * @param moduleRadius largest distance from the robot center to any swerve module center, in
+ *     meters; the longest rotational lever arm, converting between chassis yaw rate ({@code rad/s})
+ *     and outermost module linear speed ({@code omega * moduleRadius} in {@code m/s})
+ * @param inertiaShare yaw-inertia-to-module-inertia ratio, dimensionless ({@code 0} to {@code 1});
+ *     {@code min(1, 4 * yaw inertia / (mass * sum(module radius²)))}, scaling how much tire
+ *     traction is consumed by angular acceleration ({@code inertiaShare * moduleRadius * alpha})
+ *     based on how concentrated the robot's mass is relative to its module footprint
+ * @param accelerationCeiling optional segment cap on forward linear acceleration, in m/s²; {@code
+ *     Double.POSITIVE_INFINITY} defers to the speed-dependent drive motor torque model and carpet
+ *     traction
+ * @param headingP proportional heading-error feedback gain, in 1/s ({@code (rad/s) / rad});
+ *     commands corrective chassis angular velocity per radian of heading error
+ * @param headingD derivative angular-velocity-error damping gain, dimensionless ({@code (rad/s) /
+ *     (rad/s)}); scales corrective spin opposing angular-rate error to damp heading overshoot
  */
 public record DrivetrainLimits(
     RobotDrivetrainSpec robot,
