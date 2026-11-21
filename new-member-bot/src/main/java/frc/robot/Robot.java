@@ -5,7 +5,6 @@ import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.followers.PidPathFollower;
 import com.team581.trailblazer.trackers.HeuristicPathTracker;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.scheduling.SubsystemExecutionSequencer;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.controller.PIDController;
@@ -115,7 +114,6 @@ public class Robot extends TimedRobot {
   public Robot() {
     DriverStation.silenceJoystickConnectionWarning(RobotBase.isSimulation());
     RobotController.setBrownoutVoltage(5.5);
-    DiagnosticCadence.setEnabled(true);
 
     DogLog.log("Metadata/RoborioSerialNumber", RobotController.getSerialNumber());
     DogLog.log("Metadata/ProjectName", BuildConstants.MAVEN_NAME);
@@ -137,8 +135,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
-    DiagnosticCadence.beginLoop();
-
     DogLog.timeEnd("Scheduler/TimeSinceLastLoop");
     DogLog.time("Scheduler/TimeSinceLastLoop");
 

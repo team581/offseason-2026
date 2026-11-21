@@ -5,7 +5,6 @@ import com.team581.swerve.SwerveAssist;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -655,12 +654,8 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     swerve.setUseLooseTolerance(getState().isFeeding() && timeout(1.0));
 
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
-    }
-    if (DiagnosticCadence.shouldLogHeavy()) {
-      DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
-      DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
-    }
+    DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
+    DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
+    DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
   }
 }

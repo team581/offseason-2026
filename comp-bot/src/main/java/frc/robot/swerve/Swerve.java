@@ -15,7 +15,6 @@ import com.team581.swerve.XboxControllerDriveSource;
 import com.team581.trailblazer3.model.TickResult.VelocityStep;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -621,32 +620,26 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       DogLog.clearFault("Swerve modules not pointed straight");
     }
 
-    if (DriverStation.isAutonomous() || DiagnosticCadence.shouldLogHeavy()) {
-      DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
-      DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
-    }
-    if (DiagnosticCadence.shouldLogHeavy()) {
-      DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
-      DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
-    }
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      switch (currentState) {
-        case WARMUP_SCORE, SCORE -> {
-          DogLog.log("Swerve/ScoringAngle", scoringAngle);
-          DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
-        }
-        case WARMUP_FEED, FEED -> {
-          DogLog.log("Swerve/FeedingAngle", feedingAngle);
-          DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
-        }
-        default -> {}
+    DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
+    DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
+    DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
+    DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
+    switch (currentState) {
+      case WARMUP_SCORE, SCORE -> {
+        DogLog.log("Swerve/ScoringAngle", scoringAngle);
+        DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
       }
-      DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
-      DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
-
-      DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
-      DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
+      case WARMUP_FEED, FEED -> {
+        DogLog.log("Swerve/FeedingAngle", feedingAngle);
+        DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
+      }
+      default -> {}
     }
+    DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
+
+    DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
+    DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
   }
 
   private double getTargetAngleDegrees() {

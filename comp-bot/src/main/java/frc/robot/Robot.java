@@ -6,7 +6,6 @@ import com.team581.GlobalConfig;
 import com.team581.controller.ControllerBindings;
 import com.team581.trailblazer3.runtime.Trailblazer;
 import com.team581.util.FieldUtil;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.profiling.LoopTiming;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.autos.Autos;
@@ -101,7 +100,6 @@ public class Robot extends Base581Robot {
               Optional.of(CompAutoField.CLEARANCE)));
 
   public Robot() {
-    DiagnosticCadence.setEnabled(true);
     LoopTiming.setEnabled(true);
 
     logMetadata(
@@ -133,7 +131,6 @@ public class Robot extends Base581Robot {
 
   @Override
   public void robotPeriodic() {
-    DiagnosticCadence.beginLoop();
     LoopTiming.recordClockOverhead();
     long loopStart = LoopTiming.start();
 

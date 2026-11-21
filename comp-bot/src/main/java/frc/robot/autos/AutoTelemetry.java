@@ -8,7 +8,6 @@ import com.team581.signals.Signals;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.RuntimeStatus;
 import com.team581.trailblazer3.runtime.Trailblazer;
-import com.team581.util.profiling.DiagnosticCadence;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -47,7 +46,6 @@ final class AutoTelemetry {
   private String lastMotionStep = "";
   private AutoSelection lastLoggedSelection = AutoSelection.DO_NOTHING;
   private boolean lastNearStart;
-  private RuntimeStatus lastLoggedStatus = RuntimeStatus.IDLE;
   private long lastLoggedGeneration = -1;
 
   private String lastLoggedDiagnostic = "";
@@ -268,7 +266,6 @@ final class AutoTelemetry {
     biasSamples = 0;
     motionSamples.clear();
     lastMotionStep = "";
-    lastLoggedStatus = RuntimeStatus.IDLE;
     lastLoggedDiagnostic = "";
     lastLoggedInfeasible = false;
   }
@@ -315,7 +312,6 @@ final class AutoTelemetry {
     logDrive(state, auto.startPose().getRotation().getRadians(), false, firstTick);
     if (firstTick) {
       motionSamples.clear();
-      lastLoggedStatus = RuntimeStatus.IDLE;
       lastLoggedDiagnostic = "";
       lastLoggedInfeasible = false;
     }
@@ -340,12 +336,9 @@ final class AutoTelemetry {
       motionSamples.clear();
     }
     logPlannedPath();
-    if (DiagnosticCadence.shouldLogRoutine() || result.status() != lastLoggedStatus) {
-      trailblazer
-          .currentTargetPose()
-          .ifPresent(target -> DogLog.log("Trailblazer3/TargetPose", target));
-      lastLoggedStatus = result.status();
-    }
+    trailblazer
+        .currentTargetPose()
+        .ifPresent(target -> DogLog.log("Trailblazer3/TargetPose", target));
     if (!result.diagnostic().equals(lastLoggedDiagnostic) || !result.diagnostic().isEmpty()) {
       DogLog.log("Trailblazer3/Diagnostic", result.diagnostic());
       lastLoggedDiagnostic = result.diagnostic();
@@ -363,10 +356,7 @@ final class AutoTelemetry {
       boolean transitionedFromAuto) {
     collectLimits();
     boolean nearStart = auto.isNearStartPose(actualPose);
-    if (transitionedFromAuto
-        || lastLoggedSelection != state
-        || lastNearStart != nearStart
-        || DiagnosticCadence.shouldLogRoutine()) {
+    if (transitionedFromAuto || lastLoggedSelection != state || lastNearStart != nearStart) {
       DogLog.log("Autos/SelectedAutoName", state.toString());
       DogLog.log("Autos/Step", "IDLE");
       DogLog.log("Autos/AtExpectedStartPose", nearStart);
