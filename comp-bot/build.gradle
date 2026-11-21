@@ -101,8 +101,7 @@ test {
 }
 
 // Simulation configuration (e.g. environment variables).
-wpi.sim.addGui().defaultEnabled = true
-wpi.sim.addDriverstation()
+apply from: rootProject.file('gradle/simulation-app.gradle')
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
 // in order to make them all available at runtime. Also adding the manifest so WPILib
@@ -199,7 +198,7 @@ tasks.register('loopBenchmarkReport') {
 		def summary = [
 			schema_version: 2,
 			note: 'Laptop results demonstrate relative improvement but do not prove absolute roboRIO timing.',
-			modes: [:]
+			modes: [: ]
 		]
 		['auto', 'teleop'].each { benchmarkMode ->
 			def runs = (1..5).collect {
@@ -217,7 +216,7 @@ tasks.register('loopBenchmarkReport') {
 
 		if (project.hasProperty('loopBenchmarkBaseline')) {
 			def baseline = parser.parse(file(project.property('loopBenchmarkBaseline')))
-			summary.comparison = [:]
+			summary.comparison = [: ]
 			['auto', 'teleop'].each { benchmarkMode ->
 				def oldP99 = baseline.modes[benchmarkMode].median_p99 as double
 				def newP99 = summary.modes[benchmarkMode].median_p99 as double
