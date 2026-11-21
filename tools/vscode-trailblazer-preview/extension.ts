@@ -448,7 +448,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const nextLine = event.selections[0]?.active.line !== undefined ? event.selections[0].active.line + 1 : 1;
 			if (nextLine === activeSession.cursorLine) return;
 			activeSession.cursorLine = nextLine;
-			activeSession.selectedSegmentId = null;
+			if (activeSession.pinnedWholeAuto || activeSession.selectedSegmentId !== null) return;
 
 			const target = resolveCursorTarget(
 				activeSession.segments,
@@ -462,8 +462,6 @@ export function activate(context: vscode.ExtensionContext) {
 				segmentId: target.segmentId,
 				sourceRevision: activeSession.sourceRevision,
 			});
-
-			if (activeSession.pinnedWholeAuto) return;
 
 			if (cursorTimer) clearTimeout(cursorTimer);
 			const session = activeSession;

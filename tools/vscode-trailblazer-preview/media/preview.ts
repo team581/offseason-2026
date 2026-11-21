@@ -190,6 +190,10 @@ export class CameraAnimator {
 	public isTransitioning(): boolean {
 		return this.transitioning;
 	}
+
+	public getTargetViewport(): CameraViewport {
+		return this.transitioning ? this.targetViewport : this.current;
+	}
 }
 
 /** Resolves a unique source match in the active segment or across the whole auto. */
@@ -265,19 +269,52 @@ function bootWebview() {
 		fieldImage.src = fieldImageUrl;
 	}
 
-	const el = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+	const el = <T extends Element>(sel: string) => document.querySelector<T>(sel)!;
 	const diagStrip = el<HTMLDivElement>('#diagnostics-strip');
+	const timelineAlerts = el<HTMLDivElement>('#timeline-alerts');
 	const segGroup = el<HTMLDivElement>('#segment-pills');
 	const modeCursorBtn = el<HTMLButtonElement>('#mode-cursor');
 	const modeWholeBtn = el<HTMLButtonElement>('#mode-whole');
 	const diffBtn = el<HTMLButtonElement>('#btn-diff');
+	const fitBtn = el<HTMLButtonElement>('#btn-fit');
 	const playBtn = el<HTMLButtonElement>('#btn-play');
+	const iconPlay = el<SVGElement>('#icon-play');
+	const iconPause = el<SVGElement>('#icon-pause');
+	const optionsBtn = el<HTMLButtonElement>('#btn-options');
+	const optionsPopover = el<HTMLDivElement>('#options-popover');
 	const staleBadge = el<HTMLSpanElement>('#stale-badge');
 	const diffDeltaBadge = el<HTMLSpanElement>('#diff-delta-badge');
 	const slowdownBadge = el<HTMLSpanElement>('#slowdown-badge');
 	const speedReadout = el<HTMLSpanElement>('#speed-readout');
 	const durationReadout = el<HTMLSpanElement>('#duration-readout');
 	const timelineTrack = el<HTMLElement>('#timeline-track');
+
+	function setPlayButtonState(playing: boolean) {
+		playBtn.setAttribute('aria-pressed', String(playing));
+		playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+		iconPlay.toggleAttribute('hidden', playing);
+		iconPause.toggleAttribute('hidden', !playing);
+	}
+
+	function setOptionsPopoverOpen(open: boolean) {
+		optionsPopover.hidden = !open;
+		optionsBtn.setAttribute('aria-expanded', String(open));
+	}
+
+	function updateFitButtonState() {
+		if (!currentResult) {
+			fitBtn.disabled = true;
+			return;
+		}
+		const fitVp = boundsToViewport(computeAutoCropBounds(currentResult, 1.0));
+		const targetVp = camera.getTargetViewport();
+		const atFit =
+			Math.abs(targetVp.centerX - fitVp.centerX) < 1e-3 &&
+			Math.abs(targetVp.centerY - fitVp.centerY) < 1e-3 &&
+			Math.abs(targetVp.spanX - fitVp.spanX) < 1e-3 &&
+			Math.abs(targetVp.spanY - fitVp.spanY) < 1e-3;
+		fitBtn.disabled = atFit;
+	}
 
 	function persistState() {
 		vscode?.setState({ pinnedWholeAuto, diffMode, alliance, robotConfigId });
@@ -287,8 +324,8 @@ function bootWebview() {
 		modeCursorBtn.setAttribute('aria-pressed', String(!pinnedWholeAuto && selectedSegmentId === null));
 		modeWholeBtn.setAttribute('aria-pressed', String(pinnedWholeAuto));
 		diffBtn.setAttribute('aria-pressed', String(diffMode));
-		playBtn.setAttribute('aria-pressed', String(timeline.isPlaying()));
-		playBtn.textContent = timeline.isPlaying() ? '⏸' : '▶';
+		setPlayButtonState(timeline.isPlaying());
+		updateFitButtonState();
 
 		for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-alliance]')) {
 			btn.setAttribute('aria-pressed', String(btn.dataset.alliance === alliance));
@@ -328,11 +365,9 @@ function bootWebview() {
 		}
 
 		diagStrip.replaceChildren();
+		timelineAlerts.replaceChildren();
+		const totalDuration = currentResult?.totalDurationSeconds ?? 0;
 		for (const d of diagnostics) {
-			const pill = document.createElement('button');
-			pill.type = 'button';
-			pill.className = 'diag-pill';
-			pill.dataset.severity = d.severity;
 			const targetSuffix = d.targetGoal
 				? ` · ${d.targetGoal}`
 				: d.line
@@ -340,8 +375,7 @@ function bootWebview() {
 					: d.timestampSeconds !== null
 						? ` · ${d.timestampSeconds.toFixed(2)}s`
 						: '';
-			pill.textContent = `${d.code}${targetSuffix}`;
-			pill.onclick = () => {
+			const onSelectDiag = () => {
 				if (d.timestampSeconds !== null && Number.isFinite(d.timestampSeconds)) {
 					timeline.clickAtTime(d.timestampSeconds);
 					updateTelemetryUI();
@@ -351,16 +385,37 @@ function bootWebview() {
 					vscode?.postMessage({ type: 'revealLine', line: d.line, sourceRevision });
 				}
 			};
-			diagStrip.append(pill);
+
+			if (d.timestampSeconds !== null && Number.isFinite(d.timestampSeconds) && totalDuration > 0) {
+				const dot = document.createElement('button');
+				dot.type = 'button';
+				dot.className = 'timeline-alert-dot';
+				dot.dataset.severity = d.severity;
+				const pct = Math.max(0, Math.min(1, d.timestampSeconds / totalDuration)) * 100;
+				dot.style.left = `${pct.toFixed(3)}%`;
+				const label = `${d.code}${targetSuffix}${d.message ? ` — ${d.message}` : ''}`;
+				dot.title = label;
+				dot.setAttribute('aria-label', label);
+				dot.onclick = onSelectDiag;
+				timelineAlerts.append(dot);
+			} else {
+				const pill = document.createElement('button');
+				pill.type = 'button';
+				pill.className = 'diag-pill';
+				pill.dataset.severity = d.severity;
+				pill.textContent = `${d.code}${targetSuffix}`;
+				if (d.message) pill.title = d.message;
+				pill.onclick = onSelectDiag;
+				diagStrip.append(pill);
+			}
 		}
 	}
 
 	function updateTelemetryUI() {
-		playBtn.setAttribute('aria-pressed', String(timeline.isPlaying()));
-		playBtn.textContent = timeline.isPlaying() ? '⏸' : '▶';
+		setPlayButtonState(timeline.isPlaying());
 
 		if (!currentResult) {
-			durationReadout.textContent = '0.00 s';
+			durationReadout.textContent = '0.00/0.00s';
 			speedReadout.textContent = '0.00 m/s';
 			slowdownBadge.textContent = 'NONE · 100%';
 			return;
@@ -370,9 +425,7 @@ function bootWebview() {
 		const sample = sampleTrajectoryAtTime(currentResult.trajectory, activeT);
 
 		const isScrubbing = timeline.isPlaying() || timeline.isPinned() || timeline.hoveredTimeSeconds !== null;
-		durationReadout.textContent = isScrubbing
-			? `${activeT.toFixed(2)} / ${total.toFixed(2)} s`
-			: `${total.toFixed(2)} s`;
+		durationReadout.textContent = `${activeT.toFixed(2)}/${total.toFixed(2)}s`;
 		timelineTrack.setAttribute('aria-valuemax', total.toFixed(2));
 		timelineTrack.setAttribute('aria-valuenow', activeT.toFixed(2));
 
@@ -446,6 +499,7 @@ function bootWebview() {
 	function focusWaypoint(waypoint: WaypointEntry) {
 		pointFocus = waypoint;
 		camera.animateTo(computeWaypointViewport(waypoint), performance.now());
+		updateFitButtonState();
 	}
 
 	function scheduleEditZoomBack() {
@@ -457,17 +511,29 @@ function bootWebview() {
 			refitWhenRefreshed = resultRevision !== sourceRevision;
 			const fullVp = boundsToViewport(computeAutoCropBounds(currentResult, 1.0));
 			camera.animateTo(fullVp, performance.now());
+			updateFitButtonState();
 			scheduleFrame();
 		}, EDIT_ZOOM_HOLD_MS);
 	}
 
 	// Control event listeners
 	modeCursorBtn.onclick = () => {
-		pinnedWholeAuto = false;
-		selectedSegmentId = null;
+		const isCursorActive = !pinnedWholeAuto && selectedSegmentId === null;
+		if (isCursorActive) {
+			if (currentResult?.scope === 'SEGMENT' && currentResult.activeSegmentId) {
+				pinnedWholeAuto = false;
+				selectedSegmentId = currentResult.activeSegmentId;
+			} else {
+				pinnedWholeAuto = true;
+				selectedSegmentId = null;
+			}
+		} else {
+			pinnedWholeAuto = false;
+			selectedSegmentId = null;
+		}
 		updateControlsUI();
 		persistState();
-		vscode?.postMessage({ type: 'setMode', pinnedWholeAuto: false, segmentId: null });
+		vscode?.postMessage({ type: 'setMode', pinnedWholeAuto, segmentId: selectedSegmentId });
 	};
 	modeWholeBtn.onclick = () => {
 		pinnedWholeAuto = true;
@@ -505,16 +571,28 @@ function bootWebview() {
 			vscode?.postMessage({ type: 'setRobot', robotConfigId: next });
 		};
 	}
-	el<HTMLButtonElement>('#btn-fit').onclick = () => {
+	fitBtn.onclick = () => {
 		if (!currentResult) return;
 		clearPointFocus();
 		const targetVp = boundsToViewport(computeAutoCropBounds(currentResult, 1.0));
 		camera.animateTo(targetVp, performance.now());
+		updateFitButtonState();
 		scheduleFrame();
 	};
 	el<HTMLButtonElement>('#btn-refresh').onclick = () => {
 		vscode?.postMessage({ type: 'refresh' });
 	};
+	optionsBtn.onclick = (ev: MouseEvent) => {
+		ev.stopPropagation();
+		setOptionsPopoverOpen(Boolean(optionsPopover.hidden));
+	};
+	document.addEventListener('click', (ev: MouseEvent) => {
+		if (optionsPopover.hidden) return;
+		const target = ev.target as Node | null;
+		if (target && !optionsPopover.contains(target) && !optionsBtn.contains(target)) {
+			setOptionsPopoverOpen(false);
+		}
+	});
 
 	// Click on waypoint on field canvas -> bring cursor to it + zoom into that point
 	fieldCanvas.addEventListener('click', (ev: MouseEvent) => {
@@ -556,6 +634,7 @@ function bootWebview() {
 				zoomFactor,
 				performance.now(),
 			);
+			updateFitButtonState();
 			scheduleFrame();
 		},
 		{ passive: false },
@@ -584,10 +663,16 @@ function bootWebview() {
 		scheduleFrame();
 	});
 	window.addEventListener('keydown', (ev: KeyboardEvent) => {
-		if (ev.key === 'Escape' && timeline.isPinned()) {
-			timeline.unpin();
-			updateTelemetryUI();
-			scheduleFrame();
+		if (ev.key === 'Escape') {
+			if (!optionsPopover.hidden) {
+				setOptionsPopoverOpen(false);
+				return;
+			}
+			if (timeline.isPinned()) {
+				timeline.unpin();
+				updateTelemetryUI();
+				scheduleFrame();
+			}
 		}
 	});
 	window.addEventListener('resize', () => scheduleFrame());
@@ -648,6 +733,7 @@ function bootWebview() {
 			}
 
 			if (msg.type === 'cursorLineChanged' && typeof msg.cursorLine === 'number') {
+				if (pinnedWholeAuto || selectedSegmentId !== null) return;
 				const matchingScope =
 					currentResult?.scope === 'WHOLE_AUTO'
 						? msg.segmentId == null

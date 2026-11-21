@@ -9,62 +9,229 @@
 		<link rel="stylesheet" href="{{stylesheet}}" />
 	</head>
 	<body data-field-image="{{fieldImage}}">
-		<header class="top-bar">
-			<div id="diagnostics-strip" class="diagnostics-strip" role="status" aria-live="polite"></div>
-			<div class="controls-row">
-				<div class="pill-group" role="group" aria-label="Scope">
-					<button id="mode-cursor" type="button" aria-pressed="true">Cursor</button>
-					<button id="mode-whole" type="button" aria-pressed="false">Whole Auto</button>
+		<div class="pane-card">
+			<main class="canvas-stage">
+				<canvas
+					id="field-canvas"
+					width="960"
+					height="540"
+					tabindex="0"
+					aria-label="2026 Field Trajectory Preview"
+				></canvas>
+
+				<div class="hud-anchor hud-top-left">
+					<div class="toolbar-actions hud-surface" role="group" aria-label="Cursor mode">
+						<button
+							id="mode-cursor"
+							type="button"
+							class="icon-btn"
+							aria-pressed="true"
+							aria-label="Cursor"
+							title="Follow editor cursor"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								width="14"
+								height="14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M12.586 12.586 19 19" />
+								<path
+									d="M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.999a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z"
+								/>
+							</svg>
+						</button>
+					</div>
+					<div class="segmented-control hud-surface scope-island" role="group" aria-label="Scope">
+						<button id="mode-whole" type="button" aria-pressed="false">Whole Auto</button>
+						<span class="island-divider" aria-hidden="true"></span>
+						<div id="segment-pills" class="segment-pills" role="group" aria-label="Segments"></div>
+					</div>
 				</div>
-				<div id="segment-pills" class="pill-group" role="group" aria-label="Segments"></div>
-				<div class="pill-group" role="group" aria-label="Diff">
-					<button id="btn-diff" type="button" aria-pressed="false">Diff</button>
+
+				<div class="hud-anchor hud-top-right">
+					<span id="diff-delta-badge" class="badge badge-diff hud-surface" hidden>Δ 0.00 s</span>
+					<div class="toolbar-actions hud-surface" role="toolbar" aria-label="Preview actions">
+						<button
+							id="btn-diff"
+							type="button"
+							class="icon-btn"
+							aria-pressed="false"
+							aria-label="Toggle Diff"
+							title="Toggle Diff (git baseline)"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								width="15"
+								height="15"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<line x1="6" x2="6" y1="3" y2="15" />
+								<circle cx="18" cy="6" r="3" />
+								<circle cx="6" cy="18" r="3" />
+								<path d="M18 9a9 9 0 0 1-9 9" />
+							</svg>
+						</button>
+						<button id="btn-fit" type="button" class="icon-btn" aria-label="Fit to path" title="Fit to path" disabled>
+							<svg
+								viewBox="0 0 24 24"
+								width="15"
+								height="15"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M8 3v3a2 2 0 0 1-2 2H3" />
+								<path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+								<path d="M3 16h3a2 2 0 0 1 2 2v3" />
+								<path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+							</svg>
+						</button>
+						<button id="btn-refresh" type="button" class="icon-btn" aria-label="Refresh" title="Refresh preview">
+							<svg
+								viewBox="0 0 24 24"
+								width="15"
+								height="15"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+								<path d="M21 3v5h-5" />
+							</svg>
+						</button>
+						<div class="options-anchor">
+							<button
+								id="btn-options"
+								type="button"
+								class="icon-btn"
+								aria-haspopup="true"
+								aria-expanded="false"
+								aria-controls="options-popover"
+								aria-label="Preview options"
+								title="Alliance &amp; Robot"
+							>
+								<svg
+									viewBox="0 0 24 24"
+									width="15"
+									height="15"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<line x1="21" x2="14" y1="4" y2="4" />
+									<line x1="10" x2="3" y1="4" y2="4" />
+									<line x1="21" x2="12" y1="12" y2="12" />
+									<line x1="8" x2="3" y1="12" y2="12" />
+									<line x1="21" x2="16" y1="20" y2="20" />
+									<line x1="12" x2="3" y1="20" y2="20" />
+									<line x1="14" x2="14" y1="2" y2="6" />
+									<line x1="8" x2="8" y1="10" y2="14" />
+									<line x1="16" x2="16" y1="18" y2="22" />
+								</svg>
+							</button>
+							<div id="options-popover" class="options-popover" role="dialog" aria-label="Preview options" hidden>
+								<div class="option-row">
+									<span class="option-label">Alliance</span>
+									<div class="segmented-control" role="group" aria-label="Alliance">
+										<button id="alliance-blue" type="button" data-alliance="Blue" aria-pressed="true">Blue</button>
+										<button id="alliance-red" type="button" data-alliance="Red" aria-pressed="false">Red</button>
+									</div>
+								</div>
+								<div class="option-row">
+									<span class="option-label">Robot</span>
+									<div class="segmented-control" role="group" aria-label="Robot">
+										<button type="button" data-robot="581" aria-pressed="true">581</button>
+										<button type="button" data-robot="9991" aria-pressed="false">9991</button>
+										<button type="button" data-robot="9981" aria-pressed="false">9981</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div class="pill-group" role="group" aria-label="Alliance">
-					<button id="alliance-blue" type="button" data-alliance="Blue" aria-pressed="true">Blue</button>
-					<button id="alliance-red" type="button" data-alliance="Red" aria-pressed="false">Red</button>
+
+				<div class="hud-anchor hud-bottom-left">
+					<div class="status-stack">
+						<span id="stale-badge" class="badge badge-stale" hidden>STALE</span>
+						<div id="diagnostics-strip" class="diagnostics-strip" role="status" aria-live="polite"></div>
+					</div>
+					<div class="metrics-group hud-surface">
+						<span id="speed-readout" class="metric-speed">0.00 m/s</span>
+						<span class="metric-sep" aria-hidden="true">·</span>
+						<span id="slowdown-badge" class="metric-limiter">TOP_SPEED · 100%</span>
+					</div>
 				</div>
-				<div class="pill-group" role="group" aria-label="Robot">
-					<button type="button" data-robot="581" aria-pressed="true">581</button>
-					<button type="button" data-robot="9991" aria-pressed="false">9991</button>
-					<button type="button" data-robot="9981" aria-pressed="false">9981</button>
-				</div>
-				<div class="pill-group" role="group" aria-label="View">
-					<button id="btn-fit" type="button">Fit</button>
-					<button id="btn-refresh" type="button" aria-label="Refresh">↻</button>
-				</div>
-				<div class="metrics-group">
-					<span id="stale-badge" class="badge badge-stale" hidden>STALE</span>
-					<span id="diff-delta-badge" class="badge badge-diff" hidden>Δ 0.00 s</span>
-					<span id="slowdown-badge" class="badge badge-limiter">TOP_SPEED · 100%</span>
-					<span id="speed-readout" class="metric-pill">0.00 m/s</span>
-					<span id="duration-readout" class="metric-pill metric-duration">0.00 s</span>
-				</div>
-			</div>
-		</header>
-		<main class="canvas-stage">
-			<canvas
-				id="field-canvas"
-				width="960"
-				height="540"
-				tabindex="0"
-				aria-label="2026 Field Trajectory Preview"
-			></canvas>
-		</main>
+			</main>
+		</div>
 		<footer class="timeline-bar" id="timeline-bar">
-			<button id="btn-play" type="button" class="play-btn" aria-pressed="false" aria-label="Play">▶</button>
-			<div
-				id="timeline-track"
-				class="timeline-track"
-				tabindex="0"
-				role="slider"
-				aria-label="Timeline"
-				aria-valuemin="0"
-				aria-valuemax="0"
-				aria-valuenow="0"
-			>
-				<canvas id="timeline-canvas" width="900" height="32"></canvas>
+			<button id="btn-play" type="button" class="play-btn" aria-pressed="false" aria-label="Play" title="Play / Pause">
+				<svg
+					id="icon-play"
+					viewBox="0 0 24 24"
+					width="15"
+					height="15"
+					fill="currentColor"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<polygon points="6 3 20 12 6 21 6 3" />
+				</svg>
+				<svg
+					id="icon-pause"
+					viewBox="0 0 24 24"
+					width="15"
+					height="15"
+					fill="currentColor"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+					hidden
+				>
+					<rect x="6" y="4" width="4" height="16" rx="1" />
+					<rect x="14" y="4" width="4" height="16" rx="1" />
+				</svg>
+			</button>
+			<div class="timeline-scrubber">
+				<div id="timeline-alerts" class="timeline-alerts" aria-label="Diagnostics along timeline"></div>
+				<div
+					id="timeline-track"
+					class="timeline-track"
+					tabindex="0"
+					role="slider"
+					aria-label="Timeline"
+					aria-valuemin="0"
+					aria-valuemax="0"
+					aria-valuenow="0"
+				>
+					<canvas id="timeline-canvas" width="900" height="20"></canvas>
+				</div>
 			</div>
+			<span id="duration-readout" class="timeline-duration">0.00/0.00s</span>
 		</footer>
 		<script nonce="{{nonce}}" src="{{script}}"></script>
 	</body>
