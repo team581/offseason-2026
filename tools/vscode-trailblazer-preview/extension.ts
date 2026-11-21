@@ -62,7 +62,12 @@ export function activate(context: vscode.ExtensionContext) {
 		try {
 			const root = discoverWorkspaceRoot(folder);
 			const worker = getOrCreateWorker(root);
-			void worker.ensureStarted().catch(() => {
+			const activeDoc = vscode.window.activeTextEditor?.document;
+			const overlay =
+				activeDoc && isTrailblazerAutoFile(activeDoc.uri.fsPath, activeDoc.getText())
+					? activeDoc.uri.fsPath
+					: undefined;
+			void worker.ensureStarted(overlay).catch(() => {
 				// Handled when preview runs
 			});
 		} catch {

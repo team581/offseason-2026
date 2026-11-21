@@ -18,7 +18,6 @@ import frc.robot.config.DSOptions;
 import frc.robot.robot_manager.RobotManager;
 import frc.robot.swerve.Swerve.TrajectoryOwner;
 import frc.robot.util.scheduling.SubsystemPriority;
-import frc.robot.vision.Vision;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -47,7 +46,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private final RobotManager robotManager;
   private final Trailblazer trailblazer;
 
-  private final TrailblazerCalibrationAuto calibration;
   private final AutoTelemetry telemetry;
 
   private Alliance autoAlliance = currentAlliance();
@@ -56,12 +54,11 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   private boolean hasEnabledAuto;
   private boolean wasAutonomousEnabled;
 
-  public Autos(RobotManager robotManager, Trailblazer trailblazer, Vision vision) {
+  public Autos(RobotManager robotManager, Trailblazer trailblazer) {
     super(SubsystemPriority.AUTOS, AutoSelection.DO_NOTHING);
     this.robotManager = robotManager;
     this.trailblazer = trailblazer;
     this.telemetry = new AutoTelemetry(trailblazer, robotManager.swerve);
-    this.calibration = new TrailblazerCalibrationAuto(robotManager, vision);
     selectedAuto =
         new SelectedAuto(
             AutoSelection.DO_NOTHING, autoAlliance, createAuto(AutoSelection.DO_NOTHING));
@@ -78,7 +75,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
   }
 
   private void prepareWhileOutOfAuto(AutoSelection state) {
-    calibration.end();
     autoAlliance = currentAlliance();
 
     boolean transitionedFromAuto = wasAutonomousEnabled;
@@ -87,15 +83,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
       wasAutonomousEnabled = false;
       telemetry.endRun();
       DogLog.log("Trailblazer3/AutoEnableObserved", false);
-    }
-
-    if (TrailblazerCalibrationAuto.Test.fromSelection(state).isPresent()) {
-      if (!matchesSelection(AutoSelection.DO_NOTHING)) {
-        selectAuto(AutoSelection.DO_NOTHING);
-      }
-      updateStagedLaunch(new ChassisSpeeds());
-      telemetry.logCalibrationIdle(state, transitionedFromAuto);
-      return;
     }
 
     if (!matchesSelection(state)) {
@@ -161,14 +148,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     if (!DriverStation.isAutonomousEnabled()) {
       prepareWhileOutOfAuto(state);
       telemetry.logPlannedPath();
-      return;
-    }
-
-    var calibrationTest = TrailblazerCalibrationAuto.Test.fromSelection(state);
-    if (calibrationTest.isPresent()) {
-      hasEnabledAuto = true;
-      wasAutonomousEnabled = true;
-      calibration.run(calibrationTest.orElseThrow());
       return;
     }
 

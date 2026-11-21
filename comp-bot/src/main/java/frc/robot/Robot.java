@@ -98,8 +98,7 @@ public class Robot extends Base581Robot {
               CompDriveConfig.DRIVE_SPEC,
               CompDriveConfig.CALIBRATION,
               CompDriveConfig.FOLLOWER_PERIOD_SECONDS,
-              Optional.of(CompAutoField.CLEARANCE)),
-          vision);
+              Optional.of(CompAutoField.CLEARANCE)));
 
   public Robot() {
     DiagnosticCadence.setEnabled(true);

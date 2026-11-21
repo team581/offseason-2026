@@ -10,7 +10,6 @@ const NON_PREVIEW_BASENAMES = new Set([
 	'AutoSelection.java',
 	'AutoTelemetry.java',
 	'Autos.java',
-	'TrailblazerCalibrationAuto.java',
 	'DoNothingAuto.java',
 	'BaseImperativeAuto.java',
 ]);

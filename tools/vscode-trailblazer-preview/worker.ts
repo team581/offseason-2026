@@ -174,7 +174,13 @@ export class WarmPreviewWorkerClient {
 	/** Builds saved dependencies before starting; only the requested auto may use a source overlay. */
 	public async ensureStarted(overlaySourceFile?: string): Promise<void> {
 		if (this.disposed) throw new Error('Preview worker client has been disposed');
-		if (this.startingPromise) await this.startingPromise;
+		while (this.startingPromise) {
+			try {
+				await this.startingPromise;
+			} catch {
+				// Re-check startup state after an in-flight start fails (e.g. prewarm without overlay).
+			}
+		}
 		if (this.disposed) throw new Error('Preview worker client has been disposed');
 		const current = runtimeSources(this.workspaceRoot);
 		const overlay = overlaySourceFile ? path.resolve(this.workspaceRoot, overlaySourceFile) : null;
@@ -182,11 +188,14 @@ export class WarmPreviewWorkerClient {
 			this.sources = current;
 			return;
 		}
-		this.startingPromise = this.spawnWorker(overlay);
+		const start = this.spawnWorker(overlay);
+		this.startingPromise = start;
 		try {
-			await this.startingPromise;
+			await start;
 		} finally {
-			this.startingPromise = null;
+			if (this.startingPromise === start) {
+				this.startingPromise = null;
+			}
 		}
 	}
 
@@ -207,7 +216,7 @@ export class WarmPreviewWorkerClient {
 		if (requestNumber !== this.requestCounter) {
 			throw new Error(`Superseded by req-${this.requestCounter}`);
 		}
-		if (this.disposed || !this.child) {
+		if (this.disposed || !this.isRunning() || !this.child) {
 			throw new Error('Preview worker is not running');
 		}
 
@@ -301,12 +310,17 @@ export class WarmPreviewWorkerClient {
 
 		await new Promise<void>((resolve, reject) => {
 			let settled = false;
+			let stderrTail = '';
 			const proc = spawn(javaBin, args, {
 				cwd: this.workspaceRoot,
 				env,
 				stdio: ['pipe', 'pipe', 'pipe'],
 			});
 			this.child = proc;
+
+			proc.stderr.on('data', (chunk: Buffer) => {
+				stderrTail = (stderrTail + chunk.toString('utf8')).slice(-4096);
+			});
 
 			const rl = readline.createInterface({ input: proc.stdout });
 			this.rl = rl;
@@ -361,14 +375,15 @@ export class WarmPreviewWorkerClient {
 			proc.on('exit', (code) => {
 				if (this.child !== proc) return;
 				this.child = null;
+				const detail = stderrTail.trim() ? `: ${stderrTail.trim()}` : '';
 				if (!settled) {
 					settled = true;
-					reject(new Error(`Warm preview worker exited prematurely with code ${String(code)}`));
+					reject(new Error(`Warm preview worker exited prematurely with code ${String(code)}${detail}`));
 				}
 				if (this.activePending) {
 					const pending = this.activePending;
 					this.activePending = null;
-					pending.reject(new Error(`Warm preview worker exited with code ${String(code)}`));
+					pending.reject(new Error(`Warm preview worker exited with code ${String(code)}${detail}`));
 				}
 			});
 		});

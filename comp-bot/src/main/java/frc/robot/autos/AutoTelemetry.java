@@ -356,16 +356,6 @@ final class AutoTelemetry {
     }
   }
 
-  void logCalibrationIdle(AutoSelection state, boolean transitionedFromAuto) {
-    if (transitionedFromAuto || lastLoggedSelection != state) {
-      DogLog.log("Autos/SelectedAutoName", state.toString());
-      DogLog.log("Autos/Step", "CALIBRATION_IDLE");
-      DogLog.log("Autos/AtExpectedStartPose", true);
-      lastLoggedSelection = state;
-      lastNearStart = true;
-    }
-  }
-
   void logIdle(
       AutoSelection state,
       TrailblazerAuto<?> auto,
