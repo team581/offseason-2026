@@ -531,3 +531,67 @@ export function sampleTrajectoryAtTime(
 	const next = trajectory[Math.min(trajectory.length - 1, lo)];
 	return Math.abs(timeSeconds - prev.timestampSeconds) <= Math.abs(next.timestampSeconds - timeSeconds) ? prev : next;
 }
+
+/**
+ * Smoothly interpolates pose and telemetry along `trajectory` at `timeSeconds` for high-fps video export,
+ * snapping across discontinuous vision-jump steps rather than sliding through them.
+ */
+export function interpolateTrajectoryAtTime(
+	trajectory: readonly TrajectorySample[],
+	timeSeconds: number,
+): TrajectorySample | null {
+	if (!trajectory.length) return null;
+	if (timeSeconds <= trajectory[0].timestampSeconds) return trajectory[0];
+	const last = trajectory[trajectory.length - 1];
+	if (timeSeconds >= last.timestampSeconds) return last;
+
+	let lo = 0;
+	let hi = trajectory.length - 1;
+	while (lo <= hi) {
+		const mid = (lo + hi) >> 1;
+		const tMid = trajectory[mid].timestampSeconds;
+		if (Math.abs(tMid - timeSeconds) < 1e-6) return trajectory[mid];
+		if (tMid < timeSeconds) lo = mid + 1;
+		else hi = mid - 1;
+	}
+	const prev = trajectory[Math.max(0, lo - 1)];
+	const next = trajectory[Math.min(trajectory.length - 1, lo)];
+	const dt = next.timestampSeconds - prev.timestampSeconds;
+	if (dt <= 1e-9) return prev;
+
+	const alpha = Math.max(0, Math.min(1, (timeSeconds - prev.timestampSeconds) / dt));
+	if (dt <= 0.05 && Math.hypot(next.x - prev.x, next.y - prev.y) > 0.25) {
+		return alpha < 0.5 ? prev : next;
+	}
+
+	const lerp = (a: number, b: number) => a + (b - a) * alpha;
+	let dTheta = next.headingRadians - prev.headingRadians;
+	while (dTheta > Math.PI) dTheta -= Math.PI * 2;
+	while (dTheta < -Math.PI) dTheta += Math.PI * 2;
+	const headingRadians = prev.headingRadians + dTheta * alpha;
+	const discrete = alpha < 0.5 ? prev : next;
+	const clearanceMeters =
+		typeof prev.clearanceMeters === 'number' && typeof next.clearanceMeters === 'number'
+			? lerp(prev.clearanceMeters, next.clearanceMeters)
+			: discrete.clearanceMeters;
+
+	return {
+		...discrete,
+		timestampSeconds: timeSeconds,
+		x: lerp(prev.x, next.x),
+		y: lerp(prev.y, next.y),
+		headingRadians,
+		headingDegrees: (headingRadians * 180) / Math.PI,
+		vxMetersPerSec: lerp(prev.vxMetersPerSec, next.vxMetersPerSec),
+		vyMetersPerSec: lerp(prev.vyMetersPerSec, next.vyMetersPerSec),
+		omegaRadiansPerSec: lerp(prev.omegaRadiansPerSec, next.omegaRadiansPerSec),
+		commandedSpeedMetersPerSec: lerp(prev.commandedSpeedMetersPerSec, next.commandedSpeedMetersPerSec),
+		achievedSpeedMetersPerSec: lerp(prev.achievedSpeedMetersPerSec, next.achievedSpeedMetersPerSec),
+		maxSpeedMetersPerSec: lerp(prev.maxSpeedMetersPerSec, next.maxSpeedMetersPerSec),
+		slowdownRatio: lerp(prev.slowdownRatio, next.slowdownRatio),
+		paceSecondsPerMeter: lerp(prev.paceSecondsPerMeter, next.paceSecondsPerMeter),
+		heatmapNormalized: lerp(prev.heatmapNormalized, next.heatmapNormalized),
+		progressMeters: lerp(prev.progressMeters, next.progressMeters),
+		clearanceMeters,
+	};
+}

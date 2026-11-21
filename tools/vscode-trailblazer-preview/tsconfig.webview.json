@@ -10,5 +10,5 @@
 		"allowImportingTsExtensions": true,
 		"types": []
 	},
-	"include": ["media/preview.ts", "media/renderer.ts", "schema.ts"]
+	"include": ["media/preview.ts", "media/renderer.ts", "media/video-export.ts", "schema.ts"]
 }

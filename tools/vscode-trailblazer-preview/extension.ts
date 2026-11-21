@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import { execFile, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
 	analyzeJavaSourceSpans,
@@ -20,6 +22,75 @@ import { renderWebview } from './webview';
 import { WarmPreviewWorkerClient } from './worker';
 
 const DISTURBANCE_STORAGE_KEY = 'trailblazer.preview.disturbancesByFile';
+const VIDEO_EXPORT_DIR_KEY = 'trailblazer.preview.lastVideoExportDir';
+
+let ffmpegCheckPromise: Promise<boolean> | null = null;
+
+function isFfmpegAvailable(): Promise<boolean> {
+	if (!ffmpegCheckPromise) {
+		ffmpegCheckPromise = new Promise((resolve) => {
+			execFile('ffmpeg', ['-version'], { timeout: 2000 }, (err) => {
+				resolve(!err);
+			});
+		});
+	}
+	return ffmpegCheckPromise;
+}
+
+function runFfmpegStdin(args: string[], writeInput: (stdin: NodeJS.WritableStream) => void): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'ignore', 'pipe'] });
+		let stderr = '';
+		proc.stderr.on('data', (chunk: Buffer) => {
+			stderr += chunk.toString();
+		});
+		proc.on('error', (err) => reject(err));
+		proc.on('close', (code) => {
+			if (code === 0) resolve();
+			else reject(new Error(`ffmpeg exited with code ${code}: ${stderr.slice(-400)}`));
+		});
+		proc.stdin.on('error', () => {
+			// Ignore EPIPE when ffmpeg exits early; close handler reports the exit status.
+		});
+		writeInput(proc.stdin);
+		proc.stdin.end();
+	});
+}
+
+async function transcodeVideoViaFfmpeg(
+	inputBuffer: Buffer,
+	inputFormat: 'webm' | 'mp4',
+	outputPath: string,
+	targetFormat: 'mp4' | 'webm',
+): Promise<void> {
+	const codecArgs =
+		targetFormat === 'mp4'
+			? ['-c:v', 'libx264', '-preset', 'superfast', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart']
+			: ['-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8', '-b:v', '4M'];
+	await runFfmpegStdin(['-y', '-f', inputFormat, '-i', 'pipe:0', ...codecArgs, outputPath], (stdin) => {
+		stdin.write(inputBuffer);
+	});
+}
+
+async function encodeJpegFramesViaFfmpeg(
+	framesBase64: string[],
+	fps: number,
+	outputPath: string,
+	targetFormat: 'mp4' | 'webm',
+): Promise<void> {
+	const codecArgs =
+		targetFormat === 'mp4'
+			? ['-c:v', 'libx264', '-preset', 'superfast', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart']
+			: ['-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8', '-b:v', '4M'];
+	await runFfmpegStdin(
+		['-y', '-f', 'image2pipe', '-vcodec', 'mjpeg', '-framerate', String(fps), '-i', 'pipe:0', ...codecArgs, outputPath],
+		(stdin) => {
+			for (const b64 of framesBase64) {
+				stdin.write(Buffer.from(b64, 'base64'));
+			}
+		},
+	);
+}
 
 interface PanelSession {
 	panel: vscode.WebviewPanel;
@@ -64,6 +135,110 @@ function getOrCreateWorker(workspaceRoot: string): WarmPreviewWorkerClient {
 
 export function activate(context: vscode.ExtensionContext) {
 	const suppressedFiles = new Set<string>();
+	const pendingVideoExports = new Map<
+		number,
+		{ targetPath: string; targetFormat: 'mp4' | 'webm'; startedAtMs: number }
+	>();
+	let nextExportRequestId = 1;
+
+	function notifyVideoExported(finalPath: string, startedAtMs: number) {
+		const secs = ((Date.now() - startedAtMs) / 1000).toFixed(2);
+		void context.workspaceState?.update(VIDEO_EXPORT_DIR_KEY, path.dirname(finalPath));
+		void vscode.window
+			.showInformationMessage?.(`Exported ${path.basename(finalPath)} (${secs} s)`, 'Open Video')
+			?.then((choice) => {
+				if (choice === 'Open Video') {
+					void vscode.env?.openExternal?.(vscode.Uri.file(finalPath));
+				}
+			});
+	}
+
+	async function handleRequestVideoExport(session: PanelSession, suggestedFilename?: string) {
+		const lastDir = context.workspaceState?.get<string>(VIDEO_EXPORT_DIR_KEY);
+		const defaultDir = lastDir || session.workspaceRoot;
+		const cleanFilename = path.basename(suggestedFilename || 'trailblazer-path.mp4');
+		const saveUri = await vscode.window.showSaveDialog?.({
+			defaultUri: vscode.Uri.file(path.join(defaultDir, cleanFilename)),
+			filters: {
+				'MP4 Video': ['mp4'],
+				'WebM Video': ['webm'],
+			},
+			saveLabel: 'Export Video',
+		});
+		if (!saveUri) {
+			void session.panel.webview.postMessage({ type: 'videoExportCancelled' });
+			return;
+		}
+		const targetFormat = saveUri.fsPath.toLowerCase().endsWith('.webm') ? 'webm' : 'mp4';
+		const exportRequestId = nextExportRequestId++;
+		pendingVideoExports.set(exportRequestId, {
+			targetPath: saveUri.fsPath,
+			targetFormat,
+			startedAtMs: Date.now(),
+		});
+		void session.panel.webview.postMessage({
+			type: 'startVideoExport',
+			exportRequestId,
+			targetFormat,
+		});
+	}
+
+	async function handleVideoExportEncoded(
+		session: PanelSession,
+		exportRequestId: number,
+		encodedFormat: 'mp4' | 'webm',
+		base64: string,
+	) {
+		const pending = pendingVideoExports.get(exportRequestId);
+		pendingVideoExports.delete(exportRequestId);
+		if (!pending) return;
+
+		try {
+			const buf = Buffer.from(base64, 'base64');
+			let finalPath = pending.targetPath;
+			if (encodedFormat === pending.targetFormat) {
+				await writeFile(finalPath, buf);
+			} else if (await isFfmpegAvailable()) {
+				await transcodeVideoViaFfmpeg(buf, encodedFormat, finalPath, pending.targetFormat);
+			} else {
+				const fallbackExt = `.${encodedFormat}`;
+				finalPath = finalPath.replace(/\.(mp4|webm)$/i, fallbackExt);
+				if (!finalPath.toLowerCase().endsWith(fallbackExt)) {
+					finalPath += fallbackExt;
+				}
+				await writeFile(finalPath, buf);
+			}
+			notifyVideoExported(finalPath, pending.startedAtMs);
+		} catch (err) {
+			void vscode.window.showErrorMessage?.(`Video export failed: ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			void session.panel.webview.postMessage({ type: 'videoExportFinished', exportRequestId });
+		}
+	}
+
+	async function handleVideoExportJpegFrames(
+		session: PanelSession,
+		exportRequestId: number,
+		fps: number,
+		framesBase64: string[],
+	) {
+		const pending = pendingVideoExports.get(exportRequestId);
+		pendingVideoExports.delete(exportRequestId);
+		if (!pending) return;
+
+		try {
+			if (!(await isFfmpegAvailable())) {
+				throw new Error('WebCodecs VideoEncoder is unavailable and ffmpeg was not found on PATH.');
+			}
+			await encodeJpegFramesViaFfmpeg(framesBase64, fps, pending.targetPath, pending.targetFormat);
+			notifyVideoExported(pending.targetPath, pending.startedAtMs);
+		} catch (err) {
+			void vscode.window.showErrorMessage?.(`Video export failed: ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			void session.panel.webview.postMessage({ type: 'videoExportFinished', exportRequestId });
+		}
+	}
+
 	const storedDisturbances: Record<string, DisturbanceEvent[]> = {
 		...context.workspaceState?.get<Record<string, DisturbanceEvent[]>>(DISTURBANCE_STORAGE_KEY),
 	};
@@ -426,6 +601,13 @@ export function activate(context: vscode.ExtensionContext) {
 				text?: string;
 				line?: number;
 				sourceRevision?: number;
+				suggestedFilename?: string;
+				exportRequestId?: number;
+				encodedFormat?: 'mp4' | 'webm';
+				base64?: string;
+				fps?: number;
+				framesBase64?: string[];
+				message?: string;
 			}) => {
 				if (activeSession !== session) return;
 				switch (msg.type) {
@@ -482,12 +664,44 @@ export function activate(context: vscode.ExtensionContext) {
 							void revealSourceLine(session.filePath, msg.line);
 						}
 						break;
+					case 'requestVideoExport':
+						void handleRequestVideoExport(session, msg.suggestedFilename);
+						break;
+					case 'videoExportEncoded':
+						if (
+							typeof msg.exportRequestId === 'number' &&
+							(msg.encodedFormat === 'mp4' || msg.encodedFormat === 'webm') &&
+							typeof msg.base64 === 'string'
+						) {
+							void handleVideoExportEncoded(session, msg.exportRequestId, msg.encodedFormat, msg.base64);
+						}
+						break;
+					case 'videoExportJpegFrames':
+						if (
+							typeof msg.exportRequestId === 'number' &&
+							typeof msg.fps === 'number' &&
+							Array.isArray(msg.framesBase64)
+						) {
+							void handleVideoExportJpegFrames(session, msg.exportRequestId, msg.fps, msg.framesBase64);
+						}
+						break;
+					case 'videoExportError':
+						if (typeof msg.exportRequestId === 'number') {
+							pendingVideoExports.delete(msg.exportRequestId);
+						}
+						void session.panel.webview.postMessage({
+							type: 'videoExportFinished',
+							exportRequestId: msg.exportRequestId,
+						});
+						void vscode.window.showErrorMessage?.(`Video export failed: ${msg.message ?? 'Unknown error'}`);
+						break;
 				}
 			},
 		);
 
 		panel.onDidDispose(() => {
 			msgSub.dispose();
+			pendingVideoExports.clear();
 			if (activeSession === session) {
 				activeSession = null;
 			}
@@ -524,6 +738,13 @@ export function activate(context: vscode.ExtensionContext) {
 			activeSession.pinnedWholeAuto = !activeSession.pinnedWholeAuto;
 			activeSession.selectedSegmentId = null;
 			void runPreview(activeSession, true);
+		}),
+		vscode.commands.registerCommand('trailblazer.exportVideo', () => {
+			if (!activeSession) {
+				void vscode.window.showInformationMessage?.('Open a Trailblazer auto preview first.');
+				return;
+			}
+			void activeSession.panel.webview.postMessage({ type: 'triggerVideoExport' });
 		}),
 		vscode.workspace.onDidGrantWorkspaceTrust(() => {
 			prewarmWorkspaceIfTrusted();

@@ -291,54 +291,8 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 	ctx.imageSmoothingEnabled = true;
 	ctx.imageSmoothingQuality = 'high';
 
-	ctx.fillStyle = '#0b0e14';
-	ctx.fillRect(0, 0, cssWidth, cssHeight);
-
 	// 1. High-resolution 2026 AdvantageScope field image (wall-blue calibration)
-	const cfg = FIELD_2026_CONFIG;
-	const originScreenX = transform.toScreenX(0);
-	const originScreenY = transform.toScreenY(0);
-	const fieldEndScreenX = transform.toScreenX(cfg.fieldLengthMeters);
-	const fieldEndScreenY = transform.toScreenY(cfg.fieldWidthMeters);
-
-	if (options.fieldImage && options.fieldImage.complete && options.fieldImage.naturalWidth > 0) {
-		const [leftPx, topPx] = cfg.topLeft;
-		const [rightPx, bottomPx] = cfg.bottomRight;
-		const pxPerMeterX = (rightPx - leftPx) / cfg.fieldLengthMeters;
-		const pxPerMeterY = (bottomPx - topPx) / cfg.fieldWidthMeters;
-
-		ctx.save();
-		ctx.translate(originScreenX, originScreenY);
-		ctx.scale(-transform.scalePxPerMeter / pxPerMeterX, -transform.scalePxPerMeter / pxPerMeterY);
-		ctx.globalAlpha = options.stale ? 0.55 : 0.88;
-		ctx.drawImage(options.fieldImage, -rightPx, -topPx);
-		ctx.restore();
-	} else {
-		ctx.save();
-		ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
-		ctx.lineWidth = 1;
-		for (let xm = 0; xm <= cfg.fieldLengthMeters; xm += 1.0) {
-			const sx = transform.toScreenX(xm);
-			ctx.beginPath();
-			ctx.moveTo(sx, fieldEndScreenY);
-			ctx.lineTo(sx, originScreenY);
-			ctx.stroke();
-		}
-		for (let ym = 0; ym <= cfg.fieldWidthMeters; ym += 1.0) {
-			const sy = transform.toScreenY(ym);
-			ctx.beginPath();
-			ctx.moveTo(originScreenX, sy);
-			ctx.lineTo(fieldEndScreenX, sy);
-			ctx.stroke();
-		}
-		ctx.restore();
-	}
-
-	ctx.save();
-	ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
-	ctx.lineWidth = 1.25;
-	ctx.strokeRect(originScreenX, fieldEndScreenY, fieldEndScreenX - originScreenX, originScreenY - fieldEndScreenY);
-	ctx.restore();
+	drawFieldBackdrop(ctx, transform, cssWidth, cssHeight, options.fieldImage, options.stale);
 
 	const result = options.result;
 	if (!result) {
@@ -350,41 +304,7 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 	const clockMs = options.animationClockMs ?? 0;
 
 	// 2. Keepout Polygons (K_margin dashed + K_hard solid)
-	ctx.save();
-	ctx.setLineDash([4, 4]);
-	ctx.strokeStyle = 'rgba(244, 63, 94, 0.42)';
-	ctx.lineWidth = 1;
-	for (const poly of result.keepouts.marginPolygons) {
-		if (poly.vertices.length < 3) continue;
-		ctx.beginPath();
-		poly.vertices.forEach((v, idx) => {
-			const sx = transform.toScreenX(v.x);
-			const sy = transform.toScreenY(v.y);
-			if (idx === 0) ctx.moveTo(sx, sy);
-			else ctx.lineTo(sx, sy);
-		});
-		ctx.closePath();
-		ctx.stroke();
-	}
-
-	ctx.setLineDash([]);
-	ctx.fillStyle = 'rgba(244, 63, 94, 0.14)';
-	ctx.strokeStyle = 'rgba(244, 63, 94, 0.65)';
-	ctx.lineWidth = 1.25;
-	for (const poly of result.keepouts.hardPolygons) {
-		if (poly.vertices.length < 3) continue;
-		ctx.beginPath();
-		poly.vertices.forEach((v, idx) => {
-			const sx = transform.toScreenX(v.x);
-			const sy = transform.toScreenY(v.y);
-			if (idx === 0) ctx.moveTo(sx, sy);
-			else ctx.lineTo(sx, sy);
-		});
-		ctx.closePath();
-		ctx.fill();
-		ctx.stroke();
-	}
-	ctx.restore();
+	drawKeepoutPolygons(ctx, transform, result.keepouts);
 
 	// 3. Git Branch Diff / Undisturbed Baseline Overlay
 	if (options.baselineResult && (options.diffMode || (result.appliedDisturbances?.length ?? 0) > 0)) {
@@ -392,82 +312,19 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 	}
 
 	// 4. Raw Waypoint Polyline
-	if (result.waypoints.length > 0) {
-		ctx.save();
-		ctx.setLineDash([5, 5]);
-		ctx.strokeStyle = 'rgba(148, 163, 184, 0.42)';
-		ctx.lineWidth = 1.2;
-		ctx.beginPath();
-		ctx.moveTo(transform.toScreenX(result.startPose.x), transform.toScreenY(result.startPose.y));
-		for (const wp of result.waypoints) {
-			ctx.lineTo(transform.toScreenX(wp.x), transform.toScreenY(wp.y));
-		}
-		ctx.stroke();
-		ctx.restore();
-	}
+	drawWaypointPolyline(ctx, transform, result);
 
 	// 5. Swept Bumper + 2026 Intake Footprint Envelope along the revealed trajectory
 	const footprint = result.robotFootprint;
 	const maxRevealTime = result.totalDurationSeconds * reveal;
-
-	if (result.trajectory.length > 0) {
-		ctx.save();
-		ctx.fillStyle = 'rgba(20, 184, 166, 0.05)';
-		ctx.strokeStyle = 'rgba(45, 212, 191, 0.16)';
-		ctx.lineWidth = 1;
-		const stride = Math.max(1, Math.floor(result.trajectory.length / 26));
-		for (let i = 0; i < result.trajectory.length; i += stride) {
-			const s = result.trajectory[i];
-			if (s.timestampSeconds > maxRevealTime + 1e-6) break;
-			drawRobotFootprintWithIntake(ctx, transform, s.x, s.y, s.headingRadians, footprint, false);
-		}
-		ctx.restore();
-	}
+	drawSweptFootprints(ctx, transform, result.trajectory, footprint, maxRevealTime);
 
 	// 6. Mathematical Path Outcome (PathBuilder analytical lines + fillets)
-	const mathPoses = result.mathPath.sampledPoses;
 	const maxRevealS = result.mathPath.totalLengthMeters * reveal;
-	if (mathPoses.length > 1) {
-		ctx.save();
-		ctx.strokeStyle = '#38bdf8';
-		ctx.lineWidth = 2.0;
-		ctx.setLineDash([7, 4]);
-		ctx.beginPath();
-		let started = false;
-		for (const mp of mathPoses) {
-			if (mp.s > maxRevealS + 1e-6) break;
-			const sx = transform.toScreenX(mp.x);
-			const sy = transform.toScreenY(mp.y);
-			if (!started) {
-				ctx.moveTo(sx, sy);
-				started = true;
-			} else {
-				ctx.lineTo(sx, sy);
-			}
-		}
-		ctx.stroke();
-		ctx.restore();
-	}
+	drawMathPath(ctx, transform, result.mathPath, maxRevealS, 1);
 
 	// 7. Real Closed-Loop Trajectory colored as a continuous speed/pace heatmap
-	const traj = result.trajectory;
-	if (traj.length > 1) {
-		ctx.save();
-		ctx.lineCap = 'round';
-		ctx.lineJoin = 'round';
-		ctx.lineWidth = 3.5;
-		for (let i = 1; i < traj.length; i++) {
-			const prev = traj[i - 1];
-			const curr = traj[i];
-			if (curr.timestampSeconds > maxRevealTime + 1e-6) break;
-			ctx.strokeStyle = heatmapColor(curr.heatmapNormalized);
-			ctx.beginPath();
-			ctx.moveTo(transform.toScreenX(prev.x), transform.toScreenY(prev.y));
-			ctx.lineTo(transform.toScreenX(curr.x), transform.toScreenY(curr.y));
-			ctx.stroke();
-		}
-		ctx.restore();
-	}
+	drawHeatmapTrajectory(ctx, transform, result.trajectory, maxRevealTime, 3.5, 1);
 
 	// 7b. Start-offset PathBuilder Geometries
 	if (result.replannedPaths && result.replannedPaths.length > 0) {
@@ -495,7 +352,7 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 	// 9. Active Robot Bumper + 2026 Max Intake Extension Footprint at current timeline timestamp
 	const displayTime =
 		options.revealProgress < 1 ? maxRevealTime : (options.activeTimeSeconds ?? result.totalDurationSeconds);
-	const activeSample = sampleTrajectoryAtTime(traj, displayTime);
+	const activeSample = sampleTrajectoryAtTime(result.trajectory, displayTime);
 	const poseToDraw = activeSample
 		? { x: activeSample.x, y: activeSample.y, headingRadians: activeSample.headingRadians }
 		: {
@@ -505,23 +362,7 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 			};
 
 	drawRobotFootprintWithIntake(ctx, transform, poseToDraw.x, poseToDraw.y, poseToDraw.headingRadians, footprint, true);
-
-	if (activeSample && typeof activeSample.clearanceMeters === 'number' && activeSample.clearanceMeters < 0) {
-		const rx = transform.toScreenX(poseToDraw.x);
-		const ry = transform.toScreenY(poseToDraw.y);
-		const radiusPx = Math.max(
-			18,
-			Math.hypot(footprint.halfLengthMeters, footprint.halfWidthMeters) * transform.scalePxPerMeter + 4,
-		);
-		ctx.save();
-		ctx.strokeStyle = '#f43f5e';
-		ctx.lineWidth = 2.4;
-		ctx.setLineDash([4, 3]);
-		ctx.beginPath();
-		ctx.arc(rx, ry, radiusPx, 0, Math.PI * 2);
-		ctx.stroke();
-		ctx.restore();
-	}
+	drawCollisionRingIfNegative(ctx, transform, activeSample, poseToDraw, footprint);
 
 	// 10. Interactive Pick / Drag Preview
 	if (options.pickPreview) {
@@ -532,7 +373,252 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 	return transform;
 }
 
-function drawReplannedPaths(
+/** Draws the dark canvas background, 2026 field image (or 1m calibration grid), and perimeter border. */
+export function drawFieldBackdrop(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	widthCssPx: number,
+	heightCssPx: number,
+	fieldImage: HTMLImageElement | null,
+	stale = false,
+): void {
+	ctx.fillStyle = '#0b0e14';
+	ctx.fillRect(0, 0, widthCssPx, heightCssPx);
+
+	const cfg = FIELD_2026_CONFIG;
+	const originScreenX = transform.toScreenX(0);
+	const originScreenY = transform.toScreenY(0);
+	const fieldEndScreenX = transform.toScreenX(cfg.fieldLengthMeters);
+	const fieldEndScreenY = transform.toScreenY(cfg.fieldWidthMeters);
+
+	if (fieldImage && fieldImage.complete && fieldImage.naturalWidth > 0) {
+		const [leftPx, topPx] = cfg.topLeft;
+		const [rightPx, bottomPx] = cfg.bottomRight;
+		const pxPerMeterX = (rightPx - leftPx) / cfg.fieldLengthMeters;
+		const pxPerMeterY = (bottomPx - topPx) / cfg.fieldWidthMeters;
+
+		ctx.save();
+		ctx.translate(originScreenX, originScreenY);
+		ctx.scale(-transform.scalePxPerMeter / pxPerMeterX, -transform.scalePxPerMeter / pxPerMeterY);
+		ctx.globalAlpha = stale ? 0.55 : 0.88;
+		ctx.drawImage(fieldImage, -rightPx, -topPx);
+		ctx.restore();
+	} else {
+		ctx.save();
+		ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+		ctx.lineWidth = 1;
+		for (let xm = 0; xm <= cfg.fieldLengthMeters; xm += 1.0) {
+			const sx = transform.toScreenX(xm);
+			ctx.beginPath();
+			ctx.moveTo(sx, fieldEndScreenY);
+			ctx.lineTo(sx, originScreenY);
+			ctx.stroke();
+		}
+		for (let ym = 0; ym <= cfg.fieldWidthMeters; ym += 1.0) {
+			const sy = transform.toScreenY(ym);
+			ctx.beginPath();
+			ctx.moveTo(originScreenX, sy);
+			ctx.lineTo(fieldEndScreenX, sy);
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+
+	ctx.save();
+	ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+	ctx.lineWidth = 1.25;
+	ctx.strokeRect(originScreenX, fieldEndScreenY, fieldEndScreenX - originScreenX, originScreenY - fieldEndScreenY);
+	ctx.restore();
+}
+
+/** Draws K_margin (dashed) and K_hard (filled solid) keepout polygons. */
+export function drawKeepoutPolygons(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	keepouts: PreviewResult['keepouts'],
+): void {
+	ctx.save();
+	ctx.setLineDash([4, 4]);
+	ctx.strokeStyle = 'rgba(244, 63, 94, 0.42)';
+	ctx.lineWidth = 1;
+	for (const poly of keepouts.marginPolygons) {
+		if (poly.vertices.length < 3) continue;
+		ctx.beginPath();
+		poly.vertices.forEach((v, idx) => {
+			const sx = transform.toScreenX(v.x);
+			const sy = transform.toScreenY(v.y);
+			if (idx === 0) ctx.moveTo(sx, sy);
+			else ctx.lineTo(sx, sy);
+		});
+		ctx.closePath();
+		ctx.stroke();
+	}
+
+	ctx.setLineDash([]);
+	ctx.fillStyle = 'rgba(244, 63, 94, 0.14)';
+	ctx.strokeStyle = 'rgba(244, 63, 94, 0.65)';
+	ctx.lineWidth = 1.25;
+	for (const poly of keepouts.hardPolygons) {
+		if (poly.vertices.length < 3) continue;
+		ctx.beginPath();
+		poly.vertices.forEach((v, idx) => {
+			const sx = transform.toScreenX(v.x);
+			const sy = transform.toScreenY(v.y);
+			if (idx === 0) ctx.moveTo(sx, sy);
+			else ctx.lineTo(sx, sy);
+		});
+		ctx.closePath();
+		ctx.fill();
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+
+/** Draws the dashed raw waypoint polyline connecting startPose to each waypoint. */
+export function drawWaypointPolyline(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	result: PreviewResult,
+): void {
+	if (result.waypoints.length === 0) return;
+	ctx.save();
+	ctx.setLineDash([5, 5]);
+	ctx.strokeStyle = 'rgba(148, 163, 184, 0.42)';
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	ctx.moveTo(transform.toScreenX(result.startPose.x), transform.toScreenY(result.startPose.y));
+	for (const wp of result.waypoints) {
+		ctx.lineTo(transform.toScreenX(wp.x), transform.toScreenY(wp.y));
+	}
+	ctx.stroke();
+	ctx.restore();
+}
+
+/** Draws evenly strided swept robot + intake footprints along the trajectory up to `maxRevealTime`. */
+export function drawSweptFootprints(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	trajectory: readonly TrajectorySample[],
+	footprint: RobotFootprint,
+	maxRevealTime: number,
+): void {
+	if (trajectory.length === 0) return;
+	ctx.save();
+	ctx.fillStyle = 'rgba(20, 184, 166, 0.05)';
+	ctx.strokeStyle = 'rgba(45, 212, 191, 0.16)';
+	ctx.lineWidth = 1;
+	const stride = Math.max(1, Math.floor(trajectory.length / 26));
+	for (let i = 0; i < trajectory.length; i += stride) {
+		const s = trajectory[i];
+		if (s.timestampSeconds > maxRevealTime + 1e-6) break;
+		drawRobotFootprintWithIntake(ctx, transform, s.x, s.y, s.headingRadians, footprint, false);
+	}
+	ctx.restore();
+}
+
+/** Draws the analytical PathBuilder dashed centerline up to arc length `maxRevealS`. */
+export function drawMathPath(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	mathPath: PreviewResult['mathPath'],
+	maxRevealS: number,
+	alpha = 1,
+): void {
+	const mathPoses = mathPath.sampledPoses;
+	if (mathPoses.length <= 1) return;
+	ctx.save();
+	ctx.globalAlpha = alpha;
+	ctx.strokeStyle = '#38bdf8';
+	ctx.lineWidth = 2.0;
+	ctx.setLineDash([7, 4]);
+	ctx.beginPath();
+	let started = false;
+	for (const mp of mathPoses) {
+		if (mp.s > maxRevealS + 1e-6) break;
+		const sx = transform.toScreenX(mp.x);
+		const sy = transform.toScreenY(mp.y);
+		if (!started) {
+			ctx.moveTo(sx, sy);
+			started = true;
+		} else {
+			ctx.lineTo(sx, sy);
+		}
+	}
+	ctx.stroke();
+	ctx.restore();
+}
+
+/** Draws the closed-loop trajectory colored by speed heatmap up to `maxRevealTime`. */
+export function drawHeatmapTrajectory(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	trajectory: readonly TrajectorySample[],
+	maxRevealTime: number,
+	lineWidth = 3.5,
+	alpha = 1,
+	tipOverride?: { x: number; y: number; heatmapNormalized: number } | null,
+): void {
+	if (trajectory.length <= 1) return;
+	ctx.save();
+	ctx.globalAlpha = alpha;
+	ctx.lineCap = 'round';
+	ctx.lineJoin = 'round';
+	ctx.lineWidth = lineWidth;
+	let lastIncluded: TrajectorySample | null = null;
+	for (let i = 1; i < trajectory.length; i++) {
+		const prev = trajectory[i - 1];
+		const curr = trajectory[i];
+		if (curr.timestampSeconds > maxRevealTime + 1e-6) {
+			lastIncluded = prev;
+			break;
+		}
+		ctx.strokeStyle = heatmapColor(curr.heatmapNormalized);
+		ctx.beginPath();
+		ctx.moveTo(transform.toScreenX(prev.x), transform.toScreenY(prev.y));
+		ctx.lineTo(transform.toScreenX(curr.x), transform.toScreenY(curr.y));
+		ctx.stroke();
+		lastIncluded = curr;
+	}
+	if (
+		tipOverride &&
+		lastIncluded &&
+		Math.hypot(tipOverride.x - lastIncluded.x, tipOverride.y - lastIncluded.y) > 1e-4
+	) {
+		ctx.strokeStyle = heatmapColor(tipOverride.heatmapNormalized);
+		ctx.beginPath();
+		ctx.moveTo(transform.toScreenX(lastIncluded.x), transform.toScreenY(lastIncluded.y));
+		ctx.lineTo(transform.toScreenX(tipOverride.x), transform.toScreenY(tipOverride.y));
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+
+/** Draws a dashed red collision warning ring around the robot when clearance is negative. */
+export function drawCollisionRingIfNegative(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	sample: TrajectorySample | null,
+	pose: { x: number; y: number },
+	footprint: RobotFootprint,
+): void {
+	if (!sample || typeof sample.clearanceMeters !== 'number' || sample.clearanceMeters >= 0) return;
+	const rx = transform.toScreenX(pose.x);
+	const ry = transform.toScreenY(pose.y);
+	const radiusPx = Math.max(
+		18,
+		Math.hypot(footprint.halfLengthMeters, footprint.halfWidthMeters) * transform.scalePxPerMeter + 4,
+	);
+	ctx.save();
+	ctx.strokeStyle = '#f43f5e';
+	ctx.lineWidth = 2.4;
+	ctx.setLineDash([4, 3]);
+	ctx.beginPath();
+	ctx.arc(rx, ry, radiusPx, 0, Math.PI * 2);
+	ctx.stroke();
+	ctx.restore();
+}
+
+export function drawReplannedPaths(
 	ctx: CanvasRenderingContext2D,
 	transform: ScreenTransform,
 	replannedPaths: NonNullable<PreviewResult['replannedPaths']>,
@@ -572,7 +658,7 @@ function drawReplannedPaths(
 	ctx.restore();
 }
 
-function drawDisturbanceOverlays(
+export function drawDisturbanceOverlays(
 	ctx: CanvasRenderingContext2D,
 	transform: ScreenTransform,
 	appliedList: readonly AppliedDisturbanceEntry[],
@@ -688,7 +774,11 @@ function drawPickPreview(
 	ctx.restore();
 }
 
-function drawBaselineDiffOverlay(ctx: CanvasRenderingContext2D, transform: ScreenTransform, baseline: PreviewResult) {
+export function drawBaselineDiffOverlay(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	baseline: PreviewResult,
+) {
 	ctx.save();
 	if (baseline.trajectory.length > 1) {
 		ctx.setLineDash([6, 4]);
@@ -725,7 +815,7 @@ function drawBaselineDiffOverlay(ctx: CanvasRenderingContext2D, transform: Scree
  * Draws the robot footprint matching CompTunerConstants wheel center-to-center + 3-inch bumpers
  * and the forward (+X) 2026 maximum intake extension.
  */
-function drawRobotFootprintWithIntake(
+export function drawRobotFootprintWithIntake(
 	ctx: CanvasRenderingContext2D,
 	transform: ScreenTransform,
 	x: number,
@@ -829,7 +919,7 @@ function drawRobotFootprintWithIntake(
 	ctx.restore();
 }
 
-function drawWaypointGlyph(
+export function drawWaypointGlyph(
 	ctx: CanvasRenderingContext2D,
 	transform: ScreenTransform,
 	wp: WaypointEntry,

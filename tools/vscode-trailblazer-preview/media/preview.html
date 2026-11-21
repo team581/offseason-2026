@@ -124,6 +124,29 @@
 								<path d="M16 21v-3a2 2 0 0 1 2-2h3" />
 							</svg>
 						</button>
+						<button
+							id="btn-export-video"
+							type="button"
+							class="icon-btn"
+							aria-label="Export video"
+							title="Export video of selected path"
+							disabled
+						>
+							<svg
+								viewBox="0 0 24 24"
+								width="15"
+								height="15"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<rect x="2" y="4" width="20" height="16" rx="2" />
+								<path d="m10 8.5 5 3.5-5 3.5z" />
+							</svg>
+						</button>
 						<button id="btn-refresh" type="button" class="icon-btn" aria-label="Refresh" title="Refresh preview">
 							<svg
 								viewBox="0 0 24 24"
@@ -187,6 +210,13 @@
 										<button type="button" data-robot="581" aria-pressed="true">581</button>
 										<button type="button" data-robot="9991" aria-pressed="false">9991</button>
 										<button type="button" data-robot="9981" aria-pressed="false">9981</button>
+									</div>
+								</div>
+								<div class="option-row">
+									<span class="option-label">Video</span>
+									<div class="segmented-control" role="group" aria-label="Video overlay">
+										<button type="button" data-video-telemetry="true" aria-pressed="true">Telemetry</button>
+										<button type="button" data-video-telemetry="false" aria-pressed="false">Clean</button>
 									</div>
 								</div>
 							</div>

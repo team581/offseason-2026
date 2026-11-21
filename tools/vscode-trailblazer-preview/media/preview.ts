@@ -28,6 +28,7 @@ import {
 	renderFieldCanvas,
 	renderTimelineCanvas,
 } from './renderer.ts';
+import { buildSuggestedVideoFilename, exportPathVideo } from './video-export.ts';
 
 export const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
 
@@ -384,6 +385,7 @@ interface SavedWebviewState {
 	alliance?: 'Blue' | 'Red';
 	robotConfigId?: '581' | '9991' | '9981';
 	playbackSpeed?: number;
+	videoTelemetry?: boolean;
 }
 
 declare function acquireVsCodeApi(): {
@@ -412,6 +414,8 @@ function bootWebview() {
 	let activeWaypointIndex: number | null = null;
 	let alliance: 'Blue' | 'Red' = saved?.alliance ?? 'Blue';
 	let robotConfigId: '581' | '9991' | '9981' = saved?.robotConfigId ?? '581';
+	let videoTelemetry = saved?.videoTelemetry ?? true;
+	let exportingVideo = false;
 
 	const timeline = new TimelineController();
 	if (typeof saved?.playbackSpeed === 'number') {
@@ -457,6 +461,7 @@ function bootWebview() {
 	const disturbanceEditor = el<HTMLDivElement>('#disturbance-editor');
 	const diffBtn = el<HTMLButtonElement>('#btn-diff');
 	const fitBtn = el<HTMLButtonElement>('#btn-fit');
+	const exportVideoBtn = el<HTMLButtonElement>('#btn-export-video');
 	const playBtn = el<HTMLButtonElement>('#btn-play');
 	const iconPlay = el<SVGElement>('#icon-play');
 	const iconPause = el<SVGElement>('#icon-pause');
@@ -971,7 +976,22 @@ function bootWebview() {
 	}
 
 	function persistState() {
-		vscode?.setState({ pinnedWholeAuto, diffMode, alliance, robotConfigId, playbackSpeed: timeline.getSpeed() });
+		vscode?.setState({
+			pinnedWholeAuto,
+			diffMode,
+			alliance,
+			robotConfigId,
+			playbackSpeed: timeline.getSpeed(),
+			videoTelemetry,
+		});
+	}
+
+	function setExportingState(active: boolean) {
+		exportingVideo = active;
+		if (exportVideoBtn.dataset) {
+			exportVideoBtn.dataset.exporting = String(active);
+		}
+		exportVideoBtn.disabled = active || !currentResult || currentResult.trajectory.length === 0;
 	}
 
 	function updateControlsUI() {
@@ -980,12 +1000,16 @@ function bootWebview() {
 		diffBtn.setAttribute('aria-pressed', String(diffMode));
 		setPlayButtonState(timeline.isPlaying());
 		updateFitButtonState();
+		exportVideoBtn.disabled = exportingVideo || !currentResult || currentResult.trajectory.length === 0;
 
 		for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-alliance]')) {
 			btn.setAttribute('aria-pressed', String(btn.dataset.alliance === alliance));
 		}
 		for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-robot]')) {
 			btn.setAttribute('aria-pressed', String(btn.dataset.robot === robotConfigId));
+		}
+		for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-video-telemetry]')) {
+			btn.setAttribute('aria-pressed', String(btn.dataset.videoTelemetry === String(videoTelemetry)));
 		}
 
 		staleBadge.hidden = !stale;
@@ -1505,6 +1529,22 @@ function bootWebview() {
 			vscode?.postMessage({ type: 'setRobot', robotConfigId: next });
 		};
 	}
+	for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-video-telemetry]')) {
+		btn.onclick = () => {
+			videoTelemetry = btn.dataset.videoTelemetry !== 'false';
+			updateControlsUI();
+			persistState();
+		};
+	}
+	function triggerExportVideo() {
+		if (exportingVideo || !currentResult || currentResult.trajectory.length === 0) return;
+		setExportingState(true);
+		vscode?.postMessage({
+			type: 'requestVideoExport',
+			suggestedFilename: buildSuggestedVideoFilename(currentResult),
+		});
+	}
+	exportVideoBtn.onclick = triggerExportVideo;
 	fitBtn.onclick = () => {
 		if (!currentResult) return;
 		clearPointFocus();
@@ -1883,10 +1923,80 @@ function bootWebview() {
 				diagnostics?: DiagnosticEntry[];
 				segments?: SegmentDescriptor[];
 				lastResult?: unknown;
+				exportRequestId?: number;
+				targetFormat?: 'mp4' | 'webm';
 			}>,
 		) => {
 			const msg = event.data;
 			if (!msg) return;
+
+			if (msg.type === 'triggerVideoExport') {
+				triggerExportVideo();
+				return;
+			}
+
+			if (msg.type === 'videoExportCancelled' || msg.type === 'videoExportFinished') {
+				setExportingState(false);
+				return;
+			}
+
+			if (msg.type === 'startVideoExport' && typeof msg.exportRequestId === 'number') {
+				const exportRequestId = msg.exportRequestId;
+				const targetFormat = msg.targetFormat === 'webm' ? 'webm' : 'mp4';
+				if (!currentResult || currentResult.trajectory.length === 0) {
+					setExportingState(false);
+					vscode?.postMessage({
+						type: 'videoExportError',
+						exportRequestId,
+						message: 'No trajectory available to export.',
+					});
+					return;
+				}
+				void (async () => {
+					try {
+						const startedAt = performance.now();
+						const outcome = await exportPathVideo(
+							{
+								result: currentResult,
+								baselineResult,
+								diffMode,
+								disturbances,
+								fieldImage,
+								includeTelemetry: videoTelemetry,
+							},
+							targetFormat,
+							async (framesBase64, fps) => {
+								vscode?.postMessage({
+									type: 'videoExportJpegFrames',
+									exportRequestId,
+									fps,
+									framesBase64,
+									elapsedMs: Math.round(performance.now() - startedAt),
+								});
+							},
+						);
+						if (outcome) {
+							vscode?.postMessage({
+								type: 'videoExportEncoded',
+								exportRequestId,
+								encodedFormat: outcome.format,
+								base64: outcome.bytesBase64,
+								fps: outcome.fps,
+								frameCount: outcome.frameCount,
+								elapsedMs: outcome.elapsedMs,
+							});
+						}
+					} catch (err) {
+						setExportingState(false);
+						vscode?.postMessage({
+							type: 'videoExportError',
+							exportRequestId,
+							message: err instanceof Error ? err.message : String(err),
+						});
+					}
+				})();
+				return;
+			}
 
 			if (msg.type === 'disturbancesState' && Array.isArray(msg.disturbances)) {
 				disturbances = msg.disturbances;

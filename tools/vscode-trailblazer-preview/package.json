@@ -29,6 +29,7 @@
 		"@types/node": "26.6.6",
 		"@types/vscode": "1.144.0",
 		"@vscode/vsce": "4.1.0",
+		"mp4-muxer": "^5.2.2",
 		"oxfmt": "0.76.0",
 		"oxlint": "1.91.0",
 		"oxlint-tsgolint": "7.0.2005",
@@ -45,6 +46,10 @@
 			{
 				"command": "trailblazer.toggleWholeAuto",
 				"title": "Trailblazer: Toggle Whole Auto"
+			},
+			{
+				"command": "trailblazer.exportVideo",
+				"title": "Trailblazer: Export Path Video"
 			}
 		],
 		"menus": {
