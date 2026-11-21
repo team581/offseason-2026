@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -234,8 +235,8 @@ public final class PreviewSchema {
       requireNonNull(dominantLimitingFactor);
       diagnostics = List.copyOf(diagnostics);
       appliedDisturbances =
-          appliedDisturbances == null ? List.of() : List.copyOf(appliedDisturbances);
-      replannedPaths = replannedPaths == null ? List.of() : List.copyOf(replannedPaths);
+          appliedDisturbances == null ? ImmutableList.of() : List.copyOf(appliedDisturbances);
+      replannedPaths = replannedPaths == null ? ImmutableList.of() : List.copyOf(replannedPaths);
     }
   }
 
@@ -245,7 +246,7 @@ public final class PreviewSchema {
       String segmentId, long geometryGeneration, double timestampSeconds, List<PoseEntry> poses) {
     public ReplannedPathEntry {
       requireNonNull(segmentId);
-      poses = poses == null ? List.of() : List.copyOf(poses);
+      poses = poses == null ? ImmutableList.of() : List.copyOf(poses);
     }
   }
 

@@ -110,7 +110,7 @@ public final class PreviewRunner {
           sourceText,
           compileMs,
           buildIdentity,
-          List.of());
+          ImmutableList.of());
     }
 
     public PreviewRequest {
@@ -120,7 +120,7 @@ public final class PreviewRunner {
       requireNonNull(robotConfigId);
       requireNonNull(sourceText);
       requireNonNull(buildIdentity);
-      disturbances = disturbances == null ? List.of() : List.copyOf(disturbances);
+      disturbances = disturbances == null ? ImmutableList.of() : List.copyOf(disturbances);
     }
   }
 

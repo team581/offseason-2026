@@ -84,13 +84,13 @@ public final class WarmPreviewWorker {
     public OverlayClassLoader(Map<String, byte[]> inMemoryClasses, ClassLoader parent) {
       super(new URL[0], parent);
       this.overlayDir = null;
-      this.inMemoryClasses = Map.copyOf(inMemoryClasses);
+      this.inMemoryClasses = ImmutableMap.copyOf(inMemoryClasses);
     }
 
     public OverlayClassLoader(Path overlayDir, ClassLoader parent) throws IOException {
       super(new URL[] {overlayDir.toUri().toURL()}, parent);
       this.overlayDir = requireNonNull(overlayDir);
-      this.inMemoryClasses = Map.of();
+      this.inMemoryClasses = ImmutableMap.of();
     }
 
     @Override
@@ -476,7 +476,7 @@ public final class WarmPreviewWorker {
 
   private static List<DisturbanceEvent> parseDisturbances(JsonNode params) {
     if (params == null || !params.has("disturbances") || !params.get("disturbances").isArray()) {
-      return List.of();
+      return ImmutableList.of();
     }
     List<DisturbanceEvent> list = new ArrayList<>();
     for (JsonNode item : params.get("disturbances")) {
@@ -544,7 +544,7 @@ public final class WarmPreviewWorker {
 
   private volatile @Nullable String cachedOverlayKey;
 
-  private volatile Map<String, byte[]> cachedOverlayClasses = Map.of();
+  private volatile Map<String, byte[]> cachedOverlayClasses = ImmutableMap.of();
 
   public WarmPreviewWorker(Path workspaceRoot) {
     this.workspaceRoot = requireNonNull(workspaceRoot).toAbsolutePath().normalize();
@@ -645,7 +645,7 @@ public final class WarmPreviewWorker {
 
     String sourceHash = sha256Hex(sourceText);
     String overlayCacheKey = resolvedClassName + "|" + sourceHash + "|" + manifest.buildFilesHash();
-    Map<String, byte[]> memClasses = Map.of();
+    Map<String, byte[]> memClasses = ImmutableMap.of();
     boolean useInMemoryCache = false;
     double compileMs = 0.0;
 
