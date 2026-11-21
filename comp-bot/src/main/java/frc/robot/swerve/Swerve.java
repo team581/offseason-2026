@@ -10,15 +10,11 @@ import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
 import com.team581.math.CircularFilter;
 import com.team581.math.MathHelpers;
 import com.team581.mechanisms.PowerManaged;
-import com.team581.swerve.DriveSource;
-import com.team581.swerve.DriveSourceType;
 import com.team581.swerve.SwerveAssist;
-import com.team581.swerve.TrailblazerDriveSource;
 import com.team581.swerve.XboxControllerDriveSource;
-import com.team581.trailblazer.Trailblazer;
+import com.team581.trailblazer3.model.TickResult.VelocityStep;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
@@ -51,15 +47,29 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings("unused")
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
+  public enum TrajectoryOwner {
+    DIRECT,
+    STAGED,
+    FIRST_ENABLED,
+    INTERPOLATED,
+    BUMP,
+    ALIGN,
+    X_SWERVE,
+    AIM,
+    TELEOP_OR_DISABLED,
+    IDLE
+  }
+
   private static final double DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES = 10.0;
+
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
       DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
   public static final double MAX_LINEAR_RATE = 4.75;
-
   private static final double LOOSE_TOLERANCE = 45.0;
+
   // TODO(simonstoryparker): make separate ones for scoring
   private static final DoubleSubscriber MAX_LINEAR_RATE_SCORING =
       DogLog.tunable("Swerve/MaxLinearRateScoring", 1.5);
@@ -70,30 +80,27 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
       DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
-
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);
+
   private static final double SIM_LOOP_PERIOD = Units.millisecondsToSeconds(5);
 
   public static final PhoenixPIDController ORIGINAL_HEADING_PID =
       new PhoenixPIDController(15, 0, 0);
-
   private static final double MIN_AIMED_TOLERANCE = 2.0;
   private boolean useLooseTolerance = false;
+
   private final CircularFilter lastDriveDirectionFilter = new CircularFilter(1);
 
   private final SlewRateLimiter maxLinearVelocityRateLimiter =
       new SlewRateLimiter(100.0, -10.0, MAX_LINEAR_RATE);
 
   private final SlewRateLimiter maxAngularVelocityRateLimiter = new SlewRateLimiter(5.0);
-
   public final TunerSwerveDrivetrain drivetrain;
+
   private final XboxControllerDriveSource teleopDriveSource;
-  private final TrailblazerDriveSource trailblazerDriveSource;
 
-  private DriveSource driveSource;
-
-  /** A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}. */
+  /** Requests open-loop velocity in the driver perspective. */
   private final SwerveRequest.FieldCentric driverPerspective =
       new SwerveRequest.FieldCentric()
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
@@ -101,10 +108,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
           .withDeadband(0.07)
           .withRotationalDeadband(0.05);
 
-  /**
-   * A {@link SwerveRequest} for use with {@link DriveSourceType#DRIVER_PERSPECTIVE_OPEN_LOOP}, but
-   * overrides the angular velocity to instead snap to an angle.
-   */
+  /** Requests driver-relative translation while aiming at an absolute heading. */
   private final SwerveRequest.FieldCentricFacingAngle drivePerspectiveSnaps =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
@@ -115,68 +119,80 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
               ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
           .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
 
-  /** A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}. */
-  private final SwerveRequest.FieldCentric fieldCentric =
+  private final SwerveRequest.FieldCentric trajectory =
       new SwerveRequest.FieldCentric()
-          .withDeadband(0.07)
-          .withRotationalDeadband(0.05)
           .withDriveRequestType(DriveRequestType.Velocity)
-          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance);
+          .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+          .withDeadband(0)
+          .withRotationalDeadband(0);
 
-  /**
-   * A {@link SwerveRequest} for use with {@link DriveSourceType#FIELD_CENTRIC_CLOSED_LOOP}, but
-   * overrides the angular velocity to instead snap to an angle.
-   */
+  private final InterpolatedTrajectoryRequest interpolatedTrajectory =
+      new InterpolatedTrajectoryRequest();
+
+  /** Requests Blue-alliance field-centric translation while aiming at a Blue-alliance heading. */
   private final SwerveRequest.FieldCentricFacingAngle fieldCentricSnaps =
       new SwerveRequest.FieldCentricFacingAngle()
           .withDriveRequestType(DriveRequestType.Velocity)
           .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
-          .withDeadband(0.07)
-          .withRotationalDeadband(0.0)
+          .withDeadband(0)
+          .withRotationalDeadband(0)
           .withHeadingPID(
-              ORIGINAL_HEADING_PID.getP(),
-              ORIGINAL_HEADING_PID.getI(),
-              ORIGINAL_HEADING_PID.getD());
+              ORIGINAL_HEADING_PID.getP(), ORIGINAL_HEADING_PID.getI(), ORIGINAL_HEADING_PID.getD())
+          .withMaxAbsRotationalRate(MAX_ANGULAR_RATE);
+
+  private ChassisSpeeds trajectoryCommand = new ChassisSpeeds();
+  private boolean hasTrajectoryCommand;
+  private boolean aligningTrajectoryModules;
+  private boolean logCalibrationCommands;
+  private Rotation2d trajectoryModuleDirection = Rotation2d.kZero;
+
+  private final SwerveRequest.PointWheelsAt trajectoryAlignment =
+      new SwerveRequest.PointWheelsAt().withDriveRequestType(DriveRequestType.Velocity);
 
   private final SwerveRequest.SwerveDriveBrake xRequest =
       new SwerveRequest.SwerveDriveBrake().withSteerRequestType(SteerRequestType.MotionMagicExpo);
 
   private final HealthManager health;
-  private double lastSimTime;
 
+  private double lastSimTime;
   private @Nullable Notifier simNotifier = null;
+
   private SwerveDriveState drivetrainState = new SwerveDriveState();
   private ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds();
-
   private ChassisSpeeds fieldRelativeSpeeds = new ChassisSpeeds();
+
   private double scoringAngle = 0.0;
   private Rotation2d scoringAngleRotation = Rotation2d.kZero;
   private double scoringTolerance = 0.0;
-
   private double scoringFeedForward = 0.0;
+
   private double feedingAngle = 0.0;
   private Rotation2d feedingAngleRotation = Rotation2d.kZero;
   private double feedingTolerance = 0.0;
-
   private double feedingFeedForward = 0.0;
+
   private double currentMaxLinearRate = MAX_LINEAR_RATE;
   private double currentMaxAngularRate = TELEOP_MAX_ANGULAR_RATE.getRotations();
-
   private Rotation2d currentMaxAngularRateRotation = TELEOP_MAX_ANGULAR_RATE;
 
   private boolean ableToBumpAssist = false;
-  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
 
+  private final Debouncer X_SWERVE_DEBOUNCER = new Debouncer(0.3);
   private boolean ableToXSwerve = false;
 
   private boolean driverWantsSotm = false;
+
   private boolean driverStillDecidingSotm = false;
 
+  private volatile double requestedDriveSupplyAmps = Double.NaN;
+
+  private volatile long driveLimitRevision;
+  private TrajectoryOwner trajectoryOwner = TrajectoryOwner.DIRECT;
+
+  private TrajectoryOwner appliedOwner = TrajectoryOwner.IDLE;
+
   public Swerve(
-      TunerSwerveDrivetrain drivetrain,
-      HealthManager health,
-      XboxController driverController,
-      Trailblazer trailblazer) {
+      TunerSwerveDrivetrain drivetrain, HealthManager health, XboxController driverController) {
     super(SubsystemPriority.SWERVE, SwerveState.MANUAL);
     this.drivetrain = drivetrain;
     this.health = health;
@@ -191,10 +207,16 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     this.teleopDriveSource =
         new XboxControllerDriveSource(
             driverController, Swerve.MAX_LINEAR_RATE, Swerve.TELEOP_MAX_ANGULAR_RATE);
-    this.trailblazerDriveSource =
-        new TrailblazerDriveSource(
-            trailblazer, () -> drivetrainState.Pose, this::getFieldRelativeSpeeds);
-    driveSource = teleopDriveSource;
+  }
+
+  public void alignTrajectoryModules(Rotation2d robotRelativeDirection) {
+    setTrajectoryCommand(new ChassisSpeeds());
+    trajectoryModuleDirection = robotRelativeDirection;
+    aligningTrajectoryModules = true;
+  }
+
+  public String appliedTrajectoryOwner() {
+    return appliedOwner.name();
   }
 
   @Override
@@ -244,10 +266,17 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                 .clone()
                 .withSupplyCurrentLimit(supplyCurrentLimit)
                 .withSupplyCurrentLimitEnable(true));
+    requestedDriveSupplyAmps = supplyCurrentLimit;
+    driveLimitRevision++;
   }
 
-  public void climbAssistDriveRequest() {
-    setStateFromRequest(SwerveState.CLIMB_ASSIST);
+  public void clearTrajectoryCommand() {
+    setTrajectoryCommand(new ChassisSpeeds());
+    hasTrajectoryCommand = false;
+  }
+
+  public long driveLimitRevision() {
+    return driveLimitRevision;
   }
 
   public boolean driverStillDecidingSotm() {
@@ -344,7 +373,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   }
 
   public ChassisSpeeds getRequestedSpeeds() {
-    return driveSource.getRequestedSpeeds();
+    if (DriverStation.isAutonomous() || (DriverStation.isDisabled() && hasTrajectoryCommand)) {
+      return trajectoryCommand;
+    }
+    return teleopDriveSource.getRequestedSpeeds();
   }
 
   public ChassisSpeeds getRobotRelativeSpeeds() {
@@ -366,6 +398,10 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.MANUAL);
   }
 
+  public double requestedDriveSupplyAmps() {
+    return requestedDriveSupplyAmps;
+  }
+
   public void scoreRequest(AimingParameters scoringParameters) {
     setScoringAngle(scoringParameters.goalAngle());
     scoringTolerance =
@@ -375,23 +411,41 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     setStateFromRequest(SwerveState.SCORE);
   }
 
-  /**
-   * Set the {@link DriveSource} to use. For some states, this might be ignored (ex. a state where
-   * we are always using Trailblazer speeds instead of teleop).
-   *
-   * <p>This is meant to be called by the autos subsystem periodically, to ensure auto speeds are
-   * being applied at the correct times.
-   */
-  public void setDriveSourceType(DriveSourceType type) {
-    this.driveSource =
-        switch (type) {
-          case DRIVER_PERSPECTIVE_OPEN_LOOP -> teleopDriveSource;
-          case FIELD_CENTRIC_CLOSED_LOOP -> trailblazerDriveSource;
-        };
+  public void setDirectTrajectoryCommand(ChassisSpeeds speeds, TrajectoryOwner owner) {
+    trajectoryOwner = owner;
+    interpolatedTrajectory.setDirect(speeds);
+    trajectoryCommand = speeds;
+    hasTrajectoryCommand = true;
+    aligningTrajectoryModules = false;
+  }
+
+  public void setLogCalibrationCommands(boolean enabled) {
+    logCalibrationCommands = enabled;
+  }
+
+  public void setTrajectoryCommand(ChassisSpeeds speeds) {
+    setDirectTrajectoryCommand(speeds, TrajectoryOwner.DIRECT);
+  }
+
+  public void setTrajectoryCommand(ChassisSpeeds speeds, VelocityStep step) {
+    if (step.durationSeconds() <= 0) {
+      setDirectTrajectoryCommand(speeds, TrajectoryOwner.DIRECT);
+      return;
+    }
+    interpolatedTrajectory.setStep(step, speeds, Utils.getCurrentTimeSeconds());
+    trajectoryOwner =
+        interpolatedTrajectory.hasStep() ? TrajectoryOwner.INTERPOLATED : TrajectoryOwner.DIRECT;
+    trajectoryCommand = speeds;
+    hasTrajectoryCommand = true;
+    aligningTrajectoryModules = false;
   }
 
   public void setUseLooseTolerance(boolean value) {
     useLooseTolerance = value;
+  }
+
+  public DriveRequestSamples trajectorySamples() {
+    return interpolatedTrajectory.samples;
   }
 
   public void warmupFeedRequest(AimingParameters feedingParameters) {
@@ -417,120 +471,124 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     drivetrain.setOperatorPerspectiveForward(
         FmsUtil.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
 
-    switch (currentState) {
-      case MANUAL -> {
-        var speeds = driveSource.getRequestedSpeeds();
-        if (ableToBumpAssist) {
-          drivetrain.setControl(
-              withFieldRelativeTargetDirection(
-                  drivePerspectiveSnaps
-                      .withVelocityX(speeds.vxMetersPerSecond)
-                      .withVelocityY(speeds.vyMetersPerSecond),
-                  SwerveAssist.getRoundedSnapAngle(
-                      drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
-        } else {
-          var swerveRequest =
-              switch (driveSource.getDriveSourceType()) {
-                case DRIVER_PERSPECTIVE_OPEN_LOOP -> driverPerspective;
-                case FIELD_CENTRIC_CLOSED_LOOP -> fieldCentric;
-              };
-
-          drivetrain.setControl(
-              swerveRequest
-                  .withVelocityX(speeds.vxMetersPerSecond)
-                  .withVelocityY(speeds.vyMetersPerSecond)
-                  .withRotationalRate(speeds.omegaRadiansPerSecond));
-        }
+    if (DriverStation.isAutonomous() || (DriverStation.isDisabled() && hasTrajectoryCommand)) {
+      var speeds = getRequestedSpeeds();
+      if (logCalibrationCommands) {
+        DogLog.log("Trailblazer3/Calibration/CommandTime", Utils.getCurrentTimeSeconds());
+        DogLog.log("Trailblazer3/Calibration/CommandFieldSpeeds", speeds);
+        DogLog.log("Trailblazer3/Calibration/AligningModules", aligningTrajectoryModules);
       }
-      case WARMUP_SCORE, SCORE -> {
-        var speeds = driveSource.getRequestedSpeeds();
-
+      if (aligningTrajectoryModules) {
+        appliedOwner = TrajectoryOwner.ALIGN;
+        drivetrain.setControl(trajectoryAlignment.withModuleDirection(trajectoryModuleDirection));
+      } else if (DriverStation.isAutonomousEnabled() && currentState != SwerveState.MANUAL) {
+        if (interpolatedTrajectory.hasStep()) {
+          interpolatedTrajectory.setDirect(speeds);
+        }
+        appliedOwner = ableToXSwerve ? TrajectoryOwner.X_SWERVE : TrajectoryOwner.AIM;
         if (ableToXSwerve) {
           DogLog.timestamp("Swerve/XSwerveActive");
           drivetrain.setControl(xRequest);
         } else {
-          switch (driveSource.getDriveSourceType()) {
-            case DRIVER_PERSPECTIVE_OPEN_LOOP -> {
-              if (!MathUtil.isNear(
-                  0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
-                DogLog.timestamp("Swerve/DriverOverridingRotation");
-                drivetrain.setControl(
-                    driverPerspective
+          DogLog.timestamp("Swerve/TryingToAim");
+          boolean scoring =
+              currentState == SwerveState.WARMUP_SCORE || currentState == SwerveState.SCORE;
+          drivetrain.setControl(
+              fieldCentricSnaps
+                  .withVelocityX(speeds.vxMetersPerSecond)
+                  .withVelocityY(speeds.vyMetersPerSecond)
+                  .withTargetDirection(scoring ? scoringAngleRotation : feedingAngleRotation)
+                  .withTargetRateFeedforward(scoring ? scoringFeedForward : feedingFeedForward));
+        }
+      } else if (DriverStation.isAutonomousEnabled()
+          && (interpolatedTrajectory.hasStep()
+              || trajectoryOwner == TrajectoryOwner.FIRST_ENABLED)) {
+        appliedOwner = trajectoryOwner;
+        drivetrain.setControl(interpolatedTrajectory);
+      } else {
+        appliedOwner = trajectoryOwner;
+        drivetrain.setControl(
+            trajectory
+                .withVelocityX(speeds.vxMetersPerSecond)
+                .withVelocityY(speeds.vyMetersPerSecond)
+                .withRotationalRate(speeds.omegaRadiansPerSecond));
+      }
+    } else {
+      appliedOwner = TrajectoryOwner.TELEOP_OR_DISABLED;
+      if (interpolatedTrajectory.hasStep()) {
+        interpolatedTrajectory.setDirect(new ChassisSpeeds());
+      }
+      switch (currentState) {
+        case MANUAL -> {
+          var speeds = getRequestedSpeeds();
+          if (ableToBumpAssist) {
+            drivetrain.setControl(
+                withFieldRelativeTargetDirection(
+                    drivePerspectiveSnaps
                         .withVelocityX(speeds.vxMetersPerSecond)
-                        .withVelocityY(speeds.vyMetersPerSecond)
-                        .withRotationalRate(speeds.omegaRadiansPerSecond));
-              } else {
-                DogLog.timestamp("Swerve/TryingToAim");
-                drivetrain.setControl(
-                    withFieldRelativeTargetDirection(
-                            drivePerspectiveSnaps
-                                .withVelocityX(speeds.vxMetersPerSecond)
-                                .withVelocityY(speeds.vyMetersPerSecond),
-                            scoringAngleRotation)
-                        .withTargetRateFeedforward(scoringFeedForward));
-              }
-            }
-            case FIELD_CENTRIC_CLOSED_LOOP -> {
-              DogLog.timestamp("Swerve/TryingToAim");
+                        .withVelocityY(speeds.vyMetersPerSecond),
+                    SwerveAssist.getRoundedSnapAngle(
+                        drivetrainState.Pose.getRotation(), SwerveAssist.BUMP_SNAP_ROUND_ANGLE)));
+          } else {
+            drivetrain.setControl(
+                driverPerspective
+                    .withVelocityX(speeds.vxMetersPerSecond)
+                    .withVelocityY(speeds.vyMetersPerSecond)
+                    .withRotationalRate(speeds.omegaRadiansPerSecond));
+          }
+        }
+        case WARMUP_SCORE, SCORE -> {
+          var speeds = getRequestedSpeeds();
+
+          if (ableToXSwerve) {
+            DogLog.timestamp("Swerve/XSwerveActive");
+            drivetrain.setControl(xRequest);
+          } else {
+            if (!MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 1e-5)) {
+              DogLog.timestamp("Swerve/DriverOverridingRotation");
               drivetrain.setControl(
-                  fieldCentricSnaps
+                  driverPerspective
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
-                      .withTargetDirection(scoringAngleRotation)
+                      .withRotationalRate(speeds.omegaRadiansPerSecond));
+            } else {
+              DogLog.timestamp("Swerve/TryingToAim");
+              drivetrain.setControl(
+                  withFieldRelativeTargetDirection(
+                          drivePerspectiveSnaps
+                              .withVelocityX(speeds.vxMetersPerSecond)
+                              .withVelocityY(speeds.vyMetersPerSecond),
+                          scoringAngleRotation)
                       .withTargetRateFeedforward(scoringFeedForward));
             }
           }
         }
-      }
-      case WARMUP_FEED, FEED -> {
-        var speeds = driveSource.getRequestedSpeeds();
+        case WARMUP_FEED, FEED -> {
+          var speeds = getRequestedSpeeds();
 
-        if (ableToXSwerve) {
-          DogLog.timestamp("Swerve/XSwerveActive");
-          drivetrain.setControl(xRequest);
-        } else {
-          switch (driveSource.getDriveSourceType()) {
-            case DRIVER_PERSPECTIVE_OPEN_LOOP -> {
-              if (!MathUtil.isNear(
-                  0, driveSource.getRequestedSpeeds().omegaRadiansPerSecond, 1e-5)) {
-                DogLog.timestamp("Swerve/DriverOverridingRotation");
-                drivetrain.setControl(
-                    driverPerspective
-                        .withVelocityX(speeds.vxMetersPerSecond)
-                        .withVelocityY(speeds.vyMetersPerSecond)
-                        .withRotationalRate(speeds.omegaRadiansPerSecond));
-              } else {
-                DogLog.timestamp("Swerve/TryingToAim");
-                drivetrain.setControl(
-                    withFieldRelativeTargetDirection(
-                            drivePerspectiveSnaps
-                                .withVelocityX(speeds.vxMetersPerSecond)
-                                .withVelocityY(speeds.vyMetersPerSecond),
-                            feedingAngleRotation)
-                        .withTargetRateFeedforward(feedingFeedForward));
-              }
-            }
-            case FIELD_CENTRIC_CLOSED_LOOP -> {
-              DogLog.timestamp("Swerve/TryingToAim");
+          if (ableToXSwerve) {
+            DogLog.timestamp("Swerve/XSwerveActive");
+            drivetrain.setControl(xRequest);
+          } else {
+            if (!MathUtil.isNear(0, speeds.omegaRadiansPerSecond, 1e-5)) {
+              DogLog.timestamp("Swerve/DriverOverridingRotation");
               drivetrain.setControl(
-                  fieldCentricSnaps
+                  driverPerspective
                       .withVelocityX(speeds.vxMetersPerSecond)
                       .withVelocityY(speeds.vyMetersPerSecond)
-                      .withTargetDirection(feedingAngleRotation)
+                      .withRotationalRate(speeds.omegaRadiansPerSecond));
+            } else {
+              DogLog.timestamp("Swerve/TryingToAim");
+              drivetrain.setControl(
+                  withFieldRelativeTargetDirection(
+                          drivePerspectiveSnaps
+                              .withVelocityX(speeds.vxMetersPerSecond)
+                              .withVelocityY(speeds.vyMetersPerSecond),
+                          feedingAngleRotation)
                       .withTargetRateFeedforward(feedingFeedForward));
             }
           }
         }
-      }
-      case CLIMB_ASSIST -> {
-        // Always use Trailblazer drive source for climb alignment
-        var speeds = trailblazerDriveSource.getRequestedSpeeds();
-
-        drivetrain.setControl(
-            fieldCentric
-                .withVelocityX(speeds.vxMetersPerSecond)
-                .withVelocityY(speeds.vyMetersPerSecond)
-                .withRotationalRate(speeds.omegaRadiansPerSecond));
       }
     }
 
@@ -562,30 +620,26 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
       DogLog.clearFault("Swerve modules not pointed straight");
     }
 
-    if (DiagnosticCadence.shouldLogHeavy()) {
-      DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
-      DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
-      DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
-      DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
-    }
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      switch (currentState) {
-        case WARMUP_SCORE, SCORE -> {
-          DogLog.log("Swerve/ScoringAngle", scoringAngle);
-          DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
-        }
-        case WARMUP_FEED, FEED -> {
-          DogLog.log("Swerve/FeedingAngle", feedingAngle);
-          DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
-        }
-        default -> {}
+    DogLog.log("Swerve/ModuleStates", drivetrainState.ModuleStates);
+    DogLog.log("Swerve/ModuleTargets", drivetrainState.ModuleTargets);
+    DogLog.log("Swerve/RobotRelativeSpeeds", drivetrainState.Speeds);
+    DogLog.log("Swerve/FieldRelativeSpeeds", fieldRelativeSpeeds);
+    switch (currentState) {
+      case WARMUP_SCORE, SCORE -> {
+        DogLog.log("Swerve/ScoringAngle", scoringAngle);
+        DogLog.log("Swerve/ClampedScoringTolerance", scoringTolerance);
       }
-      DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
-      DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
-
-      DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
-      DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
+      case WARMUP_FEED, FEED -> {
+        DogLog.log("Swerve/FeedingAngle", feedingAngle);
+        DogLog.log("Swerve/ClampedFeedingTolerance", feedingTolerance);
+      }
+      default -> {}
     }
+    DogLog.log("Swerve/AbleToBumpAssist", ableToBumpAssist);
+    DogLog.log("Swerve/AbleToXSwerve", ableToXSwerve);
+
+    DogLog.log("Swerve/DriverWantsSOTM", driverWantsSotm);
+    DogLog.log("Swerve/DriverStillDecidingSotm", driverStillDecidingSotm);
   }
 
   private double getTargetAngleDegrees() {
@@ -666,7 +720,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                         scoringTolerance,
                         -180.0,
                         180.0)
-                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+                    && MathHelpers.getLinearVelocity(getRequestedSpeeds()) < 1e-5);
           }
           case FEED -> {
             yield X_SWERVE_DEBOUNCER.calculate(
@@ -676,23 +730,22 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
                         feedingTolerance,
                         -180.0,
                         180.0)
-                    && MathHelpers.getLinearVelocity(driveSource.getRequestedSpeeds()) < 1e-5);
+                    && MathHelpers.getLinearVelocity(getRequestedSpeeds()) < 1e-5);
           }
           default -> false;
         };
 
     ableToBumpAssist =
         DSOptions.USE_BUMP_ASSIST.get()
-            && driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP
+            && !DriverStation.isAutonomousEnabled()
             && health.isLocalizationHealthy()
             && SwerveAssist.ableToBumpAssist(drivetrainState.Pose, fieldRelativeSpeeds);
 
-    var requestedSpeeds = driveSource.getRequestedSpeeds();
+    var requestedSpeeds = getRequestedSpeeds();
     var movingInScoreOrFeed =
         MathHelpers.getLinearVelocity(requestedSpeeds) > 1e-6
             && (getState() == SwerveState.SCORE || getState() == SwerveState.FEED);
-    var usingTeleopDrive =
-        driveSource.getDriveSourceType() == DriveSourceType.DRIVER_PERSPECTIVE_OPEN_LOOP;
+    var usingTeleopDrive = !DriverStation.isAutonomousEnabled();
     var sotmDelayElapsed = timeout(DRIVER_WANTS_SOTM_DELAY.get());
     driverWantsSotm = (sotmDelayElapsed && movingInScoreOrFeed) || !usingTeleopDrive;
     driverStillDecidingSotm = !sotmDelayElapsed && movingInScoreOrFeed && usingTeleopDrive;
@@ -720,8 +773,9 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
     currentMaxAngularRateRotation = Rotation2d.fromRotations(currentMaxAngularRate);
     teleopDriveSource.setMaxVelocity(currentMaxLinearRate, currentMaxAngularRateRotation);
 
-    drivePerspectiveSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
-    fieldCentricSnaps.withMaxAbsRotationalRate(Units.rotationsToRadians(currentMaxAngularRate));
+    double maxAngularRateRadPerSec = Units.rotationsToRadians(currentMaxAngularRate);
+    drivePerspectiveSnaps.withMaxAbsRotationalRate(maxAngularRateRadPerSec);
+    fieldCentricSnaps.withMaxAbsRotationalRate(maxAngularRateRadPerSec);
 
     Optional<Rotation2d> targetRotation = Optional.empty();
     switch (getState()) {

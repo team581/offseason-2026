@@ -271,3 +271,55 @@ tasks.register('loopBenchmarkBaseline') {
 		new File(outputDir, 'baseline.json').bytes = new File(outputDir, 'summary.json').bytes
 	}
 }
+
+tasks.register('writePreviewClasspathManifest', JavaExec) {
+	group = 'verification'
+	description = 'Writes the cached Trailblazer preview classpath manifest (.gradle/trailblazer-preview/classpath.manifest)'
+	dependsOn classes, wpi.java.extractNativeReleaseArtifacts
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.team581.trailblazer3.preview.WarmPreviewWorker'
+	doFirst {
+		def nativeDir = wpi.java.extractNativeReleaseArtifacts.get().destinationDirectory.get().asFile.absolutePath
+		systemProperty 'java.library.path', nativeDir
+		args '--write-manifest', '--workspace', rootProject.projectDir.absolutePath, '--jni-dir', nativeDir
+	}
+}
+
+tasks.register('previewAuto', JavaExec) {
+	group = 'verification'
+	description = 'Runs headless Trailblazer 3 preview runner and prints the versioned preview schema JSON'
+	dependsOn classes, wpi.java.extractNativeReleaseArtifacts
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.team581.trailblazer3.preview.WarmPreviewWorker'
+	doFirst {
+		def nativeDir = wpi.java.extractNativeReleaseArtifacts.get().destinationDirectory.get().asFile.absolutePath
+		systemProperty 'java.library.path', nativeDir
+		environment 'LD_LIBRARY_PATH', nativeDir
+		environment 'DYLD_LIBRARY_PATH', nativeDir
+		environment 'DYLD_FALLBACK_LIBRARY_PATH', nativeDir
+		def autoName = project.findProperty('auto')?.toString() ?: 'RightTrenchAuto'
+		def allianceName = project.findProperty('alliance')?.toString() ?: 'Blue'
+		def robotId = project.findProperty('robot')?.toString() ?: '581'
+		def scopeName = project.findProperty('scope')?.toString() ?: 'WHOLE_AUTO'
+		def segmentName = project.findProperty('segment')?.toString()
+		def seedVal = project.findProperty('seed')?.toString() ?: '581'
+		def cliArgs = [
+			'--workspace',
+			rootProject.projectDir.absolutePath,
+			'--auto',
+			autoName,
+			'--alliance',
+			allianceName,
+			'--robot',
+			robotId,
+			'--scope',
+			scopeName,
+			'--seed',
+			seedVal
+		]
+		if (segmentName) {
+			cliArgs.addAll(['--segment', segmentName])
+		}
+		args cliArgs
+	}
+}

@@ -1,33 +1,15 @@
 package com.team581.autos;
 
-import com.team581.config.FeatureFlag;
 import com.team581.math.PoseErrorTolerance;
 import com.team581.trailblazer.AutoPoint;
 import com.team581.util.FieldUtil;
 import com.team581.util.FmsUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
-import java.util.function.BooleanSupplier;
 
 public record Point(Pose2d redPose, Pose2d bluePose) {
-  // Also determines whether or not we are using our HOME FIELD for swerve assist
-  public static final BooleanSupplier CLAMPED_POINTS_FEATURE_FLAG =
-      FeatureFlag.of("ClampedAutoPoints", false);
-
-  private static final Rectangle2d CLAMPED_AREA =
-      new Rectangle2d(
-          new Translation2d(16.54 + 5, 8.069),
-          // Half of robot width + bumpers + 15" buffer
-          new Translation2d(8.246 + Units.inchesToMeters(17.25 + 15.0), 1.645));
-
-  private static Pose2d clamp(Pose2d input) {
-    return new Pose2d(CLAMPED_AREA.nearest(input.getTranslation()), input.getRotation());
-  }
-
   public static Point ofRed(Pose2d redPose) {
     return new Point(redPose, FieldUtil.pathflip(redPose));
   }
@@ -37,13 +19,7 @@ public record Point(Pose2d redPose, Pose2d bluePose) {
   }
 
   public Pose2d getPose() {
-    var result = FmsUtil.isRedAlliance() ? redPose : bluePose;
-
-    if (CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()) {
-      return clamp(result);
-    }
-
-    return result;
+    return FmsUtil.isRedAlliance() ? redPose : bluePose;
   }
 
   public Translation2d getTranslation() {

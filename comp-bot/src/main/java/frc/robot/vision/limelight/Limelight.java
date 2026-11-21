@@ -6,7 +6,6 @@ import com.team581.config.LimelightModel;
 import com.team581.mechanisms.vision.CameraHealth;
 import com.team581.util.FmsUtil;
 import com.team581.util.ReusableOptional;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import com.team581.vision.limelight.LimelightHelpers;
 import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
@@ -187,9 +186,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
       case OFF -> {}
     }
 
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      DogLog.log(healthKey, cameraHealth);
-    }
+    DogLog.log(healthKey, cameraHealth);
 
     LimelightHelpers.SetIMUMode(limelightTableName, 0);
   }
@@ -241,9 +238,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     latestEstimateTrusted = false;
 
     if (getState() != LimelightState.TAGS && getState() != LimelightState.HUB_TAGS) {
-      if (DiagnosticCadence.shouldLogHeavy()) {
-        DogLog.log(rawPoseKey, Pose2d.kZero);
-      }
+      DogLog.log(rawPoseKey, Pose2d.kZero);
       return tagResult.empty();
     }
 
@@ -251,9 +246,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     latestEstimate = mT1Estimate;
 
     if (!poseEstimateValidator.shouldTrust(mT1Estimate, angularVelocity, robotHeading)) {
-      if (DiagnosticCadence.shouldLogHeavy()) {
-        DogLog.log(rawPoseKey, Pose2d.kZero);
-      }
+      DogLog.log(rawPoseKey, Pose2d.kZero);
       return tagResult.empty();
     }
 
@@ -274,9 +267,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
           LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightTableName);
 
       if (!poseEstimateValidator.shouldTrust(mT2Estimate, angularVelocity, robotHeading)) {
-        if (DiagnosticCadence.shouldLogHeavy()) {
-          DogLog.log(rawPoseKey, Pose2d.kZero);
-        }
+        DogLog.log(rawPoseKey, Pose2d.kZero);
         return tagResult.empty();
       }
 
@@ -295,13 +286,9 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
     reusableStdDevs.set(1, 0, xyDev);
     reusableStdDevs.set(2, 0, thetaDev);
 
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      DogLog.log(timestampDifferenceKey, Timer.getFPGATimestamp() - mTEstimateTimestamp);
-      DogLog.log(mtTimestampKey, mTEstimateTimestamp);
-    }
-    if (DiagnosticCadence.shouldLogHeavy()) {
-      DogLog.log(rawPoseKey, mTPose);
-    }
+    DogLog.log(timestampDifferenceKey, Timer.getFPGATimestamp() - mTEstimateTimestamp);
+    DogLog.log(mtTimestampKey, mTEstimateTimestamp);
+    DogLog.log(rawPoseKey, mTPose);
     return tagResult.update(mTPose, mTEstimateTimestamp, reusableStdDevs);
   }
 
@@ -315,9 +302,7 @@ public class Limelight extends StateMachineSubsystem<LimelightState> {
 
   private void updateHealth(boolean hasTargets) {
     var newHeartbeat = LimelightHelpers.getHeartbeat(limelightTableName);
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      DogLog.log(heartbeatKey, newHeartbeat);
-    }
+    DogLog.log(heartbeatKey, newHeartbeat);
     if (limelightHeartbeat != newHeartbeat) {
       limelightTimer.restart();
     }

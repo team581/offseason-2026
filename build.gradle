@@ -71,8 +71,8 @@ subprojects {
 		options.errorprone.disable("Var", "BooleanParameter", "InlineMeSuggester", "ImmutableEnumChecker")
 
 		// Exclude specific Refaster rules (these can't be disabled with disable(), they require NamePattern)
-		// SequencedCollectionGetFirst and SequencedCollectionGetLast suggest .getFirst()/.getLast() which require Java 21+
-		options.errorprone.errorproneArgs.add "-XepOpt:Refaster:NamePattern=^(?!.*SequencedCollectionGet(First|Last)).*"
+		// SequencedCollectionGetFirst, SequencedCollectionGetLast, and MathClamp suggest Java 21+ APIs.
+		options.errorprone.errorproneArgs.add "-XepOpt:Refaster:NamePattern=^(?!.*(SequencedCollectionGet(First|Last)|MathClamp)).*"
 
 		// Set the ERRORPRONE_AUTOFIX environment variable to fix files in place
 		if (System.getenv().containsKey("ERRORPRONE_AUTOFIX")) {
@@ -124,7 +124,7 @@ spotless {
 		target '**/*.json'
 		simple().indentWithSpaces(2)
 
-		targetExclude('.pathplanner/**')
+		targetExclude('.pathplanner/**', '**/node_modules/**', 'tools/vscode-trailblazer-preview/**')
 	}
 }
 

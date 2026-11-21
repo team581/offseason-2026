@@ -111,6 +111,12 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     }
   }
 
+  public void cancelOutwardHomingRequest() {
+    if (getState() == DeployState.HOME_OUTWARD) {
+      setStateFromRequest(DeployState.UNHOMED);
+    }
+  }
+
   public void feedCompactionRequest() {
     switch (getState()) {
       case UNHOMED, HOME_INWARD, HOME_OUTWARD -> {}
@@ -147,7 +153,11 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
   }
 
   public void homeInAutoRequest() {
-    setStateFromRequest(DeployState.HOME_INWARD);
+    setStateFromRequest(DeployState.HOME_OUTWARD);
+  }
+
+  public void homeOutwardRequest() {
+    setStateFromRequest(DeployState.HOME_OUTWARD);
   }
 
   public void homingRequest() {

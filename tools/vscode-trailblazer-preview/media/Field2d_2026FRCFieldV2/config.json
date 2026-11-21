@@ -1,0 +1,26 @@
+{
+	"name": "2026 Field",
+	"locales": {
+		"en-US": "2026 Field",
+		"es-419": "Campo 2026",
+		"fr": "Terrain 2026",
+		"nl": "Veld 2026",
+		"pt-BR": "Campo 2026",
+		"ro": "Teren 2026",
+		"tr": "2026 Sahası",
+		"ru": "Поле 2026",
+		"kk": "2026 алаңы",
+		"he": "מגרש 2026",
+		"ar": "ملعب 2026",
+		"hi": "2026 फील्ड",
+		"zh-CN": "2026 场地",
+		"zh-TW": "2026 場地"
+	},
+	"isFTC": false,
+	"coordinateSystem": "wall-blue",
+	"sourceUrl": "https://www.chiefdelphi.com/t/2026-rebuilt-high-resolution-field-image/510611",
+	"topLeft": [524, 95],
+	"bottomRight": [3378, 1489],
+	"widthInches": 651.22,
+	"heightInches": 317.677
+}

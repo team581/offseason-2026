@@ -1,0 +1,120 @@
+{
+	"name": "trailblazer-preview",
+	"displayName": "Trailblazer 3 Auto Preview",
+	"version": "0.3.1",
+	"description": "Split-screen preview of Trailblazer 3 autonomous routines and path segments",
+	"categories": [
+		"Visualization"
+	],
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/team581/offseason-2026.git",
+		"directory": "tools/vscode-trailblazer-preview"
+	},
+	"publisher": "team581",
+	"type": "module",
+	"main": "./out/extension.cjs",
+	"scripts": {
+		"package": "pnpm build && vsce package --no-dependencies",
+		"test": "mkdir -p test-results && node --test --test-reporter=spec --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=test-results/junit.xml test/*.cjs",
+		"build": "vp pack && NODE_ENV=production vp build",
+		"check": "tsc -p . --noEmit && tsc -p tsconfig.webview.json",
+		"format": "oxfmt --check",
+		"format:fix": "oxfmt",
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix"
+	},
+	"devDependencies": {
+		"@types/node": "26.6.6",
+		"@types/vscode": "1.144.0",
+		"@vscode/vsce": "4.1.0",
+		"mp4-muxer": "^5.2.2",
+		"oxfmt": "0.76.0",
+		"oxlint": "1.91.0",
+		"oxlint-tsgolint": "7.0.2005",
+		"typescript": "7.0.2",
+		"vite-plus": "1.5.0"
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "trailblazer.previewAuto",
+				"title": "Trailblazer: Preview Auto",
+				"icon": "$(compass)"
+			},
+			{
+				"command": "trailblazer.toggleWholeAuto",
+				"title": "Trailblazer: Toggle Whole Auto"
+			},
+			{
+				"command": "trailblazer.exportVideo",
+				"title": "Trailblazer: Export Path Video"
+			}
+		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "trailblazer.previewAuto",
+					"when": "resourceExtname == .java",
+					"group": "navigation"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "trailblazer.previewAuto",
+					"when": "resourceExtname == .java"
+				}
+			]
+		},
+		"configuration": {
+			"title": "Trailblazer Auto Preview",
+			"properties": {
+				"trailblazer.preview.autoOpen": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically open the Trailblazer preview beside the editor when a Trailblazer auto Java file is opened."
+				},
+				"trailblazer.preview.javaHome": {
+					"type": "string",
+					"default": "",
+					"description": "Optional path to a Java 21 JDK home directory used to launch the warm preview worker."
+				},
+				"trailblazer.preview.defaultAlliance": {
+					"type": "string",
+					"enum": [
+						"Blue",
+						"Red"
+					],
+					"default": "Blue",
+					"description": "Default alliance orientation for Trailblazer previews."
+				},
+				"trailblazer.preview.defaultRobot": {
+					"type": "string",
+					"enum": [
+						"581",
+						"9991",
+						"9981"
+					],
+					"default": "581",
+					"description": "Default robot drivetrain configuration for Trailblazer previews."
+				}
+			}
+		}
+	},
+	"activationEvents": [
+		"onLanguage:java"
+	],
+	"extensionKind": [
+		"workspace"
+	],
+	"engines": {
+		"vscode": "^1.144.0"
+	},
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": false
+		},
+		"virtualWorkspaces": false
+	}
+}

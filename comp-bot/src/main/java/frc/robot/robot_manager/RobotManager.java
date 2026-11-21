@@ -1,12 +1,9 @@
 package frc.robot.robot_manager;
 
-import com.team581.autos.Point;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
-import com.team581.trailblazer.Trailblazer;
 import com.team581.util.FeedLocation;
 import com.team581.util.FieldUtil;
-import com.team581.util.profiling.DiagnosticCadence;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -45,7 +42,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
   public final XboxController driverController;
   private final HealthManager health;
   private final HubActivity hubActivity;
-  private final Trailblazer trailblazer;
 
   public final PowerManager powerManager;
   private Pose2d robotPose = Pose2d.kZero;
@@ -80,7 +76,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
       XboxController driverController,
       HealthManager health,
       HubActivity hubActivity,
-      Trailblazer trailblazer,
       Hardware hardware,
       PowerManager powerManager) {
     super(SubsystemPriority.ROBOT_MANAGER, RobotState.IDLE);
@@ -93,7 +88,6 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
     this.driverController = driverController;
     this.health = health;
     this.hubActivity = hubActivity;
-    this.trailblazer = trailblazer;
     this.hardware = hardware;
     this.powerManager = powerManager;
   }
@@ -423,12 +417,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     isMoving = velocity > 0.2;
 
-    // If using clamped points FF we are using the HOME FIELD
     nearTrench =
         !trenchOverride
-            && ((Point.CLAMPED_POINTS_FEATURE_FLAG.getAsBoolean()
-                    ? FieldUtil.inHomeFieldTrench(robotPose.getTranslation())
-                    : FieldUtil.inTrench(robotPose.getTranslation()))
+            && (FieldUtil.inTrench(robotPose.getTranslation())
                 || SwerveAssist.ableToTrenchAssist(robotPose, speeds));
 
     Pose2d robotPoseUsedForScoring =
@@ -684,14 +675,9 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
     swerve.setUseLooseTolerance(getState().isFeeding() && timeout(1.0));
 
-    if (DiagnosticCadence.shouldLogRoutine()) {
-      DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
-    }
-    if (DiagnosticCadence.shouldLogHeavy()) {
-      DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
-      DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
-      MechanismVisualizer.log(
-          robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
-    }
+    DogLog.log("RobotManager/Feeding/FeedLocation", feedLocation);
+    DogLog.log("RobotManager/Feeding/FeedParameters", feedingParameters);
+    DogLog.log("RobotManager/Scoring/ScoringParameters", scoringParameters);
+    MechanismVisualizer.log(robotPose, shooterHood.getAngle(), hopperManager.deploy.getPosition());
   }
 }

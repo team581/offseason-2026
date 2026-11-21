@@ -103,8 +103,11 @@ public class CompTunerConstants {
     private static final int kPigeonId = 2;
 
     // These are only used for simulation
-    private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.01);
-    private static final MomentOfInertia kDriveInertia = KilogramSquareMeters.of(0.035);
+    private static final MomentOfInertia kSteerInertia = KilogramSquareMeters.of(0.0005);
+    // Phoenix models each wheel independently. Reflect one quarter of the 61.2 kg robot
+    // mass at the wheel so the simulated velocity loop sees the drivetrain load (J = m r²).
+    private static final MomentOfInertia kDriveInertia =
+        KilogramSquareMeters.of(61.2 / 4 * Math.pow(kWheelRadius.in(Meters), 2));
     // Simulated voltage necessary to overcome friction
     private static final Voltage kSteerFrictionVoltage = Volts.of(0.2);
     private static final Voltage kDriveFrictionVoltage = Volts.of(0.2);
@@ -146,8 +149,8 @@ public class CompTunerConstants {
     private static final boolean kFrontLeftSteerMotorInverted = true;
     private static final boolean kFrontLeftEncoderInverted = false;
 
-    private static final Distance kFrontLeftXPos = Inches.of(5.5);
-    private static final Distance kFrontLeftYPos = Inches.of(5.875);
+    private static final Distance kFrontLeftXPos = Inches.of(11);
+    private static final Distance kFrontLeftYPos = Inches.of(11.75);
 
     // Front Right
     private static final int kFrontRightDriveMotorId = 5;
@@ -157,8 +160,8 @@ public class CompTunerConstants {
     private static final boolean kFrontRightSteerMotorInverted = true;
     private static final boolean kFrontRightEncoderInverted = false;
 
-    private static final Distance kFrontRightXPos = Inches.of(5.5);
-    private static final Distance kFrontRightYPos = Inches.of(-5.875);
+    private static final Distance kFrontRightXPos = Inches.of(11);
+    private static final Distance kFrontRightYPos = Inches.of(-11.75);
 
     // Back Left
     private static final int kBackLeftDriveMotorId = 7;
@@ -168,8 +171,8 @@ public class CompTunerConstants {
     private static final boolean kBackLeftSteerMotorInverted = true;
     private static final boolean kBackLeftEncoderInverted = false;
 
-    private static final Distance kBackLeftXPos = Inches.of(-5.5);
-    private static final Distance kBackLeftYPos = Inches.of(5.875);
+    private static final Distance kBackLeftXPos = Inches.of(-11);
+    private static final Distance kBackLeftYPos = Inches.of(11.75);
 
     // Back Right
     private static final int kBackRightDriveMotorId = 9;
@@ -179,8 +182,8 @@ public class CompTunerConstants {
     private static final boolean kBackRightSteerMotorInverted = true;
     private static final boolean kBackRightEncoderInverted = false;
 
-    private static final Distance kBackRightXPos = Inches.of(-5.5);
-    private static final Distance kBackRightYPos = Inches.of(-5.875);
+    private static final Distance kBackRightXPos = Inches.of(-11);
+    private static final Distance kBackRightYPos = Inches.of(-11.75);
 
 
     public static final SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration> FrontLeft =
