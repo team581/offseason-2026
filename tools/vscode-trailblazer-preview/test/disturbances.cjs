@@ -321,7 +321,7 @@ void test('disturbance suite webview drawer adds events, posts setDisturbances, 
 	assert.equal(querySelector('#diff-delta-badge').hidden, false);
 	assert.equal(querySelector('#diff-delta-badge').textContent, 'Δ +0.45 s');
 	assert.equal(querySelector('#disturbance-summary').hidden, false);
-	assert.equal(querySelector('#disturbance-summary').children.length, 4);
+	assert.equal(querySelector('#disturbance-summary').children.length, 3);
 	assert.equal(querySelector('#timeline-events').children.length, 1);
 	if (nextFrame) nextFrame(1016);
 });
@@ -350,7 +350,6 @@ void test('warm-JVM worker executes RightTrenchAuto with PUSH and VISION_JUMP di
 		push.dyMeters = 0.45;
 		push.dvyMetersPerSec = 1.6;
 		const jump = createDefaultDisturbance('VISION_JUMP', 1.4);
-		jump.triggerRelatch = true;
 
 		const disturbed = await client.requestPreview({
 			sourceFile: rightTrenchPath,
@@ -363,8 +362,9 @@ void test('warm-JVM worker executes RightTrenchAuto with PUSH and VISION_JUMP di
 		});
 		assert.equal(disturbed.ok, true);
 		assert.equal(disturbed.result.appliedDisturbances.length, 2);
-		assert.ok(disturbed.result.relatchCount >= 1);
-		assert.ok(disturbed.result.replannedPaths.length >= 1);
+		assert.equal(disturbed.result.relatchCount, 0);
+		assert.equal(disturbed.result.replannedPaths.length, 0);
+		assert.ok(disturbed.result.passedMarkers.some((m) => m.marker === 'PREPARE_BUMP'));
 		assert.equal(disturbed.result.phaseTimings.compileMs, 0);
 	} finally {
 		client.dispose();

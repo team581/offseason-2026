@@ -469,7 +469,7 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 		ctx.restore();
 	}
 
-	// 7b. Replanned (RELATCH) PathBuilder Geometries
+	// 7b. Start-offset PathBuilder Geometries
 	if (result.replannedPaths && result.replannedPaths.length > 0) {
 		drawReplannedPaths(ctx, transform, result.replannedPaths, maxRevealTime);
 	}

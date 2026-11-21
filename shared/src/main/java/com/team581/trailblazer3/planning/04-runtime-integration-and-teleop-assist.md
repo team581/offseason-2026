@@ -13,7 +13,6 @@
 | `activate(segment, clearance)` | Start with explicit clearance |
 | `activateWithoutClearance(segment)` | Start without keepout checks |
 | `update(time, pose, speeds)` | Compute and store the next command |
-| `relatch()` | Rebuild from measured pose on the next update |
 | `passedMarker(marker)` | Read recorded passage |
 | `atGoal()` | Read terminal completion |
 | `cancel()` | Clear the segment and command |
@@ -23,8 +22,8 @@
 - Duplicate timestamps return the cached result.
 - Nonfinite measurements return zero and reset command seeding.
 - Backward time or a gap over 100 ms triggers missed-tick recovery.
-- Sustained off-track error rebuilds the remaining path.
-- Cancellation clears markers. Relatching keeps recorded markers.
+- Off-track error recovers smoothly onto the fixed path using unified cross-track control and velocity re-seeding on sustained collision divergence.
+- Cancellation clears markers.
 
 ## Robot state machine
 

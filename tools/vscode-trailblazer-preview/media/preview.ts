@@ -94,7 +94,7 @@ export function formatDisturbanceSummary(ev: DisturbanceEvent): string {
 		return `0.00s · ${disp.toFixed(2)}m, ${ev.dThetaDegrees.toFixed(0)}°`;
 	}
 	if (ev.kind === 'VISION_JUMP') {
-		return `${ev.timestampSeconds.toFixed(2)}s · ${disp.toFixed(2)}m, ${ev.dThetaDegrees.toFixed(0)}°${ev.triggerRelatch ? ' · relatch' : ''}`;
+		return `${ev.timestampSeconds.toFixed(2)}s · ${disp.toFixed(2)}m, ${ev.dThetaDegrees.toFixed(0)}°`;
 	}
 	return `${ev.timestampSeconds.toFixed(2)}s (${ev.durationSeconds.toFixed(2)}s) · ${disp.toFixed(2)}m, ${vel.toFixed(1)}m/s`;
 }
@@ -119,7 +119,7 @@ export function formatDisturbanceJunitSnippet(
 			);
 		} else if (ev.kind === 'VISION_JUMP') {
 			lines.push(
-				`if (Math.abs(sim.time - ${ev.timestampSeconds.toFixed(2)}) < sim.dt * 0.5) { /* VISION_JUMP (${ev.frame}): dx=${ev.dxMeters}, dy=${ev.dyMeters}, dTheta=${ev.dThetaDegrees}deg${ev.triggerRelatch ? '; sim.planner.relatch()' : ''} */ }`,
+				`if (Math.abs(sim.time - ${ev.timestampSeconds.toFixed(2)}) < sim.dt * 0.5) { /* VISION_JUMP (${ev.frame}): dx=${ev.dxMeters}, dy=${ev.dyMeters}, dTheta=${ev.dThetaDegrees}deg */ }`,
 			);
 		} else {
 			lines.push(
@@ -619,7 +619,6 @@ function bootWebview() {
 					: `${currentResult.totalDurationSeconds.toFixed(2)}s`;
 			const deltaTone = hasTimeout ? 'error' : deltaSec !== null && deltaSec > 0.25 ? 'warn' : 'ok';
 
-			const relatches = currentResult.relatchCount ?? 0;
 			const minClear = currentResult.minClearanceMeters;
 			const clearText = typeof minClear === 'number' ? `${minClear.toFixed(2)}m` : '-';
 			const clearTone =
@@ -635,7 +634,6 @@ function bootWebview() {
 
 			disturbanceSummary.append(
 				makeSummaryChip('Δ Time', deltaText, deltaTone),
-				makeSummaryChip('Relatches', String(relatches), relatches > 0 ? 'warn' : 'ok'),
 				makeSummaryChip('Min Clear', clearText, clearTone),
 				makeSummaryChip('Max CTE', cteText, typeof maxCte === 'number' && maxCte > 0.3 ? 'warn' : 'neutral'),
 			);
@@ -812,23 +810,6 @@ function bootWebview() {
 			disturbanceEditor.append(velGrid);
 		}
 
-		// Relatch toggle for VISION_JUMP
-		if (selected.kind === 'VISION_JUMP') {
-			const relatchLabel = document.createElement('label');
-			relatchLabel.className = 'editor-check';
-			const relatchCb = document.createElement('input');
-			relatchCb.type = 'checkbox';
-			relatchCb.checked = selected.triggerRelatch;
-			relatchCb.addEventListener('change', () => {
-				selected.triggerRelatch = relatchCb.checked;
-				commitDisturbances(true);
-			});
-			const relatchText = document.createElement('span');
-			relatchText.textContent = 'Trigger Trailblazer relatch() on snap';
-			relatchLabel.append(relatchCb, relatchText);
-			disturbanceEditor.append(relatchLabel);
-		}
-
 		// Quick presets
 		const presetRow = document.createElement('div');
 		presetRow.className = 'editor-preset-row';
@@ -886,7 +867,6 @@ function bootWebview() {
 				selected.dxMeters = -0.35;
 				selected.dyMeters = 0.25;
 				selected.dThetaDegrees = 18;
-				selected.triggerRelatch = true;
 			});
 		} else {
 			addPreset('Sloppy Place', () => {

@@ -13,13 +13,11 @@
 
 - Project measured position onto nearby path pieces.
 - Restrict projection to the local goal window to avoid jumping across route crossings.
-- Advance high-water progress only inside the tracking corridor and before a closed heading gate.
+- Advance high-water progress up to any closed heading gate.
 - Record each through marker when progress passes its anchor.
-- Rebuild remaining geometry after an explicit relatch or sustained off-track error.
-- Reset path-relative progress after rebuilding; retain already-passed markers.
 
 ## Examples
 
 - Wider corner tolerance: more room for a fillet, subject to neighbors and clearance.
-- Robot starts off the tape mark: build from its measured position.
-- Robot is pushed off the route: relatch after the runtime's off-track dwell.
+- Robot starts off the tape mark: build from its measured position when activating without a prepared path.
+- Robot is pushed off the route: unified cross-track feedback steers back onto the fixed path.

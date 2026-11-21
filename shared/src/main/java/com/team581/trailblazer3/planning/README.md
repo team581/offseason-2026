@@ -25,7 +25,7 @@ flowchart LR
 - Speed planning accounts for acceleration, braking, curvature, and rotation.
 - Heading can follow fixed angles, path travel, or a field point.
 - Markers record passed waypoints. Stops require settling; moving finishes allow handoff.
-- The runtime rebuilds remaining geometry after a relatch.
+- The runtime recovers onto the fixed segment geometry via unified cross-track and velocity control.
 - Autos own mechanism and bump crossing state machines.
 
 ## Notes
