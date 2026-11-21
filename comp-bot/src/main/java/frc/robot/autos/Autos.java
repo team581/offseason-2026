@@ -173,9 +173,6 @@ public class Autos extends StateMachineSubsystem<AutoSelection> {
     long stateStart = LoopTiming.start();
     auto.periodic();
     LoopTiming.end("Scheduler/Autos/StateMachine", stateStart);
-    if (!firstTick && robotManager.localization.consumePoseReset()) {
-      trailblazer.relatch();
-    }
 
     var pose = robotManager.localization.getPose();
     var measuredSpeeds = robotManager.swerve.getFieldRelativeSpeeds();

@@ -164,8 +164,8 @@ final class PreviewTest {
     assertThat(pushed.appliedDisturbances()).hasSize(1);
     assertEquals("PUSH", pushed.appliedDisturbances().get(0).kind());
     assertThat(pushed.maxCrossTrackErrorMeters()).isGreaterThan(0.30);
-    assertThat(pushed.relatchCount()).isPositive();
-    assertThat(pushed.replannedPaths()).isNotEmpty();
+    assertEquals(0, pushed.relatchCount());
+    assertThat(pushed.replannedPaths()).isEmpty();
     assertThat(pushed.passedMarkers()).extracting(m -> m.marker()).contains("SCORE_READY");
 
     var visionJump =
@@ -201,8 +201,8 @@ final class PreviewTest {
 
     assertThat(jumped.appliedDisturbances()).hasSize(1);
     assertEquals("VISION_JUMP", jumped.appliedDisturbances().get(0).kind());
-    assertThat(jumped.relatchCount()).isPositive();
-    assertThat(jumped.replannedPaths()).isNotEmpty();
+    assertEquals(0, jumped.relatchCount());
+    assertThat(jumped.replannedPaths()).isEmpty();
     assertThat(jumped.passedMarkers()).extracting(m -> m.marker()).contains("SCORE_READY");
 
     var startOffset =

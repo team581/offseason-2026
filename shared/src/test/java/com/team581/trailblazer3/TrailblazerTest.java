@@ -578,6 +578,30 @@ final class TrailblazerTest {
   }
 
   @Test
+  void recoversWithoutRelatchWhenPushedOutsideCorridorPastThroughWaypoint() {
+    var sim = new Simulation(0.020);
+    sim.planner.activate(
+        Trailblazer.segment("off-corridor-recovery")
+            .through(2.0, 0.0, 0.30, g -> g.mark(Marker.INTERMEDIATE))
+            .stopAt(pose(5.0, 0.0, 0.0), g -> g.mark(Marker.FINISH))
+            .build());
+    while (sim.pose.getX() < 1.6) {
+      sim.step();
+    }
+    long generation = sim.planner.pathGeneration();
+    sim.pose = pose(sim.pose.getX(), 0.65, sim.pose.getRotation().getDegrees());
+    sim.step();
+    assertEquals(generation, sim.planner.lastResult().geometryGeneration());
+    assertNotEquals("RELATCH", sim.planner.lastResult().diagnostic());
+    sim.untilGoal();
+    assertEquals(generation, sim.planner.pathGeneration());
+    assertThat(sim.planner.passedMarker(Marker.INTERMEDIATE)).isTrue();
+    assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
+    assertEquals(5.0, sim.pose.getX(), 0.05);
+    assertEquals(0.0, sim.pose.getY(), 0.05);
+  }
+
+  @Test
   void rejectsExactReversalWithoutStop() {
     assertThatThrownBy(() ->
             PathBuilder.build(
@@ -607,6 +631,60 @@ final class TrailblazerTest {
     }
     sim.untilGoal();
     assertEquals(2.0, sim.pose.getX(), 0.05);
+  }
+
+  @Test
+  void rotationJumpAtHighSpeedRecoversHeadingWithoutStarvingCorneringTraction() {
+    var robot = PreviewRunner.robotProfile("581").spec();
+    var calibration = com.team581.trailblazer3.config.TrailblazerConfig.COMP;
+    double[] time = {0.0};
+    double dt = 0.020;
+    var planner = new Trailblazer(() -> time[0], robot, calibration, dt);
+    Pose2d pose = pose(4.4, 0.5, 90.0);
+    ChassisSpeeds speed = new ChassisSpeeds();
+    planner.activate(
+        Trailblazer.segment("rotation-jump-recovery")
+            .through(
+                pose(6.5, 0.5, 90.0), 0.25, g -> g.headingTolerance(Rotation2d.fromDegrees(15)))
+            .through(
+                pose(7.7, 2.0, 80.0), 0.30, g -> g.headingTolerance(Rotation2d.fromDegrees(10)))
+            .stopAt(pose(7.7, 3.5, 120.0), g -> g.mark(Marker.FINISH))
+            .build());
+    boolean jumped = false;
+    double minX = Double.POSITIVE_INFINITY;
+    double maxX = Double.NEGATIVE_INFINITY;
+    double omegaTwoTicksAfterJump = 0.0;
+    int ticksSinceJump = 0;
+    while (!planner.atGoal() && time[0] < 8.0) {
+      if (!jumped && pose.getX() >= 6.4) {
+        jumped = true;
+        pose =
+            new Pose2d(pose.getTranslation(), pose.getRotation().plus(Rotation2d.fromDegrees(60)));
+      }
+      var res = planner.update(time[0], pose, speed);
+      speed = res.commandedFieldSpeeds();
+      if (jumped) {
+        ticksSinceJump++;
+        if (ticksSinceJump == 2) {
+          omegaTwoTicksAfterJump = speed.omegaRadiansPerSecond;
+        }
+        minX = Math.min(minX, pose.getX());
+        maxX = Math.max(maxX, pose.getX());
+      }
+      pose =
+          new Pose2d(
+              pose.getX() + speed.vxMetersPerSecond * dt,
+              pose.getY() + speed.vyMetersPerSecond * dt,
+              pose.getRotation().plus(Rotation2d.fromRadians(speed.omegaRadiansPerSecond * dt)));
+      time[0] += dt;
+    }
+    assertThat(jumped).isTrue();
+    assertThat(omegaTwoTicksAfterJump).isLessThan(-0.10);
+    assertThat(maxX).isLessThan(8.05);
+    assertThat(minX).isGreaterThan(6.3);
+    assertThat(planner.passedMarker(Marker.FINISH)).isTrue();
+    assertEquals(7.7, pose.getX(), 0.05);
+    assertEquals(3.5, pose.getY(), 0.05);
   }
 
   @Test
@@ -641,9 +719,8 @@ final class TrailblazerTest {
         sim.step();
       }
       sim.pose = pose(sim.pose.getX(), sim.pose.getY() + 0.25, sim.pose.getRotation().getDegrees());
-      sim.planner.relatch();
       sim.step();
-      assertEquals(2, sim.planner.lastResult().geometryGeneration());
+      assertEquals(1, sim.planner.lastResult().geometryGeneration());
       sim.untilGoal();
       assertThat(sim.planner.passedMarker(Marker.FINISH)).isTrue();
     }

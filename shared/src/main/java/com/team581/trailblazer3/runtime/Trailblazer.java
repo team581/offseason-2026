@@ -131,12 +131,10 @@ public final class Trailblazer {
     private long generation;
     private double highWater;
     private double dwell;
-    private double offTrack;
     private double divergence;
 
     private long velocitySequence;
     private double lastTime = Double.NaN;
-    private boolean relatchRequested;
     private int headingGoalIndex = -1;
     private double headingDwell;
     private double gateWait;
@@ -182,10 +180,8 @@ public final class Trailblazer {
       goalIndex = 0;
       highWater = 0;
       dwell = 0;
-      offTrack = 0;
       divergence = 0;
       lastTime = Double.NaN;
-      relatchRequested = false;
       headingGoalIndex = -1;
       headingDwell = 0;
       gateWait = 0;
@@ -226,7 +222,6 @@ public final class Trailblazer {
       previous = null;
       heading = null;
       lastTime = Double.NaN;
-      relatchRequested = false;
       result =
           new TickResult(
               new ChassisSpeeds(),
@@ -424,7 +419,6 @@ public final class Trailblazer {
       goalIndex = 0;
       generation++;
       highWater = 0;
-      offTrack = 0;
       dwell = 0;
       terminalLatched = false;
       stopPositionLatched = false;
@@ -539,10 +533,6 @@ public final class Trailblazer {
       return missed;
     }
 
-    private void relatch() {
-      relatchRequested = true;
-    }
-
     private Pose2d[] sampledPathPoses(double stepMeters) {
       if (path == null
           || activeGoals.isEmpty()
@@ -620,7 +610,6 @@ public final class Trailblazer {
       if (missedTick) {
         dwell = 0;
         headingDwell = 0;
-        offTrack = 0;
         divergence = 0;
         stopPositionLatched = false;
         stopHeadingLatched = false;
@@ -628,18 +617,9 @@ public final class Trailblazer {
 
       String diagnostic = missedTick ? "MISSED_TICK_RECOVERY" : "";
       if (path == null) {
-        relatchRequested = false;
         rebuild(measuredPose, remainingGoalStart);
       } else if (firstTick) {
         previousMeasuredHeading = measuredPose.getRotation();
-        relatchRequested = false;
-      } else if (relatchRequested) {
-        relatchRequested = false;
-        int lastGoalIndex = Math.max(0, activeGoals.size() - 1);
-        rebuild(measuredPose, remainingGoalStart + Math.min(goalIndex, lastGoalIndex));
-        if (diagnostic.isEmpty()) {
-          diagnostic = "RELATCH";
-        }
       }
 
       double firstAllowed = goalIndex > 1 ? path.anchors().get(goalIndex - 2) : 0;
@@ -651,20 +631,10 @@ public final class Trailblazer {
               Math.max(firstAllowed, highWater - 0.60),
               Math.min(lastAllowed, highWater + 1.50));
       var measured = translation(measuredFieldSpeeds);
-      offTrack =
-          projected.distance() > CORRIDOR || highWater - projected.progress() > 0.55
-              ? offTrack + dt
-              : 0;
       divergence = measured.getDistance(translation(previous)) > 1.0 ? divergence + dt : 0;
-      if (divergence >= RELATCH_DWELL) {
+      if (divergence >= DIVERGENCE_DWELL) {
         previous = measuredFieldSpeeds;
         divergence = 0;
-      }
-      if (offTrack >= RELATCH_DWELL && !atGoal()) {
-        int lastGoalIndex = Math.max(0, activeGoals.size() - 1);
-        rebuild(measuredPose, remainingGoalStart + Math.min(goalIndex, lastGoalIndex));
-        projected = path.project(measuredPose.getTranslation(), 0, 0);
-        diagnostic = "RELATCH";
       }
 
       var barrier = headingBarrier(measuredPose, measuredFieldSpeeds, projected, dt);
@@ -674,13 +644,11 @@ public final class Trailblazer {
           diagnostic = "HARD_GATE_BYPASSED";
         }
       }
-      if (Math.abs(projected.crossTrack()) <= CORRIDOR && projected.distance() <= CORRIDOR) {
-        double progressBeforeBarrier = Math.min(projected.progress(), barrier.progress());
-        highWater = Math.max(highWater, progressBeforeBarrier);
-        if (recordHeadingArrivals(progressBeforeBarrier, measuredPose.getRotation(), barrier)
-            && diagnostic.isEmpty()) {
-          diagnostic = "HEADING_TOLERANCE_MISS";
-        }
+      double progressBeforeBarrier = Math.min(projected.progress(), barrier.progress());
+      highWater = Math.max(highWater, progressBeforeBarrier);
+      if (recordHeadingArrivals(progressBeforeBarrier, measuredPose.getRotation(), barrier)
+          && diagnostic.isEmpty()) {
+        diagnostic = "HEADING_TOLERANCE_MISS";
       }
 
       RuntimeStatus status = atGoal() ? RuntimeStatus.AT_GOAL : RuntimeStatus.RUNNING;
@@ -789,17 +757,9 @@ public final class Trailblazer {
       double traction = limits.availableTraction(heading.velocity(), referenceAlpha);
       var tangent = path.sample(profile.tangentProgress());
       double tau = translationResponseSeconds(limits.lag(), nominalDt);
-      double crossTrackCap = Math.min(CORRIDOR / tau, 0.30 * limits.maxSpeed());
-      var demand =
-          tangent
-              .tangent()
-              .times(profile.speed())
-              .plus(
-                  tangent
-                      .normal()
-                      .times(
-                          MathUtil.clamp(
-                              -projected.crossTrack() / tau, -crossTrackCap, crossTrackCap)));
+      double baseCrossTrackCap = Math.min(CORRIDOR / tau, 0.30 * limits.maxSpeed());
+      double absCrossTrack = Math.abs(projected.crossTrack());
+      double excess = Math.max(0.0, absCrossTrack - CORRIDOR);
       var error = path.sample(barrier.progress()).position().minus(measuredPose.getTranslation());
       double distance = error.getNorm();
       double barrierGap = barrier.progress() - progress;
@@ -821,19 +781,21 @@ public final class Trailblazer {
           terminalLatched || barrierGap <= 0
               ? 1
               : MathUtil.clamp((0.25 - Math.max(barrierGap, distance)) / 0.17, 0, 1);
-      double terminalSpeed =
-          stopPositionLatched
-              ? 0.0
-              : Math.min(
-                  limits.maxSpeed(),
-                  Math.min(
-                      Math.sqrt(2 * Math.min(limits.braking(), traction) * distance),
-                      distance / tau));
-      var terminalDemand =
-          distance > 1e-9 && terminalSpeed > 0.0
-              ? error.times(terminalSpeed / distance)
-              : Translation2d.kZero;
-      demand = demand.times(1 - beta).plus(terminalDemand.times(beta));
+      var demand =
+          computeTranslationDemand(
+              limits,
+              profile.speed(),
+              tangent,
+              projected.crossTrack(),
+              absCrossTrack,
+              excess,
+              baseCrossTrackCap,
+              tau,
+              error,
+              distance,
+              beta,
+              stopPositionLatched,
+              traction);
 
       var oldVelocity = translation(previous);
       double acceleration = limits.acceleration(oldVelocity.getNorm());
@@ -848,19 +810,81 @@ public final class Trailblazer {
               limits,
               dt);
       if (limited.infeasible() && omega != previous.omegaRadiansPerSecond) {
+        double prevOmega = previous.omegaRadiansPerSecond;
+        double zeroAlphaTraction = limits.availableTraction(prevOmega, 0.0);
+        var zeroAlphaDemand =
+            computeTranslationDemand(
+                limits,
+                profile.speed(),
+                tangent,
+                projected.crossTrack(),
+                absCrossTrack,
+                excess,
+                baseCrossTrackCap,
+                tau,
+                error,
+                distance,
+                beta,
+                stopPositionLatched,
+                zeroAlphaTraction);
         var retry =
             VectorLimiter.project(
-                demand,
+                zeroAlphaDemand,
                 oldVelocity,
                 measuredPose.getRotation(),
-                previous.omegaRadiansPerSecond,
-                traction,
+                prevOmega,
+                zeroAlphaTraction,
                 acceleration,
                 limits,
                 dt);
         if (!retry.infeasible()) {
-          omega = previous.omegaRadiansPerSecond;
-          limited = retry;
+          double bestOmega = prevOmega;
+          double bestAlpha = 0.0;
+          var bestLimited = retry;
+          double lo = 0.0;
+          double hi = 1.0;
+          for (int iter = 0; iter < 6; iter++) {
+            double mid = 0.5 * (lo + hi);
+            double candOmega = prevOmega + mid * (omega - prevOmega);
+            double candAlpha = (candOmega - prevOmega) / dt;
+            double candTraction = limits.availableTraction(candOmega, candAlpha);
+            var candDemand =
+                computeTranslationDemand(
+                    limits,
+                    profile.speed(),
+                    tangent,
+                    projected.crossTrack(),
+                    absCrossTrack,
+                    excess,
+                    baseCrossTrackCap,
+                    tau,
+                    error,
+                    distance,
+                    beta,
+                    stopPositionLatched,
+                    candTraction);
+            var candLimited =
+                VectorLimiter.project(
+                    candDemand,
+                    oldVelocity,
+                    measuredPose.getRotation(),
+                    candOmega,
+                    candTraction,
+                    acceleration,
+                    limits,
+                    dt);
+            if (!candLimited.infeasible()) {
+              lo = mid;
+              bestOmega = candOmega;
+              bestAlpha = candAlpha;
+              bestLimited = candLimited;
+            } else {
+              hi = mid;
+            }
+          }
+          omega = bestOmega;
+          referenceAlpha = bestAlpha;
+          limited = bestLimited;
         }
       }
       var velocity = limited.velocity();
@@ -932,7 +956,7 @@ public final class Trailblazer {
 
   public static final double PATH_LOG_SPACING = 0.10;
   private static final double CORRIDOR = 0.30;
-  private static final double RELATCH_DWELL = 0.15;
+  private static final double DIVERGENCE_DWELL = 0.15;
   private static final double MAX_TICK_INTERVAL = 0.10;
 
   private static final TickResult IDLE_RESULT =
@@ -1032,6 +1056,54 @@ public final class Trailblazer {
       return 0.0;
     }
     return 0.0;
+  }
+
+  private static Translation2d computeTranslationDemand(
+      DrivetrainLimits limits,
+      double profileSpeed,
+      PathBuilder.Sample tangent,
+      double crossTrack,
+      double absCrossTrack,
+      double excess,
+      double baseCrossTrackCap,
+      double tau,
+      Translation2d error,
+      double distance,
+      double beta,
+      boolean stopPositionLatched,
+      double traction) {
+    double crossTrackCap =
+        excess > 0.0
+            ? Math.max(
+                baseCrossTrackCap,
+                Math.min(
+                    limits.maxSpeed(),
+                    Math.min(
+                        Math.sqrt(2.0 * Math.min(limits.braking(), traction) * absCrossTrack),
+                        baseCrossTrackCap + excess / tau)))
+            : baseCrossTrackCap;
+    double alongScale = excess > 0.0 ? Math.max(0.25, 1.0 - excess) : 1.0;
+    var demand =
+        tangent
+            .tangent()
+            .times(profileSpeed * alongScale)
+            .plus(
+                tangent
+                    .normal()
+                    .times(MathUtil.clamp(-crossTrack / tau, -crossTrackCap, crossTrackCap)));
+    double terminalSpeed =
+        stopPositionLatched
+            ? 0.0
+            : Math.min(
+                limits.maxSpeed(),
+                Math.min(
+                    Math.sqrt(2 * Math.min(limits.braking(), traction) * distance),
+                    distance / tau));
+    var terminalDemand =
+        distance > 1e-9 && terminalSpeed > 0.0
+            ? error.times(terminalSpeed / distance)
+            : Translation2d.kZero;
+    return demand.times(1 - beta).plus(terminalDemand.times(beta));
   }
 
   private static boolean finite(ChassisSpeeds speed) {
@@ -1269,11 +1341,6 @@ public final class Trailblazer {
     var preview = new FollowerState(nominalDt);
     preview.activate(prepared);
     return preview.update(0.0, prepared.geometry.start(), new ChassisSpeeds());
-  }
-
-  /** Requests rebuilding the remaining path from the measured pose on the next update. */
-  public void relatch() {
-    live.relatch();
   }
 
   /** Samples the built path for preview at the given spacing in meters. */

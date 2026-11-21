@@ -326,12 +326,13 @@ final class TrailblazerTrenchAutoTest {
     robot.localization.resetPose(measured);
     auto.periodic();
     assertThat(work).isEmpty();
+    var shiftedGeneration = planner.pathGeneration();
+    assertThat(shiftedGeneration).isGreaterThan(stagedGeneration);
     assertThat(planner.sampledPathPoses(Trailblazer.PATH_LOG_SPACING)[0]).isEqualTo(shifted);
 
-    planner.relatch();
     var first = planner.update(0.02, measured, new ChassisSpeeds());
     assertThat(first.status()).isEqualTo(TickResult.RuntimeStatus.RUNNING);
-    assertThat(first.geometryGeneration()).isGreaterThan(stagedGeneration);
+    assertThat(first.geometryGeneration()).isEqualTo(shiftedGeneration);
     assertThat(planner.sampledPathPoses(Trailblazer.PATH_LOG_SPACING)[0]).isEqualTo(shifted);
   }
 

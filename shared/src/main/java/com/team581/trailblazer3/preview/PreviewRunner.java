@@ -605,9 +605,6 @@ public final class PreviewRunner {
                     before.getX() + deltaPos.getX(),
                     before.getY() + deltaPos.getY(),
                     before.getRotation().plus(Rotation2d.fromDegrees(ev.dThetaDegrees())));
-            if (ev.triggerRelatch()) {
-              follower.relatch();
-            }
             appliedDisturbances.add(
                 new AppliedDisturbanceEntry(
                     ev.id(),
