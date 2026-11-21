@@ -17,7 +17,7 @@ public final class CompAutoField {
   public static final Pose2d RIGHT_TRENCH_START =
       new Pose2d(FieldUtil.BLUE_OUTPOST_TRENCH_CENTER.getTranslation(), Rotation2d.k180deg);
 
-  public static final Pose2d RIGHT_TRENCH_EXIT = offset(RIGHT_TRENCH_START, -2.0, 0.0);
+  public static final Pose2d RIGHT_TRENCH_EXIT = offset(RIGHT_TRENCH_START, -3.0, 0.0);
 
   public static final Pose2d LEFT_TRENCH_START =
       new Pose2d(
