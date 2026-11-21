@@ -1,6 +1,9 @@
 import {
 	FIELD_2026_CONFIG,
+	type AppliedDisturbanceEntry,
 	type CameraViewport,
+	type DisturbanceEvent,
+	type DisturbanceKind,
 	type PreviewResult,
 	type RobotFootprint,
 	type TrajectorySample,
@@ -158,10 +161,22 @@ export function hitTestWaypoint(
 	return bestCenterHit ?? bestCircleHit;
 }
 
+export interface PickPreviewState {
+	kind: DisturbanceKind;
+	x: number;
+	y: number;
+	headingRadians: number;
+	targetX?: number;
+	targetY?: number;
+}
+
 export interface RenderFieldOptions {
 	result: PreviewResult | null;
 	baselineResult?: PreviewResult | null;
 	diffMode?: boolean;
+	disturbances?: readonly DisturbanceEvent[];
+	selectedDisturbanceId?: string | null;
+	pickPreview?: PickPreviewState | null;
 	viewport: CameraViewport;
 	revealProgress: number;
 	activeTimeSeconds: number | null;
@@ -169,6 +184,86 @@ export interface RenderFieldOptions {
 	animationClockMs?: number;
 	fieldImage: HTMLImageElement | null;
 	stale: boolean;
+}
+
+/** Finds the closest sample on a trajectory to `(fieldX, fieldY)`. */
+export function findNearestTrajectorySample(
+	result: PreviewResult | null,
+	fieldX: number,
+	fieldY: number,
+): { sample: TrajectorySample; distMeters: number } | null {
+	if (!result || result.trajectory.length === 0) return null;
+	let best: TrajectorySample | null = null;
+	let bestDist = Number.POSITIVE_INFINITY;
+	for (const s of result.trajectory) {
+		const d = Math.hypot(s.x - fieldX, s.y - fieldY);
+		if (d < bestDist) {
+			bestDist = d;
+			best = s;
+		}
+	}
+	return best ? { sample: best, distMeters: bestDist } : null;
+}
+
+/** Computes the field-space anchor & handle endpoint for an applied or authored disturbance. */
+export function getDisturbanceEndpoints(applied: AppliedDisturbanceEntry): {
+	anchorX: number;
+	anchorY: number;
+	handleX: number;
+	handleY: number;
+} {
+	const anchorX = applied.beforePose.x;
+	const anchorY = applied.beforePose.y;
+	if (applied.kind === 'PUSH') {
+		const dispNorm = Math.hypot(applied.fieldDxMeters, applied.fieldDyMeters);
+		if (dispNorm > 0.03) {
+			return {
+				anchorX,
+				anchorY,
+				handleX: anchorX + applied.fieldDxMeters,
+				handleY: anchorY + applied.fieldDyMeters,
+			};
+		}
+		// Friction-only push: show velocity impulse scaled by 0.25s so handle remains visible/draggable
+		return {
+			anchorX,
+			anchorY,
+			handleX: anchorX + applied.fieldDvxMetersPerSec * 0.25,
+			handleY: anchorY + applied.fieldDvyMetersPerSec * 0.25,
+		};
+	}
+	return {
+		anchorX,
+		anchorY,
+		handleX: applied.afterPose.x,
+		handleY: applied.afterPose.y,
+	};
+}
+
+/** Hit-tests canvas pointer coordinates against disturbance handles and anchors. */
+export function hitTestDisturbanceGizmo(
+	result: PreviewResult | null,
+	transform: ScreenTransform,
+	screenX: number,
+	screenY: number,
+): { eventId: string; part: 'handle' | 'anchor' } | null {
+	const appliedList = result?.appliedDisturbances ?? [];
+	if (appliedList.length === 0) return null;
+	for (let i = appliedList.length - 1; i >= 0; i--) {
+		const applied = appliedList[i];
+		const pts = getDisturbanceEndpoints(applied);
+		const hx = transform.toScreenX(pts.handleX);
+		const hy = transform.toScreenY(pts.handleY);
+		if (Math.hypot(screenX - hx, screenY - hy) <= 12) {
+			return { eventId: applied.id, part: 'handle' };
+		}
+		const ax = transform.toScreenX(pts.anchorX);
+		const ay = transform.toScreenY(pts.anchorY);
+		if (Math.hypot(screenX - ax, screenY - ay) <= 12) {
+			return { eventId: applied.id, part: 'anchor' };
+		}
+	}
+	return null;
 }
 
 /**
@@ -291,8 +386,8 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 	}
 	ctx.restore();
 
-	// 3. Git Branch Diff Baseline Overlay (when diffMode is active)
-	if (options.diffMode && options.baselineResult) {
+	// 3. Git Branch Diff / Undisturbed Baseline Overlay
+	if (options.baselineResult && (options.diffMode || (result.appliedDisturbances?.length ?? 0) > 0)) {
 		drawBaselineDiffOverlay(ctx, transform, options.baselineResult);
 	}
 
@@ -374,10 +469,27 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 		ctx.restore();
 	}
 
+	// 7b. Replanned (RELATCH) PathBuilder Geometries
+	if (result.replannedPaths && result.replannedPaths.length > 0) {
+		drawReplannedPaths(ctx, transform, result.replannedPaths, maxRevealTime);
+	}
+
 	// 8. Waypoint Glyphs (animated active highlight)
 	for (const wp of result.waypoints) {
 		const isHighlighted = options.activeWaypointIndex === wp.index;
 		drawWaypointGlyph(ctx, transform, wp, reveal, isHighlighted, clockMs);
+	}
+
+	// 8b. Disturbance Overlays (Push Vectors, Vision Jumps, Start Offsets) & Gizmos
+	if (result.appliedDisturbances && result.appliedDisturbances.length > 0) {
+		drawDisturbanceOverlays(
+			ctx,
+			transform,
+			result.appliedDisturbances,
+			footprint,
+			options.selectedDisturbanceId ?? null,
+			maxRevealTime,
+		);
 	}
 
 	// 9. Active Robot Bumper + 2026 Max Intake Extension Footprint at current timeline timestamp
@@ -394,8 +506,186 @@ export function renderFieldCanvas(canvas: HTMLCanvasElement, options: RenderFiel
 
 	drawRobotFootprintWithIntake(ctx, transform, poseToDraw.x, poseToDraw.y, poseToDraw.headingRadians, footprint, true);
 
+	if (activeSample && typeof activeSample.clearanceMeters === 'number' && activeSample.clearanceMeters < 0) {
+		const rx = transform.toScreenX(poseToDraw.x);
+		const ry = transform.toScreenY(poseToDraw.y);
+		const radiusPx = Math.max(
+			18,
+			Math.hypot(footprint.halfLengthMeters, footprint.halfWidthMeters) * transform.scalePxPerMeter + 4,
+		);
+		ctx.save();
+		ctx.strokeStyle = '#f43f5e';
+		ctx.lineWidth = 2.4;
+		ctx.setLineDash([4, 3]);
+		ctx.beginPath();
+		ctx.arc(rx, ry, radiusPx, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.restore();
+	}
+
+	// 10. Interactive Pick / Drag Preview
+	if (options.pickPreview) {
+		drawPickPreview(ctx, transform, options.pickPreview, footprint);
+	}
+
 	ctx.restore();
 	return transform;
+}
+
+function drawReplannedPaths(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	replannedPaths: NonNullable<PreviewResult['replannedPaths']>,
+	maxRevealTime: number,
+) {
+	ctx.save();
+	for (const rp of replannedPaths) {
+		if (rp.timestampSeconds > maxRevealTime + 1e-6 || rp.poses.length < 2) continue;
+		ctx.strokeStyle = 'rgba(45, 212, 191, 0.85)';
+		ctx.lineWidth = 2.0;
+		ctx.setLineDash([5, 4]);
+		ctx.beginPath();
+		rp.poses.forEach((p, idx) => {
+			const sx = transform.toScreenX(p.x);
+			const sy = transform.toScreenY(p.y);
+			if (idx === 0) ctx.moveTo(sx, sy);
+			else ctx.lineTo(sx, sy);
+		});
+		ctx.stroke();
+
+		const origin = rp.poses[0];
+		const ox = transform.toScreenX(origin.x);
+		const oy = transform.toScreenY(origin.y);
+		ctx.setLineDash([]);
+		ctx.fillStyle = '#2dd4bf';
+		ctx.strokeStyle = '#0b0e14';
+		ctx.lineWidth = 1.4;
+		ctx.beginPath();
+		ctx.moveTo(ox, oy - 5.5);
+		ctx.lineTo(ox + 5.5, oy);
+		ctx.lineTo(ox, oy + 5.5);
+		ctx.lineTo(ox - 5.5, oy);
+		ctx.closePath();
+		ctx.fill();
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+
+function drawDisturbanceOverlays(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	appliedList: readonly AppliedDisturbanceEntry[],
+	footprint: RobotFootprint,
+	selectedId: string | null,
+	maxRevealTime: number,
+) {
+	ctx.save();
+	for (const applied of appliedList) {
+		if (applied.startTimeSeconds > maxRevealTime + 1e-6) continue;
+		const isSelected = applied.id === selectedId;
+		const color = applied.kind === 'PUSH' ? '#f59e0b' : applied.kind === 'VISION_JUMP' ? '#38bdf8' : '#e879f9';
+		const pts = getDisturbanceEndpoints(applied);
+		const ax = transform.toScreenX(pts.anchorX);
+		const ay = transform.toScreenY(pts.anchorY);
+		const hx = transform.toScreenX(pts.handleX);
+		const hy = transform.toScreenY(pts.handleY);
+
+		// Ghost robot at beforePose (or afterPose for vision jump)
+		ctx.save();
+		ctx.strokeStyle = color;
+		ctx.fillStyle =
+			applied.kind === 'PUSH'
+				? 'rgba(245, 158, 11, 0.08)'
+				: applied.kind === 'VISION_JUMP'
+					? 'rgba(56, 189, 248, 0.09)'
+					: 'rgba(232, 121, 249, 0.08)';
+		ctx.lineWidth = isSelected ? 1.8 : 1.1;
+		ctx.setLineDash([4, 3]);
+		drawRobotFootprintWithIntake(
+			ctx,
+			transform,
+			applied.beforePose.x,
+			applied.beforePose.y,
+			applied.beforePose.headingRadians,
+			footprint,
+			false,
+		);
+		if (applied.kind === 'VISION_JUMP') {
+			drawRobotFootprintWithIntake(
+				ctx,
+				transform,
+				applied.afterPose.x,
+				applied.afterPose.y,
+				applied.afterPose.headingRadians,
+				footprint,
+				false,
+			);
+		}
+		ctx.restore();
+
+		// Vector arrow from anchor to handle
+		if (Math.hypot(hx - ax, hy - ay) >= 4) {
+			ctx.save();
+			if (applied.kind !== 'PUSH') {
+				ctx.setLineDash([4, 3]);
+			}
+			drawScreenArrow(ctx, ax, ay, hx, hy, color, isSelected ? 2.8 : 2.2, 8);
+			ctx.restore();
+		}
+
+		// Anchor & Handle gizmo nodes
+		ctx.save();
+		ctx.fillStyle = color;
+		ctx.strokeStyle = isSelected ? '#ffffff' : '#0b0e14';
+		ctx.lineWidth = isSelected ? 2.0 : 1.4;
+		ctx.beginPath();
+		ctx.arc(ax, ay, isSelected ? 5.2 : 4.0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+
+		ctx.fillStyle = '#0b0e14';
+		ctx.strokeStyle = isSelected ? '#ffffff' : color;
+		ctx.lineWidth = isSelected ? 2.4 : 1.8;
+		ctx.beginPath();
+		ctx.arc(hx, hy, isSelected ? 5.8 : 4.5, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+		ctx.restore();
+	}
+	ctx.restore();
+}
+
+function drawPickPreview(
+	ctx: CanvasRenderingContext2D,
+	transform: ScreenTransform,
+	pick: PickPreviewState,
+	footprint: RobotFootprint,
+) {
+	const color = pick.kind === 'PUSH' ? '#f59e0b' : pick.kind === 'VISION_JUMP' ? '#38bdf8' : '#e879f9';
+	ctx.save();
+	ctx.strokeStyle = color;
+	ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+	ctx.lineWidth = 1.6;
+	ctx.setLineDash([4, 3]);
+	drawRobotFootprintWithIntake(ctx, transform, pick.x, pick.y, pick.headingRadians, footprint, false);
+	if (pick.targetX !== undefined && pick.targetY !== undefined) {
+		if (pick.kind !== 'PUSH') {
+			drawRobotFootprintWithIntake(ctx, transform, pick.targetX, pick.targetY, pick.headingRadians, footprint, false);
+		}
+		ctx.setLineDash([]);
+		drawScreenArrow(
+			ctx,
+			transform.toScreenX(pick.x),
+			transform.toScreenY(pick.y),
+			transform.toScreenX(pick.targetX),
+			transform.toScreenY(pick.targetY),
+			color,
+			2.5,
+			8,
+		);
+	}
+	ctx.restore();
 }
 
 function drawBaselineDiffOverlay(ctx: CanvasRenderingContext2D, transform: ScreenTransform, baseline: PreviewResult) {

@@ -2,6 +2,8 @@ import {
 	FIELD_2026_CONFIG,
 	type CameraViewport,
 	type DiagnosticEntry,
+	type DisturbanceEvent,
+	type DisturbanceKind,
 	type PreviewResult,
 	type SegmentDescriptor,
 	type WaypointEntry,
@@ -18,13 +20,115 @@ import {
 	CAMERA_TRANSITION_MS,
 	EDIT_ZOOM_HOLD_MS,
 	PATH_REVEAL_MS,
+	type PickPreviewState,
 	type ScreenTransform,
+	findNearestTrajectorySample,
+	hitTestDisturbanceGizmo,
 	hitTestWaypoint,
 	renderFieldCanvas,
 	renderTimelineCanvas,
 } from './renderer.ts';
 
 export const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+
+let disturbanceIdSeq = 1;
+
+export function createDefaultDisturbance(kind: DisturbanceKind, timestampSeconds: number): DisturbanceEvent {
+	const t = Math.max(0, Math.round(timestampSeconds * 100) / 100);
+	const id = `dist-${disturbanceIdSeq++}-${Date.now().toString(36).slice(-4)}`;
+	if (kind === 'VISION_JUMP') {
+		return {
+			id,
+			enabled: true,
+			kind: 'VISION_JUMP',
+			frame: 'FIELD',
+			timestampSeconds: t,
+			durationSeconds: 0,
+			dxMeters: 0.45,
+			dyMeters: -0.35,
+			dThetaDegrees: 18,
+			dvxMetersPerSec: 0,
+			dvyMetersPerSec: 0,
+			dOmegaDegreesPerSec: 0,
+			triggerRelatch: false,
+		};
+	}
+	if (kind === 'START_OFFSET') {
+		return {
+			id,
+			enabled: true,
+			kind: 'START_OFFSET',
+			frame: 'FIELD',
+			timestampSeconds: 0,
+			durationSeconds: 0,
+			dxMeters: -0.25,
+			dyMeters: 0.25,
+			dThetaDegrees: 15,
+			dvxMetersPerSec: 0,
+			dvyMetersPerSec: 0,
+			dOmegaDegreesPerSec: 0,
+			triggerRelatch: false,
+		};
+	}
+	return {
+		id,
+		enabled: true,
+		kind: 'PUSH',
+		frame: 'ROBOT',
+		timestampSeconds: t,
+		durationSeconds: 0.28,
+		dxMeters: 0.0,
+		dyMeters: 0.65,
+		dThetaDegrees: 10,
+		dvxMetersPerSec: -0.8,
+		dvyMetersPerSec: 2.2,
+		dOmegaDegreesPerSec: 45,
+		triggerRelatch: false,
+	};
+}
+
+export function formatDisturbanceSummary(ev: DisturbanceEvent): string {
+	const disp = Math.hypot(ev.dxMeters, ev.dyMeters);
+	const vel = Math.hypot(ev.dvxMetersPerSec, ev.dvyMetersPerSec);
+	if (ev.kind === 'START_OFFSET') {
+		return `0.00s · ${disp.toFixed(2)}m, ${ev.dThetaDegrees.toFixed(0)}°`;
+	}
+	if (ev.kind === 'VISION_JUMP') {
+		return `${ev.timestampSeconds.toFixed(2)}s · ${disp.toFixed(2)}m, ${ev.dThetaDegrees.toFixed(0)}°${ev.triggerRelatch ? ' · relatch' : ''}`;
+	}
+	return `${ev.timestampSeconds.toFixed(2)}s (${ev.durationSeconds.toFixed(2)}s) · ${disp.toFixed(2)}m, ${vel.toFixed(1)}m/s`;
+}
+
+export function formatDisturbanceJunitSnippet(
+	autoClass: string,
+	segmentId: string,
+	events: readonly DisturbanceEvent[],
+): string {
+	const enabled = events.filter((e) => e.enabled);
+	const payload = JSON.stringify(enabled, null, 2);
+	const lines = [
+		`// Trailblazer 3 disturbance scenario for ${autoClass} (${segmentId})`,
+		`// JSON events:`,
+		...payload.split('\n').map((l) => `// ${l}`),
+		`// Apply in simulation loop:`,
+	];
+	for (const ev of enabled) {
+		if (ev.kind === 'START_OFFSET') {
+			lines.push(
+				`// START_OFFSET (${ev.frame}): dx=${ev.dxMeters}m, dy=${ev.dyMeters}m, dTheta=${ev.dThetaDegrees}deg, dv=(${ev.dvxMetersPerSec}, ${ev.dvyMetersPerSec}, ${ev.dOmegaDegreesPerSec}deg/s)`,
+			);
+		} else if (ev.kind === 'VISION_JUMP') {
+			lines.push(
+				`if (Math.abs(sim.time - ${ev.timestampSeconds.toFixed(2)}) < sim.dt * 0.5) { /* VISION_JUMP (${ev.frame}): dx=${ev.dxMeters}, dy=${ev.dyMeters}, dTheta=${ev.dThetaDegrees}deg${ev.triggerRelatch ? '; sim.planner.relatch()' : ''} */ }`,
+			);
+		} else {
+			lines.push(
+				`if (sim.time >= ${ev.timestampSeconds.toFixed(2)} && sim.time < ${(ev.timestampSeconds + ev.durationSeconds).toFixed(2)}) { /* PUSH (${ev.frame}): total dx=${ev.dxMeters}m, dy=${ev.dyMeters}m, dTheta=${ev.dThetaDegrees}deg, dv=(${ev.dvxMetersPerSec}, ${ev.dvyMetersPerSec}) m/s */ }`,
+			);
+		}
+	}
+	return lines.join('\n');
+}
 
 export function formatTimelineTime(seconds: number): string {
 	if (!Number.isFinite(seconds) || seconds < 0) return '0:00.00';
@@ -335,11 +439,22 @@ function bootWebview() {
 	}
 
 	const el = <T extends Element>(sel: string) => document.querySelector<T>(sel)!;
+	const canvasStage = el<HTMLElement>('.canvas-stage');
 	const diagStrip = el<HTMLDivElement>('#diagnostics-strip');
 	const timelineAlerts = el<HTMLDivElement>('#timeline-alerts');
+	const timelineEvents = el<HTMLDivElement>('#timeline-events');
 	const segGroup = el<HTMLDivElement>('#segment-pills');
 	const modeCursorBtn = el<HTMLButtonElement>('#mode-cursor');
 	const modeWholeBtn = el<HTMLButtonElement>('#mode-whole');
+	const disturbancesBtn = el<HTMLButtonElement>('#btn-disturbances');
+	const disturbanceCountBadge = el<HTMLSpanElement>('#disturbance-count-badge');
+	const disturbanceDrawer = el<HTMLElement>('#disturbance-drawer');
+	const pickEventBtn = el<HTMLButtonElement>('#btn-pick-event');
+	const exportDisturbancesBtn = el<HTMLButtonElement>('#btn-export-disturbances');
+	const clearDisturbancesBtn = el<HTMLButtonElement>('#btn-clear-disturbances');
+	const disturbanceSummary = el<HTMLDivElement>('#disturbance-summary');
+	const disturbanceList = el<HTMLDivElement>('#disturbance-list');
+	const disturbanceEditor = el<HTMLDivElement>('#disturbance-editor');
 	const diffBtn = el<HTMLButtonElement>('#btn-diff');
 	const fitBtn = el<HTMLButtonElement>('#btn-fit');
 	const playBtn = el<HTMLButtonElement>('#btn-play');
@@ -367,6 +482,472 @@ function bootWebview() {
 	let timelineDiagnostics: DiagnosticEntry[] = [];
 	let editingCursorTime = false;
 	let cursorTimeEditInitial = '';
+	let disturbances: DisturbanceEvent[] = [];
+	let baselineKind: 'git' | 'disturbance' | null = null;
+	let disturbanceDrawerOpen = false;
+	let selectedDisturbanceId: string | null = null;
+	let pickModeKind: DisturbanceKind | null = null;
+	let pickPreview: PickPreviewState | null = null;
+	let preserveTimelineOnNextResult = false;
+	let suppressNextCanvasClick = false;
+	let disturbanceSendTimer: ReturnType<typeof setTimeout> | null = null;
+	let canvasDragState:
+		| {
+				mode: 'pick';
+				kind: DisturbanceKind;
+				t: number;
+				anchorX: number;
+				anchorY: number;
+				headingRadians: number;
+		  }
+		| {
+				mode: 'gizmo';
+				eventId: string;
+				part: 'handle' | 'anchor';
+		  }
+		| null = null;
+
+	disturbanceDrawer.hidden = true;
+	disturbanceSummary.hidden = true;
+	disturbanceEditor.hidden = true;
+
+	function setDisturbanceDrawerOpen(open: boolean) {
+		disturbanceDrawerOpen = open;
+		disturbanceDrawer.hidden = !open;
+		disturbancesBtn.setAttribute('aria-pressed', String(open));
+		if (!open) {
+			pickModeKind = null;
+			pickPreview = null;
+			if (canvasStage.dataset) canvasStage.dataset.picking = 'false';
+			pickEventBtn.setAttribute('aria-pressed', 'false');
+			scheduleFrame();
+		}
+	}
+
+	function setPickModeKind(kind: DisturbanceKind | null) {
+		pickModeKind = kind;
+		if (canvasStage.dataset) canvasStage.dataset.picking = String(kind !== null);
+		pickEventBtn.setAttribute('aria-pressed', String(kind !== null));
+		if (!kind) {
+			pickPreview = null;
+		}
+		scheduleFrame();
+	}
+
+	function commitDisturbances(immediate = false) {
+		renderDisturbanceSuite();
+		renderTimelineEvents();
+		scheduleFrame();
+		if (disturbanceSendTimer !== null) {
+			clearTimeout(disturbanceSendTimer);
+			disturbanceSendTimer = null;
+		}
+		const send = () => {
+			preserveTimelineOnNextResult = true;
+			vscode?.postMessage({ type: 'setDisturbances', disturbances });
+		};
+		if (immediate) {
+			send();
+		} else {
+			disturbanceSendTimer = setTimeout(() => {
+				disturbanceSendTimer = null;
+				send();
+			}, 75);
+		}
+	}
+
+	function makeNumberField(
+		labelText: string,
+		value: number,
+		step: string,
+		onChange: (nextVal: number) => void,
+	): HTMLLabelElement {
+		const field = document.createElement('label');
+		field.className = 'editor-field';
+		const lbl = document.createElement('span');
+		lbl.className = 'editor-field-label';
+		lbl.textContent = labelText;
+		const inp = document.createElement('input');
+		inp.type = 'number';
+		inp.className = 'editor-input';
+		inp.step = step;
+		inp.value = String(Math.round(value * 1000) / 1000);
+		inp.addEventListener('change', () => {
+			const parsed = Number(inp.value);
+			if (Number.isFinite(parsed)) {
+				onChange(parsed);
+			}
+		});
+		field.append(lbl, inp);
+		return field;
+	}
+
+	function makeSummaryChip(
+		labelText: string,
+		valueText: string,
+		tone: 'neutral' | 'ok' | 'warn' | 'error' = 'neutral',
+	) {
+		const chip = document.createElement('div');
+		chip.className = 'summary-chip';
+		const lbl = document.createElement('span');
+		lbl.className = 'summary-chip-label';
+		lbl.textContent = labelText;
+		const val = document.createElement('span');
+		val.className = 'summary-chip-value';
+		if (tone !== 'neutral') val.dataset.tone = tone;
+		val.textContent = valueText;
+		chip.append(lbl, val);
+		return chip;
+	}
+
+	function renderDisturbanceSuite() {
+		const enabledCount = disturbances.filter((d) => d.enabled).length;
+		disturbanceCountBadge.textContent = String(enabledCount);
+		disturbanceCountBadge.hidden = enabledCount === 0;
+		clearDisturbancesBtn.disabled = disturbances.length === 0;
+		exportDisturbancesBtn.disabled = enabledCount === 0;
+
+		disturbanceSummary.replaceChildren();
+		if (enabledCount > 0 && currentResult) {
+			const hasTimeout = diagnostics.some((d) => d.code === 'SEGMENT_TIMEOUT');
+			const deltaSec =
+				baselineResult && !diffMode ? currentResult.totalDurationSeconds - baselineResult.totalDurationSeconds : null;
+			const deltaText = hasTimeout
+				? 'TIMEOUT'
+				: deltaSec !== null
+					? `${deltaSec >= 0 ? '+' : ''}${deltaSec.toFixed(2)}s`
+					: `${currentResult.totalDurationSeconds.toFixed(2)}s`;
+			const deltaTone = hasTimeout ? 'error' : deltaSec !== null && deltaSec > 0.25 ? 'warn' : 'ok';
+
+			const relatches = currentResult.relatchCount ?? 0;
+			const minClear = currentResult.minClearanceMeters;
+			const clearText = typeof minClear === 'number' ? `${minClear.toFixed(2)}m` : '-';
+			const clearTone =
+				typeof minClear === 'number'
+					? minClear < 0
+						? 'error'
+						: minClear < currentResult.keepouts.marginMeters
+							? 'warn'
+							: 'ok'
+					: 'neutral';
+			const maxCte = currentResult.maxCrossTrackErrorMeters;
+			const cteText = typeof maxCte === 'number' ? `${maxCte.toFixed(2)}m` : '-';
+
+			disturbanceSummary.append(
+				makeSummaryChip('Δ Time', deltaText, deltaTone),
+				makeSummaryChip('Relatches', String(relatches), relatches > 0 ? 'warn' : 'ok'),
+				makeSummaryChip('Min Clear', clearText, clearTone),
+				makeSummaryChip('Max CTE', cteText, typeof maxCte === 'number' && maxCte > 0.3 ? 'warn' : 'neutral'),
+			);
+			disturbanceSummary.hidden = false;
+		} else {
+			disturbanceSummary.hidden = true;
+		}
+
+		disturbanceList.replaceChildren();
+		if (selectedDisturbanceId && !disturbances.some((d) => d.id === selectedDisturbanceId)) {
+			selectedDisturbanceId = disturbances[0]?.id ?? null;
+		}
+		for (const ev of disturbances) {
+			const row = document.createElement('div');
+			row.className = 'disturbance-item';
+			row.setAttribute('role', 'listitem');
+			row.dataset.selected = String(ev.id === selectedDisturbanceId);
+			row.dataset.enabled = String(ev.enabled);
+			row.onclick = () => {
+				selectedDisturbanceId = ev.id;
+				renderDisturbanceSuite();
+				scheduleFrame();
+			};
+
+			const cb = document.createElement('input');
+			cb.type = 'checkbox';
+			cb.checked = ev.enabled;
+			cb.setAttribute('aria-label', `Enable ${ev.kind}`);
+			cb.onclick = (e: MouseEvent) => e.stopPropagation();
+			cb.addEventListener('change', () => {
+				ev.enabled = cb.checked;
+				commitDisturbances(true);
+			});
+
+			const tag = document.createElement('span');
+			tag.className = 'disturbance-kind-tag';
+			tag.dataset.kind = ev.kind;
+			tag.textContent = ev.kind === 'VISION_JUMP' ? 'JUMP' : ev.kind === 'START_OFFSET' ? 'START' : 'PUSH';
+
+			const meta = document.createElement('span');
+			meta.className = 'disturbance-item-meta';
+			meta.textContent = formatDisturbanceSummary(ev);
+			meta.title = meta.textContent;
+
+			const seekBtn = document.createElement('button');
+			seekBtn.type = 'button';
+			seekBtn.className = 'disturbance-item-btn';
+			seekBtn.textContent = '→';
+			seekBtn.title = 'Seek playhead to event';
+			seekBtn.onclick = (e: MouseEvent) => {
+				e.stopPropagation();
+				timeline.seekToTime(ev.timestampSeconds, performance.now());
+				updateTelemetryUI();
+				scheduleFrame();
+			};
+
+			const delBtn = document.createElement('button');
+			delBtn.type = 'button';
+			delBtn.className = 'disturbance-item-btn';
+			delBtn.textContent = '×';
+			delBtn.title = 'Remove disturbance';
+			delBtn.onclick = (e: MouseEvent) => {
+				e.stopPropagation();
+				disturbances = disturbances.filter((d) => d.id !== ev.id);
+				if (selectedDisturbanceId === ev.id) {
+					selectedDisturbanceId = disturbances[0]?.id ?? null;
+				}
+				commitDisturbances(true);
+			};
+
+			row.append(cb, tag, meta, seekBtn, delBtn);
+			disturbanceList.append(row);
+		}
+
+		disturbanceEditor.replaceChildren();
+		const selected = disturbances.find((d) => d.id === selectedDisturbanceId);
+		if (!selected) {
+			disturbanceEditor.hidden = true;
+			return;
+		}
+		disturbanceEditor.hidden = false;
+
+		// Row 1: Frame toggle + Time / Now
+		const topRow = document.createElement('div');
+		topRow.className = 'editor-row';
+
+		const frameCtrl = document.createElement('div');
+		frameCtrl.className = 'segmented-control';
+		frameCtrl.setAttribute('role', 'group');
+		frameCtrl.setAttribute('aria-label', 'Coordinate frame');
+		for (const frameVal of ['FIELD', 'ROBOT'] as const) {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.textContent = frameVal === 'FIELD' ? 'Field' : 'Robot';
+			b.setAttribute('aria-pressed', String(selected.frame === frameVal));
+			b.onclick = () => {
+				selected.frame = frameVal;
+				commitDisturbances(true);
+			};
+			frameCtrl.append(b);
+		}
+
+		const nowBtn = document.createElement('button');
+		nowBtn.type = 'button';
+		nowBtn.className = 'suite-btn';
+		nowBtn.textContent = 'Use Playhead';
+		nowBtn.disabled = selected.kind === 'START_OFFSET';
+		nowBtn.onclick = () => {
+			selected.timestampSeconds = Math.round(timeline.activeTimeSeconds() * 100) / 100;
+			commitDisturbances(true);
+		};
+
+		topRow.append(frameCtrl, nowBtn);
+		disturbanceEditor.append(topRow);
+
+		// Timing row
+		if (selected.kind !== 'START_OFFSET') {
+			const timeGrid = document.createElement('div');
+			timeGrid.className = 'editor-grid';
+			timeGrid.append(
+				makeNumberField('t (s)', selected.timestampSeconds, '0.02', (v) => {
+					selected.timestampSeconds = Math.max(0, v);
+					commitDisturbances(true);
+				}),
+			);
+			if (selected.kind === 'PUSH') {
+				timeGrid.append(
+					makeNumberField('Dur (s)', selected.durationSeconds, '0.02', (v) => {
+						selected.durationSeconds = Math.max(0.02, v);
+						commitDisturbances(true);
+					}),
+				);
+			}
+			disturbanceEditor.append(timeGrid);
+		}
+
+		// Pose displacement grid
+		const dispGrid = document.createElement('div');
+		dispGrid.className = 'editor-grid';
+		dispGrid.append(
+			makeNumberField('Δx (m)', selected.dxMeters, '0.05', (v) => {
+				selected.dxMeters = v;
+				commitDisturbances(true);
+			}),
+			makeNumberField('Δy (m)', selected.dyMeters, '0.05', (v) => {
+				selected.dyMeters = v;
+				commitDisturbances(true);
+			}),
+			makeNumberField('Δθ (°)', selected.dThetaDegrees, '2', (v) => {
+				selected.dThetaDegrees = v;
+				commitDisturbances(true);
+			}),
+		);
+		disturbanceEditor.append(dispGrid);
+
+		// Velocity / friction grid for PUSH and START_OFFSET
+		if (selected.kind === 'PUSH' || selected.kind === 'START_OFFSET') {
+			const velGrid = document.createElement('div');
+			velGrid.className = 'editor-grid';
+			velGrid.append(
+				makeNumberField('Δvx (m/s)', selected.dvxMetersPerSec, '0.2', (v) => {
+					selected.dvxMetersPerSec = v;
+					commitDisturbances(true);
+				}),
+				makeNumberField('Δvy (m/s)', selected.dvyMetersPerSec, '0.2', (v) => {
+					selected.dvyMetersPerSec = v;
+					commitDisturbances(true);
+				}),
+				makeNumberField('Δω (°/s)', selected.dOmegaDegreesPerSec, '10', (v) => {
+					selected.dOmegaDegreesPerSec = v;
+					commitDisturbances(true);
+				}),
+			);
+			disturbanceEditor.append(velGrid);
+		}
+
+		// Relatch toggle for VISION_JUMP
+		if (selected.kind === 'VISION_JUMP') {
+			const relatchLabel = document.createElement('label');
+			relatchLabel.className = 'editor-check';
+			const relatchCb = document.createElement('input');
+			relatchCb.type = 'checkbox';
+			relatchCb.checked = selected.triggerRelatch;
+			relatchCb.addEventListener('change', () => {
+				selected.triggerRelatch = relatchCb.checked;
+				commitDisturbances(true);
+			});
+			const relatchText = document.createElement('span');
+			relatchText.textContent = 'Trigger Trailblazer relatch() on snap';
+			relatchLabel.append(relatchCb, relatchText);
+			disturbanceEditor.append(relatchLabel);
+		}
+
+		// Quick presets
+		const presetRow = document.createElement('div');
+		presetRow.className = 'editor-preset-row';
+		const addPreset = (title: string, apply: () => void) => {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'suite-btn';
+			btn.textContent = title;
+			btn.onclick = () => {
+				apply();
+				commitDisturbances(true);
+			};
+			presetRow.append(btn);
+		};
+		if (selected.kind === 'PUSH') {
+			addPreset('Side Shove', () => {
+				selected.frame = 'ROBOT';
+				selected.durationSeconds = 0.25;
+				selected.dxMeters = 0.0;
+				selected.dyMeters = 0.35;
+				selected.dThetaDegrees = 0;
+				selected.dvxMetersPerSec = -0.5;
+				selected.dvyMetersPerSec = 1.5;
+				selected.dOmegaDegreesPerSec = 20;
+			});
+			addPreset('Friction Drag', () => {
+				selected.frame = 'ROBOT';
+				selected.durationSeconds = 0.45;
+				selected.dxMeters = -0.15;
+				selected.dyMeters = 0.0;
+				selected.dThetaDegrees = 0;
+				selected.dvxMetersPerSec = -2.2;
+				selected.dvyMetersPerSec = 0.0;
+				selected.dOmegaDegreesPerSec = 0;
+			});
+			addPreset('Hard Spin', () => {
+				selected.frame = 'ROBOT';
+				selected.durationSeconds = 0.22;
+				selected.dxMeters = 0.1;
+				selected.dyMeters = 0.2;
+				selected.dThetaDegrees = 35;
+				selected.dvxMetersPerSec = -0.4;
+				selected.dvyMetersPerSec = 0.9;
+				selected.dOmegaDegreesPerSec = 140;
+			});
+		} else if (selected.kind === 'VISION_JUMP') {
+			addPreset('+0.3m Lat', () => {
+				selected.frame = 'ROBOT';
+				selected.dxMeters = 0;
+				selected.dyMeters = 0.3;
+				selected.dThetaDegrees = 0;
+			});
+			addPreset('Tag Ambiguity', () => {
+				selected.frame = 'FIELD';
+				selected.dxMeters = -0.35;
+				selected.dyMeters = 0.25;
+				selected.dThetaDegrees = 18;
+				selected.triggerRelatch = true;
+			});
+		} else {
+			addPreset('Sloppy Place', () => {
+				selected.frame = 'FIELD';
+				selected.dxMeters = -0.12;
+				selected.dyMeters = 0.14;
+				selected.dThetaDegrees = 10;
+			});
+		}
+		disturbanceEditor.append(presetRow);
+	}
+
+	function renderTimelineEvents() {
+		timelineEvents.replaceChildren();
+		const totalDuration = currentResult?.totalDurationSeconds ?? 0;
+		if (totalDuration <= 0) return;
+		for (const ev of disturbances) {
+			if (!ev.enabled) continue;
+			const startPct = Math.max(0, Math.min(1, ev.timestampSeconds / totalDuration)) * 100;
+			if (ev.kind === 'PUSH') {
+				const endPct =
+					Math.max(0, Math.min(1, (ev.timestampSeconds + Math.max(0.02, ev.durationSeconds)) / totalDuration)) * 100;
+				const span = document.createElement('div');
+				span.className = 'timeline-event-span';
+				if (span.style) {
+					span.style.left = `${startPct.toFixed(3)}%`;
+					span.style.width = `${Math.max(1.2, endPct - startPct).toFixed(3)}%`;
+				}
+				span.title = `PUSH · ${formatDisturbanceSummary(ev)}`;
+				span.addEventListener?.('pointerdown', (pointerEv: PointerEvent) => {
+					pointerEv.stopPropagation();
+					selectedDisturbanceId = ev.id;
+					setDisturbanceDrawerOpen(true);
+					renderDisturbanceSuite();
+					timeline.seekToTime(ev.timestampSeconds, performance.now());
+					updateTelemetryUI();
+					scheduleFrame();
+				});
+				timelineEvents.append(span);
+			} else {
+				const pin = document.createElement('button');
+				pin.type = 'button';
+				pin.className = 'timeline-event-pin';
+				pin.dataset.kind = ev.kind;
+				if (pin.style) {
+					pin.style.left = `${startPct.toFixed(3)}%`;
+				}
+				pin.title = `${ev.kind} · ${formatDisturbanceSummary(ev)}`;
+				pin.addEventListener?.('pointerdown', (pointerEv: PointerEvent) => {
+					pointerEv.stopPropagation();
+					selectedDisturbanceId = ev.id;
+					setDisturbanceDrawerOpen(true);
+					renderDisturbanceSuite();
+					timeline.seekToTime(ev.timestampSeconds, performance.now());
+					updateTelemetryUI();
+					scheduleFrame();
+				});
+				timelineEvents.append(pin);
+			}
+		}
+	}
 
 	function setPlayButtonState(playing: boolean) {
 		playBtn.setAttribute('aria-pressed', String(playing));
@@ -429,7 +1010,7 @@ function bootWebview() {
 
 		staleBadge.hidden = !stale;
 
-		if (diffMode && currentResult && baselineResult) {
+		if ((diffMode || baselineKind === 'disturbance') && currentResult && baselineResult) {
 			const delta = currentResult.totalDurationSeconds - baselineResult.totalDurationSeconds;
 			const sign = delta > 1e-4 ? '+' : '';
 			diffDeltaBadge.textContent = `Δ ${sign}${delta.toFixed(2)} s`;
@@ -439,6 +1020,9 @@ function bootWebview() {
 		} else {
 			diffDeltaBadge.hidden = true;
 		}
+
+		renderDisturbanceSuite();
+		renderTimelineEvents();
 
 		segGroup.replaceChildren();
 		const activeSegId = currentResult?.scope === 'SEGMENT' ? currentResult.activeSegmentId : selectedSegmentId;
@@ -617,7 +1201,28 @@ function bootWebview() {
 			timelineTooltip.append(more);
 		}
 
-		const hasContent = Boolean(sample) || hoveredAlerts.length > 0;
+		const slopSec = (slopPx / widthPx) * total;
+		const hoveredEvents = disturbances.filter((ev) => {
+			if (!ev.enabled) return false;
+			if (ev.kind === 'PUSH') {
+				return hoverT >= ev.timestampSeconds - slopSec && hoverT <= ev.timestampSeconds + ev.durationSeconds + slopSec;
+			}
+			return Math.abs(hoverT - ev.timestampSeconds) <= slopSec;
+		});
+		for (const ev of hoveredEvents) {
+			const dotColor = ev.kind === 'PUSH' ? '#f59e0b' : ev.kind === 'VISION_JUMP' ? '#38bdf8' : '#e879f9';
+			timelineTooltip.append(
+				createTooltipItem(
+					dotColor,
+					ev.kind,
+					formatTimelineTime(ev.timestampSeconds),
+					formatDisturbanceSummary(ev),
+					Boolean(sample) || hoveredAlerts.length > 0,
+				),
+			);
+		}
+
+		const hasContent = Boolean(sample) || hoveredAlerts.length > 0 || hoveredEvents.length > 0;
 		timelineTooltip.hidden = !hasContent;
 		if (hasContent && timelineTooltip.style) {
 			const tipW = timelineTooltip.offsetWidth || 160;
@@ -713,6 +1318,9 @@ function bootWebview() {
 			result: currentResult,
 			baselineResult,
 			diffMode,
+			disturbances,
+			selectedDisturbanceId,
+			pickPreview,
 			viewport: vp,
 			revealProgress,
 			activeTimeSeconds: timeline.activeTimeSeconds(),
@@ -797,6 +1405,52 @@ function bootWebview() {
 		persistState();
 		vscode?.postMessage({ type: 'setDiffMode', diffMode });
 	};
+	disturbancesBtn.onclick = () => {
+		setDisturbanceDrawerOpen(!disturbanceDrawerOpen);
+	};
+	pickEventBtn.onclick = () => {
+		if (pickModeKind !== null) {
+			setPickModeKind(null);
+		} else {
+			const selected = disturbances.find((d) => d.id === selectedDisturbanceId);
+			setPickModeKind(selected ? selected.kind : 'PUSH');
+		}
+	};
+	clearDisturbancesBtn.onclick = () => {
+		disturbances = [];
+		selectedDisturbanceId = null;
+		setPickModeKind(null);
+		commitDisturbances(true);
+	};
+	exportDisturbancesBtn.onclick = () => {
+		const snippet = formatDisturbanceJunitSnippet(
+			currentResult?.autoClass ?? 'Auto',
+			currentResult?.activeSegmentId ?? 'WHOLE_AUTO',
+			disturbances,
+		);
+		vscode?.postMessage({ type: 'copyText', text: snippet });
+		const orig = exportDisturbancesBtn.textContent;
+		exportDisturbancesBtn.textContent = 'Copied';
+		setTimeout(() => {
+			exportDisturbancesBtn.textContent = orig ?? 'Export';
+		}, 1200);
+	};
+	for (const addBtn of document.querySelectorAll<HTMLButtonElement>('[data-add-kind]')) {
+		addBtn.onclick = () => {
+			const kind = (addBtn.dataset.addKind as DisturbanceKind) ?? 'PUSH';
+			const defaultTime =
+				kind === 'START_OFFSET'
+					? 0
+					: timeline.isPinned()
+						? timeline.activeTimeSeconds()
+						: (currentResult?.totalDurationSeconds ?? 1.0) * 0.4;
+			const created = createDefaultDisturbance(kind, defaultTime);
+			disturbances = [...disturbances, created];
+			selectedDisturbanceId = created.id;
+			setDisturbanceDrawerOpen(true);
+			commitDisturbances(true);
+		};
+	}
 	playBtn.onclick = () => {
 		timeline.togglePlay(performance.now());
 		updateTelemetryUI();
@@ -886,7 +1540,7 @@ function bootWebview() {
 		ev.stopPropagation();
 		setOptionsPopoverOpen(Boolean(optionsPopover.hidden));
 	};
-	document.addEventListener('click', (ev: MouseEvent) => {
+	document.addEventListener?.('click', (ev: MouseEvent) => {
 		if (optionsPopover.hidden) return;
 		const target = ev.target as Node | null;
 		if (target && !optionsPopover.contains(target) && !optionsBtn.contains(target)) {
@@ -894,9 +1548,185 @@ function bootWebview() {
 		}
 	});
 
+	// Pointer interactions on field canvas: Pick-on-path placement & gizmo dragging
+	const canvasCoords = (ev: MouseEvent | PointerEvent) => {
+		const rect = fieldCanvas.getBoundingClientRect();
+		const px = ev.clientX - rect.left;
+		const py = ev.clientY - rect.top;
+		return {
+			px,
+			py,
+			fieldX: lastTransform ? lastTransform.toFieldX(px) : 0,
+			fieldY: lastTransform ? lastTransform.toFieldY(py) : 0,
+		};
+	};
+
+	fieldCanvas.addEventListener('pointerdown', (ev: PointerEvent) => {
+		if (ev.button !== 0 || !currentResult || !lastTransform) return;
+		const { px, py, fieldX, fieldY } = canvasCoords(ev);
+		const refResult = baselineResult ?? currentResult;
+
+		const activePickKind = pickModeKind ?? (ev.altKey ? (ev.shiftKey ? 'VISION_JUMP' : 'PUSH') : null);
+		if (activePickKind) {
+			ev.preventDefault();
+			fieldCanvas.setPointerCapture?.(ev.pointerId);
+			if (activePickKind === 'START_OFFSET') {
+				canvasDragState = {
+					mode: 'pick',
+					kind: 'START_OFFSET',
+					t: 0,
+					anchorX: refResult.startPose.x,
+					anchorY: refResult.startPose.y,
+					headingRadians: refResult.startPose.headingRadians,
+				};
+				pickPreview = {
+					kind: 'START_OFFSET',
+					x: refResult.startPose.x,
+					y: refResult.startPose.y,
+					headingRadians: refResult.startPose.headingRadians,
+					targetX: fieldX,
+					targetY: fieldY,
+				};
+			} else {
+				const nearest = findNearestTrajectorySample(refResult, fieldX, fieldY);
+				if (!nearest) return;
+				canvasDragState = {
+					mode: 'pick',
+					kind: activePickKind,
+					t: nearest.sample.timestampSeconds,
+					anchorX: nearest.sample.x,
+					anchorY: nearest.sample.y,
+					headingRadians: nearest.sample.headingRadians,
+				};
+				pickPreview = {
+					kind: activePickKind,
+					x: nearest.sample.x,
+					y: nearest.sample.y,
+					headingRadians: nearest.sample.headingRadians,
+					targetX: nearest.sample.x,
+					targetY: nearest.sample.y,
+				};
+			}
+			scheduleFrame();
+			return;
+		}
+
+		const gizmoHit = hitTestDisturbanceGizmo(currentResult, lastTransform, px, py);
+		if (gizmoHit) {
+			ev.preventDefault();
+			fieldCanvas.setPointerCapture?.(ev.pointerId);
+			selectedDisturbanceId = gizmoHit.eventId;
+			canvasDragState = { mode: 'gizmo', eventId: gizmoHit.eventId, part: gizmoHit.part };
+			setDisturbanceDrawerOpen(true);
+			renderDisturbanceSuite();
+			scheduleFrame();
+		}
+	});
+
+	fieldCanvas.addEventListener('pointermove', (ev: PointerEvent) => {
+		if (!currentResult || !lastTransform) return;
+		const { fieldX, fieldY } = canvasCoords(ev);
+		const refResult = baselineResult ?? currentResult;
+
+		if (canvasDragState?.mode === 'pick') {
+			if (pickPreview) {
+				pickPreview.targetX = fieldX;
+				pickPreview.targetY = fieldY;
+				scheduleFrame();
+			}
+			return;
+		}
+
+		if (canvasDragState?.mode === 'gizmo') {
+			const drag = canvasDragState;
+			const targetEv = disturbances.find((d) => d.id === drag.eventId);
+			const applied = currentResult.appliedDisturbances?.find((a) => a.id === drag.eventId);
+			if (!targetEv || !applied) return;
+
+			if (drag.part === 'anchor' && targetEv.kind !== 'START_OFFSET') {
+				const nearest = findNearestTrajectorySample(refResult, fieldX, fieldY);
+				if (nearest) {
+					targetEv.timestampSeconds = Math.round(nearest.sample.timestampSeconds * 100) / 100;
+					commitDisturbances(false);
+				}
+			} else if (drag.part === 'handle') {
+				const worldDx = Math.round((fieldX - applied.beforePose.x) * 100) / 100;
+				const worldDy = Math.round((fieldY - applied.beforePose.y) * 100) / 100;
+				if (targetEv.frame === 'ROBOT') {
+					const cos = Math.cos(-applied.beforePose.headingRadians);
+					const sin = Math.sin(-applied.beforePose.headingRadians);
+					targetEv.dxMeters = Math.round((worldDx * cos - worldDy * sin) * 100) / 100;
+					targetEv.dyMeters = Math.round((worldDx * sin + worldDy * cos) * 100) / 100;
+				} else {
+					targetEv.dxMeters = worldDx;
+					targetEv.dyMeters = worldDy;
+				}
+				commitDisturbances(false);
+			}
+			return;
+		}
+
+		if (pickModeKind !== null) {
+			if (pickModeKind === 'START_OFFSET') {
+				pickPreview = {
+					kind: 'START_OFFSET',
+					x: refResult.startPose.x,
+					y: refResult.startPose.y,
+					headingRadians: refResult.startPose.headingRadians,
+				};
+			} else {
+				const nearest = findNearestTrajectorySample(refResult, fieldX, fieldY);
+				pickPreview = nearest
+					? {
+							kind: pickModeKind,
+							x: nearest.sample.x,
+							y: nearest.sample.y,
+							headingRadians: nearest.sample.headingRadians,
+						}
+					: null;
+			}
+			scheduleFrame();
+		}
+	});
+
+	fieldCanvas.addEventListener('pointerup', (ev: PointerEvent) => {
+		if (!canvasDragState) return;
+		const state = canvasDragState;
+		canvasDragState = null;
+		suppressNextCanvasClick = true;
+		const { fieldX, fieldY } = canvasCoords(ev);
+
+		if (state.mode === 'pick') {
+			const dxWorld = fieldX - state.anchorX;
+			const dyWorld = fieldY - state.anchorY;
+			const dragDist = Math.hypot(dxWorld, dyWorld);
+			const created = createDefaultDisturbance(state.kind, state.t);
+			if (dragDist >= 0.05) {
+				created.frame = 'FIELD';
+				created.dxMeters = Math.round(dxWorld * 100) / 100;
+				created.dyMeters = Math.round(dyWorld * 100) / 100;
+				if (created.kind === 'PUSH') {
+					created.dvxMetersPerSec = Math.round(dxWorld * 2.5 * 100) / 100;
+					created.dvyMetersPerSec = Math.round(dyWorld * 2.5 * 100) / 100;
+				}
+			}
+			disturbances = [...disturbances, created];
+			selectedDisturbanceId = created.id;
+			setDisturbanceDrawerOpen(true);
+			setPickModeKind(null);
+			commitDisturbances(true);
+		} else {
+			commitDisturbances(true);
+		}
+	});
+
 	// Click on waypoint on field canvas -> bring cursor to it + zoom into that point
 	fieldCanvas.addEventListener('click', (ev: MouseEvent) => {
-		if (!currentResult || !lastTransform) return;
+		if (suppressNextCanvasClick) {
+			suppressNextCanvasClick = false;
+			return;
+		}
+		if (!currentResult || !lastTransform || pickModeKind !== null) return;
 		const rect = fieldCanvas.getBoundingClientRect();
 		const clickX = ev.clientX - rect.left;
 		const clickY = ev.clientY - rect.top;
@@ -1033,6 +1863,10 @@ function bootWebview() {
 	});
 	window.addEventListener('keydown', (ev: KeyboardEvent) => {
 		if (ev.key === 'Escape') {
+			if (pickModeKind !== null) {
+				setPickModeKind(null);
+				return;
+			}
 			if (!speedPopover.hidden) {
 				setSpeedPopoverOpen(false);
 				return;
@@ -1057,6 +1891,8 @@ function bootWebview() {
 				type?: string;
 				result?: unknown;
 				baselineResult?: unknown;
+				baselineKind?: 'git' | 'disturbance' | null;
+				disturbances?: DisturbanceEvent[];
 				diffMode?: boolean;
 				stale?: boolean;
 				pinnedWholeAuto?: boolean;
@@ -1072,10 +1908,23 @@ function bootWebview() {
 			const msg = event.data;
 			if (!msg) return;
 
+			if (msg.type === 'disturbancesState' && Array.isArray(msg.disturbances)) {
+				disturbances = msg.disturbances;
+				selectedDisturbanceId = disturbances[0]?.id ?? null;
+				updateControlsUI();
+				scheduleFrame();
+				return;
+			}
+
 			if (msg.type === 'sourceChanged' && typeof msg.sourceRevision === 'number') {
 				clearPointFocus();
 				sourceRevision = msg.sourceRevision;
 				currentResult = baselineResult = null;
+				baselineKind = null;
+				if (Array.isArray(msg.disturbances)) {
+					disturbances = msg.disturbances;
+					selectedDisturbanceId = disturbances[0]?.id ?? null;
+				}
 				activeWaypointIndex = null;
 				hasInitializedCamera = false;
 				selectedSegmentId = null;
@@ -1130,6 +1979,10 @@ function bootWebview() {
 				const parsed = parsePreviewResult(msg.result);
 				currentResult = parsed;
 				baselineResult = msg.baselineResult ? parsePreviewResult(msg.baselineResult) : null;
+				baselineKind = msg.baselineKind ?? (diffMode && baselineResult ? 'git' : null);
+				if (Array.isArray(msg.disturbances)) {
+					disturbances = msg.disturbances;
+				}
 				if (typeof msg.diffMode === 'boolean') {
 					diffMode = msg.diffMode;
 				}
@@ -1143,8 +1996,15 @@ function bootWebview() {
 				if (parsed.robotConfigId === '581' || parsed.robotConfigId === '9991' || parsed.robotConfigId === '9981') {
 					robotConfigId = parsed.robotConfigId;
 				}
+				const wasPinned = preserveTimelineOnNextResult && timeline.isPinned();
+				const prevPinnedT = timeline.pinnedTimeSeconds;
+				preserveTimelineOnNextResult = false;
 				timeline.setTotalDuration(parsed.totalDurationSeconds);
-				timeline.unpin();
+				if (wasPinned && prevPinnedT !== null) {
+					timeline.seekToTime(prevPinnedT, performance.now());
+				} else {
+					timeline.unpin();
+				}
 
 				const now = performance.now();
 				const scopeKey = `${parsed.autoClass}::${parsed.scope}::${parsed.activeSegmentId}::${parsed.alliance}`;

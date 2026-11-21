@@ -9,9 +9,17 @@ import {
 	resolveCursorTarget,
 	resolveGitBaselineSource,
 } from './project';
-import { parsePreviewResult, type DiagnosticEntry, type PreviewResult, type SegmentDescriptor } from './schema';
+import {
+	parsePreviewResult,
+	type DiagnosticEntry,
+	type DisturbanceEvent,
+	type PreviewResult,
+	type SegmentDescriptor,
+} from './schema';
 import { renderWebview } from './webview';
 import { WarmPreviewWorkerClient } from './worker';
+
+const DISTURBANCE_STORAGE_KEY = 'trailblazer.preview.disturbancesByFile';
 
 interface PanelSession {
 	panel: vscode.WebviewPanel;
@@ -28,11 +36,13 @@ interface PanelSession {
 	lastResolvedSegmentId: string | null;
 	alliance: 'Blue' | 'Red';
 	robotConfigId: '581' | '9991' | '9981';
+	disturbances: DisturbanceEvent[];
 	segments: SegmentDescriptor[];
 	latestResult: PreviewResult | null;
 	latestResultRevision: number;
 	latestBaselineResult: PreviewResult | null;
 	baselineCache: Map<string, PreviewResult>;
+	nominalCache: Map<string, PreviewResult>;
 	stale: boolean;
 }
 
@@ -54,6 +64,23 @@ function getOrCreateWorker(workspaceRoot: string): WarmPreviewWorkerClient {
 
 export function activate(context: vscode.ExtensionContext) {
 	const suppressedFiles = new Set<string>();
+	const storedDisturbances: Record<string, DisturbanceEvent[]> = {
+		...context.workspaceState?.get<Record<string, DisturbanceEvent[]>>(DISTURBANCE_STORAGE_KEY),
+	};
+
+	function getDisturbancesForFile(filePath: string): DisturbanceEvent[] {
+		const list = storedDisturbances[filePath];
+		return Array.isArray(list) ? list : [];
+	}
+
+	function saveDisturbancesForFile(filePath: string, disturbances: DisturbanceEvent[]): void {
+		if (disturbances.length === 0) {
+			delete storedDisturbances[filePath];
+		} else {
+			storedDisturbances[filePath] = disturbances;
+		}
+		void context.workspaceState?.update(DISTURBANCE_STORAGE_KEY, storedDisturbances);
+	}
 
 	function prewarmWorkspaceIfTrusted() {
 		if (!vscode.workspace.isTrusted) return;
@@ -80,19 +107,50 @@ export function activate(context: vscode.ExtensionContext) {
 		worker: WarmPreviewWorkerClient,
 		scope: 'SEGMENT' | 'WHOLE_AUTO',
 		segmentId: string | null,
-	): Promise<PreviewResult | null> {
-		if (!session.diffMode) return null;
-		const baseSource = resolveGitBaselineSource(session.workspaceRoot, session.filePath, session.sourceText);
-		if (!baseSource) return null;
+		sourceRevision: number,
+	): Promise<{ result: PreviewResult | null; kind: 'git' | 'disturbance' | null }> {
+		if (session.diffMode) {
+			const baseSource = resolveGitBaselineSource(session.workspaceRoot, session.filePath, session.sourceText);
+			if (!baseSource) return { result: null, kind: null };
 
-		const cacheKey = `${session.filePath}::${scope}::${segmentId ?? 'ALL'}::${session.alliance}::${session.robotConfigId}::${baseSource.length}`;
-		const cached = session.baselineCache.get(cacheKey);
-		if (cached) return cached;
+			const cacheKey = `${session.filePath}::${scope}::${segmentId ?? 'ALL'}::${session.alliance}::${session.robotConfigId}::${baseSource.length}`;
+			const cached = session.baselineCache.get(cacheKey);
+			if (cached) return { result: cached, kind: 'git' };
+
+			try {
+				const baseResp = await worker.requestPreview({
+					sourceFile: session.filePath,
+					sourceContent: baseSource,
+					scope,
+					segmentId,
+					cursorLine: session.cursorLine,
+					previousSegmentId: segmentId,
+					alliance: session.alliance,
+					robotConfigId: session.robotConfigId,
+					seed: 581,
+				});
+				if (baseResp.ok && baseResp.result) {
+					const parsed = parsePreviewResult(baseResp.result);
+					session.baselineCache.set(cacheKey, parsed);
+					return { result: parsed, kind: 'git' };
+				}
+			} catch {
+				// Ignore if baseline fails or is superseded
+			}
+			return { result: session.latestBaselineResult, kind: session.latestBaselineResult ? 'git' : null };
+		}
+
+		const hasEnabledDisturbances = session.disturbances.some((d) => d.enabled);
+		if (!hasEnabledDisturbances) return { result: null, kind: null };
+
+		const nominalKey = `${session.filePath}::${sourceRevision}::${scope}::${segmentId ?? 'ALL'}::${session.alliance}::${session.robotConfigId}`;
+		const cachedNominal = session.nominalCache.get(nominalKey);
+		if (cachedNominal) return { result: cachedNominal, kind: 'disturbance' };
 
 		try {
-			const baseResp = await worker.requestPreview({
+			const nomResp = await worker.requestPreview({
 				sourceFile: session.filePath,
-				sourceContent: baseSource,
+				sourceContent: session.sourceText,
 				scope,
 				segmentId,
 				cursorLine: session.cursorLine,
@@ -100,16 +158,17 @@ export function activate(context: vscode.ExtensionContext) {
 				alliance: session.alliance,
 				robotConfigId: session.robotConfigId,
 				seed: 581,
+				disturbances: [],
 			});
-			if (baseResp.ok && baseResp.result) {
-				const parsed = parsePreviewResult(baseResp.result);
-				session.baselineCache.set(cacheKey, parsed);
-				return parsed;
+			if (nomResp.ok && nomResp.result) {
+				const parsed = parsePreviewResult(nomResp.result);
+				session.nominalCache.set(nominalKey, parsed);
+				return { result: parsed, kind: 'disturbance' };
 			}
 		} catch {
-			// Ignore if baseline fails or is superseded
+			// Ignore if nominal baseline fails or is superseded
 		}
-		return session.latestBaselineResult;
+		return { result: null, kind: null };
 	}
 
 	async function runPreview(session: PanelSession, force = false) {
@@ -152,6 +211,7 @@ export function activate(context: vscode.ExtensionContext) {
 				alliance: session.alliance,
 				robotConfigId: session.robotConfigId,
 				seed: 581,
+				disturbances: session.disturbances,
 			});
 
 			if (!isCurrent()) return;
@@ -165,19 +225,22 @@ export function activate(context: vscode.ExtensionContext) {
 				session.lastResolvedScope = validated.scope;
 				session.lastResolvedSegmentId = validated.scope === 'SEGMENT' ? validated.activeSegmentId : null;
 
-				const baselineResult = await computeBaselineIfNeeded(
+				const baseline = await computeBaselineIfNeeded(
 					session,
 					worker,
 					validated.scope,
 					validated.scope === 'SEGMENT' ? validated.activeSegmentId : null,
+					sourceRevision,
 				);
 				if (!isCurrent()) return;
-				session.latestBaselineResult = baselineResult;
+				session.latestBaselineResult = baseline.result;
 
 				void session.panel.webview.postMessage({
 					type: 'previewResult',
 					result: validated,
-					baselineResult,
+					baselineResult: baseline.result,
+					baselineKind: baseline.kind,
+					disturbances: session.disturbances,
 					diffMode: session.diffMode,
 					stale: false,
 					pinnedWholeAuto: session.pinnedWholeAuto,
@@ -281,9 +344,12 @@ export function activate(context: vscode.ExtensionContext) {
 				activeSession.latestBaselineResult = null;
 				activeSession.lastResolvedSegmentId = null;
 				activeSession.selectedSegmentId = null;
+				activeSession.nominalCache.clear();
+				activeSession.disturbances = getDisturbancesForFile(filePath);
 				void activeSession.panel.webview.postMessage({
 					type: 'sourceChanged',
 					sourceRevision: activeSession.sourceRevision,
+					disturbances: activeSession.disturbances,
 				});
 			}
 			activeSession.workspaceRoot = workspaceRoot;
@@ -337,11 +403,13 @@ export function activate(context: vscode.ExtensionContext) {
 			lastResolvedSegmentId: null,
 			alliance: defaultAlliance,
 			robotConfigId: defaultRobot,
+			disturbances: getDisturbancesForFile(filePath),
 			segments: analyzeJavaSourceSpans(docText),
 			latestResult: null,
 			latestResultRevision: -1,
 			latestBaselineResult: null,
 			baselineCache: new Map(),
+			nominalCache: new Map(),
 			stale: false,
 		};
 		activeSession = session;
@@ -354,14 +422,25 @@ export function activate(context: vscode.ExtensionContext) {
 				segmentId?: string | null;
 				alliance?: 'Blue' | 'Red';
 				robotConfigId?: '581' | '9991' | '9981';
+				disturbances?: DisturbanceEvent[];
+				text?: string;
 				line?: number;
 				sourceRevision?: number;
 			}) => {
 				if (activeSession !== session) return;
 				switch (msg.type) {
 					case 'ready':
+						void session.panel.webview.postMessage({
+							type: 'disturbancesState',
+							disturbances: session.disturbances,
+						});
+						session.baselineCache.clear();
+						session.nominalCache.clear();
+						void runPreview(session, true);
+						break;
 					case 'refresh':
 						session.baselineCache.clear();
+						session.nominalCache.clear();
 						void runPreview(session, true);
 						break;
 					case 'setMode':
@@ -383,6 +462,18 @@ export function activate(context: vscode.ExtensionContext) {
 						if (msg.robotConfigId === '581' || msg.robotConfigId === '9991' || msg.robotConfigId === '9981') {
 							session.robotConfigId = msg.robotConfigId;
 							void runPreview(session, true);
+						}
+						break;
+					case 'setDisturbances':
+						if (Array.isArray(msg.disturbances)) {
+							session.disturbances = msg.disturbances;
+							saveDisturbancesForFile(session.filePath, session.disturbances);
+							void runPreview(session, true);
+						}
+						break;
+					case 'copyText':
+						if (typeof msg.text === 'string' && vscode.env?.clipboard) {
+							void vscode.env.clipboard.writeText(msg.text);
 						}
 						break;
 					case 'revealLine':
@@ -482,6 +573,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const session = activeSession;
 			session.sourceText = event.document.getText();
 			session.segments = analyzeJavaSourceSpans(session.sourceText);
+			session.nominalCache.clear();
 			const change = event.contentChanges.length === 1 ? event.contentChanges[0] : null;
 			void session.panel.webview.postMessage({
 				type: 'sourceEdited',
@@ -502,6 +594,9 @@ export function activate(context: vscode.ExtensionContext) {
 				const relative = path.relative(activeSession.workspaceRoot, doc.uri.fsPath);
 				if (relative.startsWith('..') || !relative.split(path.sep).join('/').includes('/src/main/java/')) return;
 				activeSession.baselineCache.clear();
+				activeSession.nominalCache.clear();
+			} else {
+				activeSession.nominalCache.clear();
 			}
 			if (editTimer) {
 				clearTimeout(editTimer);

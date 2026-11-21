@@ -116,6 +116,47 @@ export interface KeepoutSet {
 	marginPolygons: KeepoutPolygon[];
 }
 
+export type DisturbanceKind = 'PUSH' | 'VISION_JUMP' | 'START_OFFSET';
+export type DisturbanceFrame = 'FIELD' | 'ROBOT';
+
+export interface DisturbanceEvent {
+	id: string;
+	enabled: boolean;
+	kind: DisturbanceKind;
+	frame: DisturbanceFrame;
+	timestampSeconds: number;
+	durationSeconds: number;
+	dxMeters: number;
+	dyMeters: number;
+	dThetaDegrees: number;
+	dvxMetersPerSec: number;
+	dvyMetersPerSec: number;
+	dOmegaDegreesPerSec: number;
+	triggerRelatch: boolean;
+}
+
+export interface AppliedDisturbanceEntry {
+	id: string;
+	kind: DisturbanceKind;
+	startTimeSeconds: number;
+	endTimeSeconds: number;
+	beforePose: PoseEntry;
+	afterPose: PoseEntry;
+	fieldDxMeters: number;
+	fieldDyMeters: number;
+	fieldDThetaDegrees: number;
+	fieldDvxMetersPerSec: number;
+	fieldDvyMetersPerSec: number;
+	fieldDOmegaDegreesPerSec: number;
+}
+
+export interface ReplannedPathEntry {
+	segmentId: string;
+	geometryGeneration: number;
+	timestampSeconds: number;
+	poses: PoseEntry[];
+}
+
 export interface TrajectorySample {
 	timestampSeconds: number;
 	segmentId: string;
@@ -137,6 +178,8 @@ export interface TrajectorySample {
 	limitingFactor: string;
 	status: string;
 	diagnostic: string;
+	geometryGeneration?: number;
+	clearanceMeters?: number;
 }
 
 export interface PassedMarkerEntry {
@@ -189,6 +232,11 @@ export interface PreviewResult {
 	dominantLimitingFactor: string;
 	minSlowdownRatio: number;
 	diagnostics: DiagnosticEntry[];
+	appliedDisturbances?: AppliedDisturbanceEntry[];
+	replannedPaths?: ReplannedPathEntry[];
+	relatchCount?: number;
+	minClearanceMeters?: number;
+	maxCrossTrackErrorMeters?: number;
 }
 
 export interface WorkerResponse {

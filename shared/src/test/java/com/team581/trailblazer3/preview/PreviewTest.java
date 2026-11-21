@@ -12,6 +12,7 @@ import com.team581.trailblazer3.model.AutoSegment;
 import com.team581.trailblazer3.preview.ClasspathManifestManager.ClasspathManifest;
 import com.team581.trailblazer3.preview.PreviewRunner.PreviewRequest;
 import com.team581.trailblazer3.preview.PreviewSchema.BuildIdentity;
+import com.team581.trailblazer3.preview.PreviewSchema.DisturbanceEvent;
 import com.team581.trailblazer3.preview.PreviewSchema.PreviewResult;
 import com.team581.trailblazer3.preview.PreviewSchema.SegmentDescriptor;
 import com.team581.trailblazer3.preview.PreviewSchema.WaypointEntry;
@@ -98,6 +99,148 @@ final class PreviewTest {
 
     Files.writeString(buildGradle, "// v2 modified\n", UTF_8);
     assertThat(ClasspathManifestManager.loadIfValid(tempDir)).isEmpty();
+  }
+
+  @Test
+  void disabledDisturbancesProduceZeroDeltaAndPushOrVisionJumpTriggerRecovery() {
+    var baselineReq =
+        new PreviewRequest(
+            SampleTwoCycleAuto.class.getName(),
+            "SEGMENT",
+            "cycle-1",
+            0,
+            null,
+            "Blue",
+            "581",
+            581L,
+            "",
+            0.0,
+            new BuildIdentity("src", "cp", 1L));
+    PreviewResult baseline = PreviewRunner.run(SampleTwoCycleAuto.class, baselineReq, () -> {});
+
+    var disabledPush =
+        new DisturbanceEvent(
+            "d-off", false, "PUSH", "FIELD", 0.5, 0.25, 0.5, 0.5, 10.0, 1.5, 1.5, 30.0, false);
+    var disabledReq =
+        new PreviewRequest(
+            SampleTwoCycleAuto.class.getName(),
+            "SEGMENT",
+            "cycle-1",
+            0,
+            null,
+            "Blue",
+            "581",
+            581L,
+            "",
+            0.0,
+            new BuildIdentity("src", "cp", 1L),
+            ImmutableList.of(disabledPush));
+    PreviewResult withDisabled = PreviewRunner.run(SampleTwoCycleAuto.class, disabledReq, () -> {});
+
+    assertEquals(baseline.totalDurationSeconds(), withDisabled.totalDurationSeconds(), 1e-9);
+    assertEquals(baseline.trajectory().size(), withDisabled.trajectory().size());
+    assertEquals(0, withDisabled.appliedDisturbances().size());
+    assertEquals(0, withDisabled.relatchCount());
+
+    var activePush =
+        new DisturbanceEvent(
+            "d-push", true, "PUSH", "ROBOT", 0.40, 0.30, 0.0, 0.65, 0.0, -0.8, 2.2, 25.0, false);
+    var pushReq =
+        new PreviewRequest(
+            SampleTwoCycleAuto.class.getName(),
+            "SEGMENT",
+            "cycle-1",
+            0,
+            null,
+            "Blue",
+            "581",
+            581L,
+            "",
+            0.0,
+            new BuildIdentity("src", "cp", 1L),
+            ImmutableList.of(activePush));
+    PreviewResult pushed = PreviewRunner.run(SampleTwoCycleAuto.class, pushReq, () -> {});
+
+    assertThat(pushed.appliedDisturbances()).hasSize(1);
+    assertEquals("PUSH", pushed.appliedDisturbances().get(0).kind());
+    assertThat(pushed.maxCrossTrackErrorMeters()).isGreaterThan(0.30);
+    assertThat(pushed.relatchCount()).isPositive();
+    assertThat(pushed.replannedPaths()).isNotEmpty();
+    assertThat(pushed.passedMarkers()).extracting(m -> m.marker()).contains("SCORE_READY");
+
+    var visionJump =
+        new DisturbanceEvent(
+            "d-jump",
+            true,
+            "VISION_JUMP",
+            "FIELD",
+            0.50,
+            0.0,
+            0.25,
+            0.35,
+            15.0,
+            0.0,
+            0.0,
+            0.0,
+            true);
+    var jumpReq =
+        new PreviewRequest(
+            SampleTwoCycleAuto.class.getName(),
+            "SEGMENT",
+            "cycle-1",
+            0,
+            null,
+            "Blue",
+            "581",
+            581L,
+            "",
+            0.0,
+            new BuildIdentity("src", "cp", 1L),
+            ImmutableList.of(visionJump));
+    PreviewResult jumped = PreviewRunner.run(SampleTwoCycleAuto.class, jumpReq, () -> {});
+
+    assertThat(jumped.appliedDisturbances()).hasSize(1);
+    assertEquals("VISION_JUMP", jumped.appliedDisturbances().get(0).kind());
+    assertThat(jumped.relatchCount()).isPositive();
+    assertThat(jumped.replannedPaths()).isNotEmpty();
+    assertThat(jumped.passedMarkers()).extracting(m -> m.marker()).contains("SCORE_READY");
+
+    var startOffset =
+        new DisturbanceEvent(
+            "d-start",
+            true,
+            "START_OFFSET",
+            "FIELD",
+            0.0,
+            0.0,
+            -0.15,
+            0.20,
+            12.0,
+            0.0,
+            0.0,
+            0.0,
+            false);
+    var startReq =
+        new PreviewRequest(
+            SampleTwoCycleAuto.class.getName(),
+            "SEGMENT",
+            "cycle-1",
+            0,
+            null,
+            "Blue",
+            "581",
+            581L,
+            "",
+            0.0,
+            new BuildIdentity("src", "cp", 1L),
+            ImmutableList.of(startOffset));
+    PreviewResult offsetResult = PreviewRunner.run(SampleTwoCycleAuto.class, startReq, () -> {});
+
+    assertThat(offsetResult.appliedDisturbances()).hasSize(1);
+    assertEquals(2.0, offsetResult.startPose().x(), 1e-6);
+    assertEquals(1.85, offsetResult.trajectory().get(0).x(), 1e-6);
+    assertEquals(2.20, offsetResult.trajectory().get(0).y(), 1e-6);
+    assertThat(offsetResult.replannedPaths()).isNotEmpty();
   }
 
   @Test
@@ -262,6 +405,64 @@ final class PreviewTest {
         Optional.of("cycle-2"), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 22, null));
 
     assertEquals(Optional.empty(), SourceSpanAnalyzer.resolveSegmentAtCursor(descriptors, 2, null));
+  }
+
+  @Test
+  void warmWorkerCachesOverlayCompileAndRunsJsonDisturbances() throws Exception {
+    Path workspace = Path.of("").toAbsolutePath().normalize();
+    if (!Files.exists(workspace.resolve("settings.gradle")) && workspace.getParent() != null) {
+      workspace = workspace.getParent();
+    }
+    WarmPreviewWorker worker = new WarmPreviewWorker(workspace);
+
+    String source =
+        """
+        package frc.robot.autos;
+        import com.team581.trailblazer3.model.AutoSegment;
+        import com.team581.trailblazer3.runtime.Trailblazer;
+        import edu.wpi.first.math.geometry.Pose2d;
+        import edu.wpi.first.math.geometry.Rotation2d;
+        public final class WarmCacheDisturbanceTestAuto {
+          public static final Pose2d START = new Pose2d(2.0, 2.0, Rotation2d.kZero);
+          public static final AutoSegment SEG_A =
+              Trailblazer.segment("seg-a").stopAt(4.5, 2.0, 0.0).build();
+        }
+        """;
+
+    var req1 = MAPPER.createObjectNode();
+    req1.put("autoClass", "frc.robot.autos.WarmCacheDisturbanceTestAuto");
+    req1.put("sourceContent", source);
+    req1.put("scope", "WHOLE_AUTO");
+    req1.put("alliance", "Blue");
+    req1.put("robotConfigId", "581");
+    WorkerResponse resp1 = worker.executeRequest("cache-1", req1, () -> {});
+    assertThat(resp1.ok()).isTrue();
+    assertThat(resp1.result()).isNotNull();
+    assertThat(resp1.result().phaseTimings().compileMs()).isPositive();
+
+    var req2 = req1.deepCopy();
+    var arr = req2.putArray("disturbances");
+    var pushNode = arr.addObject();
+    pushNode.put("id", "p1");
+    pushNode.put("enabled", true);
+    pushNode.put("kind", "PUSH");
+    pushNode.put("frame", "FIELD");
+    pushNode.put("timestampSeconds", 0.35);
+    pushNode.put("durationSeconds", 0.24);
+    pushNode.put("dxMeters", 0.0);
+    pushNode.put("dyMeters", 0.45);
+    pushNode.put("dThetaDegrees", 0.0);
+    pushNode.put("dvxMetersPerSec", -0.5);
+    pushNode.put("dvyMetersPerSec", 1.5);
+    pushNode.put("dOmegaDegreesPerSec", 0.0);
+    pushNode.put("triggerRelatch", false);
+
+    WorkerResponse resp2 = worker.executeRequest("cache-2", req2, () -> {});
+    assertThat(resp2.ok()).isTrue();
+    assertThat(resp2.result()).isNotNull();
+    assertEquals(0.0, resp2.result().phaseTimings().compileMs(), 1e-9);
+    assertThat(resp2.result().appliedDisturbances()).hasSize(1);
+    assertThat(resp2.result().maxCrossTrackErrorMeters()).isGreaterThan(0.30);
   }
 
   @Test

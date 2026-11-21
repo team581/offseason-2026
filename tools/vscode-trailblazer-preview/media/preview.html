@@ -58,6 +58,30 @@
 					<span id="diff-delta-badge" class="badge badge-diff hud-surface" hidden>Δ 0.00 s</span>
 					<div class="toolbar-actions hud-surface" role="toolbar" aria-label="Preview actions">
 						<button
+							id="btn-disturbances"
+							type="button"
+							class="icon-btn icon-btn-badged"
+							aria-pressed="false"
+							aria-controls="disturbance-drawer"
+							aria-label="Disturbance Suite"
+							title="Disturbance Suite (Push / Vision Jump)"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								width="15"
+								height="15"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+							</svg>
+							<span id="disturbance-count-badge" class="btn-count-badge" hidden>0</span>
+						</button>
+						<button
 							id="btn-diff"
 							type="button"
 							class="icon-btn"
@@ -169,6 +193,37 @@
 						</div>
 					</div>
 				</div>
+
+				<aside id="disturbance-drawer" class="disturbance-drawer hud-surface" aria-label="Disturbance Suite" hidden>
+					<div class="disturbance-header">
+						<span class="disturbance-title">Disturbances</span>
+						<div class="disturbance-header-actions">
+							<button
+								id="btn-pick-event"
+								type="button"
+								class="suite-btn"
+								aria-pressed="false"
+								title="Click or drag on path to place"
+							>
+								Pick
+							</button>
+							<button id="btn-export-disturbances" type="button" class="suite-btn" title="Copy JUnit test snippet">
+								Export
+							</button>
+							<button id="btn-clear-disturbances" type="button" class="suite-btn" title="Remove all disturbances">
+								Clear
+							</button>
+						</div>
+					</div>
+					<div class="disturbance-add-row" role="group" aria-label="Add disturbance">
+						<button type="button" class="suite-add-btn" data-add-kind="PUSH">+ Push</button>
+						<button type="button" class="suite-add-btn" data-add-kind="VISION_JUMP">+ Jump</button>
+						<button type="button" class="suite-add-btn" data-add-kind="START_OFFSET">+ Start</button>
+					</div>
+					<div id="disturbance-summary" class="disturbance-summary" hidden></div>
+					<div id="disturbance-list" class="disturbance-list" role="list"></div>
+					<div id="disturbance-editor" class="disturbance-editor" hidden></div>
+				</aside>
 
 				<div class="hud-anchor hud-bottom-left">
 					<div class="status-stack">
@@ -286,6 +341,7 @@
 			>
 				<div id="timeline-scrubber" class="timeline-scrubber">
 					<div id="timeline-alerts" class="timeline-alerts" aria-label="Diagnostics along timeline"></div>
+					<div id="timeline-events" class="timeline-events" aria-label="Disturbances along timeline"></div>
 					<div id="timeline-track" class="timeline-track">
 						<canvas id="timeline-canvas" width="900" height="8"></canvas>
 					</div>

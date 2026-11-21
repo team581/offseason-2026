@@ -16,6 +16,29 @@ import org.jspecify.annotations.Nullable;
  * preview runner ({@code ./gradlew previewAuto}).
  */
 public final class PreviewSchema {
+  /** Recorded field-space footprint of an applied disturbance event during preview simulation. */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record AppliedDisturbanceEntry(
+      String id,
+      String kind,
+      double startTimeSeconds,
+      double endTimeSeconds,
+      PoseEntry beforePose,
+      PoseEntry afterPose,
+      double fieldDxMeters,
+      double fieldDyMeters,
+      double fieldDThetaDegrees,
+      double fieldDvxMetersPerSec,
+      double fieldDvyMetersPerSec,
+      double fieldDOmegaDegreesPerSec) {
+    public AppliedDisturbanceEntry {
+      requireNonNull(id);
+      requireNonNull(kind);
+      requireNonNull(beforePose);
+      requireNonNull(afterPose);
+    }
+  }
+
   /** Build and source identity for reproducibility and cache tracking. */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record BuildIdentity(String sourceHash, String classpathHash, long compiledAtEpochMs) {
@@ -39,6 +62,29 @@ public final class PreviewSchema {
       requireNonNull(severity);
       requireNonNull(code);
       requireNonNull(message);
+    }
+  }
+
+  /** User-authored preview disturbance (push, vision jump, or start pose offset). */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record DisturbanceEvent(
+      String id,
+      boolean enabled,
+      String kind,
+      String frame,
+      double timestampSeconds,
+      double durationSeconds,
+      double dxMeters,
+      double dyMeters,
+      double dThetaDegrees,
+      double dvxMetersPerSec,
+      double dvyMetersPerSec,
+      double dOmegaDegreesPerSec,
+      boolean triggerRelatch) {
+    public DisturbanceEvent {
+      id = id == null ? "" : id;
+      kind = kind == null ? "PUSH" : kind;
+      frame = frame == null ? "FIELD" : frame;
     }
   }
 
@@ -157,7 +203,12 @@ public final class PreviewSchema {
       List<HeadingArrivalEntry> headingArrivals,
       String dominantLimitingFactor,
       double minSlowdownRatio,
-      List<DiagnosticEntry> diagnostics) {
+      List<DiagnosticEntry> diagnostics,
+      List<AppliedDisturbanceEntry> appliedDisturbances,
+      List<ReplannedPathEntry> replannedPaths,
+      int relatchCount,
+      double minClearanceMeters,
+      double maxCrossTrackErrorMeters) {
     public PreviewResult {
       checkArgument(
           schemaVersion == SCHEMA_VERSION,
@@ -182,6 +233,19 @@ public final class PreviewSchema {
       headingArrivals = List.copyOf(headingArrivals);
       requireNonNull(dominantLimitingFactor);
       diagnostics = List.copyOf(diagnostics);
+      appliedDisturbances =
+          appliedDisturbances == null ? List.of() : List.copyOf(appliedDisturbances);
+      replannedPaths = replannedPaths == null ? List.of() : List.copyOf(replannedPaths);
+    }
+  }
+
+  /** Rebuilt PathBuilder trajectory sampled when Trailblazer relatches mid-segment. */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record ReplannedPathEntry(
+      String segmentId, long geometryGeneration, double timestampSeconds, List<PoseEntry> poses) {
+    public ReplannedPathEntry {
+      requireNonNull(segmentId);
+      poses = poses == null ? List.of() : List.copyOf(poses);
     }
   }
 
@@ -261,7 +325,9 @@ public final class PreviewSchema {
       double progressMeters,
       String limitingFactor,
       String status,
-      String diagnostic) {
+      String diagnostic,
+      long geometryGeneration,
+      double clearanceMeters) {
     public TrajectorySample {
       requireNonNull(segmentId);
       requireNonNull(limitingFactor);

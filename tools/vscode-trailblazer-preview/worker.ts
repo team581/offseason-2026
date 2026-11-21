@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
-import type { WorkerResponse } from './schema';
+import type { DisturbanceEvent, WorkerResponse } from './schema';
 
 export interface ClasspathManifestData {
 	buildFilesHash: string;
@@ -24,6 +24,7 @@ export interface PreviewWorkerRequestParams {
 	alliance: 'Blue' | 'Red';
 	robotConfigId: '581' | '9991' | '9981';
 	seed?: number;
+	disturbances?: DisturbanceEvent[];
 }
 
 /** Resolves the Java 21 JDK binary (`java`) for launching the warm preview worker. */

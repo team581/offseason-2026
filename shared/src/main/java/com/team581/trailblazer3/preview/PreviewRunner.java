@@ -16,8 +16,10 @@ import com.team581.trailblazer3.model.HeadingPlan;
 import com.team581.trailblazer3.model.RobotDrivetrainSpec;
 import com.team581.trailblazer3.model.TickResult;
 import com.team581.trailblazer3.model.TickResult.LimitingFactor;
+import com.team581.trailblazer3.preview.PreviewSchema.AppliedDisturbanceEntry;
 import com.team581.trailblazer3.preview.PreviewSchema.BuildIdentity;
 import com.team581.trailblazer3.preview.PreviewSchema.DiagnosticEntry;
+import com.team581.trailblazer3.preview.PreviewSchema.DisturbanceEvent;
 import com.team581.trailblazer3.preview.PreviewSchema.HeadingArrivalEntry;
 import com.team581.trailblazer3.preview.PreviewSchema.KeepoutPolygon;
 import com.team581.trailblazer3.preview.PreviewSchema.KeepoutSet;
@@ -28,6 +30,7 @@ import com.team581.trailblazer3.preview.PreviewSchema.PhaseTimings;
 import com.team581.trailblazer3.preview.PreviewSchema.PointEntry;
 import com.team581.trailblazer3.preview.PreviewSchema.PoseEntry;
 import com.team581.trailblazer3.preview.PreviewSchema.PreviewResult;
+import com.team581.trailblazer3.preview.PreviewSchema.ReplannedPathEntry;
 import com.team581.trailblazer3.preview.PreviewSchema.RobotFootprint;
 import com.team581.trailblazer3.preview.PreviewSchema.SampledMathPose;
 import com.team581.trailblazer3.preview.PreviewSchema.SegmentDescriptor;
@@ -81,7 +84,35 @@ public final class PreviewRunner {
       long seed,
       String sourceText,
       double compileMs,
-      BuildIdentity buildIdentity) {
+      BuildIdentity buildIdentity,
+      List<DisturbanceEvent> disturbances) {
+    public PreviewRequest(
+        String autoClassName,
+        String scope,
+        @Nullable String segmentId,
+        int cursorLine,
+        @Nullable String previousSegmentId,
+        String alliance,
+        String robotConfigId,
+        long seed,
+        String sourceText,
+        double compileMs,
+        BuildIdentity buildIdentity) {
+      this(
+          autoClassName,
+          scope,
+          segmentId,
+          cursorLine,
+          previousSegmentId,
+          alliance,
+          robotConfigId,
+          seed,
+          sourceText,
+          compileMs,
+          buildIdentity,
+          List.of());
+    }
+
     public PreviewRequest {
       requireNonNull(autoClassName);
       requireNonNull(scope);
@@ -89,6 +120,7 @@ public final class PreviewRunner {
       requireNonNull(robotConfigId);
       requireNonNull(sourceText);
       requireNonNull(buildIdentity);
+      disturbances = disturbances == null ? List.of() : List.copyOf(disturbances);
     }
   }
 
@@ -339,6 +371,24 @@ public final class PreviewRunner {
       }
     }
 
+    List<DisturbanceEvent> activeDisturbances =
+        request.disturbances().stream().filter(DisturbanceEvent::enabled).toList();
+    List<AppliedDisturbanceEntry> appliedDisturbances = new ArrayList<>();
+    List<ReplannedPathEntry> replannedPaths = new ArrayList<>();
+    int relatchCount = 0;
+    double minClearanceMeters = Double.POSITIVE_INFINITY;
+    double maxCrossTrackErrorMeters = 0.0;
+
+    boolean[] eventStarted = new boolean[activeDisturbances.size()];
+    boolean[] eventFinished = new boolean[activeDisturbances.size()];
+    Pose2d[] eventBeforePose = new Pose2d[activeDisturbances.size()];
+    double[] pushFieldDx = new double[activeDisturbances.size()];
+    double[] pushFieldDy = new double[activeDisturbances.size()];
+    double[] pushFieldDThetaDeg = new double[activeDisturbances.size()];
+    double[] pushFieldDvx = new double[activeDisturbances.size()];
+    double[] pushFieldDvy = new double[activeDisturbances.size()];
+    double[] pushFieldDOmegaDeg = new double[activeDisturbances.size()];
+
     List<MathPieceEntry> mathPieces = new ArrayList<>();
     List<Double> mathAnchors = new ArrayList<>();
     List<SampledMathPose> sampledMathPoses = new ArrayList<>();
@@ -352,13 +402,59 @@ public final class PreviewRunner {
     double cumulativeLength = 0.0;
     double simTime = 0.0;
     Pose2d currentPose = entryPose;
+    Pose2d nominalSegStart = entryPose;
     ChassisSpeeds currentSpeeds = new ChassisSpeeds();
+    boolean hadStartOffset = false;
+
+    for (int d = 0; d < activeDisturbances.size(); d++) {
+      DisturbanceEvent ev = activeDisturbances.get(d);
+      if (!"START_OFFSET".equalsIgnoreCase(ev.kind())) {
+        continue;
+      }
+      eventStarted[d] = true;
+      eventFinished[d] = true;
+      hadStartOffset = true;
+      Pose2d before = currentPose;
+      Translation2d deltaPos =
+          resolveVector(ev.dxMeters(), ev.dyMeters(), ev.frame(), before.getRotation());
+      Translation2d deltaVel =
+          resolveVector(
+              ev.dvxMetersPerSec(), ev.dvyMetersPerSec(), ev.frame(), before.getRotation());
+      currentPose =
+          new Pose2d(
+              before.getX() + deltaPos.getX(),
+              before.getY() + deltaPos.getY(),
+              before.getRotation().plus(Rotation2d.fromDegrees(ev.dThetaDegrees())));
+      currentSpeeds =
+          new ChassisSpeeds(
+              currentSpeeds.vxMetersPerSecond + deltaVel.getX(),
+              currentSpeeds.vyMetersPerSecond + deltaVel.getY(),
+              currentSpeeds.omegaRadiansPerSecond + Math.toRadians(ev.dOmegaDegreesPerSec()));
+      appliedDisturbances.add(
+          new AppliedDisturbanceEntry(
+              ev.id(),
+              "START_OFFSET",
+              0.0,
+              0.0,
+              toPoseEntry(before),
+              toPoseEntry(currentPose),
+              PreviewSchema.round6(deltaPos.getX()),
+              PreviewSchema.round6(deltaPos.getY()),
+              PreviewSchema.round6(ev.dThetaDegrees()),
+              PreviewSchema.round6(deltaVel.getX()),
+              PreviewSchema.round6(deltaVel.getY()),
+              PreviewSchema.round6(ev.dOmegaDegreesPerSec())));
+    }
+
     double planMsAccum = 0.0;
     double simMsAccum = 0.0;
     int globalWaypointIndex = 0;
 
     for (int segIdx = firstSegIdx; segIdx <= lastSegIdx; segIdx++) {
       checkCancelled.run();
+      if (segIdx > firstSegIdx) {
+        nominalSegStart = currentPose;
+      }
       NamedSegment namedSeg = extracted.segments().get(segIdx);
       AutoSegment segment = namedSeg.segment().forAlliance(alliance, FIELD_2026);
       String segId = segment.id();
@@ -382,7 +478,7 @@ public final class PreviewRunner {
       try {
         builtPath =
             PathBuilder.build(
-                currentPose.getTranslation(),
+                nominalSegStart.getTranslation(),
                 goals,
                 profile.calibration().maxBrakingDeceleration(),
                 clearance);
@@ -439,7 +535,7 @@ public final class PreviewRunner {
         mathAnchors.add(PreviewSchema.round6(cumulativeLength + anchor));
       }
 
-      Pose2d[] sampled = Trailblazer.sampleSegmentPoses(currentPose, builtPath, goals, 0.05);
+      Pose2d[] sampled = Trailblazer.sampleSegmentPoses(nominalSegStart, builtPath, goals, 0.05);
       int sampleCount = sampled.length;
       for (int i = 0; i < sampleCount; i++) {
         if (segIdx > firstSegIdx && i == 0 && !sampledMathPoses.isEmpty()) {
@@ -487,11 +583,78 @@ public final class PreviewRunner {
       double segElapsed = 0.0;
       double responseAlpha =
           -Math.expm1(-DT_SECONDS / profile.calibration().driveResponseLagSeconds());
+      long lastRecordedGen = follower.pathGeneration();
 
       while (segElapsed <= MAX_SEGMENT_SIM_SECONDS) {
         checkCancelled.run();
         clock[0] = simTime;
+
+        for (int d = 0; d < activeDisturbances.size(); d++) {
+          DisturbanceEvent ev = activeDisturbances.get(d);
+          if (!"VISION_JUMP".equalsIgnoreCase(ev.kind()) || eventFinished[d]) {
+            continue;
+          }
+          if (simTime + 1e-9 >= ev.timestampSeconds()) {
+            eventStarted[d] = true;
+            eventFinished[d] = true;
+            Pose2d before = currentPose;
+            Translation2d deltaPos =
+                resolveVector(ev.dxMeters(), ev.dyMeters(), ev.frame(), before.getRotation());
+            currentPose =
+                new Pose2d(
+                    before.getX() + deltaPos.getX(),
+                    before.getY() + deltaPos.getY(),
+                    before.getRotation().plus(Rotation2d.fromDegrees(ev.dThetaDegrees())));
+            if (ev.triggerRelatch()) {
+              follower.relatch();
+            }
+            appliedDisturbances.add(
+                new AppliedDisturbanceEntry(
+                    ev.id(),
+                    "VISION_JUMP",
+                    PreviewSchema.round6(simTime),
+                    PreviewSchema.round6(simTime),
+                    toPoseEntry(before),
+                    toPoseEntry(currentPose),
+                    PreviewSchema.round6(deltaPos.getX()),
+                    PreviewSchema.round6(deltaPos.getY()),
+                    PreviewSchema.round6(ev.dThetaDegrees()),
+                    0.0,
+                    0.0,
+                    0.0));
+          }
+        }
+
         TickResult tick = follower.update(simTime, currentPose, currentSpeeds);
+        long gen = tick.geometryGeneration();
+        if (gen > lastRecordedGen) {
+          if (lastRecordedGen >= 1
+              || (lastRecordedGen <= 0 && segIdx == firstSegIdx && hadStartOffset)) {
+            if (lastRecordedGen >= 1) {
+              relatchCount++;
+            }
+            Pose2d[] replanSamples = follower.sampledPathPoses(0.10);
+            List<PoseEntry> replanPoseEntries = new ArrayList<>(replanSamples.length);
+            for (Pose2d rp : replanSamples) {
+              replanPoseEntries.add(toPoseEntry(rp));
+            }
+            replannedPaths.add(
+                new ReplannedPathEntry(
+                    segId, gen, PreviewSchema.round6(simTime), replanPoseEntries));
+          }
+          lastRecordedGen = gen;
+        }
+
+        double clearanceMeters = clearance.clearance(currentPose);
+        if (Double.isFinite(clearanceMeters)) {
+          minClearanceMeters = Math.min(minClearanceMeters, clearanceMeters);
+        }
+        double crossTrack =
+            builtPath.project(currentPose.getTranslation(), 0.0, builtPath.length()).distance();
+        if (Double.isFinite(crossTrack)) {
+          maxCrossTrackErrorMeters = Math.max(maxCrossTrackErrorMeters, crossTrack);
+        }
+
         var cmd = tick.commandedFieldSpeeds();
         double cmdSpeed = Math.hypot(cmd.vxMetersPerSecond, cmd.vyMetersPerSecond);
         double achSpeed =
@@ -529,7 +692,9 @@ public final class PreviewRunner {
                 PreviewSchema.round6(cumulativeLength + tick.progress()),
                 tick.limitingFactor().name(),
                 tick.status().name(),
-                tick.diagnostic()));
+                tick.diagnostic(),
+                gen,
+                PreviewSchema.round6(clearanceMeters)));
 
         for (int g = 0; g < goals.size(); g++) {
           Goal goal = goals.get(g);
@@ -601,8 +766,107 @@ public final class PreviewRunner {
                     .getRotation()
                     .plus(
                         Rotation2d.fromRadians(currentSpeeds.omegaRadiansPerSecond * DT_SECONDS)));
+
+        double tickStart = simTime;
+        double tickEnd = simTime + DT_SECONDS;
+        for (int d = 0; d < activeDisturbances.size(); d++) {
+          DisturbanceEvent ev = activeDisturbances.get(d);
+          if (!"PUSH".equalsIgnoreCase(ev.kind()) || eventFinished[d]) {
+            continue;
+          }
+          double pushStart = Math.max(0.0, ev.timestampSeconds());
+          double pushDuration = Math.max(DT_SECONDS, ev.durationSeconds());
+          double pushEnd = pushStart + pushDuration;
+          double overlap =
+              Math.max(0.0, Math.min(tickEnd, pushEnd) - Math.max(tickStart, pushStart));
+          if (overlap <= 1e-9) {
+            continue;
+          }
+          if (!eventStarted[d]) {
+            eventStarted[d] = true;
+            eventBeforePose[d] = currentPose;
+            Translation2d deltaPos =
+                resolveVector(ev.dxMeters(), ev.dyMeters(), ev.frame(), currentPose.getRotation());
+            Translation2d deltaVel =
+                resolveVector(
+                    ev.dvxMetersPerSec(),
+                    ev.dvyMetersPerSec(),
+                    ev.frame(),
+                    currentPose.getRotation());
+            pushFieldDx[d] = deltaPos.getX();
+            pushFieldDy[d] = deltaPos.getY();
+            pushFieldDThetaDeg[d] = ev.dThetaDegrees();
+            pushFieldDvx[d] = deltaVel.getX();
+            pushFieldDvy[d] = deltaVel.getY();
+            pushFieldDOmegaDeg[d] = ev.dOmegaDegreesPerSec();
+          }
+          double frac = overlap / pushDuration;
+          currentSpeeds =
+              new ChassisSpeeds(
+                  currentSpeeds.vxMetersPerSecond + frac * pushFieldDvx[d],
+                  currentSpeeds.vyMetersPerSecond + frac * pushFieldDvy[d],
+                  currentSpeeds.omegaRadiansPerSecond
+                      + frac * Math.toRadians(pushFieldDOmegaDeg[d]));
+          currentPose =
+              new Pose2d(
+                  currentPose.getX() + frac * pushFieldDx[d],
+                  currentPose.getY() + frac * pushFieldDy[d],
+                  currentPose
+                      .getRotation()
+                      .plus(Rotation2d.fromDegrees(frac * pushFieldDThetaDeg[d])));
+          if (tickEnd >= pushEnd - 1e-9) {
+            eventFinished[d] = true;
+            appliedDisturbances.add(
+                new AppliedDisturbanceEntry(
+                    ev.id(),
+                    "PUSH",
+                    PreviewSchema.round6(pushStart),
+                    PreviewSchema.round6(pushEnd),
+                    toPoseEntry(eventBeforePose[d]),
+                    toPoseEntry(currentPose),
+                    PreviewSchema.round6(pushFieldDx[d]),
+                    PreviewSchema.round6(pushFieldDy[d]),
+                    PreviewSchema.round6(pushFieldDThetaDeg[d]),
+                    PreviewSchema.round6(pushFieldDvx[d]),
+                    PreviewSchema.round6(pushFieldDvy[d]),
+                    PreviewSchema.round6(pushFieldDOmegaDeg[d])));
+          }
+        }
+
         simTime += DT_SECONDS;
         segElapsed += DT_SECONDS;
+      }
+
+      if (!activeDisturbances.isEmpty() && !follower.atGoal()) {
+        diagnostics.add(
+            new DiagnosticEntry(
+                "WARNING",
+                "SEGMENT_TIMEOUT",
+                "SEGMENT_TIMEOUT @ " + "%.2fs".formatted(simTime),
+                segId,
+                null,
+                PreviewSchema.round6(simTime),
+                segDeclLine));
+      }
+      for (int d = 0; d < activeDisturbances.size(); d++) {
+        if (eventStarted[d] && !eventFinished[d]) {
+          DisturbanceEvent ev = activeDisturbances.get(d);
+          eventFinished[d] = true;
+          appliedDisturbances.add(
+              new AppliedDisturbanceEntry(
+                  ev.id(),
+                  "PUSH",
+                  PreviewSchema.round6(Math.max(0.0, ev.timestampSeconds())),
+                  PreviewSchema.round6(simTime),
+                  toPoseEntry(eventBeforePose[d]),
+                  toPoseEntry(currentPose),
+                  PreviewSchema.round6(pushFieldDx[d]),
+                  PreviewSchema.round6(pushFieldDy[d]),
+                  PreviewSchema.round6(pushFieldDThetaDeg[d]),
+                  PreviewSchema.round6(pushFieldDvx[d]),
+                  PreviewSchema.round6(pushFieldDvy[d]),
+                  PreviewSchema.round6(pushFieldDOmegaDeg[d])));
+        }
       }
 
       for (Trailblazer.HeadingArrival arrival : follower.headingArrivals()) {
@@ -663,6 +927,8 @@ public final class PreviewRunner {
     }
 
     KeepoutSet keepoutSet = buildKeepoutSet(clearance);
+    double resolvedMinClearance =
+        Double.isFinite(minClearanceMeters) ? minClearanceMeters : clearance.clearance(entryPose);
     double totalMs = request.compileMs() + (System.nanoTime() - startNs) / 1_000_000.0;
 
     return new PreviewResult(
@@ -691,11 +957,7 @@ public final class PreviewRunner {
             PreviewSchema.round6(profile.intakeExtensionMeters()),
             PreviewSchema.round6(
                 profile.bumperHalfLengthMeters() + profile.intakeExtensionMeters())),
-        new PoseEntry(
-            PreviewSchema.round6(entryPose.getX()),
-            PreviewSchema.round6(entryPose.getY()),
-            PreviewSchema.round6(entryPose.getRotation().getRadians()),
-            PreviewSchema.round6(entryPose.getRotation().getDegrees())),
+        toPoseEntry(entryPose),
         waypoints,
         new MathPathEntry(
             PreviewSchema.round6(cumulativeLength), mathPieces, mathAnchors, sampledMathPoses),
@@ -705,7 +967,12 @@ public final class PreviewRunner {
         headingArrivals,
         dominantLimiter,
         PreviewSchema.round6(minSlowdownRatio),
-        diagnostics);
+        diagnostics,
+        appliedDisturbances,
+        replannedPaths,
+        relatchCount,
+        PreviewSchema.round6(resolvedMinClearance),
+        PreviewSchema.round6(maxCrossTrackErrorMeters));
   }
 
   private static Object allocateWithoutConstructor(Class<?> clazz) throws Exception {
@@ -1008,6 +1275,14 @@ public final class PreviewRunner {
     return goal.pose().getRotation();
   }
 
+  private static Translation2d resolveVector(double x, double y, String frame, Rotation2d heading) {
+    var vec = new Translation2d(x, y);
+    if ("ROBOT".equalsIgnoreCase(frame)) {
+      return vec.rotateBy(heading);
+    }
+    return vec;
+  }
+
   private static Pose2d terminalGoalPose(Goal terminal) {
     if (terminal.heading() != null) {
       if (terminal.heading().target() instanceof HeadingPlan.Target.Fixed fixed) {
@@ -1025,6 +1300,14 @@ public final class PreviewRunner {
       }
     }
     return terminal.pose();
+  }
+
+  private static PoseEntry toPoseEntry(Pose2d pose) {
+    return new PoseEntry(
+        PreviewSchema.round6(pose.getX()),
+        PreviewSchema.round6(pose.getY()),
+        PreviewSchema.round6(pose.getRotation().getRadians()),
+        PreviewSchema.round6(pose.getRotation().getDegrees()));
   }
 
   private PreviewRunner() {}

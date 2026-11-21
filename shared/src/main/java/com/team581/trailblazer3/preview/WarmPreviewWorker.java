@@ -16,6 +16,7 @@ import com.team581.trailblazer3.preview.ClasspathManifestManager.ClasspathManife
 import com.team581.trailblazer3.preview.PreviewRunner.PreviewRequest;
 import com.team581.trailblazer3.preview.PreviewSchema.BuildIdentity;
 import com.team581.trailblazer3.preview.PreviewSchema.DiagnosticEntry;
+import com.team581.trailblazer3.preview.PreviewSchema.DisturbanceEvent;
 import com.team581.trailblazer3.preview.PreviewSchema.PreviewResult;
 import com.team581.trailblazer3.preview.PreviewSchema.SegmentDescriptor;
 import dev.doglog.DogLog;
@@ -39,6 +40,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -76,11 +78,19 @@ public final class WarmPreviewWorker {
    * locks and stale static class state.
    */
   public static final class OverlayClassLoader extends URLClassLoader {
-    private final Path overlayDir;
+    private final @Nullable Path overlayDir;
+    private final Map<String, byte[]> inMemoryClasses;
+
+    public OverlayClassLoader(Map<String, byte[]> inMemoryClasses, ClassLoader parent) {
+      super(new URL[0], parent);
+      this.overlayDir = null;
+      this.inMemoryClasses = Map.copyOf(inMemoryClasses);
+    }
 
     public OverlayClassLoader(Path overlayDir, ClassLoader parent) throws IOException {
       super(new URL[] {overlayDir.toUri().toURL()}, parent);
       this.overlayDir = requireNonNull(overlayDir);
+      this.inMemoryClasses = Map.of();
     }
 
     @Override
@@ -92,13 +102,18 @@ public final class WarmPreviewWorker {
             && !name.startsWith("jdk.")
             && !name.startsWith("edu.wpi.")
             && !name.startsWith("com.team581.trailblazer3.")) {
-          Path classFile = overlayDir.resolve(name.replace('.', '/') + ".class");
-          if (Files.isRegularFile(classFile)) {
-            try {
-              byte[] bytes = Files.readAllBytes(classFile);
-              loaded = defineClass(name, bytes, 0, bytes.length);
-            } catch (IOException e) {
-              throw new ClassNotFoundException("Failed to read overlay class " + name, e);
+          byte[] memBytes = inMemoryClasses.get(name);
+          if (memBytes != null) {
+            loaded = defineClass(name, memBytes, 0, memBytes.length);
+          } else if (overlayDir != null) {
+            Path classFile = overlayDir.resolve(name.replace('.', '/') + ".class");
+            if (Files.isRegularFile(classFile)) {
+              try {
+                byte[] bytes = Files.readAllBytes(classFile);
+                loaded = defineClass(name, bytes, 0, bytes.length);
+              } catch (IOException e) {
+                throw new ClassNotFoundException("Failed to read overlay class " + name, e);
+              }
             }
           }
         }
@@ -459,6 +474,41 @@ public final class WarmPreviewWorker {
     }
   }
 
+  private static List<DisturbanceEvent> parseDisturbances(JsonNode params) {
+    if (params == null || !params.has("disturbances") || !params.get("disturbances").isArray()) {
+      return List.of();
+    }
+    List<DisturbanceEvent> list = new ArrayList<>();
+    for (JsonNode item : params.get("disturbances")) {
+      if (item == null || !item.isObject()) {
+        continue;
+      }
+      try {
+        list.add(MAPPER.treeToValue(item, DisturbanceEvent.class));
+      } catch (IOException ignored) {
+
+      }
+    }
+    return list;
+  }
+
+  private static Map<String, byte[]> readCompiledClasses(Path overlayDir) throws IOException {
+    Map<String, byte[]> classes = new LinkedHashMap<>();
+    if (!Files.isDirectory(overlayDir)) {
+      return classes;
+    }
+    try (Stream<Path> walk = Files.walk(overlayDir)) {
+      for (Path p : walk.filter(Files::isRegularFile).toList()) {
+        String rel = overlayDir.relativize(p).toString().replace(File.separatorChar, '/');
+        if (rel.endsWith(".class")) {
+          String className = rel.substring(0, rel.length() - ".class".length()).replace('/', '.');
+          classes.put(className, Files.readAllBytes(p));
+        }
+      }
+    }
+    return classes;
+  }
+
   private static String sha256Hex(String input) {
     try {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -492,6 +542,10 @@ public final class WarmPreviewWorker {
 
   private volatile @Nullable String baseClasspathHash;
 
+  private volatile @Nullable String cachedOverlayKey;
+
+  private volatile Map<String, byte[]> cachedOverlayClasses = Map.of();
+
   public WarmPreviewWorker(Path workspaceRoot) {
     this.workspaceRoot = requireNonNull(workspaceRoot).toAbsolutePath().normalize();
     this.compiler = resolveSystemCompiler();
@@ -517,6 +571,7 @@ public final class WarmPreviewWorker {
     String allianceParam = textOrDefault(params, "alliance", "Blue");
     String robotParam = textOrDefault(params, "robotConfigId", "581");
     long seed = params.has("seed") ? params.get("seed").asLong(581L) : 581L;
+    List<DisturbanceEvent> disturbances = parseDisturbances(params);
 
     Path sourcePath = null;
     String sourceText = sourceContentParam != null ? sourceContentParam : "";
@@ -588,43 +643,61 @@ public final class WarmPreviewWorker {
     ClasspathManifest manifest = ensureClasspathManifest();
     ClassLoader parentLoader = ensureBaseClassLoader(manifest);
 
-    Path overlayBaseDir = workspaceRoot.resolve(".gradle/trailblazer-preview/overlay");
-    Path overlayDir = overlayBaseDir.resolve("run-" + OVERLAY_COUNTER.getAndIncrement());
+    String sourceHash = sha256Hex(sourceText);
+    String overlayCacheKey = resolvedClassName + "|" + sourceHash + "|" + manifest.buildFilesHash();
+    Map<String, byte[]> memClasses = Map.of();
+    boolean useInMemoryCache = false;
     double compileMs = 0.0;
 
+    Path overlayBaseDir = workspaceRoot.resolve(".gradle/trailblazer-preview/overlay");
+    Path overlayDir =
+        overlayBaseDir.resolve(
+            "run-" + ProcessHandle.current().pid() + "-" + OVERLAY_COUNTER.getAndIncrement());
+
     try {
-      Files.createDirectories(overlayDir);
       if (!sourceText.isEmpty()) {
-        long compileStartNs = System.nanoTime();
-        List<DiagnosticEntry> compileErrors =
-            compileToOverlay(resolvedClassName, sourcePath, sourceText, manifest, overlayDir);
-        compileMs = (System.nanoTime() - compileStartNs) / 1_000_000.0;
-        checkCancelled.run();
-        if (!compileErrors.isEmpty()) {
-          List<Map.Entry<String, String>> rawKnown = new ArrayList<>();
-          for (var raw : SourceSpanAnalyzer.parseRawSegments(sourceText)) {
-            String id = raw.literalSegmentId() != null ? raw.literalSegmentId() : raw.fieldName();
-            rawKnown.add(Map.entry(raw.fieldName(), id));
+        if (overlayCacheKey.equals(cachedOverlayKey)) {
+          memClasses = cachedOverlayClasses;
+          useInMemoryCache = true;
+        } else {
+          Files.createDirectories(overlayDir);
+          long compileStartNs = System.nanoTime();
+          List<DiagnosticEntry> compileErrors =
+              compileToOverlay(resolvedClassName, sourcePath, sourceText, manifest, overlayDir);
+          compileMs = (System.nanoTime() - compileStartNs) / 1_000_000.0;
+          checkCancelled.run();
+          if (!compileErrors.isEmpty()) {
+            List<Map.Entry<String, String>> rawKnown = new ArrayList<>();
+            for (var raw : SourceSpanAnalyzer.parseRawSegments(sourceText)) {
+              String id = raw.literalSegmentId() != null ? raw.literalSegmentId() : raw.fieldName();
+              rawKnown.add(Map.entry(raw.fieldName(), id));
+            }
+            List<SegmentDescriptor> fallbackSegments =
+                SourceSpanAnalyzer.analyze(sourceText, rawKnown);
+            return new WorkerResponse(
+                requestId,
+                "result",
+                false,
+                true,
+                "COMPILE_ERROR",
+                compileErrors.get(0).message(),
+                compileErrors,
+                fallbackSegments,
+                null);
           }
-          List<SegmentDescriptor> fallbackSegments =
-              SourceSpanAnalyzer.analyze(sourceText, rawKnown);
-          return new WorkerResponse(
-              requestId,
-              "result",
-              false,
-              true,
-              "COMPILE_ERROR",
-              compileErrors.get(0).message(),
-              compileErrors,
-              fallbackSegments,
-              null);
+          memClasses = readCompiledClasses(overlayDir);
+          cachedOverlayClasses = memClasses;
+          cachedOverlayKey = overlayCacheKey;
+          useInMemoryCache = !memClasses.isEmpty();
         }
       }
 
       checkCancelled.run();
-      try (OverlayClassLoader childLoader = new OverlayClassLoader(overlayDir, parentLoader)) {
+      try (OverlayClassLoader childLoader =
+          useInMemoryCache
+              ? new OverlayClassLoader(memClasses, parentLoader)
+              : new OverlayClassLoader(overlayDir, parentLoader)) {
         Class<?> autoClass = Class.forName(resolvedClassName, false, childLoader);
-        String sourceHash = sha256Hex(sourceText);
         BuildIdentity identity =
             new BuildIdentity(sourceHash, manifest.buildFilesHash(), System.currentTimeMillis());
         PreviewRequest req =
@@ -639,7 +712,8 @@ public final class WarmPreviewWorker {
                 seed,
                 sourceText,
                 compileMs,
-                identity);
+                identity,
+                disturbances);
         PreviewResult previewResult = PreviewRunner.run(autoClass, req, checkCancelled);
         checkCancelled.run();
         return new WorkerResponse(
