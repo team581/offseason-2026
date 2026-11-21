@@ -7,15 +7,10 @@ import java.util.function.Function;
 /** Competition and characterization autonomous routines shown on the driver station chooser. */
 public enum AutoSelection implements AutoSelectionBase {
   DO_NOTHING("Do Nothing", DoNothingAuto::new),
-  RIGHT_TRENCH("Right Trench", RightTrenchAuto::new),
-  LEFT_TRENCH("Left Trench", LeftTrenchAuto::new),
-  TRAILBLAZER_3_RIGHT_TRENCH("TB3 Right Trench Leave", TrailblazerTrenchAuto::new),
-  TRAILBLAZER_3_LEFT_TRENCH("TB3 Left Trench Leave", LeftTrenchLeaveAuto::new),
+  RIGHT_TRENCH("Right Full Auto", RightTrenchAuto::new),
+  TRAILBLAZER_3_RIGHT_TRENCH("Right Trench Straight Line", TrailblazerTrenchAuto::new),
   TRAILBLAZER_3_TRENCH_ROTATION_TEST(
-      "TB3 Trench Rotation Test", TrailblazerTrenchRotationAuto::new),
-  TRAILBLAZER_3_CALIBRATE_LAG("TB3 Calibrate Lag"),
-  TRAILBLAZER_3_CALIBRATE_TRACTION("TB3 Calibrate Traction"),
-  TRAILBLAZER_3_CALIBRATE_BRAKING("TB3 Calibrate Braking");
+      "Post Right Trench Line Rotation Test", TrailblazerTrenchRotationAuto::new);
 
   private final String displayName;
   private final Optional<Function<AutoContext, TrailblazerAuto<?>>> factory;
