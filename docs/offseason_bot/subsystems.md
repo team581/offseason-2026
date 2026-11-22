@@ -224,10 +224,12 @@ stateDiagram-v2
 
 ## Bringup tuning
 
-Deploy average gains remain under `Deploy/Left` and `Deploy/Right`. Difference
-axis gains are exposed under `Deploy/Left/Slot1`, `Deploy/Right/Slot1` (normal
-synchronization) and `Deploy/Left/Slot2`, `Deploy/Right/Slot2` (desync override).
-Each exposes kP, kI, kD, kS, kV, kA, and kG; tune both motors consistently.
+Deploy and Shooter each share one set of dashboard tunables under
+`/Tunable/Deploy` and `/Tunable/Shooter`, respectively. Each group exposes `kP`,
+`kI`, `kD`, `kS`, `kV`, `kA`, and `kG` for slot 0, plus `MotionMagic/MaxVel` and
+`MotionMagic/MaxAccel`. Edits write to both controllers in the group. The left
+shooter motor still follows the right motor's output rather than running its own
+velocity loop.
 
 ## Beta tuning baseline
 

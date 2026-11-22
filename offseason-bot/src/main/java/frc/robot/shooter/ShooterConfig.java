@@ -74,24 +74,14 @@ public class ShooterConfig {
       PolynomialRegression.quadratic("Shooter/ScoringToFRegression", DISTANCE_TO_SCORE_TOF);
   public static final PolynomialRegression FEEDING_TOF_REGRESSION_MODEL =
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
-  // Torque-current output: A per motor RPS. SimKit has no friction/load to feed forward.
-  private static final Slot0Configs SIM_GAINS = new Slot0Configs().withKP(5.0);
 
   public static final TalonFXConfiguration LEFT_MOTOR_CONFIG =
       createMotorConfig()
-          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              RobotBase.isSimulation()
-                  ? SIM_GAINS.clone()
-                  : new Slot0Configs().withKP(0.4).withKV(0.12));
+          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
   public static final TalonFXConfiguration RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
-              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(
-              RobotBase.isSimulation()
-                  ? SIM_GAINS.clone()
-                  : new Slot0Configs().withKP(0.55).withKV(0.127));
+              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
       DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
@@ -111,6 +101,11 @@ public class ShooterConfig {
 
   private static TalonFXConfiguration createMotorConfig() {
     return new TalonFXConfiguration()
+        .withSlot0(
+            // SimKit has no friction or load to feed forward.
+            RobotBase.isSimulation()
+                ? new Slot0Configs().withKP(5.0)
+                : new Slot0Configs().withKP(0.55).withKV(0.127))
         .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
         .withMotionMagic(
             new MotionMagicConfigs()

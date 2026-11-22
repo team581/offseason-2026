@@ -1,11 +1,15 @@
 package frc.robot.shooter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.Hardware;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,6 +23,17 @@ final class ShooterReadinessTest {
     shooter.robotPeriodic();
     var request = (VelocityTorqueCurrentFOC) hardware.shooterRightMotor.getAppliedControl();
     assertThat(request.FeedForward).isEqualTo(expected);
+  }
+
+  private static void assertGain(TalonFX motor, double expected) throws InterruptedException {
+    var gains = new Slot0Configs();
+    for (int i = 0; i < 25; i++) {
+      Thread.sleep(20);
+      if (motor.getConfigurator().refresh(gains).isOK() && gains.kP == expected) {
+        return;
+      }
+    }
+    fail("Expected shooter motor %s kP %s, last read %s", motor.getDeviceID(), expected, gains.kP);
   }
 
   @BeforeAll
@@ -68,7 +83,7 @@ final class ShooterReadinessTest {
   }
 
   @Test
-  void leftMotorFollowsRightMotorOpposedThroughScoringAndIdle() {
+  void leftMotorFollowsRightMotorOpposedThroughScoringTuningAndIdle() throws InterruptedException {
     var shooter = new Shooter(hardware.shooterLeftMotor, hardware.shooterRightMotor);
     shooter.robotPeriodic();
     shooter.scoreRequest(3.0);
@@ -78,6 +93,22 @@ final class ShooterReadinessTest {
     var follower = (Follower) hardware.shooterLeftMotor.getAppliedControl();
     assertThat(follower.LeaderID).isEqualTo(hardware.shooterRightMotor.getDeviceID());
     assertThat(follower.MotorAlignment).isEqualTo(MotorAlignmentValue.Opposed);
+
+    var tunables = NetworkTableInstance.getDefault().getTable("/Tunable/Shooter");
+    assertThat(tunables.getDoubleTopic("Left/kP").exists()).isFalse();
+    assertThat(tunables.getDoubleTopic("Right/kP").exists()).isFalse();
+    try (var kP = tunables.getDoubleTopic("kP").publish()) {
+      double defaultGain = ShooterConfig.RIGHT_MOTOR_CONFIG.Slot0.kP;
+      try {
+        kP.set(7.0);
+        assertGain(hardware.shooterRightMotor, 7.0);
+        assertGain(hardware.shooterLeftMotor, 7.0);
+      } finally {
+        kP.set(defaultGain);
+        assertGain(hardware.shooterRightMotor, defaultGain);
+        assertGain(hardware.shooterLeftMotor, defaultGain);
+      }
+    }
 
     shooter.idleRequest();
     shooter.robotPeriodic();

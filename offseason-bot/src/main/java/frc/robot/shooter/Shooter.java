@@ -110,8 +110,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     DogLog.log("Shooter/Right/DeviceId", rightMotor.getDeviceID());
     DogLog.log("Shooter/Right/CanBus", rightMotor.getNetwork().getName());
 
-    TunablePid.register("Shooter/Left", leftMotor, ShooterConfig.LEFT_MOTOR_CONFIG);
-    TunablePid.register("Shooter/Right", rightMotor, ShooterConfig.RIGHT_MOTOR_CONFIG);
+    TunablePid.register("Shooter", ShooterConfig.RIGHT_MOTOR_CONFIG, rightMotor, leftMotor);
 
     this.leftMotor = leftMotor;
     this.rightMotor = rightMotor;

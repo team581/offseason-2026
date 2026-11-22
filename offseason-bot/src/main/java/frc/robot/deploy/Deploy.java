@@ -64,8 +64,7 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     this.rightMotor = rightMotor;
     leftMotor.getConfigurator().apply(DeployConfig.LEFT_MOTOR_CONFIG);
     rightMotor.getConfigurator().apply(DeployConfig.RIGHT_MOTOR_CONFIG);
-    TunablePid.register("Deploy/Left", leftMotor, DeployConfig.LEFT_MOTOR_CONFIG);
-    TunablePid.register("Deploy/Right", rightMotor, DeployConfig.RIGHT_MOTOR_CONFIG);
+    TunablePid.register("Deploy", DeployConfig.LEFT_MOTOR_CONFIG, leftMotor, rightMotor);
 
     setControl(neutralRequest);
 

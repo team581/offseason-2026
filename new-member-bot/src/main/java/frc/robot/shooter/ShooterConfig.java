@@ -91,22 +91,18 @@ public class ShooterConfig {
       PolynomialRegression.quadratic("Shooter/FeedingToFRegression", DISTANCE_TO_FEED_TOF);
   public static final TalonFXConfiguration TOP_LEFT_MOTOR_CONFIGS =
       createMotorConfig()
-          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
   public static final TalonFXConfiguration TOP_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
-              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(14.0).withKS(6.4).withKV(0.13));
+              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
   public static final TalonFXConfiguration BOTTOM_LEFT_MOTOR_CONFIG =
       createMotorConfig()
-          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+          .withMotorOutput(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
   public static final TalonFXConfiguration BOTTOM_RIGHT_MOTOR_CONFIG =
       createMotorConfig()
           .withMotorOutput(
-              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKV(0.0));
+              new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
       DogLog.tunable("Shooter/FullHopperInitialFF", 20.0);
@@ -135,6 +131,7 @@ public class ShooterConfig {
 
   private static TalonFXConfiguration createMotorConfig() {
     return new TalonFXConfiguration()
+        .withSlot0(new Slot0Configs().withKP(14.0).withKS(6.4).withKV(0.13))
         .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(1.0 / 1.0))
         .withMotionMagic(
             new MotionMagicConfigs()

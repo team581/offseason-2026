@@ -32,7 +32,7 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
         : ShooterConfig.DISTANCE_TO_SCORE_RPM.get(distance);
   }
 
-  // Top left motor is the leader
+  // The top-right motor runs the velocity loop; the other motors follow its output.
   private final TalonFX topLeftMotor;
   private final TalonFX topRightMotor;
   public final TalonFX bottomLeftMotor;
@@ -103,12 +103,13 @@ public class Shooter extends StateMachineSubsystem<ShooterState> implements Powe
     bottomLeftMotor.getConfigurator().apply(ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
     bottomRightMotor.getConfigurator().apply(ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
 
-    TunablePid.register("Shooter/TopLeft", topLeftMotor, ShooterConfig.TOP_LEFT_MOTOR_CONFIGS);
-    TunablePid.register("Shooter/TopRight", topRightMotor, ShooterConfig.TOP_RIGHT_MOTOR_CONFIG);
     TunablePid.register(
-        "Shooter/BottomLeft", bottomLeftMotor, ShooterConfig.BOTTOM_LEFT_MOTOR_CONFIG);
-    TunablePid.register(
-        "Shooter/BottomRight", bottomRightMotor, ShooterConfig.BOTTOM_RIGHT_MOTOR_CONFIG);
+        "Shooter",
+        ShooterConfig.TOP_RIGHT_MOTOR_CONFIG,
+        topRightMotor,
+        topLeftMotor,
+        bottomLeftMotor,
+        bottomRightMotor);
 
     this.topLeftMotor = topLeftMotor;
     this.topRightMotor = topRightMotor;
