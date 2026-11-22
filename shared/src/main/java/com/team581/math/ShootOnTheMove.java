@@ -1,5 +1,7 @@
 package com.team581.math;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -27,12 +29,12 @@ public class ShootOnTheMove {
 
   // Fixed physical prediction horizon; independent of scheduler timing.
   public static final DoubleSubscriber VELOCITY_TIME_CONSTANT_SECONDS =
-      DogLog.tunable("ShootOnTheMove/VelocityTimeConstantSeconds", 0.15);
+      DogLog.tunable("ShootOnTheMove/VelocityTimeConstantSeconds", 0.15, Seconds);
 
   public static final DoubleSubscriber PREDICTION_HORIZON_SECONDS =
-      DogLog.tunable("ShootOnTheMove/PredictionHorizonSeconds", 0.02);
+      DogLog.tunable("ShootOnTheMove/PredictionHorizonSeconds", 0.02, Seconds);
   public static final DoubleSubscriber ANGULAR_TIME_CONSTANT_SECONDS =
-      DogLog.tunable("ShootOnTheMove/AngularTimeConstantSeconds", 0.15);
+      DogLog.tunable("ShootOnTheMove/AngularTimeConstantSeconds", 0.15, Seconds);
   private static final int MAX_ITERATIONS = 100;
   private static final double SOLUTION_TOLERANCE_METERS = 1e-10;
 

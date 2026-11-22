@@ -1,5 +1,7 @@
 package frc.robot.localization;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.ctre.phoenix6.Utils;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.math.MathHelpers;
@@ -51,7 +53,10 @@ public class Localization extends StateMachineSubsystem<LocalizationState> {
     trustFactor.reset(lastVisionLoopTimestamp, false);
 
     DogLog.tunable(
-        "Localization/ResetHeadingDegrees", 0.0, degrees -> pendingHeadingResetDegrees = degrees);
+        "Localization/ResetHeadingDegrees",
+        0.0,
+        Degrees,
+        degrees -> pendingHeadingResetDegrees = degrees);
   }
 
   public Pose2d getLookaheadPose(double lookahead) {

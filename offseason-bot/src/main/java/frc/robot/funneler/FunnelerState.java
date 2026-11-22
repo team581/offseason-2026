@@ -1,5 +1,7 @@
 package frc.robot.funneler;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -14,7 +16,7 @@ public enum FunnelerState {
   public final DoubleSubscriber tunableVoltage;
 
   private FunnelerState(double voltage) {
-    this.tunableVoltage = DogLog.tunable("Funneler/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Funneler/" + this, voltage, Volts);
   }
 
   public double getVoltage() {

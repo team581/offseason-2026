@@ -1,5 +1,7 @@
 package frc.robot.deploy;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -24,7 +26,7 @@ public enum DeployState {
 
   DeployState(double length) {
 
-    this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length);
+    this.tunableLength = DogLog.tunable("Deploy/State/" + name(), length, Inches);
   }
 
   public double getLength() {

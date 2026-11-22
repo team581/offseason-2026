@@ -1,5 +1,8 @@
 package frc.robot.shooter;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -41,7 +44,7 @@ public class ShooterConfig {
 
   public static final InterpolatingDoubleTreeMap FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD =
       TunableInterpolatingDoubleTreeMap.ofEntries(
-          "Shooter/FeederCurrentToShooterFeedForward", Map.entry(0.0, 0.0));
+          "Shooter/FeederCurrentToShooterFeedForward", Amps, Map.entry(0.0, 0.0));
 
   public static final InterpolatingDoubleTreeMap DISTANCE_TO_SCORE_RPM =
       TunableInterpolatingDoubleTreeMap.ofEntries(
@@ -100,15 +103,15 @@ public class ShooterConfig {
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 0.0, Amps);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
-      DogLog.tunable("Shooter/LowHopperInitialFF", 0.0);
+      DogLog.tunable("Shooter/LowHopperInitialFF", 0.0, Amps);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
-      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
+      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0, Amps);
   // Calculated from average of CAPIN logs
   public static DoubleSubscriber FEEDER_TO_SHOOTER_TRAVEL_TIME =
-      DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.15);
+      DogLog.tunable("Shooter/FeederToShooterTravelTime", 0.15, Seconds);
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {

@@ -1,5 +1,9 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -53,7 +57,7 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   private static final double DYNAMIC_CENTER_OF_ROTATION_TRIGGER_TOLERANCE_DEGREES = 10.0;
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
-      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3);
+      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.3, Seconds);
 
   public static final double TRANSLATION_STD_DEV = 0.01;
 
@@ -62,14 +66,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
   private static final double LOOSE_TOLERANCE = 45.0;
   // TODO(simonstoryparker): make separate ones for scoring
   private static final DoubleSubscriber MAX_LINEAR_RATE_SCORING =
-      DogLog.tunable("Swerve/MaxLinearRateScoring", 1.5);
+      DogLog.tunable("Swerve/MaxLinearRateScoring", 1.5, MetersPerSecond);
 
   // TODO(simonstoryparker): make separate ones for scoring
   private static final DoubleSubscriber MAX_LINEAR_RATE_FEEDING =
-      DogLog.tunable("Swerve/MaxLinearRateFeeding", 4.0);
+      DogLog.tunable("Swerve/MaxLinearRateFeeding", 4.0, MetersPerSecond);
 
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
+      DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0, RotationsPerSecond);
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);

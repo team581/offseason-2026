@@ -1,5 +1,9 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -49,7 +53,7 @@ import org.jspecify.annotations.Nullable;
 public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerManaged {
 
   private static final DoubleSubscriber DRIVER_WANTS_SOTM_DELAY =
-      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.0);
+      DogLog.tunable("Swerve/DriverWantsSotmDelay", 0.0, Seconds);
 
   /**
    * Spot's modeled deviations are about 10x comp-bot's Limelight ones, so 0.01 left each frame
@@ -62,14 +66,14 @@ public class Swerve extends StateMachineSubsystem<SwerveState> implements PowerM
 
   // TODO(simonstoryparker): make separate ones for scoring
   private static final DoubleSubscriber MAX_LINEAR_RATE_SCORING =
-      DogLog.tunable("Swerve/MaxLinearRateScoring", 4.0);
+      DogLog.tunable("Swerve/MaxLinearRateScoring", 4.0, MetersPerSecond);
 
   // TODO(simonstoryparker): make separate ones for scoring
   private static final DoubleSubscriber MAX_LINEAR_RATE_FEEDING =
-      DogLog.tunable("Swerve/MaxLinearRateFeeding", 4.0);
+      DogLog.tunable("Swerve/MaxLinearRateFeeding", 4.0, MetersPerSecond);
 
   private static final DoubleSubscriber MAX_ANGULAR_RATE_SHOOTING =
-      DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0);
+      DogLog.tunable("Swerve/MaxAngularRateShootingRot", 4.0, RotationsPerSecond);
 
   private static final double MAX_ANGULAR_RATE = Units.rotationsToRadians(4.0);
   public static final Rotation2d TELEOP_MAX_ANGULAR_RATE = Rotation2d.fromRotations(2);

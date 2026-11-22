@@ -1,5 +1,7 @@
 package frc.robot.feeder;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -15,7 +17,7 @@ public enum FeederState {
 
   FeederState(double voltage) {
     this.voltage = voltage;
-    this.tunableVoltage = DogLog.tunable("Feeder/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Feeder/" + this, voltage, Volts);
   }
 
   public double getVoltage() {

@@ -1,5 +1,7 @@
 package frc.robot.intake;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -15,7 +17,7 @@ public enum IntakeState {
 
   IntakeState(double voltage) {
     this.voltage = voltage;
-    this.tunableVoltage = DogLog.tunable("Intake/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Intake/" + this, voltage, Volts);
   }
 
   public double getVoltage() {

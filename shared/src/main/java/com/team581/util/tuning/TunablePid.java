@@ -1,5 +1,8 @@
 package com.team581.util.tuning;
 
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
+
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.Slot2Configs;
@@ -8,6 +11,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.team581.GlobalConfig;
 import dev.doglog.DogLog;
+import edu.wpi.first.units.Unit;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -43,6 +47,16 @@ public class TunablePid {
    * No other settings from {@code defaultConfig} are applied to the motors.
    */
   public static void register(String key, TalonFXConfiguration defaultConfig, TalonFX... motors) {
+    register(key, defaultConfig, RotationsPerSecond, RotationsPerSecondPerSecond, motors);
+  }
+
+  /** Registers tunables with the units already used by the configured Motion Magic limits. */
+  public static void register(
+      String key,
+      TalonFXConfiguration defaultConfig,
+      Unit velocityUnit,
+      Unit accelerationUnit,
+      TalonFX... motors) {
     if (!GlobalConfig.IS_DEVELOPMENT) return;
 
     var targets = List.of(motors);
@@ -55,10 +69,12 @@ public class TunablePid {
     DogLog.tunable(
         key + "/MotionMagic/MaxVel",
         motionMagic.MotionMagicCruiseVelocity,
+        velocityUnit,
         value -> apply.accept(motionMagic.withMotionMagicCruiseVelocity(value)));
     DogLog.tunable(
         key + "/MotionMagic/MaxAccel",
         motionMagic.MotionMagicAcceleration,
+        accelerationUnit,
         value -> apply.accept(motionMagic.withMotionMagicAcceleration(value)));
   }
 

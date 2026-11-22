@@ -1,5 +1,7 @@
 package frc.robot.hub_activity;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.team581.util.FmsUtil;
 import com.team581.util.state_machines.StateMachineSubsystem;
 import dev.doglog.DogLog;
@@ -16,7 +18,7 @@ public class HubActivity extends StateMachineSubsystem<HubActivityState> {
   private static final String RED_HEX = Color.kRed.toHexString();
 
   private final DoubleSubscriber tunableHubStateOffset =
-      DogLog.tunable("HubActivity/FieldHubDelay", 0.5);
+      DogLog.tunable("HubActivity/FieldHubDelay", 0.5, Seconds);
 
   private final Timer teleopTimer = new Timer();
   private final Timer autoTimer = new Timer();

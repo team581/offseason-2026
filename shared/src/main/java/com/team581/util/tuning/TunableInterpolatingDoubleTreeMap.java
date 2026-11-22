@@ -4,10 +4,12 @@ import com.team581.GlobalConfig;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import edu.wpi.first.units.Unit;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.DoubleStream;
+import org.jspecify.annotations.Nullable;
 
 public class TunableInterpolatingDoubleTreeMap {
   @SuppressWarnings("unchecked")
@@ -31,6 +33,13 @@ public class TunableInterpolatingDoubleTreeMap {
   @SafeVarargs
   public static InterpolatingDoubleTreeMap ofEntries(
       String key, Map.Entry<Double, Double>... entries) {
+    return ofEntries(key, null, entries);
+  }
+
+  /** Publishes unit metadata when the keys and values use the same unit. */
+  @SafeVarargs
+  public static InterpolatingDoubleTreeMap ofEntries(
+      String key, @Nullable Unit unit, Map.Entry<Double, Double>... entries) {
     var map = InterpolatingDoubleTreeMap.ofEntries(entries);
 
     if (!GlobalConfig.IS_DEVELOPMENT) {
@@ -45,6 +54,7 @@ public class TunableInterpolatingDoubleTreeMap {
     DogLog.tunable(
         key,
         flatEntries,
+        unit,
         newFlatEntries -> {
           if (newFlatEntries.length % 2 != 0) {
             // Not a complete list of pairs, ignore

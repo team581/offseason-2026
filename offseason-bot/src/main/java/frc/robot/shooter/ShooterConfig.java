@@ -1,5 +1,7 @@
 package frc.robot.shooter;
 
+import static edu.wpi.first.units.Units.Amps;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -83,9 +85,9 @@ public class ShooterConfig {
           .withMotorOutput(
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 0.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 0.0, Amps);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
-      DogLog.tunable("Shooter/LowHopperInitialFF", 0.0);
+      DogLog.tunable("Shooter/LowHopperInitialFF", 0.0, Amps);
 
   public static double getFeedTimeOfFlight(double distance) {
     return FeatureFlags.TOF_REGRESSION_MODEL.getAsBoolean()

@@ -1,5 +1,8 @@
 package frc.robot.feeder;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -13,9 +16,9 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 public class FeederConfig {
   // Tune above unloaded current and below current while fuel passes through the feeder.
   public static final DoubleSubscriber FUEL_CURRENT_THRESHOLD_AMPS =
-      DogLog.tunable("Feeder/FuelCurrentThresholdAmps", 10.0);
+      DogLog.tunable("Feeder/FuelCurrentThresholdAmps", 10.0, Amps);
   public static final DoubleSubscriber EMPTY_DEBOUNCE_SECONDS =
-      DogLog.tunable("Feeder/EmptyDebounceSeconds", 0.5);
+      DogLog.tunable("Feeder/EmptyDebounceSeconds", 0.5, Seconds);
 
   // Motor rotations per roller rotation, from the offseason subsystem hardware specs.
   public static final double MOTOR_TO_ROLLER_RATIO = 28.0 / 18.0;

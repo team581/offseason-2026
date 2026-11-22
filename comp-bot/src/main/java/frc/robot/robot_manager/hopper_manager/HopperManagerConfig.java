@@ -1,5 +1,7 @@
 package frc.robot.robot_manager.hopper_manager;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.FovParamsConfigs;
 import com.ctre.phoenix6.configs.ToFParamsConfigs;
@@ -18,7 +20,7 @@ public class HopperManagerConfig {
                   .withFOVCenterX(0.0))
           .withToFParams(new ToFParamsConfigs().withUpdateMode(UpdateModeValue.LongRangeUserFreq));
   public static final DoubleSubscriber HOPPER_COMPACTION_DELAY =
-      DogLog.tunable("HopperManager/CompactionDelay", 0.25);
+      DogLog.tunable("HopperManager/CompactionDelay", 0.25, Seconds);
   public static final DoubleSubscriber HOPPER_COMPACTION_SHUFFLE_INTERVAL =
-      DogLog.tunable("HopperManager/CompactionShuffleInterval", 0.25);
+      DogLog.tunable("HopperManager/CompactionShuffleInterval", 0.25, Seconds);
 }

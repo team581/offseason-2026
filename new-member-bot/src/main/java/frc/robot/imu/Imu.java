@@ -1,5 +1,7 @@
 package frc.robot.imu;
 
+import static edu.wpi.first.units.Units.Gs;
+
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.team581.mechanisms.imu.BaseImuSubsystem;
 import com.team581.mechanisms.imu.BumpCrossingTracker;
@@ -19,7 +21,7 @@ public class Imu extends BaseImuSubsystem {
   private final LinearFilter pigeonYAccelFilter = LinearFilter.movingAverage(10);
 
   private final DoubleSubscriber MAX_ACCELRATION_THRESHOLD_SHOOTING =
-      DogLog.tunable("Imu/MaxAccelerationThresholdShooting", 0.35);
+      DogLog.tunable("Imu/MaxAccelerationThresholdShooting", 0.35, Gs);
 
   public final BumpCrossingTracker bumpCrossingTracker;
 

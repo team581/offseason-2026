@@ -1,5 +1,7 @@
 package frc.robot.imu;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.team581.autos.Point;
 import com.team581.mechanisms.imu.BumpCrossingState;
 import com.team581.util.state_machines.StateMachine;
@@ -22,11 +24,11 @@ public class BumpCrossingTracker extends StateMachine<BumpCrossingState> {
   private static final double FLAT_FALLBACK_DEBOUNCE_SECONDS = 0.75;
   private static final double STUCK_IN_STATE_TIMEOUT_DURATION = 2.5;
   private static final DoubleSubscriber FLAT_THRESHOLD =
-      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0);
+      DogLog.tunable("BumpCrossing/FlatThresholdDegrees", 5.0, Degrees);
   private static final DoubleSubscriber UPHILL_THRESHOLD =
-      DogLog.tunable("BumpCrossing/UphillThresholdDegrees", 5.0);
+      DogLog.tunable("BumpCrossing/UphillThresholdDegrees", 5.0, Degrees);
   private static final DoubleSubscriber DOWNHILL_THRESHOLD =
-      DogLog.tunable("BumpCrossing/DownhillThresholdDegrees", -5.0);
+      DogLog.tunable("BumpCrossing/DownhillThresholdDegrees", -5.0, Degrees);
 
   /**
    * Calculates the signed tilt component along the crossing direction.

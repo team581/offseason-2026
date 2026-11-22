@@ -1,5 +1,7 @@
 package frc.robot.localization;
 
+import static edu.wpi.first.units.Units.Milliseconds;
+
 import com.ctre.phoenix6.Utils;
 import com.team581.autos.StuckOnBallRecovery;
 import com.team581.localization.TrustFactor;
@@ -21,7 +23,7 @@ import java.util.List;
 
 public class Localization extends StateMachineSubsystem<LocalizationState> {
   private static final DoubleSubscriber LATENCY_CONSTANT =
-      DogLog.tunable("Localization/StaticLatencyAdjustment", 0.0);
+      DogLog.tunable("Localization/StaticLatencyAdjustment", 0.0, Milliseconds);
   public final Imu imu;
   private final Swerve swerve;
   private final TunerSwerveDrivetrain drivetrain;

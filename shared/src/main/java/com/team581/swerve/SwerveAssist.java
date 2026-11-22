@@ -1,5 +1,7 @@
 package com.team581.swerve;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import com.team581.autos.Point;
 import com.team581.math.MathHelpers;
 import com.team581.math.PolarChassisSpeeds;
@@ -38,7 +40,8 @@ public class SwerveAssist {
   private static final Rotation2d WALL_SNAP_ROUND_ANGLE = Rotation2d.fromDegrees(180.0);
 
   private static final DoubleSupplier MIN_ROBOT_VELOCITY_FOR_DIRECTION_SNAPS =
-      DogLog.tunable("Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.2);
+      DogLog.tunable(
+          "Swerve/MinRobotVelocityForDirectionSnapsMetersPerSecond", 0.2, MetersPerSecond);
 
   private static final PIDController SWERVE_ASSIST_PID_CONTROLLER = new PIDController(10, 0, 0);
 

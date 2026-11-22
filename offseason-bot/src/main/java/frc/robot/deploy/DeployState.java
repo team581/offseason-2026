@@ -1,5 +1,7 @@
 package frc.robot.deploy;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -22,7 +24,8 @@ public enum DeployState {
 
   DeployState(double angleDegrees) {
 
-    this.tunableAngle = DogLog.tunable("Deploy/State/" + name() + "/AngleDegrees", angleDegrees);
+    this.tunableAngle =
+        DogLog.tunable("Deploy/State/" + name() + "/AngleDegrees", angleDegrees, Degrees);
   }
 
   /** Target arm angle in degrees: zero is fully down, positive is raised. */

@@ -1,5 +1,7 @@
 package com.team581.autos;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import com.team581.trailblazer.AutoPoint;
 import com.team581.trailblazer.Trailblazer;
 import com.team581.trailblazer.segments.AutoSegment;
@@ -17,7 +19,7 @@ public class StuckOnBallRecovery {
   private static final double STUCK_ANGLE_THRESHOLD = 5.0;
 
   private static final DoubleSubscriber RECOVERY_POINT_DISTANCE =
-      DogLog.tunable("Imu/BeachedRecovery/RecoveryPointDistance", 1.5);
+      DogLog.tunable("Imu/BeachedRecovery/RecoveryPointDistance", 1.5, Meters);
 
   // For logging visualization only
   public static Pose2d getRecoveryPose(Pose2d robotPose, Rotation2d pitch, Rotation2d roll) {

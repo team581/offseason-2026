@@ -1,5 +1,7 @@
 package frc.robot.conveyor;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
@@ -16,7 +18,7 @@ public enum ConveyorState {
 
   ConveyorState(double voltage) {
     this.voltage = voltage;
-    this.tunableVoltage = DogLog.tunable("Conveyor/" + this, voltage);
+    this.tunableVoltage = DogLog.tunable("Conveyor/" + this, voltage, Volts);
   }
 
   public double getVoltage() {

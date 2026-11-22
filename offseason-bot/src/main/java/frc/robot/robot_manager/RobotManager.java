@@ -1,5 +1,7 @@
 package frc.robot.robot_manager;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import com.team581.autos.Point;
 import com.team581.math.MathHelpers;
 import com.team581.swerve.SwerveAssist;
@@ -61,10 +63,10 @@ public class RobotManager extends StateMachineSubsystem<RobotState> {
 
   // Number gotten from trench scoring point
   private DoubleSubscriber SLOW_SCORING_DISTANCE_THRESHOLD =
-      DogLog.tunable("RobotManager/FarScoreThreshold", 4.0);
+      DogLog.tunable("RobotManager/FarScoreThreshold", 4.0, Meters);
 
   private DoubleSubscriber SLOW_FEEDING_DISTANCE_THRESHOLD =
-      DogLog.tunable("RobotManager/FarFeedThreshold", 8.5);
+      DogLog.tunable("RobotManager/FarFeedThreshold", 8.5, Meters);
 
   private FeedLocation feedLocation = FeedLocation.RIGHT;
 

@@ -1,18 +1,19 @@
 package com.team581.vision.limelight;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
 import com.team581.vision.limelight.LimelightHelpers.PoseEstimate;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.DoubleSubscriber;
 
 public class PoseEstimateValidator {
-  // Degrees per second
   public static final DoubleSubscriber MAX_ANGULAR_VELOCITY =
-      DogLog.tunable("Limelight/MaxTagAngularRate", 100.0);
+      DogLog.tunable("Limelight/MaxTagAngularRate", 100.0, DegreesPerSecond);
 
-  // Degrees
   public static final DoubleSubscriber MAX_ROTATION_ERROR =
-      DogLog.tunable("Limelight/MaxTagRotationError", 45.0);
+      DogLog.tunable("Limelight/MaxTagRotationError", 45.0, Degrees);
 
   private final String name;
 

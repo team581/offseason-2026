@@ -1,5 +1,7 @@
 package frc.robot.util;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import com.team581.math.ShootOnTheMove;
 import com.team581.math.ShootOnTheMove.ShotSolution;
 import com.team581.util.FeedLocation;
@@ -85,7 +87,7 @@ public class AimParameterUtil {
   // Provisional comp Q64 response estimate; see docs/swerve-lag-q64.md.
   // Keep this bot's calibration separate from the shared/competition default.
   public static final DoubleSubscriber VELOCITY_TIME_CONSTANT_SECONDS =
-      DogLog.tunable("Offseason/ShootOnTheMove/VelocityTimeConstantSeconds", 0.30);
+      DogLog.tunable("Offseason/ShootOnTheMove/VelocityTimeConstantSeconds", 0.30, Seconds);
 
   public static final ShootOnTheMove SCORING_SOTM =
       new ShootOnTheMove(ShooterConfig::getScoreTimeOfFlight, "Scoring");

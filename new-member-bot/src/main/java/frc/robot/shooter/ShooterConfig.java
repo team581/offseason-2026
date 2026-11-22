@@ -1,5 +1,6 @@
 package frc.robot.shooter;
 
+import static edu.wpi.first.units.Units.Amps;
 import static frc.robot.Hardware.SUPPLY_CURRENT_LIMIT_SCALE;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -43,6 +44,7 @@ public class ShooterConfig {
   public static final InterpolatingDoubleTreeMap FEEDER_CURRENT_TO_SHOOTER_FEED_FORWARD =
       TunableInterpolatingDoubleTreeMap.ofEntries(
           "Shooter/FeederCurrentToShooterFeedForward",
+          Amps,
           Map.entry(0.0, 0.0),
           Map.entry(50.0, 27.0),
           Map.entry(20.0, 10.0),
@@ -105,12 +107,12 @@ public class ShooterConfig {
               new MotorOutputConfigs().withInverted(InvertedValue.CounterClockwise_Positive));
 
   public static DoubleSubscriber FULL_HOPPER_INITIAL_FF =
-      DogLog.tunable("Shooter/FullHopperInitialFF", 20.0);
+      DogLog.tunable("Shooter/FullHopperInitialFF", 20.0, Amps);
   public static DoubleSubscriber LOW_HOPPER_INITIAL_FFF =
-      DogLog.tunable("Shooter/LowHopperInitialFF", 15.0);
+      DogLog.tunable("Shooter/LowHopperInitialFF", 15.0, Amps);
 
   public static DoubleSubscriber TURBO_MODE_FF_CURRENT =
-      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0);
+      DogLog.tunable("Shooter/TurboShotFFCurrent", 30.0, Amps);
 
   public static Rotation2d calculateAimingAngle(
       Translation2d shooterTranslation, Translation2d goalTranslation) {

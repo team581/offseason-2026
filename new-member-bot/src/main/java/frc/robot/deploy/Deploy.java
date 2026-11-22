@@ -1,5 +1,8 @@
 package frc.robot.deploy;
 
+import static edu.wpi.first.units.Units.InchesPerSecond;
+import static edu.wpi.first.units.Units.InchesPerSecondPerSecond;
+
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
@@ -58,7 +61,13 @@ public class Deploy extends StateMachineSubsystem<DeployState> implements PowerM
     this.differentialMechanism = differentialMechanism;
     this.leftMotor = differentialMechanism.getLeader();
     this.rightMotor = differentialMechanism.getFollower();
-    TunablePid.register("Deploy", DeployConfig.LEFT_MOTOR_CONFIG, leftMotor, rightMotor);
+    TunablePid.register(
+        "Deploy",
+        DeployConfig.LEFT_MOTOR_CONFIG,
+        InchesPerSecond,
+        InchesPerSecondPerSecond,
+        leftMotor,
+        rightMotor);
 
     differentialMechanism.setControl(
         torqueCurrentFOCAverageRequest.withPosition(0),
