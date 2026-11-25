@@ -32,8 +32,8 @@ public final class MechanismVisualizer {
   }
 
   /**
-   * Builds poses in the fixed AdvantageScope component order: green hood, green turret, intake
-   * carriage, yellow hood, blue turret, upper deploy arms, lower deploy arms.
+   * Builds poses in {@code doglog.jsonc} part order: green hood, green turret, intake carriage,
+   * yellow hood, blue turret, upper deploy arms, lower deploy arms.
    */
   static Pose3d[] buildComponentPoses(
       RobotState robotState,

@@ -1,7 +1,7 @@
 # cadquery-ocp ships no type stubs; its submodules star-import from one compiled
 # extension module, so ty cannot resolve `from OCP.X import Y` members.
 # ty: ignore[import-not-found]
-"""Convert the offseason Onshape export package to articulated AdvantageScope assets.
+"""Convert the offseason Onshape export package to articulated DogLog Studio assets.
 
 Run from the repository root:
     uv run --package cad python tools/cad/import_offseason.py '/path/to/offseason STEP'
@@ -185,23 +185,25 @@ def export_scene(source, output, nodes=None, color=None):
     }
 
 
-def component(pivot):
-    return {"zeroedRotations": [], "zeroedPosition": (-np.asarray(pivot)).tolist()}
-
-
 def main():
+    repo_root = Path(__file__).resolve().parents[2]
+    default_output = repo_root / "advantagescope_assets/Robot_offseason"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(__file__).resolve().parents[2]
-        / "advantagescope_assets/Robot_offseason",
-    )
+    parser.add_argument("--output", type=Path, default=default_output)
     parser.add_argument("--cache-dir", type=Path)
     args = parser.parse_args()
+    output = args.output.resolve()
+    project_dir = repo_root if output == default_output else output
+    model_dir = output.relative_to(project_dir)
+    config_path = project_dir / "doglog.jsonc"
+    config = (
+        json.loads(config_path.read_text())
+        if config_path.exists()
+        else {"$schema": "https://doglog.studio/doglog.schema.json", "robots": []}
+    )
     sources = ["base", "turret", "hood", "intake-in", "intake-out", "full-reference"]
-    args.output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="offseason-cad-") as temporary:
         cache = args.cache_dir or Path(temporary)
         cache.mkdir(parents=True, exist_ok=True)
@@ -230,34 +232,42 @@ def main():
             ("hood", "model_3.glb", [245, 205, 40, 255]),
             ("turret", "model_4.glb", [45, 110, 235, 255]),
         ]:
-            assets.append(
-                export_scene(scenes[name], args.output / filename, color=color)
-            )
+            assets.append(export_scene(scenes[name], output / filename, color=color))
         for index, group in zip([2, 5, 6], groups):
             assets.append(
                 export_scene(
                     scenes["intake-in"],
-                    args.output / f"model_{index}.glb",
+                    output / f"model_{index}.glb",
                     nodes=group["nodes"],
                 )
             )
-        config = {
-            "$schema": "../config-schema.json",
+        pivots = [
+            HOOD_PIVOT,
+            TURRET_PIVOT,
+            [0, 0, 0],
+            HOOD_PIVOT,
+            TURRET_PIVOT,
+            groups[1]["pivot"],
+            groups[2]["pivot"],
+        ]
+        robot = {
             "name": "581 Offseason Bot",
-            "rotations": [],
-            "position": [0, 0, 0],
-            "cameras": [],
-            "components": [
-                component(HOOD_PIVOT),
-                component(TURRET_PIVOT),
-                component([0, 0, 0]),
-                component(HOOD_PIVOT),
-                component(TURRET_PIVOT),
-                component(groups[1]["pivot"]),
-                component(groups[2]["pivot"]),
+            "model": (model_dir / "model.glb").as_posix(),
+            "parts": [
+                {
+                    "model": (model_dir / f"model_{index}.glb").as_posix(),
+                    "origin": dict(zip("xyz", map(float, pivot), strict=True)),
+                }
+                for index, pivot in enumerate(pivots)
             ],
         }
-        (args.output / "config.json").write_text(json.dumps(config, indent=2) + "\n")
+        for index, entry in enumerate(config["robots"]):
+            if entry["name"] == robot["name"]:
+                config["robots"][index] = robot
+                break
+        else:
+            config["robots"].append(robot)
+        config_path.write_text(json.dumps(config, indent=2) + "\n")
         manifest = {
             "source_sha256": hashes,
             "cad_to_robot_rotation_degrees_z": 90,
@@ -280,9 +290,7 @@ def main():
             },
             "assets": sorted(assets, key=lambda asset: asset["file"]),
         }
-        (args.output / "cad-manifest.json").write_text(
-            json.dumps(manifest, indent=2) + "\n"
-        )
+        (output / "cad-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         print(json.dumps(manifest["deploy"], indent=2))
 
 

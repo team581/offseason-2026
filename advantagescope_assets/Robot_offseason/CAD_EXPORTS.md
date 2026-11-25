@@ -25,9 +25,9 @@ variant of each is visible at a time when component poses are selected.
 
 All assembled models are expressed in robot coordinates, in meters: X forward,
 Y left, Z up. Onshape's assembly is rotated +90 degrees about Z. Its wheel contact
-plane is already Z = 0. `config.json` therefore uses no overall rotation or
-translation. Component `zeroedPosition` offsets align each rotating model's
-pivot to the origin before the logged pose is applied.
+plane is already Z = 0, so `doglog.jsonc` doesn't need a `mount` transform.
+Each part's `origin` is its pivot in the assembled CAD. Studio moves the part
+so that the pivot follows the logged pose.
 
 The turret axis is **4.750 inches back, 8.025 inches left**, and its CAD reference
 height is 14.750 inches. The hood hinge is recovered from the two pivot bearings,
@@ -86,15 +86,18 @@ tessellation deflection. Repeated geometry stays instanced in the final GLBs.
 
 If regenerated CAD changes the pivots or linkage geometry, update the Java
 constants to match the manifest and rerun the tests; regeneration does not
-automatically change robot code.
+automatically change robot code. The importer updates only the Offseason Bot
+entry in the root `doglog.jsonc`. Keep that file valid JSON (no comments or
+trailing commas) so the importer can read it.
 
 ## View and verify
 
-In AdvantageScope, choose **Use Custom Assets Folder** and select this checkout's
-`advantagescope_assets` parent folder. Select **581 Offseason Bot** in the 3D
-Field view and add `SuperstructureVisualization/Components` as its component poses.
-Reload assets if the previous placeholder model is cached. Color variants overlap
-when no component poses are provided, because both variants use the same default
+In DogLog Studio, open **Widget options** in a **Robot** widget. In the
+**Robot** dropdown (default: **Swerve drivebase**), choose **Add project…** and
+select the repository root. This registers all three robots from `doglog.jsonc`.
+Choose **581 Offseason Bot**, then add `SuperstructureVisualization/Components`
+to the widget to animate the parts.
+Color variants overlap without component poses because they use the same
 assembled position.
 
 Validation covers the two exported endpoints, linkage attachment points at
@@ -102,5 +105,4 @@ intermediate positions, travel clamping, hood motion, component colors, and turr
 placement. The final intake assets' outward transforms were also checked against
 all 64 STEP-exported instance placements, with maximum matrix error below 1e-9.
 
-References: [AdvantageScope component setup](https://docs.advantagescope.org/more-features/custom-assets/)
-and [STEP conversion guide](https://docs.advantagescope.org/more-features/custom-assets/gltf-convert/).
+Reference: [DogLog Studio robot config schema](https://doglog.studio/doglog.schema.json).

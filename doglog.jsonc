@@ -1,0 +1,108 @@
+{
+  "$schema": "https://doglog.studio/doglog.schema.json",
+  "robots": [
+    {
+      "name": "581 Beta Bot",
+      "model": "advantagescope_assets/Robot_beta/model.glb",
+      "mount": {
+        "roll": 90,
+        "yaw": 180
+      },
+      "parts": [
+        {
+          "model": "advantagescope_assets/Robot_beta/model_0.glb"
+        },
+        {
+          "model": "advantagescope_assets/Robot_beta/model_1.glb"
+        },
+        {
+          "model": "advantagescope_assets/Robot_beta/model_2.glb"
+        },
+        {
+          "model": "advantagescope_assets/Robot_beta/model_3.glb"
+        },
+        {
+          "model": "advantagescope_assets/Robot_beta/model_4.glb"
+        }
+      ]
+    },
+    {
+      "name": "581 Comp Bot",
+      "model": "advantagescope_assets/Robot_comp/model.glb",
+      "mount": {
+        "roll": 90,
+        "yaw": 180
+      },
+      "parts": [
+        {
+          "model": "advantagescope_assets/Robot_comp/model_0.glb"
+        },
+        {
+          "model": "advantagescope_assets/Robot_comp/model_1.glb"
+        }
+      ]
+    },
+    {
+      "name": "581 Offseason Bot",
+      "model": "advantagescope_assets/Robot_offseason/model.glb",
+      "parts": [
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_0.glb",
+          "origin": {
+            "x": -0.014985981,
+            "y": 0.203835,
+            "z": 0.457770893
+          }
+        },
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_1.glb",
+          "origin": {
+            "x": -0.12065,
+            "y": 0.203835,
+            "z": 0.37465
+          }
+        },
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_2.glb",
+          "origin": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        },
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_3.glb",
+          "origin": {
+            "x": -0.014985981,
+            "y": 0.203835,
+            "z": 0.457770893
+          }
+        },
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_4.glb",
+          "origin": {
+            "x": -0.12065,
+            "y": 0.203835,
+            "z": 0.37465
+          }
+        },
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_5.glb",
+          "origin": {
+            "x": 0.14604999999999407,
+            "y": 4.046193105484455e-17,
+            "z": 0.26263852490581985
+          }
+        },
+        {
+          "model": "advantagescope_assets/Robot_offseason/model_6.glb",
+          "origin": {
+            "x": 0.23087274455928036,
+            "y": -8.181923382689241e-17,
+            "z": 0.20320000000000193
+          }
+        }
+      ]
+    }
+  ]
+}
