@@ -1,0 +1,905 @@
+{
+  "acknowledgements": [
+    {
+      "valid": true,
+      "name": "compatible",
+      "ack": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "attached": true,
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "unsupported-version",
+      "ack": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "attached": true,
+        "version": 2,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "missing-version",
+      "ack": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "attached": true,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "invalid-enabled",
+      "ack": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "attached": true,
+        "version": 1,
+        "enabled": "yes"
+      }
+    }
+  ],
+  "control": [
+    {
+      "valid": true,
+      "name": "disabled-with-six-ports",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "unsupported-version",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 2,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "missing-port",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "invalid-mode",
+      "frame": {
+        "mode": "other",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "negative-sequence",
+      "frame": {
+        "mode": "teleop",
+        "sequence": -1,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "invalid-time",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 3601,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "axis-outside-range",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [1.1],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "pov-outside-range",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [360],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    },
+    {
+      "valid": false,
+      "name": "too-many-buttons",
+      "frame": {
+        "mode": "teleop",
+        "sequence": 0,
+        "estop": false,
+        "alliance": "Red1",
+        "matchTime": 100,
+        "joysticks": [
+          {
+            "buttons": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          },
+          {
+            "buttons": [
+              true,
+              false
+            ],
+            "name": "Fixture",
+            "axes": [
+              0.25,
+              -0.5
+            ],
+            "povs": [90],
+            "xbox": true
+          }
+        ],
+        "version": 1,
+        "enabled": false
+      }
+    }
+  ]
+}

@@ -68,8 +68,7 @@ test {
 	systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
-wpi.sim.addGui().defaultEnabled = true
-wpi.sim.addDriverstation()
+apply from: rootProject.file('gradle/simulation-app.gradle')
 
 jar {
 	from {
